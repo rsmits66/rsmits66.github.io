@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Random dyadic grids · an investigation</title>
+<style>
+:root {
+  --bg: #fffdf7;
+  --bg-2: #faf4e4;
+  --text: #1a1411;
+  --text-muted: #6b5a55;
+  --text-faint: #d4c4be;
+  --border: #e8dccf;
+  --accent: #9E1B32;
+  --accent-bg: #fbeae0;
+  --accent-border: #c2415a;
+  --gold: #c8a430;
+  --houndstooth-soft: #f0e6d2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #faf4e4;
+    --bg-2: #f0e6d2;
+    --text: #1a1411;
+    --text-muted: #6b5a55;
+    --text-faint: #c4b5b0;
+    --border: #d9c9c4;
+    --accent: #9E1B32;
+    --accent-bg: #fbeae0;
+    --accent-border: #c2415a;
+    --gold: #a07820;
+    --houndstooth-soft: #e8dccf;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+  background-color: var(--bg-2);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 2.5rem 1.5rem;
+  background-image:
+    linear-gradient(45deg, var(--houndstooth-soft) 12%, transparent 12.5%, transparent 87%, var(--houndstooth-soft) 87.5%, var(--houndstooth-soft)),
+    linear-gradient(135deg, var(--houndstooth-soft) 12%, transparent 12.5%, transparent 87%, var(--houndstooth-soft) 87.5%, var(--houndstooth-soft));
+  background-size: 22px 22px;
+  background-position: 0 0, 11px 11px;
+}
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: var(--bg);
+  padding: 2rem 2rem 1.5rem;
+  border: 0.5px solid var(--border);
+  border-top: 4px solid var(--accent);
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+}
+.container::before {
+  content: "";
+  position: absolute;
+  top: 4px; left: 0; right: 0;
+  height: 6px;
+  background-image:
+    linear-gradient(45deg, var(--accent) 25%, transparent 25%, transparent 75%, var(--accent) 75%),
+    linear-gradient(45deg, var(--accent) 25%, transparent 25%, transparent 75%, var(--accent) 75%);
+  background-size: 6px 6px;
+  background-position: 0 0, 3px 3px;
+  background-color: var(--bg);
+  opacity: 0.75;
+}
+h1 {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+.lede {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  color: var(--text-muted);
+  margin: 0 0 2rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+.section { margin-top: 2.5rem; padding-top: 0.5rem; }
+.section:first-of-type { margin-top: 1.5rem; }
+.section-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 0.5px solid var(--border);
+  letter-spacing: 0.3px;
+}
+.section-title.sub {
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 0.85rem;
+}
+.section-title .num {
+  color: var(--accent);
+  margin-right: 0.4em;
+  font-style: italic;
+}
+.formula {
+  font-family: Cambria, "Latin Modern Math", Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  padding: 0.7rem 1rem;
+  background: var(--bg-2);
+  border-left: 3px solid var(--accent);
+}
+.formula.compact { font-size: 14px; padding: 0.55rem 0.9rem; }
+.definition {
+  background: var(--bg-2);
+  border-left: 3px solid var(--accent);
+  padding: 0.85rem 1.25rem;
+  margin: 1rem 0 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.definition .def-label {
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 0.4rem;
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+}
+.definition p { margin: 0.4rem 0; }
+.display-math {
+  text-align: center;
+  font-style: italic;
+  font-family: Cambria, "Latin Modern Math", Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  margin: 0.7rem 0 !important;
+  color: var(--text);
+}
+.piecewise {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  margin: 0.7rem 0;
+  font-family: Cambria, "Latin Modern Math", Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 15.5px;
+  color: var(--text);
+}
+.piecewise .lhs { white-space: nowrap; }
+.piecewise svg.brace { color: var(--text); flex-shrink: 0; display: block; }
+.piecewise .cases { display: table; border-collapse: collapse; }
+.piecewise .cases-row { display: table-row; }
+.piecewise .cases-cell { display: table-cell; padding: 1px 12px; vertical-align: middle; white-space: nowrap; }
+.piecewise .cases-cell:first-child { text-align: right; }
+.piecewise .cases-cell:last-child { font-style: normal; color: var(--text-muted); }
+svg { display: block; max-width: 100%; height: auto; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text-muted);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.row > .row-label { min-width: 28px; flex-shrink: 0; font-weight: 500; color: var(--text); font-style: italic; font-family: Cambria, Georgia, serif; font-size: 16px; }
+.bit-btn, .j-btn, .f-btn, .h-btn {
+  padding: 7px 12px;
+  border: 0.5px solid var(--border);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.bit-btn:hover, .j-btn:hover, .f-btn:hover, .h-btn:hover { border-color: var(--accent); }
+.bit-btn.on, .j-btn.on, .f-btn.on, .h-btn.on { background: var(--accent); color: #fbfaf7; border-color: var(--accent); font-weight: 600; }
+.f-btn.rolltide, .h-btn.rolltide {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-style: italic;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+.f-btn.rolltide:hover, .h-btn.rolltide:hover { background: var(--accent-bg); }
+.f-btn.rolltide.on, .h-btn.rolltide.on { background: var(--accent); color: #fbfaf7; font-style: italic; }
+.readout {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+.action {
+  padding: 7px 16px;
+  border: 0.5px solid var(--accent);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--accent);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.action:hover { background: var(--accent); color: #fbfaf7; }
+.action:active { transform: scale(0.98); }
+.action.compact { padding: 5px 10px; font-size: 11px; letter-spacing: 0.5px; }
+input[type=range] {
+  flex: 1;
+  min-width: 200px;
+  accent-color: var(--accent);
+}
+.haar-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  font-family: Cambria, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0.4rem 0 0.8rem;
+  padding: 0.5rem 0.7rem;
+  border-top: 0.5px solid var(--border);
+  border-bottom: 0.5px solid var(--border);
+}
+.haar-readout .val {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+}
+.notes {
+  margin-top: 1rem;
+  padding: 0.85rem 1.15rem;
+  background: var(--bg-2);
+  border-radius: 2px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+  color: var(--text-muted);
+  font-family: Georgia, "Times New Roman", serif;
+}
+.notes.preface { margin-top: 0; margin-bottom: 0.85rem; }
+.notes p { margin: 0.55rem 0; }
+.notes p:first-child { margin-top: 0; }
+.notes p:last-child { margin-bottom: 0; }
+.notes em { color: var(--accent); font-style: normal; font-weight: 700; font-family: "Playfair Display", Georgia, serif; }
+.notes code {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-style: normal;
+}
+.two-col {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin: 0;
+}
+.two-col > .col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+@media (max-width: 820px) {
+  .two-col { flex-direction: column; }
+  .container { padding: 1.5rem 1.25rem 1rem; }
+}
+.plot-caption {
+  text-align: center;
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 0.4rem;
+}
+.mc-counter {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.mc-counter .n {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 15px;
+}
+.footer {
+  text-align: center;
+  margin-top: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.footer span { color: var(--accent); }
+.mc-sample {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 6px 0 0;
+}
+.mc-sample > .label {
+  font-style: italic;
+  color: var(--text-muted);
+  font-family: Cambria, Georgia, serif;
+  font-size: 14px;
+  margin-right: 6px;
+}
+.bit-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  border: 0.5px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 2px;
+  white-space: nowrap;
+  margin: 0 1px;
+}
+.bit-badge.on {
+  background: var(--accent);
+  color: #fbfaf7;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.bit-ellipsis {
+  color: var(--text-faint);
+  font-size: 16px;
+  margin: 0 3px;
+  font-family: Georgia, serif;
+}
+.r-display {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text);
+  margin-left: 12px;
+}
+.r-display .val {
+  color: var(--accent);
+  font-weight: 600;
+}
+.mc-sample.empty {
+  font-style: italic;
+  color: var(--text-faint);
+}
+text { fill: var(--text); }
+text.muted { fill: var(--text-muted); font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+text.label { font-size: 13px; font-weight: 600; font-family: Georgia, "Times New Roman", serif; fill: var(--accent); }
+text.axis { fill: var(--text-muted); font-size: 11px; font-family: ui-monospace, monospace; }
+text.haar-amp { fill: var(--accent); font-size: 11px; font-style: italic; font-family: Cambria, Georgia, serif; }
+text.region-label { fill: var(--text-muted); font-size: 12px; font-style: italic; font-family: Cambria, Georgia, serif; }
+text.legend { fill: var(--text-muted); font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+text.plot-title { fill: var(--text); font-size: 12.5px; font-weight: 600; font-family: "Playfair Display", Georgia, serif; }
+rect.click-target { fill: transparent; cursor: pointer; pointer-events: all; }
+rect.click-target:hover { fill: var(--accent); fill-opacity: 0.08; }
+rect.selected-bg { fill: var(--accent); fill-opacity: 0.10; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="container">
+<p class="subtitle">— The University of Alabama · Department of Mathematics —</p>
+<h1>Random Dyadic Grids: An Investigation</h1>
+<p class="lede">A working notebook on random dyadic grids and the structures built on top of them. Sections accumulate as the investigation proceeds; controls below each figure stay live, and the §1 grid feeds the constructions in later sections.</p>
+
+<section class="section">
+<h2 class="section-title"><span class="num">§1.</span> The random dyadic grid &middot;<span style="color: var(--text-muted); font-weight: 400; margin-left: 0.4em;"> with §2 alongside</span></h2>
+
+<p class="formula">𝒟<sub>β,r</sub> = r &middot; 𝒟<sup>β</sup> = { r &middot; 2<sup>j</sup> ([0,1) + k + Σ<sub>i&lt;j</sub> 2<sup>i&minus;j</sup> β<sub>i</sub>) : j, k &isin; ℤ }</p>
+
+<div class="notes preface">
+  <p><em>Reading the picture.</em> Each row is one scale of the dyadic grid; <code>[</code> marks a closed left endpoint and <code>)</code> marks an open right endpoint. The faint pattern is the reference grid 𝒟<sup>0</sup> at β=0, r=1; toggle a bit or move r to see the shifted-and-rescaled grid 𝒟<sub>β,r</sub> drawn over it in crimson. <strong>Click an interval to designate it as I in §2.</strong></p>
+  <p><em>How the bits propagate.</em> Bit β<sub>i</sub> contributes 2<sup>i</sup> to the shift σ<sub>j</sub> at every level j &gt; i. So β₁ shifts only j=2; β₀ shifts j ∈ {2, 1}; β₋₃ shifts every level shown. Because each σ<sub>j</sub> is bounded by 2<sup>j</sup>, the shifted intervals at level j+1 still split cleanly into pairs of level j intervals and the dyadic nesting is preserved.</p>
+</div>
+
+<div class="two-col">
+  <div class="col">
+    <svg id="grid" width="100%" viewBox="0 0 540 240" role="img">
+      <title>Random dyadic grid</title>
+      <desc>Four rows of dyadic intervals; faint reference grid behind, current shifted and rescaled grid in crimson. Click an interval to select it as I in section 2.</desc>
+      <text class="label" x="68" y="50" text-anchor="end" dominant-baseline="central">j = 2</text>
+      <text class="label" x="68" y="100" text-anchor="end" dominant-baseline="central">j = 1</text>
+      <text class="label" x="68" y="150" text-anchor="end" dominant-baseline="central">j = 0</text>
+      <text class="label" x="68" y="200" text-anchor="end" dominant-baseline="central">j = &minus;1</text>
+      <g id="grid-content"></g>
+      <line x1="80" y1="225" x2="520" y2="225" stroke="var(--text-faint)" stroke-width="0.5"/>
+      <g stroke="var(--text-faint)" stroke-width="0.5">
+        <line x1="80" y1="222" x2="80" y2="228"/>
+        <line x1="190" y1="222" x2="190" y2="228"/>
+        <line x1="300" y1="222" x2="300" y2="228"/>
+        <line x1="410" y1="222" x2="410" y2="228"/>
+        <line x1="520" y1="222" x2="520" y2="228"/>
+      </g>
+      <text class="muted" x="80" y="240" text-anchor="middle">&minus;4</text>
+      <text class="muted" x="190" y="240" text-anchor="middle">&minus;2</text>
+      <text class="muted" x="300" y="240" text-anchor="middle">0</text>
+      <text class="muted" x="410" y="240" text-anchor="middle">2</text>
+      <text class="muted" x="520" y="240" text-anchor="middle">4</text>
+    </svg>
+
+    <div class="row">
+      <span class="row-label">β =</span>
+      <button class="bit-btn" data-bit="1">β₁ = 0</button>
+      <button class="bit-btn" data-bit="0">β₀ = 0</button>
+      <button class="bit-btn" data-bit="-1">β₋₁ = 0</button>
+      <button class="bit-btn" data-bit="-2">β₋₂ = 0</button>
+      <button class="bit-btn" data-bit="-3">β₋₃ = 0</button>
+    </div>
+    <div class="row">
+      <span class="row-label">r =</span>
+      <input type="range" id="r-slider" min="1" max="1.99" step="0.01" value="1" />
+      <span class="readout" id="r-out">1.00</span>
+    </div>
+    <div class="row">
+      <button class="action" id="rand-btn">Roll Tide</button>
+      <button class="action" id="reset-btn">Reset</button>
+    </div>
+
+    <div class="notes">
+      <p><em>Why this matters.</em> With (β, r) drawn appropriately at random, every bounded interval of ℝ ends up in 𝒟<sub>β,r</sub> with positive probability. This is the workhorse of the Hytönen–Tapiola random grid construction and the operator-averaging identity in §4.</p>
+    </div>
+  </div>
+
+  <div class="col">
+    <h3 class="section-title sub"><span class="num">§2.</span> Haar functions on dyadic intervals</h3>
+
+    <svg id="haar-plot" width="100%" viewBox="0 0 540 200" role="img">
+      <title>Haar function on the selected dyadic interval</title>
+      <desc>Step function plot of h_I; values plus or minus one over square root of the length of I on the right and left halves of I, and zero elsewhere.</desc>
+      <text class="label" x="32" y="20" text-anchor="start">h<tspan font-style="italic" baseline-shift="sub" font-size="10">I</tspan>(x)</text>
+      <g id="haar-content"></g>
+    </svg>
+
+    <div class="haar-readout">
+      <span>I = [<span class="val" id="ro-a">0.000</span>, <span class="val" id="ro-b">1.000</span>)</span>
+      <span>|I| = <span class="val" id="ro-len">1.000</span></span>
+      <span>1/√|I| = <span class="val" id="ro-amp">1.000</span></span>
+      <span>j = <span class="val" id="ro-j">0</span></span>
+      <span>k = <span class="val" id="ro-k">0</span></span>
+    </div>
+
+    <div class="definition">
+      <p class="def-label">Definition.</p>
+      <p>The Haar function on a dyadic interval I is</p>
+      <p class="display-math">h<sub>I</sub>(x) = (1/√|I|) (χ<sub>I<sub>r</sub></sub>(x) − χ<sub>I<sub>l</sub></sub>(x)),</p>
+      <p>a step function with ∫h<sub>I</sub> = 0 and ∫|h<sub>I</sub>|² = 1. As I ranges over a dyadic grid 𝒟 the family {h<sub>I</sub>} is an orthonormal basis of L²(ℝ) — the basis used in §3 and §4.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title"><span class="num">§3.</span> Decomposing functions in the Haar basis</h2>
+
+<p class="formula">f(x) = Σ<sub>I ∈ 𝒟</sub> ⟨f, h<sub>I</sub>⟩ h<sub>I</sub>(x), &nbsp;&nbsp;⟨f, h<sub>I</sub>⟩ = (1/√|I|) ( ∫<sub>I<sub>r</sub></sub> f − ∫<sub>I<sub>l</sub></sub> f )</p>
+
+<svg id="decomp-plot" width="100%" viewBox="0 0 540 200" role="img">
+  <title>Function f(x) and its truncated Haar partial sum</title>
+  <desc>Overlay of f(x) as a smooth curve and the partial Haar sum as a crimson step function on the current grid.</desc>
+  <g id="decomp-content"></g>
+</svg>
+
+<div class="row">
+  <span class="row-label">f =</span>
+  <button class="f-btn" data-f="linear">x/2</button>
+  <button class="f-btn" data-f="parabola">x²/8</button>
+  <button class="f-btn" data-f="sine">sin(πx/2)</button>
+  <button class="f-btn" data-f="bell">e^(−x²)</button>
+  <button class="f-btn" data-f="step">χ_[0,2)</button>
+  <button class="f-btn" data-f="haar">h_[0,1)</button>
+  <button class="f-btn rolltide" data-f="rolltide">Roll Tide ✦ random simple f</button>
+</div>
+
+<div class="notes">
+  <p><em>What you're seeing.</em> The dark curve is f, the crimson step function is the partial sum f<sub>𝒟</sub>(x) = Σ<sub>I</sub> ⟨f, h<sub>I</sub>⟩ h<sub>I</sub>(x) restricted to the four levels j ∈ {−1, 0, 1, 2} of the current grid 𝒟<sub>β,r</sub>. Coefficients ⟨f, h<sub>I</sub>⟩ are computed by midpoint integration on each I.</p>
+  <p><em>Truncation, scaling, and offset.</em> The full series in the formula is over <em>all</em> dyadic I; truncating to j ≤ 2 leaves out the coarse-scale "scaling" component, so for f with non-zero mean over the window (e.g. x²/8, e^(−x²), χ_[0,2)) the partial sum is offset from f by roughly that mean. For mean-zero f (linear, sine, the Haar atom) the approximation hugs the curve.</p>
+  <p><em>Roll Tide.</em> Each click of <em>Roll Tide</em> generates a fresh random simple function — three to five weighted indicators, signs and supports drawn at random — and hands it to the same machinery. Toggle β bits or move r to watch the same f get re-decomposed against a different grid.</p>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title"><span class="num">§4.</span> The Hilbert transform via random dyadic shifts</h2>
+
+<p class="formula compact">Hf(x) = − (8/π) ⟨Ш⟩ f(x) := − (8/π) ∫<sub>1</sub><sup>2</sup> ∫<sub>{0,1}<sup>ℤ</sup></sub> Ш<sup>β,r</sup> f(x) dμ(β) dr/r.&nbsp;&nbsp;Ш<sup>β,r</sup> h<sub>I</sub> := (h<sub>I<sub>l</sub></sub> − h<sub>I<sub>r</sub></sub>)/√2 for I ∈ 𝒟<sub>β,r</sub>, extended linearly.</p>
+
+<div class="two-col">
+  <div class="col">
+    <p class="plot-caption">f and its exact Hilbert transform Hf</p>
+    <svg id="hf-exact-plot" width="100%" viewBox="0 0 460 240" role="img">
+      <title>Exact Hilbert transform</title>
+      <g id="hf-exact-content"></g>
+    </svg>
+  </div>
+  <div class="col">
+    <p class="plot-caption">Random-shift approximation: −(8/π) · running mean of Ш<sup>β,r</sup> f over <span class="mc-counter">N = <span class="n" id="mc-n">0</span></span> samples</p>
+    <svg id="hf-mc-plot" width="100%" viewBox="0 0 460 240" role="img">
+      <title>Monte Carlo approximation</title>
+      <g id="hf-mc-content"></g>
+    </svg>
+  </div>
+</div>
+
+<div class="row">
+  <span class="row-label">f =</span>
+  <button class="h-btn" data-h="indicator">𝟏_[−1,1]</button>
+  <button class="h-btn" data-h="two_blocks">𝟏_[−2,−1] + 𝟏_[1,2]</button>
+  <button class="h-btn" data-h="gaussian">e^(−x²)</button>
+  <button class="h-btn" data-h="lorentz">1/(1+x²)</button>
+  <button class="h-btn" data-h="xlorentz">x/(1+x²)</button>
+  <button class="h-btn rolltide" data-h="rolltide">Roll Tide ✦ random simple f</button>
+</div>
+<div class="row">
+  <span class="row-label">N =</span>
+  <button class="action compact" id="mc-1">+ 1 Sample</button>
+  <button class="action compact" id="mc-10">+ 10</button>
+  <button class="action compact" id="mc-100">+ 100</button>
+  <button class="action compact" id="mc-1000">+ 1000</button>
+  <button class="action compact" id="mc-10000">+ 10000</button>
+  <button class="action compact" id="mc-reset">Reset</button>
+</div>
+<div class="mc-sample" id="mc-last-sample">
+  <span class="label">last (β, r) drawn:</span>
+  <span id="mc-bits-display"><span class="bit-ellipsis" style="font-style:italic; color: var(--text-faint);">— click a sample button to draw —</span></span>
+  <span class="r-display" id="mc-r-wrap" style="display:none;">r = <span class="val" id="mc-r-display">—</span></span>
+</div>
+
+<div class="notes">
+  <p><em>What's plotted.</em> The left panel shows the L² function f and its exact Hilbert transform Hf, computed from the closed-form log expression for indicators and from Dawson's function or other known formulas for the smooth presets. The right panel shows the running Monte Carlo estimate <strong>−(8/π) · (1/N) Σ Ш<sup>β<sub>n</sub>,r<sub>n</sub></sup> f(x)</strong> with each (β<sub>n</sub>, r<sub>n</sub>) drawn as: bits β<sub>i</sub> i.i.d. Bernoulli(1/2) for i ∈ {−8, …, 4}, and r = 2<sup>u</sup> with u uniform on [0, 1] (so r is distributed with density 1/(r ln 2) on [1, 2)).</p>
+  <p><em>Why Ш makes sense as a "discrete H".</em> Petermichl's shift maps each Haar function h<sub>I</sub> to the difference (h<sub>I<sub>l</sub></sub> − h<sub>I<sub>r</sub></sub>)/√2 of its children's Haars — a discrete version of taking a derivative across the midpoint. The full Hilbert transform is recovered as an average of these shifts over the random dyadic grid family from §1: averaging breaks the artificial dyadic structure and restores translation invariance.</p>
+  <p><em>Convergence has two pieces.</em> The error decomposes as ‖H<sub>N</sub> f − Hf‖₂ ≤ (statistical fluctuation) + (truncation bias from using only nine dyadic scales), and the two pieces have independent rates.</p>
+  <p><em>Statistical, ∝ 1/√N.</em> Ш<sup>β,r</sup> is a partial isometry on the Haar series — every h<sub>I</sub> is sent to a unit-norm image and the images are pairwise orthogonal across I — so ‖Ш<sup>β,r</sup> f‖₂ ≤ ‖f‖₂ uniformly in (β, r). Independence of samples gives the standard Monte Carlo rate ‖H<sub>N</sub> f − 𝔼 H<sub>N</sub> f‖₂ ≲ (8 ln 2 / π) ‖f‖₂ / √N ≈ 1.77 ‖f‖₂ / √N. So N = 100 produces noise of order ‖f‖₂/10 — the visible wobble; N = 10⁴ drops it well below the line width. Pointwise the same √N rate holds by CLT, with the constant being the standard deviation of the scalar Ш<sup>β,r</sup> f(x).</p>
+  <p><em>Truncation, ∝ 2<sup>−Ls</sup>.</em> Dropping Haar coefficients ⟨f, h<sub>I</sub>⟩ at scales |I| ∉ [2<sup>−L</sup>, 2<sup>L</sup>] leaves a fixed bias whose size is set by the Haar / Besov regularity of f. The smooth presets (Gaussian, Lorentzian, x/(1+x²)) sit in every Sobolev space, so their bias decays like 2<sup>−Ls</sup> for any s — at L = 4 already invisible. Indicators have jump discontinuities (regularity Ḣ<sup>1/2−ε</sup>), giving the much slower rate 2<sup>−L/2</sup>: that's the ~10% residual near |x| = 3 that <em>does not</em> shrink no matter how many samples you add. Click +100 a dozen times on the Lorentzian and the curve locks onto Hf to within a fraction of a percent; do the same on the indicator and the edges stay visibly thick — the thickness is bias, not noise.</p>
+  <p><em>Hytönen's representation.</em> Petermichl's identity is the prototype: in 2012 Hytönen proved that every Calderón–Zygmund operator is an average of dyadic shifts of bounded complexity, with convergence in operator norm on L² and on the relevant weighted spaces. The statistical-plus-truncation rate decomposition above is universal across that family, and reducing sharp weighted bounds for H to bounds for the discrete shifts is the route by which the A<sub>2</sub> conjecture was settled.</p>
+</div>
+</section>
+
+<p class="footer">Yea <span>✦</span> Alabama <span>✦</span> Drown 'em Tide</p>
+</div>
+
+<script>
+(function() {
+  const SUBS = { '1': '\u2081', '0': '\u2080', '-1': '\u208B\u2081', '-2': '\u208B\u2082', '-3': '\u208B\u2083' };
+  const BIT_KEYS = ['1', '0', '-1', '-2', '-3'];
+  const state = { bits: {'1':0,'0':0,'-1':0,'-2':0,'-3':0}, r: 1.0 };
+  const haarState = { j: 0, k: 0 };
+  const decompState = { preset: 'linear', rolltideIvs: null };
+
+  const levels = [
+    { j: 2, y: 50,  w: 3,   h: 12 },
+    { j: 1, y: 100, w: 3,   h: 12 },
+    { j: 0, y: 150, w: 3,   h: 12 },
+    { j: -1, y: 200, w: 2.5, h: 10 }
+  ];
+  const J_LEVELS = [-1, 0, 1, 2];
+
+  const RANGE_LEFT = -4, RANGE_RIGHT = 4;
+  const PLOT_LEFT = 80, PLOT_RIGHT = 520;
+  const SCALE = (PLOT_RIGHT - PLOT_LEFT) / (RANGE_RIGHT - RANGE_LEFT);
+  const ux = u => PLOT_LEFT + (u - RANGE_LEFT) * SCALE;
+
+  const HAAR_X_LEFT = 80, HAAR_X_RIGHT = 520;
+  const HAAR_Y_CENTER = 95, HAAR_Y_SCALE = 35;
+  const HAAR_X_SCALE = (HAAR_X_RIGHT - HAAR_X_LEFT) / (RANGE_RIGHT - RANGE_LEFT);
+  const hx = u => HAAR_X_LEFT + (u - RANGE_LEFT) * HAAR_X_SCALE;
+  const hy = v => HAAR_Y_CENTER - v * HAAR_Y_SCALE;
+
+  const DEC_X_LEFT = 80, DEC_X_RIGHT = 520;
+  const DEC_Y_CENTER = 110, DEC_Y_SCALE = 35;
+  const DEC_X_SCALE = (DEC_X_RIGHT - DEC_X_LEFT) / (RANGE_RIGHT - RANGE_LEFT);
+  const dpx = u => DEC_X_LEFT + (u - RANGE_LEFT) * DEC_X_SCALE;
+  const dpy = v => DEC_Y_CENTER - v * DEC_Y_SCALE;
+
+  // §4 plot geometry (per-panel; viewBox 460x240)
+  const HF_LEFT = 50, HF_RIGHT = 445;
+  const HF_Y_CENTER = 120, HF_Y_SCALE = 38;
+  const HF_X_SCALE = (HF_RIGHT - HF_LEFT) / (RANGE_RIGHT - RANGE_LEFT);
+  const hfx = u => HF_LEFT + (u - RANGE_LEFT) * HF_X_SCALE;
+  const hfy = v => HF_Y_CENTER - v * HF_Y_SCALE;
+  const HF_Y_CLIP = 2.4;
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const EPS = 1e-9;
+
+  const PRESETS = [
+    { id: 'linear',   fn: function(x) { return x / 2; } },
+    { id: 'parabola', fn: function(x) { return x * x / 8; } },
+    { id: 'sine',     fn: function(x) { return Math.sin(Math.PI * x / 2); } },
+    { id: 'bell',     fn: function(x) { return Math.exp(-x * x); } },
+    { id: 'step',     fn: function(x) { return (x >= 0 && x < 2) ? 1 : 0; } },
+    { id: 'haar',     fn: function(x) {
+        if (x < 0 || x >= 1) return 0;
+        return (x < 0.5) ? -Math.SQRT2 : Math.SQRT2;
+      } },
+    { id: 'rolltide', fn: function(x) {
+        const ivs = decompState.rolltideIvs || [];
+        let s = 0;
+        for (const iv of ivs) if (x >= iv.a && x < iv.b) s += iv.c;
+        return s;
+      } }
+  ];
+
+  function generateRolltideIntervals() {
+    const ivs = [];
+    const N = 3 + Math.floor(Math.random() * 3); // 3..5
+    for (let i = 0; i < N; i++) {
+      const a = -3.5 + Math.random() * 6;
+      const len = 0.4 + Math.random() * 1.6;
+      const b = Math.min(a + len, 4);
+      if (b - a < 0.3) continue;
+      const c = ((Math.random() * 2) - 1) * 1.4;
+      ivs.push({ a: a, b: b, c: c });
+    }
+    if (ivs.length === 0) ivs.push({ a: -1, b: 1, c: 1 });
+    return ivs;
+  }
+
+  // ── §4 Hilbert state and presets ──
+  const hilbertState = {
+    preset: 'indicator',
+    samples: 0,
+    shiftAvg: null,
+    xs: null,
+    fVals: null,
+    hExactVals: null,
+    initialized: false,
+    rolltideIvs: null
+  };
+
+  function dawson(x) {
+    const ax = Math.abs(x);
+    if (ax < 0.5) {
+      let s = 0, term = x, k = 0;
+      while (k < 60) { s += term; k++; term *= -2*x*x/(2*k+1); if (Math.abs(term) < 1e-16) break; }
+      return s;
+    }
+    if (ax > 6) {
+      const x2 = x*x;
+      return (1/(2*x)) * (1 + 1/(2*x2) + 3/(4*x2*x2) + 15/(8*x2*x2*x2));
+    }
+    const N = 200;
+    const dt = x/N;
+    let sum = 0;
+    for (let i = 0; i < N; i++) { const t = x*(i+0.5)/N; sum += Math.exp(t*t) * dt; }
+    return Math.exp(-x*x) * sum;
+  }
+
+  function logIndicatorH(a, b, x) {
+    const da = Math.abs(x - a), db = Math.abs(x - b);
+    if (da < 1e-10 || db < 1e-10) return NaN;
+    return (1/Math.PI) * (Math.log(da) - Math.log(db));
+  }
+
+  // hilbertSimple: H of Σ c_k 𝟏_{[a_k,b_k]} via log formula
+  function hilbertSimple(intervals, x) {
+    let s = 0;
+    for (const iv of intervals) {
+      const v = logIndicatorH(iv.a, iv.b, x);
+      if (!isFinite(v)) return NaN;
+      s += iv.c * v;
+    }
+    return s;
+  }
+
+  function numericalHilbert(fn, x) {
+    const eps = 1e-5;
+    const R = 50;
+    const Nbase = 2400;
+    let sum = 0;
+    if (x - eps > -R) {
+      const len = (x - eps) - (-R);
+      const n1 = Math.max(60, Math.round(Nbase * len / (2 * R)));
+      const dt1 = len / n1;
+      for (let i = 0; i < n1; i++) { const t = -R + (i + 0.5) * dt1; sum += fn(t) / (x - t) * dt1; }
+    }
+    if (x + eps < R) {
+      const len = R - (x + eps);
+      const n2 = Math.max(60, Math.round(Nbase * len / (2 * R)));
+      const dt2 = len / n2;
+      for (let i = 0; i < n2; i++) { const t = (x + eps) + (i + 0.5) * dt2; sum += fn(t) / (x - t) * dt2; }
+    }
+    return sum / Math.PI;
+  }
+
+  const HILBERT_PRESETS = {
+    indicator: {
+      fn: function(x) { return (x >= -1 && x < 1) ? 1 : 0; },
+      simple: [{ a: -1, b: 1, c: 1 }]
+    },
+    two_blocks: {
+      fn: function(x) { return ((x >= -2 && x < -1) || (x >= 1 && x < 2)) ? 1 : 0; },
+      simple: [{ a: -2, b: -1, c: 1 }, { a: 1, b: 2, c: 1 }]
+    },
+    gaussian: {
+      fn: function(x) { return Math.exp(-x*x); },
+      exact: function(x) { return (2/Math.sqrt(Math.PI)) * dawson(x); }
+    },
+    lorentz: {
+      fn: function(x) { return 1/(1+x*x); },
+      exact: function(x) { return x/(1+x*x); }
+    },
+    xlorentz: {
+      fn: function(x) { return x/(1+x*x); },
+      exact: function(x) { return -1/(1+x*x); }
+    },
+    rolltide: {
+      simple: null  // populated on Roll Tide click
+    }
+  };
+
+  // get fn for a Hilbert preset (handles rolltide special case)
+  function hilbertFn(presetId) {
+    if (presetId === 'rolltide') {
+      const ivs = hilbertState.rolltideIvs || [];
+      return function(x) { let s = 0; for (const iv of ivs) if (x >= iv.a && x < iv.b) s += iv.c; return s; };
+    }
+    return HILBERT_PRESETS[presetId].fn;
+  }
+  function hilbertExactAt(presetId, x) {
+    const p = HILBERT_PRESETS[presetId];
+    if (presetId === 'rolltide') {
+      return hilbertSimple(hilbertState.rolltideIvs || [], x);
+    }
+    if (p.exact) return p.exact(x);
+    if (p.simple) return hilbertSimple(p.simple, x);
+    return numericalHilbert(p.fn, x);
+  }
+
+  function sigmaAt(j) {
+    let s = 0;
+    for (const i of BIT_KEYS) {
+      const ii = parseInt(i);
+      if (ii < j) s += Math.pow(2, ii) * state.bits[i];
+    }
+    return s;
+  }
+
+  function sigmaWithBits(j, bits) {
+    let s = 0;
+    for (const k in bits) {
+      const i = parseInt(k);
+      if (i < j) s += Math.pow(2, i) * bits[k];
+    }
+    return s;
+  }
+
+  function intervalFor(j, k) {
+    const len = Math.pow(2, j);
+    const sigma = sigmaAt(j);
+    return { a: state.r * (len * k + sigma), b: state.r * (len * (k + 1) + sigma) };
+  }
+
+  function kRangeForJ(j) {
+    const len = Math.pow(2, j);
+    return [Math.floor(-4 / len) - 1, Math.ceil(4 / len)];
+  }
+
+  function bracketsAt(j, y, sigma, r, w, h) {
+    const len = Math.pow(2, j);
+    const kMin = Math.floor((RANGE_LEFT/r - sigma)/len) - 1;
+    const kMax = Math.ceil((RANGE_RIGHT/r - sigma)/len) + 1;
+    let lb = '', rb = '';
+    for (let k = kMin; k <= kMax; k++) {
+      const a = r * (len*k + sigma);
+      const b = r * (len*(k+1) + sigma);
+      if (a >= RANGE_LEFT - EPS && a < RANGE_RIGHT - EPS) {
+        const x = ux(a);
+        lb += 'M' + (x+w) + ' ' + (y-h/2) + ' H' + x + ' V' + (y+h/2) + ' H' + (x+w) + ' ';
+      }
+      if (b > RANGE_LEFT + EPS && b <= RANGE_RIGHT + EPS) {
+        const x = ux(b);
+        rb += 'M' + (x-w) + ' ' + (y-h/2) + ' Q' + (x+w) + ' ' + y + ' ' + (x-w) + ' ' + (y+h/2) + ' ';
+      }
+    }
+    return { lb: lb, rb: rb };
+  }
+
+  function mkPath(d, colorVar, sw, dash) {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('stroke', colorVar);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke-width', sw);
+    p.setAttribute('stroke-linecap', 'round');
+    p.setAttribute('stroke-linejoin', 'round');
+    if (dash) p.setAttribute('stroke-dasharray', dash);
+    return p;
+  }
+
+  function mkLine(x1, y1, x2, y2, colorVar, sw, dash) {
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+    l.setAttribute('stroke', colorVar);
+    l.setAttribute('stroke-width', sw);
+    if (dash) l.setAttribute('stroke-dasharray', dash);
+    return l;
+  }
+
+  function mkRect(x, y, w, h, fill, opts) {
+    opts = opts || {};
+    const r = document.createElementNS(NS, 'rect');
+    r.setAttribute('x', x); r.setAttribute('y', y);
+    r.setAttribute('width', w); r.setAttribute('height', h);
+    if (fill) r.setAttribute('fill', fill);
+    if (opts.cls) r.setAttribute('class', opts.cls);
+    if (opts.opacity != null) r.setAttribute('fill-opacity', opts.opacity);
+    if (opts.dataJ != null) r.setAttribute('data-j', opts.dataJ);
+    if (opts.dataK != null) r.setAttribute('data-k', opts.dataK);
+    return r;
+  }
+
+  function mkText(x, y, str, cls, opts) {
+    opts = opts || {};
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    if (cls) t.setAttribute('class', cls);
+    if (opts.anchor) t.setAttribute('text-anchor', opts.anchor);
+    if (opts.baseline) t.setAttribute('dominant-baseline', opts.baseline);
+    t.textContent = str;
+    return t;
+  }
+
+  function innerProduct(fn, a, b) {
+    const c = (a + b) / 2;
+    const N = 32;
+    const dxL = (c - a) / N, dxR = (b - c) / N;
+    let sumL = 0, sumR = 0;
+    for (let i = 0; i < N; i++) {
+      sumL += fn(a + (i + 0.5) * dxL) * dxL;
+      sumR += fn(c + (i + 0.5) * dxR) * dxR;
+    }
+    return (1 / Math.sqrt(b - a)) * (sumR - sumL);
+  }
+
+  function partialSumValueAt(x, fn, coeffs) {
+    let total = 0;
+    for (const j of J_LEVELS) {
+      const sigma = sigmaAt(j);
+      const len = Math.pow(2, j);
+      const k = Math.floor((x / state.r - sigma) / len);
+      const aa = state.r * (len * k + sigma);
+      const bb = aa + state.r * len;
+      const cc = (aa + bb) / 2;
+      const cf = (coeffs && coeffs[j] && coeffs[j][k] != null) ? coeffs[j][k] : innerProduct(fn, aa, bb);
+      const amp = 1 / Math.sqrt(bb - aa);
+      total += cf * (x >= cc ? amp : -amp);
+    }
+    return total;
+  }
+
+  // §4 Petermichl shift at point x for grid 𝒟_{β,r} (β = bits, r = r)
+  // Ш f(x) = Σ_{I ∈ 𝒟} ⟨f, h_I⟩ · (h_{I_l}(x) − h_{I_r}(x)) / √2
+  // For I = [a, b) with c = (a+b)/2, d = (a+c)/2, e = (c+b)/2,
+  // (h_{I_l} − h_{I_r})/√2 takes values (−,+,+,−) · 1/√|I| on [a,d), [d,c), [c,e), [e,b).
+  const HF_LEVELS = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
+  const HF_LEN = HF_LEVELS.map(j => Math.pow(2, j));
+  function shiftAt(x, fn, bits, r) {
+    let total = 0;
+    for (const j of HF_LEVELS) {
+      const sigma = sigmaWithBits(j, bits);
+      const len = Math.pow(2, j);
+      const k = Math.floor((x/r - sigma) / len);
+      const a = r * (len*k + sigma);
+      const b = a + r * len;
+      if (x < a || x >= b) continue;
+      const c = (a + b) / 2;
+      const d = (a + c) / 2;
+      const e = (c + b) / 2;
+      const cf = innerProduct(fn, a, b);
+      const amp = 1 / Math.sqrt(b - a);
+      let sign;
+      if (x < d) sign = -1;
+      else if (x < c) sign = +1;
+      else if (x < e) sign = +1;
+      else sign = -1;
+      total += cf * sign * amp;
+    }
+    return total;
+  }
+
+  function sampleMCBits() {
+    const bits = {};
+    for (let i = -8; i <= 4; i++) bits[String(i)] = Math.random() < 0.5 ? 0 : 1;
+    return bits;
+  }
+
+  function updateGrid() {
+    const grid = document.getElementById('grid-content');
+    grid.innerHTML = '';
+
+    for (const lev of levels) {
+      grid.appendChild(mkLine(PLOT_LEFT, lev.y, PLOT_RIGHT, lev.y, 'var(--text-faint)', '0.5'));
+    }
+
+    const sel = intervalFor(haarState.j, haarState.k);
+    const selLev = levels.find(l => l.j === haarState.j);
+    if (selLev && sel.b > RANGE_LEFT && sel.a < RANGE_RIGHT) {
+      const x1 = Math.max(ux(sel.a), PLOT_LEFT);
+      const x2 = Math.min(ux(sel.b), PLOT_RIGHT);
+      const halfH = (selLev.h / 2) + 6;
+      grid.appendChild(mkRect(x1, selLev.y - halfH, x2 - x1, halfH * 2, 'var(--accent)', { cls: 'selected-bg' }));
+    }
+
+    for (const lev of levels) {
+      const r = bracketsAt(lev.j, lev.y, 0, 1, lev.w, lev.h);
+      if (r.lb) grid.appendChild(mkPath(r.lb, 'var(--text-faint)', '0.75'));
+      if (r.rb) grid.appendChild(mkPath(r.rb, 'var(--text-faint)', '0.75'));
+    }
+
+    for (const lev of levels) {
+      const r = bracketsAt(lev.j, lev.y, sigmaAt(lev.j), state.r, lev.w, lev.h);
+      if (r.lb) grid.appendChild(mkPath(r.lb, 'var(--accent)', '1.5'));
+      if (r.rb) grid.appendChild(mkPath(r.rb, 'var(--accent)', '1.5'));
+    }
+
+    for (const lev of levels) {
+      const len = Math.pow(2, lev.j);
+      const sigma = sigmaAt(lev.j);
+      const kMin = Math.floor((RANGE_LEFT/state.r - sigma)/len) - 1;
+      const kMax = Math.ceil((RANGE_RIGHT/state.r - sigma)/len) + 1;
+      const halfH = (lev.h / 2) + 6;
+      for (let k = kMin; k <= kMax; k++) {
+        const a = state.r * (len*k + sigma);
+        const b = state.r * (len*(k+1) + sigma);
+        if (b <= RANGE_LEFT + EPS || a >= RANGE_RIGHT - EPS) continue;
+        const x1 = Math.max(ux(a), PLOT_LEFT);
+        const x2 = Math.min(ux(b), PLOT_RIGHT);
+        if (x2 - x1 < 1) continue;
+        grid.appendChild(mkRect(x1, lev.y - halfH, x2 - x1, halfH * 2, null, {
+          cls: 'click-target', dataJ: lev.j, dataK: k
+        }));
+      }
+    }
+  }
+
+  function updateHaarPlot() {
+    const root = document.getElementById('haar-content');
+    root.innerHTML = '';
+
+    const I = intervalFor(haarState.j, haarState.k);
+    const a = I.a, b = I.b;
+    const c = (a + b) / 2;
+    const len = b - a;
+    const amp = 1 / Math.sqrt(len);
+
+    root.appendChild(mkLine(HAAR_X_LEFT, hy(0), HAAR_X_RIGHT, hy(0), 'var(--text-faint)', '0.5'));
+    [-4, -2, 0, 2, 4].forEach(function(t) {
+      const x = hx(t);
+      root.appendChild(mkLine(x, hy(0) - 3, x, hy(0) + 3, 'var(--text-faint)', '0.5'));
+      root.appendChild(mkText(x, hy(0) + 14, (t < 0 ? '\u2212' + Math.abs(t) : String(t)), 'axis', { anchor: 'middle' }));
+    });
+
+    const yPos = Math.max(hy(amp), 16);
+    const yNeg = Math.min(hy(-amp), 184);
+    root.appendChild(mkLine(HAAR_X_LEFT, yPos, HAAR_X_RIGHT, yPos, 'var(--text-faint)', '0.5', '2 3'));
+    root.appendChild(mkLine(HAAR_X_LEFT, yNeg, HAAR_X_RIGHT, yNeg, 'var(--text-faint)', '0.5', '2 3'));
+    root.appendChild(mkText(HAAR_X_LEFT - 6, yPos, '+1/\u221A|I|', 'haar-amp', { anchor: 'end', baseline: 'central' }));
+    root.appendChild(mkText(HAAR_X_LEFT - 6, yNeg, '\u22121/\u221A|I|', 'haar-amp', { anchor: 'end', baseline: 'central' }));
+
+    const aV = Math.max(a, RANGE_LEFT);
+    const bV = Math.min(b, RANGE_RIGHT);
+    const visible = bV > aV;
+
+    if (visible) {
+      if (c > aV) {
+        const cV = Math.min(c, bV);
+        root.appendChild(mkRect(hx(aV), hy(0), hx(cV) - hx(aV), hy(-amp) - hy(0), 'var(--accent)', { opacity: 0.10 }));
+      }
+      if (c < bV) {
+        const cV = Math.max(c, aV);
+        root.appendChild(mkRect(hx(cV), hy(amp), hx(bV) - hx(cV), hy(0) - hy(amp), 'var(--accent)', { opacity: 0.18 }));
+      }
+      let d = 'M ' + hx(RANGE_LEFT) + ' ' + hy(0) + ' ';
+      d += 'L ' + hx(aV) + ' ' + hy(0) + ' ';
+      if (a >= RANGE_LEFT) d += 'L ' + hx(a) + ' ' + hy(-amp) + ' ';
+      if (c > aV && c < bV) {
+        d += 'L ' + hx(c) + ' ' + hy(-amp) + ' ';
+        d += 'L ' + hx(c) + ' ' + hy(amp) + ' ';
+      } else if (c <= aV) {
+        d += 'L ' + hx(aV) + ' ' + hy(amp) + ' ';
+      }
+      d += 'L ' + hx(bV) + ' ' + (c < bV ? hy(amp) : hy(-amp)) + ' ';
+      if (b <= RANGE_RIGHT) d += 'L ' + hx(b) + ' ' + hy(0) + ' ';
+      d += 'L ' + hx(RANGE_RIGHT) + ' ' + hy(0);
+      root.appendChild(mkPath(d, 'var(--accent)', '2'));
+
+      [a, c, b].forEach(function(p) {
+        if (p >= RANGE_LEFT && p <= RANGE_RIGHT) {
+          root.appendChild(mkLine(hx(p), hy(0) - 4, hx(p), hy(0) + 4, 'var(--accent)', '1.5'));
+        }
+      });
+
+      if (c > aV && (Math.min(c, bV) - aV) * HAAR_X_SCALE > 20) {
+        root.appendChild(mkText(hx((aV + Math.min(c, bV))/2), hy(0) + 30, 'I\u2097', 'region-label', { anchor: 'middle' }));
+      }
+      if (c < bV && (bV - Math.max(c, aV)) * HAAR_X_SCALE > 20) {
+        root.appendChild(mkText(hx((Math.max(c, aV) + bV)/2), hy(0) + 30, 'I\u1d63', 'region-label', { anchor: 'middle' }));
+      }
+    } else {
+      const d = 'M ' + hx(RANGE_LEFT) + ' ' + hy(0) + ' L ' + hx(RANGE_RIGHT) + ' ' + hy(0);
+      root.appendChild(mkPath(d, 'var(--accent)', '2'));
+      root.appendChild(mkText((HAAR_X_LEFT + HAAR_X_RIGHT)/2, 50, 'I lies outside the plot window', 'region-label', { anchor: 'middle' }));
+    }
+  }
+
+  function updateHaarReadout() {
+    const I = intervalFor(haarState.j, haarState.k);
+    const len = I.b - I.a;
+    document.getElementById('ro-a').textContent = I.a.toFixed(3);
+    document.getElementById('ro-b').textContent = I.b.toFixed(3);
+    document.getElementById('ro-len').textContent = len.toFixed(3);
+    document.getElementById('ro-amp').textContent = (1 / Math.sqrt(len)).toFixed(3);
+    document.getElementById('ro-j').textContent = String(haarState.j);
+    document.getElementById('ro-k').textContent = String(haarState.k);
+  }
+
+  function updateJButtons() {
+    document.querySelectorAll('.j-btn').forEach(function(btn) {
+      btn.classList.toggle('on', parseInt(btn.getAttribute('data-j')) === haarState.j);
+    });
+  }
+  function updateFButtons() {
+    document.querySelectorAll('.f-btn').forEach(function(btn) {
+      btn.classList.toggle('on', btn.getAttribute('data-f') === decompState.preset);
+    });
+  }
+  function updateHButtons() {
+    document.querySelectorAll('.h-btn').forEach(function(btn) {
+      btn.classList.toggle('on', btn.getAttribute('data-h') === hilbertState.preset);
+    });
+  }
+  function updateKSlider() {
+    const slider = document.getElementById('k-slider');
+    if (!slider) return;
+    const range = kRangeForJ(haarState.j);
+    slider.min = range[0];
+    slider.max = range[1];
+    if (haarState.k < range[0]) haarState.k = range[0];
+    if (haarState.k > range[1]) haarState.k = range[1];
+    slider.value = haarState.k;
+    document.getElementById('k-out').textContent = String(haarState.k);
+  }
+
+  function updateDecomp() {
+    const root = document.getElementById('decomp-content');
+    root.innerHTML = '';
+    const preset = PRESETS.find(p => p.id === decompState.preset);
+    if (!preset) return;
+    const fn = preset.fn;
+
+    root.appendChild(mkLine(DEC_X_LEFT, dpy(0), DEC_X_RIGHT, dpy(0), 'var(--text-faint)', '0.5'));
+    [-4, -2, 2, 4].forEach(function(t) {
+      const x = dpx(t);
+      root.appendChild(mkLine(x, dpy(0) - 3, x, dpy(0) + 3, 'var(--text-faint)', '0.5'));
+      root.appendChild(mkText(x, dpy(0) + 14, (t < 0 ? '\u2212' + Math.abs(t) : String(t)), 'axis', { anchor: 'middle' }));
+    });
+    [2, 1, -1, -2].forEach(function(v) {
+      root.appendChild(mkLine(DEC_X_LEFT, dpy(v), DEC_X_RIGHT, dpy(v), 'var(--text-faint)', '0.5', '2 3'));
+      root.appendChild(mkText(DEC_X_LEFT - 6, dpy(v), (v < 0 ? '\u2212' + Math.abs(v) : String(v)), 'axis', { anchor: 'end', baseline: 'central' }));
+    });
+
+    const coeffs = {};
+    for (const j of J_LEVELS) {
+      coeffs[j] = {};
+      const sigma = sigmaAt(j);
+      const len = Math.pow(2, j);
+      const kMin = Math.floor((RANGE_LEFT/state.r - sigma)/len) - 1;
+      const kMax = Math.ceil((RANGE_RIGHT/state.r - sigma)/len) + 1;
+      for (let k = kMin; k <= kMax; k++) {
+        const a = state.r * (len * k + sigma);
+        const b = a + state.r * len;
+        coeffs[j][k] = innerProduct(fn, a, b);
+      }
+    }
+
+    const finer_step = 0.25;
+    const finer_sigma = sigmaAt(-2);
+    const k0 = Math.floor((RANGE_LEFT/state.r - finer_sigma)/finer_step) - 1;
+    const k1 = Math.ceil((RANGE_RIGHT/state.r - finer_sigma)/finer_step) + 1;
+    let psPath = '';
+    let prevY = null;
+    for (let kk = k0; kk <= k1; kk++) {
+      const a = state.r * (finer_step * kk + finer_sigma);
+      const b = a + state.r * finer_step;
+      const aV = Math.max(a, RANGE_LEFT);
+      const bV = Math.min(b, RANGE_RIGHT);
+      if (bV <= aV + EPS) continue;
+      const mid = (a + b) / 2;
+      let val = partialSumValueAt(mid, fn, coeffs);
+      if (val > 2.2) val = 2.2;
+      if (val < -2.2) val = -2.2;
+      if (psPath === '') psPath = 'M ' + dpx(aV) + ' ' + dpy(val);
+      else psPath += ' L ' + dpx(aV) + ' ' + dpy(prevY) + ' L ' + dpx(aV) + ' ' + dpy(val);
+      psPath += ' L ' + dpx(bV) + ' ' + dpy(val);
+      prevY = val;
+    }
+    if (psPath) root.appendChild(mkPath(psPath, 'var(--accent)', '2'));
+
+    const N = 600;
+    let fPath = '';
+    let pen_down = false;
+    for (let i = 0; i <= N; i++) {
+      const x = RANGE_LEFT + (RANGE_RIGHT - RANGE_LEFT) * i / N;
+      let y = fn(x);
+      if (!isFinite(y)) { pen_down = false; continue; }
+      if (y > 2.2) y = 2.2;
+      if (y < -2.2) y = -2.2;
+      if (!pen_down) { fPath += 'M ' + dpx(x) + ' ' + dpy(y) + ' '; pen_down = true; }
+      else fPath += 'L ' + dpx(x) + ' ' + dpy(y) + ' ';
+    }
+    root.appendChild(mkPath(fPath, 'var(--text)', '1.3'));
+
+    const ly = 10;
+    root.appendChild(mkLine(DEC_X_LEFT + 4, ly, DEC_X_LEFT + 22, ly, 'var(--text)', '1.3'));
+    root.appendChild(mkText(DEC_X_LEFT + 28, ly, 'f(x)', 'legend', { baseline: 'central' }));
+    root.appendChild(mkLine(DEC_X_LEFT + 80, ly, DEC_X_LEFT + 98, ly, 'var(--accent)', '2'));
+    root.appendChild(mkText(DEC_X_LEFT + 104, ly, 'partial sum f\u1D30', 'legend', { baseline: 'central' }));
+  }
+
+  // §4 axes/grid for either Hilbert plot
+  function drawHilbertAxes(root) {
+    root.appendChild(mkLine(HF_LEFT, hfy(0), HF_RIGHT, hfy(0), 'var(--text-faint)', '0.5'));
+    [-4, -2, 2, 4].forEach(function(t) {
+      const x = hfx(t);
+      root.appendChild(mkLine(x, hfy(0) - 3, x, hfy(0) + 3, 'var(--text-faint)', '0.5'));
+      root.appendChild(mkText(x, hfy(0) + 14, (t < 0 ? '\u2212' + Math.abs(t) : String(t)), 'axis', { anchor: 'middle' }));
+    });
+    [2, 1, -1, -2].forEach(function(v) {
+      root.appendChild(mkLine(HF_LEFT, hfy(v), HF_RIGHT, hfy(v), 'var(--text-faint)', '0.5', '2 3'));
+      root.appendChild(mkText(HF_LEFT - 5, hfy(v), (v < 0 ? '\u2212' + Math.abs(v) : String(v)), 'axis', { anchor: 'end', baseline: 'central' }));
+    });
+  }
+
+  function drawHilbertCurveFromValues(root, xs, vals, color, sw, dash) {
+    let path = '';
+    let pen = false;
+    for (let i = 0; i < xs.length; i++) {
+      let y = vals[i];
+      if (!isFinite(y)) { pen = false; continue; }
+      if (y > HF_Y_CLIP) y = HF_Y_CLIP;
+      if (y < -HF_Y_CLIP) y = -HF_Y_CLIP;
+      if (!pen) { path += 'M ' + hfx(xs[i]) + ' ' + hfy(y) + ' '; pen = true; }
+      else path += 'L ' + hfx(xs[i]) + ' ' + hfy(y) + ' ';
+    }
+    if (path) root.appendChild(mkPath(path, color, sw, dash));
+  }
+
+  function ensureHilbertInit() {
+    if (hilbertState.initialized) {
+      // Still need to recompute fVals/hExactVals if preset changed — caller handles by calling recomputeHilbertPreset
+      return;
+    }
+    const N = 240;
+    const xs = [];
+    for (let i = 0; i < N; i++) xs.push(RANGE_LEFT + (RANGE_RIGHT - RANGE_LEFT) * i / (N - 1));
+    hilbertState.xs = xs;
+    hilbertState.shiftAvg = new Float64Array(N);
+    hilbertState.initialized = true;
+  }
+
+  function recomputeHilbertPreset() {
+    ensureHilbertInit();
+    const fn = hilbertFn(hilbertState.preset);
+    const xs = hilbertState.xs;
+    const N = xs.length;
+    hilbertState.fVals = new Float64Array(N);
+    hilbertState.hExactVals = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      hilbertState.fVals[i] = fn(xs[i]);
+      hilbertState.hExactVals[i] = hilbertExactAt(hilbertState.preset, xs[i]);
+    }
+    // Reset Monte Carlo when the preset changes
+    hilbertState.samples = 0;
+    hilbertState.shiftAvg.fill(0);
+    hilbertState.lastBits = null;
+    hilbertState.lastR = null;
+    if (document.getElementById('mc-bits-display')) updateLastSampleDisplay();
+  }
+
+  function addMCSamples(numSamples) {
+    ensureHilbertInit();
+    const fn = hilbertFn(hilbertState.preset);
+    const xs = hilbertState.xs;
+    const N = xs.length;
+    const NL = HF_LEVELS.length;
+    let lastBits = null, lastR = null;
+    for (let s = 0; s < numSamples; s++) {
+      const bits = sampleMCBits();
+      const r = Math.pow(2, Math.random());
+      const r_inv = 1 / r;
+
+      // σ_j is the same for every x within one sample — compute once per sample.
+      const sigmas = new Array(NL);
+      for (let li = 0; li < NL; li++) sigmas[li] = sigmaWithBits(HF_LEVELS[li], bits);
+
+      // ⟨f, h_I⟩ depends only on (j, k), not x — cache per sample to dedup
+      // across the 240 x-points (at level j = 4 every x lands in the same
+      // interval, so without this cache that one inner product is recomputed
+      // 240×).
+      const ipCache = new Map();
+
+      const oldN = hilbertState.samples;
+      const newN = oldN + 1;
+
+      for (let i = 0; i < N; i++) {
+        const x = xs[i];
+        const xr = x * r_inv;
+        let total = 0;
+        for (let li = 0; li < NL; li++) {
+          const sigma = sigmas[li];
+          const len = HF_LEN[li];
+          const k = Math.floor((xr - sigma) / len);
+          const a = r * (len * k + sigma);
+          const b = a + r * len;
+          if (x < a || x >= b) continue;
+          const c = (a + b) * 0.5;
+          const d = (a + c) * 0.5;
+          const e = (c + b) * 0.5;
+          const key = li * 1000000 + (k + 500000);
+          let cf = ipCache.get(key);
+          if (cf === undefined) {
+            cf = innerProduct(fn, a, b);
+            ipCache.set(key, cf);
+          }
+          const amp = 1 / Math.sqrt(b - a);
+          let sign;
+          if (x < d) sign = -1;
+          else if (x < c) sign = +1;
+          else if (x < e) sign = +1;
+          else sign = -1;
+          total += cf * sign * amp;
+        }
+        hilbertState.shiftAvg[i] = (hilbertState.shiftAvg[i] * oldN + total) / newN;
+      }
+      hilbertState.samples = newN;
+      lastBits = bits;
+      lastR = r;
+    }
+    hilbertState.lastBits = lastBits;
+    hilbertState.lastR = lastR;
+    document.getElementById('mc-n').textContent = String(hilbertState.samples);
+    updateLastSampleDisplay();
+  }
+
+  // ── Display the most recent (β, r) drawn during the last sample batch ──
+  // We show a representative window β_{-3}…β_{3} of the 13 bits actually used.
+  function updateLastSampleDisplay() {
+    const bitsEl = document.getElementById('mc-bits-display');
+    const rWrap = document.getElementById('mc-r-wrap');
+    const rEl = document.getElementById('mc-r-display');
+    if (!hilbertState.lastBits) {
+      bitsEl.innerHTML = '<span class="bit-ellipsis" style="font-style:italic; color: var(--text-faint);">— click a sample button to draw —</span>';
+      rWrap.style.display = 'none';
+      return;
+    }
+    const SUBS_FULL = {
+      '-3': '\u208B\u2083', '-2': '\u208B\u2082', '-1': '\u208B\u2081',
+      '0':  '\u2080',       '1':  '\u2081',       '2':  '\u2082',  '3':  '\u2083'
+    };
+    const visibleRange = ['-3','-2','-1','0','1','2','3'];
+    let html = '<span class="bit-ellipsis">…</span>';
+    for (const i of visibleRange) {
+      const v = hilbertState.lastBits[i];
+      const cls = v === 1 ? 'bit-badge on' : 'bit-badge';
+      html += '<span class="' + cls + '">\u03B2' + SUBS_FULL[i] + ' = ' + v + '</span>';
+    }
+    html += '<span class="bit-ellipsis">…</span>';
+    bitsEl.innerHTML = html;
+    rWrap.style.display = '';
+    rEl.textContent = hilbertState.lastR.toFixed(3);
+  }
+
+  function updateHilbert() {
+    document.getElementById('mc-n').textContent = String(hilbertState.samples);
+
+    const exactRoot = document.getElementById('hf-exact-content');
+    const mcRoot = document.getElementById('hf-mc-content');
+    exactRoot.innerHTML = '';
+    mcRoot.innerHTML = '';
+
+    drawHilbertAxes(exactRoot);
+    drawHilbertAxes(mcRoot);
+
+    // Plot titles
+    exactRoot.appendChild(mkText((HF_LEFT+HF_RIGHT)/2, 14, 'Exact Hf', 'plot-title', { anchor: 'middle' }));
+    mcRoot.appendChild(mkText((HF_LEFT+HF_RIGHT)/2, 14, '\u2212(8/\u03c0) \u00b7 \u27e8\u0428\u27e9 f', 'plot-title', { anchor: 'middle' }));
+
+    if (!hilbertState.fVals) recomputeHilbertPreset();
+
+    // Both plots show f(x) lightly in gray
+    drawHilbertCurveFromValues(exactRoot, hilbertState.xs, hilbertState.fVals, 'var(--text-muted)', '1', null);
+    drawHilbertCurveFromValues(mcRoot, hilbertState.xs, hilbertState.fVals, 'var(--text-muted)', '1', null);
+
+    // Left: exact Hf
+    drawHilbertCurveFromValues(exactRoot, hilbertState.xs, hilbertState.hExactVals, 'var(--accent)', '2', null);
+
+    // Right: MC approximation, plus exact as a faint dashed reference
+    drawHilbertCurveFromValues(mcRoot, hilbertState.xs, hilbertState.hExactVals, 'var(--accent)', '1', '3 3');
+    if (hilbertState.samples > 0) {
+      const N = hilbertState.xs.length;
+      // The user's formula uses the unnormalized integral with measure dμ(β) dr/r
+      // (total mass ln 2 over r ∈ [1,2]). Our MC sampler draws r from the normalized
+      // probability density 1/(r·ln 2), so the sample mean approximates (1/ln 2)·⟨Ш⟩ f.
+      // Multiply by ln 2 here to recover ⟨Ш⟩ f, then by −(8/π) per the formula.
+      const C = -(8 * Math.LN2 / Math.PI);
+      const mcVals = new Float64Array(N);
+      for (let i = 0; i < N; i++) mcVals[i] = C * hilbertState.shiftAvg[i];
+      drawHilbertCurveFromValues(mcRoot, hilbertState.xs, mcVals, 'var(--accent)', '2', null);
+    }
+
+    // Legends
+    const ly = 30;
+    exactRoot.appendChild(mkLine(HF_LEFT + 4, ly, HF_LEFT + 22, ly, 'var(--text-muted)', '1', null));
+    exactRoot.appendChild(mkText(HF_LEFT + 28, ly, 'f', 'legend', { baseline: 'central' }));
+    exactRoot.appendChild(mkLine(HF_LEFT + 60, ly, HF_LEFT + 78, ly, 'var(--accent)', '2', null));
+    exactRoot.appendChild(mkText(HF_LEFT + 84, ly, 'Hf', 'legend', { baseline: 'central' }));
+
+    mcRoot.appendChild(mkLine(HF_LEFT + 4, ly, HF_LEFT + 22, ly, 'var(--text-muted)', '1', null));
+    mcRoot.appendChild(mkText(HF_LEFT + 28, ly, 'f', 'legend', { baseline: 'central' }));
+    mcRoot.appendChild(mkLine(HF_LEFT + 60, ly, HF_LEFT + 78, ly, 'var(--accent)', '1', '3 3'));
+    mcRoot.appendChild(mkText(HF_LEFT + 84, ly, 'Hf (target)', 'legend', { baseline: 'central' }));
+    mcRoot.appendChild(mkLine(HF_LEFT + 160, ly, HF_LEFT + 178, ly, 'var(--accent)', '2', null));
+    mcRoot.appendChild(mkText(HF_LEFT + 184, ly, 'MC mean', 'legend', { baseline: 'central' }));
+  }
+
+  function update() {
+    updateGrid();
+    updateHaarPlot();
+    updateHaarReadout();
+    updateDecomp();
+  }
+
+  function setBitButton(i, v) {
+    const btn = document.querySelector('.bit-btn[data-bit="' + i + '"]');
+    btn.textContent = '\u03B2' + SUBS[i] + ' = ' + v;
+    btn.classList.toggle('on', v === 1);
+  }
+
+  document.querySelectorAll('.bit-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const i = btn.getAttribute('data-bit');
+      state.bits[i] = state.bits[i] ? 0 : 1;
+      setBitButton(i, state.bits[i]);
+      update();
+    });
+  });
+
+  document.getElementById('r-slider').addEventListener('input', function(e) {
+    state.r = parseFloat(e.target.value);
+    document.getElementById('r-out').textContent = state.r.toFixed(2);
+    update();
+  });
+
+  document.getElementById('rand-btn').addEventListener('click', function() {
+    for (const i of BIT_KEYS) {
+      state.bits[i] = Math.random() < 0.5 ? 0 : 1;
+      setBitButton(i, state.bits[i]);
+    }
+    state.r = 1 + Math.random() * 0.99;
+    document.getElementById('r-slider').value = state.r;
+    document.getElementById('r-out').textContent = state.r.toFixed(2);
+    update();
+  });
+  document.getElementById('reset-btn').addEventListener('click', function() {
+    for (const i of BIT_KEYS) { state.bits[i] = 0; setBitButton(i, 0); }
+    state.r = 1;
+    document.getElementById('r-slider').value = 1;
+    document.getElementById('r-out').textContent = '1.00';
+    update();
+  });
+
+  document.querySelectorAll('.j-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const newJ = parseInt(btn.getAttribute('data-j'));
+      const oldI = intervalFor(haarState.j, haarState.k);
+      const center = (oldI.a + oldI.b) / 2;
+      haarState.j = newJ;
+      const len = Math.pow(2, newJ);
+      const sigma = sigmaAt(newJ);
+      haarState.k = Math.round((center / state.r - sigma) / len - 0.5);
+      updateJButtons();
+      updateKSlider();
+      update();
+    });
+  });
+
+  document.querySelectorAll('.f-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const id = btn.getAttribute('data-f');
+      decompState.preset = id;
+      if (id === 'rolltide') decompState.rolltideIvs = generateRolltideIntervals();
+      updateFButtons();
+      updateDecomp();
+    });
+  });
+
+  document.querySelectorAll('.h-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const id = btn.getAttribute('data-h');
+      hilbertState.preset = id;
+      if (id === 'rolltide') hilbertState.rolltideIvs = generateRolltideIntervals();
+      recomputeHilbertPreset();
+      updateHButtons();
+      updateHilbert();
+    });
+  });
+
+  document.getElementById('mc-1').addEventListener('click', function() {
+    addMCSamples(1); updateHilbert();
+  });
+  document.getElementById('mc-10').addEventListener('click', function() {
+    addMCSamples(10); updateHilbert();
+  });
+  document.getElementById('mc-100').addEventListener('click', function() {
+    addMCSamples(100); updateHilbert();
+  });
+  document.getElementById('mc-1000').addEventListener('click', function() {
+    addMCSamples(1000); updateHilbert();
+  });
+  document.getElementById('mc-10000').addEventListener('click', function(ev) {
+    // ~2 s of synchronous work — defer one frame so the button's :active
+    // styling and the existing N counter visibly register before the freeze.
+    const btn = ev.currentTarget;
+    btn.disabled = true;
+    btn.textContent = '…computing';
+    requestAnimationFrame(function() { requestAnimationFrame(function() {
+      addMCSamples(10000);
+      updateHilbert();
+      btn.disabled = false;
+      btn.textContent = '+ 10000';
+    }); });
+  });
+  document.getElementById('mc-reset').addEventListener('click', function() {
+    hilbertState.samples = 0;
+    if (hilbertState.shiftAvg) hilbertState.shiftAvg.fill(0);
+    hilbertState.lastBits = null;
+    hilbertState.lastR = null;
+    updateLastSampleDisplay();
+    updateHilbert();
+  });
+
+  document.getElementById('grid').addEventListener('click', function(e) {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('click-target')) {
+      haarState.j = parseInt(t.getAttribute('data-j'));
+      haarState.k = parseInt(t.getAttribute('data-k'));
+      updateJButtons();
+      updateKSlider();
+      update();
+    }
+  });
+
+  // initial render
+  updateJButtons();
+  updateFButtons();
+  updateHButtons();
+  updateKSlider();
+  update();
+  recomputeHilbertPreset();
+  updateHilbert();
+})();
+</script>
+</body>
+</html>

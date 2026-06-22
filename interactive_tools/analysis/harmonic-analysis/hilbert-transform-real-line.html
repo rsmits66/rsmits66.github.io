@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hilbert Transform on ℝ — Simple Functions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --crimson:#9E1B32;--crimson2:#7a1426;
+  --cream:#faf7f2;--paper:#fff;
+  --navy:#18284a;--navy2:#2c4070;
+  --gold:#c8a430;--gold2:#a07820;
+  --gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#fdf0f2;--acc-blue:#edf1fb;
+  --green:#1a6a40;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.66;}
+
+header{background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.45rem 2.5rem;font-size:.82rem;color:#f0c8d0;letter-spacing:.06em;text-transform:uppercase;}
+.hdr-main{padding:1.5rem 2.5rem;}
+header h1{font-family:var(--font-head);font-size:1.95rem;font-weight:700;letter-spacing:.01em;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.3rem;font-size:1rem;}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+
+main{max-width:1180px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;margin-bottom:1.2rem;box-shadow:0 2px 16px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.18rem;font-weight:600;color:var(--crimson);margin-bottom:.6rem;padding-bottom:.35rem;border-bottom:2px solid #f5dde2;}
+.card h3{font-family:var(--font-head);font-size:1rem;font-weight:600;color:var(--navy2);margin:.7rem 0 .3rem;}
+.card p{margin-bottom:.55rem;line-height:1.68;}
+
+.def-box{background:var(--acc-bg);border-left:3.5px solid var(--crimson);border-radius:0 6px 6px 0;padding:.55rem .9rem;margin:.55rem 0;font-size:.95rem;line-height:1.65;}
+.def-box strong{color:var(--crimson);}
+.thm-box{background:#f0f4ff;border-left:3.5px solid var(--navy2);border-radius:0 6px 6px 0;padding:.55rem .9rem;margin:.55rem 0;font-size:.95rem;line-height:1.65;}
+.thm-box strong{color:var(--navy2);}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:6px;padding:.55rem .9rem;margin:.55rem 0;font-size:.91rem;line-height:1.65;color:#4a3800;}
+.math-block{overflow-x:auto;margin:.6rem 0;text-align:center;}
+
+.machine-wrap{display:flex;justify-content:center;align-items:center;gap:1.2rem;flex-wrap:wrap;margin:.7rem 0;}
+.machine-box{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;border-radius:10px;padding:.9rem 1.4rem;text-align:center;box-shadow:0 4px 20px rgba(24,40,74,.25);min-width:170px;}
+.machine-box h4{font-family:var(--font-head);font-size:1rem;font-weight:600;color:var(--gold);margin-bottom:.3rem;}
+.machine-box p{font-size:.82rem;color:#c0d0e8;line-height:1.45;}
+.machine-arrow{font-size:1.6rem;color:var(--navy2);}
+.input-bubble{background:var(--acc-blue);border:2px solid #b0c4e8;border-radius:7px;padding:.55rem 1rem;text-align:center;min-width:100px;}
+.output-bubble{background:var(--acc-bg);border:2px solid #e0a0b0;border-radius:7px;padding:.55rem 1rem;text-align:center;min-width:100px;}
+
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;margin-bottom:.45rem;}
+.ctrl-group label{display:block;font-size:.86rem;font-weight:600;color:var(--navy2);margin-bottom:.2rem;}
+.ctrl-group p{font-size:.8rem;color:var(--gray);margin-top:.2rem;line-height:1.45;}
+input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;margin:.1rem 0;}
+input[type=text],input[type=number],select{padding:.25rem .45rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.92rem;background:#fff;color:var(--navy);}
+input[type=text]:focus,input[type=number]:focus,select:focus{outline:none;border-color:var(--crimson);}
+select{width:100%;}
+.val-badge{display:inline-block;background:var(--crimson);color:#fff;border-radius:4px;padding:.02rem .45rem;font-size:.86rem;font-weight:700;min-width:32px;text-align:center;margin-left:.25rem;}
+
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.3rem .8rem;font-size:.9rem;transition:all .13s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--crimson);color:#fff;}
+.btn-primary:hover{background:var(--crimson2);}
+.btn-secondary{background:var(--acc-blue);color:var(--navy2);border:1px solid #b0c4e8;}
+.btn-secondary:hover{background:#c8daff;}
+.btn-danger{background:#fff;color:var(--crimson);border:1px solid #e0a0b0;font-size:.82rem;padding:.2rem .5rem;}
+.btn-danger:hover{background:var(--acc-bg);}
+.btn-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;align-items:center;}
+
+canvas{display:block;border-radius:6px;border:1.5px solid var(--border);background:#fff;}
+.cv-label{text-align:center;font-size:.83rem;color:var(--gray);margin-top:.3rem;font-style:italic;}
+.canvas-full{width:100%;display:block;}
+
+.legend{display:flex;flex-wrap:wrap;gap:.55rem;margin:.5rem 0;font-size:.83rem;justify-content:center;}
+.leg-swatch{width:28px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:.25rem;}
+.leg-item{display:flex;align-items:center;}
+
+/* Interval table */
+.interval-tbl{border-collapse:collapse;font-size:.88rem;width:100%;margin:.4rem 0;}
+.interval-tbl th{background:var(--navy);color:#fff;padding:.28rem .5rem;font-weight:400;font-size:.8rem;text-align:center;}
+.interval-tbl td{padding:.22rem .35rem;border:1px solid #e8e4de;text-align:center;vertical-align:middle;}
+.interval-tbl tr:nth-child(even) td{background:#f8f6f2;}
+.interval-tbl input[type=number]{width:60px;text-align:center;font-size:.85rem;padding:.15rem .25rem;}
+
+.two-col{display:flex;gap:1.4rem;flex-wrap:wrap;}
+.two-col>.col-a{flex:0 0 280px;min-width:240px;}
+.two-col>.col-b{flex:1;min-width:300px;}
+
+@media(max-width:700px){
+  .two-col>.col-a{flex:1 1 100%;}
+  .two-col>.col-b{flex:1 1 100%;}
+  .hdr-main{padding:1.2rem 1rem;}
+  main{padding:1rem .7rem;}
+  .card{padding:1rem;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama — Harmonic Analysis · Singular Integrals</div>
+  <div class="hdr-main">
+    <h1>The Hilbert Transform on ℝ</h1>
+    <div class="subtitle">Principal-value convolution with the Cauchy kernel — exact formulae for simple functions</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<main>
+
+<!-- §1 Theory -->
+<div class="card">
+  <h2>§1 — The Hilbert Transform on the Real Line</h2>
+  <p>For <span id="th_fL2"></span>, the <strong>Hilbert transform</strong> is the principal-value convolution</p>
+  <div class="math-block" id="th_Hdef"></div>
+
+  <div class="def-box">
+    <strong>Key building block.</strong> For the indicator function of an interval,
+    <div class="math-block" id="th_indicator"></div>
+    <span id="th_indicator_note"></span>
+  </div>
+
+  <div class="thm-box">
+    <strong>Simple functions.</strong>
+    Every simple function has the form <span id="th_simple"></span>.
+    By linearity,
+    <div class="math-block" id="th_Hsimple"></div>
+    This is <strong>exact</strong> — no numerical integration needed. The logarithmic singularities at
+    each endpoint are the signature of the Hilbert transform acting on discontinuities.
+  </div>
+
+  <h3>The Machine</h3>
+  <div class="machine-wrap">
+    <div class="input-bubble">
+      <div style="font-size:.82rem;color:var(--gray);">simple function</div>
+      <div id="mach_in" style="margin-top:.2rem;"></div>
+    </div>
+    <div class="machine-arrow">→</div>
+    <div class="machine-box">
+      <h4>Exact Formula</h4>
+      <div id="mach_K" style="margin:.3rem 0;font-size:.88rem;"></div>
+      <p>Sum of logarithmic terms — one per endpoint</p>
+    </div>
+    <div class="machine-arrow">→</div>
+    <div class="output-bubble">
+      <div style="font-size:.82rem;color:var(--gray);">output</div>
+      <div id="mach_out" style="margin-top:.2rem;"></div>
+    </div>
+  </div>
+
+  <div class="key-box">
+    <strong>Properties on ℝ.</strong>
+    <span id="th_props"></span>.
+    Unlike the periodic case, H maps constants to 0, and the transform of a compactly supported function
+    has logarithmic tails — it is never compactly supported itself.
+  </div>
+</div>
+
+<!-- §2 Simple function builder -->
+<div class="card">
+  <h2>§2 — Build a Simple Function</h2>
+  <p>Define <em>f</em> as a finite sum of weighted indicator functions. The Hilbert transform is computed exactly.</p>
+
+  <div class="two-col">
+    <div class="col-a">
+
+      <div class="ctrl-group">
+        <label>Preset</label>
+        <select id="presetSelect" onchange="loadPreset()">
+          <option value="">— choose a preset —</option>
+          <option value="single">Single indicator 𝟏_{[−1,1]}</option>
+          <option value="offcenter">Off-center 𝟏_{[1,3]}</option>
+          <option value="symmetric2">Two symmetric blocks</option>
+          <option value="antisym">Odd function (antisymmetric)</option>
+          <option value="staircase">Staircase (4 levels)</option>
+          <option value="narrow">Narrow spike 𝟏_{[−0.1,0.1]}</option>
+          <option value="wide">Wide block 𝟏_{[−5,5]}</option>
+          <option value="twopulse">Two narrow pulses</option>
+          <option value="posneg">Positive + negative</option>
+        </select>
+      </div>
+
+      <div style="margin:.5rem 0;">
+        <table class="interval-tbl" id="intervalTable">
+          <thead><tr><th>c_k</th><th>a_k</th><th>b_k</th><th></th></tr></thead>
+          <tbody id="intervalBody"></tbody>
+        </table>
+        <div class="btn-row" style="margin-top:.35rem;">
+          <button class="btn-secondary" onclick="addInterval()">+ Add interval</button>
+          <button class="btn-primary" onclick="compute()">▶ Compute Hf</button>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <label>View window [<span id="xMinDisp">−6</span>, <span id="xMaxDisp">6</span>]</label>
+        <div style="display:flex;gap:.3rem;align-items:center;font-size:.85rem;">
+          <span>x∈[</span>
+          <input type="number" id="viewXMin" value="-6" step="1" style="width:55px;" onchange="compute()">
+          <span>,</span>
+          <input type="number" id="viewXMax" value="6" step="1" style="width:55px;" onchange="compute()">
+          <span>]</span>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <label>y range</label>
+        <div style="display:flex;gap:.3rem;align-items:center;font-size:.85rem;">
+          <button class="btn-secondary" onclick="yMode='auto';compute();" style="font-size:.8rem;padding:.2rem .5rem;">Auto</button>
+          <span>or [</span>
+          <input type="number" id="viewYMin" value="-2" step="0.5" style="width:55px;" onchange="yMode='manual';compute();">
+          <span>,</span>
+          <input type="number" id="viewYMax" value="2" step="0.5" style="width:55px;" onchange="yMode='manual';compute();">
+          <span>]</span>
+        </div>
+      </div>
+
+      <div id="formulaBox" class="def-box" style="font-size:.88rem;margin-top:.5rem;"></div>
+
+    </div>
+
+    <div class="col-b">
+      <canvas id="cvMain" height="340" class="canvas-full"></canvas>
+      <div class="legend" style="margin-top:.3rem;">
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--gold);"></span> f(x)</div>
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--crimson);"></span> Hf(x)</div>
+      </div>
+      <div class="cv-label">Gold = simple function f(x) · Crimson = Hilbert transform Hf(x)</div>
+
+      <div style="height:.8rem;"></div>
+      <canvas id="cvZoom" height="200" class="canvas-full"></canvas>
+      <div class="legend" style="margin-top:.3rem;">
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--crimson);"></span> Hf(x)</div>
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--navy2);opacity:.4;"></span> log tails</div>
+      </div>
+      <div class="cv-label">Hf(x) alone — note logarithmic tails and singularities at jump points</div>
+    </div>
+  </div>
+</div>
+
+<!-- §3 L2 functions -->
+<div class="card">
+  <h2>§3 — Beyond Simple Functions</h2>
+  <p>For smooth L² functions on ℝ, we compute Hf numerically via truncated principal-value integration.</p>
+
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+    <div style="flex:0 0 220px;">
+      <div class="ctrl-group">
+        <label>Function</label>
+        <select id="smoothSelect" onchange="computeSmooth()">
+          <option value="gaussian">Gaussian e^{−x²}</option>
+          <option value="lorentz">Lorentzian 1/(1+x²)</option>
+          <option value="xlorentz">x/(1+x²)</option>
+          <option value="sinc">sinc(x) = sin(πx)/(πx)</option>
+          <option value="bump">Bump function</option>
+          <option value="hermite">Hermite: xe^{−x²}</option>
+        </select>
+      </div>
+      <div class="thm-box" style="font-size:.84rem;" id="knownBox"></div>
+    </div>
+    <div style="flex:1;min-width:300px;">
+      <canvas id="cvSmooth" height="280" class="canvas-full"></canvas>
+      <div class="legend" style="margin-top:.3rem;">
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--gold);"></span> f(x)</div>
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--crimson);"></span> Hf(x) (numerical)</div>
+        <div class="leg-item"><span class="leg-swatch" style="background:var(--green);"></span> Hf(x) (exact, if known)</div>
+      </div>
+      <div class="cv-label">Numerical PV integration with R = 200, ε = 10⁻⁶, 8000 quadrature points</div>
+    </div>
+  </div>
+</div>
+
+<!-- §4 Properties -->
+<div class="card">
+  <h2>§4 — Structural Properties</h2>
+  <div class="thm-box">
+    <strong>Theorem (Hilbert, M. Riesz).</strong>
+    <span id="th_riesz"></span>.
+    The sharp constant satisfies <span id="th_sharp"></span>.
+  </div>
+  <div class="def-box">
+    <strong>Parseval.</strong> The Hilbert transform is a <strong>unitary</strong> operator on L²(ℝ):
+    <span id="th_parseval"></span>.
+    This follows from the Fourier multiplier <span id="th_mult2"></span> having unit modulus.
+  </div>
+  <div class="key-box">
+    <strong>Titchmarsh convolution theorem.</strong>
+    If f, g ∈ L¹(ℝ) with f ∗ g = 0 a.e., and both f and g are supported on half-lines,
+    then one of them must vanish a.e. The Hilbert transform is the key tool in the proof.
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ══════════════════════════════════════════
+   KaTeX
+══════════════════════════════════════════ */
+function rk(t,disp){
+  t=String(t).replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/g,'');
+  try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}
+}
+function setK(id,t,disp){var el=document.getElementById(id);if(el)el.innerHTML=rk(t,disp);}
+
+function populateTheory(){
+  setK('th_fL2','f\\in L^2(\\mathbb{R})');
+  setK('th_Hdef','Hf(x)=\\operatorname{p.v.}\\frac{1}{\\pi}\\int_{-\\infty}^{\\infty}\\frac{f(t)}{x-t}\\,dt',true);
+  setK('th_indicator',
+    'H\\bigl(\\mathbf{1}_{[a,b]}\\bigr)(x)=\\frac{1}{\\pi}\\ln\\left|\\frac{x-a}{x-b}\\right|',true);
+  setK('th_indicator_note',
+    'Logarithmic singularities at the endpoints x = a and x = b, with slow decay as x → ±∞.');
+  setK('th_simple','f=\\sum_{k=1}^n c_k\\,\\mathbf{1}_{[a_k,b_k]}');
+  setK('th_Hsimple',
+    'Hf(x)=\\frac{1}{\\pi}\\sum_{k=1}^n c_k\\ln\\left|\\frac{x-a_k}{x-b_k}\\right|',true);
+  setK('mach_in','\\sum c_k\\,\\mathbf{1}_{[a_k,b_k]}');
+  setK('mach_K','\\tfrac{c_k}{\\pi}\\ln\\left|\\tfrac{x-a_k}{x-b_k}\\right|');
+  setK('mach_out','Hf(x)');
+  setK('th_props',
+    'H^2=-\\mathrm{Id},\\quad \\|Hf\\|_2=\\|f\\|_2,\\quad \\widehat{Hf}(\\xi)=-i\\,\\mathrm{sgn}(\\xi)\\,\\hat f(\\xi)');
+  setK('th_riesz','\\text{For }1<p<\\infty,\\; H:L^p(\\mathbb{R})\\to L^p(\\mathbb{R})\\text{ is bounded with }\\|Hf\\|_p\\le C_p\\|f\\|_p');
+  setK('th_sharp','C_p=\\tan\\frac{\\pi}{2p^*}\\text{ where }p^*=\\max(p,p/(p-1))');
+  setK('th_parseval','\\langle Hf,Hg\\rangle = \\langle f,g\\rangle \\quad\\text{for all }f,g\\in L^2(\\mathbb{R})');
+  setK('th_mult2','m(\\xi)=-i\\,\\mathrm{sgn}(\\xi)');
+}
+
+/* ══════════════════════════════════════════
+   Canvas helpers
+══════════════════════════════════════════ */
+function setupCV(cv){
+  var dpr=window.devicePixelRatio||1;
+  var rect=cv.getBoundingClientRect();
+  var W=rect.width, H=parseInt(cv.getAttribute('height'))||300;
+  cv.width=W*dpr;cv.height=H*dpr;
+  cv.style.height=H+'px';
+  var ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  return {ctx:ctx,W:W,H:H};
+}
+
+var PAD={l:52,r:18,t:14,b:30};
+
+function drawGrid(ctx,W,H,pad,xMin,xMax,yMin,yMax){
+  var gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  function px(x){return pad.l+(x-xMin)/(xMax-xMin)*gW;}
+  function py(y){return pad.t+(1-(y-yMin)/(yMax-yMin))*gH;}
+
+  ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.8;
+  var nX=8,nY=6;
+  for(var i=0;i<=nX;i++){var x=xMin+(xMax-xMin)*i/nX;ctx.beginPath();ctx.moveTo(px(x),pad.t);ctx.lineTo(px(x),pad.t+gH);ctx.stroke();}
+  for(var i=0;i<=nY;i++){var y=yMin+(yMax-yMin)*i/nY;ctx.beginPath();ctx.moveTo(pad.l,py(y));ctx.lineTo(pad.l+gW,py(y));ctx.stroke();}
+
+  // zero lines
+  if(yMin<=0&&yMax>=0){ctx.strokeStyle='#b8b5ad';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(pad.l,py(0));ctx.lineTo(pad.l+gW,py(0));ctx.stroke();}
+  if(xMin<=0&&xMax>=0){ctx.strokeStyle='#b8b5ad';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(px(0),pad.t);ctx.lineTo(px(0),pad.t+gH);ctx.stroke();}
+
+  ctx.font='11px "Crimson Pro",serif';ctx.fillStyle='#7a7a8a';
+  ctx.textAlign='center';
+  for(var i=0;i<=nX;i++){
+    var v=xMin+(xMax-xMin)*i/nX;
+    ctx.fillText(niceNum(v),px(v),pad.t+gH+16);
+  }
+  ctx.textAlign='right';
+  for(var i=0;i<=nY;i++){
+    var v=yMin+(yMax-yMin)*i/nY;
+    ctx.fillText(niceNum(v),pad.l-5,py(v)+4);
+  }
+  ctx.strokeStyle='#ddd9d0';ctx.lineWidth=1;ctx.strokeRect(pad.l,pad.t,gW,gH);
+  return {px:px,py:py,gW:gW,gH:gH};
+}
+
+function niceNum(v){
+  if(Math.abs(v)<1e-10) return '0';
+  if(Math.abs(v)>=100) return v.toFixed(0);
+  if(Math.abs(v)>=1) return v.toFixed(1);
+  return v.toFixed(2);
+}
+
+function drawCurve(ctx,pxs,pys,color,width,dash){
+  ctx.strokeStyle=color;ctx.lineWidth=width;
+  ctx.setLineDash(dash||[]);ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();var started=false;
+  for(var i=0;i<pxs.length;i++){
+    if(!isFinite(pys[i])){started=false;continue;}
+    if(!started){ctx.moveTo(pxs[i],pys[i]);started=true;}else ctx.lineTo(pxs[i],pys[i]);
+  }
+  ctx.stroke();ctx.setLineDash([]);
+}
+
+// Draw a step function as horizontal segments with vertical joins
+function drawStepFunc(ctx,intervals,ax,pad,H,color,width){
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash([]);
+  ctx.lineJoin='round';ctx.lineCap='round';
+
+  // sort intervals by a
+  var sorted=intervals.slice().sort(function(a,b){return a.a-b.a;});
+
+  // For each interval draw horizontal line at height c, with filled rectangle
+  for(var i=0;i<sorted.length;i++){
+    var iv=sorted[i];
+    var x1=ax.px(iv.a), x2=ax.px(iv.b), y=ax.py(iv.c), y0=ax.py(0);
+
+    // fill
+    ctx.fillStyle=color.replace(')',',0.08)').replace('rgb','rgba');
+    if(color.charAt(0)==='#'){
+      var r=parseInt(color.substr(1,2),16),g=parseInt(color.substr(3,2),16),b=parseInt(color.substr(5,2),16);
+      ctx.fillStyle='rgba('+r+','+g+','+b+',0.10)';
+    }
+    ctx.fillRect(Math.min(x1,x2),Math.min(y,y0),Math.abs(x2-x1),Math.abs(y-y0));
+
+    // horizontal line
+    ctx.strokeStyle=color;
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+
+    // vertical edges (dashed)
+    ctx.setLineDash([3,3]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x1,y0);ctx.lineTo(x1,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x2,y0);ctx.lineTo(x2,y);ctx.stroke();
+    ctx.setLineDash([]);ctx.lineWidth=width;
+  }
+}
+
+/* ══════════════════════════════════════════
+   Exact Hilbert transform of simple functions
+══════════════════════════════════════════ */
+// H(1_{[a,b]})(x) = (1/π) ln|x-a| - (1/π) ln|x-b| = (1/π) ln|(x-a)/(x-b)|
+function hilbertIndicator(a,b,x){
+  var da=Math.abs(x-a), db=Math.abs(x-b);
+  if(da<1e-14||db<1e-14) return NaN; // singularity
+  return (1/Math.PI)*(Math.log(da)-Math.log(db));
+}
+
+function hilbertSimple(intervals,x){
+  var sum=0;
+  for(var i=0;i<intervals.length;i++){
+    var iv=intervals[i];
+    var h=hilbertIndicator(iv.a,iv.b,x);
+    if(!isFinite(h)) return NaN;
+    sum+=iv.c*h;
+  }
+  return sum;
+}
+
+function evalSimple(intervals,x){
+  var sum=0;
+  for(var i=0;i<intervals.length;i++){
+    var iv=intervals[i];
+    if(x>=iv.a&&x<iv.b) sum+=iv.c;
+  }
+  return sum;
+}
+
+/* ══════════════════════════════════════════
+   Interval management
+══════════════════════════════════════════ */
+var intervals=[{c:1,a:-1,b:1}];
+var yMode='auto';
+
+function renderTable(){
+  var tbody=document.getElementById('intervalBody');
+  tbody.innerHTML='';
+  for(var i=0;i<intervals.length;i++){
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="number" value="'+intervals[i].c+'" step="0.5" data-i="'+i+'" data-f="c" onchange="updateInterval(this)"></td>'+
+      '<td><input type="number" value="'+intervals[i].a+'" step="0.5" data-i="'+i+'" data-f="a" onchange="updateInterval(this)"></td>'+
+      '<td><input type="number" value="'+intervals[i].b+'" step="0.5" data-i="'+i+'" data-f="b" onchange="updateInterval(this)"></td>'+
+      '<td><button class="btn-danger" onclick="removeInterval('+i+')">✕</button></td>';
+    tbody.appendChild(tr);
+  }
+}
+
+function updateInterval(el){
+  var i=parseInt(el.dataset.i), f=el.dataset.f;
+  intervals[i][f]=parseFloat(el.value)||0;
+  compute();
+}
+
+function addInterval(){
+  // guess a new interval
+  var maxB=-Infinity;
+  intervals.forEach(function(iv){maxB=Math.max(maxB,iv.b);});
+  var newA=isFinite(maxB)?maxB:0;
+  intervals.push({c:1,a:newA,b:newA+1});
+  renderTable();
+  compute();
+}
+
+function removeInterval(i){
+  if(intervals.length<=1) return;
+  intervals.splice(i,1);
+  renderTable();
+  compute();
+}
+
+/* ══════════════════════════════════════════
+   Presets
+══════════════════════════════════════════ */
+var PRESETS={
+  single:    [{c:1,a:-1,b:1}],
+  offcenter: [{c:1,a:1,b:3}],
+  symmetric2:[{c:1,a:-3,b:-1},{c:1,a:1,b:3}],
+  antisym:   [{c:1,a:0,b:2},{c:-1,a:-2,b:0}],
+  staircase: [{c:0.25,a:-4,b:-2},{c:0.5,a:-2,b:0},{c:0.75,a:0,b:2},{c:1,a:2,b:4}],
+  narrow:    [{c:10,a:-0.1,b:0.1}],
+  wide:      [{c:1,a:-5,b:5}],
+  twopulse:  [{c:1,a:-3,b:-2},{c:1,a:2,b:3}],
+  posneg:    [{c:1,a:-2,b:0},{c:-1,a:0,b:2}]
+};
+
+function loadPreset(){
+  var sel=document.getElementById('presetSelect').value;
+  if(!sel) return;
+  intervals=PRESETS[sel].map(function(iv){return {c:iv.c,a:iv.a,b:iv.b};});
+  // auto-fit view window
+  var lo=Infinity,hi=-Infinity;
+  intervals.forEach(function(iv){lo=Math.min(lo,iv.a);hi=Math.max(hi,iv.b);});
+  var span=hi-lo;
+  document.getElementById('viewXMin').value=Math.floor(lo-span*0.6);
+  document.getElementById('viewXMax').value=Math.ceil(hi+span*0.6);
+  yMode='auto';
+  renderTable();
+  compute();
+}
+
+/* ══════════════════════════════════════════
+   Compute & draw §2
+══════════════════════════════════════════ */
+function compute(){
+  var xMin=parseFloat(document.getElementById('viewXMin').value)||(-6);
+  var xMax=parseFloat(document.getElementById('viewXMax').value)||(6);
+  if(xMin>=xMax){xMax=xMin+1;}
+  document.getElementById('xMinDisp').textContent=xMin;
+  document.getElementById('xMaxDisp').textContent=xMax;
+
+  var N=1200;
+  var xs=[],fVals=[],hVals=[];
+  for(var i=0;i<N;i++){
+    var x=xMin+(xMax-xMin)*i/(N-1);
+    xs.push(x);
+    fVals.push(evalSimple(intervals,x));
+    hVals.push(hilbertSimple(intervals,x));
+  }
+
+  // Formula box
+  var terms=[];
+  intervals.forEach(function(iv){
+    var cStr=iv.c===1?'':iv.c===-1?'-':(iv.c+'\\cdot ');
+    terms.push(cStr+'\\mathbf{1}_{['+iv.a+',\\,'+iv.b+']}');
+  });
+  var fStr=terms.join('+').replace(/\+\-/g,'-');
+  document.getElementById('formulaBox').innerHTML=
+    '<strong>f(x)</strong> = '+rk(fStr)+'<br>'+
+    '<strong>Hf(x)</strong> = '+rk('\\frac{1}{\\pi}\\sum c_k\\ln\\left|\\frac{x-a_k}{x-b_k}\\right|');
+
+  drawMainPlot(xs,fVals,hVals,xMin,xMax);
+  drawZoomPlot(xs,hVals,xMin,xMax);
+}
+
+function drawMainPlot(xs,fVals,hVals,xMin,xMax){
+  var cv=document.getElementById('cvMain');
+  var s=setupCV(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var N=xs.length;
+
+  var yMin,yMax;
+  if(yMode==='manual'){
+    yMin=parseFloat(document.getElementById('viewYMin').value);
+    yMax=parseFloat(document.getElementById('viewYMax').value);
+  } else {
+    yMin=Infinity;yMax=-Infinity;
+    for(var i=0;i<N;i++){
+      if(isFinite(fVals[i])){yMin=Math.min(yMin,fVals[i]);yMax=Math.max(yMax,fVals[i]);}
+      if(isFinite(hVals[i])){
+        var clamped=Math.max(-20,Math.min(20,hVals[i]));
+        yMin=Math.min(yMin,clamped);yMax=Math.max(yMax,clamped);
+      }
+    }
+    var margin=(yMax-yMin)*0.15||0.5;yMin-=margin;yMax+=margin;
+  }
+
+  var ax=drawGrid(ctx,W,H,PAD,xMin,xMax,yMin,yMax);
+
+  // Draw f(x) as step function
+  drawStepFunc(ctx,intervals,ax,PAD,H,'#c8a430',2.5);
+
+  // Draw Hf(x) — clip to yMin/yMax to avoid visual explosion at singularities
+  var pxs=[],pys=[];
+  for(var i=0;i<N;i++){
+    pxs.push(ax.px(xs[i]));
+    var v=hVals[i];
+    if(!isFinite(v)||v<yMin-5||v>yMax+5) pys.push(NaN);
+    else pys.push(ax.py(v));
+  }
+  drawCurve(ctx,pxs,pys,'#9E1B32',2.2,[]);
+
+  // Mark singularities with dotted verticals
+  ctx.strokeStyle='rgba(158,27,50,0.25)';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+  intervals.forEach(function(iv){
+    [iv.a,iv.b].forEach(function(ep){
+      if(ep>=xMin&&ep<=xMax){
+        ctx.beginPath();ctx.moveTo(ax.px(ep),PAD.t);ctx.lineTo(ax.px(ep),PAD.t+ax.gH);ctx.stroke();
+      }
+    });
+  });
+  ctx.setLineDash([]);
+}
+
+function drawZoomPlot(xs,hVals,xMin,xMax){
+  var cv=document.getElementById('cvZoom');
+  var s=setupCV(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var N=xs.length;
+
+  // Auto y range from Hf only
+  var yMin=Infinity,yMax=-Infinity;
+  for(var i=0;i<N;i++){
+    if(isFinite(hVals[i])){
+      var v=Math.max(-20,Math.min(20,hVals[i]));
+      yMin=Math.min(yMin,v);yMax=Math.max(yMax,v);
+    }
+  }
+  var margin=(yMax-yMin)*0.12||0.5;yMin-=margin;yMax+=margin;
+
+  var ax=drawGrid(ctx,W,H,PAD,xMin,xMax,yMin,yMax);
+
+  // Asymptotic envelope: for large |x|, Hf ~ (sum c_k (b_k - a_k)) / (π x)
+  var totalMass=0;
+  intervals.forEach(function(iv){totalMass+=iv.c*(iv.b-iv.a);});
+  if(Math.abs(totalMass)>1e-10){
+    var envPxs=[],envPys=[];
+    for(var i=0;i<N;i++){
+      var x=xs[i];
+      if(Math.abs(x)<0.5) {envPxs.push(ax.px(x));envPys.push(NaN);continue;}
+      var env=totalMass/(Math.PI*x);
+      envPxs.push(ax.px(x));
+      envPys.push(ax.py(env));
+    }
+    drawCurve(ctx,envPxs,envPys,'rgba(44,64,112,0.3)',1.5,[5,4]);
+  }
+
+  // Hf curve
+  var pxs=[],pys=[];
+  for(var i=0;i<N;i++){
+    pxs.push(ax.px(xs[i]));
+    var v=hVals[i];
+    if(!isFinite(v)||v<yMin-5||v>yMax+5) pys.push(NaN);
+    else pys.push(ax.py(v));
+  }
+  drawCurve(ctx,pxs,pys,'#9E1B32',2,[]);
+
+  // Singularity markers
+  ctx.strokeStyle='rgba(158,27,50,0.25)';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+  intervals.forEach(function(iv){
+    [iv.a,iv.b].forEach(function(ep){
+      if(ep>=xMin&&ep<=xMax){
+        ctx.beginPath();ctx.moveTo(ax.px(ep),PAD.t);ctx.lineTo(ax.px(ep),PAD.t+ax.gH);ctx.stroke();
+      }
+    });
+  });
+  ctx.setLineDash([]);
+
+  // Label tails
+  if(Math.abs(totalMass)>1e-10){
+    ctx.font='italic 11px "Crimson Pro",serif';ctx.fillStyle='rgba(44,64,112,0.5)';ctx.textAlign='right';
+    ctx.fillText('~ '+niceNum(totalMass/Math.PI)+'/x',ax.px(xMax)-4,ax.py(0)-6);
+  }
+}
+
+/* ══════════════════════════════════════════
+   §3 Smooth L² functions — numerical PV
+══════════════════════════════════════════ */
+var SMOOTH={
+  gaussian:{
+    fn:function(x){return Math.exp(-x*x);},
+    label:'e^{-x^2}',
+    exact:function(x){return (2/Math.sqrt(Math.PI))*dawson(x);},
+    note:'Exact: Hf(x) = (2/√π)·F(x) where F is the Dawson function F(x) = e^{−x²}∫₀ˣ e^{t²}dt.'
+  },
+  lorentz:{
+    fn:function(x){return 1/(1+x*x);},
+    label:'\\frac{1}{1+x^2}',
+    exact:function(x){return x/(1+x*x);},
+    note:'Exact: H(1/(1+x²)) = x/(1+x²). The conjugate Poisson kernel.'
+  },
+  xlorentz:{
+    fn:function(x){return x/(1+x*x);},
+    label:'\\frac{x}{1+x^2}',
+    exact:function(x){return -1/(1+x*x);},
+    note:'Exact: H(x/(1+x²)) = −1/(1+x²). The conjugate pair — note H swaps even ↔ odd.'
+  },
+  sinc:{
+    fn:function(x){return Math.abs(x)<1e-14?1:Math.sin(Math.PI*x)/(Math.PI*x);},
+    label:'\\mathrm{sinc}(x)',
+    exact:function(x){return Math.abs(x)<1e-14?0:(1-Math.cos(Math.PI*x))/(Math.PI*x);},
+    note:'Exact: H(sinc)(x) = (1−cos(πx))/(πx). The transform of the band-limited function.'
+  },
+  bump:{
+    fn:function(x){return Math.abs(x)<1?Math.exp(-1/(1-x*x)):0;},
+    label:'\\text{bump}(x)',
+    exact:null,
+    note:'The C^∞ bump has no closed-form Hilbert transform. Numerical PV only.'
+  },
+  hermite:{
+    fn:function(x){return x*Math.exp(-x*x);},
+    label:'xe^{-x^2}',
+    exact:function(x){return (2*x*dawson(x)-1)/Math.sqrt(Math.PI);},
+    note:'Exact: H(xe^{−x²}) = (2xF(x)−1)/√π, derived from H∘d/dx = d/dx∘H and the Dawson function F.'
+  }
+};
+
+// Dawson function via series/continued fraction
+function dawson(x){
+  // Rybicki's method for moderate x
+  var h=0.2,n=Math.ceil(x/h);
+  // Use series for small x, asymptotic for large
+  if(Math.abs(x)<0.5){
+    var s=0,term=x,k=0;
+    while(k<50){s+=term;k++;term*=-2*x*x/(2*k+1);}
+    return s;
+  }
+  if(Math.abs(x)>6){
+    // asymptotic: F(x) ~ 1/(2x) + 1/(4x^3) + 3/(8x^5)
+    var x2=x*x;
+    return 1/(2*x)*(1+1/(2*x2)+3/(4*x2*x2));
+  }
+  // Numerical integration: F(x) = e^{-x^2} ∫_0^x e^{t^2} dt
+  var N=200;
+  var dt=x/N,sum=0;
+  for(var i=0;i<N;i++){
+    var t=x*(i+0.5)/N;
+    sum+=Math.exp(t*t)*dt;
+  }
+  return Math.exp(-x*x)*sum;
+}
+
+// (dawsonDeriv removed — Hermite exact now uses F' = 1 - 2xF directly)
+
+// Numerical principal-value Hilbert transform
+function numericalHilbert(fn,x){
+  // Hf(x) = (1/π) PV ∫ f(t)/(x-t) dt
+  // Split into |t-x| > ε and use symmetric cancellation
+  var eps=1e-5;
+  var R=150; // truncation radius
+  var N=6000;
+
+  // Integrate [-R, x-eps] and [x+eps, R]
+  var sum=0;
+
+  // Region 1: [-R, x-eps]
+  var a1=-R, b1=x-eps;
+  if(b1>a1){
+    var n1=Math.max(100,Math.round(N*(b1-a1)/(2*R)));
+    var dt1=(b1-a1)/n1;
+    for(var i=0;i<n1;i++){
+      var t=a1+(i+0.5)*dt1;
+      sum+=fn(t)/(x-t)*dt1;
+    }
+  }
+
+  // Region 2: [x+eps, R]
+  var a2=x+eps, b2=R;
+  if(b2>a2){
+    var n2=Math.max(100,Math.round(N*(b2-a2)/(2*R)));
+    var dt2=(b2-a2)/n2;
+    for(var i=0;i<n2;i++){
+      var t=a2+(i+0.5)*dt2;
+      sum+=fn(t)/(x-t)*dt2;
+    }
+  }
+
+  return sum/Math.PI;
+}
+
+function computeSmooth(){
+  var sel=document.getElementById('smoothSelect').value;
+  var preset=SMOOTH[sel];
+  if(!preset) return;
+
+  // Update info box
+  document.getElementById('knownBox').innerHTML=
+    '<strong>'+rk(preset.label)+'</strong><br>'+preset.note;
+
+  var cv=document.getElementById('cvSmooth');
+  var s=setupCV(cv);var ctx=s.ctx,W=s.W,H=s.H;
+
+  var xMin=-8,xMax=8,N=400;
+  var xs=[],fVals=[],hVals=[],exactVals=[];
+
+  for(var i=0;i<N;i++){
+    var x=xMin+(xMax-xMin)*i/(N-1);
+    xs.push(x);
+    fVals.push(preset.fn(x));
+    hVals.push(numericalHilbert(preset.fn,x));
+    if(preset.exact) exactVals.push(preset.exact(x));
+  }
+
+  // Y range
+  var yMin=Infinity,yMax=-Infinity;
+  for(var i=0;i<N;i++){
+    [fVals[i],hVals[i]].forEach(function(v){
+      if(isFinite(v)){yMin=Math.min(yMin,v);yMax=Math.max(yMax,v);}
+    });
+    if(preset.exact&&isFinite(exactVals[i])){yMin=Math.min(yMin,exactVals[i]);yMax=Math.max(yMax,exactVals[i]);}
+  }
+  var margin=(yMax-yMin)*0.12||0.5;yMin-=margin;yMax+=margin;
+
+  var ax=drawGrid(ctx,W,H,PAD,xMin,xMax,yMin,yMax);
+
+  var pxs=xs.map(ax.px);
+
+  // f — gold dashed
+  drawCurve(ctx,pxs,fVals.map(ax.py),'#c8a430',2.5,[7,4]);
+
+  // Hf numerical — crimson
+  drawCurve(ctx,pxs,hVals.map(ax.py),'#9E1B32',2.2,[]);
+
+  // Exact — green dashed (if available)
+  if(preset.exact){
+    drawCurve(ctx,pxs,exactVals.map(ax.py),'#1a6a40',1.8,[4,3]);
+
+    // L2 error
+    var err=0,cnt=0;
+    for(var i=0;i<N;i++){
+      if(isFinite(hVals[i])&&isFinite(exactVals[i])){
+        var d=hVals[i]-exactVals[i];err+=d*d;cnt++;
+      }
+    }
+    err=Math.sqrt(err/Math.max(cnt,1));
+    ctx.font='11px "Crimson Pro",serif';ctx.fillStyle='var(--green)';ctx.textAlign='left';
+    ctx.fillText('‖numerical − exact‖ ≈ '+err.toExponential(2),PAD.l+8,PAD.t+14);
+  }
+}
+
+/* ══════════════════════════════════════════
+   Init
+══════════════════════════════════════════ */
+var resizeTimer;
+window.addEventListener('resize',function(){
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(function(){compute();computeSmooth();},200);
+});
+
+window.addEventListener('DOMContentLoaded',function(){
+  populateTheory();
+  renderTable();
+  compute();
+  computeSmooth();
+});
+</script>
+</body>
+</html>

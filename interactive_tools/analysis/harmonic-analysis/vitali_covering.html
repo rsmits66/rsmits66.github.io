@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitali's covering theorem · visualization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f0e8;
+    --paper: #faf7f1;
+    --ink: #1c1814;
+    --ink-2: #5a544c;
+    --ink-3: #8a8278;
+    --rule: #d9d3c5;
+    --rule-soft: #ebe5d6;
+    --accent: #7d1d2c;
+    --skip: #aaa49a;
+    --blowup: #b6492a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+    padding: 36px 32px 60px;
+  }
+  main {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 22px;
+    margin-bottom: 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 32px;
+  }
+  .title-block .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-weight: 400;
+    font-size: 38px;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+    font-style: italic;
+  }
+  h1 .roman { font-style: normal; }
+  .lemma {
+    font-size: 14.5px;
+    color: var(--ink-2);
+    max-width: 540px;
+    text-align: right;
+    line-height: 1.55;
+  }
+  .lemma .math {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .controls {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 22px 22px 18px;
+    position: sticky;
+    top: 24px;
+  }
+  .controls section + section {
+    border-top: 1px solid var(--rule-soft);
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+  .controls h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+  }
+  .domain-list { display: flex; flex-direction: column; gap: 2px; }
+  .domain-btn {
+    background: none;
+    border: none;
+    font-family: 'Spectral', serif;
+    font-size: 15px;
+    color: var(--ink-2);
+    text-align: left;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 120ms ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .domain-btn:hover {
+    color: var(--ink);
+    background: var(--rule-soft);
+  }
+  .domain-btn.active {
+    color: var(--ink);
+    border-left-color: var(--accent);
+    background: var(--rule-soft);
+    font-style: italic;
+  }
+  .domain-btn .desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    font-style: normal;
+  }
+
+  .mode-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mode-btn {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 6px;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+  }
+  .mode-btn:hover { background: var(--rule-soft); color: var(--ink); }
+  .mode-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .step-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .step-btn {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 6px;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+  }
+  .step-btn:hover { background: var(--rule-soft); color: var(--ink); }
+  .step-btn:disabled { opacity: 0.35; cursor: default; }
+  .step-progress {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .step-progress em { font-style: normal; color: var(--ink); }
+
+  .bucket-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .bucket-row {
+    display: grid;
+    grid-template-columns: 14px 18px 1fr 30px;
+    gap: 8px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-2);
+  }
+  .bucket-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid;
+  }
+  .bucket-row .label { color: var(--ink-3); }
+  .bucket-row .count { text-align: right; color: var(--ink); }
+  .bucket-row .range { color: var(--ink-2); font-size: 10px; }
+
+  .toggles { display: flex; flex-direction: column; gap: 8px; }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .toggle:hover { color: var(--ink); }
+  .toggle input { 
+    appearance: none;
+    width: 28px;
+    height: 16px;
+    background: var(--rule);
+    border-radius: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 150ms ease;
+    flex-shrink: 0;
+  }
+  .toggle input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--paper);
+    transition: transform 150ms ease;
+  }
+  .toggle input:checked { background: var(--ink); }
+  .toggle input:checked::after { transform: translateX(12px); }
+
+  .canvas-wrap {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px;
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--paper);
+    cursor: crosshair;
+  }
+  .canvas-corner {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  .info-bar {
+    margin-top: 18px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 16px 22px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+  }
+  .stat .value {
+    font-size: 22px;
+    font-weight: 400;
+    font-feature-settings: "tnum";
+    color: var(--ink);
+  }
+  .stat .value .unit {
+    font-size: 13px;
+    color: var(--ink-3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 4px;
+  }
+  .stat .value em {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-size: 18px;
+  }
+
+  .lemma-detail {
+    margin-top: 28px;
+    border-top: 1px solid var(--rule);
+    padding-top: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 30px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .lemma-detail h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .lemma-detail .formula {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--paper);
+    padding: 8px 10px;
+    margin: 8px 0;
+    border-left: 2px solid var(--accent);
+    font-size: 12px;
+    color: var(--ink);
+  }
+
+  @media (max-width: 980px) {
+    .workspace { grid-template-columns: 1fr; }
+    .controls { position: static; }
+    .info-bar { grid-template-columns: repeat(2, 1fr); }
+    .lemma-detail { grid-template-columns: 1fr; }
+    header { grid-template-columns: 1fr; }
+    .lemma { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="title-block">
+      <div class="eyebrow">Vitali · 5r covering theorem</div>
+      <h1>The greedy <span class="roman">disjoint subfamily</span></h1>
+    </div>
+    <p class="lemma">
+      For any family <span class="math">𝓕</span> of closed balls in <span class="math">ℝⁿ</span> with bounded diameter, there is a countable disjoint subfamily <span class="math">𝓖 ⊆ 𝓕</span> with <span class="math">⋃<sub>𝓕</sub> B ⊆ ⋃<sub>𝓖</sub> B̂</span>, where <span class="math">B̂</span> is the concentric ball of 5× the radius. Proof: bucket by diameter at scale 2, take a maximal disjoint subcollection in each bucket greedily.
+    </p>
+  </header>
+
+  <div class="workspace">
+    <aside class="controls">
+      <section>
+        <h2>Example family 𝓕</h2>
+        <div class="domain-list" id="exampleList"></div>
+      </section>
+
+      <section>
+        <h2>Display mode</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-mode="final">Final</button>
+          <button class="mode-btn" data-mode="bybucket">By bucket</button>
+          <button class="mode-btn" data-mode="step">Per ball</button>
+        </div>
+        <div id="stepGroup" style="display:none;">
+          <div class="step-controls">
+            <button class="step-btn" id="stepBack">◂ Back</button>
+            <button class="step-btn" id="stepFwd">Forward ▸</button>
+            <button class="step-btn" id="stepReset">Reset</button>
+            <button class="step-btn" id="stepEnd">Skip to end</button>
+          </div>
+          <div class="step-progress" id="stepProgress">step <em>0</em> / <em>0</em></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Buckets 𝓕<sub>j</sub></h2>
+        <div class="bucket-legend" id="bucketLegend"></div>
+      </section>
+
+      <section>
+        <h2>Show</h2>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="showAllBalls" checked> All balls 𝓕 (faint)</label>
+          <label class="toggle"><input type="checkbox" id="showSelected" checked> Selected 𝓖 (filled)</label>
+          <label class="toggle"><input type="checkbox" id="showBlowups" checked> 5× blow-ups B̂'</label>
+          <label class="toggle"><input type="checkbox" id="showSkipped" checked> Skipped balls</label>
+          <label class="toggle"><input type="checkbox" id="showCertificate"> Covering certificates</label>
+        </div>
+      </section>
+    </aside>
+
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="1800" height="1200"></canvas>
+        <div class="canvas-corner" id="cornerLabel">𝓕 · uniform mix</div>
+      </div>
+
+      <div class="info-bar">
+        <div class="stat">
+          <div class="label">|𝓕|</div>
+          <div class="value" id="statTotal">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">|𝓖|</div>
+          <div class="value" id="statSelected">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Buckets</div>
+          <div class="value" id="statBuckets">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">D = sup diam</div>
+          <div class="value" id="statD">—</div>
+        </div>
+      </div>
+
+      <div class="lemma-detail">
+        <div>
+          <h3>Step 1 · bucket</h3>
+          Sort by diameter and partition into geometric buckets:
+          <div class="formula">𝓕<sub>j</sub> = {B : D/2<sup>j</sup> &lt; diam B ≤ D/2<sup>j-1</sup>}</div>
+          Inside one bucket, all balls have diameters within a factor of 2.
+        </div>
+        <div>
+          <h3>Step 2 · greedy</h3>
+          Process buckets in order j = 1, 2, …. For each bucket, take any maximal disjoint subcollection that is also disjoint from all previously selected balls. Each ball is either selected or struck out (skipped) by an earlier selection.
+        </div>
+        <div>
+          <h3>Step 3 · 5× covers</h3>
+          By maximality of 𝓖<sub>j</sub>, every B ∈ 𝓕<sub>j</sub> meets some B' ∈ 𝓖<sub>1</sub> ∪ … ∪ 𝓖<sub>j</sub>; that B' has
+          <div class="formula">diam B' &gt; D/2<sup>j</sup> ≥ ½ diam B</div>
+          and the triangle inequality gives B ⊆ B̂' = concentric ball of radius 5 r(B').
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// =====================================================================
+// SEEDED RNG
+// =====================================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return (((t ^ (t >>> 14)) >>> 0)) / 4294967296;
+  };
+}
+
+// =====================================================================
+// EXAMPLE FAMILIES
+// =====================================================================
+const EXAMPLES = {
+  uniform: {
+    name: 'Uniform mix',
+    desc: '60 balls · radii 0.1–0.5',
+    gen: () => {
+      const rng = mulberry32(7);
+      const balls = [];
+      for (let i = 0; i < 60; i++) {
+        balls.push({
+          x: -4.4 + 8.8*rng(),
+          y: -2.7 + 5.4*rng(),
+          r: 0.1 + 0.4*rng(),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  powerlaw: {
+    name: 'Power-law sizes',
+    desc: 'wide range of scales',
+    gen: () => {
+      const rng = mulberry32(13);
+      const balls = [];
+      for (let i = 0; i < 120; i++) {
+        const u = rng();
+        balls.push({
+          x: -4.5 + 9*rng(),
+          y: -2.8 + 5.6*rng(),
+          r: 0.04 * Math.pow(20, rng()),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  fewLargeManySmall: {
+    name: 'Few large, many small',
+    desc: 'classic Vitali demo',
+    gen: () => {
+      const rng = mulberry32(31);
+      const balls = [];
+      for (let i = 0; i < 4; i++) {
+        balls.push({
+          x: -3.0 + 2.0*i,
+          y: -0.5 + 0.4*Math.sin(i*1.7),
+          r: 0.7 + 0.15*rng(),
+          id: i
+        });
+      }
+      for (let i = 0; i < 100; i++) {
+        balls.push({
+          x: -4.5 + 9*rng(),
+          y: -2.8 + 5.6*rng(),
+          r: 0.05 + 0.12*rng(),
+          id: i + 4
+        });
+      }
+      return balls;
+    }
+  },
+  cluster: {
+    name: 'Clustered',
+    desc: 'overlapping mid-size',
+    gen: () => {
+      const rng = mulberry32(99);
+      const balls = [];
+      for (let i = 0; i < 80; i++) {
+        // anisotropic cloud — wider than tall
+        const r = Math.sqrt(rng());
+        const t = 2*Math.PI*rng();
+        balls.push({
+          x: 2.4*r*Math.cos(t),
+          y: 1.5*r*Math.sin(t),
+          r: 0.15 + 0.4*rng(),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  grid: {
+    name: 'Grid + jitter',
+    desc: '10×6 perturbed lattice',
+    gen: () => {
+      const rng = mulberry32(11);
+      const balls = [];
+      let id = 0;
+      const cols = 10, rows = 6;
+      const dx = 0.85, dy = 0.85;
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const cx = -dx*(cols-1)/2 + dx*i + 0.3*(rng()-0.5);
+          const cy = -dy*(rows-1)/2 + dy*j + 0.3*(rng()-0.5);
+          balls.push({
+            x: cx, y: cy,
+            r: 0.15 + 0.3*rng(),
+            id: id++
+          });
+        }
+      }
+      return balls;
+    }
+  },
+  chain: {
+    name: 'Wavy chain',
+    desc: 'balls along a curve',
+    gen: () => {
+      const rng = mulberry32(57);
+      const balls = [];
+      const n = 90;
+      for (let i = 0; i < n; i++) {
+        const t = -4.4 + 8.8*i/(n-1);
+        const wob = 1.4 + 0.6*rng();
+        balls.push({
+          x: t + 0.3*(rng()-0.5),
+          y: wob*Math.sin(t*0.85) + 0.2*(rng()-0.5),
+          r: 0.12 + 0.18*rng(),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  nearTangent: {
+    name: 'Near-tangent ladder',
+    desc: 'why we need 5×',
+    gen: () => {
+      const balls = [];
+      let id = 0;
+      // A row of nearly-tangent equal balls; one gets selected,
+      // the next is blocked & must be covered by the 5× blow-up
+      const r = 0.32;
+      const eps = 0.01;
+      const N = 13;
+      const totalW = (N-1)*(2*r + eps);
+      for (let i = 0; i < N; i++) {
+        balls.push({
+          x: -totalW/2 + i*(2*r + eps),
+          y: 0,
+          r,
+          id: id++
+        });
+      }
+      // small perturbations above and below
+      const rng = mulberry32(3);
+      for (let i = 0; i < 40; i++) {
+        balls.push({
+          x: -4.4 + 8.8*rng(),
+          y: 1.4 + 1.3*(rng()-0.5),
+          r: 0.07 + 0.15*rng(),
+          id: id++
+        });
+      }
+      for (let i = 0; i < 40; i++) {
+        balls.push({
+          x: -4.4 + 8.8*rng(),
+          y: -1.4 + 1.3*(rng()-0.5),
+          r: 0.07 + 0.15*rng(),
+          id: id++
+        });
+      }
+      return balls;
+    }
+  },
+  multiscale: {
+    name: 'Multiscale',
+    desc: 'discrete size tiers',
+    gen: () => {
+      const rng = mulberry32(101);
+      const balls = [];
+      let id = 0;
+      const tiers = [
+        { r: 0.85, n: 7 },
+        { r: 0.40, n: 28 },
+        { r: 0.18, n: 80 },
+        { r: 0.08, n: 160 },
+      ];
+      for (const tier of tiers) {
+        for (let i = 0; i < tier.n; i++) {
+          balls.push({
+            x: -4.5 + 9*rng(),
+            y: -2.8 + 5.6*rng(),
+            r: tier.r * (0.85 + 0.3*rng()),
+            id: id++
+          });
+        }
+      }
+      return balls;
+    }
+  },
+};
+
+// =====================================================================
+// VITALI ALGORITHM
+// =====================================================================
+function runVitali(balls) {
+  if (balls.length === 0) return { events: [], selected: [], buckets: [], D: 0 };
+
+  // Sort by radius descending — within a bucket we use this order
+  const sorted = [...balls].sort((a, b) => b.r - a.r);
+  const D = 2 * sorted[0].r;
+
+  // Bucket by diameter at scale 2: F_j = {B : D/2^j < diam ≤ D/2^{j-1}}
+  // For diam = D, we want j = 1 (since D/2^0 = D, D/2^1 = D/2, so D/2 < D ≤ D)
+  const buckets = [];
+  for (const b of sorted) {
+    const diam = 2 * b.r;
+    let j;
+    if (diam >= D) {
+      j = 1;
+    } else {
+      // smallest j with D/2^{j-1} >= diam, i.e., 2^{j-1} <= D/diam
+      // j = floor(log2(D/diam)) + 1
+      j = Math.floor(Math.log2(D / diam)) + 1;
+      if (j < 1) j = 1;
+    }
+    while (buckets.length < j) buckets.push([]);
+    buckets[j - 1].push(b);
+  }
+
+  // Greedy selection
+  const events = [];
+  const selected = [];
+  for (let j = 0; j < buckets.length; j++) {
+    for (const b of buckets[j]) {
+      let blocker = null;
+      for (const g of selected) {
+        const d = Math.hypot(b.x - g.x, b.y - g.y);
+        if (d < b.r + g.r) { blocker = g; break; }
+      }
+      if (blocker) {
+        events.push({ ball: b, bucket: j + 1, action: 'skip', blocker });
+      } else {
+        selected.push(b);
+        events.push({ ball: b, bucket: j + 1, action: 'select' });
+      }
+    }
+  }
+
+  return { events, selected, buckets, D };
+}
+
+// =====================================================================
+// COLOR PALETTE per bucket index j
+// =====================================================================
+function bucketColor(j, alpha = 1) {
+  // j is 1-indexed; map j=1..K to a sequential warm→cool palette
+  const palette = [
+    [350, 70, 38],   // deep crimson
+    [25,  72, 44],   // burnt orange
+    [44,  62, 48],   // ochre
+    [85,  45, 42],   // olive
+    [165, 50, 38],   // teal
+    [205, 55, 38],   // ocean blue
+    [240, 45, 42],   // indigo
+    [275, 40, 42],   // violet
+    [310, 45, 40],   // magenta
+  ];
+  const i = Math.min(j - 1, palette.length - 1);
+  const [h, s, l] = palette[i];
+  return `hsla(${h}, ${s}%, ${l}%, ${alpha})`;
+}
+
+// =====================================================================
+// STATE
+// =====================================================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  exampleKey: 'uniform',
+  balls: [],
+  events: [],
+  selected: [],
+  buckets: [],
+  D: 0,
+  mode: 'final',
+  step: 0,            // 0..events.length
+  bucketCursor: 999,  // for bybucket mode
+  showAllBalls: true,
+  showSelected: true,
+  showBlowups: true,
+  showSkipped: true,
+  showCertificate: false,
+  highlightedBall: null,  // for click certificates
+};
+
+function recompute() {
+  state.balls = EXAMPLES[state.exampleKey].gen();
+  const r = runVitali(state.balls);
+  state.events = r.events;
+  state.selected = r.selected;
+  state.buckets = r.buckets;
+  state.D = r.D;
+  state.step = state.mode === 'step' ? 0 : state.events.length;
+  state.bucketCursor = state.mode === 'bybucket' ? 0 : state.buckets.length;
+  state.highlightedBall = null;
+  paintBucketLegend();
+  updateStepUI();
+}
+
+function getActiveEvents() {
+  // Determine which events count as "processed" given current mode
+  if (state.mode === 'final') return state.events;
+  if (state.mode === 'step') return state.events.slice(0, state.step);
+  if (state.mode === 'bybucket') {
+    return state.events.filter(e => e.bucket <= state.bucketCursor);
+  }
+  return state.events;
+}
+
+function getCurrentBall() {
+  if (state.mode === 'step' && state.step > 0 && state.step <= state.events.length) {
+    return state.events[state.step - 1];
+  }
+  return null;
+}
+
+// =====================================================================
+// VIEW TRANSFORM
+// =====================================================================
+function viewTransform() {
+  // World is roughly [-3.4, 3.4] vertically; widen horizontally to match 3:2 canvas
+  const Y0 = -3.4, Y1 = 3.4;
+  const halfW = (Y1 - Y0) * 0.5 * (3/2);
+  const X0 = -halfW, X1 = halfW;
+  const W = canvas.width, H = canvas.height;
+  const sx = W / (X1 - X0), sy = H / (Y1 - Y0);
+  const s = Math.min(sx, sy);
+  const offX = (W - s*(X1-X0)) / 2 - s*X0;
+  const offY = (H + s*(Y1-Y0)) / 2 + s*Y0;
+  return { s, tx: offX, ty: offY, X0, X1, Y0, Y1 };
+}
+
+function W2S(p, T) {
+  return [T.tx + T.s*p[0], T.ty - T.s*p[1]];
+}
+
+function S2W([x, y], T) {
+  return [(x - T.tx) / T.s, -(y - T.ty) / T.s];
+}
+
+// =====================================================================
+// DRAW
+// =====================================================================
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  let cssW = canvas.parentElement.clientWidth - 28;
+  const aspect = 3/2;  // wider than tall, like the Hayman view
+  let cssH = cssW / aspect;
+  // Cap the height so the canvas + header + info bar fit in a typical viewport
+  // without forcing the user to scroll.
+  const maxH = Math.max(380, window.innerHeight - 360);
+  if (cssH > maxH) {
+    cssH = maxH;
+    cssW = cssH * aspect;
+  }
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const T = viewTransform();
+
+  // Determine what's active
+  const active = getActiveEvents();
+  const activeIds = new Set(active.map(e => e.ball.id));
+  const selectedActive = active.filter(e => e.action === 'select').map(e => e.ball);
+  const skippedActive = active.filter(e => e.action === 'skip');
+
+  // ----- Layer 1: Faint "all balls" outline -----
+  if (state.showAllBalls) {
+    ctx.strokeStyle = 'rgba(122, 110, 88, 0.20)';
+    ctx.lineWidth = 1;
+    for (const b of state.balls) {
+      if (activeIds.has(b.id)) continue;  // will draw it later if selected/skipped
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r = T.s * b.r;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.stroke();
+    }
+  }
+
+  // ----- Layer 2: 5x blow-ups (drawn before the balls so they sit underneath) -----
+  if (state.showBlowups) {
+    for (const b of selectedActive) {
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r5 = T.s * b.r * 5;
+      ctx.fillStyle = bucketColor(getBucketOf(b), 0.04);
+      ctx.strokeStyle = bucketColor(getBucketOf(b), 0.30);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r5, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ----- Layer 3: Skipped balls (dashed gray outline) -----
+  if (state.showSkipped) {
+    for (const ev of skippedActive) {
+      const b = ev.ball;
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r = T.s * b.r;
+      ctx.strokeStyle = 'rgba(122, 110, 88, 0.55)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // a small × in the center to make it clearer
+      ctx.strokeStyle = 'rgba(122, 110, 88, 0.4)';
+      ctx.lineWidth = 1;
+      const m = Math.min(r * 0.4, 5);
+      ctx.beginPath();
+      ctx.moveTo(cx - m, cy - m); ctx.lineTo(cx + m, cy + m);
+      ctx.moveTo(cx - m, cy + m); ctx.lineTo(cx + m, cy - m);
+      ctx.stroke();
+    }
+  }
+
+  // ----- Layer 4: Selected balls (filled, colored by bucket) -----
+  if (state.showSelected) {
+    for (const b of selectedActive) {
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r = T.s * b.r;
+      const j = getBucketOf(b);
+      ctx.fillStyle = bucketColor(j, 0.32);
+      ctx.strokeStyle = bucketColor(j, 0.95);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.stroke();
+      // tiny center marker
+      ctx.fillStyle = bucketColor(j, 0.95);
+      ctx.beginPath();
+      ctx.arc(cx, cy, 1.5, 0, 2*Math.PI);
+      ctx.fill();
+    }
+  }
+
+  // ----- Layer 5: Per-step current ball highlight -----
+  const cur = getCurrentBall();
+  if (cur) {
+    const b = cur.ball;
+    const [cx, cy] = W2S([b.x, b.y], T);
+    const r = T.s * b.r;
+    ctx.strokeStyle = '#1c1814';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, 2*Math.PI);
+    ctx.stroke();
+    if (cur.action === 'skip' && cur.blocker) {
+      // draw line from current ball to its blocker
+      const [bx, by] = W2S([cur.blocker.x, cur.blocker.y], T);
+      ctx.strokeStyle = '#7d1d2c';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ----- Layer 6: Click-certificate -----
+  if (state.showCertificate && state.highlightedBall) {
+    const B = state.highlightedBall;
+    // Find a B' in selected with B ∩ B' ≠ ∅; pick the smallest such.
+    const candidates = state.selected
+      .filter(g => Math.hypot(B.x - g.x, B.y - g.y) < B.r + g.r);
+    if (candidates.length > 0) {
+      // Prefer one with diam B' >= diam B / 2 (the proof's certificate)
+      let cert = candidates.find(g => g.r >= B.r / 2);
+      if (!cert) cert = candidates[0];
+      const [cx, cy] = W2S([B.x, B.y], T);
+      const [c2x, c2y] = W2S([cert.x, cert.y], T);
+      const r = T.s * B.r;
+      const r2 = T.s * cert.r;
+      const r5 = T.s * cert.r * 5;
+      // highlight B itself
+      ctx.strokeStyle = '#1c1814';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.stroke();
+      // highlight cert
+      ctx.strokeStyle = '#1c1814';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(c2x, c2y, r2, 0, 2*Math.PI);
+      ctx.stroke();
+      // draw the 5× blow-up of cert
+      ctx.strokeStyle = '#7d1d2c';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.arc(c2x, c2y, r5, 0, 2*Math.PI);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // draw connecting line
+      ctx.strokeStyle = 'rgba(28, 24, 20, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(c2x, c2y);
+      ctx.stroke();
+    }
+  }
+
+  updateStats();
+}
+
+// =====================================================================
+// HELPERS
+// =====================================================================
+const _bucketOf = new Map();
+function getBucketOf(b) {
+  if (_bucketOf.has(b.id)) return _bucketOf.get(b.id);
+  for (let j = 0; j < state.buckets.length; j++) {
+    for (const x of state.buckets[j]) {
+      if (x.id === b.id) { _bucketOf.set(b.id, j + 1); return j + 1; }
+    }
+  }
+  return 1;
+}
+function clearBucketCache() { _bucketOf.clear(); }
+
+function updateStats() {
+  document.getElementById('statTotal').innerHTML = `<em>${state.balls.length}</em>`;
+  const numSel = state.mode === 'final' ? state.selected.length :
+                 getActiveEvents().filter(e => e.action === 'select').length;
+  document.getElementById('statSelected').innerHTML =
+    `<em>${numSel}</em><span class="unit">disjoint</span>`;
+  document.getElementById('statBuckets').innerHTML = `<em>${state.buckets.length}</em>`;
+  document.getElementById('statD').innerHTML =
+    `<em>${state.D.toFixed(2)}</em>`;
+  document.getElementById('cornerLabel').textContent =
+    `𝓕 · ${EXAMPLES[state.exampleKey].name}`;
+}
+
+function paintBucketLegend() {
+  const el = document.getElementById('bucketLegend');
+  el.innerHTML = '';
+  if (state.buckets.length === 0) return;
+  for (let j = 0; j < state.buckets.length; j++) {
+    const count = state.buckets[j].length;
+    const sel = state.buckets[j].filter(b =>
+      state.selected.some(s => s.id === b.id)).length;
+    const top = state.D / Math.pow(2, j);
+    const bot = state.D / Math.pow(2, j+1);
+    const row = document.createElement('div');
+    row.className = 'bucket-row';
+    row.innerHTML = `
+      <div class="bucket-swatch" style="background:${bucketColor(j+1, 0.3)}; border-color:${bucketColor(j+1, 1)}"></div>
+      <span class="label">𝓕<sub>${j+1}</sub></span>
+      <span class="range">(${bot.toFixed(2)}, ${top.toFixed(2)}]</span>
+      <span class="count">${sel}/${count}</span>
+    `;
+    el.appendChild(row);
+  }
+}
+
+function updateStepUI() {
+  document.getElementById('stepProgress').innerHTML =
+    `step <em>${state.step}</em> / <em>${state.events.length}</em>`;
+  document.getElementById('stepBack').disabled = state.step === 0;
+  document.getElementById('stepFwd').disabled = state.step === state.events.length;
+  document.getElementById('stepReset').disabled = state.step === 0;
+  document.getElementById('stepEnd').disabled = state.step === state.events.length;
+}
+
+// =====================================================================
+// UI WIRING
+// =====================================================================
+function buildExampleList() {
+  const list = document.getElementById('exampleList');
+  for (const key of Object.keys(EXAMPLES)) {
+    const btn = document.createElement('button');
+    btn.className = 'domain-btn' + (key === state.exampleKey ? ' active' : '');
+    btn.dataset.key = key;
+    btn.innerHTML = `<span>${EXAMPLES[key].name}</span><span class="desc">${EXAMPLES[key].desc}</span>`;
+    btn.addEventListener('click', () => {
+      state.exampleKey = key;
+      document.querySelectorAll('.domain-btn').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+      clearBucketCache();
+      recompute();
+      draw();
+    });
+    list.appendChild(btn);
+  }
+}
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+    document.getElementById('stepGroup').style.display = state.mode === 'step' ? '' : 'none';
+    if (state.mode === 'step') state.step = 0;
+    else if (state.mode === 'bybucket') {
+      state.bucketCursor = 0;
+      // animate buckets
+      if (state.bucketTimer) clearInterval(state.bucketTimer);
+      state.bucketTimer = setInterval(() => {
+        state.bucketCursor++;
+        if (state.bucketCursor > state.buckets.length) {
+          clearInterval(state.bucketTimer);
+          state.bucketTimer = null;
+        }
+        draw();
+      }, 700);
+    } else {
+      state.step = state.events.length;
+    }
+    if (state.bucketTimer && state.mode !== 'bybucket') {
+      clearInterval(state.bucketTimer); state.bucketTimer = null;
+    }
+    updateStepUI();
+    draw();
+  });
+});
+
+document.getElementById('stepFwd').addEventListener('click', () => {
+  if (state.step < state.events.length) state.step++;
+  updateStepUI();
+  draw();
+});
+document.getElementById('stepBack').addEventListener('click', () => {
+  if (state.step > 0) state.step--;
+  updateStepUI();
+  draw();
+});
+document.getElementById('stepReset').addEventListener('click', () => {
+  state.step = 0;
+  updateStepUI();
+  draw();
+});
+document.getElementById('stepEnd').addEventListener('click', () => {
+  state.step = state.events.length;
+  updateStepUI();
+  draw();
+});
+
+['showAllBalls','showSelected','showBlowups','showSkipped','showCertificate'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    state[id] = e.target.checked;
+    if (id === 'showCertificate' && !e.target.checked) state.highlightedBall = null;
+    draw();
+  });
+});
+
+// Click on canvas to pick a "certificate ball" — show which 5x cover contains it
+canvas.addEventListener('click', (ev) => {
+  if (!state.showCertificate) return;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const sx = (ev.clientX - rect.left) * dpr;
+  const sy = (ev.clientY - rect.top) * dpr;
+  const T = viewTransform();
+  const [wx, wy] = S2W([sx, sy], T);
+  // pick nearest ball to click point that contains the click
+  let best = null, bestD = Infinity;
+  for (const b of state.balls) {
+    const d = Math.hypot(wx - b.x, wy - b.y);
+    if (d <= b.r && d < bestD) { best = b; bestD = d; }
+  }
+  state.highlightedBall = best;
+  draw();
+});
+
+window.addEventListener('resize', draw);
+
+// =====================================================================
+// INIT
+// =====================================================================
+buildExampleList();
+recompute();
+draw();
+</script>
+</body>
+</html>

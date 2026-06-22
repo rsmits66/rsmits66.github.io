@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bessel capacity of a disk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  options: { renderActions: { addMenu: [] } }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root {
+  --bg: #f4efe3;
+  --bg-card: #faf6ec;
+  --bg-deep: #ede5d2;
+  --bg-soft: #f9f3e3;
+  --ink: #1c1813;
+  --ink-soft: #4a423a;
+  --ink-fade: #7a7066;
+  --rule: #c9bea8;
+  --rule-soft: #d8cfba;
+  --accent: #8b2e2e;
+  --accent-deep: #6e2424;
+  --accent-soft: rgba(139,46,46,0.08);
+  --slate: #3d4d5c;
+  --warning: #8a5a00;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 0%, rgba(139,46,46,0.06), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(61,77,92,0.05), transparent 50%);
+  color: var(--ink);
+  font-family: 'EB Garamond', 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 56px 36px 96px;
+}
+@media (max-width: 720px) { .container { padding: 36px 22px 64px; } }
+
+header {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 30px;
+  margin-bottom: 36px;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--accent), transparent);
+  opacity: 0.4;
+}
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: 46px;
+  line-height: 1.05;
+  margin: 0 0 14px;
+  letter-spacing: -0.012em;
+}
+h1 em { font-style: italic; font-weight: 500; color: var(--accent); }
+.lede {
+  font-size: 17.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  max-width: 720px;
+  margin: 0;
+}
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-fade);
+  margin: 0 0 12px;
+  font-weight: 500;
+}
+
+.formula-box {
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--accent);
+  padding: 18px 26px 14px;
+  margin: 32px 0 40px;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+.formula-box p { margin: 0 0 6px; }
+.formula-box mjx-container { margin: 0.5em 0 !important; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 28px;
+  margin-top: 32px;
+}
+@media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  padding: 20px 22px;
+}
+.controls h2 { font-size: 22px; margin-bottom: 18px; }
+
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input-cell { margin-bottom: 12px; }
+.input-cell label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-fade);
+  margin-bottom: 6px;
+}
+.input-cell label em {
+  font-style: italic;
+  color: var(--accent);
+  font-family: 'Cormorant Garamond', serif;
+  text-transform: none;
+  font-size: 16px;
+  letter-spacing: 0;
+  margin-right: 4px;
+}
+input[type="number"] {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 9px 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+}
+input[type="number"]:focus { outline: none; border-color: var(--accent); }
+.hint { color: var(--ink-fade); font-size: 12px; font-style: italic; margin-top: 4px; }
+
+.controls-divider {
+  height: 1px;
+  background: var(--rule-soft);
+  margin: 14px 0;
+}
+
+button {
+  background: var(--ink);
+  color: var(--bg-card);
+  border: none;
+  padding: 11px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.08s ease;
+  width: 100%;
+}
+button:hover { background: var(--accent); }
+button:active { transform: translateY(1px); }
+button:disabled { background: var(--rule); cursor: wait; opacity: 0.7; }
+button.secondary {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+}
+button.secondary:hover { background: var(--bg-deep); color: var(--ink); }
+.button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+.status {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--rule-soft);
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  min-height: 44px;
+}
+.status strong { font-style: normal; color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+.status em { color: var(--ink); }
+.status .warn { color: var(--warning); font-style: normal; font-weight: 500; }
+.status sub { font-size: 0.7em; }
+
+.formula-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg-deep);
+  padding: 9px 11px;
+  margin-top: 14px;
+  color: var(--ink-soft);
+  overflow-x: auto;
+  white-space: nowrap;
+  border-left: 2px solid var(--accent);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1100px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .summary-grid { grid-template-columns: 1fr; } }
+.metric {
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  padding: 13px 14px;
+}
+.metric .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-fade);
+  margin-bottom: 6px;
+}
+.metric .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  word-break: break-all;
+}
+.metric .small {
+  color: var(--ink-fade);
+  font-size: 12px;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.diagnostic {
+  background: var(--bg-soft);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--slate);
+  padding: 12px 16px;
+  margin-bottom: 28px;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.diagnostic strong { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-style: normal; }
+.diagnostic em { color: var(--ink); }
+.diagnostic .warn { color: var(--warning); font-style: normal; font-weight: 500; }
+
+.plot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+@media (max-width: 920px) { .plot-grid { grid-template-columns: 1fr; } }
+.plot-section {}
+.plot-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.plot-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--ink);
+}
+.plot-title em { font-weight: 500; color: var(--accent); }
+.plot-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-fade);
+}
+.plot {
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  padding: 4px;
+  width: 100%;
+}
+.plot svg { display: block; width: 100%; height: auto; }
+
+.table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  max-height: 360px;
+  overflow: auto;
+  margin-bottom: 18px;
+}
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+}
+th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-deep);
+  color: var(--ink-fade);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+th:first-child, td:first-child { text-align: left; }
+tr:last-child td { border-bottom: none; }
+
+details {
+  margin-top: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  padding: 12px 18px;
+}
+details summary {
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+details[open] summary { color: var(--accent); margin-bottom: 8px; }
+details p { margin: 8px 0; font-size: 14.5px; color: var(--ink-soft); font-style: italic; }
+details .formula-pill { white-space: normal; }
+
+.notes {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+  font-size: 14.5px;
+  color: var(--ink-fade);
+  line-height: 1.6;
+}
+.notes p { margin: 8px 0; }
+.notes em { color: var(--accent); font-style: italic; }
+.notes code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  background: var(--bg-deep);
+  padding: 1px 5px;
+}
+
+.loading {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--bg-card);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: -1px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="eyebrow">Bessel · α · p · capacity</div>
+    <h1>The capacity of a <em>disk</em></h1>
+    <p class="lede">Numerical estimate of $B_{\alpha,p}(\overline{B_R}) = \inf\{\,\|f\|_p^p : f \ge 0,\ G_\alpha * f \ge 1 \text{ on } \overline{B_R}\,\}$ in $\mathbb R^2$, via the heat-semigroup representation of $G_\alpha$ and projected dual ascent with backtracking.</p>
+  </header>
+
+  <div class="formula-box">
+    <p>The Bessel kernel obeys the heat-semigroup identity</p>
+    <p>$$G_\alpha * f \;=\; \frac{1}{\Gamma(\alpha/2)}\int_0^\infty t^{\alpha/2 - 1}\,e^{-t}\,e^{t\Delta} f \,dt,\qquad \alpha &gt; 0.$$</p>
+    <p>The unresolved small-time tail $\int_0^{t_0}$ is folded into a local-identity contribution $\gamma(\alpha/2,\,t_0)/\Gamma(\alpha/2)$; the rest is computed by Gauss–Legendre quadrature on $\log t$. As $\alpha \downarrow 0$ the kernel approaches $\delta$, so $B_{\alpha,p}(\overline{B_R}) \to \pi R^2$.</p>
+  </div>
+
+  <div class="layout">
+    <aside class="controls card">
+      <h2>Inputs</h2>
+      <div class="input-row">
+        <div class="input-cell">
+          <label><em>R</em>radius</label>
+          <input id="radius" type="number" min="0.02" step="0.05" value="3.00" />
+        </div>
+        <div class="input-cell">
+          <label><em>α</em>order</label>
+          <input id="alpha" type="number" min="0" max="6" step="0.05" value="1.00" />
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-cell">
+          <label><em>p</em>exponent</label>
+          <input id="p" type="number" min="1.1" max="8" step="0.05" value="4.00" />
+        </div>
+        <div class="input-cell">
+          <label><em>L</em>outer</label>
+          <input id="tail" type="number" min="0" step="0.25" value="0" />
+          <div class="hint">0 = auto</div>
+        </div>
+      </div>
+
+      <div class="controls-divider"></div>
+
+      <h3>Numerics</h3>
+      <div class="input-row">
+        <div class="input-cell">
+          <label>annuli N</label>
+          <input id="N" type="number" min="40" max="320" step="10" value="180" />
+        </div>
+        <div class="input-cell">
+          <label>quadrature Q</label>
+          <input id="Q" type="number" min="24" max="120" step="8" value="64" />
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-cell">
+          <label>checks</label>
+          <input id="checks" type="number" min="8" max="120" step="4" value="56" />
+        </div>
+        <div class="input-cell">
+          <label>iterations</label>
+          <input id="iterations" type="number" min="200" max="8000" step="100" value="3200" />
+        </div>
+      </div>
+      <div class="input-cell">
+        <label>initial step</label>
+        <input id="lr" type="number" min="0.005" max="2" step="0.005" value="0.10" />
+        <div class="hint">backtracked, so this is just a seed</div>
+      </div>
+
+      <div class="controls-divider"></div>
+      <button id="runBtn">Compute capacity</button>
+      <div class="button-row">
+        <button class="secondary" id="exampleBtn" type="button">Examples</button>
+        <button class="secondary" id="csvBtn" type="button" disabled>Export CSV</button>
+      </div>
+      <div class="status" id="status">Ready. Click <em>Compute capacity</em> or load an example.</div>
+
+      <div class="formula-pill">B<sub>α,p</sub>(E) = inf ∫ f(x)<sup>p</sup> dx,&nbsp; f ≥ 0, G<sub>α</sub>*f ≥ 1 on E</div>
+    </aside>
+
+    <main class="output">
+      <h2>Numerical output</h2>
+      <div class="summary-grid">
+        <div class="metric">
+          <div class="label">Estimate B<sub>α,p</sub>(B̄<sub>R</sub>)</div>
+          <div class="value" id="capValue">—</div>
+          <div class="small" id="capSmall">run computation</div>
+        </div>
+        <div class="metric">
+          <div class="label">Area πR²</div>
+          <div class="value" id="areaValue">—</div>
+          <div class="small">α ↓ 0 limit</div>
+        </div>
+        <div class="metric">
+          <div class="label">min u on disk</div>
+          <div class="value" id="minU">—</div>
+          <div class="small">after rescaling</div>
+        </div>
+        <div class="metric">
+          <div class="label">max u on disk</div>
+          <div class="value" id="maxU">—</div>
+          <div class="small">sampled checks</div>
+        </div>
+        <div class="metric">
+          <div class="label">local mass</div>
+          <div class="value" id="localMass">—</div>
+          <div class="small">small-time identity</div>
+        </div>
+      </div>
+      <div class="diagnostic" id="diagnostic">
+        Click <em>Compute capacity</em>. The solver builds the kernel matrix, performs projected dual ascent with backtracking, and rescales the recovered primal so $\min_{\overline{B_R}} u^* = 1$.
+      </div>
+
+      <div class="plot-grid">
+        <div class="plot-section">
+          <div class="plot-header">
+            <div class="plot-title">Extremal density&nbsp;<em>f*(r)</em></div>
+            <div class="plot-tag" id="fPlotInfo">—</div>
+          </div>
+          <div class="plot" id="plotF" style="min-height:260px"></div>
+        </div>
+        <div class="plot-section">
+          <div class="plot-header">
+            <div class="plot-title">Potential&nbsp;<em>u*(r)</em>&nbsp;= G<sub>α</sub>*f*</div>
+            <div class="plot-tag" id="uPlotInfo">—</div>
+          </div>
+          <div class="plot" id="plotU" style="min-height:260px"></div>
+        </div>
+      </div>
+
+      <h2>Sample values</h2>
+      <div class="table-wrap">
+        <table id="sampleTable">
+          <thead><tr><th>r</th><th>f*(r)</th><th>u*(r)</th><th>inside disk?</th></tr></thead>
+          <tbody><tr><td colspan="4" style="text-align:left; color:var(--ink-fade); font-style: italic;">No data yet.</td></tr></tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>method &amp; small-α stability</summary>
+        <p>Direct pointwise evaluation of the Bessel kernel becomes ill-conditioned as $\alpha \downarrow 0$: the kernel develops an integrable $|x|^{\alpha - 2}$ singularity at the origin, and any radial discretization can miss most of the local mass. The mass-loss feeds back into the dual ascent and pushes $f$ artificially upward.</p>
+        <p>This solver instead writes</p>
+        <div class="formula-pill">G<sub>α</sub> * f = (1/Γ(α/2)) ∫<sub>0</sub><sup>∞</sup> e<sup>−t</sup> t<sup>α/2−1</sup> e<sup>tΔ</sup>f dt</div>
+        <p>and approximates the small-time slab $\int_0^{t_0}$ as the identity operator scaled by $\gamma(\alpha/2,\,t_0)/\Gamma(\alpha/2)$ — exact in the $t \to 0$ limit and quantitatively accurate for $t_0 \sim (0.35\,\Delta r)^2$. The remaining heat-flow integral is Gauss–Legendre on $\log t$, so the prefactor $t^{\alpha/2-1}$ never blows up.</p>
+        <p>Dual ascent uses backtracking line search so the dual objective is monotone — no fixed-step limit cycles.</p>
+      </details>
+    </main>
+  </div>
+
+  <div class="notes">
+    <p>Best behaviour in the supercritical regime <em>αp &gt; 2</em>; for borderline parameters (αp ≤ 2) the equilibrium density develops a strong boundary singularity, but the heat-kernel construction stays stable. Try <code>R=3, α=1, p=4</code> ($B \approx 58$, vs. $\approx 49$ for the bare circle&nbsp;$C_R$), <code>R=1, α=2, p=2</code> ($B \approx 24$), <code>R=1, α=0.1, p=2</code> ($B \approx 3.8$, close to $\pi$), or <code>R=1, α=0.5, p=2</code> ($B \approx 6.9$).</p>
+    <p>If results look unstable, raise <em>annuli&nbsp;N</em> and <em>iterations</em>, or shrink the <em>initial step</em>. The <em>checks</em> field controls how densely the constraint $u^* \ge 1$ is sampled inside the disk — boost it if you see a noisy <em>u*</em> profile near $r = R$.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const TWO_PI = 2 * Math.PI;
+const FOUR_PI = 4 * Math.PI;
+
+const COLORS = {
+  ink: '#1c1813',
+  inkSoft: '#4a423a',
+  inkFade: '#7a7066',
+  rule: '#c9bea8',
+  ruleSoft: '#d8cfba',
+  accent: '#8b2e2e',
+  slate: '#3d4d5c'
+};
+
+let lastResult = null;
+
+// ============================================================
+//   MATH PRIMITIVES                                  (from explorer)
+// ============================================================
+
+function logGamma(z) {
+  const coeff = [
+    676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+    9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (z < 0.5) return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
+  z -= 1;
+  let x = 0.99999999999980993;
+  for (let i = 0; i < coeff.length; i++) x += coeff[i] / (z + i + 1);
+  const t = z + coeff.length - 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function regularizedLowerGamma(a, x) {
+  if (x <= 0) return 0;
+  if (!Number.isFinite(x)) return 1;
+  const gln = logGamma(a);
+  const EPS = 1e-13;
+  const ITMAX = 200;
+  const FPMIN = 1e-300;
+  if (x < a + 1) {
+    let ap = a, sum = 1 / a, del = sum;
+    for (let n = 1; n <= ITMAX; n++) {
+      ap += 1; del *= x / ap; sum += del;
+      if (Math.abs(del) < Math.abs(sum) * EPS) break;
+    }
+    return Math.max(0, Math.min(1, sum * Math.exp(-x + a * Math.log(x) - gln)));
+  }
+  let b = x + 1 - a, c = 1 / FPMIN, d = 1 / Math.max(b, FPMIN), h = d;
+  for (let i = 1; i <= ITMAX; i++) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = b + an / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; const del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  const q = Math.exp(-x + a * Math.log(x) - gln) * h;
+  return Math.max(0, Math.min(1, 1 - q));
+}
+
+function gaussLegendre(n, a, b) {
+  const x = new Float64Array(n), w = new Float64Array(n);
+  const m = Math.floor((n + 1) / 2);
+  const xm = 0.5 * (b + a), xl = 0.5 * (b - a);
+  const EPS = 1e-14;
+  for (let i = 0; i < m; i++) {
+    let z = Math.cos(Math.PI * (i + 0.75) / (n + 0.5));
+    let z1, pp = 0;
+    do {
+      let p1 = 1, p2 = 0;
+      for (let j = 1; j <= n; j++) {
+        const p3 = p2; p2 = p1;
+        p1 = ((2 * j - 1) * z * p2 - (j - 1) * p3) / j;
+      }
+      pp = n * (z * p1 - p2) / (z * z - 1);
+      z1 = z; z = z1 - p1 / pp;
+    } while (Math.abs(z - z1) > EPS);
+    x[i] = xm - xl * z;
+    x[n - 1 - i] = xm + xl * z;
+    const wi = 2 * xl / ((1 - z * z) * pp * pp);
+    w[i] = wi; w[n - 1 - i] = wi;
+  }
+  return { x, w };
+}
+
+function besselI0e(x) {
+  x = Math.abs(x);
+  if (x < 3.75) {
+    const y = (x / 3.75) ** 2;
+    const i0 = 1 + y * (3.5156229 + y * (3.0899424 + y * (1.2067492 + y * (0.2659732 + y * (0.0360768 + y * 0.0045813)))));
+    return i0 * Math.exp(-x);
+  }
+  const y = 3.75 / x;
+  const poly = 0.39894228 + y * (0.01328592 + y * (0.00225319 + y * (-0.00157565 + y * (0.00916281 + y * (-0.02057706 + y * (0.02635537 + y * (-0.01647633 + y * 0.00392377)))))));
+  return poly / Math.sqrt(x);
+}
+
+function annulusIndex(r, dr, n) {
+  const rr = Math.max(0, r - 1e-12);
+  return Math.max(0, Math.min(n - 1, Math.floor(rr / dr)));
+}
+
+function uniqueSorted(values, tol = 1e-10) {
+  values.sort((a, b) => a - b);
+  const out = [];
+  for (const v of values) {
+    if (out.length === 0 || Math.abs(v - out[out.length - 1]) > tol) out.push(v);
+  }
+  return new Float64Array(out);
+}
+
+function makeConstraintRadii(R, sourceRadii, extraChecks) {
+  const vals = [0, R];
+  for (const s of sourceRadii) if (s <= R + 1e-12) vals.push(s);
+  const n = Math.max(2, extraChecks);
+  for (let j = 0; j < n; j++) vals.push(R * j / (n - 1));
+  return uniqueSorted(vals);
+}
+
+function matVec(K, x) {
+  const m = K.length;
+  const y = new Float64Array(m);
+  for (let j = 0; j < m; j++) {
+    const row = K[j];
+    let s = 0;
+    for (let i = 0; i < x.length; i++) s += row[i] * x[i];
+    y[j] = s;
+  }
+  return y;
+}
+
+function transposeVec(K, lambda, n) {
+  const a = new Float64Array(n);
+  for (let j = 0; j < K.length; j++) {
+    const row = K[j];
+    const lj = lambda[j];
+    if (lj === 0) continue;
+    for (let i = 0; i < n; i++) a[i] += row[i] * lj;
+  }
+  return a;
+}
+
+function recoverPrimal(K, lambda, weights, p) {
+  const n = weights.length;
+  const a = transposeVec(K, lambda, n);
+  const f = new Float64Array(n);
+  const exponent = 1 / (p - 1);
+  for (let i = 0; i < n; i++) {
+    const val = Math.max(0, a[i]) / (p * weights[i]);
+    f[i] = val > 0 ? Math.pow(val, exponent) : 0;
+    if (!Number.isFinite(f[i])) f[i] = 0;
+  }
+  return f;
+}
+
+function weightedLpPower(f, weights, p) {
+  let total = 0;
+  for (let i = 0; i < f.length; i++) total += weights[i] * Math.pow(Math.max(0, f[i]), p);
+  return total;
+}
+
+function minMax(arr) {
+  let mn = Infinity, mx = -Infinity;
+  for (const v of arr) { if (v < mn) mn = v; if (v > mx) mx = v; }
+  return [mn, mx];
+}
+
+function dualObjective(K, lambda, weights, p) {
+  const f = recoverPrimal(K, lambda, weights, p);
+  const u = matVec(K, f);
+  let obj = 0;
+  for (let j = 0; j < lambda.length; j++) obj += lambda[j];
+  obj -= (p - 1) * weightedLpPower(f, weights, p);
+  return { obj, f, u };
+}
+
+async function buildHeatBesselMatrix(evalRadii, sourceRadii, weights, alpha, dr, quadNodes, label) {
+  const n = sourceRadii.length;
+  const K = new Array(evalRadii.length);
+  for (let j = 0; j < evalRadii.length; j++) K[j] = new Float64Array(n);
+
+  if (alpha <= 1e-14) {
+    for (let j = 0; j < evalRadii.length; j++) K[j][annulusIndex(evalRadii[j], dr, n)] = 1;
+    return { K, localMass: 1, tLocal: 0, tMax: 0 };
+  }
+
+  const a = alpha / 2;
+  const tLocal = Math.max(1e-8, Math.pow(0.35 * dr, 2));
+  const tMax = 50;
+  const localMass = regularizedLowerGamma(a, tLocal);
+
+  for (let j = 0; j < evalRadii.length; j++) {
+    K[j][annulusIndex(evalRadii[j], dr, n)] += localMass;
+  }
+
+  const y0 = Math.log(tLocal);
+  const y1 = Math.log(tMax);
+  const quad = gaussLegendre(quadNodes, y0, y1);
+  const lg = logGamma(a);
+
+  for (let q = 0; q < quadNodes; q++) {
+    const y = quad.x[q];
+    const t = Math.exp(y);
+    const logProbWeight = -t + a * y - lg;
+    const probWeight = quad.w[q] * Math.exp(logProbWeight);
+    if (probWeight < 1e-18) continue;
+    const heatFactor = probWeight / (FOUR_PI * t);
+
+    for (let j = 0; j < evalRadii.length; j++) {
+      const r = evalRadii[j];
+      const row = K[j];
+      for (let i = 0; i < n; i++) {
+        const s = sourceRadii[i];
+        const z = (r * s) / (2 * t);
+        const avg = Math.exp(-((r - s) * (r - s)) / (4 * t)) * besselI0e(z);
+        row[i] += heatFactor * weights[i] * avg;
+      }
+    }
+
+    if (q % 8 === 0 || q === quadNodes - 1) {
+      setStatus(`Building ${label} kernel matrix… ${(100 * (q + 1) / quadNodes).toFixed(0)}%`);
+      await sleep(0);
+    }
+  }
+
+  return { K, localMass, tLocal, tMax };
+}
+
+async function solveDual(K, weights, p, iterations, initialStep) {
+  const m = K.length;
+  const lambda = new Float64Array(m);
+  for (let j = 0; j < m; j++) lambda[j] = 1e-6;
+
+  let step = initialStep;
+  let current = dualObjective(K, lambda, weights, p);
+
+  for (let t = 1; t <= iterations; t++) {
+    const grad = new Float64Array(m);
+    for (let j = 0; j < m; j++) grad[j] = 1 - current.u[j];
+
+    let accepted = null;
+    let trialStep = step;
+    for (let bt = 0; bt < 32; bt++) {
+      const trialLambda = new Float64Array(m);
+      for (let j = 0; j < m; j++) trialLambda[j] = Math.max(0, lambda[j] + trialStep * grad[j]);
+      const trial = dualObjective(K, trialLambda, weights, p);
+      if (trial.obj >= current.obj - 1e-12 || trialStep < 1e-10) {
+        accepted = { lambda: trialLambda, state: trial, step: trialStep };
+        break;
+      }
+      trialStep *= 0.5;
+    }
+
+    if (!accepted) throw new Error("Dual line search failed. Try fewer annuli or a smaller initial step.");
+    lambda.set(accepted.lambda);
+    current = accepted.state;
+    step = Math.min(20, accepted.step * 1.03);
+
+    if (t % 100 === 0 || t === iterations) {
+      const mm = minMax(current.u);
+      setStatus(`Dual iteration ${t}/${iterations} · min u=${fmt(mm[0], 5)} · max u=${fmt(mm[1], 5)}.`);
+      await sleep(0);
+    }
+  }
+
+  return { lambda, f: current.f, u: current.u, objective: current.obj };
+}
+
+// ============================================================
+//   PLOTTING                                          (my SVG renderer)
+// ============================================================
+
+function escapeXml(s) {
+  return String(s).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+}
+
+function niceTicks(min, max, target) {
+  const range = max - min;
+  if (!(range > 0)) return [min];
+  const rawStep = range / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  let step;
+  if (norm < 1.5) step = 1 * mag;
+  else if (norm < 3.5) step = 2 * mag;
+  else if (norm < 7.5) step = 5 * mag;
+  else step = 10 * mag;
+  const ticks = [];
+  const lo = Math.ceil(min / step) * step;
+  for (let v = lo; v <= max + 1e-9; v += step) ticks.push(Number(v.toFixed(12)));
+  return ticks;
+}
+
+function fmtTick(v) {
+  if (v === 0) return '0';
+  const abs = Math.abs(v);
+  if (abs < 0.001 || abs >= 10000) return v.toExponential(1);
+  if (abs < 1) return v.toFixed(2).replace(/\.?0+$/, '');
+  if (abs < 10) return v.toFixed(2).replace(/\.?0+$/, '');
+  if (abs < 100) return v.toFixed(1).replace(/\.?0+$/, '');
+  return Math.round(v).toString();
+}
+
+function renderPlot(containerId, opts) {
+  const W = 640, H = 320;
+  const m = { left: 64, right: 18, top: 18, bottom: 38 };
+  const plotW = W - m.left - m.right;
+  const plotH = H - m.top - m.bottom;
+
+  const xMin = opts.xMin, xMax = opts.xMax;
+  const yMin = opts.yMin, yMax = opts.yMax;
+  const sx = x => m.left + (x - xMin) / (xMax - xMin) * plotW;
+  const sy = y => m.top + plotH - (y - yMin) / (yMax - yMin) * plotH;
+
+  const xTicks = niceTicks(xMin, xMax, 6);
+  const yTicks = niceTicks(yMin, yMax, 5);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+  for (const t of xTicks) {
+    if (t < xMin - 1e-9 || t > xMax + 1e-9) continue;
+    const px = sx(t);
+    svg += `<line x1="${px.toFixed(1)}" y1="${m.top}" x2="${px.toFixed(1)}" y2="${m.top + plotH}" stroke="${COLORS.ruleSoft}" stroke-width="0.5"/>`;
+  }
+  for (const t of yTicks) {
+    if (t < yMin - 1e-9 || t > yMax + 1e-9) continue;
+    const py = sy(t);
+    svg += `<line x1="${m.left}" y1="${py.toFixed(1)}" x2="${m.left + plotW}" y2="${py.toFixed(1)}" stroke="${COLORS.ruleSoft}" stroke-width="0.5"/>`;
+  }
+
+  if (opts.diskRadius && opts.diskRadius > xMin) {
+    const xR = Math.min(sx(opts.diskRadius), m.left + plotW);
+    svg += `<rect x="${m.left}" y="${m.top}" width="${(xR - m.left).toFixed(1)}" height="${plotH}" fill="rgba(139,46,46,0.05)"/>`;
+  }
+
+  if (opts.shapes) {
+    for (const sh of opts.shapes) {
+      if (sh.type === 'vline') {
+        const px = sx(sh.x);
+        svg += `<line x1="${px.toFixed(1)}" y1="${m.top}" x2="${px.toFixed(1)}" y2="${m.top + plotH}" stroke="${sh.color}" stroke-width="1" stroke-dasharray="3,4" opacity="0.7"/>`;
+      } else if (sh.type === 'hline') {
+        const py = sy(sh.y);
+        svg += `<line x1="${m.left}" y1="${py.toFixed(1)}" x2="${m.left + plotW}" y2="${py.toFixed(1)}" stroke="${sh.color}" stroke-width="1" stroke-dasharray="3,4" opacity="0.7"/>`;
+      }
+    }
+  }
+
+  for (const series of opts.series) {
+    const xs = series.x, ys = series.y;
+    if (xs.length === 0) continue;
+    const segments = [];
+    let cur = [];
+    const yPad = (yMax - yMin) * 5;
+    for (let i = 0; i < xs.length; i++) {
+      const x = xs[i], y = ys[i];
+      if (!isFinite(x) || !isFinite(y) || y < yMin - yPad || y > yMax + yPad) {
+        if (cur.length > 0) { segments.push(cur); cur = []; }
+        continue;
+      }
+      const yc = Math.max(yMin, Math.min(yMax, y));
+      cur.push([sx(x), sy(yc)]);
+    }
+    if (cur.length > 0) segments.push(cur);
+
+    if (series.fill) {
+      for (const seg of segments) {
+        if (seg.length < 2) continue;
+        const yBase = sy(yMin);
+        let d = `M${seg[0][0].toFixed(1)},${yBase.toFixed(1)} `;
+        for (const [px, py] of seg) d += `L${px.toFixed(1)},${py.toFixed(1)} `;
+        d += `L${seg[seg.length - 1][0].toFixed(1)},${yBase.toFixed(1)} Z`;
+        svg += `<path d="${d}" fill="${series.fill}" stroke="none"/>`;
+      }
+    }
+    for (const seg of segments) {
+      if (seg.length < 2) continue;
+      let d = `M${seg[0][0].toFixed(1)},${seg[0][1].toFixed(1)} `;
+      for (let i = 1; i < seg.length; i++) d += `L${seg[i][0].toFixed(1)},${seg[i][1].toFixed(1)} `;
+      svg += `<path d="${d}" fill="none" stroke="${series.color}" stroke-width="${series.width || 2}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+  }
+
+  svg += `<line x1="${m.left}" y1="${m.top + plotH}" x2="${m.left + plotW}" y2="${m.top + plotH}" stroke="${COLORS.rule}" stroke-width="1"/>`;
+  svg += `<line x1="${m.left}" y1="${m.top}" x2="${m.left}" y2="${m.top + plotH}" stroke="${COLORS.rule}" stroke-width="1"/>`;
+
+  for (const t of xTicks) {
+    if (t < xMin - 1e-9 || t > xMax + 1e-9) continue;
+    const px = sx(t);
+    svg += `<line x1="${px.toFixed(1)}" y1="${m.top + plotH}" x2="${px.toFixed(1)}" y2="${m.top + plotH + 5}" stroke="${COLORS.rule}"/>`;
+    svg += `<text x="${px.toFixed(1)}" y="${m.top + plotH + 19}" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="${COLORS.inkSoft}">${escapeXml(fmtTick(t))}</text>`;
+  }
+  for (const t of yTicks) {
+    if (t < yMin - 1e-9 || t > yMax + 1e-9) continue;
+    const py = sy(t);
+    svg += `<line x1="${m.left}" y1="${py.toFixed(1)}" x2="${m.left - 5}" y2="${py.toFixed(1)}" stroke="${COLORS.rule}"/>`;
+    svg += `<text x="${m.left - 8}" y="${(py + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="${COLORS.inkSoft}">${escapeXml(fmtTick(t))}</text>`;
+  }
+
+  if (opts.xLabel) {
+    svg += `<text x="${m.left + plotW / 2}" y="${H - 8}" text-anchor="middle" font-family="'EB Garamond', serif" font-style="italic" font-size="14" fill="${COLORS.ink}">${opts.xLabel}</text>`;
+  }
+  if (opts.yLabel) {
+    const cy = m.top + plotH / 2;
+    svg += `<text x="14" y="${cy}" text-anchor="middle" font-family="'EB Garamond', serif" font-style="italic" font-size="14" fill="${COLORS.ink}" transform="rotate(-90, 14, ${cy})">${opts.yLabel}</text>`;
+  }
+
+  if (opts.annotations) {
+    for (const a of opts.annotations) {
+      const px = sx(a.x);
+      const py = a.yPaper !== undefined ? m.top + plotH * (1 - a.yPaper) : sy(a.y);
+      svg += `<text x="${(px + (a.dx || 0)).toFixed(1)}" y="${(py + (a.dy || 0)).toFixed(1)}" text-anchor="${a.anchor || 'middle'}" font-family="'EB Garamond', serif" font-style="italic" font-size="13" fill="${a.color || COLORS.ink}">${escapeXml(a.text)}</text>`;
+    }
+  }
+
+  svg += '</svg>';
+  document.getElementById(containerId).innerHTML = svg;
+}
+
+// ============================================================
+//   GLUE
+// ============================================================
+
+function el(id) { return document.getElementById(id); }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function setStatus(message) { el("status").innerHTML = message; }
+
+function fmt(x, digits = 6) {
+  if (x === null || x === undefined || !Number.isFinite(x)) return "—";
+  if (x === 0) return "0";
+  const abs = Math.abs(x);
+  if (abs < 1e-4 || abs >= 1e6) return x.toExponential(Math.max(2, digits - 2));
+  return Number(x.toPrecision(digits)).toString();
+}
+
+function validateInputs() {
+  const R = Number(el("radius").value);
+  const alpha = Number(el("alpha").value);
+  const p = Number(el("p").value);
+  const Lin = Number(el("tail").value);
+  const N = Math.round(Number(el("N").value));
+  const Q = Math.round(Number(el("Q").value));
+  const checks = Math.round(Number(el("checks").value));
+  const iterations = Math.round(Number(el("iterations").value));
+  const lr = Number(el("lr").value);
+  if (!(R > 0)) throw new Error("R must be positive.");
+  if (!(alpha >= 0)) throw new Error("α must be nonnegative.");
+  if (!(p > 1.0001)) throw new Error("p must be greater than 1.");
+  if (!(N >= 40 && N <= 320)) throw new Error("N out of range.");
+  if (!(Q >= 24 && Q <= 120)) throw new Error("Q out of range.");
+  if (!(checks >= 8 && checks <= 120)) throw new Error("checks out of range.");
+  if (!(iterations >= 200 && iterations <= 8000)) throw new Error("iterations out of range.");
+  if (!(lr > 0 && lr <= 2)) throw new Error("step out of range.");
+
+  let L = Lin;
+  if (!(L > R)) L = Math.max(R + 4, 2.5 * R + 2, 5);
+  return { R, alpha, p, L, N, Q, checks, iterations, lr };
+}
+
+async function runComputation() {
+  const runBtn = el("runBtn"), csvBtn = el("csvBtn");
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<span class="loading"></span>Working';
+  csvBtn.disabled = true;
+  try {
+    const params = validateInputs();
+    const { R, alpha, p, L, N, Q, checks, iterations, lr } = params;
+    const areaReference = Math.PI * R * R;
+
+    setStatus("Preparing radial grid…");
+    await sleep(20);
+    const dr = L / N;
+    const sourceRadii = new Float64Array(N);
+    const weights = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      sourceRadii[i] = (i + 0.5) * dr;
+      weights[i] = TWO_PI * sourceRadii[i] * dr;
+    }
+    const plotRadii = new Float64Array(N + 1);
+    for (let i = 0; i <= N; i++) plotRadii[i] = L * i / N;
+    const constraintRadii = makeConstraintRadii(R, sourceRadii, checks);
+
+    let fScaled, uConstraints, uPlot, capacity, minU, maxU, localMass, tLocal;
+
+    if (alpha <= 1e-14) {
+      fScaled = new Float64Array(N);
+      uPlot = new Float64Array(plotRadii.length);
+      uConstraints = new Float64Array(constraintRadii.length);
+      for (let i = 0; i < N; i++) fScaled[i] = sourceRadii[i] <= R + 1e-12 ? 1 : 0;
+      for (let i = 0; i < plotRadii.length; i++) uPlot[i] = plotRadii[i] <= R + 1e-12 ? 1 : 0;
+      for (let j = 0; j < constraintRadii.length; j++) uConstraints[j] = 1;
+      capacity = areaReference;
+      minU = 1; maxU = 1;
+      localMass = 1; tLocal = 0;
+      setStatus("α = 0: identity-kernel limit, B = πR² exactly.");
+    } else {
+      const builtC = await buildHeatBesselMatrix(constraintRadii, sourceRadii, weights, alpha, dr, Q, "constraint");
+      localMass = builtC.localMass;
+      tLocal = builtC.tLocal;
+      const builtP = await buildHeatBesselMatrix(plotRadii, sourceRadii, weights, alpha, dr, Q, "plot");
+
+      const dual = await solveDual(builtC.K, weights, p, iterations, lr);
+      const minBefore = minMax(dual.u)[0];
+      if (!(minBefore > 0) || !Number.isFinite(minBefore)) throw new Error("Solver did not produce a positive potential; try fewer annuli or a smaller initial step.");
+
+      const scale = 1 / minBefore;
+      fScaled = new Float64Array(dual.f.length);
+      for (let i = 0; i < dual.f.length; i++) fScaled[i] = dual.f[i] * scale;
+      uConstraints = matVec(builtC.K, fScaled);
+      uPlot = matVec(builtP.K, fScaled);
+      capacity = weightedLpPower(fScaled, weights, p);
+      [minU, maxU] = minMax(uConstraints);
+    }
+
+    lastResult = {
+      ...params, dr, sourceRadii, weights, plotRadii, constraintRadii,
+      f: fScaled, uConstraints, uPlot, capacity, minU, maxU,
+      localMass, tLocal, areaReference
+    };
+
+    el("capValue").textContent = fmt(capacity, 8);
+    el("capSmall").textContent = `R=${fmt(R, 4)}, α=${fmt(alpha, 4)}, p=${fmt(p, 4)}, N=${N}`;
+    el("areaValue").textContent = fmt(areaReference, 6);
+    el("minU").textContent = fmt(minU, 6);
+    el("maxU").textContent = fmt(maxU, 6);
+    el("localMass").textContent = fmt(localMass, 5);
+
+    const rel = Math.abs(capacity - areaReference) / Math.max(1e-12, areaReference);
+    const spread = maxU - minU;
+    let diag = `Constraint check: sampled <em>u*</em> ranges from <strong>${fmt(minU, 5)}</strong> to <strong>${fmt(maxU, 5)}</strong> on $\\overline{B_R}$. Area reference $\\pi R^2 = ${fmt(areaReference, 6)}$, relative difference ${fmt(100 * rel, 4)}%. `;
+    if (alpha <= 0.15) diag += `For small α, increasing N should move the estimate toward $\\pi R^2$.`;
+    if (spread > 0.05) diag += ` <span class="warn">The contact set is not very flat — try more iterations or a smaller initial step.</span>`;
+    el("diagnostic").innerHTML = diag;
+    if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([el("diagnostic")]);
+
+    const fX = Array.from(sourceRadii), fY = Array.from(fScaled);
+    const yMaxF = Math.max(0.001, Math.max.apply(null, fY) * 1.1);
+    renderPlot('plotF', {
+      xMin: 0, xMax: L, yMin: 0, yMax: yMaxF,
+      xLabel: 'r', yLabel: 'f*(r)',
+      diskRadius: R,
+      series: [{ x: fX, y: fY, color: COLORS.accent, width: 2.2, fill: 'rgba(139,46,46,0.08)' }],
+      shapes: [{ type: 'vline', x: R, color: COLORS.slate }],
+      annotations: [{ x: R, yPaper: 0.05, text: `R = ${fmt(R, 3)}`, dx: -6, anchor: 'end', color: COLORS.slate }]
+    });
+    el('fPlotInfo').textContent = `N=${N}, L=${fmt(L, 3)}`;
+
+    const uX = Array.from(plotRadii), uY = Array.from(uPlot);
+    const yMaxU = Math.max(1.05, Math.max.apply(null, uY) * 1.05);
+    renderPlot('plotU', {
+      xMin: 0, xMax: L, yMin: 0, yMax: yMaxU,
+      xLabel: 'r', yLabel: 'u*(r)',
+      diskRadius: R,
+      series: [{ x: uX, y: uY, color: COLORS.slate, width: 2.2, fill: 'rgba(61,77,92,0.07)' }],
+      shapes: [{ type: 'vline', x: R, color: COLORS.slate }, { type: 'hline', y: 1, color: COLORS.accent }],
+      annotations: [
+        { x: R, yPaper: 0.95, text: `R = ${fmt(R, 3)}`, dx: -6, anchor: 'end', color: COLORS.slate },
+        { x: L * 0.04, y: 1, text: 'u = 1', dy: -6, anchor: 'start', color: COLORS.accent }
+      ]
+    });
+    el('uPlotInfo').textContent = `shaded: 0 ≤ r ≤ R`;
+
+    updateTable(lastResult);
+    el("csvBtn").disabled = false;
+
+    const extra = alpha > 0 ? ` · local mass ${fmt(localMass, 5)}, t₀ ≈ ${fmt(tLocal, 4)}` : "";
+    setStatus(`Done. <strong>B<sub>${fmt(alpha, 3)},${fmt(p, 3)}</sub>(B̄<sub>${fmt(R, 3)}</sub>) ≈ ${fmt(capacity, 7)}</strong>${extra}.`);
+  } catch (err) {
+    console.error(err);
+    setStatus(`<span class="warn">${err.message}</span>`);
+  } finally {
+    runBtn.disabled = false;
+    runBtn.innerHTML = 'Compute capacity';
+  }
+}
+
+function updateTable(result) {
+  const tbody = el("sampleTable").querySelector("tbody");
+  tbody.innerHTML = "";
+  const rows = 16;
+  const { sourceRadii, f, plotRadii, uPlot, R } = result;
+  for (let k = 0; k < rows; k++) {
+    const idx = Math.round(k * (plotRadii.length - 1) / (rows - 1));
+    const r = plotRadii[idx];
+    let fi = 0, best = Infinity;
+    for (let i = 0; i < sourceRadii.length; i++) {
+      const d = Math.abs(sourceRadii[i] - r);
+      if (d < best) { best = d; fi = i; }
+    }
+    const tr = document.createElement("tr");
+    const inside = r <= R + 1e-12 ? "yes" : "no";
+    tr.innerHTML = `<td>${fmt(r, 5)}</td><td>${fmt(f[fi], 5)}</td><td>${fmt(uPlot[idx], 5)}</td><td>${inside}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function exportCSV() {
+  if (!lastResult) return;
+  const { sourceRadii, f, plotRadii, uPlot, R, alpha, p, capacity, areaReference, L, N } = lastResult;
+  let csv = `# Bessel capacity B_{α,p} of the closed disk B̄_R\n`;
+  csv += `# R=${R}, alpha=${alpha}, p=${p}, L=${L}, N=${N}\n`;
+  csv += `# capacity=${capacity}, area_pi_R2=${areaReference}\n`;
+  csv += `r,f,u,inside_disk\n`;
+  for (let i = 0; i <= N; i++) {
+    const r = plotRadii[i];
+    let fi = 0, best = Infinity;
+    for (let k = 0; k < sourceRadii.length; k++) {
+      const d = Math.abs(sourceRadii[k] - r);
+      if (d < best) { best = d; fi = k; }
+    }
+    csv += `${r},${f[fi]},${uPlot[i]},${r <= R + 1e-12 ? 1 : 0}\n`;
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `bessel_capacity_R${R}_alpha${alpha}_p${p}.csv`.replace(/\s+/g, "_");
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+const EXAMPLES = [
+  { R: 3.0, alpha: 1.0, p: 4.0, L: 0, N: 180, Q: 64, checks: 56, it: 3200, lr: 0.10, label: "default — supercritical αp = 4" },
+  { R: 1.0, alpha: 2.0, p: 2.0, L: 0, N: 180, Q: 64, checks: 48, it: 3000, lr: 0.10, label: "Newtonian-like, αp = 4" },
+  { R: 1.0, alpha: 1.0, p: 2.0, L: 0, N: 180, Q: 64, checks: 48, it: 3000, lr: 0.10, label: "borderline αp = 2" },
+  { R: 1.0, alpha: 0.5, p: 2.0, L: 0, N: 180, Q: 72, checks: 56, it: 3600, lr: 0.08, label: "subcritical αp = 1" },
+  { R: 1.0, alpha: 0.1, p: 2.0, L: 0, N: 180, Q: 64, checks: 48, it: 3000, lr: 0.10, label: "small α, near πR²" },
+  { R: 1.0, alpha: 0.0, p: 2.0, L: 0, N: 120, Q: 48, checks: 36, it: 800,  lr: 0.10, label: "α = 0, exact identity" }
+];
+function loadExamples() {
+  const idx = Number(el("exampleBtn").dataset.index || 0);
+  const ex = EXAMPLES[idx % EXAMPLES.length];
+  el("exampleBtn").dataset.index = String(idx + 1);
+  el("radius").value = ex.R;
+  el("alpha").value = ex.alpha;
+  el("p").value = ex.p;
+  el("tail").value = ex.L;
+  el("N").value = ex.N;
+  el("Q").value = ex.Q;
+  el("checks").value = ex.checks;
+  el("iterations").value = ex.it;
+  el("lr").value = ex.lr;
+  setStatus(`Loaded example: <em>${ex.label}</em>. Click <em>Compute capacity</em> to run.`);
+}
+
+el("runBtn").addEventListener("click", runComputation);
+el("exampleBtn").addEventListener("click", loadExamples);
+el("csvBtn").addEventListener("click", exportCSV);
+
+runComputation();
+</script>
+</body>
+</html>

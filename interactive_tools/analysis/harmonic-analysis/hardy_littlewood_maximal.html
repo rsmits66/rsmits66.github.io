@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hardy–Littlewood Maximal Function</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0d0f1a;--panel-bg:#13152a;--panel-border:#2a2d4a;
+  --cream:#f5f0e8;--gold:#d4a843;--gold-bright:#f0c95c;
+  --crimson:#c4324d;--crimson-light:#e85d78;
+  --teal:#4a9eaa;--teal-light:#6cc4d0;
+  --text:#c8c4bc;--text-dim:#7a7770;
+}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',Georgia,serif;overflow:hidden;height:100vh;width:100vw;display:flex;}
+#panel{
+  width:355px;min-width:355px;height:100vh;overflow-y:auto;
+  background:var(--panel-bg);border-right:1px solid var(--panel-border);
+  padding:20px;display:flex;flex-direction:column;gap:12px;
+  scrollbar-width:thin;scrollbar-color:var(--panel-border) transparent;
+}
+#panel::-webkit-scrollbar{width:6px;}
+#panel::-webkit-scrollbar-track{background:transparent;}
+#panel::-webkit-scrollbar-thumb{background:var(--panel-border);border-radius:3px;}
+#panel h1{font-family:'Playfair Display',serif;font-weight:900;font-size:19px;color:var(--cream);}
+#panel .subtitle{font-size:12.5px;color:var(--text-dim);font-style:italic;margin-top:-6px;}
+.section-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:4px;}
+.preset-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.preset-btn{
+  padding:5px 9px;border:1px solid var(--panel-border);border-radius:6px;
+  background:transparent;color:var(--text);font-family:'Crimson Pro',serif;
+  font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;
+}
+.preset-btn:hover{border-color:var(--gold);color:var(--cream);background:rgba(212,168,67,0.08);}
+.preset-btn.build{border-color:var(--teal);color:var(--teal-light);}
+.preset-btn.build:hover{background:rgba(74,158,170,0.1);}
+#interval-table{width:100%;border-collapse:collapse;}
+#interval-table th{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:3px 2px;text-align:center;font-weight:600;}
+#interval-table td{padding:2px 2px;}
+#interval-table input{
+  width:100%;padding:4px 5px;border:1px solid var(--panel-border);border-radius:5px;
+  background:rgba(0,0,0,0.3);color:var(--cream);font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;text-align:center;outline:none;
+}
+#interval-table input:focus{border-color:var(--gold);}
+.remove-btn{background:none;border:none;color:var(--crimson);cursor:pointer;font-size:15px;padding:2px 5px;opacity:0.6;transition:opacity 0.2s;}
+.remove-btn:hover{opacity:1;}
+.btn-row{display:flex;gap:6px;}
+.btn{
+  flex:1;padding:7px 10px;border:1px solid var(--panel-border);border-radius:7px;
+  background:transparent;color:var(--text);font-family:'Crimson Pro',serif;
+  font-size:13px;cursor:pointer;transition:all 0.2s;text-align:center;
+}
+.btn:hover{border-color:var(--gold);color:var(--cream);background:rgba(212,168,67,0.08);}
+.btn.primary{background:rgba(212,168,67,0.15);border-color:var(--gold);color:var(--gold-bright);}
+.btn.primary:hover{background:rgba(212,168,67,0.25);}
+.formula-box{padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:8px;font-size:13px;line-height:1.6;}
+.formula-box .katex{font-size:13px;}
+#hover-info{padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:8px;font-size:12px;line-height:1.5;min-height:44px;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11.5px;}
+.gold{color:var(--gold-bright);}
+.crimson{color:var(--crimson-light);}
+.teal{color:var(--teal-light);}
+#plot-area{flex:1;position:relative;overflow:hidden;}
+#plot-canvas{width:100%;height:100%;display:block;cursor:crosshair;}
+.legend-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:3px;}
+.legend-line{width:22px;height:3px;border-radius:2px;flex-shrink:0;}
+.toggle-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:4px;}
+.toggle-row input{accent-color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Hardy–Littlewood</h1>
+  <div class="subtitle">Centered maximal function — envelope of hyperbolas</div>
+
+  <div>
+    <div class="section-label">Presets</div>
+    <div class="preset-grid">
+      <button class="preset-btn" onclick="loadPreset(0)">χ<sub>[0,1]</sub></button>
+      <button class="preset-btn" onclick="loadPreset(1)">Fig 5.1 (two steps)</button>
+      <button class="preset-btn" onclick="loadPreset(2)">Three intervals</button>
+      <button class="preset-btn" onclick="loadPreset(3)">Fig 5.2(a) (p=2)</button>
+      <button class="preset-btn build" onclick="buildOwn()">Build your own</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">Step function f</div>
+    <table id="interval-table">
+      <thead><tr><th>Left</th><th>Right</th><th>Height</th><th></th></tr></thead>
+      <tbody id="interval-tbody"></tbody>
+    </table>
+    <div class="btn-row" style="margin-top:6px;">
+      <button class="btn" onclick="addRow()">+ Add piece</button>
+      <button class="btn primary" onclick="compute()">Compute Mf</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">Display</div>
+    <div class="toggle-row">
+      <input type="checkbox" id="show-candidates" checked onchange="if(gridMf.length)draw();">
+      <label for="show-candidates">Show candidate curves (faint)</label>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="show-equations" checked onchange="if(gridMf.length)draw();">
+      <label for="show-equations">Show arc equations</label>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">Legend</div>
+    <div class="legend-row"><div class="legend-line" style="background:var(--cream);opacity:0.85;"></div><span>f(x)</span></div>
+    <div class="legend-row"><div class="legend-line" style="background:var(--gold-bright);"></div><span>Mf(x) — upper envelope</span></div>
+    <div class="legend-row"><div class="legend-line" style="background:var(--teal);opacity:0.4;"></div><span>Candidate curves g<sub>d</sub>(x)</span></div>
+    <div class="legend-row"><div class="legend-line" style="background:var(--crimson);opacity:0.4;height:10px;"></div><span>Achieving interval (hover)</span></div>
+  </div>
+
+  <div>
+    <div class="section-label">Formula</div>
+    <div class="formula-box" id="formula-box"></div>
+  </div>
+
+  <div>
+    <div class="section-label">Hover info</div>
+    <div id="hover-info">
+      <span style="color:var(--text-dim);font-style:italic;">Hover over the plot to inspect the achieving interval.</span>
+    </div>
+  </div>
+</div>
+
+<div id="plot-area">
+  <canvas id="plot-canvas"></canvas>
+</div>
+
+<script>
+// ═══════════════════════════════════
+//  State
+// ═══════════════════════════════════
+let intervals = [];
+let gridX = [], gridF = [], gridMf = [];
+let winIdx = [], optR = [];
+let breakpoints = [];
+let xMin, xMax, yMax;
+const GRID_N = 5000;
+
+// Candidate curve data: for each breakpoint, store the full curve
+let candidateCurves = []; // [{d, values:[...]}, ...]
+
+// Arc segments of the envelope with equations
+let arcs = []; // [{x0, x1, yMid, winner, eqStr, eqLatex}, ...]
+
+// Transition points
+let transitions = [];
+
+// Color palette for candidate curves
+const CAND_COLORS = [
+  'rgba(74,158,170,0.35)', 'rgba(212,168,67,0.3)', 'rgba(196,50,77,0.3)',
+  'rgba(130,180,100,0.3)', 'rgba(180,130,220,0.3)', 'rgba(220,160,100,0.3)',
+  'rgba(100,160,220,0.3)', 'rgba(220,100,160,0.3)'
+];
+
+// ═══════════════════════════════════
+//  Presets
+// ═══════════════════════════════════
+const PRESETS = [
+  { name: 'Indicator', data: [{left:0,right:1,height:1}] },
+  { name: 'Fig 5.1', data: [{left:0,right:1,height:0.5},{left:1,right:2,height:1.0}] },
+  { name: 'Three intervals', data: [{left:1,right:2,height:3},{left:3,right:5,height:1},{left:6,right:7,height:2}] },
+  { name: 'Fig 5.2(a)', data: [
+    {left:0,right:1,height:0.45},{left:1,right:2,height:0.22},
+    {left:2,right:3,height:0.75},{left:3,right:4,height:0.22},{left:4,right:5,height:0.45}
+  ]}
+];
+
+// ═══════════════════════════════════
+//  Table UI
+// ═══════════════════════════════════
+const tbody = document.getElementById('interval-tbody');
+
+function renderTable() {
+  tbody.innerHTML = '';
+  intervals.forEach((iv, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" step="any" value="${iv.left}" onchange="intervals[${i}].left=parseFloat(this.value)"></td>
+      <td><input type="number" step="any" value="${iv.right}" onchange="intervals[${i}].right=parseFloat(this.value)"></td>
+      <td><input type="number" step="any" value="${iv.height}" onchange="intervals[${i}].height=parseFloat(this.value)"></td>
+      <td><button class="remove-btn" onclick="intervals.splice(${i},1);renderTable();">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addRow() {
+  const last = intervals.length > 0 ? intervals[intervals.length-1] : {left:0,right:0,height:0};
+  intervals.push({left: last.right, right: last.right + 1, height: 1});
+  renderTable();
+}
+
+function buildOwn() {
+  intervals = [{left: 0, right: 1, height: 1}];
+  renderTable();
+  // Clear the plot
+  gridMf = []; candidateCurves = []; arcs = []; transitions = [];
+  draw();
+}
+
+function loadPreset(idx) {
+  intervals = JSON.parse(JSON.stringify(PRESETS[idx].data));
+  renderTable();
+  compute();
+}
+
+// ═══════════════════════════════════
+//  Computation
+// ═══════════════════════════════════
+function fVal(x) {
+  for (const iv of intervals) {
+    if (x >= iv.left && x < iv.right) return iv.height;
+  }
+  return 0;
+}
+
+function F(x) {
+  let sum = 0;
+  for (const iv of intervals) {
+    sum += iv.height * Math.max(0, Math.min(x, iv.right) - iv.left);
+  }
+  return sum;
+}
+
+function compute() {
+  if (intervals.length === 0) return;
+  intervals.sort((a, b) => a.left - b.left);
+
+  const bpSet = new Set();
+  for (const iv of intervals) { bpSet.add(iv.left); bpSet.add(iv.right); }
+  breakpoints = Array.from(bpSet).sort((a, b) => a - b);
+
+  const pMin = Math.min(...breakpoints);
+  const pMax = Math.max(...breakpoints);
+  const span = pMax - pMin || 2;
+  xMin = pMin - span * 0.6;
+  xMax = pMax + span * 0.6;
+
+  const dx = (xMax - xMin) / GRID_N;
+  gridX = []; gridF = []; gridMf = [];
+  winIdx = []; optR = [];
+
+  // Build candidate curves
+  candidateCurves = [];
+  for (let j = 0; j < breakpoints.length; j++) {
+    candidateCurves.push({ d: breakpoints[j], values: [] });
+  }
+
+  for (let i = 0; i <= GRID_N; i++) {
+    const x = xMin + i * dx;
+    gridX.push(x);
+    const localVal = Math.abs(fVal(x));
+    gridF.push(localVal);
+
+    let bestVal = localVal;
+    let bestIdx = -1;
+    let bestR = 0;
+
+    for (let j = 0; j < breakpoints.length; j++) {
+      const d = breakpoints[j];
+      let r = Math.abs(x - d);
+      if (r < 1e-12) r = 1e-10;
+      const avg = (F(x + r) - F(x - r)) / (2 * r);
+      candidateCurves[j].values.push(avg);
+      if (avg > bestVal) {
+        bestVal = avg;
+        bestIdx = j;
+        bestR = r;
+      }
+    }
+
+    gridMf.push(bestVal);
+    winIdx.push(bestIdx);
+    optR.push(bestR);
+  }
+
+  yMax = Math.max(...gridMf) * 1.15;
+  if (yMax < 0.1) yMax = 1;
+
+  // ── Compute arcs (segments of the envelope with equations) ──
+  arcs = [];
+  let arcStart = 0;
+  for (let i = 1; i <= GRID_N; i++) {
+    const changed = (winIdx[i] !== winIdx[arcStart]);
+    const isLast = (i === GRID_N);
+
+    if (changed || isLast) {
+      const endI = isLast && !changed ? i : i - 1;
+      if (endI > arcStart + 5) {
+        const w = winIdx[arcStart];
+        const x0 = gridX[arcStart];
+        const x1 = gridX[endI];
+        const midI = Math.floor((arcStart + endI) / 2);
+        const yMid = gridMf[midI];
+        const xMid = gridX[midI];
+
+        let eqStr = '';
+        let eqLatex = '';
+
+        if (w === -1) {
+          // Local value (horizontal)
+          const h = gridMf[midI];
+          eqStr = fmtN(h);
+          eqLatex = fmtN(h);
+        } else {
+          // Candidate curve: fit A + B/(x - d)
+          const d = breakpoints[w];
+          // Use two well-separated points to fit A, B
+          const i1 = Math.floor(arcStart + (endI - arcStart) * 0.3);
+          const i2 = Math.floor(arcStart + (endI - arcStart) * 0.7);
+          const xa = gridX[i1], ya = gridMf[i1];
+          const xb = gridX[i2], yb = gridMf[i2];
+          const da = xa - d, db = xb - d;
+
+          if (Math.abs(da) > 1e-10 && Math.abs(db) > 1e-10 && Math.abs(da - db) > 1e-10) {
+            const B = (ya - yb) * da * db / (db - da);
+            const A = ya - B / da;
+
+            // Build readable equation string
+            eqStr = buildEqStr(A, B, d);
+            eqLatex = buildEqLatex(A, B, d);
+          }
+        }
+
+        arcs.push({ x0, x1, xMid, yMid, winner: w, eqStr, eqLatex });
+      }
+      arcStart = i;
+    }
+  }
+
+  // ── Transition points ──
+  transitions = [];
+  for (let i = 1; i <= GRID_N; i++) {
+    if (winIdx[i] !== winIdx[i-1]) {
+      const tx = (gridX[i] + gridX[i-1]) / 2;
+      const ty = (gridMf[i] + gridMf[i-1]) / 2;
+      transitions.push({x: tx, y: ty});
+    }
+  }
+  // Deduplicate
+  transitions.sort((a, b) => a.x - b.x);
+  const filt = [];
+  for (const t of transitions) {
+    if (filt.length === 0 || Math.abs(t.x - filt[filt.length-1].x) > span * 0.01) filt.push(t);
+  }
+  transitions = filt;
+
+  renderFormula();
+  draw();
+}
+
+function buildEqStr(A, B, d) {
+  const aStr = Math.abs(A) < 0.0005 ? '' : fmtN(A);
+  const dStr = d === 0 ? 'x' : d > 0 ? `(x−${fmtN(d)})` : `(x+${fmtN(-d)})`;
+  const bSign = B >= 0 ? '+' : '−';
+  const bAbs = Math.abs(B);
+
+  if (Math.abs(A) < 0.0005) {
+    return `${fmtN(B)}/${dStr}`;
+  }
+  if (Math.abs(B) < 0.0005) {
+    return fmtN(A);
+  }
+  return `${aStr} ${bSign} ${fmtN(bAbs)}/${dStr}`;
+}
+
+function buildEqLatex(A, B, d) {
+  const dStr = d === 0 ? 'x' : d > 0 ? `(x-${fmtN(d)})` : `(x+${fmtN(-d)})`;
+  if (Math.abs(A) < 0.0005 && Math.abs(B) > 0.0005) {
+    return `\\frac{${fmtN(B)}}{${dStr}}`;
+  }
+  if (Math.abs(B) < 0.0005) {
+    return fmtN(A);
+  }
+  const bSign = B >= 0 ? '+' : '-';
+  return `${fmtN(A)} ${bSign} \\frac{${fmtN(Math.abs(B))}}{${dStr}}`;
+}
+
+function renderFormula() {
+  const el = document.getElementById('formula-box');
+  el.innerHTML = '';
+  const parts = intervals.map(iv =>
+    `${fmtN(iv.height)}\\cdot\\mathbf{1}_{[${fmtN(iv.left)},\\,${fmtN(iv.right)})}`
+  ).join(' + ');
+  const sp1 = document.createElement('span');
+  sp1.style.display = 'block';
+  sp1.style.marginBottom = '4px';
+  try { katex.render(`f = ${parts}`, sp1, {displayMode: false}); } catch(e) { sp1.textContent = `f = ${parts}`; }
+  el.appendChild(sp1);
+
+  const sp2 = document.createElement('span');
+  sp2.style.display = 'block';
+  sp2.style.fontSize = '11px';
+  sp2.style.color = 'var(--text-dim)';
+  try { katex.render(`Mf(x) = \\sup_{r>0}\\frac{1}{2r}\\int_{x-r}^{x+r}|f|\\,dt`, sp2, {displayMode: false}); } catch(e) {}
+  el.appendChild(sp2);
+
+  const sp3 = document.createElement('span');
+  sp3.style.display = 'block';
+  sp3.style.fontSize = '11px';
+  sp3.style.color = 'var(--text-dim)';
+  sp3.style.marginTop = '3px';
+  try { katex.render(`= \\max\\bigl\\{|f(x)|,\\; \\max_j g_{d_j}(x)\\bigr\\}`, sp3, {displayMode: false}); } catch(e) {}
+  el.appendChild(sp3);
+
+  // Show breakpoints
+  const sp4 = document.createElement('div');
+  sp4.style.fontSize = '11px';
+  sp4.style.color = 'var(--text-dim)';
+  sp4.style.marginTop = '5px';
+  sp4.innerHTML = `Breakpoints: <span class="mono teal">{${breakpoints.map(fmtN).join(', ')}}</span>`;
+  el.appendChild(sp4);
+}
+
+// ═══════════════════════════════════
+//  Canvas
+// ═══════════════════════════════════
+const canvas = document.getElementById('plot-canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+const MARGIN = {top: 30, right: 30, bottom: 50, left: 60};
+let plotL, plotR, plotT, plotB;
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  plotL = MARGIN.left * dpr;
+  plotR = W - MARGIN.right * dpr;
+  plotT = MARGIN.top * dpr;
+  plotB = H - MARGIN.bottom * dpr;
+  if (gridMf.length > 0) draw();
+}
+
+function toX(v) { return plotL + (v - xMin) / (xMax - xMin) * (plotR - plotL); }
+function toY(v) { return plotB - (v / yMax) * (plotB - plotT); }
+function fromX(cx) { return xMin + (cx - plotL) / (plotR - plotL) * (xMax - xMin); }
+
+let hoverDataX = null;
+
+function draw() {
+  const dpr = window.devicePixelRatio;
+  ctx.clearRect(0, 0, W, H);
+
+  if (gridMf.length === 0) {
+    ctx.fillStyle = '#7a7770';
+    ctx.font = `${14*dpr}px 'Crimson Pro', serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Select a preset or build your own, then press Compute.', W/2, H/2);
+    return;
+  }
+
+  const showCand = document.getElementById('show-candidates').checked;
+  const showEqs = document.getElementById('show-equations').checked;
+
+  // ── Grid ──
+  ctx.strokeStyle = 'rgba(42,45,74,0.5)';
+  ctx.lineWidth = 1;
+  const xStep = niceStep((xMax - xMin) / 8);
+  const xStart = Math.ceil(xMin / xStep) * xStep;
+  for (let v = xStart; v <= xMax; v += xStep) {
+    const cx = toX(v); if (cx < plotL || cx > plotR) continue;
+    ctx.beginPath(); ctx.moveTo(cx, plotT); ctx.lineTo(cx, plotB); ctx.stroke();
+  }
+  const yStep = niceStep(yMax / 6);
+  for (let v = yStep; v < yMax; v += yStep) {
+    const cy = toY(v); if (cy < plotT || cy > plotB) continue;
+    ctx.beginPath(); ctx.moveTo(plotL, cy); ctx.lineTo(plotR, cy); ctx.stroke();
+  }
+
+  // ── Axes ──
+  ctx.strokeStyle = 'rgba(200,196,188,0.3)';
+  ctx.lineWidth = 1.5 * dpr;
+  const y0 = toY(0);
+  ctx.beginPath(); ctx.moveTo(plotL, y0); ctx.lineTo(plotR, y0); ctx.stroke();
+  if (xMin <= 0 && xMax >= 0) {
+    const x0 = toX(0);
+    ctx.beginPath(); ctx.moveTo(x0, plotT); ctx.lineTo(x0, plotB); ctx.stroke();
+  }
+
+  // ── Axis labels ──
+  ctx.fillStyle = 'rgba(200,196,188,0.55)';
+  ctx.font = `${10*dpr}px 'JetBrains Mono', monospace`;
+  ctx.textAlign = 'center';
+  for (let v = xStart; v <= xMax; v += xStep) {
+    const cx = toX(v); if (cx < plotL + 10 || cx > plotR - 10) continue;
+    ctx.fillText(fmtN(v), cx, plotB + 15*dpr);
+  }
+  ctx.textAlign = 'right';
+  for (let v = 0; v <= yMax; v += yStep) {
+    const cy = toY(v); if (cy < plotT + 5 || cy > plotB - 5) continue;
+    ctx.fillText(fmtN(v), plotL - 5*dpr, cy + 4*dpr);
+  }
+  ctx.fillStyle = 'rgba(200,196,188,0.4)';
+  ctx.font = `italic ${11*dpr}px 'Crimson Pro', serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('x', (plotL + plotR)/2, plotB + 36*dpr);
+
+  // ── Hover: achieving interval ──
+  let hoverIdx = -1;
+  if (hoverDataX !== null && hoverDataX >= xMin && hoverDataX <= xMax) {
+    const dx = (xMax - xMin) / GRID_N;
+    hoverIdx = Math.round((hoverDataX - xMin) / dx);
+    hoverIdx = Math.max(0, Math.min(GRID_N, hoverIdx));
+
+    const hx = gridX[hoverIdx];
+    const hmf = gridMf[hoverIdx];
+    const hr = optR[hoverIdx];
+    const hw = winIdx[hoverIdx];
+
+    if (hw >= 0 && hr > 1e-9) {
+      const iLeft = toX(hx - hr);
+      const iRight = toX(hx + hr);
+
+      // Shade interval
+      ctx.fillStyle = 'rgba(196, 50, 77, 0.12)';
+      ctx.fillRect(iLeft, plotT, iRight - iLeft, plotB - plotT);
+
+      // Interval boundary dashes
+      ctx.strokeStyle = 'rgba(196, 50, 77, 0.5)';
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.setLineDash([4*dpr, 4*dpr]);
+      ctx.beginPath(); ctx.moveTo(iLeft, plotT); ctx.lineTo(iLeft, plotB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(iRight, plotT); ctx.lineTo(iRight, plotB); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Fill under f in interval
+      ctx.fillStyle = 'rgba(196, 50, 77, 0.2)';
+      const dx2 = (xMax - xMin) / GRID_N;
+      const si = Math.max(0, Math.floor((hx - hr - xMin) / dx2));
+      const ei = Math.min(GRID_N, Math.ceil((hx + hr - xMin) / dx2));
+      ctx.beginPath();
+      ctx.moveTo(toX(gridX[si]), toY(0));
+      for (let k = si; k <= ei; k++) ctx.lineTo(toX(gridX[k]), toY(gridF[k]));
+      ctx.lineTo(toX(gridX[ei]), toY(0));
+      ctx.closePath(); ctx.fill();
+
+      // Dashed average line
+      ctx.strokeStyle = 'rgba(240, 201, 92, 0.6)';
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.setLineDash([5*dpr, 3*dpr]);
+      const avgY = toY(hmf);
+      ctx.beginPath(); ctx.moveTo(iLeft, avgY); ctx.lineTo(iRight, avgY); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ── Candidate curves (faint) ──
+  if (showCand) {
+    for (let j = 0; j < candidateCurves.length; j++) {
+      const cc = candidateCurves[j];
+      const color = CAND_COLORS[j % CAND_COLORS.length];
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2 * dpr;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i <= GRID_N; i++) {
+        const v = cc.values[i];
+        if (v < 0 || v > yMax * 1.5 || !isFinite(v)) { started = false; continue; }
+        const px = toX(gridX[i]);
+        const py = toY(v);
+        if (py < plotT - 20 || py > plotB + 20) { started = false; continue; }
+        if (!started) { ctx.moveTo(px, py); started = true; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Label the candidate at its breakpoint
+      const labelX = toX(cc.d);
+      if (labelX > plotL + 20 && labelX < plotR - 20) {
+        ctx.fillStyle = color.replace(/[\d.]+\)$/, '0.7)');
+        ctx.font = `${8*dpr}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`d=${fmtN(cc.d)}`, labelX, plotT + 12*dpr);
+      }
+    }
+  }
+
+  // ── f(x) filled rectangles ──
+  for (const iv of intervals) {
+    const lx = toX(iv.left), rx = toX(iv.right);
+    const ty = toY(iv.height), by = toY(0);
+    ctx.fillStyle = 'rgba(74, 158, 170, 0.06)';
+    ctx.fillRect(lx, ty, rx - lx, by - ty);
+  }
+
+  // ── f(x) outline ──
+  ctx.strokeStyle = 'rgba(245, 240, 232, 0.8)';
+  ctx.lineWidth = 2 * dpr;
+  const sorted = [...intervals].sort((a, b) => a.left - b.left);
+  ctx.beginPath();
+  let prevR = null;
+  for (const iv of sorted) {
+    const lx = toX(iv.left), rx = toX(iv.right);
+    const hy = toY(iv.height), zy = toY(0);
+    if (prevR === null || iv.left > prevR) {
+      if (prevR !== null && prevR < iv.left) {
+        ctx.lineTo(toX(prevR), zy);
+        ctx.lineTo(toX(iv.left), zy);
+      } else if (prevR === null) {
+        ctx.moveTo(toX(Math.max(xMin, iv.left - 0.3)), zy);
+        ctx.lineTo(lx, zy);
+      }
+    }
+    ctx.lineTo(lx, hy); ctx.lineTo(rx, hy); ctx.lineTo(rx, zy);
+    prevR = iv.right;
+  }
+  ctx.stroke();
+
+  // ── Mf(x) curve ──
+  ctx.strokeStyle = '#f0c95c';
+  ctx.lineWidth = 2.5 * dpr;
+  ctx.beginPath();
+  for (let i = 0; i <= GRID_N; i++) {
+    const px = toX(gridX[i]), py = toY(gridMf[i]);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // ── Transition dots ──
+  for (const t of transitions) {
+    const tx = toX(t.x), ty = toY(t.y);
+    if (tx < plotL + 10 || tx > plotR - 10) continue;
+    ctx.beginPath(); ctx.arc(tx, ty, 3*dpr, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(200,196,188,0.5)';
+    ctx.fill();
+    // Coordinates
+    ctx.fillStyle = 'rgba(200,196,188,0.45)';
+    ctx.font = `${7.5*dpr}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+    const above = (transitions.indexOf(t) % 2 === 0);
+    ctx.fillText(`(${fmtN(t.x)}, ${fmtN(t.y)})`, tx, ty + (above ? -7*dpr : 13*dpr));
+  }
+
+  // ── Arc equations ──
+  if (showEqs) {
+    ctx.font = `${8*dpr}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+    for (let ai = 0; ai < arcs.length; ai++) {
+      const a = arcs[ai];
+      if (!a.eqStr || a.eqStr.length === 0) continue;
+      const mx = toX(a.xMid);
+      const my = toY(a.yMid);
+      if (mx < plotL + 30 || mx > plotR - 30) continue;
+
+      // Position label above or below curve, alternating
+      const offset = (ai % 2 === 0) ? -16*dpr : 16*dpr;
+      const ly = my + offset;
+      if (ly < plotT + 5 || ly > plotB - 5) continue;
+
+      // Background
+      const tw = ctx.measureText(a.eqStr).width + 10*dpr;
+      ctx.fillStyle = 'rgba(13,15,26,0.8)';
+      ctx.fillRect(mx - tw/2, ly - 7*dpr, tw, 14*dpr);
+
+      // Text
+      if (a.winner === -1) {
+        ctx.fillStyle = 'rgba(108,196,208,0.7)';
+      } else {
+        const ci = a.winner % CAND_COLORS.length;
+        ctx.fillStyle = CAND_COLORS[ci].replace(/[\d.]+\)$/, '0.85)');
+      }
+      ctx.fillText(a.eqStr, mx, ly + 3*dpr);
+    }
+  }
+
+  // ── Hover marker ──
+  if (hoverIdx >= 0 && hoverIdx <= GRID_N) {
+    const hx = gridX[hoverIdx], hmf = gridMf[hoverIdx];
+
+    // Dot
+    ctx.beginPath(); ctx.arc(toX(hx), toY(hmf), 5*dpr, 0, Math.PI*2);
+    ctx.fillStyle = '#f0c95c'; ctx.fill();
+    ctx.strokeStyle = 'rgba(13,15,26,0.8)'; ctx.lineWidth = 2*dpr; ctx.stroke();
+
+    // Vertical guide
+    ctx.strokeStyle = 'rgba(240,201,92,0.25)';
+    ctx.lineWidth = 1*dpr;
+    ctx.setLineDash([3*dpr, 3*dpr]);
+    ctx.beginPath(); ctx.moveTo(toX(hx), plotT); ctx.lineTo(toX(hx), plotB); ctx.stroke();
+    ctx.setLineDash([]);
+
+    updateHoverInfo(hoverIdx);
+  }
+
+  // ── Title ──
+  ctx.fillStyle = 'rgba(245,240,232,0.65)';
+  ctx.font = `${12*dpr}px 'Crimson Pro', serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('Hardy–Littlewood Maximal Function', plotL + 6*dpr, plotT - 8*dpr);
+}
+
+function updateHoverInfo(idx) {
+  const el = document.getElementById('hover-info');
+  const x = gridX[idx], mf = gridMf[idx], fv = gridF[idx];
+  const r = optR[idx], wi = winIdx[idx];
+
+  let html = `<span class="mono">x = <span class="gold">${x.toFixed(3)}</span></span>`;
+  html += ` &ensp;<span class="mono">f = ${fv.toFixed(4)}</span>`;
+  html += ` &ensp;<span class="mono">Mf = <span class="gold">${mf.toFixed(4)}</span></span><br>`;
+
+  if (wi < 0) {
+    html += `<span class="teal">Local value wins — f(x) ≥ all averages</span>`;
+  } else {
+    const d = breakpoints[wi];
+    html += `<span class="crimson">r = |${x.toFixed(2)} − ${fmtN(d)}| = ${r.toFixed(3)}</span>`;
+    html += `<br><span class="mono" style="font-size:11px;">interval [${(x-r).toFixed(2)}, ${(x+r).toFixed(2)}], breakpoint d = ${fmtN(d)}</span>`;
+  }
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════
+//  Utilities
+// ═══════════════════════════════════
+function niceStep(rough) {
+  const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+  const n = rough / pow;
+  let s; if (n < 1.5) s = 1; else if (n < 3.5) s = 2; else if (n < 7.5) s = 5; else s = 10;
+  return s * pow;
+}
+
+function fmtN(v) {
+  if (Math.abs(v) < 1e-10) return '0';
+  if (Math.abs(v - Math.round(v)) < 0.005) return Math.round(v).toString();
+  if (Math.abs(v) >= 100) return v.toFixed(0);
+  if (Math.abs(v) >= 10) return v.toFixed(1);
+  return parseFloat(v.toFixed(3)).toString();
+}
+
+// ═══════════════════════════════════
+//  Events
+// ═══════════════════════════════════
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) * window.devicePixelRatio;
+  const cy = (e.clientY - rect.top) * window.devicePixelRatio;
+  hoverDataX = (cx >= plotL && cx <= plotR && cy >= plotT && cy <= plotB) ? fromX(cx) : null;
+  if (gridMf.length > 0) draw();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoverDataX = null;
+  if (gridMf.length > 0) draw();
+  document.getElementById('hover-info').innerHTML =
+    '<span style="color:var(--text-dim);font-style:italic;">Hover over the plot to inspect the achieving interval.</span>';
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.touches[0].clientX - rect.left) * window.devicePixelRatio;
+  hoverDataX = fromX(cx);
+  if (gridMf.length > 0) draw();
+}, {passive: false});
+
+canvas.addEventListener('touchend', () => {
+  hoverDataX = null;
+  if (gridMf.length > 0) draw();
+});
+
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════
+//  Init
+// ═══════════════════════════════════
+resize();
+loadPreset(2);
+</script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Besicovitch Set — Perron Tree Construction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Newsreader:ital,opsz@0,6..72;1,6..72&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe4;--paper-2:#ece5d6;--ink:#1c1a17;--ink-soft:#574f44;
+    --rule:#c9bda4;--crimson:#9c2a1e;--crimson-deep:#5e150f;--gold:#9a7b25;--grid:#d8cdb6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.55;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px;background-position:center;
+  }
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(ellipse at 50% 0%,rgba(255,250,240,.55),transparent 60%),radial-gradient(ellipse at 50% 120%,rgba(94,21,15,.06),transparent 55%);}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:48px 28px 80px;}
+  header{margin-bottom:34px;border-bottom:2px solid var(--ink);padding-bottom:22px;}
+  .eyebrow{font-family:"Spline Sans Mono",monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--crimson);margin-bottom:14px;font-weight:500;}
+  h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(34px,5.5vw,60px);line-height:.99;letter-spacing:-.015em;}
+  h1 em{font-style:italic;color:var(--crimson-deep);}
+  .lede{margin-top:16px;max-width:64ch;font-size:18px;color:var(--ink-soft);}
+  .lede b{color:var(--ink);font-weight:600;}.kf{font-style:italic;}
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:34px;align-items:start;margin-top:38px;}
+  @media(max-width:840px){.layout{grid-template-columns:1fr;}}
+  .panel{background:linear-gradient(180deg,var(--paper-2),var(--paper));border:1px solid var(--rule);border-radius:3px;padding:26px 24px;box-shadow:0 1px 0 #fff inset,0 18px 40px -28px rgba(28,26,23,.6);}
+  .panel h2{font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:20px;}
+  label.fld{display:block;margin-bottom:20px;}
+  label.fld .name{font-family:"Spline Sans Mono",monospace;font-size:12.5px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;color:var(--ink);}
+  label.fld .name .val{color:var(--crimson);font-weight:600;}
+  input[type=number]{font-family:"Spline Sans Mono",monospace;font-size:16px;background:#fbf8f0;border:1px solid var(--rule);border-radius:2px;padding:10px 12px;color:var(--ink);width:100%;}
+  input[type=number]:focus{outline:none;border-color:var(--crimson);box-shadow:0 0 0 3px rgba(156,42,30,.12);}
+  input[type=range]{width:100%;accent-color:var(--crimson);height:22px;}
+  .eps-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .chip{font-family:"Spline Sans Mono",monospace;font-size:11.5px;cursor:pointer;background:#fbf8f0;border:1px solid var(--rule);border-radius:999px;padding:5px 11px;color:var(--ink-soft);transition:.15s;}
+  .chip:hover{border-color:var(--crimson);color:var(--crimson);}
+  .btnrow{display:flex;gap:8px;margin-bottom:20px;}
+  button.act{flex:1;font-family:"Spline Sans Mono",monospace;font-size:13px;letter-spacing:.04em;cursor:pointer;
+    background:var(--crimson);color:#fbf3e6;border:1px solid var(--crimson-deep);border-radius:3px;padding:11px 10px;font-weight:600;transition:.15s;}
+  button.act:hover{background:var(--crimson-deep);}
+  button.ghost{flex:0 0 auto;background:#fbf8f0;color:var(--ink-soft);border:1px solid var(--rule);}
+  button.ghost:hover{border-color:var(--crimson);color:var(--crimson);background:#fbf8f0;}
+  .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;margin-top:2px;}
+  .toggle input{width:16px;height:16px;accent-color:var(--crimson);}
+  .readout{margin-top:8px;border-top:1px solid var(--rule);padding-top:18px;}
+  .stat{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:14.5px;}
+  .stat .k{font-family:"Spline Sans Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--ink-soft);}
+  .stat .v{font-family:"Spline Sans Mono",monospace;font-weight:600;}
+  .stat .v.big{color:var(--crimson-deep);font-size:16px;}
+  .bar{height:7px;background:#e3dac6;border-radius:4px;margin-top:12px;overflow:hidden;border:1px solid var(--rule);}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--crimson),var(--gold));transition:width .25s ease;}
+  .flag{margin-top:14px;font-size:13px;line-height:1.45;color:var(--crimson-deep);background:rgba(156,42,30,.08);border:1px solid rgba(156,42,30,.25);border-radius:3px;padding:10px 12px;display:none;}
+  .flag.show{display:block;}
+  .stage{background:linear-gradient(180deg,#fbf8f0,#f1eadc);border:1px solid var(--rule);border-radius:3px;padding:14px;box-shadow:0 18px 50px -34px rgba(28,26,23,.7);position:relative;}
+  .stage .cap{position:absolute;top:18px;left:20px;font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);pointer-events:none;}
+  .stage .legend{position:absolute;top:18px;right:20px;font-family:"Spline Sans Mono",monospace;font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);text-align:right;line-height:1.7;pointer-events:none;}
+  .swatch{display:inline-block;width:9px;height:9px;border-radius:2px;margin-left:7px;vertical-align:middle;}
+  canvas{width:100%;display:block;border-radius:2px;}
+  .note{margin-top:26px;font-size:15.5px;color:var(--ink-soft);max-width:72ch;border-left:3px solid var(--crimson);padding:4px 0 4px 16px;}
+  .note b{color:var(--ink);}
+  .foot{margin-top:26px;font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--ink-soft);letter-spacing:.03em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Stein · Harmonic Analysis · Perron Tree</div>
+    <h1>Cut every triangle in two,<br><em>slide the halves together.</em></h1>
+    <p class="lede">An equilateral triangle of altitude&nbsp;2, base&nbsp;AB. Split the base into 2<sup>n</sup> pieces to get triangles T<sub>j</sub>=A<sub>2j</sub>A<sub>2j+2</sub>C; cut each at its midpoint A<sub>2j+1</sub> and slide the right half over the left — a <b>heart</b> with two <b>arms</b> — then do it again. Press <b>sprout</b> and watch: because <b>sliding never changes a segment's direction</b>, the Perron tree still points a needle every way the original did, while its area falls toward&nbsp;0.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="btnrow">
+        <button class="act" id="play">▶ sprout</button>
+        <button class="act ghost" id="reset">↺</button>
+      </div>
+      <label class="fld">
+        <span class="name">target area &nbsp;ε &gt; 0 <span class="val" id="epsEcho">1.00</span></span>
+        <input type="number" id="eps" min="0.0001" max="2.31" step="0.05" value="1.00">
+        <div class="eps-btns">
+          <span class="chip" data-eps="1.5">1.5</span>
+          <span class="chip" data-eps="1.0">1.0</span>
+          <span class="chip" data-eps="0.75">0.75</span>
+          <span class="chip" data-eps="0.6">0.6</span>
+          <span class="chip" data-eps="0.5">0.5</span>
+        </div>
+      </label>
+      <label class="fld">
+        <span class="name">scrub by hand <span class="val" id="genEcho">n = 0</span></span>
+        <input type="range" id="gen" min="0" max="13" step="1" value="0">
+      </label>
+      <label class="toggle"><input type="checkbox" id="dirs"> overlay rotated copies (all directions)</label>
+
+      <div class="readout">
+        <div class="stat"><span class="k">generations n</span><span class="v" id="sN">0</span></div>
+        <div class="stat"><span class="k">triangles 2ⁿ</span><span class="v" id="sT">1</span></div>
+        <div class="stat"><span class="k">original area</span><span class="v" id="sO">2.309</span></div>
+        <div class="stat"><span class="k">set area</span><span class="v big" id="sA">2.309</span></div>
+        <div class="stat"><span class="k">fraction kept</span><span class="v" id="sF">100%</span></div>
+        <div class="bar"><i id="barFill" style="width:100%"></i></div>
+        <div class="flag" id="flag"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="stage">
+        <div class="cap" id="stageCap">n = 0 · the original triangle</div>
+        <div class="legend" id="legend" style="display:none">left half<span class="swatch" style="background:rgba(156,42,30,.65)"></span><br>sliding half<span class="swatch" style="background:rgba(196,104,24,.75)"></span></div>
+        <canvas id="cv"></canvas>
+      </div>
+      <p class="note">During a step the <b>left halves stay put</b> while the <b>sliding halves</b> drift across them; the deepening crimson where they pile up is exactly where area is saved. The set area shrinks monotonically toward its <b>infimum&nbsp;0</b>, never reached — the same fact that lets the <b>Kakeya needle</b> turn fully inside an arbitrarily small region with no minimal area.</p>
+      <p class="note" style="border-color:var(--gold)"><b>An honest caveat.</b> This elementary construction approaches&nbsp;0 only <span class="kf">very</span> slowly (about 1/log of the piece count): even tens of thousands of triangles hover near a fifth of the original. Tiny ε is real in the limit but not renderable — the <b>trend</b>, not any finite frame, is the theorem.</p>
+      <div class="foot">median split · slide schedule f(level)=1/(level+2) · area by rasterization · altitude 2, |ABC|=4/√3≈2.309</div>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  const H=2,BASE=4/Math.sqrt(3),ORIG=0.5*BASE*H;
+  const P0={x:0,y:0},P1={x:BASE,y:0},V={x:BASE/2,y:H},CAP=13;
+  const frac=l=>1/(l+2);
+
+  // ---- construction ----
+  function build(a,b,apex,depth,level){
+    if(depth<=0) return [[{x:a.x,y:a.y},{x:b.x,y:b.y},{x:apex.x,y:apex.y}]];
+    const m={x:(a.x+b.x)/2,y:0};
+    const L=build(a,m,apex,depth-1,level+1);
+    const R=build(m,b,apex,depth-1,level+1);
+    const s=(b.x-a.x)*frac(level);
+    for(const t of R) for(const p of t) p.x-=s;
+    return L.concat(R);
+  }
+  function measureArea(tris,N){
+    N=N||520;let mnX=1e9,mxX=-1e9,mnY=1e9,mxY=-1e9;
+    for(const t of tris)for(const p of t){if(p.x<mnX)mnX=p.x;if(p.x>mxX)mxX=p.x;if(p.y<mnY)mnY=p.y;if(p.y>mxY)mxY=p.y;}
+    const w=mxX-mnX,h=mxY-mnY,sc=N/Math.max(w,h),W=Math.max(2,Math.round(w*sc)),Ht=Math.max(2,Math.round(h*sc));
+    const off=document.createElement('canvas');off.width=W;off.height=Ht;const o=off.getContext('2d');o.fillStyle='#000';
+    for(const t of tris){o.beginPath();o.moveTo((t[0].x-mnX)*sc,(t[0].y-mnY)*sc);o.lineTo((t[1].x-mnX)*sc,(t[1].y-mnY)*sc);o.lineTo((t[2].x-mnX)*sc,(t[2].y-mnY)*sc);o.closePath();o.fill();}
+    const d=o.getImageData(0,0,W,Ht).data;let c=0;for(let i=3;i<d.length;i+=4)if(d[i]>10)c++;
+    return c*(w/W)*(h/Ht);
+  }
+  const cacheTris=[],cacheArea=[];
+  const levelTris=d=>cacheTris[d]||(cacheTris[d]=build(P0,P1,V,d,0));
+  const levelArea=d=>cacheArea[d]!=null?cacheArea[d]:(cacheArea[d]=measureArea(levelTris(d)));
+  function chooseN(eps){for(let n=0;n<=CAP;n++)if(levelArea(n)<=eps)return n;return CAP;}
+
+  // ---- camera (fixed per ε so motion is stable) ----
+  function rot(p,c,a){const dx=p.x-c.x,dy=p.y-c.y,C=Math.cos(a),S=Math.sin(a);return {x:c.x+dx*C-dy*S,y:c.y+dx*S+dy*C};}
+  function computeCam(N,dirs){
+    const cen={x:BASE/2,y:H/2};let pts=levelTris(N).flat().concat([P0,P1,V]);
+    if(dirs){let all=[];for(let k=0;k<3;k++){const a=k*2*Math.PI/3;all=all.concat(pts.map(p=>rot(p,cen,a)));}pts=all;}
+    let mnX=1e9,mxX=-1e9,mnY=1e9,mxY=-1e9;
+    for(const p of pts){if(p.x<mnX)mnX=p.x;if(p.x>mxX)mxX=p.x;if(p.y<mnY)mnY=p.y;if(p.y>mxY)mxY=p.y;}
+    const pad=0.1*Math.max(mxX-mnX,mxY-mnY);
+    return {mnX:mnX-pad,mxX:mxX+pad,mnY:mnY-pad,mxY:mxY+pad};
+  }
+
+  // ---- painting: leftP in one tint, rightP (sliding) in another ----
+  function paint(leftP,rightP){
+    const cam=st.cam,cen={x:BASE/2,y:H/2};
+    let GL=[leftP],GR=[rightP];
+    if(st.dirs){GL=[];GR=[];for(let k=0;k<3;k++){const a=k*2*Math.PI/3;GL.push(leftP.map(t=>t.map(p=>rot(p,cen,a))));GR.push(rightP.map(t=>t.map(p=>rot(p,cen,a))));}}
+    const dpr=Math.min(window.devicePixelRatio||1,2),cssW=cv.clientWidth;
+    const cssH=Math.max(360,Math.min(620,cssW*((cam.mxY-cam.mnY)/(cam.mxX-cam.mnX))));
+    cv.style.height=cssH+'px';cv.width=cssW*dpr;cv.height=cssH*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cssW,cssH);
+    const s=Math.min(cssW/(cam.mxX-cam.mnX),cssH/(cam.mxY-cam.mnY));
+    const ox=(cssW-(cam.mxX-cam.mnX)*s)/2,oy=(cssH-(cam.mxY-cam.mnY)*s)/2;
+    const TX=p=>({x:ox+(p.x-cam.mnX)*s,y:cssH-oy-(p.y-cam.mnY)*s});
+    // original triangle reference
+    ctx.beginPath();[P0,P1,V].forEach((p,i)=>{const q=TX(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.closePath();
+    ctx.fillStyle='rgba(154,123,37,.07)';ctx.fill();ctx.lineWidth=1;ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(90,80,60,.5)';ctx.stroke();ctx.setLineDash([]);
+    const fill=(groups,style)=>{ctx.fillStyle=style;for(const g of groups)for(const t of g){const a=TX(t[0]),b=TX(t[1]),c=TX(t[2]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.closePath();ctx.fill();}};
+    const splitView=rightP.length>0;
+    fill(GL, splitView?'rgba(156,42,30,0.40)':'rgba(156,42,30,0.42)');
+    if(splitView) fill(GR,'rgba(196,104,24,0.46)');
+  }
+
+  // ---- transition figure: gen n with each leaf cut + right half slid by u ----
+  function transitionPieces(n,u){
+    const leaves=levelTris(n),L=[],R=[];
+    for(const t of leaves){
+      const a=t[0],b=t[1],ap=t[2],m={x:(a.x+b.x)/2,y:0};
+      L.push([a,m,ap]);
+      const s=(b.x-a.x)*frac(n)*u;
+      R.push([{x:m.x-s,y:0},{x:b.x-s,y:0},{x:ap.x-s,y:ap.y}]);
+    }
+    return [L,R];
+  }
+
+  const el=id=>document.getElementById(id);
+  const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+  let st={eps:1.0,gen:0,N:0,dirs:false,cam:null};
+  let anim={on:false,n:0,t0:0,raf:0};
+
+  function setReadout(n,area){
+    el('genEcho').textContent='n = '+n;el('sN').textContent=n;
+    el('sT').textContent=Math.pow(2,n).toLocaleString();el('sO').textContent=ORIG.toFixed(3);
+    el('sA').textContent=area.toFixed(3);
+    const fr=area/ORIG;el('sF').textContent=(fr*100).toFixed(1)+'%';el('barFill').style.width=Math.max(2,fr*100)+'%';
+  }
+  function drawStatic(){
+    el('legend').style.display='none';
+    paint(levelTris(st.gen),[]);
+    setReadout(st.gen,levelArea(st.gen));
+    el('stageCap').textContent=st.gen===0?'n = 0 · the original triangle':'n = '+st.gen+' · '+Math.pow(2,st.gen).toLocaleString()+' translated pieces';
+    el('gen').value=st.gen;
+  }
+  function drawTransition(n,u){
+    el('legend').style.display='block';
+    const [L,R]=transitionPieces(n,u);paint(L,R);
+    const area=levelArea(n)+(levelArea(n+1)-levelArea(n))*u;
+    setReadout(n,area); // n shown is the from-stage; count/echo reflect it
+    el('sT').textContent=Math.pow(2,n).toLocaleString()+' → '+Math.pow(2,n+1).toLocaleString();
+    el('stageCap').textContent='cutting & sliding · n = '+n+' → '+(n+1);
+    el('gen').value=n;
+  }
+
+  const DUR=900,PAUSE=260;
+  function stop(){anim.on=false;if(anim.raf)cancelAnimationFrame(anim.raf);anim.raf=0;el('play').textContent='▶ sprout';}
+  function loop(now){
+    if(!anim.on)return;
+    if(anim.n>=st.N){st.gen=st.N;stop();el('play').textContent='▶ replay';drawStatic();return;}
+    const e=now-anim.t0;
+    if(e<DUR){drawTransition(anim.n,ease(e/DUR));anim.raf=requestAnimationFrame(loop);}
+    else if(e<DUR+PAUSE){drawTransition(anim.n,1);anim.raf=requestAnimationFrame(loop);}
+    else{anim.n++;anim.t0=now;st.gen=anim.n;
+      if(anim.n>=st.N){st.gen=st.N;stop();el('play').textContent='▶ replay';drawStatic();return;}
+      anim.raf=requestAnimationFrame(loop);}
+  }
+  function play(){
+    if(anim.on){stop();drawStatic();return;}
+    if(st.N===0){drawStatic();return;}
+    anim.on=true;anim.n=0;st.gen=0;anim.t0=performance.now();el('play').textContent='⏸ pause';
+    anim.raf=requestAnimationFrame(loop);
+  }
+
+  function setEps(v,autoplay){
+    if(!isFinite(v)||v<=0)v=0.0001;st.eps=v;el('epsEcho').textContent=v.toFixed(2);
+    st.N=chooseN(v);el('gen').max=st.N;st.cam=computeCam(st.N,st.dirs);
+    const floor=levelArea(CAP),f=el('flag');
+    if(v<floor){f.classList.add('show');f.innerHTML='ε = '+v.toFixed(3)+' is below what '+(2**CAP).toLocaleString()+' triangles reach ('+floor.toFixed(3)+'). Showing the deepest stage — area falls to 0 only in the limit.';}
+    else f.classList.remove('show');
+    stop();
+    if(autoplay&&st.N>0){play();} else {st.gen=st.N;drawStatic();}
+  }
+
+  el('play').addEventListener('click',play);
+  el('reset').addEventListener('click',()=>{stop();st.gen=0;drawStatic();});
+  el('eps').addEventListener('input',e=>setEps(parseFloat(e.target.value),false));
+  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{el('eps').value=c.dataset.eps;setEps(parseFloat(c.dataset.eps),true);}));
+  el('gen').addEventListener('input',e=>{stop();st.gen=parseInt(e.target.value,10);drawStatic();});
+  el('dirs').addEventListener('change',e=>{st.dirs=e.target.checked;st.cam=computeCam(st.N,st.dirs);if(!anim.on)drawStatic();});
+  window.addEventListener('resize',()=>{if(!anim.on)drawStatic();});
+
+  // boot
+  setEps(1.0,false);
+  setTimeout(()=>play(),420);
+})();
+</script>
+</body>
+</html>

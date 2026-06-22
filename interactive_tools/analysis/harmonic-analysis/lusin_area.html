@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lusin Area Integral S(u) — Harmonic Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:#faf7f2; --navy:#18284a; --gold:#c8a430;
+    --crimson:#9E1B32; --crimson2:#7a1426;
+    --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+       display:flex;flex-direction:column;align-items:center;padding-bottom:52px;}
+
+  /* ── Alabama header ── */
+  header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);margin-bottom:20px;}
+  .hdr-top{background:var(--crimson2);padding:.3rem 2rem;font-size:.78rem;color:#f0c8d0;letter-spacing:.07em;text-transform:uppercase;}
+  .hdr-main{padding:.8rem 2rem .7rem;text-align:center;}
+  header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.75rem;font-weight:700;}
+  header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.25rem;font-size:.88rem;line-height:1.6;}
+  .hdr-stripe{height:4px;background:linear-gradient(90deg,var(--gold),#a07820);}
+
+  .controls{display:flex;align-items:center;gap:26px;margin-bottom:16px;flex-wrap:wrap;
+             justify-content:center;background:var(--panel);border:1px solid var(--border);
+             border-radius:4px;padding:10px 20px;}
+  .ctrl{display:flex;align-items:center;gap:8px;}
+  .ctrl label{font-size:.85rem;color:var(--muted);}
+  select{font-family:'Crimson Pro',Georgia,serif;font-size:.88rem;padding:4px 8px;
+         border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--navy);}
+  select:focus{outline:none;border-color:var(--crimson);}
+  input[type=range]{width:220px;accent-color:var(--crimson);cursor:pointer;}
+  .x0v{font-size:1rem;color:var(--crimson);font-weight:bold;min-width:3.5em;}
+  .row{display:flex;gap:14px;margin-bottom:14px;justify-content:center;flex-wrap:wrap;align-items:flex-start;}
+  .panel{background:#fff;border:1.5px solid var(--border);border-radius:4px;
+         box-shadow:0 2px 10px rgba(0,0,0,.07);}
+  .phdr{font-size:.70rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);
+        padding:5px 10px 4px;background:var(--panel);border-bottom:1px solid var(--border);}
+  canvas{display:block;}
+  .stats{width:178px;flex-shrink:0;background:var(--panel);border:1.5px solid var(--border);
+         border-radius:4px;padding:13px 14px;font-size:.82rem;display:flex;
+         flex-direction:column;gap:7px;}
+  .shdr{font-size:.70rem;text-transform:uppercase;letter-spacing:.09em;color:var(--crimson);margin-bottom:2px;font-weight:600;}
+  .srow{display:flex;justify-content:space-between;align-items:baseline;}
+  .skey{color:var(--muted);font-size:.79rem;}
+  .sval{color:var(--crimson);font-weight:bold;font-size:.98rem;}
+  .snote{font-size:.74rem;color:var(--muted);font-style:italic;margin-top:5px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama &ensp;&mdash;&ensp; Harmonic Analysis &ensp;&middot;&ensp; Real-Variable Methods</div>
+  <div class="hdr-main">
+    <h1>Lusin Area Integral &thinsp;<em>S(u)</em></h1>
+    <div class="subtitle">
+      n = 1 &ensp;&middot;&ensp; α = 1, h = 1 &ensp;&middot;&ensp; u = Re F(z) harmonic in ℝ²₊<br>
+      Γ¹<sub>α</sub>(x₀) = {(x,y) : |x − x₀| &lt; αy, 0 &lt; y &lt; h} &ensp;&mdash;&ensp;
+      S(u)(x₀)² = ∬<sub>Γ</sub> |∇u|² dx dy = area of F(Γ) in ℂ
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <div class="ctrl">
+    <label for="fsel">F(z) =</label>
+    <select id="fsel">
+      <option value="z2">z² &nbsp;&nbsp; (u = x²−y²)</option>
+      <option value="z3">z³ &nbsp;&nbsp; (u = x³−3xy²)</option>
+      <option value="ez">eᶻ &nbsp;&nbsp; (u = eˣcos y)</option>
+      <option value="cosz">cos z &nbsp; (u = cos x · cosh y)</option>
+      <option value="logz">log z &nbsp; (u = log|z|)</option>
+    </select>
+  </div>
+  <div class="ctrl">
+    <label>x₀ =</label>
+    <span class="x0v" id="x0v">0.50</span>
+    <input type="range" id="x0sl" min="-2.7" max="2.7" step="0.05" value="0.5">
+  </div>
+</div>
+
+<div class="row">
+  <!-- Half-plane heatmap -->
+  <div class="panel">
+    <div class="phdr">Upper half-plane &ensp; u(x,y) = Re F(z) &ensp;+&ensp; cone Γ¹<sub>α</sub>(x₀)</div>
+    <canvas id="chp" width="450" height="210"></canvas>
+  </div>
+  <!-- F-image -->
+  <div class="panel">
+    <div class="phdr">Image F(Γ¹<sub>α</sub>(x₀)) in ℂ &ensp;&middot;&ensp; area = S(u)(x₀)²</div>
+    <canvas id="cim" width="272" height="252"></canvas>
+  </div>
+  <!-- Stats -->
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="row">
+  <div class="panel">
+    <div class="phdr">Boundary values &ensp; u(x₀, 0⁺) = Re F(x₀) &ensp; [nontangential limit]</div>
+    <canvas id="cub" width="370" height="158"></canvas>
+  </div>
+  <div class="panel">
+    <div class="phdr">Area integral &ensp; S(u)(x₀) = ( ∬<sub>Γ</sub> |F′(z)|² dx dy )^½</div>
+    <canvas id="csp" width="370" height="158"></canvas>
+  </div>
+</div>
+
+<script>
+// ── Complex arithmetic ──────────────────────────────────────────────────────
+const cMul   = (a,b) => [a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]];
+const cScale  = (a,s) => [a[0]*s, a[1]*s];
+const cAbs2   = a => a[0]*a[0]+a[1]*a[1];
+const cExp    = a => { const r=Math.exp(a[0]); return [r*Math.cos(a[1]), r*Math.sin(a[1])]; };
+const cCos    = a => [ Math.cos(a[0])*Math.cosh(a[1]), -Math.sin(a[0])*Math.sinh(a[1])];
+const cSin    = a => [ Math.sin(a[0])*Math.cosh(a[1]),  Math.cos(a[0])*Math.sinh(a[1])];
+const cLog    = a => [0.5*Math.log(cAbs2(a)), Math.atan2(a[1],a[0])];
+const cInv    = a => { const d=cAbs2(a); return [a[0]/d,-a[1]/d]; };
+
+// ── Function presets ────────────────────────────────────────────────────────
+const PRESETS = {
+  z2:   { F: z=>cMul(z,z),         Fp: z=>cScale(z,2),          uB: x=>x*x },
+  z3:   { F: z=>cMul(cMul(z,z),z), Fp: z=>cScale(cMul(z,z),3),  uB: x=>x**3 },
+  ez:   { F: z=>cExp(z),            Fp: z=>cExp(z),               uB: x=>Math.exp(x) },
+  cosz: { F: z=>cCos(z),            Fp: z=>cScale(cSin(z),-1),   uB: x=>Math.cos(x) },
+  logz: { F: z=>cLog(z),            Fp: z=>cInv(z),               uB: x=>x!==0?Math.log(Math.abs(x)):NaN },
+};
+
+// ── State ───────────────────────────────────────────────────────────────────
+let preset=PRESETS.z2, x0=0.5;
+const ALPHA=1, HCONE=1, XMIN=-2.7, XMAX=2.7;
+let hpImg=null, sCurve=null, curS2=NaN;
+
+// ── Colormap (navy ← cream → crimson) ──────────────────────────────────────
+function colormap(t) {
+  t=Math.max(-1,Math.min(1,t));
+  const s=Math.abs(t), c=t>=0?[158,27,50]:[24,40,74];
+  return[Math.round(250+s*(c[0]-250)),Math.round(247+s*(c[1]-247)),Math.round(242+s*(c[2]-242))];
+}
+
+// ── S² via change of variables ─────────────────────────────────────────────
+// Γ_α^h(x0): |x−x0| < α·y, 0 < y < h
+// S² = ∫₀ʰ ∫₋α^α |F′(x0+ty, y)|² · y dt dy
+function S2(x0v, pre) {
+  const NY=55, NT=55;
+  let sum=0;
+  for(let ky=0;ky<NY;ky++){
+    const y=(ky+0.5)/NY;
+    for(let kt=0;kt<NT;kt++){
+      const t=-ALPHA+(kt+0.5)*2*ALPHA/NT;
+      const fp=pre.Fp([x0v+t*y, y]);
+      if(!isFinite(fp[0])||!isFinite(fp[1])) continue;
+      sum+=cAbs2(fp)*y;
+    }
+  }
+  return sum*(1/NY)*(2*ALPHA/NT);
+}
+
+function buildSCurve(pre) {
+  const N=140, out=[];
+  for(let i=0;i<=N;i++){
+    const x=XMIN+(XMAX-XMIN)*i/N;
+    const s2=S2(x,pre);
+    out.push({x, s2, s:Math.sqrt(Math.max(0,s2))});
+  }
+  return out;
+}
+
+// ── Half-plane canvas ───────────────────────────────────────────────────────
+const CHP=document.getElementById('chp'), CTXHP=CHP.getContext('2d');
+const HPW=CHP.width, HPH=CHP.height;
+const HPXMIN=-3.3, HPXMAX=3.3, HPYMAX=1.42;
+
+function hp2c(wx,wy){
+  return[(wx-HPXMIN)/(HPXMAX-HPXMIN)*HPW, HPH-wy/HPYMAX*HPH];
+}
+
+function buildHPImg(pre) {
+  const id=CTXHP.createImageData(HPW,HPH), d=id.data;
+  let umin=Infinity, umax=-Infinity;
+  for(let px=0;px<HPW;px+=5) for(let py=2;py<HPH;py+=5){
+    const wx=HPXMIN+(px/HPW)*(HPXMAX-HPXMIN);
+    const wy=HPYMAX*(1-py/HPH);
+    if(wy<0.01) continue;
+    const u=pre.F([wx,wy])[0];
+    if(isFinite(u)){umin=Math.min(umin,u);umax=Math.max(umax,u);}
+  }
+  if(!isFinite(umin)||umin===umax){umin=0;umax=1;}
+
+  for(let px=0;px<HPW;px++) for(let py=0;py<HPH;py++){
+    const wx=HPXMIN+(px/HPW)*(HPXMAX-HPXMIN);
+    const wy=HPYMAX*(1-py/HPH);
+    const idx=(py*HPW+px)*4;
+    if(wy<=0){
+      d[idx]=215;d[idx+1]=210;d[idx+2]=205;d[idx+3]=255;
+    } else {
+      const u=pre.F([wx,wy])[0];
+      const t=isFinite(u)?2*(u-umin)/(umax-umin)-1:0;
+      const [r,g,b]=colormap(t);
+      d[idx]=r;d[idx+1]=g;d[idx+2]=b;d[idx+3]=255;
+    }
+  }
+  return id;
+}
+
+function drawHP() {
+  if(hpImg) CTXHP.putImageData(hpImg,0,0);
+
+  // Triangle / cone
+  const [ax,ay]=hp2c(x0,0);
+  const [lx,ly]=hp2c(x0-HCONE*ALPHA, HCONE);
+  const [rx,ry]=hp2c(x0+HCONE*ALPHA, HCONE);
+  CTXHP.beginPath(); CTXHP.moveTo(ax,ay); CTXHP.lineTo(lx,ly); CTXHP.lineTo(rx,ry); CTXHP.closePath();
+  CTXHP.fillStyle='rgba(158,27,50,0.15)'; CTXHP.fill();
+  CTXHP.strokeStyle='rgba(158,27,50,0.90)'; CTXHP.lineWidth=1.8; CTXHP.stroke();
+
+  // x-axis
+  const [,axy]=hp2c(0,0);
+  CTXHP.strokeStyle='rgba(26,42,74,0.5)'; CTXHP.lineWidth=1; CTXHP.setLineDash([]);
+  CTXHP.beginPath(); CTXHP.moveTo(0,axy); CTXHP.lineTo(HPW,axy); CTXHP.stroke();
+  CTXHP.fillStyle='rgba(26,42,74,0.55)'; CTXHP.font='9px Georgia'; CTXHP.textAlign='center';
+  for(let xi=-3;xi<=3;xi++){
+    const [tx]=hp2c(xi,0);
+    CTXHP.beginPath(); CTXHP.moveTo(tx,axy); CTXHP.lineTo(tx,axy-3); CTXHP.stroke();
+    if(xi!==0) CTXHP.fillText(xi,tx,axy+11);
+  }
+
+  // h=1 dashed
+  const [,h1y]=hp2c(0,HCONE);
+  CTXHP.setLineDash([4,4]); CTXHP.strokeStyle='rgba(26,42,74,0.20)'; CTXHP.lineWidth=1;
+  CTXHP.beginPath(); CTXHP.moveTo(0,h1y); CTXHP.lineTo(HPW,h1y); CTXHP.stroke();
+  CTXHP.setLineDash([]);
+  CTXHP.fillStyle='rgba(26,42,74,0.38)'; CTXHP.font='9px Georgia'; CTXHP.textAlign='left';
+  CTXHP.fillText('y = h = 1', 5, h1y-4);
+
+  // Slope labels on cone sides
+  CTXHP.fillStyle='rgba(158,27,50,0.80)'; CTXHP.font='italic 9px Georgia';
+  CTXHP.textAlign='center';
+  CTXHP.fillText('|x−x₀|=y', (ax+lx)/2-8, (ay+ly)/2-6);
+
+  // x0 dot
+  CTXHP.beginPath(); CTXHP.arc(ax,ay,4.5,0,2*Math.PI);
+  CTXHP.fillStyle='#9E1B32'; CTXHP.strokeStyle='#fff'; CTXHP.lineWidth=1.5;
+  CTXHP.fill(); CTXHP.stroke();
+  CTXHP.fillStyle='#9E1B32'; CTXHP.font='bold 10px Georgia'; CTXHP.textAlign='center';
+  CTXHP.fillText('x₀',ax,ay+15);
+}
+
+// ── F-image canvas ──────────────────────────────────────────────────────────
+const CIM=document.getElementById('cim'), CTXIM=CIM.getContext('2d');
+const IMW=CIM.width, IMH=CIM.height;
+
+function drawFImg() {
+  CTXIM.clearRect(0,0,IMW,IMH);
+  CTXIM.fillStyle='#fff'; CTXIM.fillRect(0,0,IMW,IMH);
+
+  // Dense sample of Γ
+  const NY=72, NT=72;
+  const pts=[];
+  let umin=Infinity,umax=-Infinity,vmin=Infinity,vmax=-Infinity;
+  for(let ky=0;ky<NY;ky++){
+    const y=(ky+0.5)/NY;
+    for(let kt=0;kt<NT;kt++){
+      const t=-ALPHA+(kt+0.5)*2*ALPHA/NT;
+      const z=[x0+t*y, y];
+      const Fz=preset.F(z);
+      if(!isFinite(Fz[0])||!isFinite(Fz[1])) continue;
+      pts.push({u:Fz[0],v:Fz[1],y});
+      umin=Math.min(umin,Fz[0]); umax=Math.max(umax,Fz[0]);
+      vmin=Math.min(vmin,Fz[1]); vmax=Math.max(vmax,Fz[1]);
+    }
+  }
+  if(!pts.length) return;
+
+  const PAD=28;
+  const usc=Math.max(umax-umin,1e-8), vsc=Math.max(vmax-vmin,1e-8);
+  const sc=Math.min((IMW-2*PAD)/usc,(IMH-2*PAD)/vsc);
+  const ox=(IMW-usc*sc)/2-umin*sc;
+  const oy=(IMH+vsc*sc)/2+vmin*sc;
+  const toC=(u,v)=>[ox+u*sc, oy-v*sc];
+
+  // Light axes
+  const [axu,axv]=toC(0,0);
+  CTXIM.strokeStyle='rgba(26,42,74,0.15)'; CTXIM.lineWidth=1; CTXIM.setLineDash([3,3]);
+  if(axu>0&&axu<IMW){CTXIM.beginPath();CTXIM.moveTo(axu,0);CTXIM.lineTo(axu,IMH);CTXIM.stroke();}
+  if(axv>0&&axv<IMH){CTXIM.beginPath();CTXIM.moveTo(0,axv);CTXIM.lineTo(IMW,axv);CTXIM.stroke();}
+  CTXIM.setLineDash([]);
+
+  // Points colored by y: y=0→crimson, y=1→navy
+  for(const {u,v,y} of pts){
+    const [px,py]=toC(u,v);
+    if(px<0||px>IMW||py<0||py>IMH) continue;
+    const r=Math.round(200+y*(24-200)), g=Math.round(27+y*(40-27)), b=Math.round(50+y*(74-50));
+    CTXIM.fillStyle=`rgb(${r},${g},${b})`;
+    CTXIM.fillRect(px-1,py-1,2.5,2.5);
+  }
+
+  // Boundary of F(Γ): left side, top, right side
+  const bdryL=[], bdryT=[], bdryR=[];
+  const NB=40;
+  for(let i=0;i<=NB;i++){
+    const y=i/NB;
+    let Fz;
+    Fz=preset.F([x0-y*ALPHA,y]); if(isFinite(Fz[0])&&isFinite(Fz[1])) bdryL.push(Fz);
+    Fz=preset.F([x0+y*ALPHA,y]); if(isFinite(Fz[0])&&isFinite(Fz[1])) bdryR.unshift(Fz);
+  }
+  for(let i=0;i<=NB;i++){
+    const x=x0-HCONE*ALPHA+(2*HCONE*ALPHA)*i/NB;
+    const Fz=preset.F([x,HCONE]); if(isFinite(Fz[0])&&isFinite(Fz[1])) bdryT.push(Fz);
+  }
+  const bdry=[...bdryL,...bdryT,...bdryR];
+  if(bdry.length>2){
+    CTXIM.beginPath();
+    let [px,py]=toC(bdry[0][0],bdry[0][1]); CTXIM.moveTo(px,py);
+    for(let i=1;i<bdry.length;i++){[px,py]=toC(bdry[i][0],bdry[i][1]);CTXIM.lineTo(px,py);}
+    CTXIM.closePath();
+    CTXIM.strokeStyle='rgba(200,164,48,0.80)'; CTXIM.lineWidth=1.4; CTXIM.stroke();
+  }
+
+  // Axis labels
+  CTXIM.fillStyle='rgba(26,42,74,0.5)'; CTXIM.font='9px Georgia'; CTXIM.textAlign='center';
+  CTXIM.fillText('Re F(z)', IMW/2, IMH-3);
+  CTXIM.save(); CTXIM.translate(11,IMH/2); CTXIM.rotate(-Math.PI/2);
+  CTXIM.fillText('Im F(z)',0,0); CTXIM.restore();
+
+  // Colour legend
+  const LX=IMW-38, LY=IMH-52;
+  const grad=CTXIM.createLinearGradient(LX,LY,LX,LY+34);
+  grad.addColorStop(0,'rgb(24,40,74)'); grad.addColorStop(1,'rgb(158,27,50)');
+  CTXIM.fillStyle=grad; CTXIM.fillRect(LX,LY,8,34);
+  CTXIM.strokeStyle='rgba(26,42,74,0.3)'; CTXIM.lineWidth=0.5; CTXIM.strokeRect(LX,LY,8,34);
+  CTXIM.fillStyle='rgba(26,42,74,0.55)'; CTXIM.font='8px Georgia'; CTXIM.textAlign='left';
+  CTXIM.fillText('y=1',LX+11,LY+6); CTXIM.fillText('y=0',LX+11,LY+36);
+
+  // S² annotation
+  CTXIM.fillStyle='#18284a'; CTXIM.font='10px Georgia'; CTXIM.textAlign='left';
+  CTXIM.fillText(`S² = ${curS2.toFixed(5)}`, 6, 15);
+}
+
+// ── Generic plot ────────────────────────────────────────────────────────────
+const P={l:44,r:14,t:12,b:28};
+
+function drawPlot(canvas, ctx, data, lineColor, dotVal) {
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  const vals=data.map(d=>d.v).filter(isFinite);
+  if(!vals.length) return;
+  const vmin=Math.min(...vals), vmax=Math.max(...vals), vr=Math.max(vmax-vmin,1e-8);
+
+  const tx=x=>(P.l+(x-XMIN)/(XMAX-XMIN)*(W-P.l-P.r));
+  const ty=v=>(P.t+(vmax-v)/vr*(H-P.t-P.b));
+
+  // Grid
+  ctx.strokeStyle='rgba(26,42,74,0.08)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  [0.25,0.5,0.75].forEach(f=>{
+    const yy=P.t+f*(H-P.t-P.b);
+    ctx.beginPath(); ctx.moveTo(P.l,yy); ctx.lineTo(W-P.r,yy); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // Zero line
+  if(vmin<0&&vmax>0){
+    const zy=ty(0);
+    ctx.strokeStyle='rgba(26,42,74,0.25)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(P.l,zy); ctx.lineTo(W-P.r,zy); ctx.stroke();
+  }
+
+  // Curve
+  ctx.beginPath(); let first=true;
+  for(const {x,v} of data){
+    if(!isFinite(v)){first=true; continue;}
+    first ? ctx.moveTo(tx(x),ty(v)) : ctx.lineTo(tx(x),ty(v));
+    first=false;
+  }
+  ctx.strokeStyle=lineColor; ctx.lineWidth=2.2; ctx.stroke();
+
+  // x₀ vertical
+  ctx.strokeStyle='rgba(158,27,50,0.60)'; ctx.lineWidth=1.3; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(tx(x0),P.t); ctx.lineTo(tx(x0),H-P.b); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Dot at x₀
+  if(isFinite(dotVal)){
+    ctx.beginPath(); ctx.arc(tx(x0),ty(dotVal),4,0,2*Math.PI);
+    ctx.fillStyle=lineColor; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
+    ctx.fill(); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle='rgba(26,42,74,0.4)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(P.l,P.t); ctx.lineTo(P.l,H-P.b); ctx.lineTo(W-P.r,H-P.b); ctx.stroke();
+
+  // x ticks
+  ctx.fillStyle='rgba(26,42,74,0.55)'; ctx.font='9px Georgia'; ctx.textAlign='center';
+  for(let xi=-2;xi<=2;xi++){
+    const px=tx(xi);
+    ctx.beginPath(); ctx.moveTo(px,H-P.b); ctx.lineTo(px,H-P.b+3); ctx.stroke();
+    ctx.fillText(xi,px,H-P.b+13);
+  }
+  // x₀ label
+  ctx.fillStyle='rgba(158,27,50,0.80)';
+  ctx.fillText('x₀',tx(x0),H-P.b+13);
+
+  // y ticks
+  ctx.textAlign='right';
+  [0,0.5,1].forEach(f=>{
+    const v=vmin+f*vr, yy=ty(v);
+    ctx.beginPath(); ctx.moveTo(P.l,yy); ctx.lineTo(P.l-3,yy); ctx.stroke();
+    ctx.fillStyle='rgba(26,42,74,0.55)';
+    ctx.fillText(v.toFixed(2),P.l-5,yy+3);
+  });
+}
+
+// ── Stats box ───────────────────────────────────────────────────────────────
+function updateStats() {
+  const s=Math.sqrt(Math.max(0,curS2));
+  const ub=preset.uB(x0);
+  document.getElementById('stats').innerHTML=
+  `<div class="shdr">At x₀ = ${x0.toFixed(2)}</div>
+   <div class="srow"><span class="skey">u(x₀, 0⁺)</span><span class="sval">${isFinite(ub)?ub.toFixed(5):'—'}</span></div>
+   <div class="srow"><span class="skey">S(u)(x₀)</span><span class="sval">${s.toFixed(5)}</span></div>
+   <div class="srow"><span class="skey">S(u)²</span><span class="sval">${curS2.toFixed(5)}</span></div>
+   <div class="snote">
+     S² = area of F(Γ) in ℂ<br>
+     = ∬<sub>Γ</sub> |F′(z)|² dx dy<br>
+     (Cauchy–Riemann: |∇u|² = |F′|²)<br><br>
+     Γ = triangle<br>
+     {|x−x₀| &lt; y, &thinsp;0 &lt; y &lt; 1}<br><br>
+     Color in image:<br>
+     <span style="color:#9E1B32">■</span> near bdry (y→0)<br>
+     <span style="color:#18284a">■</span> top (y = 1)
+   </div>`;
+}
+
+// ── Full update ─────────────────────────────────────────────────────────────
+const CUB=document.getElementById('cub'), CTXUB=CUB.getContext('2d');
+const CSP=document.getElementById('csp'), CTXSP=CSP.getContext('2d');
+
+function update() {
+  curS2=S2(x0,preset);
+  drawHP();
+  drawFImg();
+  updateStats();
+
+  // u boundary data
+  const ubData=[];
+  for(let i=0;i<=220;i++){
+    const xi=XMIN+(XMAX-XMIN)*i/220;
+    ubData.push({x:xi, v:preset.uB(xi)});
+  }
+  drawPlot(CUB, CTXUB, ubData, '#18284a', preset.uB(x0));
+
+  // S curve
+  if(sCurve){
+    drawPlot(CSP, CTXSP, sCurve.map(d=>({x:d.x,v:d.s})), '#9E1B32',
+             sCurve.reduce((b,d)=>Math.abs(d.x-x0)<Math.abs(b.x-x0)?d:b).s);
+  }
+}
+
+function rebuild() {
+  hpImg=buildHPImg(preset);
+  sCurve=buildSCurve(preset);
+  update();
+}
+
+// ── Events ──────────────────────────────────────────────────────────────────
+document.getElementById('fsel').addEventListener('change',e=>{
+  preset=PRESETS[e.target.value]; rebuild();
+});
+document.getElementById('x0sl').addEventListener('input',e=>{
+  x0=parseFloat(e.target.value);
+  document.getElementById('x0v').textContent=x0.toFixed(2);
+  update();
+});
+
+rebuild();
+</script>
+</body>
+</html>

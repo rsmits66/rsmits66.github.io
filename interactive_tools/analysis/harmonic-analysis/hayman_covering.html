@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hayman's covering lemma · visualization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f0e8;
+    --paper: #faf7f1;
+    --ink: #1c1814;
+    --ink-2: #5a544c;
+    --ink-3: #8a8278;
+    --rule: #d9d3c5;
+    --rule-soft: #ebe5d6;
+    --accent: #7d1d2c;
+    --domain-stroke: #1f3060;
+    --domain-fill: rgba(91, 111, 176, 0.13);
+    --grid: #d4cdbb;
+    --grid-soft: #e6e0d0;
+    --inscribed: #a13822;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+    padding: 36px 32px 60px;
+  }
+  main {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 22px;
+    margin-bottom: 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 32px;
+  }
+  .title-block .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-weight: 400;
+    font-size: 38px;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+    font-style: italic;
+  }
+  h1 .roman { font-style: normal; }
+  .lemma {
+    font-size: 14.5px;
+    color: var(--ink-2);
+    max-width: 540px;
+    text-align: right;
+    line-height: 1.55;
+  }
+  .lemma .math {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .controls {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 22px 22px 18px;
+    position: sticky;
+    top: 24px;
+  }
+  .controls section + section {
+    border-top: 1px solid var(--rule-soft);
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+  .controls h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+  }
+  .domain-list { display: flex; flex-direction: column; gap: 2px; }
+  .domain-btn {
+    background: none;
+    border: none;
+    font-family: 'Spectral', serif;
+    font-size: 15px;
+    color: var(--ink-2);
+    text-align: left;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 120ms ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .domain-btn:hover {
+    color: var(--ink);
+    background: var(--rule-soft);
+  }
+  .domain-btn.active {
+    color: var(--ink);
+    border-left-color: var(--accent);
+    background: var(--rule-soft);
+    font-style: italic;
+  }
+  .domain-btn .desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    font-style: normal;
+  }
+
+  .mode-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mode-btn {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 6px;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+  }
+  .mode-btn:hover { background: var(--rule-soft); color: var(--ink); }
+  .mode-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .class-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+    margin-top: 8px;
+  }
+  .class-cell {
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 100ms ease;
+    position: relative;
+  }
+  .class-cell:hover { transform: scale(1.15); z-index: 2; }
+  .class-cell.selected {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink);
+  }
+  .class-axis {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    gap: 4px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .class-axis .axis-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .class-axis .axis-cols {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+  }
+  .class-axis .axis-cols span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+
+  .toggles { display: flex; flex-direction: column; gap: 8px; }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .toggle:hover { color: var(--ink); }
+  .toggle input { 
+    appearance: none;
+    width: 28px;
+    height: 16px;
+    background: var(--rule);
+    border-radius: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 150ms ease;
+    flex-shrink: 0;
+  }
+  .toggle input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--paper);
+    transition: transform 150ms ease;
+  }
+  .toggle input:checked { background: var(--ink); }
+  .toggle input:checked::after { transform: translateX(12px); }
+
+  .canvas-wrap {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px;
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--paper);
+  }
+  .canvas-corner {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  .info-bar {
+    margin-top: 18px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 16px 22px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+  }
+  .stat .value {
+    font-size: 22px;
+    font-weight: 400;
+    font-feature-settings: "tnum";
+    color: var(--ink);
+  }
+  .stat .value .unit {
+    font-size: 13px;
+    color: var(--ink-3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 4px;
+  }
+  .stat .value em {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-size: 18px;
+  }
+
+  .lemma-detail {
+    margin-top: 28px;
+    border-top: 1px solid var(--rule);
+    padding-top: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 30px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .lemma-detail h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .lemma-detail .formula {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--paper);
+    padding: 8px 10px;
+    margin: 8px 0;
+    border-left: 2px solid var(--accent);
+    font-size: 12px;
+    color: var(--ink);
+  }
+
+  @media (max-width: 980px) {
+    .workspace { grid-template-columns: 1fr; }
+    .controls { position: static; }
+    .info-bar { grid-template-columns: repeat(2, 1fr); }
+    .lemma-detail { grid-template-columns: 1fr; }
+    header { grid-template-columns: 1fr; }
+    .lemma { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="title-block">
+      <div class="eyebrow">Hayman 1978 · lemma 2</div>
+      <h1>The boundary-disc <span class="roman">covering construction</span></h1>
+    </div>
+    <p class="lemma">
+      For any simply connected <span class="math">D ⊂ ℝ²</span> with inradius <span class="math">d</span>, the discs <span class="math">Cₘ,ₙ = {|z − zₘ,ₙ| ≤ d(1+√2)}</span> with centers <span class="math">zₘ,ₙ ∈ ∂D ∩ Qₘ,ₙ</span> cover <span class="math">D</span>; the family splits into 36 pairwise-disjoint subfamilies indexed by <span class="math">(m mod 6, n mod 6)</span>.
+    </p>
+  </header>
+
+  <div class="workspace">
+    <aside class="controls">
+      <section>
+        <h2>Domain</h2>
+        <div class="domain-list" id="domainList"></div>
+      </section>
+
+      <section>
+        <h2>Display mode</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-mode="all">All</button>
+          <button class="mode-btn" data-mode="single">Single class</button>
+          <button class="mode-btn" data-mode="cycle">Cycle</button>
+        </div>
+        <div id="classGroup" style="display:none;">
+          <div class="class-grid" id="classGrid"></div>
+          <div class="class-axis">
+            <span class="axis-label"></span>
+            <div class="axis-cols">
+              <span>n=0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Show</h2>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="showGrid" checked> Grid Q<sub>m,n</sub></label>
+          <label class="toggle"><input type="checkbox" id="showInscribed" checked> Inscribed disc (radius d)</label>
+          <label class="toggle"><input type="checkbox" id="showActiveSquares" checked> Active squares</label>
+          <label class="toggle"><input type="checkbox" id="showCenters" checked> Boundary centers z<sub>m,n</sub></label>
+          <label class="toggle"><input type="checkbox" id="showDiscs" checked> Discs C<sub>m,n</sub></label>
+        </div>
+      </section>
+    </aside>
+
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="1800" height="1200"></canvas>
+        <div class="canvas-corner" id="cornerLabel">D · simply connected</div>
+      </div>
+
+      <div class="info-bar">
+        <div class="stat">
+          <div class="label">Inradius d</div>
+          <div class="value" id="statInradius">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Disc radius</div>
+          <div class="value" id="statDiscR">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Active squares</div>
+          <div class="value" id="statSquares">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Mode status</div>
+          <div class="value" id="statMode">—</div>
+        </div>
+      </div>
+
+      <div class="lemma-detail">
+        <div>
+          <h3>Step 1 · grid</h3>
+          Tile ℝ² by half-open squares of side d:
+          <div class="formula">Q<sub>m,n</sub> = [md,(m+1)d) × [nd,(n+1)d)</div>
+          With inradius d, no open disc of radius &gt; d fits inside D.
+        </div>
+        <div>
+          <h3>Step 2 · cover</h3>
+          For each Q<sub>m,n</sub> meeting ∂D, choose any z<sub>m,n</sub> ∈ ∂D ∩ Q<sub>m,n</sub> and form the disc of radius d(1+√2). For z<sub>0</sub>∈D, the nearest boundary point z<sub>1</sub> is at distance ≤ d, and z<sub>1</sub> sits in some Q<sub>m,n</sub>, so |z<sub>1</sub> − z<sub>m,n</sub>| &lt; d√2, giving |z<sub>0</sub> − z<sub>m,n</sub>| &lt; d(1+√2).
+        </div>
+        <div>
+          <h3>Step 3 · 36 disjoint families</h3>
+          Distinct centers in the same residue class (m,n) mod 6 satisfy
+          <div class="formula">|z<sub>m,n</sub> − z<sub>m',n'</sub>| &gt; 5d &gt; 2d(1+√2)</div>
+          (since 1+√2 ≈ 2.414, hence 2(1+√2) ≈ 4.828 &lt; 5), so the corresponding discs are disjoint.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// =====================================================================
+// DOMAINS — each returns a closed simply-connected polygon (CCW)
+// =====================================================================
+const DOMAINS = {
+  disc: {
+    name: 'Disc',
+    desc: 'convex',
+    poly: () => {
+      const pts = [];
+      for (let i = 0; i < 96; i++) {
+        const t = 2*Math.PI*i/96;
+        pts.push([2.6*Math.cos(t), 2.6*Math.sin(t)]);
+      }
+      return pts;
+    }
+  },
+  ellipse: {
+    name: 'Ellipse',
+    desc: 'convex',
+    poly: () => {
+      const pts = [];
+      for (let i = 0; i < 120; i++) {
+        const t = 2*Math.PI*i/120;
+        pts.push([4.2*Math.cos(t), 1.6*Math.sin(t)]);
+      }
+      return pts;
+    }
+  },
+  rectangle: {
+    name: 'Rectangle',
+    desc: 'aspect 4:1',
+    poly: () => [[-4,-1],[4,-1],[4,1],[-4,1]]
+  },
+  lshape: {
+    name: 'L-shape',
+    desc: 'non-convex',
+    poly: () => [[-2.5,-2.5],[2.5,-2.5],[2.5,0],[0,0],[0,2.5],[-2.5,2.5]]
+  },
+  pacman: {
+    name: 'Pac-man',
+    desc: 'concave arc',
+    poly: () => {
+      const pts = [];
+      const r = 3;
+      const open = Math.PI / 3.5;
+      const start = open, end = 2*Math.PI - open;
+      const n = 80;
+      for (let i = 0; i <= n; i++) {
+        const t = start + (end - start) * i / n;
+        pts.push([r*Math.cos(t), r*Math.sin(t)]);
+      }
+      pts.push([0, 0]);
+      return pts;
+    }
+  },
+  snake: {
+    name: 'S-curve',
+    desc: 'meandering tube',
+    poly: () => {
+      const pts = [];
+      const n = 80;
+      const xL = -5, xR = 5;
+      const w = 0.55;
+      const phase = (x) => 1.2 * Math.sin(x * 0.85);
+      for (let i = 0; i <= n; i++) {
+        const t = xL + (xR - xL) * i / n;
+        pts.push([t, phase(t) + w]);
+      }
+      for (let i = n; i >= 0; i--) {
+        const t = xL + (xR - xL) * i / n;
+        pts.push([t, phase(t) - w]);
+      }
+      return pts;
+    }
+  },
+  star: {
+    name: '5-point star',
+    desc: 'sharp concavities',
+    poly: () => {
+      const pts = [];
+      const points = 5;
+      const outer = 3.4, inner = 1.35;
+      for (let i = 0; i < 2*points; i++) {
+        const r = i % 2 === 0 ? outer : inner;
+        const t = Math.PI*i/points - Math.PI/2;
+        pts.push([r*Math.cos(t), r*Math.sin(t)]);
+      }
+      return pts;
+    }
+  },
+  comb: {
+    name: 'Comb',
+    desc: 'thin spikes',
+    poly: () => {
+      const teeth = 7;
+      const xL = -4.2, xR = 4.2;
+      const baseY = -1.0;
+      const topY = 0.0;
+      const tipY = 2.5;
+      const span = xR - xL;
+      const teethGap = span / teeth;
+      const toothW = teethGap * 0.55;
+      const pts = [];
+      pts.push([xL, baseY]);
+      pts.push([xR, baseY]);
+      pts.push([xR, topY]);
+      // walk leftward along top, going up over each tooth
+      for (let i = teeth - 1; i >= 0; i--) {
+        const cx = xL + teethGap * (i + 0.5);
+        const x1 = cx + toothW/2;
+        const x2 = cx - toothW/2;
+        pts.push([x1, topY]);
+        pts.push([x1, tipY]);
+        pts.push([x2, tipY]);
+        pts.push([x2, topY]);
+      }
+      pts.push([xL, topY]);
+      return pts;
+    }
+  },
+  blob: {
+    name: 'Random blob',
+    desc: 'smooth generic',
+    poly: () => {
+      const pts = [];
+      const n = 96;
+      const seed = [1.0, 0.55, -0.40, 0.72, -0.28, 0.45, -0.18, 0.30];
+      const phase = [0.0, 1.3, 2.6, 0.7, 4.0, 5.1, 2.0, 3.4];
+      for (let i = 0; i < n; i++) {
+        const t = 2*Math.PI*i/n;
+        let r = 2.7;
+        for (let k = 0; k < seed.length; k++) {
+          r += 0.42*seed[k]*Math.cos((k+1)*t + phase[k]);
+        }
+        r = Math.max(r, 0.6);
+        pts.push([r*Math.cos(t), r*Math.sin(t)]);
+      }
+      return pts;
+    }
+  },
+  spiralarm: {
+    name: 'Spiral arm',
+    desc: 'long & curved',
+    poly: () => {
+      const pts = [];
+      const n = 140;
+      const w = 0.42;
+      // centerline: spiral with radial step large enough that ±w doesn't self-intersect
+      const turns = 1.5;
+      const r0 = 0.7, r1 = 3.2;
+      const center = [];
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        const theta = t * Math.PI * 2 * turns;
+        const r = r0 + (r1 - r0) * t;
+        center.push([r*Math.cos(theta), r*Math.sin(theta)]);
+      }
+      const tangent = (i) => {
+        const a = center[Math.max(0, i-1)];
+        const b = center[Math.min(n, i+1)];
+        const dx = b[0]-a[0], dy = b[1]-a[1];
+        const L = Math.hypot(dx, dy) || 1;
+        return [-dy/L, dx/L];
+      };
+      const top = [], bot = [];
+      for (let i = 0; i <= n; i++) {
+        const [nx, ny] = tangent(i);
+        top.push([center[i][0] + w*nx, center[i][1] + w*ny]);
+        bot.push([center[i][0] - w*nx, center[i][1] - w*ny]);
+      }
+      return [...top, ...bot.reverse()];
+    }
+  },
+};
+
+// =====================================================================
+// GEOMETRY HELPERS
+// =====================================================================
+function pointInPolygon(p, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1];
+    const xj = poly[j][0], yj = poly[j][1];
+    if (((yi > p[1]) !== (yj > p[1])) &&
+        (p[0] < (xj - xi) * (p[1] - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function distToSegment(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const len2 = dx*dx + dy*dy;
+  if (len2 === 0) return Math.hypot(p[0]-a[0], p[1]-a[1]);
+  let t = ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0] - (a[0]+t*dx), p[1] - (a[1]+t*dy));
+}
+function distToBoundary(p, poly) {
+  let d = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    d = Math.min(d, distToSegment(p, poly[i], poly[(i+1)%poly.length]));
+  }
+  return d;
+}
+
+function bbox(poly) {
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for (const p of poly) {
+    if (p[0]<minX) minX=p[0]; if (p[0]>maxX) maxX=p[0];
+    if (p[1]<minY) minY=p[1]; if (p[1]>maxY) maxY=p[1];
+  }
+  return {minX, minY, maxX, maxY};
+}
+
+function findInradius(poly) {
+  const {minX, minY, maxX, maxY} = bbox(poly);
+  const N = 90;
+  let bestD = 0, bestC = [(minX+maxX)/2, (minY+maxY)/2];
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const x = minX + (maxX-minX)*(i+0.5)/N;
+      const y = minY + (maxY-minY)*(j+0.5)/N;
+      if (!pointInPolygon([x,y], poly)) continue;
+      const d = distToBoundary([x,y], poly);
+      if (d > bestD) { bestD = d; bestC = [x,y]; }
+    }
+  }
+  // Local refinement (gradient-free)
+  let step = Math.max(maxX-minX, maxY-minY) / N;
+  for (let iter = 0; iter < 60; iter++) {
+    let improved = false;
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1],[0.7,0.7],[-0.7,-0.7],[0.7,-0.7],[-0.7,0.7]];
+    for (const [dx,dy] of dirs) {
+      const x = bestC[0] + dx*step, y = bestC[1] + dy*step;
+      if (!pointInPolygon([x,y], poly)) continue;
+      const d = distToBoundary([x,y], poly);
+      if (d > bestD + 1e-9) { bestD = d; bestC = [x,y]; improved = true; }
+    }
+    if (!improved) step *= 0.5;
+    if (step < 1e-6) break;
+  }
+  return { radius: bestD, center: bestC };
+}
+
+// segment / axis-aligned rectangle clip; returns mid-point of intersection
+// or null if no intersection.
+function clipSegmentToRect(a, b, x0, x1, y0, y1) {
+  let tMin = 0, tMax = 1;
+  const dx = b[0]-a[0], dy = b[1]-a[1];
+  const tests = [
+    [-dx, a[0]-x0],
+    [ dx, x1-a[0]],
+    [-dy, a[1]-y0],
+    [ dy, y1-a[1]],
+  ];
+  for (const [p, q] of tests) {
+    if (Math.abs(p) < 1e-12) {
+      if (q < 0) return null;
+    } else {
+      const t = q / p;
+      if (p < 0) {
+        if (t > tMax) return null;
+        if (t > tMin) tMin = t;
+      } else {
+        if (t < tMin) return null;
+        if (t < tMax) tMax = t;
+      }
+    }
+  }
+  if (tMin > tMax) return null;
+  const t = (tMin + tMax) / 2;
+  return [a[0] + t*dx, a[1] + t*dy];
+}
+
+// For each grid square Q_{m,n} that meets ∂D, return one boundary point.
+function findBoundaryPoints(poly, d, originX, originY) {
+  const {minX, minY, maxX, maxY} = bbox(poly);
+  const margin = d * 0.5;
+  const mMin = Math.floor((minX - margin - originX)/d);
+  const mMax = Math.ceil((maxX + margin - originX)/d);
+  const nMin = Math.floor((minY - margin - originY)/d);
+  const nMax = Math.ceil((maxY + margin - originY)/d);
+  const result = [];
+  // Closed interval clipping: cells touching the same grid line may both
+  // detect a boundary point lying on that line, but the lemma's conclusions
+  // (covering, 36 disjoint subfamilies) are unaffected by such doubling.
+  for (let m = mMin; m <= mMax; m++) {
+    for (let n = nMin; n <= nMax; n++) {
+      const x0 = originX + m*d, x1 = originX + (m+1)*d;
+      const y0 = originY + n*d, y1 = originY + (n+1)*d;
+      let found = null;
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i+1)%poly.length];
+        const p = clipSegmentToRect(a, b, x0, x1, y0, y1);
+        if (p) { found = p; break; }
+      }
+      if (found) result.push({ m, n, point: found, square: [x0, x1, y0, y1] });
+    }
+  }
+  return result;
+}
+
+// =====================================================================
+// COLOR PALETTE for 36 residue classes
+// =====================================================================
+function classIndex(m, n) {
+  return ((m % 6) + 6) % 6 * 6 + ((n % 6) + 6) % 6;
+}
+function classColorHSL(idx, alpha = 1) {
+  // Two-dimensional hue/value layout: hue runs along m mod 6, lightness along n mod 6
+  const mi = Math.floor(idx / 6);
+  const ni = idx % 6;
+  const hue = (mi * 60 + ni * 18 + 200) % 360;
+  const sat = 60 + (ni % 3) * 6;
+  const light = 38 + ni * 5;
+  return `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
+}
+
+// =====================================================================
+// STATE & RENDERING
+// =====================================================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  domainKey: 'lshape',
+  poly: [],
+  inradius: 1,
+  inradiusCenter: [0, 0],
+  origin: [0, 0],
+  boundaryPoints: [],
+  mode: 'all',                 // 'all' | 'single' | 'cycle'
+  selectedClass: 0,
+  showGrid: true,
+  showInscribed: true,
+  showActiveSquares: true,
+  showCenters: true,
+  showDiscs: true,
+  cycleStep: 0,
+  cycleTimer: null,
+  presentClasses: [],
+};
+
+function recompute() {
+  state.poly = DOMAINS[state.domainKey].poly();
+  const ir = findInradius(state.poly);
+  state.inradius = ir.radius;
+  state.inradiusCenter = ir.center;
+  // Place the grid origin at (0,0) world coords, BUT shift the polygon so its
+  // inscribed disc is roughly aligned with a grid cell — purely cosmetic.
+  state.origin = [0, 0];
+  state.boundaryPoints = findBoundaryPoints(state.poly, state.inradius, 0, 0);
+
+  const present = new Set();
+  for (const bp of state.boundaryPoints) present.add(classIndex(bp.m, bp.n));
+  state.presentClasses = [...present].sort((a,b)=>a-b);
+  if (state.presentClasses.length && !state.presentClasses.includes(state.selectedClass)) {
+    state.selectedClass = state.presentClasses[0];
+  }
+  paintClassGrid();
+}
+
+function viewTransform() {
+  const d = state.inradius;
+  const margin = d * (1 + Math.sqrt(2)) + d * 0.3;
+  const {minX, minY, maxX, maxY} = bbox(state.poly);
+  const X0 = minX - margin, X1 = maxX + margin;
+  const Y0 = minY - margin, Y1 = maxY + margin;
+  const W = canvas.width, H = canvas.height;
+  const sx = W / (X1 - X0);
+  const sy = H / (Y1 - Y0);
+  const s = Math.min(sx, sy);
+  const offX = (W - s*(X1-X0)) / 2 - s*X0;
+  const offY = (H + s*(Y1-Y0)) / 2 + s*Y0;
+  return { s, tx: offX, ty: offY, X0, X1, Y0, Y1 };
+}
+
+function W2S(p, T) {
+  return [T.tx + T.s*p[0], T.ty - T.s*p[1]];
+}
+
+function draw() {
+  // High-DPI scale
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.parentElement.clientWidth - 28;
+  const aspect = 1800/1200;
+  const cssH = cssW / aspect;
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const T = viewTransform();
+  const d = state.inradius;
+  const [ox, oy] = state.origin;
+  const activeClass = state.mode === 'cycle'
+    ? (state.presentClasses.length ? state.presentClasses[state.cycleStep % state.presentClasses.length] : 0)
+    : state.selectedClass;
+
+  // ----- background grid -----
+  if (state.showGrid) {
+    ctx.lineWidth = 1;
+    const mMin = Math.floor((T.X0 - ox)/d), mMax = Math.ceil((T.X1 - ox)/d);
+    const nMin = Math.floor((T.Y0 - oy)/d), nMax = Math.ceil((T.Y1 - oy)/d);
+    ctx.strokeStyle = 'rgba(212, 205, 187, 0.55)';
+    ctx.beginPath();
+    for (let m = mMin; m <= mMax; m++) {
+      const x = ox + m*d;
+      const [a1] = [W2S([x, oy + nMin*d], T)];
+      const [a2] = [W2S([x, oy + nMax*d], T)];
+      ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]);
+    }
+    for (let n = nMin; n <= nMax; n++) {
+      const y = oy + n*d;
+      const a = W2S([ox + mMin*d, y], T);
+      const b = W2S([ox + mMax*d, y], T);
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+    }
+    ctx.stroke();
+
+    // Bold axes through origin
+    ctx.strokeStyle = 'rgba(122, 110, 88, 0.55)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    const yA = W2S([ox + mMin*d, oy], T);
+    const yB = W2S([ox + mMax*d, oy], T);
+    ctx.moveTo(yA[0], yA[1]); ctx.lineTo(yB[0], yB[1]);
+    const xA = W2S([ox, oy + nMin*d], T);
+    const xB = W2S([ox, oy + nMax*d], T);
+    ctx.moveTo(xA[0], xA[1]); ctx.lineTo(xB[0], xB[1]);
+    ctx.stroke();
+  }
+
+  // ----- active squares (those that meet ∂D) -----
+  if (state.showActiveSquares) {
+    for (const bp of state.boundaryPoints) {
+      const [x0, x1, y0, y1] = bp.square;
+      const cls = classIndex(bp.m, bp.n);
+      const visible = state.mode === 'all' || cls === activeClass;
+      if (!visible) continue;
+      const [sx0, sy0] = W2S([x0, y1], T);
+      const [sx1, sy1] = W2S([x1, y0], T);
+      const fillCol = classColorHSL(cls, 0.10);
+      const strokeCol = classColorHSL(cls, 0.55);
+      ctx.fillStyle = fillCol;
+      ctx.fillRect(sx0, sy0, sx1 - sx0, sy1 - sy0);
+      ctx.strokeStyle = strokeCol;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(sx0 + 0.5, sy0 + 0.5, sx1 - sx0 - 1, sy1 - sy0 - 1);
+    }
+  }
+
+  // ----- the discs C_{m,n} -----
+  if (state.showDiscs) {
+    for (const bp of state.boundaryPoints) {
+      const cls = classIndex(bp.m, bp.n);
+      const visible = state.mode === 'all' || cls === activeClass;
+      if (!visible) continue;
+      const fillAlpha = state.mode === 'all' ? 0.07 : 0.16;
+      const strokeAlpha = state.mode === 'all' ? 0.55 : 0.9;
+      const [cx, cy] = W2S(bp.point, T);
+      const r = T.s * d * (1 + Math.sqrt(2));
+      ctx.fillStyle = classColorHSL(cls, fillAlpha);
+      ctx.strokeStyle = classColorHSL(cls, strokeAlpha);
+      ctx.lineWidth = state.mode === 'all' ? 0.9 : 1.4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  // ----- the domain D -----
+  ctx.fillStyle = 'rgba(91, 111, 176, 0.13)';
+  ctx.strokeStyle = '#1f3060';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i < state.poly.length; i++) {
+    const [x, y] = W2S(state.poly[i], T);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // ----- inscribed disc (radius d) -----
+  if (state.showInscribed) {
+    const [cx, cy] = W2S(state.inradiusCenter, T);
+    const r = T.s * d;
+    ctx.strokeStyle = '#a13822';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#a13822';
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2*Math.PI); ctx.fill();
+    // radius line + label
+    ctx.strokeStyle = '#a13822';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * 0.85, cy - r * 0.5);
+    ctx.stroke();
+    ctx.fillStyle = '#a13822';
+    ctx.font = "italic 13px 'Spectral', serif";
+    ctx.fillText('d', cx + r*0.4 + 4, cy - r*0.25);
+  }
+
+  // ----- centers z_{m,n} -----
+  if (state.showCenters) {
+    for (const bp of state.boundaryPoints) {
+      const cls = classIndex(bp.m, bp.n);
+      const visible = state.mode === 'all' || cls === activeClass;
+      if (!visible) continue;
+      const [x, y] = W2S(bp.point, T);
+      ctx.fillStyle = '#1c1814';
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, 2*Math.PI); ctx.fill();
+      ctx.strokeStyle = 'rgba(250, 247, 241, 0.9)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, 2*Math.PI); ctx.stroke();
+    }
+  }
+
+  updateStats();
+}
+
+function updateStats() {
+  const d = state.inradius;
+  document.getElementById('statInradius').innerHTML =
+    `<em>${d.toFixed(2)}</em>`;
+  document.getElementById('statDiscR').innerHTML =
+    `<em>${(d*(1+Math.sqrt(2))).toFixed(2)}</em><span class="unit">= d(1+√2)</span>`;
+  document.getElementById('statSquares').innerHTML =
+    `<em>${state.boundaryPoints.length}</em><span class="unit">/ ${state.presentClasses.length} class${state.presentClasses.length===1?'':'es'}</span>`;
+  let modeText;
+  if (state.mode === 'all') {
+    modeText = `<em>all</em><span class="unit">covers D</span>`;
+  } else {
+    const cls = state.mode === 'cycle' ? state.presentClasses[state.cycleStep % Math.max(1,state.presentClasses.length)] : state.selectedClass;
+    const m6 = Math.floor(cls/6), n6 = cls%6;
+    const count = state.boundaryPoints.filter(bp => classIndex(bp.m,bp.n) === cls).length;
+    modeText = `<em>(${m6},${n6})</em><span class="unit">${count} disc${count===1?'':'s'} · disjoint</span>`;
+  }
+  document.getElementById('statMode').innerHTML = modeText;
+  document.getElementById('cornerLabel').textContent = `${DOMAINS[state.domainKey].name} · simply connected`;
+}
+
+// =====================================================================
+// UI
+// =====================================================================
+function paintClassGrid() {
+  const grid = document.getElementById('classGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 6; j++) {
+      const idx = i*6 + j;
+      const cell = document.createElement('div');
+      cell.className = 'class-cell';
+      cell.style.background = classColorHSL(idx, 0.85);
+      const present = state.presentClasses.includes(idx);
+      cell.style.opacity = present ? 1 : 0.18;
+      cell.title = `(m mod 6, n mod 6) = (${i}, ${j})${present ? '' : ' · empty'}`;
+      cell.dataset.idx = idx;
+      if (idx === state.selectedClass) cell.classList.add('selected');
+      cell.addEventListener('click', () => {
+        if (!present) return;
+        state.selectedClass = idx;
+        state.mode = 'single';
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'single'));
+        document.getElementById('classGroup').style.display = '';
+        if (state.cycleTimer) { clearInterval(state.cycleTimer); state.cycleTimer = null; }
+        paintClassGrid();
+        draw();
+      });
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function buildDomainList() {
+  const list = document.getElementById('domainList');
+  for (const key of Object.keys(DOMAINS)) {
+    const btn = document.createElement('button');
+    btn.className = 'domain-btn' + (key === state.domainKey ? ' active' : '');
+    btn.dataset.key = key;
+    btn.innerHTML = `<span>${DOMAINS[key].name}</span><span class="desc">${DOMAINS[key].desc}</span>`;
+    btn.addEventListener('click', () => {
+      state.domainKey = key;
+      state.cycleStep = 0;
+      document.querySelectorAll('.domain-btn').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+      recompute();
+      draw();
+    });
+    list.appendChild(btn);
+  }
+}
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+    document.getElementById('classGroup').style.display = (state.mode === 'single' || state.mode === 'cycle') ? '' : 'none';
+    if (state.cycleTimer) { clearInterval(state.cycleTimer); state.cycleTimer = null; }
+    if (state.mode === 'cycle') {
+      state.cycleStep = 0;
+      state.cycleTimer = setInterval(() => {
+        state.cycleStep++;
+        draw();
+      }, 750);
+    }
+    paintClassGrid();
+    draw();
+  });
+});
+
+['showGrid','showInscribed','showActiveSquares','showCenters','showDiscs'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    state[id] = e.target.checked;
+    draw();
+  });
+});
+
+window.addEventListener('resize', draw);
+
+// =====================================================================
+// Init
+// =====================================================================
+buildDomainList();
+recompute();
+draw();
+</script>
+</body>
+</html>

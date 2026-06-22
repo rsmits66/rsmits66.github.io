@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Besicovitch covering theorem · visualization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f0e8;
+    --paper: #faf7f1;
+    --ink: #1c1814;
+    --ink-2: #5a544c;
+    --ink-3: #8a8278;
+    --rule: #d9d3c5;
+    --rule-soft: #ebe5d6;
+    --accent: #7d1d2c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { min-height: 100vh; padding: 36px 32px 60px; }
+  main { max-width: 1240px; margin: 0 auto; }
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 22px;
+    margin-bottom: 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 32px;
+  }
+  .title-block .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-weight: 400;
+    font-size: 38px;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+    font-style: italic;
+  }
+  h1 .roman { font-style: normal; }
+  .lemma {
+    font-size: 14.5px;
+    color: var(--ink-2);
+    max-width: 540px;
+    text-align: right;
+    line-height: 1.55;
+  }
+  .lemma .math {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .controls {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 22px 22px 18px;
+    position: sticky;
+    top: 24px;
+  }
+  .controls section + section {
+    border-top: 1px solid var(--rule-soft);
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+  .controls h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+  }
+  .domain-list { display: flex; flex-direction: column; gap: 2px; }
+  .domain-btn {
+    background: none;
+    border: none;
+    font-family: 'Spectral', serif;
+    font-size: 15px;
+    color: var(--ink-2);
+    text-align: left;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 120ms ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .domain-btn:hover { color: var(--ink); background: var(--rule-soft); }
+  .domain-btn.active {
+    color: var(--ink);
+    border-left-color: var(--accent);
+    background: var(--rule-soft);
+    font-style: italic;
+  }
+  .domain-btn .desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    font-style: normal;
+  }
+
+  .mode-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mode-btn {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 6px;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+  }
+  .mode-btn:hover { background: var(--rule-soft); color: var(--ink); }
+  .mode-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .step-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .step-btn {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 6px;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+  }
+  .step-btn:hover { background: var(--rule-soft); color: var(--ink); }
+  .step-btn:disabled { opacity: 0.35; cursor: default; }
+  .step-progress {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .step-progress em { font-style: normal; color: var(--ink); }
+
+  .color-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .color-row {
+    display: grid;
+    grid-template-columns: 14px 1fr 30px;
+    gap: 8px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-2);
+    cursor: pointer;
+    padding: 3px 6px 3px 0;
+    border-left: 2px solid transparent;
+    transition: all 100ms ease;
+  }
+  .color-row:hover { background: var(--rule-soft); }
+  .color-row.selected {
+    border-left-color: var(--ink);
+    background: var(--rule-soft);
+  }
+  .color-row.dim { opacity: 0.35; }
+  .color-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid;
+    margin-left: 4px;
+  }
+  .color-row .label { color: var(--ink); }
+  .color-row .count { text-align: right; color: var(--ink-3); }
+
+  .toggles { display: flex; flex-direction: column; gap: 8px; }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .toggle:hover { color: var(--ink); }
+  .toggle input { 
+    appearance: none;
+    width: 28px;
+    height: 16px;
+    background: var(--rule);
+    border-radius: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 150ms ease;
+    flex-shrink: 0;
+  }
+  .toggle input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--paper);
+    transition: transform 150ms ease;
+  }
+  .toggle input:checked { background: var(--ink); }
+  .toggle input:checked::after { transform: translateX(12px); }
+
+  .canvas-wrap {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px;
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--paper);
+  }
+  .canvas-corner {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  .info-bar {
+    margin-top: 18px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 16px 22px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+  }
+  .stat .value {
+    font-size: 22px;
+    font-weight: 400;
+    font-feature-settings: "tnum";
+    color: var(--ink);
+  }
+  .stat .value .unit {
+    font-size: 13px;
+    color: var(--ink-3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 4px;
+  }
+  .stat .value em {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-size: 18px;
+  }
+
+  .lemma-detail {
+    margin-top: 28px;
+    border-top: 1px solid var(--rule);
+    padding-top: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 30px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .lemma-detail h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .lemma-detail .formula {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--paper);
+    padding: 8px 10px;
+    margin: 8px 0;
+    border-left: 2px solid var(--accent);
+    font-size: 12px;
+    color: var(--ink);
+  }
+
+  @media (max-width: 980px) {
+    .workspace { grid-template-columns: 1fr; }
+    .controls { position: static; }
+    .info-bar { grid-template-columns: repeat(2, 1fr); }
+    .lemma-detail { grid-template-columns: 1fr; }
+    header { grid-template-columns: 1fr; }
+    .lemma { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="title-block">
+      <div class="eyebrow">Besicovitch · covering theorem</div>
+      <h1>Bounded color, <span class="roman">unbounded overlap</span></h1>
+    </div>
+    <p class="lemma">
+      For any family <span class="math">𝓕</span> of closed balls in <span class="math">ℝⁿ</span> with bounded diameter, the centers <span class="math">A</span> can be covered by <span class="math">N<sub>n</sub></span> disjoint subfamilies <span class="math">𝓖₁, …, 𝓖<sub>Nₙ</sub> ⊂ 𝓕</span>. Selection is greedy: at each step pick a ball whose center is not yet covered, with radius within ¾ of the supremum.
+    </p>
+  </header>
+
+  <div class="workspace">
+    <aside class="controls">
+      <section>
+        <h2>Example family 𝓕</h2>
+        <div class="domain-list" id="exampleList"></div>
+      </section>
+
+      <section>
+        <h2>Display mode</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-mode="final">Final</button>
+          <button class="mode-btn" data-mode="bycolor">By color</button>
+          <button class="mode-btn" data-mode="step">Per ball</button>
+        </div>
+        <div id="stepGroup" style="display:none;">
+          <div class="step-controls">
+            <button class="step-btn" id="stepBack">◂ Back</button>
+            <button class="step-btn" id="stepFwd">Forward ▸</button>
+            <button class="step-btn" id="stepReset">Reset</button>
+            <button class="step-btn" id="stepEnd">Skip to end</button>
+          </div>
+          <div class="step-progress" id="stepProgress">step <em>0</em> / <em>0</em></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Color classes 𝓖<sub>i</sub></h2>
+        <div class="color-legend" id="colorLegend"></div>
+      </section>
+
+      <section>
+        <h2>Show</h2>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="showFamily" checked> Family 𝓕 (faint)</label>
+          <label class="toggle"><input type="checkbox" id="showCenters" checked> Centers A</label>
+          <label class="toggle"><input type="checkbox" id="showSelected" checked> Selected B<sub>j</sub> (filled)</label>
+          <label class="toggle"><input type="checkbox" id="showThirdRadius"> Third-radius B(a<sub>j</sub>, r<sub>j</sub>/3)</label>
+        </div>
+      </section>
+    </aside>
+
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="1800" height="1200"></canvas>
+        <div class="canvas-corner" id="cornerLabel">𝓕 · uniform mix</div>
+      </div>
+
+      <div class="info-bar">
+        <div class="stat">
+          <div class="label">|𝓕| = |A|</div>
+          <div class="value" id="statTotal">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">|{B<sub>j</sub>}|</div>
+          <div class="value" id="statSelected">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Colors used</div>
+          <div class="value" id="statColors">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">D = sup diam</div>
+          <div class="value" id="statD">—</div>
+        </div>
+      </div>
+
+      <div class="lemma-detail">
+        <div>
+          <h3>Step 1 · greedy selection</h3>
+          With <span style="font-family:'JetBrains Mono',monospace">A<sub>j</sub> = A − ⋃<sub>i&lt;j</sub> B<sub>i</sub></span>, while <span style="font-family:'JetBrains Mono',monospace">A<sub>j</sub> ≠ ∅</span> pick
+          <div class="formula">B<sub>j</sub> = B(a<sub>j</sub>, r<sub>j</sub>),  a<sub>j</sub> ∈ A<sub>j</sub>,<br>r<sub>j</sub> ≥ ¾ sup{r : B(a,r)∈𝓕, a∈A<sub>j</sub>}</div>
+          The selected balls cover A. Their centers <em>are</em> mutually outside one another, but the balls themselves may overlap.
+        </div>
+        <div>
+          <h3>Step 2 · disjoint thirds</h3>
+          For j &gt; i: a<sub>j</sub> ∉ B<sub>i</sub> gives |a<sub>i</sub> − a<sub>j</sub>| &gt; r<sub>i</sub>, so
+          <div class="formula">B(a<sub>j</sub>, r<sub>j</sub>/3) are pairwise disjoint</div>
+          This packs <span style="font-family:'JetBrains Mono',monospace">{B<sub>j</sub>}</span> into Lebesgue volume, bounding the count K of small overlapping neighbors of any B<sub>k</sub> by 20<sup>n</sup>.
+        </div>
+        <div>
+          <h3>Step 3 · color greedily</h3>
+          For each B<sub>k</sub>, the set I<sub>k</sub> = {j&lt;k : B<sub>j</sub>∩B<sub>k</sub>≠∅} satisfies |I<sub>k</sub>| ≤ 20<sup>n</sup> + L<sub>n</sub> =: M<sub>n</sub>−1, where L<sub>n</sub> bounds angular spacing of large-radius neighbors. Greedy first-fit therefore uses ≤ M<sub>n</sub> colors; each class is disjoint.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// =====================================================================
+// SEEDED RNG
+// =====================================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return (((t ^ (t >>> 14)) >>> 0)) / 4294967296;
+  };
+}
+
+// =====================================================================
+// EXAMPLE FAMILIES
+// =====================================================================
+const EXAMPLES = {
+  uniform: {
+    name: 'Uniform mix',
+    desc: '60 balls · radii 0.1–0.5',
+    gen: () => {
+      const rng = mulberry32(7);
+      const balls = [];
+      for (let i = 0; i < 60; i++) {
+        balls.push({
+          x: -4.4 + 8.8*rng(),
+          y: -2.7 + 5.4*rng(),
+          r: 0.1 + 0.4*rng(),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  powerlaw: {
+    name: 'Power-law sizes',
+    desc: 'wide range of scales',
+    gen: () => {
+      const rng = mulberry32(13);
+      const balls = [];
+      for (let i = 0; i < 120; i++) {
+        balls.push({
+          x: -4.5 + 9*rng(),
+          y: -2.8 + 5.6*rng(),
+          r: 0.04 * Math.pow(20, rng()),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  fewLargeManySmall: {
+    name: 'Few large, many small',
+    desc: 'classic demo',
+    gen: () => {
+      const rng = mulberry32(31);
+      const balls = [];
+      for (let i = 0; i < 4; i++) {
+        balls.push({
+          x: -3.0 + 2.0*i,
+          y: -0.5 + 0.4*Math.sin(i*1.7),
+          r: 0.7 + 0.15*rng(),
+          id: i
+        });
+      }
+      for (let i = 0; i < 100; i++) {
+        balls.push({
+          x: -4.5 + 9*rng(),
+          y: -2.8 + 5.6*rng(),
+          r: 0.05 + 0.12*rng(),
+          id: i + 4
+        });
+      }
+      return balls;
+    }
+  },
+  cluster: {
+    name: 'Clustered',
+    desc: 'overlapping mid-size',
+    gen: () => {
+      const rng = mulberry32(99);
+      const balls = [];
+      for (let i = 0; i < 80; i++) {
+        const r = Math.sqrt(rng());
+        const t = 2*Math.PI*rng();
+        balls.push({
+          x: 2.4*r*Math.cos(t),
+          y: 1.5*r*Math.sin(t),
+          r: 0.15 + 0.4*rng(),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  grid: {
+    name: 'Grid + jitter',
+    desc: '10×6 perturbed lattice',
+    gen: () => {
+      const rng = mulberry32(11);
+      const balls = [];
+      let id = 0;
+      const cols = 10, rows = 6;
+      const dx = 0.85, dy = 0.85;
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const cx = -dx*(cols-1)/2 + dx*i + 0.3*(rng()-0.5);
+          const cy = -dy*(rows-1)/2 + dy*j + 0.3*(rng()-0.5);
+          balls.push({
+            x: cx, y: cy,
+            r: 0.18 + 0.28*rng(),
+            id: id++
+          });
+        }
+      }
+      return balls;
+    }
+  },
+  equalRadii: {
+    name: 'Equal radii mesh',
+    desc: 'tests angular bound',
+    gen: () => {
+      const rng = mulberry32(41);
+      const balls = [];
+      const r0 = 0.36;
+      for (let i = 0; i < 90; i++) {
+        balls.push({
+          x: -4.4 + 8.8*rng(),
+          y: -2.7 + 5.4*rng(),
+          r: r0 * (0.95 + 0.1*rng()),  // nearly equal
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  chain: {
+    name: 'Wavy chain',
+    desc: 'balls along a curve',
+    gen: () => {
+      const rng = mulberry32(57);
+      const balls = [];
+      const n = 90;
+      for (let i = 0; i < n; i++) {
+        const t = -4.4 + 8.8*i/(n-1);
+        const wob = 1.4 + 0.6*rng();
+        balls.push({
+          x: t + 0.3*(rng()-0.5),
+          y: wob*Math.sin(t*0.85) + 0.2*(rng()-0.5),
+          r: 0.15 + 0.22*rng(),
+          id: i
+        });
+      }
+      return balls;
+    }
+  },
+  multiscale: {
+    name: 'Multiscale',
+    desc: 'discrete size tiers',
+    gen: () => {
+      const rng = mulberry32(101);
+      const balls = [];
+      let id = 0;
+      const tiers = [
+        { r: 0.85, n: 7 },
+        { r: 0.40, n: 28 },
+        { r: 0.18, n: 80 },
+        { r: 0.08, n: 160 },
+      ];
+      for (const tier of tiers) {
+        for (let i = 0; i < tier.n; i++) {
+          balls.push({
+            x: -4.5 + 9*rng(),
+            y: -2.8 + 5.6*rng(),
+            r: tier.r * (0.85 + 0.3*rng()),
+            id: id++
+          });
+        }
+      }
+      return balls;
+    }
+  },
+};
+
+// =====================================================================
+// BESICOVITCH ALGORITHM
+// =====================================================================
+function runBesicovitch(balls) {
+  if (balls.length === 0) return { selected: [], events: [], colors: [], groups: [], M: 0, D: 0 };
+
+  // Sort balls by radius descending — used for sup search
+  const sortedByR = [...balls].sort((a, b) => b.r - a.r);
+  const D = 2 * sortedByR[0].r;
+
+  // Selection: greedy by radius, picking only balls whose center is uncovered.
+  // (One ball per center, so we always pick the largest such.)
+  const selected = [];
+  const events = [];
+  const selectedIds = new Set();
+
+  while (true) {
+    let pick = null;
+    for (const b of sortedByR) {
+      if (selectedIds.has(b.id)) continue;
+      let covered = false;
+      for (const g of selected) {
+        if (Math.hypot(b.x - g.x, b.y - g.y) <= g.r + 1e-12) { covered = true; break; }
+      }
+      if (!covered) { pick = b; break; }
+    }
+    if (!pick) break;
+
+    // record which previously-uncovered centers become covered now
+    const newlyCovered = [];
+    for (const c of balls) {
+      if (selectedIds.has(c.id)) continue;
+      if (c.id === pick.id) continue;
+      let wasCovered = false;
+      for (const g of selected) {
+        if (Math.hypot(c.x - g.x, c.y - g.y) <= g.r + 1e-12) { wasCovered = true; break; }
+      }
+      if (wasCovered) continue;
+      if (Math.hypot(c.x - pick.x, c.y - pick.y) <= pick.r + 1e-12) {
+        newlyCovered.push(c.id);
+      }
+    }
+
+    selected.push(pick);
+    selectedIds.add(pick.id);
+    events.push({ ball: pick, newlyCovered });
+  }
+
+  // Greedy first-fit coloring of overlap graph
+  const colors = [];
+  for (let k = 0; k < selected.length; k++) {
+    const used = new Set();
+    for (let j = 0; j < k; j++) {
+      const a = selected[j], b = selected[k];
+      if (Math.hypot(a.x - b.x, a.y - b.y) < a.r + b.r - 1e-12) {
+        used.add(colors[j]);
+      }
+    }
+    let c = 0;
+    while (used.has(c)) c++;
+    colors.push(c);
+  }
+
+  const M = colors.length === 0 ? 0 : Math.max(...colors) + 1;
+  const groups = [];
+  for (let i = 0; i < M; i++) groups.push([]);
+  for (let i = 0; i < selected.length; i++) {
+    groups[colors[i]].push(selected[i]);
+  }
+
+  return { selected, events, colors, groups, M, D };
+}
+
+// =====================================================================
+// COLOR PALETTE — distinctive hues for up to ~10 color classes
+// =====================================================================
+const PALETTE = [
+  [350, 70, 38],   // crimson
+  [25,  72, 44],   // burnt orange
+  [200, 60, 38],   // ocean blue
+  [100, 45, 38],   // olive
+  [285, 50, 42],   // violet
+  [165, 55, 36],   // teal
+  [45,  68, 44],   // gold
+  [325, 55, 42],   // rose
+  [240, 50, 42],   // indigo
+  [70,  50, 38],   // moss
+  [15,  62, 40],   // brick
+  [220, 50, 40],   // slate blue
+];
+function colorClass(c, alpha = 1) {
+  const [h, s, l] = PALETTE[c % PALETTE.length];
+  return `hsla(${h}, ${s}%, ${l}%, ${alpha})`;
+}
+
+// =====================================================================
+// STATE
+// =====================================================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  exampleKey: 'uniform',
+  balls: [],
+  selected: [],
+  events: [],
+  colors: [],
+  groups: [],
+  M: 0,
+  D: 0,
+  mode: 'final',
+  step: 0,
+  selectedColor: 0,
+  showFamily: true,
+  showCenters: true,
+  showSelected: true,
+  showThirdRadius: false,
+};
+
+function recompute() {
+  state.balls = EXAMPLES[state.exampleKey].gen();
+  const r = runBesicovitch(state.balls);
+  state.selected = r.selected;
+  state.events = r.events;
+  state.colors = r.colors;
+  state.groups = r.groups;
+  state.M = r.M;
+  state.D = r.D;
+  state.step = state.mode === 'step' ? 0 : state.events.length;
+  state.selectedColor = 0;
+  paintColorLegend();
+  updateStepUI();
+}
+
+function activeSelectedRange() {
+  // returns the index range of currently-active selections
+  if (state.mode === 'step') return state.step;
+  return state.selected.length;
+}
+
+function colorOfBall(ball) {
+  const idx = state.selected.indexOf(ball);
+  if (idx < 0) return 0;
+  return state.colors[idx];
+}
+
+function activeSelectedBalls() {
+  const n = activeSelectedRange();
+  return state.selected.slice(0, n);
+}
+
+// =====================================================================
+// VIEW TRANSFORM
+// =====================================================================
+function viewTransform() {
+  const Y0 = -3.4, Y1 = 3.4;
+  const halfW = (Y1 - Y0) * 0.5 * (3/2);
+  const X0 = -halfW, X1 = halfW;
+  const W = canvas.width, H = canvas.height;
+  const sx = W / (X1 - X0), sy = H / (Y1 - Y0);
+  const s = Math.min(sx, sy);
+  const offX = (W - s*(X1-X0)) / 2 - s*X0;
+  const offY = (H + s*(Y1-Y0)) / 2 + s*Y0;
+  return { s, tx: offX, ty: offY, X0, X1, Y0, Y1 };
+}
+function W2S(p, T) { return [T.tx + T.s*p[0], T.ty - T.s*p[1]]; }
+
+// =====================================================================
+// DRAW
+// =====================================================================
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  let cssW = canvas.parentElement.clientWidth - 28;
+  const aspect = 3/2;
+  let cssH = cssW / aspect;
+  const maxH = Math.max(380, window.innerHeight - 360);
+  if (cssH > maxH) {
+    cssH = maxH;
+    cssW = cssH * aspect;
+  }
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const T = viewTransform();
+  const activeSelected = activeSelectedBalls();
+  const activeIds = new Set(activeSelected.map(b => b.id));
+
+  // For "by color" mode, single color is active
+  const onlyColor = state.mode === 'bycolor' ? state.selectedColor : null;
+
+  // Determine which centers are currently covered by active selections
+  const coveredCenter = new Set();
+  for (const b of state.balls) {
+    for (const g of activeSelected) {
+      if (Math.hypot(b.x - g.x, b.y - g.y) <= g.r + 1e-12) {
+        coveredCenter.add(b.id);
+        break;
+      }
+    }
+  }
+
+  // ----- Layer 1: Family 𝓕 (all balls, faint outlines) -----
+  if (state.showFamily) {
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(122, 110, 88, 0.18)';
+    for (const b of state.balls) {
+      if (activeIds.has(b.id)) continue;
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r = T.s * b.r;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.stroke();
+    }
+  }
+
+  // ----- Layer 2: Selected balls -----
+  if (state.showSelected) {
+    for (let i = 0; i < activeSelected.length; i++) {
+      const b = activeSelected[i];
+      const c = state.colors[i];
+      const visible = onlyColor === null || c === onlyColor;
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r = T.s * b.r;
+      const fillAlpha = onlyColor !== null ? 0.32 : (state.mode === 'final' ? 0.20 : 0.28);
+      const strokeAlpha = visible ? 0.95 : 0.20;
+      const fa = visible ? fillAlpha : 0.04;
+      ctx.fillStyle = colorClass(c, fa);
+      ctx.strokeStyle = colorClass(c, strokeAlpha);
+      ctx.lineWidth = visible ? 1.7 : 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  // ----- Layer 3: Third-radius disjoint balls (Claim #2) -----
+  if (state.showThirdRadius) {
+    for (let i = 0; i < activeSelected.length; i++) {
+      const b = activeSelected[i];
+      const c = state.colors[i];
+      const visible = onlyColor === null || c === onlyColor;
+      if (!visible) continue;
+      const [cx, cy] = W2S([b.x, b.y], T);
+      const r3 = T.s * b.r / 3;
+      ctx.fillStyle = colorClass(c, 0.85);
+      ctx.strokeStyle = '#1c1814';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r3, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  // ----- Layer 4: Centers A -----
+  if (state.showCenters) {
+    for (const b of state.balls) {
+      const [x, y] = W2S([b.x, b.y], T);
+      const isCovered = coveredCenter.has(b.id);
+      const isSelected = activeIds.has(b.id);
+      if (isSelected) continue;  // we'll draw selected centers differently below
+      ctx.fillStyle = isCovered
+        ? 'rgba(122, 110, 88, 0.45)'
+        : '#1c1814';
+      ctx.beginPath();
+      ctx.arc(x, y, isCovered ? 1.6 : 2.4, 0, 2*Math.PI);
+      ctx.fill();
+    }
+    // selected balls' centers — small dots in the center color
+    for (let i = 0; i < activeSelected.length; i++) {
+      const b = activeSelected[i];
+      const c = state.colors[i];
+      const visible = onlyColor === null || c === onlyColor;
+      if (!visible) continue;
+      const [x, y] = W2S([b.x, b.y], T);
+      ctx.fillStyle = colorClass(c, 1);
+      ctx.beginPath();
+      ctx.arc(x, y, 2.2, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(250, 247, 241, 0.95)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.2, 0, 2*Math.PI);
+      ctx.stroke();
+    }
+  }
+
+  // ----- Layer 5: Per-step current ball highlight -----
+  if (state.mode === 'step' && state.step > 0 && state.step <= state.selected.length) {
+    const b = state.selected[state.step - 1];
+    const [cx, cy] = W2S([b.x, b.y], T);
+    const r = T.s * b.r;
+    ctx.strokeStyle = '#1c1814';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, 2*Math.PI);
+    ctx.stroke();
+  }
+
+  updateStats();
+}
+
+// =====================================================================
+// UI HELPERS
+// =====================================================================
+function updateStats() {
+  document.getElementById('statTotal').innerHTML = `<em>${state.balls.length}</em>`;
+  const numSel = activeSelectedBalls().length;
+  document.getElementById('statSelected').innerHTML =
+    `<em>${numSel}</em><span class="unit">/ ${state.selected.length}</span>`;
+  document.getElementById('statColors').innerHTML =
+    `<em>${state.M}</em><span class="unit">≤ N<sub>2</sub></span>`;
+  document.getElementById('statD').innerHTML = `<em>${state.D.toFixed(2)}</em>`;
+  document.getElementById('cornerLabel').textContent =
+    `𝓕 · ${EXAMPLES[state.exampleKey].name}`;
+}
+
+function paintColorLegend() {
+  const el = document.getElementById('colorLegend');
+  el.innerHTML = '';
+  for (let i = 0; i < state.M; i++) {
+    const count = state.groups[i].length;
+    const row = document.createElement('div');
+    row.className = 'color-row';
+    row.dataset.color = i;
+    if (state.mode === 'bycolor' && i === state.selectedColor) row.classList.add('selected');
+    if (state.mode === 'bycolor' && i !== state.selectedColor) row.classList.add('dim');
+    row.innerHTML = `
+      <div class="color-swatch" style="background:${colorClass(i, 0.35)}; border-color:${colorClass(i, 1)}"></div>
+      <span class="label">𝓖<sub>${i+1}</sub></span>
+      <span class="count">${count}</span>
+    `;
+    row.addEventListener('click', () => {
+      state.selectedColor = i;
+      // switch to by-color mode
+      state.mode = 'bycolor';
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'bycolor'));
+      document.getElementById('stepGroup').style.display = 'none';
+      paintColorLegend();
+      draw();
+    });
+    el.appendChild(row);
+  }
+}
+
+function updateStepUI() {
+  document.getElementById('stepProgress').innerHTML =
+    `step <em>${state.step}</em> / <em>${state.events.length}</em>`;
+  document.getElementById('stepBack').disabled = state.step === 0;
+  document.getElementById('stepFwd').disabled = state.step === state.events.length;
+  document.getElementById('stepReset').disabled = state.step === 0;
+  document.getElementById('stepEnd').disabled = state.step === state.events.length;
+}
+
+// =====================================================================
+// UI WIRING
+// =====================================================================
+function buildExampleList() {
+  const list = document.getElementById('exampleList');
+  for (const key of Object.keys(EXAMPLES)) {
+    const btn = document.createElement('button');
+    btn.className = 'domain-btn' + (key === state.exampleKey ? ' active' : '');
+    btn.dataset.key = key;
+    btn.innerHTML = `<span>${EXAMPLES[key].name}</span><span class="desc">${EXAMPLES[key].desc}</span>`;
+    btn.addEventListener('click', () => {
+      state.exampleKey = key;
+      document.querySelectorAll('.domain-btn').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+      recompute();
+      draw();
+    });
+    list.appendChild(btn);
+  }
+}
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+    document.getElementById('stepGroup').style.display = state.mode === 'step' ? '' : 'none';
+    if (state.mode === 'step') state.step = 0;
+    else state.step = state.selected.length;
+    paintColorLegend();
+    updateStepUI();
+    draw();
+  });
+});
+
+document.getElementById('stepFwd').addEventListener('click', () => {
+  if (state.step < state.events.length) state.step++;
+  updateStepUI();
+  draw();
+});
+document.getElementById('stepBack').addEventListener('click', () => {
+  if (state.step > 0) state.step--;
+  updateStepUI();
+  draw();
+});
+document.getElementById('stepReset').addEventListener('click', () => {
+  state.step = 0;
+  updateStepUI();
+  draw();
+});
+document.getElementById('stepEnd').addEventListener('click', () => {
+  state.step = state.events.length;
+  updateStepUI();
+  draw();
+});
+
+['showFamily','showCenters','showSelected','showThirdRadius'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    state[id] = e.target.checked;
+    draw();
+  });
+});
+
+window.addEventListener('resize', draw);
+
+// =====================================================================
+// INIT
+// =====================================================================
+buildExampleList();
+recompute();
+draw();
+</script>
+</body>
+</html>

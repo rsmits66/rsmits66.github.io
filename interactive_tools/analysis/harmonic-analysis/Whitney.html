@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distance to Polygon Boundary</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf7f2; --navy: #1a2a4a; --gold: #c8922a;
+      --red:   #b03030; --muted: #6b7a8d; --border: #d4c9b8; --panel: #f2ede4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, serif; background: var(--cream); color: var(--navy);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 20px 52px; min-height: 100vh;
+    }
+    header { text-align: center; margin-bottom: 22px; }
+    header h1 { font-size: 1.55rem; font-weight: normal; }
+    header .subtitle { margin-top: 6px; font-size: .92rem; color: var(--muted); font-style: italic; }
+    .workspace { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+    .canvas-wrap {
+      position: relative; border: 1.5px solid var(--border); border-radius: 4px;
+      box-shadow: 0 3px 14px rgba(0,0,0,.08); overflow: hidden; background: #fff;
+    }
+    canvas { display: block; }
+    #phase-badge {
+      position: absolute; top: 8px; left: 8px; font-size: .73rem;
+      background: var(--navy); color: #fff; padding: 3px 9px;
+      border-radius: 3px; letter-spacing: .07em; text-transform: uppercase; pointer-events: none;
+    }
+    .panel { width: 224px; display: flex; flex-direction: column; gap: 13px; }
+    .info-box { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 13px 15px; }
+    .info-box h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 8px; font-weight: normal; }
+    #dist-value { font-size: 2rem; font-weight: bold; color: var(--gold); line-height: 1; letter-spacing: -.02em; }
+    #dist-unit  { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+    .placeholder { color: var(--muted); font-style: italic; font-size: .87rem; line-height: 1.55; }
+    #vertex-list { font-size: .82rem; line-height: 1.85; }
+    #vertex-list .empty { color: var(--muted); font-style: italic; }
+    #instructions { font-size: .84rem; line-height: 1.6; }
+    .btn-group { display: flex; flex-direction: column; gap: 8px; }
+    button {
+      padding: 9px 14px; font-family: Georgia, serif; font-size: .87rem;
+      cursor: pointer; border: 1.5px solid transparent;
+      border-radius: 4px; transition: opacity .15s; width: 100%;
+    }
+    button:hover:not(:disabled) { opacity: .80; }
+    button:disabled { opacity: .35; cursor: default; }
+    #btn-finalize { background: var(--navy); color: #fff; border-color: var(--navy); }
+    #btn-render2d, #btn-render3d { background: transparent; color: var(--navy); border-color: var(--navy); }
+    #btn-whitney  { background: transparent; color: var(--gold);  border-color: var(--gold); }
+    #btn-clear    { background: transparent; color: var(--red);   border-color: var(--red); }
+    .status { font-size: .79rem; color: var(--muted); font-style: italic; text-align: center; min-height: 1.1em; }
+    /* 3-D section */
+    #section-3d { display: none; margin-top: 34px; text-align: center; }
+    #section-3d h2 { font-size: 1.15rem; font-weight: normal; margin-bottom: 5px; }
+    #section-3d .note { font-size: .83rem; color: var(--muted); font-style: italic; margin-bottom: 12px; }
+    #canvas-3d { border: 1.5px solid var(--border); border-radius: 4px; box-shadow: 0 3px 14px rgba(0,0,0,.08); cursor: grab; display: block; margin: 0 auto; }
+    #canvas-3d:active { cursor: grabbing; }
+    .colorbar-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 11px; font-size: .81rem; color: var(--muted); }
+    #colorbar { width: 220px; height: 13px; border: 1px solid var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Distance to Polygon Boundary</h1>
+  <div class="subtitle">Interactive computation of <span id="header-math"></span></div>
+</header>
+
+<div class="workspace">
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="580" height="420"></canvas>
+    <div id="phase-badge">Drawing</div>
+  </div>
+  <div class="panel">
+    <div class="info-box">
+      <h3>Distance &ensp;<span id="dist-label"></span></h3>
+      <div id="dist-display"><div class="placeholder">Finalize the polygon,<br>then hover to query.</div></div>
+    </div>
+    <div class="info-box">
+      <h3>Vertices</h3>
+      <div id="vertex-list"><span class="empty">None yet.</span></div>
+    </div>
+    <div class="info-box">
+      <h3>Instructions</h3>
+      <div id="instructions"></div>
+    </div>
+    <div class="btn-group">
+      <button id="btn-finalize" disabled>Finalize Polygon</button>
+      <button id="btn-render2d" disabled>Render 2D Distance Field</button>
+      <button id="btn-whitney"  disabled>Whitney Decomposition</button>
+      <button id="btn-render3d" disabled>Render 3D Altitude Map</button>
+      <div class="status" id="render-status"></div>
+      <button id="btn-clear">Clear &amp; Reset</button>
+    </div>
+  </div>
+</div>
+
+<div id="section-3d">
+  <h2>Altitude Map of <span id="title-3d-math"></span></h2>
+  <p class="note">Drag to orbit &ensp;&middot;&ensp; Scroll to zoom</p>
+  <canvas id="canvas-3d" width="700" height="460"></canvas>
+  <div class="colorbar-row">
+    <span>exterior &thinsp;(&minus;)</span>
+    <canvas id="colorbar" width="220" height="13"></canvas>
+    <span>(+)&thinsp; interior</span>
+  </div>
+</div>
+
+<script>
+// ── KaTeX ────────────────────────────────────────────────────────────────────
+function tex(el, src, display) {
+  if (!el) return;
+  if (typeof katex !== 'undefined')
+    katex.render(src, el, { throwOnError: false, displayMode: !!display });
+  else el.textContent = src;
+}
+window.addEventListener('load', () => {
+  tex(document.getElementById('header-math'),
+      'd(x,\\partial P)=\\min_{y\\in\\partial P}\\|x-y\\|');
+  tex(document.getElementById('dist-label'), 'd(x,\\partial P)');
+  tex(document.getElementById('title-3d-math'), 'd_{\\pm}(x,\\,\\partial P)');
+  setInstructions('drawing');
+  drawColorbar();
+});
+
+// ── Colormap: navy (t = −1) → cream (t = 0) → gold (t = +1) ────────────────
+const C_NEG = [26,  42,  74];
+const C_MID = [250, 247, 242];
+const C_POS = [200, 146,  42];
+
+function colormap(t) {
+  t = Math.max(-1, Math.min(1, t));
+  const s = Math.abs(t), c0 = t >= 0 ? C_POS : C_NEG;
+  return [
+    Math.round(C_MID[0] + s*(c0[0]-C_MID[0])),
+    Math.round(C_MID[1] + s*(c0[1]-C_MID[1])),
+    Math.round(C_MID[2] + s*(c0[2]-C_MID[2])),
+  ];
+}
+function drawColorbar() {
+  const cb = document.getElementById('colorbar'); if (!cb) return;
+  const cc = cb.getContext('2d');
+  for (let x = 0; x < cb.width; x++) {
+    const [r,g,b] = colormap((x/(cb.width-1))*2-1);
+    cc.fillStyle = `rgb(${r},${g},${b})`; cc.fillRect(x,0,1,cb.height);
+  }
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let phase         = 'drawing';   // 'drawing' | 'querying'
+let points        = [];
+let mouse         = null;
+let fieldRendered = false;
+let fieldData     = null;
+let normScale     = 100;          // updated once we know the polygon's extent
+let whitneyCubes  = [];
+
+const badge        = document.getElementById('phase-badge');
+const btnFinalize  = document.getElementById('btn-finalize');
+const btnRender2d  = document.getElementById('btn-render2d');
+const btnWhitney   = document.getElementById('btn-whitney');
+const btnRender3d  = document.getElementById('btn-render3d');
+const btnClear     = document.getElementById('btn-clear');
+const renderStatus = document.getElementById('render-status');
+const distDisplay  = document.getElementById('dist-display');
+const vertexList   = document.getElementById('vertex-list');
+
+// ── Core geometry ─────────────────────────────────────────────────────────────
+
+/** Projects p onto segment v→w. Returns { distSq, nearest }. */
+function projectOntoSegment(p, v, w) {
+  const dx = w.x-v.x, dy = w.y-v.y;
+  const l2 = dx*dx + dy*dy;
+  if (l2 === 0) return { distSq: (p.x-v.x)**2+(p.y-v.y)**2, nearest: {x:v.x,y:v.y} };
+  const t  = Math.max(0, Math.min(1, ((p.x-v.x)*dx+(p.y-v.y)*dy)/l2));
+  const nx = v.x+t*dx, ny = v.y+t*dy;
+  return { distSq: (p.x-nx)**2+(p.y-ny)**2, nearest: {x:nx,y:ny} };
+}
+
+/** Minimum distance from p to ∂P and the nearest point on ∂P. */
+function distanceToBoundary(p) {
+  let bestSq = Infinity, bestNearest = null;
+  for (let i = 0; i < points.length; i++) {
+    const { distSq, nearest } = projectOntoSegment(p, points[i], points[(i+1)%points.length]);
+    if (distSq < bestSq) { bestSq = distSq; bestNearest = nearest; }
+  }
+  return { dist: Math.sqrt(bestSq), nearest: bestNearest };
+}
+
+/** Ray-casting point-in-polygon test. */
+function pointInPolygon(p) {
+  let inside = false;
+  const n = points.length;
+  for (let i=0, j=n-1; i<n; j=i++) {
+    const xi=points[i].x, yi=points[i].y, xj=points[j].x, yj=points[j].y;
+    if ((yi>p.y) !== (yj>p.y) && p.x < (xj-xi)*(p.y-yi)/(yj-yi)+xi)
+      inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Signed distance: positive inside the polygon, negative outside, zero on ∂P.
+ */
+function signedDistance(p) {
+  const { dist } = distanceToBoundary(p);
+  return pointInPolygon(p) ? dist : -dist;
+}
+
+// ── Whitney decomposition geometry ────────────────────────────────────────────
+
+function cross2d(ax,ay,bx,by) { return ax*by - ay*bx; }
+
+/** True iff the closed segments (p1→p2) and (q1→q2) intersect. */
+function segmentsIntersect(p1,p2,q1,q2) {
+  const rx=p2.x-p1.x, ry=p2.y-p1.y;
+  const sx=q2.x-q1.x, sy=q2.y-q1.y;
+  const den = cross2d(rx,ry,sx,sy);
+  if (Math.abs(den) < 1e-10) return false;
+  const dx=q1.x-p1.x, dy=q1.y-p1.y;
+  const t = cross2d(dx,dy,sx,sy)/den;
+  const u = cross2d(dx,dy,rx,ry)/den;
+  return t>=-1e-9 && t<=1+1e-9 && u>=-1e-9 && u<=1+1e-9;
+}
+
+function ptSegDist(p,v,w) { return Math.sqrt(projectOntoSegment(p,v,w).distSq); }
+
+/** Minimum distance between segments [a,b] and [c,d]. */
+function segSegDist(a,b,c,d) {
+  if (segmentsIntersect(a,b,c,d)) return 0;
+  return Math.min(ptSegDist(a,c,d), ptSegDist(b,c,d),
+                  ptSegDist(c,a,b), ptSegDist(d,a,b));
+}
+
+/**
+ * Exact minimum distance from the closed square [x0,x0+s]×[y0,y0+s] to ∂P.
+ *
+ * We compare each of the 4 square edges against each polygon edge, plus we
+ * check whether any polygon vertex lies strictly inside the square.  The
+ * combination is exhaustive:
+ *   • polygon edge entirely inside square  → vertex check fires
+ *   • polygon edge crossing square boundary → segment-intersection fires
+ *   • polygon edge entirely outside square  → minimum point-segment distances
+ */
+function distSquareToBoundary(x0,y0,s) {
+  const x1=x0+s, y1=y0+s;
+  const C = [{x:x0,y:y0},{x:x1,y:y0},{x:x1,y:y1},{x:x0,y:y1}];
+  const SE = [[C[0],C[1]],[C[1],C[2]],[C[2],C[3]],[C[3],C[0]]];
+  const n = points.length;
+  let minD = Infinity;
+
+  for (let i=0; i<n; i++) {
+    const v=points[i], w=points[(i+1)%n];
+
+    // Polygon vertex inside (or on boundary of) square → distance is 0
+    if (v.x>=x0 && v.x<=x1 && v.y>=y0 && v.y<=y1) return 0;
+
+    // Each square edge vs this polygon edge
+    for (const [a,b] of SE) {
+      const d = segSegDist(a,b,v,w);
+      if (d===0) return 0;
+      if (d < minD) minD = d;
+    }
+  }
+  return minD;
+}
+
+// ── Whitney recursive subdivision ─────────────────────────────────────────────
+//
+// We treat F = ∂P (the polygon boundary, a closed set of measure zero) and
+// Ω = ℝ²∖∂P (its open complement, covering both interior and exterior).
+//
+// Selection rule (Stein, Ch. I): a dyadic square Q is added to the Whitney
+// family iff
+//   (i)  d(Q, ∂P) > 0          [Q lies in Ω, not cut by the boundary]
+//   (ii) diam(Q) ≤ d(Q, ∂P)   [Whitney condition], or Q is at minimum size.
+//
+// Maximality (Q's parent violates condition ii) then guarantees the upper
+// bound d(Q,∂P) ≤ 4·diam(Q), and the dyadic structure guarantees that
+// touching cubes differ in side-length by at most a factor of 4.
+
+const MIN_WH = 4;   // finest side-length in pixels
+
+function nextPow2(n) { let p=1; while(p<=n) p<<=1; return p; }
+
+function computeWhitney() {
+  whitneyCubes = [];
+  // One dyadic square whose side is the next power of 2 above max(W,H)
+  // covers the entire canvas; culling removes off-canvas descendants.
+  whitneyRec(0, 0, nextPow2(Math.max(W,H)));
+}
+
+function whitneyRec(x0, y0, s) {
+  // Cull squares entirely outside the canvas viewport
+  if (x0 >= W || y0 >= H || x0+s <= 0 || y0+s <= 0) return;
+
+  const dQ = distSquareToBoundary(x0, y0, s);
+
+  if (dQ === 0) {
+    // Q intersects ∂P → must subdivide; discard at minimum size (belongs to F)
+    if (s <= MIN_WH) return;
+    const h = s/2;
+    whitneyRec(x0,  y0,  h); whitneyRec(x0+h,y0,  h);
+    whitneyRec(x0,  y0+h,h); whitneyRec(x0+h,y0+h,h);
+    return;
+  }
+
+  // Q ⊂ Ω.  Accept if diam(Q) = s√2 ≤ d(Q,∂P), or if we cannot go finer.
+  if (s * Math.SQRT2 <= dQ || s <= MIN_WH) {
+    whitneyCubes.push({x0, y0, s});
+    return;
+  }
+
+  // Whitney condition not yet met — subdivide into four children
+  const h = s/2;
+  whitneyRec(x0,  y0,  h); whitneyRec(x0+h,y0,  h);
+  whitneyRec(x0,  y0+h,h); whitneyRec(x0+h,y0+h,h);
+}
+
+// ── 2D canvas drawing ─────────────────────────────────────────────────────────
+
+function drawAll() {
+  ctx.clearRect(0,0,W,H);
+
+  // 1. Distance field (replaces everything below it)
+  if (fieldRendered && fieldData) ctx.putImageData(fieldData, 0, 0);
+
+  if (points.length === 0) return;
+
+  const onField = fieldRendered && fieldData;
+
+  // 2. Whitney cubes (drawn before the polygon outline so outline stays on top)
+  if (whitneyCubes.length > 0) drawWhitney(onField);
+
+  // 3. Polygon
+  if (phase === 'querying') {
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i=1; i<points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.closePath();
+    if (!onField && whitneyCubes.length===0) { ctx.fillStyle='rgba(26,42,74,0.05)'; ctx.fill(); }
+    ctx.strokeStyle = onField ? 'rgba(255,255,255,0.88)' : '#1a2a4a';
+    ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
+    if (onField) { ctx.strokeStyle='#1a2a4a'; ctx.lineWidth=1; ctx.stroke(); }
+  } else {
+    // Open polyline while drawing
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i=1; i<points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.strokeStyle='#1a2a4a'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+    // Dashed closing-edge preview
+    if (points.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(points[points.length-1].x, points[points.length-1].y);
+      ctx.lineTo(points[0].x, points[0].y);
+      ctx.strokeStyle='#6b7a8d'; ctx.lineWidth=1.5; ctx.setLineDash([5,5]);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+
+  // Vertex dots and labels
+  ctx.font='11px Georgia, serif';
+  for (let i=0; i<points.length; i++) {
+    const p=points[i];
+    ctx.beginPath(); ctx.arc(p.x,p.y,5,0,2*Math.PI);
+    ctx.fillStyle='#1a2a4a'; ctx.strokeStyle='#faf7f2'; ctx.lineWidth=1.5;
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#1a2a4a'; ctx.fillText(`v${i+1}`,p.x+8,p.y-6);
+  }
+
+  // 4. Query annotation
+  if (phase==='querying' && mouse) {
+    const {dist, nearest} = distanceToBoundary(mouse);
+    // Gold dashed segment to nearest point on ∂P
+    ctx.beginPath(); ctx.moveTo(mouse.x,mouse.y); ctx.lineTo(nearest.x,nearest.y);
+    ctx.strokeStyle='#c8922a'; ctx.lineWidth=1.8; ctx.setLineDash([4,3]);
+    ctx.stroke(); ctx.setLineDash([]);
+    // Nearest point on ∂P
+    ctx.beginPath(); ctx.arc(nearest.x,nearest.y,5,0,2*Math.PI);
+    ctx.fillStyle='#c8922a'; ctx.fill();
+    // Query point
+    ctx.beginPath(); ctx.arc(mouse.x,mouse.y,4,0,2*Math.PI);
+    ctx.fillStyle='#b03030'; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
+    ctx.fill(); ctx.stroke();
+    showDistance(dist, mouse);
+  }
+}
+
+/**
+ * Renders the Whitney cubes with:
+ *   – fill colored by the signed distance at the cube's centre (same colormap
+ *     as the 2D field, lighter when the field is already showing beneath)
+ *   – a thin navy border making the dyadic grid legible
+ */
+function drawWhitney(onField) {
+  for (const {x0,y0,s} of whitneyCubes) {
+    // Clip to canvas
+    const cx=Math.max(0,x0), cy=Math.max(0,y0);
+    const cw=Math.min(x0+s,W)-cx, ch=Math.min(y0+s,H)-cy;
+    if (cw<=0 || ch<=0) continue;
+
+    const sd = signedDistance({x: x0+s/2, y: y0+s/2});
+    // tanh mapping: cubes at ±normScale from ∂P reach ~76% saturation
+    const t  = Math.tanh(sd / normScale);
+    const [r,g,b] = colormap(t);
+
+    // Lighter fill when the continuous field is already visible beneath
+    ctx.fillStyle = onField
+      ? `rgba(${r},${g},${b},0.18)`
+      : `rgba(${r},${g},${b},0.38)`;
+    ctx.fillRect(cx, cy, cw, ch);
+
+    // Navy border, slightly thicker for larger cubes to preserve legibility
+    ctx.strokeStyle = 'rgba(26,42,74,0.60)';
+    ctx.lineWidth = s >= 32 ? 0.9 : 0.6;
+    ctx.strokeRect(cx+0.5, cy+0.5, cw-1, ch-1);
+  }
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
+function showDistance(dist, p) {
+  distDisplay.innerHTML =
+    `<div id="dist-value">${dist.toFixed(2)}</div>
+     <div id="dist-unit">pixels &nbsp;&nbsp; x\u2009=\u2009(${Math.round(p.x)},\u2009${Math.round(p.y)})</div>`;
+}
+function clearDistance() {
+  distDisplay.innerHTML = '<div class="placeholder">Finalize the polygon,<br>then hover to query.</div>';
+}
+function updateVertexList() {
+  vertexList.innerHTML = points.length===0
+    ? '<span class="empty">None yet.</span>'
+    : points.map((p,i)=>`v<sub>${i+1}</sub>\u2009=\u2009(${Math.round(p.x)},\u2009${Math.round(p.y)})`).join('<br>');
+}
+function setInstructions(ph) {
+  const el=document.getElementById('instructions');
+  if (ph==='drawing') {
+    el.innerHTML='<b>1.</b> Click to place vertices.<br><b>2.</b> Place at least 3.<br><b>3.</b> Click <em>Finalize Polygon</em>.';
+  } else {
+    el.innerHTML='Hover to query the distance.<br><br>The gold segment is the shortest path to <span id="instr-bdry"></span>.';
+    tex(document.getElementById('instr-bdry'),'\\partial P');
+  }
+}
+
+// ── Phase control ─────────────────────────────────────────────────────────────
+
+function setPhase(ph) {
+  phase=ph;
+  badge.textContent = ph==='drawing' ? 'Drawing' : 'Query Mode';
+  canvas.style.cursor = ph==='drawing' ? 'crosshair' : 'none';
+  setInstructions(ph);
+}
+
+// Compute normScale from a coarse grid sample
+function updateNormScale() {
+  let maxAbs = 1;
+  for (let y=0; y<=H; y+=20) for (let x=0; x<=W; x+=20) {
+    const a = Math.abs(signedDistance({x,y}));
+    if (a > maxAbs) maxAbs = a;
+  }
+  normScale = maxAbs;
+}
+
+function reset() {
+  points=[]; mouse=null; fieldRendered=false; fieldData=null;
+  whitneyCubes=[]; normScale=100;
+  renderStatus.textContent='';
+  btnFinalize.disabled=btnRender2d.disabled=btnWhitney.disabled=btnRender3d.disabled=true;
+  clearDistance(); updateVertexList(); setPhase('drawing');
+  document.getElementById('section-3d').style.display='none';
+  if (mesh3) { scene3.remove(mesh3); mesh3.geometry.dispose(); mesh3.material.dispose(); mesh3=null; }
+  drawAll();
+}
+
+// ── Canvas events ─────────────────────────────────────────────────────────────
+
+canvas.addEventListener('click', e => {
+  if (phase!=='drawing') return;
+  const r=canvas.getBoundingClientRect();
+  points.push({x:e.clientX-r.left, y:e.clientY-r.top});
+  btnFinalize.disabled = points.length<3;
+  updateVertexList(); drawAll();
+});
+canvas.addEventListener('mousemove', e => {
+  if (phase!=='querying') return;
+  const r=canvas.getBoundingClientRect();
+  mouse={x:e.clientX-r.left, y:e.clientY-r.top};
+  drawAll();
+});
+canvas.addEventListener('mouseleave', () => {
+  if (phase!=='querying') return;
+  mouse=null; drawAll(); clearDistance();
+});
+
+// ── Button events ─────────────────────────────────────────────────────────────
+
+btnFinalize.addEventListener('click', () => {
+  if (points.length<3) return;
+  setPhase('querying');
+  btnRender2d.disabled=btnWhitney.disabled=btnRender3d.disabled=false;
+  drawAll();
+});
+btnClear.addEventListener('click', reset);
+
+// ── 2D Distance Field ─────────────────────────────────────────────────────────
+
+btnRender2d.addEventListener('click', () => {
+  if (points.length<3) return;
+  btnRender2d.disabled=true; fieldRendered=false; fieldData=null;
+  renderStatus.textContent='Rendering…';
+  render2DField().then(() => {
+    renderStatus.textContent='Done.';
+    drawAll();
+    setTimeout(()=>{ renderStatus.textContent=''; btnRender2d.disabled=false; }, 1800);
+  });
+});
+
+function render2DField() {
+  return new Promise(resolve => {
+    // Coarse sampling to determine normalization
+    let maxAbs = 1;
+    for (let y=0; y<=H; y+=15) for (let x=0; x<=W; x+=15) {
+      const a = Math.abs(signedDistance({x,y}));
+      if (a > maxAbs) maxAbs = a;
+    }
+    normScale = maxAbs;
+
+    const imgData = ctx.createImageData(W,H);
+    const data = imgData.data;
+    const CHUNK = 22;
+    let row = 0;
+
+    function tick() {
+      const end = Math.min(row+CHUNK, H);
+      for (let y=row; y<end; y++) {
+        for (let x=0; x<W; x++) {
+          const sd = signedDistance({x,y});
+          const t  = sd / normScale;
+          let [r,g,b] = colormap(t);
+
+          // Thin contour lines every 15 px of |sd|; smooth threshold to avoid aliasing
+          const rem = Math.abs(sd) % 15;
+          if (rem < 0.6 || rem > 14.4) {
+            r=Math.round(r*0.38+10); g=Math.round(g*0.38+15); b=Math.round(b*0.38+29);
+          }
+
+          const idx=(y*W+x)*4;
+          data[idx]=r; data[idx+1]=g; data[idx+2]=b; data[idx+3]=255;
+        }
+      }
+      row=end;
+      if (row<H) {
+        renderStatus.textContent=`Rendering… ${Math.round(row/H*100)}%`;
+        requestAnimationFrame(tick);
+      } else {
+        fieldData=imgData; fieldRendered=true;
+        resolve();
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+// ── Whitney Decomposition ─────────────────────────────────────────────────────
+
+btnWhitney.addEventListener('click', () => {
+  if (points.length<3) return;
+  btnWhitney.disabled=true;
+  renderStatus.textContent='Computing decomposition…';
+  // Ensure normScale is set even if 2D field was not rendered yet
+  if (!fieldRendered) updateNormScale();
+
+  requestAnimationFrame(() => {
+    computeWhitney();
+    drawAll();
+    renderStatus.textContent=`Done — ${whitneyCubes.length.toLocaleString()} cubes.`;
+    setTimeout(()=>{ renderStatus.textContent=''; btnWhitney.disabled=false; }, 2800);
+  });
+});
+
+// ── 3D Altitude Map (Three.js) ────────────────────────────────────────────────
+
+let renderer3=null, scene3=null, camera3=null, mesh3=null;
+let theta3=0.5, phi3=0.82, radius3=900;
+let drag3=false, lastM3=null;
+
+function init3D() {
+  const c3=document.getElementById('canvas-3d'); if (renderer3) return;
+  renderer3=new THREE.WebGLRenderer({canvas:c3, antialias:true});
+  renderer3.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer3.setClearColor(0xfaf7f2);
+  renderer3.setSize(c3.width, c3.height);
+  scene3=new THREE.Scene();
+  camera3=new THREE.PerspectiveCamera(45, c3.width/c3.height, 1, 30000);
+  scene3.add(new THREE.AmbientLight(0xffffff,0.50));
+  const dl1=new THREE.DirectionalLight(0xfff8ee,0.90); dl1.position.set(400,900,300); scene3.add(dl1);
+  const dl2=new THREE.DirectionalLight(0xd0d8f0,0.35); dl2.position.set(-300,100,-400); scene3.add(dl2);
+  c3.addEventListener('mousedown',e=>{drag3=true;lastM3={x:e.clientX,y:e.clientY};e.preventDefault();});
+  c3.addEventListener('mousemove',e=>{
+    if(!drag3||!lastM3) return;
+    theta3-=(e.clientX-lastM3.x)*0.007;
+    phi3=Math.max(0.07,Math.min(Math.PI-0.07,phi3+(e.clientY-lastM3.y)*0.007));
+    lastM3={x:e.clientX,y:e.clientY}; render3D();
+  });
+  c3.addEventListener('mouseup',()=>drag3=false);
+  c3.addEventListener('mouseleave',()=>drag3=false);
+  c3.addEventListener('wheel',e=>{
+    radius3=Math.max(150,Math.min(6000,radius3*(1+e.deltaY*0.001))); render3D(); e.preventDefault();
+  },{passive:false});
+}
+
+function buildMesh() {
+  if (mesh3) { scene3.remove(mesh3); mesh3.geometry.dispose(); mesh3.material.dispose(); mesh3=null; }
+  const NX=210, NY=Math.round(210*H/W);
+  const geo=new THREE.PlaneGeometry(W,H,NX,NY);
+  geo.rotateX(-Math.PI/2);   // vertices now in XZ plane; Y = 0
+  const pos=geo.attributes.position.array, nV=pos.length/3;
+  const cols=new Float32Array(nV*3), sds=new Float32Array(nV);
+  let maxAbs=0.001;
+  for (let i=0; i<nV; i++) {
+    // pos[i*3]   = world-x = canvas-x − W/2
+    // pos[i*3+2] = world-z = canvas-y − H/2  (after rotateX)
+    const sd = signedDistance({x:pos[i*3]+W/2, y:pos[i*3+2]+H/2});
+    sds[i]=sd; if (Math.abs(sd)>maxAbs) maxAbs=Math.abs(sd);
+  }
+  const hScale=(H*0.40)/maxAbs;
+  for (let i=0; i<nV; i++) {
+    pos[i*3+1]=sds[i]*hScale;
+    const [r,g,b]=colormap(sds[i]/maxAbs);
+    cols[i*3]=r/255; cols[i*3+1]=g/255; cols[i*3+2]=b/255;
+  }
+  geo.attributes.position.needsUpdate=true;
+  geo.setAttribute('color',new THREE.BufferAttribute(cols,3));
+  geo.computeVertexNormals();
+  mesh3=new THREE.Mesh(geo,
+    new THREE.MeshPhongMaterial({vertexColors:true, side:THREE.DoubleSide,
+      shininess:22, specular:new THREE.Color(0.08,0.08,0.08)}));
+  scene3.add(mesh3);
+  radius3=Math.sqrt(W*W+H*H)*1.30;
+}
+
+function render3D() {
+  if (!renderer3||!scene3||!camera3) return;
+  camera3.position.set(
+    radius3*Math.sin(phi3)*Math.sin(theta3),
+    radius3*Math.cos(phi3),
+    radius3*Math.sin(phi3)*Math.cos(theta3));
+  camera3.lookAt(0,0,0);
+  renderer3.render(scene3,camera3);
+}
+
+btnRender3d.addEventListener('click', () => {
+  if (points.length<3) return;
+  const sec3d=document.getElementById('section-3d');
+  sec3d.style.display='block';
+  renderStatus.textContent='Building mesh…'; btnRender3d.disabled=true;
+  requestAnimationFrame(()=>{
+    init3D(); buildMesh(); render3D();
+    renderStatus.textContent='Done.';
+    sec3d.scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>{ renderStatus.textContent=''; btnRender3d.disabled=false; }, 1800);
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+drawAll();
+</script>
+</body>
+</html>

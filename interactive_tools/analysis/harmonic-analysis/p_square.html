@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>p-capacity of a square in a disk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  options: { renderActions: { addMenu: [] } }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root {
+  --bg: #f4efe3;
+  --bg-card: #faf6ec;
+  --bg-deep: #ede5d2;
+  --bg-soft: #f9f3e3;
+  --ink: #1c1813;
+  --ink-soft: #4a423a;
+  --ink-fade: #7a7066;
+  --rule: #c9bea8;
+  --rule-soft: #d8cfba;
+  --accent: #8b2e2e;
+  --accent-deep: #6e2424;
+  --slate: #3d4d5c;
+  --warning: #8a5a00;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 0%, rgba(139,46,46,0.06), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(61,77,92,0.05), transparent 50%);
+  color: var(--ink);
+  font-family: 'EB Garamond', 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 56px 36px 96px;
+}
+@media (max-width: 600px) { .container { padding: 36px 22px 64px; } }
+header {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 30px;
+  margin-bottom: 36px;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--accent), transparent);
+  opacity: 0.4;
+}
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: 46px;
+  line-height: 1.05;
+  margin: 0 0 14px;
+  letter-spacing: -0.012em;
+}
+h1 em { font-style: italic; font-weight: 500; color: var(--accent); }
+.lede {
+  font-size: 17.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  max-width: 680px;
+  margin: 0;
+}
+
+.formula-box {
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--accent);
+  padding: 18px 26px 14px;
+  margin: 32px 0 40px;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+.formula-box p { margin: 0 0 6px; }
+.formula-box mjx-container { margin: 0.5em 0 !important; }
+
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+.input-cell label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-fade);
+  margin-bottom: 7px;
+}
+.input-cell label em {
+  font-style: italic;
+  color: var(--accent);
+  font-family: 'Cormorant Garamond', serif;
+  text-transform: none;
+  font-size: 17px;
+  letter-spacing: 0;
+  margin-right: 4px;
+}
+input[type="number"] {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 11px 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+input[type="number"]:focus {
+  outline: none; border-color: var(--accent); background: #fff;
+}
+button.compute {
+  background: var(--ink);
+  color: var(--bg-card);
+  border: none;
+  padding: 12px 26px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  height: 44px;
+}
+button.compute:hover { background: var(--accent); }
+button.compute:active { transform: translateY(1px); }
+button.compute:disabled { background: var(--rule); cursor: wait; }
+.hint { color: var(--ink-fade); font-size: 13px; margin-top: 6px; font-style: italic; }
+.warning {
+  background: rgba(139,46,46,0.08);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 14.5px;
+  color: var(--accent-deep);
+  font-style: italic;
+  display: none;
+}
+.warning.visible { display: block; }
+
+.results { margin-top: 44px; }
+
+.capacity-display {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 36px 32px 32px;
+  margin-bottom: 44px;
+  text-align: center;
+  position: relative;
+}
+.capacity-display::before, .capacity-display::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--accent);
+  opacity: 0.5;
+}
+.capacity-display::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.capacity-display::after { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+.capacity-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 19px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.capacity-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 38px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  line-height: 1;
+}
+.capacity-detail {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink-fade);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.plot-section { margin-bottom: 36px; }
+.plot-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+.plot-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 24px;
+  color: var(--ink);
+}
+.plot-title em { font-weight: 500; color: var(--accent); }
+.plot-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-fade);
+}
+.plot-caption {
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  font-style: italic;
+  max-width: 620px;
+}
+.plot-frame {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--rule-soft);
+  padding: 4px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+.plot-frame.surface3d { aspect-ratio: 600 / 380; margin-top: 8px; }
+.plot-frame.surface3d svg {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+.plot-frame.surface3d svg.dragging { cursor: grabbing; }
+.reset3d {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 5px 9px;
+  cursor: pointer;
+  z-index: 10;
+  width: auto;
+  height: auto;
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.reset3d:hover { background: var(--bg-deep); color: var(--accent); }
+.plot-frame canvas, .plot-frame svg {
+  display: block;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+}
+.plot-frame canvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+.plot-frame canvas.smooth {
+  image-rendering: auto;
+  image-rendering: smooth;
+}
+.plot-frame svg { pointer-events: none; }
+
+.legend-row {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink-fade);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+  flex-wrap: wrap;
+}
+.legend-row span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 14px; height: 14px; vertical-align: middle; }
+.swatch.square { background: var(--accent); border: 1px solid var(--accent-deep); }
+.swatch.fade {
+  background: linear-gradient(to right, #f4efe3, #c98e8e, var(--accent));
+  border: 1px solid var(--rule);
+}
+
+.notes {
+  margin-top: 64px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+  font-size: 14.5px;
+  color: var(--ink-fade);
+  line-height: 1.6;
+}
+.notes p { margin: 8px 0; }
+.notes em { color: var(--accent); font-style: italic; }
+.notes code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  background: var(--bg-deep);
+  padding: 1px 5px;
+}
+
+.loading {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--bg-card);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: -1px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="eyebrow">p-Laplace · Dirichlet energy · capacity</div>
+    <h1>The capacity of a <em>unit square</em> in a disk</h1>
+    <p class="lede">A unit square $\overline{Q} = [-\tfrac12, \tfrac12]^2$ sits at the center of $B_5$. Find the function that equals $1$ on $\overline{Q}$, vanishes on $\partial B_5$, and is $p$-harmonic in between — and read off the $p$-capacity.</p>
+  </header>
+
+  <div class="formula-box">
+    <p>The $p$-capacity of the condenser $(\overline{Q}, B_5)$ is the infimum of the Dirichlet $p$-energy:</p>
+    <p>$$\mathrm{cap}_p(\overline{Q},\,B_5) \;=\; \inf_{u}\,\int_{B_5} |\nabla u|^p\,dx,\qquad u \ge 1\ \text{on}\ \overline{Q},\ \ u\big|_{\partial B_5} = 0.$$</p>
+    <p>The minimizer $u^*$ satisfies the $p$-Laplace equation $\nabla\!\cdot(|\nabla u|^{p-2}\nabla u) = 0$ in $B_5\setminus\overline{Q}$, with $u = 1$ on $\partial Q$ and $u = 0$ on $\partial B_5$. For $p = 2$ this is the classical harmonic measure; conformal-modulus theory gives $\mathrm{cap}_2 = 2\pi/\log(R/d_Q) \approx 2.94$ where $d_Q \approx 0.590$ is the logarithmic capacity of the unit square.</p>
+  </div>
+
+  <div class="input-grid">
+    <div class="input-cell">
+      <label><em>p</em>exponent</label>
+      <input id="pInput" type="number" min="1.2" max="6" step="0.1" value="2">
+    </div>
+    <button class="compute" id="computeBtn">Compute</button>
+  </div>
+  <p class="hint">Try $p = 2$ (harmonic, ≈ 2.94), $p = 1.5$ (≈ 5.2), $p = 4$, or $p = 3$.</p>
+  <div class="warning" id="warning"></div>
+
+  <div class="results" id="results" style="display:none">
+    <div class="capacity-display">
+      <div class="capacity-label">$p$-capacity</div>
+      <div class="capacity-value" id="capValue">—</div>
+      <div class="capacity-detail" id="capDetail"></div>
+    </div>
+
+    <div class="plot-section">
+      <div class="plot-header">
+        <div class="plot-title">The minimizer&nbsp;<em>u*(x, y)</em></div>
+        <div class="plot-tag" id="plotTag">—</div>
+      </div>
+      <p class="plot-caption">$u^*$ shaded in oxblood: deep at the unit square (where $u = 1$), fading to cream at the disk's edge ($u = 0$). Dashed contours at $u = 0.1, 0.2, \ldots, 0.9$.</p>
+      <div class="plot-frame" id="plotFrame">
+        <canvas id="plotCanvas"></canvas>
+        <svg id="plotOverlay" viewBox="0 0 600 600" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="legend-row">
+        <span><span class="swatch square"></span>square: u = 1</span>
+        <span><span class="swatch fade"></span>u: 0 → 1</span>
+        <span style="color: var(--slate);">— — —  contour at level c</span>
+      </div>
+    </div>
+
+    <div class="plot-section">
+      <div class="plot-header">
+        <div class="plot-title">The same minimizer as a&nbsp;<em>3D surface</em></div>
+        <div class="plot-tag" id="plot3DTag">—</div>
+      </div>
+      <p class="plot-caption">Axonometric projection of $z = u^*(x, y)$. The flat plateau at the centre is the unit square at $u = 1$; the surface slopes down to $u = 0$ on $\partial B_5$. Vertical scale exaggerated.</p>
+      <div class="plot-frame surface3d">
+        <svg id="surface3dSvg" viewBox="0 0 600 380" preserveAspectRatio="xMidYMid meet"></svg>
+        <button class="reset3d" id="reset3dBtn" type="button" title="reset view">reset view</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <p><em>Method.</em> Discretize on a Cartesian grid over $[-5,5]^2$ with $N$ points per side ($N = 121$ by default, $N = 161$ for extreme $p$). Inside the unit square, $u$ is fixed at $1$; outside the disk, $u$ is fixed at $0$. The Dirichlet $p$-energy is approximated using forward-difference gradients at each node — a discretization that yields the standard 5-point Laplacian as the Euler–Lagrange equation when $p = 2$. The minimizer is found by heavy-ball gradient descent on the energy with backtracking line search: a momentum step with coefficient $\mu \approx 0.92$ is tried first, with a fallback to plain backtracking when momentum overshoots. This is robust across the full $p$-range — Picard iteration with frozen coefficients $\lambda = |\nabla u|^{p-2}$ diverges for $p \gtrsim 2.5$ because of the very sharp $\lambda$-contrast near the corners.</p>
+    <p>For $p$ far from $2$ the discretization is less accurate near the corners of the square (where $|\nabla u^*|$ has a singularity); the conformal-modulus reference at $p = 2$ is matched to within a few tenths of a percent. Above the input field, the diagnostic shows the per-iteration energy as the solver runs.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const COLORS = {
+  ink: '#1c1813',
+  inkSoft: '#4a423a',
+  inkFade: '#7a7066',
+  rule: '#c9bea8',
+  ruleSoft: '#d8cfba',
+  accent: '#8b2e2e',
+  accentDeep: '#6e2424',
+  slate: '#3d4d5c',
+  cream: '#f4efe3'
+};
+
+// ============================================================
+//   SOLVER
+// ============================================================
+//
+// Discretize u on an N x N grid over [-5, 5]^2. Mark each node:
+//   fixed = 1  if (x,y) in unit square         -> u = 1
+//   fixed = 2  if x^2 + y^2 >= 25 (off disk)   -> u = 0
+//   fixed = 0  otherwise (free)
+//
+// Energy:  E = (1/p) * sum_{i,j} ((u_{i+1,j}-u_{ij})^2 + (u_{i,j+1}-u_{ij})^2)^{p/2} * h^2
+// Setting dE/du_{ij} = 0 gives the discrete p-Laplace; for p = 2 this is the
+// standard 5-point Laplacian and u_{ij} = (E + N + W + S)/4.  For general p,
+// freeze lambda = |grad u|^{p-2} at each node and solve the linear weighted-
+// Laplacian via SOR.  Iterate (Picard).
+//
+// Capacity = int |grad u|^p dx = p * E.
+
+async function solve(p, opts) {
+  opts = opts || {};
+  const N = opts.N || 121;
+  const maxIter = opts.maxIter || 8000;
+  const mu = opts.momentum != null ? opts.momentum : 0.92;
+  const onProgress = opts.onProgress || (() => {});
+  const reg = 1e-12;
+
+  const h = 10 / (N - 1);
+  const u = new Float64Array(N * N);
+  const fixed = new Uint8Array(N * N);
+  const grad = new Float64Array(N * N);
+  const v = new Float64Array(N * N);
+  const uTrial = new Float64Array(N * N);
+
+  // Set up domain.
+  for (let j = 0; j < N; j++) {
+    const y = -5 + j * h;
+    for (let i = 0; i < N; i++) {
+      const x = -5 + i * h;
+      const idx = j * N + i;
+      if (x * x + y * y >= 25 - 1e-12) {
+        fixed[idx] = 2; u[idx] = 0;
+      } else if (Math.abs(x) <= 0.5 + 1e-9 && Math.abs(y) <= 0.5 + 1e-9) {
+        fixed[idx] = 1; u[idx] = 1;
+      } else {
+        // Log-radial initial guess (exact for the disk-in-disk problem at p = 2).
+        const r = Math.sqrt(x * x + y * y);
+        const init = Math.log(5 / Math.max(r, 0.5)) / Math.log(5 / 0.5);
+        u[idx] = Math.max(0, Math.min(1, init));
+      }
+    }
+  }
+
+  // Forward-difference energy + gradient.
+  // E = (1/p) Σ_{i,j<N-1} ((u_{i+1,j}-u_{i,j})² + (u_{i,j+1}-u_{i,j})²)^{p/2} h²
+  // For p = 2 the EL-equation becomes the standard 5-point Laplacian.
+  function evalEG(u_, withGrad) {
+    if (withGrad) grad.fill(0);
+    let E = 0;
+    for (let j = 0; j < N - 1; j++) {
+      for (let i = 0; i < N - 1; i++) {
+        const idx = j * N + i;
+        const u00 = u_[idx], u10 = u_[idx + 1], u01 = u_[idx + N];
+        const gx = (u10 - u00) / h;
+        const gy = (u01 - u00) / h;
+        const g2 = gx * gx + gy * gy;
+        if (g2 < 1e-30) continue;
+        const g2eps = g2 + reg;
+        const lam = Math.pow(g2eps, (p - 2) / 2);
+        E += g2eps * lam * (h * h) / p;
+        if (withGrad) {
+          const c = h * lam;
+          grad[idx]     -= c * (gx + gy);
+          grad[idx + 1] += c * gx;
+          grad[idx + N] += c * gy;
+        }
+      }
+    }
+    if (withGrad) {
+      for (let k = 0; k < N * N; k++) if (fixed[k]) grad[k] = 0;
+    }
+    return E;
+  }
+
+  let E = evalEG(u, true);
+  let step = 0.001;
+  let prevE = Infinity;
+  let consecutiveFails = 0;
+
+  // Heavy-ball gradient descent: tries momentum step first; falls back
+  // to backtracked plain GD when the momentum step doesn't decrease energy.
+  for (let it = 0; it < maxIter; it++) {
+    // Momentum-augmented step.
+    for (let k = 0; k < N * N; k++) uTrial[k] = u[k] + mu * v[k] - step * grad[k];
+    let ET = evalEG(uTrial, false);
+    if (ET < E - 1e-15) {
+      for (let k = 0; k < N * N; k++) v[k] = uTrial[k] - u[k];
+      u.set(uTrial);
+      E = evalEG(u, true);
+      step = Math.min(0.5, step * 1.04);
+      consecutiveFails = 0;
+    } else {
+      // Backtrack pure GD.
+      let trial = step * 2;
+      let ok = false;
+      for (let bt = 0; bt < 30; bt++) {
+        for (let k = 0; k < N * N; k++) uTrial[k] = u[k] - trial * grad[k];
+        ET = evalEG(uTrial, false);
+        if (ET < E + 1e-15) {
+          for (let k = 0; k < N * N; k++) v[k] = uTrial[k] - u[k];
+          u.set(uTrial);
+          E = evalEG(u, true);
+          step = trial;
+          ok = true;
+          break;
+        }
+        trial *= 0.5;
+      }
+      if (!ok) {
+        consecutiveFails++;
+        if (consecutiveFails > 3) break;
+      }
+    }
+
+    if (it > 100 && Math.abs(prevE - E) < 1e-12 * (Math.abs(E) + 1)) break;
+    prevE = E;
+
+    // Yield to the browser every so often so the UI stays responsive.
+    if ((it & 127) === 0) {
+      onProgress(it, maxIter, E);
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  // Final capacity ∫|∇u|^p dx (cell quadrature, no 1/p factor).
+  let cap = 0;
+  for (let j = 0; j < N - 1; j++) {
+    for (let i = 0; i < N - 1; i++) {
+      const idx = j * N + i;
+      const gx = (u[idx + 1] - u[idx]) / h;
+      const gy = (u[idx + N] - u[idx]) / h;
+      const g2 = gx * gx + gy * gy;
+      if (g2 > 0) cap += Math.pow(g2, p / 2);
+    }
+  }
+  cap *= h * h;
+
+  return { u, capacity: cap, N, h, fixed, p };
+}
+
+// ============================================================
+//   PLOTTING
+// ============================================================
+//
+// Heatmap on canvas (one pixel per grid cell, browser smooths to display
+// size); SVG overlay for contours, square outline, circle outline, axes.
+
+const PLOT_PX = 600;            // logical SVG units; canvas dpr-scaled below
+
+// RGB lerp for u in [0, 1]: cream (#f4efe3 ~ 244,239,227) -> oxblood (139,46,46).
+function colorFor(v) {
+  v = Math.max(0, Math.min(1, v));
+  const r = Math.round(244 + v * (139 - 244));
+  const g = Math.round(239 + v * (46 - 239));
+  const b = Math.round(227 + v * (46 - 227));
+  return [r, g, b];
+}
+
+function drawHeatmap(canvas, sol) {
+  const { u, N, fixed } = sol;
+  // Use pixel-per-grid-point (N x N), rely on imageSmoothing for upscaling.
+  canvas.width = N;
+  canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(N, N);
+
+  // Background page color (matches outside the disk).
+  const [bgR, bgG, bgB] = [244, 239, 227];
+
+  for (let j = 0; j < N; j++) {
+    // canvas y is flipped: row 0 at top, but math y increases up; so flip.
+    const jc = N - 1 - j;
+    for (let i = 0; i < N; i++) {
+      const idx = j * N + i;
+      const px = (jc * N + i) * 4;
+      if (fixed[idx] === 2) {
+        // outside the disk — match the background
+        img.data[px] = bgR; img.data[px + 1] = bgG; img.data[px + 2] = bgB; img.data[px + 3] = 255;
+      } else {
+        const [r, g, b] = colorFor(u[idx]);
+        img.data[px] = r; img.data[px + 1] = g; img.data[px + 2] = b; img.data[px + 3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // Smooth scaling on display.
+  canvas.classList.add('smooth');
+}
+
+// Marching squares: contour at level c. Each cell with corners
+//   bl=u(i,j), br=u(i+1,j), tl=u(i,j+1), tr=u(i+1,j+1)
+// produces 0, 1, or 2 line segments crossing it.  We emit raw segments and
+// let the SVG render them without trying to chain into polylines.
+function marchingSquares(u, N, h, c) {
+  const segs = [];
+  // helper: linear interp on edge
+  function edgeX(i, j, va, vb) { return i + (c - va) / (vb - va); }
+  function edgeY(j, va, vb)   { return j + (c - va) / (vb - va); }
+
+  for (let j = 0; j < N - 1; j++) {
+    for (let i = 0; i < N - 1; i++) {
+      const a = u[j * N + i];           // bl
+      const b = u[j * N + i + 1];       // br
+      const cc = u[(j + 1) * N + i + 1]; // tr
+      const d = u[(j + 1) * N + i];      // tl
+      let code = 0;
+      if (a > c) code |= 1;
+      if (b > c) code |= 2;
+      if (cc > c) code |= 4;
+      if (d > c) code |= 8;
+      if (code === 0 || code === 15) continue;
+
+      // edge crossings (in grid coords, fractional)
+      // bottom: between bl and br -> y = j, x in [i, i+1]
+      // right: between br and tr -> x = i+1, y in [j, j+1]
+      // top: between tl and tr -> y = j+1, x in [i, i+1]
+      // left: between bl and tl -> x = i, y in [j, j+1]
+      let pts = null;
+      switch (code) {
+        case 1: case 14:
+          pts = [[edgeX(i, j, a, b), j], [i, edgeY(j, a, d)]]; break;
+        case 2: case 13:
+          pts = [[edgeX(i, j, a, b), j], [i + 1, edgeY(j, b, cc)]]; break;
+        case 3: case 12:
+          pts = [[i, edgeY(j, a, d)], [i + 1, edgeY(j, b, cc)]]; break;
+        case 4: case 11:
+          pts = [[i + 1, edgeY(j, b, cc)], [edgeX(i, j + 1, d, cc), j + 1]]; break;
+        case 6: case 9:
+          pts = [[edgeX(i, j, a, b), j], [edgeX(i, j + 1, d, cc), j + 1]]; break;
+        case 7: case 8:
+          pts = [[i, edgeY(j, a, d)], [edgeX(i, j + 1, d, cc), j + 1]]; break;
+        case 5: {
+          // saddle: two segments
+          segs.push([[edgeX(i, j, a, b), j], [i + 1, edgeY(j, b, cc)]]);
+          pts = [[i, edgeY(j, a, d)], [edgeX(i, j + 1, d, cc), j + 1]];
+          break;
+        }
+        case 10: {
+          segs.push([[edgeX(i, j, a, b), j], [i, edgeY(j, a, d)]]);
+          pts = [[i + 1, edgeY(j, b, cc)], [edgeX(i, j + 1, d, cc), j + 1]];
+          break;
+        }
+      }
+      if (pts) segs.push(pts);
+    }
+  }
+  return segs;
+}
+
+function renderOverlay(svg, sol) {
+  const { u, N } = sol;
+  const W = PLOT_PX, H = PLOT_PX;
+  // viewBox is 0..W in screen coords.  Map data (x, y) in [-5, 5] -> screen.
+  // (i, j) grid index in [0..N-1] -> data = (-5 + i*h, -5 + j*h).
+  // Screen x = (data.x + 5)/10 * W ; Screen y flips: (5 - data.y)/10 * H.
+  // Equivalently, from grid (i, j_data): sx = i/(N-1)*W, sy = (N-1-j)/(N-1)*H.
+  function gridToScreen(gx, gy) {
+    return [gx / (N - 1) * W, (N - 1 - gy) / (N - 1) * H];
+  }
+
+  let out = '';
+
+  // Disk circle outline.
+  // disk has radius 5 centered at (0,0) in data coords; in screen, center
+  // at (W/2, H/2) and radius = (5 / 10) * W.
+  const cx = W / 2, cy = H / 2, rDisk = (5 / 10) * W;
+  out += `<circle cx="${cx}" cy="${cy}" r="${rDisk}" fill="none" stroke="${COLORS.slate}" stroke-width="1.5" stroke-dasharray="0"/>`;
+
+  // Square outline at u=1 region.
+  // square is [-0.5, 0.5]^2 in data; in screen, side = (1/10)*W centered.
+  const sqHalf = (0.5 / 10) * W;
+  out += `<rect x="${cx - sqHalf}" y="${cy - sqHalf}" width="${2 * sqHalf}" height="${2 * sqHalf}" fill="none" stroke="${COLORS.accentDeep}" stroke-width="1.6"/>`;
+
+  // Contours at u = 0.1, 0.2, ..., 0.9.
+  for (let k = 1; k <= 9; k++) {
+    const c = k / 10;
+    const segs = marchingSquares(u, N, sol.h, c);
+    let path = '';
+    for (const [p0, p1] of segs) {
+      const [x0, y0] = gridToScreen(p0[0], p0[1]);
+      const [x1, y1] = gridToScreen(p1[0], p1[1]);
+      path += `M${x0.toFixed(2)},${y0.toFixed(2)} L${x1.toFixed(2)},${y1.toFixed(2)} `;
+    }
+    if (path) {
+      // emphasize u=0.5 a bit more
+      const major = (k === 5);
+      const opacity = major ? 0.75 : 0.4;
+      const width = major ? 1.0 : 0.7;
+      const dash = major ? '4,3' : '3,4';
+      out += `<path d="${path}" fill="none" stroke="${COLORS.slate}" stroke-width="${width}" stroke-dasharray="${dash}" opacity="${opacity}"/>`;
+    }
+  }
+
+  // Axis ticks at every integer along the bottom and left (data coords).
+  // Show -4..4 since -5,5 are at the edge.
+  const tickColor = COLORS.inkFade;
+  for (let v = -4; v <= 4; v++) {
+    const [tx, ty] = gridToScreen((v + 5) / 10 * (N - 1), 0); // along bottom
+    out += `<line x1="${tx}" y1="${H - 1}" x2="${tx}" y2="${H - 6}" stroke="${tickColor}" stroke-width="0.7"/>`;
+    if (v !== 0) {
+      out += `<text x="${tx}" y="${H - 9}" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="${tickColor}" opacity="0.7">${v}</text>`;
+    }
+  }
+  for (let v = -4; v <= 4; v++) {
+    const [_, sy] = gridToScreen(0, (v + 5) / 10 * (N - 1));
+    out += `<line x1="0" y1="${sy}" x2="6" y2="${sy}" stroke="${tickColor}" stroke-width="0.7"/>`;
+    if (v !== 0) {
+      out += `<text x="9" y="${sy + 3}" text-anchor="start" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="${tickColor}" opacity="0.7">${v}</text>`;
+    }
+  }
+
+  // u = 1 / u = 0 labels
+  out += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-family="'EB Garamond', serif" font-style="italic" font-size="14" fill="white" opacity="0.95">u = 1</text>`;
+  out += `<text x="${cx + rDisk * 0.78}" y="${cy - rDisk * 0.78}" text-anchor="middle" font-family="'EB Garamond', serif" font-style="italic" font-size="13" fill="${COLORS.slate}">u = 0</text>`;
+
+  svg.innerHTML = out;
+}
+
+// ------------------------------------------------------------
+//   3D SURFACE PLOT
+// ------------------------------------------------------------
+//
+// Hand-rolled axonometric projection of z = u(x, y). The grid is sub-sampled
+// to ~41 points per side; each cell becomes a quadrilateral in screen space,
+// painted back-to-front (painter's algorithm) using cell-centre depth. Colour
+// follows the same cream→oxblood map as the heatmap, modulated by simple
+// Lambertian shading from a front-right-top light.
+
+function render3D(svg, sol, opts) {
+  opts = opts || {};
+  const { u, N } = sol;
+  const W = opts.width || 600;
+  const H = opts.height || 380;
+  const azimuth = opts.azimuth != null ? opts.azimuth : Math.PI / 6;       // 30°
+  const elevation = opts.elevation != null ? opts.elevation : Math.PI * 25 / 180; // 25°
+  const zScale = opts.zScale || 2.8;
+  const targetM = opts.targetM || 41;
+
+  const sa = Math.sin(azimuth), ca = Math.cos(azimuth);
+  const sb = Math.sin(elevation), cb = Math.cos(elevation);
+
+  // Sub-sample the grid.
+  const stride = Math.max(1, Math.floor((N - 1) / (targetM - 1)));
+  const sampleIdx = [];
+  for (let m = 0; m * stride < N; m++) sampleIdx.push(m * stride);
+  if (sampleIdx[sampleIdx.length - 1] !== N - 1) sampleIdx.push(N - 1);
+  const M = sampleIdx.length;
+
+  const dx = 10 / (N - 1);
+  const xs = sampleIdx.map(i => -5 + i * dx);
+  const uS = new Float64Array(M * M);
+  for (let mj = 0; mj < M; mj++) {
+    const j = sampleIdx[mj];
+    for (let mi = 0; mi < M; mi++) {
+      const i = sampleIdx[mi];
+      uS[mj * M + mi] = u[j * N + i];
+    }
+  }
+
+  // Orthonormal screen basis after rotate-about-z by azimuth, then tilt-about-x by elevation:
+  //   right = (ca, sa, 0); up = (-sa·sb, ca·sb, cb); into (toward viewer) = (sa·cb, -ca·cb, sb).
+  function projX(x, y, z)     { return ca * x + sa * y; }
+  function projY(x, y, z)     { return -sa * sb * x + ca * sb * y + cb * z; }
+  function depthOf(x, y, z)   { return sa * cb * x - ca * cb * y + sb * z; }
+
+  // World→screen mapping: fit the axis-aligned bounding box of the [-5,5]² × [0,zScale]
+  // box into the SVG viewBox with a small margin.
+  let minPX = Infinity, maxPX = -Infinity, minPY = Infinity, maxPY = -Infinity;
+  for (const x of [-5, 5]) for (const y of [-5, 5]) for (const z of [0, zScale]) {
+    const px = projX(x, y, z), py = projY(x, y, z);
+    if (px < minPX) minPX = px; if (px > maxPX) maxPX = px;
+    if (py < minPY) minPY = py; if (py > maxPY) maxPY = py;
+  }
+  const padding = 18;
+  const scale = Math.min((W - 2 * padding) / (maxPX - minPX),
+                         (H - 2 * padding) / (maxPY - minPY));
+  const offX = (W - (maxPX - minPX) * scale) / 2 - minPX * scale;
+  const offY = (H + (maxPY - minPY) * scale) / 2 + minPY * scale - 4;
+
+  function toScreen(x, y, z) {
+    const sz = z * zScale;
+    return [offX + projX(x, y, sz) * scale, offY - projY(x, y, sz) * scale];
+  }
+
+  // Lambertian shading from a front-right-top light source.
+  const lx = 0.40, ly = -0.50, lz = 0.769; // ~ (1, -1.25, 2) / norm
+  function shade(ux, uy) {
+    const norm = Math.sqrt(ux * ux + uy * uy + 1);
+    const dot = (-ux * lx + -uy * ly + lz) / norm;
+    return Math.max(0.55, Math.min(1, 0.40 + 0.85 * dot));
+  }
+
+  // Build cells.
+  const cells = [];
+  const sdx = xs[1] - xs[0];
+  for (let mj = 0; mj < M - 1; mj++) {
+    for (let mi = 0; mi < M - 1; mi++) {
+      const x0 = xs[mi],   x1 = xs[mi + 1];
+      const y0 = xs[mj],   y1 = xs[mj + 1];
+      const u00 = uS[mj * M + mi];
+      const u10 = uS[mj * M + mi + 1];
+      const u01 = uS[(mj + 1) * M + mi];
+      const u11 = uS[(mj + 1) * M + mi + 1];
+      const xC = 0.5 * (x0 + x1), yC = 0.5 * (y0 + y1);
+      // Drop cells whose centre is well outside the disk (cells straddling the
+      // disk boundary keep their mixed corners; u is already 0 outside).
+      if (xC * xC + yC * yC > 25 + 0.02) continue;
+
+      const uAvg = 0.25 * (u00 + u10 + u01 + u11);
+      const ux = (u10 + u11 - u00 - u01) / (2 * sdx);
+      const uy = (u01 + u11 - u00 - u10) / (2 * sdx);
+      const sh = shade(ux, uy);
+      const d  = depthOf(xC, yC, uAvg * zScale);
+      const c0 = toScreen(x0, y0, u00);
+      const c1 = toScreen(x1, y0, u10);
+      const c2 = toScreen(x1, y1, u11);
+      const c3 = toScreen(x0, y1, u01);
+      cells.push({ c0, c1, c2, c3, u: uAvg, sh, d });
+    }
+  }
+  // Painter's algorithm: smaller depth = farther from viewer = paint first.
+  cells.sort((a, b) => a.d - b.d);
+
+  // Disk ring at z = 0, split into back/front halves.
+  const Nseg = 96;
+  const ringPts = new Array(Nseg + 1);
+  const ringDep = new Array(Nseg + 1);
+  for (let s = 0; s <= Nseg; s++) {
+    const theta = s * 2 * Math.PI / Nseg;
+    const xx = 5 * Math.cos(theta), yy = 5 * Math.sin(theta);
+    ringPts[s] = toScreen(xx, yy, 0);
+    ringDep[s] = depthOf(xx, yy, 0);
+  }
+
+  const parts = [];
+
+  // Back half of the ring (drawn before cells).
+  for (let i = 0; i < Nseg; i++) {
+    const segDep = 0.5 * (ringDep[i] + ringDep[i + 1]);
+    if (segDep < 0) {
+      parts.push(`<line x1="${ringPts[i][0].toFixed(1)}" y1="${ringPts[i][1].toFixed(1)}" x2="${ringPts[i+1][0].toFixed(1)}" y2="${ringPts[i+1][1].toFixed(1)}" stroke="${COLORS.slate}" stroke-width="0.7" stroke-dasharray="3,3" opacity="0.45"/>`);
+    }
+  }
+
+  // Cells.
+  for (const cell of cells) {
+    const [r, g, b] = colorFor(cell.u);
+    const sh = cell.sh;
+    const sr = Math.min(255, Math.round(r * sh));
+    const sg = Math.min(255, Math.round(g * sh));
+    const sb_ = Math.min(255, Math.round(b * sh));
+    const fill = `rgb(${sr},${sg},${sb_})`;
+    parts.push(`<polygon points="${cell.c0[0].toFixed(1)},${cell.c0[1].toFixed(1)} ${cell.c1[0].toFixed(1)},${cell.c1[1].toFixed(1)} ${cell.c2[0].toFixed(1)},${cell.c2[1].toFixed(1)} ${cell.c3[0].toFixed(1)},${cell.c3[1].toFixed(1)}" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round"/>`);
+  }
+
+  // Front half of the ring.
+  for (let i = 0; i < Nseg; i++) {
+    const segDep = 0.5 * (ringDep[i] + ringDep[i + 1]);
+    if (segDep >= 0) {
+      parts.push(`<line x1="${ringPts[i][0].toFixed(1)}" y1="${ringPts[i][1].toFixed(1)}" x2="${ringPts[i+1][0].toFixed(1)}" y2="${ringPts[i+1][1].toFixed(1)}" stroke="${COLORS.slate}" stroke-width="1" opacity="0.7"/>`);
+    }
+  }
+
+  // Unit-square top edge at z = 1, drawn last so it sits on the plateau.
+  const sq = [
+    toScreen(-0.5, -0.5, 1),
+    toScreen( 0.5, -0.5, 1),
+    toScreen( 0.5,  0.5, 1),
+    toScreen(-0.5,  0.5, 1)
+  ];
+  parts.push(`<path d="M${sq[0][0].toFixed(1)},${sq[0][1].toFixed(1)} L${sq[1][0].toFixed(1)},${sq[1][1].toFixed(1)} L${sq[2][0].toFixed(1)},${sq[2][1].toFixed(1)} L${sq[3][0].toFixed(1)},${sq[3][1].toFixed(1)} Z" fill="none" stroke="${COLORS.accentDeep}" stroke-width="1.6" stroke-linejoin="round"/>`);
+
+  // Vertical reference for the u axis at the back-left corner.
+  const axBot = toScreen(-5.6, 5.6, 0);
+  const axTop = toScreen(-5.6, 5.6, 1);
+  parts.push(`<line x1="${axBot[0].toFixed(1)}" y1="${axBot[1].toFixed(1)}" x2="${axTop[0].toFixed(1)}" y2="${axTop[1].toFixed(1)}" stroke="${COLORS.inkFade}" stroke-width="0.8"/>`);
+  parts.push(`<text x="${(axBot[0] - 5).toFixed(1)}" y="${(axBot[1] + 4).toFixed(1)}" font-family="'JetBrains Mono', monospace" font-size="10" fill="${COLORS.inkFade}" text-anchor="end">u = 0</text>`);
+  parts.push(`<text x="${(axTop[0] - 5).toFixed(1)}" y="${(axTop[1] + 4).toFixed(1)}" font-family="'JetBrains Mono', monospace" font-size="10" fill="${COLORS.inkFade}" text-anchor="end">u = 1</text>`);
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = parts.join('');
+}
+
+// ============================================================
+//   GLUE
+// ============================================================
+
+function el(id) { return document.getElementById(id); }
+function fmt(x, digits) {
+  if (!isFinite(x)) return '—';
+  if (digits == null) digits = 5;
+  return Number(x.toPrecision(digits)).toString();
+}
+
+async function compute() {
+  const p = parseFloat(el('pInput').value);
+  const warn = el('warning');
+  warn.classList.remove('visible'); warn.textContent = '';
+
+  if (!(p > 1)) {
+    warn.textContent = 'p must be greater than 1.';
+    warn.classList.add('visible');
+    return;
+  }
+  if (p < 1.2 || p > 6) {
+    warn.textContent = `Note: p = ${p} is outside the well-tested range [1.2, 6]; convergence may be slow or rough near the corners.`;
+    warn.classList.add('visible');
+  }
+
+  const btn = el('computeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>Working';
+  await new Promise(r => setTimeout(r, 30));
+
+  try {
+    const t0 = performance.now();
+    // Resolution: N=121 is fast (≈0.3–6 s in the browser depending on p) and
+    // gets us to within 0.3 % of the conformal-modulus reference at p = 2.
+    // Bump grid for extreme p where the corner singularity sharpens.
+    let N = 121;
+    let maxIter = 8000;
+    if (p < 1.4 || p > 4) { N = 161; maxIter = 12000; }
+    const onProgress = (it, max, E) => {
+      btn.innerHTML = `<span class="loading"></span>Iter ${it} · E=${E.toFixed(4)}`;
+    };
+    const sol = await solve(p, { N, maxIter, momentum: 0.92, onProgress });
+    const dt = (performance.now() - t0) / 1000;
+
+    el('capValue').textContent = fmt(sol.capacity, 6);
+
+    // Reference comparison line for p=2.
+    let detail = `p = ${p}  ·  grid ${sol.N}×${sol.N}  ·  ${dt.toFixed(2)}s`;
+    if (Math.abs(p - 2) < 0.01) {
+      const ref = 2 * Math.PI / Math.log(5 / 0.59017);
+      const errPct = (sol.capacity - ref) / ref * 100;
+      detail += `  ·  conformal ref ${ref.toFixed(4)}  (Δ ${errPct >= 0 ? '+' : ''}${errPct.toFixed(2)}%)`;
+    }
+    el('capDetail').textContent = detail;
+    el('plotTag').textContent = `${sol.N}×${sol.N} grid`;
+
+    drawHeatmap(el('plotCanvas'), sol);
+    renderOverlay(el('plotOverlay'), sol);
+    currentSol = sol;
+    rerender3D();
+
+    el('results').style.display = 'block';
+    if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+  } catch (e) {
+    console.error(e);
+    warn.textContent = 'Computation error: ' + e.message;
+    warn.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Compute';
+  }
+}
+
+// ------------------------------------------------------------
+//   3D ROTATION (mouse + touch drag)
+// ------------------------------------------------------------
+
+let currentSol = null;
+const view3D = {
+  azimuthDefault: Math.PI / 6,
+  elevationDefault: Math.PI * 25 / 180,
+  azimuth: Math.PI / 6,
+  elevation: Math.PI * 25 / 180
+};
+let drag3DState = null;
+let pending3DFrame = null;
+
+function update3DTag() {
+  let azDeg = view3D.azimuth * 180 / Math.PI;
+  azDeg = ((azDeg % 360) + 360) % 360;
+  const elDeg = view3D.elevation * 180 / Math.PI;
+  el('plot3DTag').textContent = `drag to rotate · az ${azDeg.toFixed(0)}° · el ${elDeg.toFixed(0)}°`;
+}
+
+function rerender3D(extra) {
+  if (!currentSol) return;
+  const opts = {
+    azimuth: view3D.azimuth,
+    elevation: view3D.elevation
+  };
+  if (extra) for (const k in extra) opts[k] = extra[k];
+  render3D(el('surface3dSvg'), currentSol, opts);
+  update3DTag();
+}
+
+function setupRotation() {
+  const svg = el('surface3dSvg');
+  if (!svg) return;
+
+  const startDrag = (cx, cy) => {
+    if (!currentSol) return;
+    drag3DState = {
+      x0: cx, y0: cy,
+      az0: view3D.azimuth,
+      el0: view3D.elevation
+    };
+    svg.classList.add('dragging');
+  };
+
+  const moveDrag = (cx, cy) => {
+    if (!drag3DState) return;
+    const dx = cx - drag3DState.x0;
+    const dy = cy - drag3DState.y0;
+    const rect = svg.getBoundingClientRect();
+    const w = rect.width || 600;
+    const h = rect.height || 380;
+    // Sensitivity: full SVG width ≈ 290° azimuth, full height ≈ 125° elevation.
+    view3D.azimuth = drag3DState.az0 + (dx / w) * Math.PI * 1.6;
+    let elNew = drag3DState.el0 - (dy / h) * Math.PI * 0.7;
+    // Clamp to [5°, 88°]: always look down at the surface, avoid the
+    // degenerate top-down view that flattens the projection.
+    elNew = Math.max(Math.PI / 36, Math.min(Math.PI / 2 - 0.04, elNew));
+    view3D.elevation = elNew;
+    if (pending3DFrame !== null) return;
+    pending3DFrame = requestAnimationFrame(() => {
+      pending3DFrame = null;
+      rerender3D({ targetM: 25 });   // low-res while dragging
+    });
+  };
+
+  const endDrag = () => {
+    if (!drag3DState) return;
+    drag3DState = null;
+    svg.classList.remove('dragging');
+    if (pending3DFrame !== null) {
+      cancelAnimationFrame(pending3DFrame);
+      pending3DFrame = null;
+    }
+    rerender3D();   // full-resolution snap
+  };
+
+  svg.addEventListener('mousedown', e => { e.preventDefault(); startDrag(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
+
+  svg.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  window.addEventListener('touchmove', e => {
+    if (drag3DState && e.touches.length === 1) {
+      e.preventDefault();
+      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  window.addEventListener('touchend', endDrag);
+  window.addEventListener('touchcancel', endDrag);
+
+  const resetBtn = el('reset3dBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      view3D.azimuth = view3D.azimuthDefault;
+      view3D.elevation = view3D.elevationDefault;
+      rerender3D();
+    });
+  }
+}
+
+el('computeBtn').addEventListener('click', compute);
+el('pInput').addEventListener('keydown', e => { if (e.key === 'Enter') compute(); });
+setupRotation();
+
+// Auto-run on load.
+compute();
+</script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poisson Integral — Harmonic Extension to the Upper Half-Space</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
+:root {
+  --bg: #faf6f0; --surface: #fff; --card: #f5efe6;
+  --crimson: #9e1b32; --crimson-light: #b8293f; --crimson-glow: rgba(158,27,50,0.12);
+  --gold: #8a6d20; --gold-dim: #6e5518;
+  --text: #2a1a10; --text-dim: #6e5a4a; --text-faint: #a09080;
+  --border: #d8cfc2;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Crimson Pro',serif;
+  overflow-x:hidden; }
+h1 { font-size:1.6em; font-weight:300; letter-spacing:0.04em; color:var(--crimson); margin-bottom:4px; }
+h2 { font-size:1.1em; font-weight:400; color:var(--crimson); margin:12px 0 6px; }
+.subtitle { font-size:0.85em; color:var(--text-dim); font-style:italic; margin-bottom:12px; }
+.container { max-width:1200px; margin:0 auto; padding:16px; }
+
+/* Tabs */
+.tabs { display:flex; gap:2px; margin-bottom:16px; }
+.tab { padding:10px 24px; background:var(--surface); border:1px solid var(--border);
+  color:var(--text-dim); cursor:pointer; font-family:'Crimson Pro',serif; font-size:0.95em;
+  transition:all 0.3s; border-radius:4px 4px 0 0; }
+.tab:hover { color:var(--text); }
+.tab.active { background:var(--card); color:var(--crimson); border-bottom-color:var(--card);
+  font-weight:600; }
+
+/* Controls */
+.controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+  background:var(--card); padding:12px 16px; border-radius:6px;
+  border:1px solid var(--border); margin-bottom:12px; }
+.control-group { display:flex; flex-direction:column; gap:3px; }
+.control-group label { font-size:0.75em; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:0.08em; font-family:'JetBrains Mono',monospace; }
+select, input[type=range] { background:#fff; color:var(--text); border:1px solid var(--border);
+  padding:4px 8px; border-radius:3px; font-family:'Crimson Pro',serif; font-size:0.9em; }
+select { min-width:180px; cursor:pointer; }
+input[type=range] { width:140px; accent-color:var(--crimson); }
+button { background:var(--crimson); color:#fff; border:none; padding:6px 16px;
+  border-radius:3px; cursor:pointer; font-family:'Crimson Pro',serif; font-size:0.9em;
+  transition:background 0.2s; }
+button:hover { background:var(--crimson-light); }
+.val { font-family:'JetBrains Mono',monospace; font-size:0.8em; color:var(--crimson); min-width:40px; }
+
+/* Canvas area */
+.canvas-wrap { position:relative; background:#fff; border-radius:6px;
+  border:1px solid var(--border); overflow:hidden; margin-bottom:12px; }
+canvas.main-canvas { display:block; width:100%; }
+
+/* Info panel */
+.info { background:var(--card); border:1px solid var(--border); border-radius:6px;
+  padding:14px 18px; font-size:0.88em; line-height:1.6; }
+.info .formula { font-family:'JetBrains Mono',monospace; font-size:0.82em;
+  color:#4a2010; background:#f0e8dc; padding:6px 10px; border-radius:3px;
+  margin:6px 0; display:block; overflow-x:auto; white-space:nowrap;
+  border:1px solid #e0d4c4; }
+.info em { color:var(--crimson); font-style:italic; }
+
+/* Two-col layout */
+.row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:800px){ .row{grid-template-columns:1fr;} }
+
+/* Slice plot */
+.slice-canvas { background:#fff; border:1px solid var(--border); border-radius:6px; }
+
+/* Toggle buttons */
+.toggle-group { display:flex; gap:0; }
+.toggle-btn { padding:5px 14px; background:#fff; border:1px solid var(--border);
+  color:var(--text-dim); cursor:pointer; font-family:'Crimson Pro',serif; font-size:0.85em;
+  transition:all 0.2s; }
+.toggle-btn:first-child { border-radius:3px 0 0 3px; }
+.toggle-btn:last-child { border-radius:0 3px 3px 0; }
+.toggle-btn.active { background:var(--crimson); color:#fff; border-color:var(--crimson); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Poisson Integral — Harmonic Extension</h1>
+<div class="subtitle">Extending boundary data f on ℝⁿ to harmonic functions on ℝⁿ⁺¹₊ via the Poisson kernel</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchMode(0)">Half-Plane (n = 1)</div>
+  <div class="tab" onclick="switchMode(1)">Half-Space (n = 2)</div>
+</div>
+
+<!-- ============ MODE 0: n=1 ============ -->
+<div id="mode0">
+<div class="controls">
+  <div class="control-group">
+    <label>Boundary function f(x)</label>
+    <select id="fn1d" onchange="recompute1D()">
+      <option value="step">χ₍₋₁,₁₎ — Step function</option>
+      <option value="gauss">e⁻ˣ² — Gaussian</option>
+      <option value="delta">δ-approximation (narrow peak)</option>
+      <option value="sgn">sgn(x)·e⁻|x| — Odd decay</option>
+      <option value="sin">sin(πx)·χ₍₋₁,₁₎</option>
+      <option value="cusp">|x|⁻¹ᐟ² · χ₍₋₁,₁₎ — Singular</option>
+      <option value="twobox">χ₍₋₃,₋₁₎ + χ₍₁,₃₎ — Two boxes</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Show surface</label>
+    <div class="toggle-group">
+      <div class="toggle-btn active" onclick="setShow1D('u',this)">u (Poisson)</div>
+      <div class="toggle-btn" onclick="setShow1D('v',this)">v (Conjugate)</div>
+      <div class="toggle-btn" onclick="setShow1D('both',this)">Both</div>
+    </div>
+  </div>
+  <div class="control-group">
+    <label>Height y = <span class="val" id="yval1d">0.05</span></label>
+    <input type="range" id="yslider1d" min="1" max="100" value="5" oninput="updateSlice1D()">
+  </div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="c3d1d" class="main-canvas" width="1100" height="480"></canvas>
+</div>
+
+<div class="row">
+  <div>
+    <h2>Cross-section at height y</h2>
+    <canvas id="cslice1d" class="slice-canvas" width="540" height="200"></canvas>
+  </div>
+  <div>
+    <h2>Poisson & conjugate kernels</h2>
+    <canvas id="ckernel1d" class="slice-canvas" width="540" height="200"></canvas>
+  </div>
+</div>
+
+<div class="info" style="margin-top:12px">
+  <h2>The Poisson kernel for ℝ²₊</h2>
+  <span class="formula">P_y(x) = (1/π) · y / (x² + y²)</span>
+  The harmonic extension of <em>f</em> to the upper half-plane is 
+  <span class="formula">u(x, y) = (P_y ∗ f)(x) = (1/π) ∫ y · f(t) / ((x−t)² + y²) dt</span>
+  As y → 0⁺, u(x,y) → f(x) at points of continuity. For f = δ₀, u(x,y) = P_y(x) itself — the Poisson kernel is the harmonic extension of a point mass.
+
+  <h2>Conjugate harmonic function</h2>
+  <span class="formula">Q_y(x) = (1/π) · x / (x² + y²)     (conjugate Poisson kernel)</span>
+  <span class="formula">v(x, y) = (Q_y ∗ f)(x) = (1/π) ∫ (x−t) · f(t) / ((x−t)² + y²) dt</span>
+  Then <em>u + iv</em> is analytic in the upper half-plane. As y → 0⁺, v(x,y) → Hf(x), the <em>Hilbert transform</em> of f.
+</div>
+</div>
+
+<!-- ============ MODE 1: n=2 ============ -->
+<div id="mode1" style="display:none">
+<div class="controls">
+  <div class="control-group">
+    <label>Boundary function f(x₁,x₂)</label>
+    <select id="fn2d" onchange="recompute2D()">
+      <option value="disk">χ_disk — Unit disk</option>
+      <option value="gauss2">e⁻⁽ˣ¹²⁺ˣ²²⁾ — Gaussian</option>
+      <option value="delta2">δ-approximation</option>
+      <option value="rect">χ₍₋₁,₁₎² — Unit square</option>
+      <option value="ring">Ring: χ_{0.5<r<1.5}</option>
+      <option value="cos2">cos(πr)·χ_{r<1}</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Height y = <span class="val" id="yval2d">0.10</span></label>
+    <input type="range" id="yslider2d" min="1" max="100" value="10" oninput="updateSlice2D()">
+  </div>
+</div>
+
+<div class="row">
+  <div>
+    <h2>Boundary data f(x₁,x₂)</h2>
+    <canvas id="c2d_bdy" class="slice-canvas" width="540" height="400"></canvas>
+  </div>
+  <div>
+    <h2>Slice u(x₁,x₂,y) at height y</h2>
+    <canvas id="c2d_slice" class="slice-canvas" width="540" height="400"></canvas>
+  </div>
+</div>
+
+<div class="canvas-wrap" style="margin-top:12px">
+  <canvas id="c3d2d" class="main-canvas" width="1100" height="440"></canvas>
+</div>
+
+<div class="info" style="margin-top:12px">
+  <h2>The Poisson kernel for ℝ³₊</h2>
+  <span class="formula">P_y(x₁,x₂) = (1/2π) · y / (x₁² + x₂² + y²)^{3/2}</span>
+  <span class="formula">u(x₁,x₂,y) = (P_y ∗ f)(x₁,x₂) = ∫∫ P_y(x₁−t₁, x₂−t₂) f(t₁,t₂) dt₁ dt₂</span>
+  As y → 0⁺, the kernel concentrates to a delta and u → f. For large y, the kernel flattens and u(·,·,y) approaches the mean of f — a manifestation of the mean value property for harmonic functions.
+</div>
+</div>
+
+</div><!-- container -->
+
+<script>
+// ======================== GLOBAL STATE ========================
+let currentMode = 0;
+let show1D = 'u'; // 'u','v','both'
+
+// Mouse drag rotation state
+let drag1D = { active:false, startX:0, startY:0, rotX:0.5, rotY:0.65, baseRotX:0.5, baseRotY:0.65 };
+let drag2D = { active:false, startX:0, startY:0, rotX:0.5, rotY:0.7, baseRotX:0.5, baseRotY:0.7 };
+
+// ======================== 1D COMPUTATION ========================
+const NX1 = 300, NY1 = 80;
+const X1MIN = -6, X1MAX = 6, Y1MIN = 0.01, Y1MAX = 3.0;
+let uGrid = null, vGrid = null; // NX1 x NY1
+let fVals = new Float64Array(NX1);
+const dx1 = (X1MAX - X1MIN) / (NX1 - 1);
+
+function f1d(x, name) {
+  switch(name) {
+    case 'step': return (x > -1 && x < 1) ? 1 : 0;
+    case 'gauss': return Math.exp(-x*x);
+    case 'delta': return Math.exp(-x*x/0.005) / Math.sqrt(0.005*Math.PI);
+    case 'sgn': return Math.sign(x) * Math.exp(-Math.abs(x));
+    case 'sin': return (x > -1 && x < 1) ? Math.sin(Math.PI*x) : 0;
+    case 'cusp': return (x > -1 && x < 1 && x !== 0) ? Math.min(1/Math.sqrt(Math.abs(x)), 10) : 0;
+    case 'twobox': return ((x > -3 && x < -1) || (x > 1 && x < 3)) ? 1 : 0;
+    default: return 0;
+  }
+}
+
+function compute1D() {
+  const fn = document.getElementById('fn1d').value;
+  // Sample boundary function on integration grid
+  const NI = 600; // integration points
+  const IMIN = -8, IMAX = 8;
+  const di = (IMAX - IMIN) / (NI - 1);
+  const fI = new Float64Array(NI);
+  for (let k = 0; k < NI; k++) fI[k] = f1d(IMIN + k*di, fn);
+
+  // Sample for display
+  for (let i = 0; i < NX1; i++) fVals[i] = f1d(X1MIN + i*dx1, fn);
+
+  uGrid = new Float64Array(NX1 * NY1);
+  vGrid = new Float64Array(NX1 * NY1);
+
+  for (let j = 0; j < NY1; j++) {
+    const y = Y1MIN + (Y1MAX - Y1MIN) * j / (NY1 - 1);
+    for (let i = 0; i < NX1; i++) {
+      const x = X1MIN + i * dx1;
+      let su = 0, sv = 0;
+      for (let k = 0; k < NI; k++) {
+        const t = IMIN + k * di;
+        const d = x - t;
+        const denom = d*d + y*y;
+        su += y / denom * fI[k];
+        sv += d / denom * fI[k];
+      }
+      uGrid[j * NX1 + i] = su * di / Math.PI;
+      vGrid[j * NX1 + i] = sv * di / Math.PI;
+    }
+  }
+}
+
+// ======================== 3D RENDERING (1D case) ========================
+function render1D3D() {
+  const canvas = document.getElementById('c3d1d');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const rot = drag1D.rotX;
+  const tilt = drag1D.rotY;
+
+  // Projection: isometric-like
+  const cx = W/2, cy = H * 0.55;
+  const scaleX = 60, scaleY = 120, scaleZ = 80;
+  const cosR = Math.cos(rot), sinR = Math.sin(rot);
+  const cosT = Math.cos(tilt), sinT = Math.sin(tilt);
+
+  function project(x, y, z) {
+    // x=spatial, y=height above boundary, z=function value
+    const rx = x * cosR - y * sinR;
+    const ry = x * sinR + y * cosR;
+    return [cx + rx * scaleX, cy - ry * sinT * scaleY - z * scaleZ * cosT];
+  }
+
+  // Determine which grids to render
+  const grids = [];
+  if (show1D === 'u' || show1D === 'both') grids.push({data: uGrid, color: [158,27,50], label:'u'});
+  if (show1D === 'v' || show1D === 'both') grids.push({data: vGrid, color: [40,90,160], label:'v'});
+
+  // Find range for coloring
+  let gmin = Infinity, gmax = -Infinity;
+  for (const g of grids) {
+    for (let k = 0; k < g.data.length; k++) {
+      if (isFinite(g.data[k])) { gmin = Math.min(gmin, g.data[k]); gmax = Math.max(gmax, g.data[k]); }
+    }
+  }
+  const grange = Math.max(gmax - gmin, 0.01);
+
+  // Step sizes for rendering
+  const si = Math.max(1, Math.floor(NX1/150));
+  const sj = Math.max(1, Math.floor(NY1/40));
+
+  for (const g of grids) {
+    // Draw wireframe surface
+    ctx.lineWidth = 0.6;
+    // Lines along x
+    for (let j = 0; j < NY1; j += sj) {
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < NX1; i += si) {
+        const x = (X1MIN + i*dx1);
+        const y = Y1MIN + (Y1MAX-Y1MIN)*j/(NY1-1);
+        const z = g.data[j*NX1+i];
+        if (!isFinite(z)) { started = false; continue; }
+        const [px,py] = project(x, y, z);
+        if (!started) { ctx.moveTo(px,py); started = true; }
+        else ctx.lineTo(px,py);
+      }
+      const t = j/(NY1-1);
+      const alpha = 0.2 + 0.6*t;
+      ctx.strokeStyle = `rgba(${g.color[0]},${g.color[1]},${g.color[2]},${alpha})`;
+      ctx.stroke();
+    }
+    // Lines along y
+    for (let i = 0; i < NX1; i += si*2) {
+      ctx.beginPath();
+      let started = false;
+      for (let j = 0; j < NY1; j += sj) {
+        const x = X1MIN + i*dx1;
+        const y = Y1MIN + (Y1MAX-Y1MIN)*j/(NY1-1);
+        const z = g.data[j*NX1+i];
+        if (!isFinite(z)) { started = false; continue; }
+        const [px,py] = project(x, y, z);
+        if (!started) { ctx.moveTo(px,py); started = true; }
+        else ctx.lineTo(px,py);
+      }
+      ctx.strokeStyle = `rgba(${g.color[0]},${g.color[1]},${g.color[2]},0.3)`;
+      ctx.stroke();
+    }
+  }
+
+  // Draw boundary curve (y=0 slice) highlighted
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < NX1; i += 1) {
+    const x = X1MIN + i*dx1;
+    const z = fVals[i];
+    if (!isFinite(z)) { started = false; continue; }
+    const [px,py] = project(x, Y1MIN, z);
+    if (!started) { ctx.moveTo(px,py); started = true; }
+    else ctx.lineTo(px,py);
+  }
+  ctx.strokeStyle = '#8a6d20';
+  ctx.stroke();
+
+  // Draw current y-slice
+  const yIdx = Math.round(parseFloat(document.getElementById('yslider1d').value) / 100 * (NY1-1));
+  const yCur = Y1MIN + (Y1MAX-Y1MIN)*yIdx/(NY1-1);
+  if (grids.length > 0) {
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    started = false;
+    for (let i = 0; i < NX1; i += 1) {
+      const x = X1MIN + i*dx1;
+      const z = grids[0].data[yIdx*NX1+i];
+      if (!isFinite(z)) { started = false; continue; }
+      const [px,py] = project(x, yCur, z);
+      if (!started) { ctx.moveTo(px,py); started = true; }
+      else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.stroke();
+  }
+
+  // Axes labels
+  ctx.fillStyle = var_text_dim;
+  ctx.font = '13px "Crimson Pro"';
+  const [ax1] = project(X1MAX+0.3, 0, 0); ctx.fillText('x', ax1, cy+15);
+  const [,ay1] = project(0, Y1MAX+0.2, 0); ctx.fillText('y', cx-10, ay1-5);
+
+  // Legend
+  ctx.font = '14px "Crimson Pro"';
+  ctx.fillStyle = '#8a6d20';
+  ctx.fillText('━ f(x) boundary data', 20, 25);
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText('━ slice at y = '+yCur.toFixed(2), 20, 42);
+  if (show1D === 'u' || show1D === 'both') {
+    ctx.fillStyle = 'rgba(158,27,50,0.9)';
+    ctx.fillText('━ u(x,y) Poisson extension', 20, 59);
+  }
+  if (show1D === 'v' || show1D === 'both') {
+    ctx.fillStyle = 'rgba(40,90,160,0.9)';
+    ctx.fillText('━ v(x,y) conjugate harmonic', 20, 76);
+  }
+  // Drag hint
+  ctx.fillStyle = '#b0a090'; ctx.font = 'italic 12px "Crimson Pro"';
+  ctx.fillText('drag to rotate', W-100, H-12);
+}
+const var_text_dim = '#6e5a4a';
+
+function renderSlice1D() {
+  const canvas = document.getElementById('cslice1d');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const yIdx = Math.round(parseFloat(document.getElementById('yslider1d').value) / 100 * (NY1-1));
+  const yCur = Y1MIN + (Y1MAX-Y1MIN)*yIdx/(NY1-1);
+
+  // Find range
+  let vmin = -0.1, vmax = 1.1;
+  for (let i = 0; i < NX1; i++) {
+    const u = uGrid[yIdx*NX1+i], v = vGrid[yIdx*NX1+i];
+    if (isFinite(u)) { vmin = Math.min(vmin, u); vmax = Math.max(vmax, u); }
+    if (isFinite(v)) { vmin = Math.min(vmin, v); vmax = Math.max(vmax, v); }
+    if (isFinite(fVals[i])) { vmin = Math.min(vmin, fVals[i]); vmax = Math.max(vmax, fVals[i]); }
+  }
+  const pad = (vmax-vmin)*0.1; vmin -= pad; vmax += pad;
+
+  const margin = {l:50, r:20, t:20, b:30};
+  const pw = W-margin.l-margin.r, ph = H-margin.t-margin.b;
+
+  function toP(x, v) {
+    return [margin.l + (x-X1MIN)/(X1MAX-X1MIN)*pw,
+            margin.t + (1-(v-vmin)/(vmax-vmin))*ph];
+  }
+
+  // Grid
+  ctx.strokeStyle = '#ede5da'; ctx.lineWidth = 0.5;
+  for (let v = Math.ceil(vmin); v <= vmax; v += Math.max(0.5, Math.round((vmax-vmin)/5*2)/2)) {
+    const [,py] = toP(0, v);
+    ctx.beginPath(); ctx.moveTo(margin.l, py); ctx.lineTo(W-margin.r, py); ctx.stroke();
+  }
+  // Zero line
+  const [,zy] = toP(0,0);
+  ctx.strokeStyle = '#c8bfb0'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(margin.l,zy); ctx.lineTo(W-margin.r,zy); ctx.stroke();
+
+  // f(x) - gold dashed
+  ctx.setLineDash([4,3]);
+  ctx.strokeStyle = '#8a6d20'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < NX1; i++) {
+    const [px,py] = toP(X1MIN+i*dx1, fVals[i]);
+    i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // u(x,y) - crimson
+  ctx.strokeStyle = '#9e1b32'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < NX1; i++) {
+    const v = uGrid[yIdx*NX1+i];
+    if (!isFinite(v)) continue;
+    const [px,py] = toP(X1MIN+i*dx1, v);
+    i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  // v(x,y) - blue
+  ctx.strokeStyle = 'rgba(40,90,160,0.8)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < NX1; i++) {
+    const v = vGrid[yIdx*NX1+i];
+    if (!isFinite(v)) continue;
+    const [px,py] = toP(X1MIN+i*dx1, v);
+    i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#8a6d20'; ctx.font = '12px "Crimson Pro"';
+  ctx.fillText('--- f(x)', margin.l+5, margin.t+14);
+  ctx.fillStyle = '#9e1b32';
+  ctx.fillText('— u(x,'+yCur.toFixed(2)+')', margin.l+80, margin.t+14);
+  ctx.fillStyle = 'rgba(40,90,160,0.9)';
+  ctx.fillText('— v(x,'+yCur.toFixed(2)+')', margin.l+200, margin.t+14);
+
+  // Axis labels
+  ctx.fillStyle = var_text_dim; ctx.font = '11px "JetBrains Mono"';
+  ctx.fillText('x', W-margin.r+4, H-margin.b+4);
+}
+
+function renderKernel1D() {
+  const canvas = document.getElementById('ckernel1d');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const yIdx = Math.round(parseFloat(document.getElementById('yslider1d').value) / 100 * (NY1-1));
+  const yCur = Y1MIN + (Y1MAX-Y1MIN)*yIdx/(NY1-1);
+
+  const margin = {l:50, r:20, t:20, b:30};
+  const pw = W-margin.l-margin.r, ph = H-margin.t-margin.b;
+  const xmin = -5, xmax = 5;
+
+  // Compute kernels at multiple y values
+  const yVals = [0.1, 0.3, 0.5, 1.0, 2.0, yCur];
+  const N = 200;
+  const dxi = (xmax-xmin)/(N-1);
+
+  // Find range
+  let vmax = 0;
+  for (const y of yVals) {
+    const p = (1/Math.PI)*y/(0+y*y);
+    vmax = Math.max(vmax, p);
+  }
+  vmax = Math.min(vmax, 4);
+  const vmin = -vmax*0.5;
+
+  function toP(x, v) {
+    return [margin.l + (x-xmin)/(xmax-xmin)*pw,
+            margin.t + (1-(v-vmin)/(vmax-vmin))*ph];
+  }
+
+  // Zero line
+  const [,zy] = toP(0,0);
+  ctx.strokeStyle = '#c8bfb0'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(margin.l,zy); ctx.lineTo(W-margin.r,zy); ctx.stroke();
+
+  // Draw P_y for various y
+  const colors = ['#e8ddd0','#ddd0c0','#d0c0a8','#c0a888','#b09870'];
+  for (let k = 0; k < yVals.length-1; k++) {
+    const y = yVals[k];
+    ctx.strokeStyle = colors[k] || '#c0a888';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const x = xmin + i*dxi;
+      const p = (1/Math.PI)*y/(x*x+y*y);
+      const [px,py] = toP(x, Math.min(p, vmax));
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
+
+  // Current y - Poisson kernel
+  ctx.strokeStyle = '#9e1b32'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const x = xmin + i*dxi;
+    const p = (1/Math.PI)*yCur/(x*x+yCur*yCur);
+    const [px,py] = toP(x, Math.min(p, vmax));
+    i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  // Current y - Conjugate kernel
+  ctx.strokeStyle = 'rgba(40,90,160,0.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const x = xmin + i*dxi;
+    const q = (1/Math.PI)*x/(x*x+yCur*yCur);
+    const [px,py] = toP(x, q);
+    i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#9e1b32'; ctx.font = '12px "Crimson Pro"';
+  ctx.fillText('P_y (Poisson) at y='+yCur.toFixed(2), margin.l+5, margin.t+14);
+  ctx.fillStyle = 'rgba(40,90,160,0.9)';
+  ctx.fillText('Q_y (conjugate) at y='+yCur.toFixed(2), margin.l+5, margin.t+30);
+  ctx.fillStyle = var_text_dim; ctx.font = '11px "Crimson Pro"';
+  ctx.fillText('faint curves: P_y at y=0.1, 0.3, 0.5, 1, 2', margin.l+5, H-margin.b-4);
+}
+
+function recompute1D() {
+  compute1D();
+  render1D3D();
+  renderSlice1D();
+  renderKernel1D();
+}
+function updateSlice1D() {
+  const v = parseFloat(document.getElementById('yslider1d').value);
+  const y = Y1MIN + (Y1MAX-Y1MIN)*v/100;
+  document.getElementById('yval1d').textContent = y.toFixed(2);
+  render1D3D();
+  renderSlice1D();
+  renderKernel1D();
+}
+function updateRot1D() { render1D3D(); }
+
+// ======================== MOUSE DRAG ROTATION ========================
+function initDrag(canvasId, dragState, renderFn) {
+  const canvas = document.getElementById(canvasId);
+  function onStart(ex, ey) {
+    dragState.active = true;
+    dragState.startX = ex;
+    dragState.startY = ey;
+    dragState.baseRotX = dragState.rotX;
+    dragState.baseRotY = dragState.rotY;
+  }
+  function onMove(ex, ey) {
+    if (!dragState.active) return;
+    const dx = ex - dragState.startX;
+    const dy = ey - dragState.startY;
+    dragState.rotX = dragState.baseRotX + dx * 0.008;
+    dragState.rotY = Math.max(0.15, Math.min(1.4, dragState.baseRotY + dy * 0.005));
+    renderFn();
+  }
+  function onEnd() { dragState.active = false; }
+
+  canvas.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => { if(dragState.active){e.preventDefault(); onMove(e.clientX, e.clientY);} });
+  window.addEventListener('mouseup', onEnd);
+
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0]; onStart(t.clientX, t.clientY); }, {passive:false});
+  window.addEventListener('touchmove', e => { if(dragState.active){const t=e.touches[0]; onMove(t.clientX, t.clientY);} }, {passive:false});
+  window.addEventListener('touchend', onEnd);
+
+  canvas.style.cursor = 'grab';
+  canvas.addEventListener('mousedown', () => canvas.style.cursor='grabbing');
+  window.addEventListener('mouseup', () => canvas.style.cursor='grab');
+}
+function setShow1D(s, el) {
+  show1D = s;
+  document.querySelectorAll('#mode0 .toggle-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  render1D3D();
+}
+
+// ======================== 2D COMPUTATION ========================
+const N2 = 128;
+const X2MIN = -4, X2MAX = 4;
+const dx2 = (X2MAX - X2MIN) / (N2 - 1);
+let fGrid2D = new Float64Array(N2*N2);
+let uGrid2D = new Float64Array(N2*N2);
+
+function f2d(x1, x2, name) {
+  const r2 = x1*x1 + x2*x2;
+  switch(name) {
+    case 'disk': return r2 < 1 ? 1 : 0;
+    case 'gauss2': return Math.exp(-r2);
+    case 'delta2': return Math.exp(-r2/0.02) / (0.02*Math.PI);
+    case 'rect': return (Math.abs(x1)<1 && Math.abs(x2)<1) ? 1 : 0;
+    case 'ring': { const r = Math.sqrt(r2); return (r>0.5&&r<1.5)?1:0; }
+    case 'cos2': { const r = Math.sqrt(r2); return r<1 ? Math.cos(Math.PI*r) : 0; }
+    default: return 0;
+  }
+}
+
+function compute2D() {
+  const fn = document.getElementById('fn2d').value;
+  const yv = parseFloat(document.getElementById('yslider2d').value);
+  const y = 0.01 + 2.99 * yv / 100;
+  document.getElementById('yval2d').textContent = y.toFixed(2);
+
+  // Sample boundary
+  for (let j = 0; j < N2; j++)
+    for (let i = 0; i < N2; i++)
+      fGrid2D[j*N2+i] = f2d(X2MIN+i*dx2, X2MIN+j*dx2, fn);
+
+  // Compute Poisson extension via convolution (subsample for speed)
+  const step = 2;
+  for (let j = 0; j < N2; j++) {
+    for (let i = 0; i < N2; i++) {
+      const x1 = X2MIN + i*dx2, x2 = X2MIN + j*dx2;
+      let s = 0;
+      for (let jj = 0; jj < N2; jj += step) {
+        for (let ii = 0; ii < N2; ii += step) {
+          const t1 = X2MIN + ii*dx2, t2 = X2MIN + jj*dx2;
+          const d2 = (x1-t1)*(x1-t1)+(x2-t2)*(x2-t2)+y*y;
+          s += y / (d2 * Math.sqrt(d2)) * fGrid2D[jj*N2+ii];
+        }
+      }
+      uGrid2D[j*N2+i] = s * (step*dx2)*(step*dx2) / (2*Math.PI);
+    }
+  }
+}
+
+function colormap(v, vmin, vmax) {
+  const t = Math.max(0, Math.min(1, (v-vmin)/(vmax-vmin)));
+  // Cream → gold → crimson
+  if (t < 0.5) {
+    const s = t*2;
+    return [Math.round(245-40*s), Math.round(240-120*s), Math.round(230-140*s)];
+  } else {
+    const s = (t-0.5)*2;
+    return [Math.round(205-47*s), Math.round(120-93*s), Math.round(90-40*s)];
+  }
+}
+
+function render2DHeatmap(canvas, data, N, title) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  let vmin = Infinity, vmax = -Infinity;
+  for (let k = 0; k < N*N; k++) {
+    if (isFinite(data[k])) { vmin = Math.min(vmin,data[k]); vmax = Math.max(vmax,data[k]); }
+  }
+  if (vmax - vmin < 0.001) { vmin -= 0.5; vmax += 0.5; }
+
+  const margin = 40;
+  const pw = W - 2*margin, ph = H - 2*margin;
+  const cellW = pw/N, cellH = ph/N;
+
+  const imgData = ctx.createImageData(N, N);
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = data[(N-1-j)*N+i];
+      const [r,g,b] = colormap(v, vmin, vmax);
+      const idx = (j*N+i)*4;
+      imgData.data[idx] = r; imgData.data[idx+1] = g; imgData.data[idx+2] = b; imgData.data[idx+3] = 255;
+    }
+  }
+  // Scale up
+  const tmpC = document.createElement('canvas'); tmpC.width = N; tmpC.height = N;
+  tmpC.getContext('2d').putImageData(imgData, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(tmpC, margin, margin, pw, ph);
+
+  // Border
+  ctx.strokeStyle = var_text_dim; ctx.lineWidth = 1;
+  ctx.strokeRect(margin, margin, pw, ph);
+
+  // Axis labels
+  ctx.fillStyle = var_text_dim; ctx.font = '11px "JetBrains Mono"';
+  ctx.fillText(X2MIN.toFixed(0), margin-5, H-margin+15);
+  ctx.fillText(X2MAX.toFixed(0), W-margin-10, H-margin+15);
+  ctx.fillText(X2MIN.toFixed(0), margin-30, H-margin+4);
+  ctx.fillText(X2MAX.toFixed(0), margin-30, margin+10);
+
+  // Colorbar
+  for (let k = 0; k < 60; k++) {
+    const t = k/59;
+    const v = vmin + t*(vmax-vmin);
+    const [r,g,b] = colormap(v, vmin, vmax);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(W-30, margin + (1-t)*ph, 12, ph/60+1);
+  }
+  ctx.fillStyle = var_text_dim; ctx.font = '10px "JetBrains Mono"';
+  ctx.fillText(vmax.toFixed(2), W-30, margin-4);
+  ctx.fillText(vmin.toFixed(2), W-30, H-margin+12);
+}
+
+function render2D3DSurface() {
+  const canvas = document.getElementById('c3d2d');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const rot = drag2D.rotX;
+  const tilt = drag2D.rotY;
+  const cx = W/2, cy = H*0.55;
+  const sc = 50;
+
+  const cosR = Math.cos(rot), sinR = Math.sin(rot);
+  const sinT = Math.sin(tilt), cosT = Math.cos(tilt);
+
+  // Find range
+  let vmin = Infinity, vmax = -Infinity;
+  for (let k = 0; k < N2*N2; k++) {
+    if (isFinite(uGrid2D[k])) { vmin = Math.min(vmin,uGrid2D[k]); vmax = Math.max(vmax,uGrid2D[k]); }
+  }
+  const vrange = Math.max(vmax-vmin, 0.01);
+
+  const step = 3;
+  // Draw wireframe
+  for (let j = 0; j < N2; j += step) {
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < N2; i += step) {
+      const x1 = X2MIN + i*dx2, x2 = X2MIN + j*dx2;
+      const z = uGrid2D[j*N2+i];
+      if (!isFinite(z)) { started = false; continue; }
+      const rx = x1*cosR - x2*sinR;
+      const ry = x1*sinR + x2*cosR;
+      const px = cx + rx*sc;
+      const py = cy - ry*sinT*sc - (z-vmin)/vrange*sc*2*cosT;
+      if (!started) { ctx.moveTo(px,py); started = true; } else ctx.lineTo(px,py);
+    }
+    const t = (uGrid2D[j*N2+Math.floor(N2/2)]-vmin)/vrange;
+    const [r,g,b] = colormap(vmin+t*(vmax-vmin), vmin, vmax);
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  for (let i = 0; i < N2; i += step) {
+    ctx.beginPath();
+    let started = false;
+    for (let j = 0; j < N2; j += step) {
+      const x1 = X2MIN + i*dx2, x2 = X2MIN + j*dx2;
+      const z = uGrid2D[j*N2+i];
+      if (!isFinite(z)) { started = false; continue; }
+      const rx = x1*cosR - x2*sinR;
+      const ry = x1*sinR + x2*cosR;
+      const px = cx + rx*sc;
+      const py = cy - ry*sinT*sc - (z-vmin)/vrange*sc*2*cosT;
+      if (!started) { ctx.moveTo(px,py); started = true; } else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle = 'rgba(158,27,50,0.3)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = var_text_dim; ctx.font = '13px "Crimson Pro"';
+  ctx.fillText('3D wireframe of u(x₁,x₂,y) at current height — drag to rotate', 20, 25);
+}
+
+function recompute2D() {
+  compute2D();
+  render2DHeatmap(document.getElementById('c2d_bdy'), fGrid2D, N2);
+  render2DHeatmap(document.getElementById('c2d_slice'), uGrid2D, N2);
+  render2D3DSurface();
+}
+function updateSlice2D() {
+  compute2D();
+  render2DHeatmap(document.getElementById('c2d_slice'), uGrid2D, N2);
+  render2D3DSurface();
+}
+
+// ======================== MODE SWITCHING ========================
+function switchMode(m) {
+  currentMode = m;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===m));
+  document.getElementById('mode0').style.display = m===0 ? 'block' : 'none';
+  document.getElementById('mode1').style.display = m===1 ? 'block' : 'none';
+  if (m === 0) recompute1D();
+  else recompute2D();
+}
+
+// ======================== INIT ========================
+window.addEventListener('load', () => {
+  initDrag('c3d1d', drag1D, render1D3D);
+  initDrag('c3d2d', drag2D, render2D3DSurface);
+  recompute1D();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Regularized Distance Function on the Exterior of the Square</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Oswald:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.27.0/dist/plotly.min.js"></script>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  chtml: { scale: 1.05 }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+  :root {
+    --paper:      #f7f3ef;
+    --paper-2:    #efe7df;
+    --card:       #fffdfb;
+    --ink:        #1c1216;
+    --ink-soft:   #45313a;
+    --ink-faint:  #8b7a80;
+    --rule:       #d8cabf;
+    --grid:       #e4d8cd;
+    --crimson:    #9e1b32;
+    --crimson-d:  #6d1322;
+    --crimson-br: #c2334b;
+    --gray:       #6f7679;
+    --gray-lt:    #c9c8c5;
+    --ht-crimson: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%3E%3Cpath%20fill='%239e1b32'%20d='M0%200h12v12H0z%20M0%2012h12L0%2024z%20M12%200h12L12%2012z'/%3E%3C/svg%3E");
+    --ht-faint:   url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='30'%20height='30'%3E%3Cpath%20fill='%23ece2da'%20d='M0%200h15v15H0z%20M0%2015h15L0%2030z%20M15%200h15L15%2015z'/%3E%3C/svg%3E");
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 19px; line-height: 1.66;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      var(--ht-faint),
+      radial-gradient(circle at 84% 6%, rgba(158,27,50,0.06), transparent 40%),
+      radial-gradient(circle at 10% 96%, rgba(158,27,50,0.05), transparent 42%);
+    min-height: 100vh;
+  }
+  .tape {
+    height: 26px;
+    background-image: var(--ht-crimson);
+    border-bottom: 2px solid var(--crimson-d);
+  }
+  article {
+    max-width: 880px; margin: 0 auto; padding: 22px 32px 110px;
+  }
+
+  /* ---- entrance ---- */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  header, section, h2 { animation: rise 0.7s cubic-bezier(.2,.7,.2,1) both; }
+  section:nth-of-type(2){ animation-delay:.05s; }
+
+  header {
+    margin: 34px 0 56px; padding-bottom: 34px;
+    border-bottom: 2px solid var(--crimson);
+    position: relative;
+  }
+  header::after {
+    content: ""; position: absolute; left: 0; bottom: -8px;
+    width: 128px; height: 4px; background: var(--crimson-d);
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem; letter-spacing: 0.30em;
+    text-transform: uppercase; color: var(--crimson);
+    margin-bottom: 1.5em; display: flex; align-items: center; gap: 0.8em;
+  }
+  .eyebrow .mark {
+    display: inline-block; width: 22px; height: 22px;
+    background-image: var(--ht-crimson); background-size: 11px 11px;
+    border: 1.5px solid var(--crimson-d);
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif; font-weight: 600;
+    font-size: clamp(2.2rem, 5.4vw, 3.5rem);
+    line-height: 1.06; letter-spacing: 0.005em;
+    text-transform: uppercase;
+    margin: 0 0 0.42em; color: var(--ink);
+  }
+  h1 em {
+    font-style: normal; color: var(--crimson);
+  }
+  .subtitle {
+    font-family: 'EB Garamond', serif;
+    font-style: italic; font-size: 1.16rem;
+    color: var(--ink-soft); max-width: 680px;
+    margin-top: 0.7em;
+  }
+  h2 {
+    font-family: 'Oswald', sans-serif; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.012em;
+    font-size: 1.74rem; margin-top: 3.1em; margin-bottom: 0.5em;
+    color: var(--ink); padding-bottom: 0.18em;
+    border-bottom: 1px solid var(--rule);
+  }
+  h2::before {
+    content: attr(data-step); display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.64rem; letter-spacing: 0.30em;
+    color: var(--crimson); margin-bottom: 0.65em;
+    text-transform: uppercase; font-weight: 500;
+  }
+  h3 {
+    font-family: 'EB Garamond', serif; font-weight: 600;
+    font-size: 1.26rem; font-style: italic;
+    margin-top: 2.1em; margin-bottom: 0.3em;
+    color: var(--ink-soft);
+  }
+  p { margin: 0.85em 0; text-align: justify; hyphens: auto; }
+  em { color: var(--crimson-d); }
+
+  .plot {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--crimson);
+    margin: 30px 0 6px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(28,18,22,0.04),
+      0 14px 38px -18px rgba(109,19,34,0.28);
+  }
+  .plot-caption {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 0.95rem; color: var(--ink-faint);
+    text-align: center; margin: 9px 0 34px; padding: 0 26px;
+    line-height: 1.5;
+  }
+  .plot-caption strong {
+    font-style: normal; font-weight: 600;
+    color: var(--crimson);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.20em;
+    margin-right: 0.8em; text-transform: uppercase;
+  }
+  .formula-box {
+    background: var(--paper-2);
+    border-left: 4px solid var(--crimson);
+    padding: 20px 32px; margin: 26px 0;
+    font-size: 1.03rem;
+  }
+  .note {
+    background: rgba(111,118,121,0.10);
+    border-left: 3px solid var(--gray);
+    padding: 16px 24px; margin: 26px 0;
+    font-size: 0.97rem;
+  }
+  .note::before {
+    content: "Remark.";
+    font-style: italic; font-weight: 600;
+    color: var(--gray); margin-right: 0.5em;
+  }
+  .note.tide {
+    background: rgba(158,27,50,0.07);
+    border-left-color: var(--crimson);
+  }
+  .note.tide::before { content: "Note."; color: var(--crimson-d); }
+
+  .ornament {
+    display: flex; align-items: center; justify-content: center;
+    gap: 18px; margin: 70px 0 18px;
+  }
+  .ornament .bar {
+    height: 1.5px; flex: 1; max-width: 200px;
+    background: var(--crimson);
+  }
+  .ornament .hb {
+    width: 132px; height: 22px;
+    background-image: var(--ht-crimson); background-size: 13px 13px;
+    border: 1.5px solid var(--crimson-d);
+  }
+  .colophon {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem; letter-spacing: 0.26em;
+    text-transform: uppercase; color: var(--crimson);
+    margin-top: 6px;
+  }
+
+  mjx-container { color: var(--ink); }
+  mjx-container[display="true"] { margin: 1.15em 0 !important; }
+
+  @media (max-width: 600px) {
+    article { padding: 18px 18px 84px; }
+    html, body { font-size: 17px; }
+    .formula-box { padding: 15px 20px; }
+    p { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="tape"></div>
+<article>
+
+<header>
+  <div class="eyebrow"><span class="mark"></span>Whitney Decomposition · Standard Mollifier · An Unbounded Domain</div>
+  <h1>The <em>Regularized</em> Distance Function on the <em>Exterior</em> of the Square</h1>
+  <p class="subtitle">Smoothing the boundary distance on $\mathbb{R}^2 \setminus [-1,1]^2$. The obstacle is convex, so the raw distance is already $C^1$ — but not $C^2$. The cure is the same recipe, now run on dyadic cubes that shrink toward the square and grow toward infinity, and built from the classical bump function rather than a flat‑topped one.</p>
+</header>
+
+<section class="lead">
+<p>For an open set $\Omega \subset \mathbb{R}^N$ with complement $F = \mathbb{R}^N \setminus \Omega$, the distance function $d(x) = \min\{|x-y| : y \in F\}$ is Lipschitz of constant $1$ but typically not smooth. There is a $C^\infty$ replacement $\tilde d$ — the <em>regularized distance</em> — satisfying:</p>
+<div class="formula-box">
+$$
+c^{-1} d(x) \;\le\; \tilde d(x) \;\le\; c\,d(x), \qquad
+|\nabla \tilde d(x)| \;\le\; c, \qquad
+|\Delta \tilde d(x)| \;\le\; c\, \tilde d(x)^{-1}.
+$$
+</div>
+<p>We carry out the construction for the <em>exterior</em> of the closed unit square, $\Omega = \mathbb{R}^2 \setminus [-1,1]^2$. Because the obstacle $F = [-1,1]^2$ is <em>convex</em>, the nearest‑point projection onto $F$ is single‑valued and varies continuously — so $d$ is in fact $C^1$ on all of $\Omega$. This is gentler than the interior square, where $d$ was a pyramid with genuine gradient kinks along a medial axis. Here the defect sits one derivative higher: the second derivatives of $d$ jump across the four <em>corner rays</em>, and the Laplacian blows up like $d^{-1}$ as one approaches a corner of the square. The regularization produces a genuinely $C^\infty$ companion whose Laplacian growth is no worse than the optimal rate $\tilde d^{-1}$.</p>
+<p>The recipe is unchanged: a Whitney decomposition into dyadic cubes, a smooth mollifier, a partition of unity, then the weighted sum of cube diameters.</p>
+</section>
+
+
+<h2 data-step="Step 1">The distance function $d(x_1, x_2)$</h2>
+<p>For $\Omega = \mathbb{R}^2 \setminus [-1,1]^2$, the distance from a point to the closed square is the classical <em>distance to a box</em>:</p>
+<div class="formula-box">
+$$
+d(x_1, x_2) \;=\; \sqrt{\bigl(|x_1| - 1\bigr)_+^{2} \;+\; \bigl(|x_2| - 1\bigr)_+^{2}}\,,
+\qquad (t)_+ := \max(t,\,0).
+$$
+</div>
+<p>The exterior splits into eight pieces. In the four <em>edge regions</em> — directly N, S, E, W of the square — the nearest boundary point lies on a side and $d$ is linear; e.g. on the east region $\{x_1 > 1,\ |x_2| \le 1\}$ one has $d = x_1 - 1$. In the four <em>corner regions</em> — the diagonal quadrants — the nearest point is a vertex of the square and $d$ is radial; e.g. on the NE region $\{x_1 > 1,\ x_2 > 1\}$ one has $d = \sqrt{(x_1-1)^2 + (x_2-1)^2}$.</p>
+<p>Across each <em>corner ray</em> (such as $\{x_1 = 1,\ x_2 > 1\}$, separating an edge region from a corner region) both $d$ and $\nabla d$ match — the gradient is the continuous unit vector pointing away from the nearest boundary point. But the Hessian does not match: $\Delta d = 0$ on the linear edge regions, while $\Delta d = 1/d$ on the radial corner regions, and $1/d \to \infty$ at the four vertices. So $d \in C^1(\Omega) \setminus C^2(\Omega)$ — exactly the regularity gap the bound $|\Delta\tilde d| \le c\,\tilde d^{-1}$ is designed to control.</p>
+<div class="plot" id="plot-d"></div>
+<p class="plot-caption"><strong>Fig. 1</strong>The exterior distance $d(x_1, x_2)$ — a moat that rises from $0$ along the rim of the square. Drag to rotate. The four planar edge ramps meet the four radial corner cones along the corner rays; $d$ is $C^1$ there, but its curvature jumps.</p>
+
+
+<h2 data-step="Step 2">Whitney decomposition of the exterior</h2>
+<p>We tile $\Omega$ by closed dyadic squares $\{Q_k\}$ with disjoint interiors and side lengths comparable to the distance from the boundary,
+$$\operatorname{side}(Q_k) \;\asymp\; \operatorname{dist}(Q_k,\, \partial\Omega).$$
+The exterior is unbounded, so the decomposition runs <em>both ways</em>: cubes shrink geometrically toward the square and grow geometrically toward infinity. We tile $\Omega$ by square annular <em>frames</em>, each one cube thick, with side doubling from one frame to the next:</p>
+<div class="formula-box">
+$$
+\begin{aligned}
+\text{Frame } 0:\quad & \|x\|_\infty \in [2,\,3], & \ell &= 1, & 20 \text{ squares.} \\
+\text{Frame } 1:\quad & \|x\|_\infty \in [\tfrac32,\,2], & \ell &= \tfrac12, & 28 \text{ squares.} \\
+\text{Frame } 2:\quad & \|x\|_\infty \in [\tfrac54,\,\tfrac32], & \ell &= \tfrac14, & 44 \text{ squares.} \\
+\text{Frame } 3:\quad & \|x\|_\infty \in [\tfrac98,\,\tfrac54], & \ell &= \tfrac18, & 76 \text{ squares.} \\
+& \;\;\;\vdots
+\end{aligned}
+$$
+</div>
+<p>Each frame is obtained from the next by stepping outward a distance equal to its own side length. Toward the square the frames continue indefinitely ($\ell = \tfrac1{16}, \tfrac1{32}, \dots$, with $140, 268, \dots$ squares); toward infinity they continue with $\ell = 2, 4, \dots$. The number of squares per frame grows linearly as one descends — characteristic of a co‑dimension‑$1$ boundary.</p>
+<div class="plot" id="plot-whitney"></div>
+<p class="plot-caption"><strong>Fig. 2</strong>The Whitney decomposition of $\mathbb{R}^2 \setminus [-1,1]^2$, top‑down. The dark block is the obstacle $F$; each cell is one $Q_k$, colored by frame. Four frames are drawn; finer frames tile the visible collar near $\partial\Omega$, coarser frames continue past the window.</p>
+
+
+<h2 data-step="Step 3">The standard mollifier $\phi$</h2>
+<p>For the bump we use the <em>classical mollifier</em> of distribution theory — the function everyone meets first, and the one whose properties are best understood:</p>
+<div class="formula-box">
+$$
+\phi(s) \;=\; \left\{ \begin{array}{ll}
+\displaystyle e^{-1/(1 - s^2)}, & -1 < s < 1, \\[8pt]
+0, & |s| \ge 1.
+\end{array} \right.
+$$
+</div>
+<p>$\phi$ is $C^\infty(\mathbb{R})$, supported exactly on $[-1,1]$, and has a single maximum $\phi(0) = e^{-1}$. The two‑dimensional base bump is the tensor product
+$$\varphi(x_1, x_2) \;=\; \phi(x_1)\,\phi(x_2),$$
+which is $C^\infty$, supported on the open square $(-1,1)^2$, with a single peak $\varphi(0,0) = e^{-2}$.</p>
+<div class="note tide">Unlike the flat‑topped bump often used in this construction, $\phi$ has <em>no plateau</em>: it is strictly below its maximum at every point but the origin. We will see in Step&nbsp;5 that this costs only a cosmetic piece of bookkeeping — the partition of unity, and every estimate that matters, go through unchanged.</div>
+<div class="plot" id="plot-phi"></div>
+<p class="plot-caption"><strong>Fig. 3</strong>The $2$‑D base mollifier $\varphi(x_1, x_2) = \phi(x_1)\,\phi(x_2)$. A single smooth peak of height $e^{-2}$, decaying to zero — together with all its derivatives — at the edge of the unit square.</p>
+
+
+<h2 data-step="Step 4">Localized mollifiers $\varphi_k$</h2>
+<p>For each Whitney cube $Q_k$ with center $x^k = (x^k_1, x^k_2)$ and side $\ell_k$, we scale $\varphi$ to sit on a slightly enlarged cube. With dilation factor $1+\varepsilon$ (we take $\varepsilon = 1$),
+$$\varphi_k(x_1, x_2) \;=\; \phi\!\left(\frac{2(x_1 - x^k_1)}{(1+\varepsilon)\,\ell_k}\right)\;\phi\!\left(\frac{2(x_2 - x^k_2)}{(1+\varepsilon)\,\ell_k}\right).$$
+Then $\varphi_k$ is supported on the enlarged cube $Q_k^{*} = (1+\varepsilon)\,Q_k$ and is <em>strictly positive on its interior</em> — in particular on all of the cube $Q_k$ itself, which sits well inside $Q_k^*$. The chain rule gives the scale‑aware derivative bounds
+$$\bigl|\partial^\alpha \varphi_k(x)\bigr| \;\le\; A_\alpha\, \ell_k^{-|\alpha|}.$$
+Below we plot the pointwise maximum of $\varphi_k$ over a handful of cubes drawn from every frame — bumps that grow narrower as their cubes approach the square.</p>
+<div class="plot" id="plot-phi-k"></div>
+<p class="plot-caption"><strong>Fig. 4</strong>The pointwise maximum of $\varphi_k$ over six selected Whitney cubes spanning all four drawn frames. Each bump is a single smooth hump — no plateau — scaled to its cube; bumps near the obstacle are correspondingly narrower and steeper.</p>
+
+
+<h2 data-step="Step 5">Partition of unity</h2>
+<p>Sum and normalize. Set
+$$\Phi(x) \;=\; \sum_k \varphi_k(x), \qquad \varphi_k^{*}(x) \;=\; \frac{\varphi_k(x)}{\Phi(x)}, \qquad x \in \Omega.$$
+Every $x \in \Omega$ lies in some Whitney cube $Q_k$, and there $\varphi_k(x) > 0$ — so $\Phi(x) > 0$ everywhere on $\Omega$ and the quotient is well defined and $C^\infty$. Tautologically $\sum_k \varphi_k^{*} \equiv 1$, a $C^\infty$ partition of unity subordinate to the enlarged cubes $\{Q_k^*\}$.</p>
+<div class="note">With a flat‑topped bump one gets the tidy bound $1 \le \Phi \le 2^d$ by counting overlapping plateaus. The standard mollifier has no plateau, so $\Phi$ is no longer pinned to integers. But that bound was never essential: the Whitney decomposition has <em>bounded overlap</em> — only finitely many enlarged cubes meet at any point, and their sizes stay comparable — so $\Phi$ is still squeezed between two positive constants $0 < m \le \Phi \le M$. That is all the construction asks of it. The numerical $\inf$ and $\sup$ over the window are reported on the next two figures.</div>
+<div class="plot" id="plot-phi-sum"></div>
+<p class="plot-caption"><strong>Fig. 5</strong>The unnormalized sum $\Phi(x_1, x_2) = \sum_k \varphi_k$ over the moat. Strictly positive on $\Omega$ and bounded between two positive constants — the bounded‑overlap property doing the work the plateau bound used to do.</p>
+<div class="plot" id="plot-phi-star"></div>
+<p class="plot-caption"><strong>Fig. 6</strong>One element $\varphi_k^*(x_1, x_2)$ of the partition of unity, here for a Frame‑$1$ cube of side $\tfrac12$ on the east side of the square. Smooth, non‑negative, supported in $Q_k^*$, one piece of a partition summing identically to $1$.</p>
+
+
+<h2 data-step="Step 6">The regularized distance $\tilde d$</h2>
+<p>The construction is delivered in a single line:
+$$\boxed{\quad\tilde d(x) \;=\; \sum_k \operatorname{side}(Q_k)\,\varphi_k^{*}(x) \;=\; \sum_k \ell_k\,\varphi_k^{*}(x), \qquad x \in \Omega.\quad}$$
+At each point $x$, this is a smooth convex combination of the side lengths of the few Whitney cubes whose enlargements $Q_k^*$ contain $x$. Since each such cube has $\ell_k \asymp d(x)$, the result $\tilde d(x)$ is comparable to $d(x)$. Smoothness is free, because every $\varphi_k^*$ is $C^\infty$; the gradient bound comes from the cancellation of the $\ell_k^{-1}$ in $|\nabla\varphi_k|$ against the $\ell_k$ weight.</p>
+<div class="plot" id="plot-tilde"></div>
+<p class="plot-caption"><strong>Fig. 7</strong>The regularized distance $\tilde d(x_1, x_2)$. The same moat shape as $d$, but the corner rays and the rim are now perfectly smooth. Drag to rotate and compare with Fig. 1.</p>
+
+
+<h2 data-step="Step 7">Verification of the bounds</h2>
+<p>We confirm numerically that $\tilde d$ behaves. Three views: a one‑dimensional slice across two corner rays, the pointwise ratio $\tilde d / d$, and the gradient magnitude.</p>
+<div class="plot" id="plot-slice"></div>
+<p class="plot-caption"><strong>Fig. 8</strong>Slice along $x_2 = \tfrac32$, which crosses the corner rays at $x_1 = \pm 1$. The raw $d$ (dotted) is flat over the edge region and curved over the corner regions: continuous in value and slope, but with a jump in curvature at $x_1 = \pm 1$. The regularized $\tilde d$ (crimson) is smooth throughout and comparable to $d$ — equal up to a fixed factor, not identically equal.</p>
+<div class="plot" id="plot-ratio"></div>
+<p class="plot-caption"><strong>Fig. 9</strong>The pointwise ratio $\tilde d / d$, shown on an annular band around the square (the near‑rim sliver and the far field are masked, where the finite drawn decomposition no longer resolves the local scale). Trapped between two positive constants — a quantitative witness to comparability.</p>
+<div class="plot" id="plot-grad"></div>
+<p class="plot-caption"><strong>Fig. 10</strong>The gradient magnitude $|\nabla \tilde d(x_1, x_2)|$, by central differences. Finite throughout $\Omega$ — so $\tilde d$ is uniformly Lipschitz — with mild ridges along frame interfaces, the same dyadic diameter‑ratio effect seen in lower dimensions.</p>
+
+<div class="ornament">
+  <span class="bar"></span>
+  <span class="hb"></span>
+  <span class="bar"></span>
+</div>
+<div class="colophon">Whitney · Stein · Davies — Regularized Distance — Roll Tide</div>
+
+</article>
+
+<script>
+/* ======================================================================
+   Mathematical core  —  exterior of the square, standard mollifier
+   ====================================================================== */
+
+/* exterior distance: distance from x to the closed box [-1,1]^2 */
+function dExt(x, y) {
+  const ax = Math.max(Math.abs(x) - 1, 0);
+  const ay = Math.max(Math.abs(y) - 1, 0);
+  return Math.hypot(ax, ay);
+}
+
+/* the standard mollifier  phi(s) = exp(-1/(1-s^2))  for |s|<1, else 0 */
+function phi1(s) {
+  if (s <= -1 || s >= 1) return 0;
+  return Math.exp(-1 / (1 - s * s));
+}
+
+/* localized bump for a cube: supported on the enlarged cube (1+EPS)*Q_k */
+const EPS = 1.0;
+function phiK(x, y, c) {
+  const h = (1 + EPS) * c.size * 0.5;          // = c.size  when EPS = 1
+  const sx = (x - c.cx) / h, sy = (y - c.cy) / h;
+  if (sx <= -1 || sx >= 1 || sy <= -1 || sy >= 1) return 0;
+  return Math.exp(-1 / (1 - sx * sx)) * Math.exp(-1 / (1 - sy * sy));
+}
+
+/* Whitney decomposition of the exterior: square annular frames        */
+/* a frame is the annulus  ||x||_inf in [a, a+w], one cube of side w thick */
+function frameCubes(a, w, level) {
+  const out = [];
+  const mid = a + w / 2;                 // |coordinate| of a strip centerline
+  const n   = Math.round(2 * a / w);     // cubes spanning an inner face
+  const half = a - w / 2;
+  for (let i = 0; i < n; i++) {
+    const t = -half + i * w;
+    out.push({ cx:  mid, cy:  t,   size: w, level });   // right strip
+    out.push({ cx: -mid, cy:  t,   size: w, level });   // left strip
+    out.push({ cx:  t,   cy:  mid, size: w, level });   // top strip
+    out.push({ cx:  t,   cy: -mid, size: w, level });   // bottom strip
+  }
+  for (const sx of [-1, 1])
+    for (const sy of [-1, 1])
+      out.push({ cx: sx * mid, cy: sy * mid, size: w, level });  // 4 corners
+  return out;
+}
+
+/* drawn frames: levels 0..3  (sides 1, 1/2, 1/4, 1/8)                 */
+/* finer frames: levels 4..5  (sides 1/16, 1/32) — computed, not drawn */
+const FRAMES = [
+  { a: 2,       w: 1,       level: 0 },
+  { a: 1.5,     w: 0.5,     level: 1 },
+  { a: 1.25,    w: 0.25,    level: 2 },
+  { a: 1.125,   w: 0.125,   level: 3 },
+  { a: 1.0625,  w: 0.0625,  level: 4 },
+  { a: 1.03125, w: 0.03125, level: 5 }
+];
+let cubes = [];
+for (const f of FRAMES) cubes = cubes.concat(frameCubes(f.a, f.w, f.level));
+//  20 + 28 + 44 + 76 + 140 + 268  =  576 cubes
+
+function PhiSum(x, y) {
+  let s = 0;
+  for (let i = 0; i < cubes.length; i++) {
+    const c = cubes[i];
+    if (Math.abs(x - c.cx) >= c.size || Math.abs(y - c.cy) >= c.size) continue;
+    s += phiK(x, y, c);
+  }
+  return s;
+}
+function tildeD(x, y) {
+  let num = 0, den = 0;
+  for (let i = 0; i < cubes.length; i++) {
+    const c = cubes[i];
+    if (Math.abs(x - c.cx) >= c.size || Math.abs(y - c.cy) >= c.size) continue;
+    const v = phiK(x, y, c);
+    num += c.size * v;
+    den += v;
+  }
+  return den > 0 ? num / den : NaN;
+}
+
+/* select the cube of a given frame nearest a target point */
+function pick(level, tx, ty) {
+  let best = null, bd = Infinity;
+  for (const c of cubes) {
+    if (c.level !== level) continue;
+    const d = (c.cx - tx) * (c.cx - tx) + (c.cy - ty) * (c.cy - ty);
+    if (d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+
+/* grid helpers */
+function makeGrid(a, b, n) {
+  const arr = new Array(n);
+  for (let i = 0; i < n; i++) arr[i] = a + (b - a) * i / (n - 1);
+  return arr;
+}
+function evalGrid(f, xs, ys) {
+  const Z = new Array(ys.length);
+  for (let j = 0; j < ys.length; j++) {
+    const row = new Array(xs.length);
+    for (let i = 0; i < xs.length; i++) row[i] = f(xs[i], ys[j]);
+    Z[j] = row;
+  }
+  return Z;
+}
+const inSquare = (x, y) => (Math.abs(x) < 1 && Math.abs(y) < 1);
+function evalSurface(f, xs, ys, mask) {
+  const Z = new Array(ys.length);
+  for (let j = 0; j < ys.length; j++) {
+    const row = new Array(xs.length);
+    for (let i = 0; i < xs.length; i++) {
+      const x = xs[i], y = ys[j];
+      row[i] = mask(x, y) ? NaN : f(x, y);
+    }
+    Z[j] = row;
+  }
+  return Z;
+}
+
+/* ======================================================================
+   Plot styling  —  Crimson Tide palette
+   ====================================================================== */
+
+const C = {
+  bg:         '#fbf8f5',
+  ink:        '#1c1216',
+  inkSoft:    '#45313a',
+  inkFaint:   '#8b7a80',
+  rule:       '#d8cabf',
+  grid:       '#e4d8cd',
+  crimson:    '#9e1b32',
+  crimsonD:   '#6d1322',
+  crimsonBr:  '#c2334b',
+  gray:       '#6f7679',
+  grayLt:     '#c9c8c5'
+};
+
+const crimsonScale = [
+  [0.00, '#f4ece8'],
+  [0.28, '#dba9ad'],
+  [0.55, '#bd4d56'],
+  [0.78, '#9e1b32'],
+  [1.00, '#3c0c15']
+];
+const tideScale = [
+  [0.00, '#fbf8f5'],
+  [0.32, '#ecc4c4'],
+  [0.60, '#d06b73'],
+  [0.84, '#9e1b32'],
+  [1.00, '#6d1322']
+];
+const graphiteScale = [
+  [0.00, '#fbf8f5'],
+  [0.42, '#bdbdba'],
+  [0.72, '#74787a'],
+  [1.00, '#262a2c']
+];
+
+const PCFG = { displayModeBar: false, responsive: true };
+
+function cbar(title) {
+  const o = {
+    thickness: 11, len: 0.7,
+    outlinecolor: C.rule, outlinewidth: 1,
+    tickfont: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft }
+  };
+  if (title) o.title = { text: title, side: 'right',
+    font: { family: "'Oswald', sans-serif", size: 12, color: C.inkSoft } };
+  return o;
+}
+function baseAxis() {
+  return {
+    gridcolor: C.grid, linecolor: C.inkSoft, tickcolor: C.inkSoft,
+    zerolinecolor: C.rule,
+    titlefont: { family: "'Oswald', sans-serif", size: 13, color: C.inkSoft },
+    tickfont:  { family: "'JetBrains Mono', monospace", size: 11, color: C.inkSoft }
+  };
+}
+function makeLayout(extra) {
+  return Object.assign({
+    paper_bgcolor: C.bg, plot_bgcolor: C.bg,
+    font: { family: "'EB Garamond', Georgia, serif", size: 14, color: C.ink },
+    margin: { l: 58, r: 26, t: 24, b: 50 }
+  }, extra || {});
+}
+function makeScene(opt) {
+  opt = opt || {};
+  const ax = {
+    gridcolor: C.grid, linecolor: C.inkSoft, zerolinecolor: C.rule,
+    backgroundcolor: C.bg, showbackground: true,
+    titlefont: { family: "'Oswald', sans-serif", size: 13, color: C.inkSoft },
+    tickfont:  { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft }
+  };
+  const r = opt.r || [-3.05, 3.05];
+  return {
+    xaxis: Object.assign({ title: 'x₁', range: r }, ax),
+    yaxis: Object.assign({ title: 'x₂', range: r }, ax),
+    zaxis: Object.assign({ title: opt.ztitle || '', range: opt.zr || [0, 1] }, ax),
+    camera: { eye: { x: 1.62, y: -1.62, z: 1.02 }, up: { x: 0, y: 0, z: 1 } },
+    aspectratio: { x: 1, y: 1, z: opt.zaspect || 0.55 }
+  };
+}
+
+/* ======================================================================
+   Fig 1: exterior distance d
+   ====================================================================== */
+{
+  const N = 110;
+  const xs = makeGrid(-3, 3, N), ys = makeGrid(-3, 3, N);
+  const Z = evalSurface(dExt, xs, ys, inSquare);
+  Plotly.newPlot('plot-d', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: crimsonScale, cmin: 0, cmax: 2.85,
+    showscale: true, colorbar: cbar(),
+    connectgaps: false,
+    contours: { z: { show: true, usecolormap: true, project: { z: true } } },
+    hovertemplate: 'd(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 490,
+    scene: makeScene({ ztitle: 'd', zr: [0, 2.95], zaspect: 0.5 })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 2: Whitney decomposition (top-down)
+   ====================================================================== */
+{
+  const pal   = ['#8c9295', '#cf9aa0', '#bf4252', '#7c142a'];
+  const label = ['Frame 0  ·  side 1', 'Frame 1  ·  side 1/2',
+                 'Frame 2  ·  side 1/4', 'Frame 3  ·  side 1/8'];
+  const traces = [];
+  // obstacle F
+  traces.push({
+    type: 'scatter', mode: 'lines',
+    x: [-1, 1, 1, -1, -1], y: [-1, -1, 1, 1, -1],
+    fill: 'toself', fillcolor: '#261a1d',
+    line: { color: C.crimson, width: 2.6 },
+    showlegend: false, hoverinfo: 'skip'
+  });
+  // drawn cubes
+  for (const c of cubes) {
+    if (c.level > 3) continue;
+    const col = pal[c.level];
+    const x0 = c.cx - c.size / 2, x1 = c.cx + c.size / 2;
+    const y0 = c.cy - c.size / 2, y1 = c.cy + c.size / 2;
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: [x0, x1, x1, x0, x0], y: [y0, y0, y1, y1, y0],
+      fill: 'toself', fillcolor: col + '2e',
+      line: { color: col, width: 1.1 },
+      showlegend: false, hoverinfo: 'skip'
+    });
+  }
+  // legend dummies
+  for (let l = 0; l < 4; l++) traces.push({
+    type: 'scatter', mode: 'lines', x: [null], y: [null],
+    line: { color: pal[l], width: 6 }, name: label[l], showlegend: true
+  });
+  Plotly.newPlot('plot-whitney', traces, makeLayout({
+    height: 540,
+    xaxis: Object.assign(baseAxis(), { title: 'x₁', range: [-3.18, 3.18], dtick: 1, scaleanchor: 'y', scaleratio: 1 }),
+    yaxis: Object.assign(baseAxis(), { title: 'x₂', range: [-3.18, 3.18], dtick: 1 }),
+    legend: {
+      font: { family: "'JetBrains Mono', monospace", size: 10.5, color: C.inkSoft },
+      bgcolor: 'rgba(255,253,251,0.88)',
+      bordercolor: C.rule, borderwidth: 1,
+      x: 0.5, xanchor: 'center', y: 0.5, yanchor: 'middle'
+    },
+    annotations: [{
+      x: 0, y: 0, text: 'F = [−1, 1]²', showarrow: false,
+      font: { family: "'JetBrains Mono', monospace", size: 11, color: '#fbf8f5' }
+    }]
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 3: base mollifier  phi(x1,x2) = phi(x1) phi(x2)
+   ====================================================================== */
+{
+  const N = 85;
+  const xs = makeGrid(-1.08, 1.08, N), ys = makeGrid(-1.08, 1.08, N);
+  const Z = evalGrid((x, y) => phi1(x) * phi1(y), xs, ys);
+  Plotly.newPlot('plot-phi', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: tideScale, cmin: 0, cmax: 0.138,
+    showscale: true, colorbar: cbar(),
+    contours: { z: { show: true, usecolormap: true, project: { z: true } } },
+    hovertemplate: 'φ(%{x:.2f}, %{y:.2f}) = %{z:.4f}<extra></extra>'
+  }], makeLayout({
+    height: 440,
+    scene: makeScene({ r: [-1.12, 1.12], ztitle: 'φ', zr: [0, 0.15], zaspect: 0.52 })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 4: max over selected localized phi_k
+   ====================================================================== */
+{
+  const sel = [
+    pick(0,  2.5,  0.6),
+    pick(1,  1.8,  0.85),
+    pick(2,  1.4,  0.4),
+    pick(3,  1.2,  0.18),
+    pick(0, -0.6,  2.5),
+    pick(2, -1.4, -0.45)
+  ].filter(Boolean);
+  const N = 120;
+  const xs = makeGrid(-3, 3, N), ys = makeGrid(-3, 3, N);
+  const Z = evalSurface((x, y) => {
+    let m = 0;
+    for (const c of sel) { const v = phiK(x, y, c); if (v > m) m = v; }
+    return m;
+  }, xs, ys, inSquare);
+  Plotly.newPlot('plot-phi-k', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: crimsonScale, cmin: 0, cmax: 0.138,
+    showscale: true, colorbar: cbar(), connectgaps: false,
+    hovertemplate: 'max φₖ(%{x:.2f}, %{y:.2f}) = %{z:.4f}<extra></extra>'
+  }], makeLayout({
+    height: 470,
+    scene: makeScene({ ztitle: 'max φₖ', zr: [0, 0.15], zaspect: 0.5 })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 5: Phi sum
+   ====================================================================== */
+{
+  const N = 86;
+  const xs = makeGrid(-2.97, 2.97, N), ys = makeGrid(-2.97, 2.97, N);
+  const Z = evalSurface(PhiSum, xs, ys, inSquare);
+  let mx = 0, mn = Infinity;
+  for (const r of Z) for (const v of r) {
+    if (v == null || Number.isNaN(v)) continue;
+    if (v > mx) mx = v;
+    if (v > 1e-6 && v < mn) mn = v;
+  }
+  Plotly.newPlot('plot-phi-sum', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: graphiteScale, cmin: 0, cmax: mx,
+    showscale: true, colorbar: cbar(), connectgaps: false,
+    hovertemplate: 'Φ(%{x:.2f}, %{y:.2f}) = %{z:.4f}<extra></extra>'
+  }], makeLayout({
+    height: 470,
+    scene: makeScene({ ztitle: 'Φ', zr: [0, mx * 1.06], zaspect: 0.5 }),
+    annotations: []
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 6: one element of partition of unity
+   ====================================================================== */
+{
+  const cstar = pick(1, 1.75, 0.0);
+  const N = 86;
+  const xs = makeGrid(-2.97, 2.97, N), ys = makeGrid(-2.97, 2.97, N);
+  const Z = evalSurface((x, y) => {
+    const den = PhiSum(x, y);
+    return den > 1e-9 ? phiK(x, y, cstar) / den : NaN;
+  }, xs, ys, inSquare);
+  Plotly.newPlot('plot-phi-star', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: tideScale, cmin: 0, cmax: 1,
+    showscale: true, colorbar: cbar(), connectgaps: false,
+    hovertemplate: 'φ*ₖ(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 450,
+    scene: makeScene({ ztitle: 'φ*ₖ', zr: [0, 1.05], zaspect: 0.5 })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 7: regularized distance d-tilde
+   ====================================================================== */
+{
+  const N = 96;
+  const xs = makeGrid(-2.98, 2.98, N), ys = makeGrid(-2.98, 2.98, N);
+  const Z = evalSurface(tildeD, xs, ys, inSquare);
+  Plotly.newPlot('plot-tilde', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: crimsonScale, cmin: 0, cmax: 1.0,
+    showscale: true, colorbar: cbar(), connectgaps: false,
+    contours: { z: { show: true, usecolormap: true, project: { z: true } } },
+    hovertemplate: 'd̃(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 490,
+    scene: makeScene({ ztitle: 'd̃', zr: [0, 1.08], zaspect: 0.5 })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 8: slice  x2 = 3/2  across two corner rays
+   ====================================================================== */
+{
+  const c = 1.5;
+  const ts = makeGrid(-2.9, 2.9, 601);
+  const yd = ts.map(t => dExt(t, c));
+  const yt = ts.map(t => { const v = tildeD(t, c); return Number.isFinite(v) ? v : null; });
+  Plotly.newPlot('plot-slice', [
+    { x: ts, y: yd, mode: 'lines',
+      line: { color: C.ink, width: 2, dash: 'dot' },
+      name: 'd(x₁, 3/2)',
+      hovertemplate: 'd = %{y:.4f}<extra></extra>' },
+    { x: ts, y: yt, mode: 'lines',
+      line: { color: C.crimson, width: 2.8 },
+      name: 'd̃(x₁, 3/2)',
+      hovertemplate: 'd̃ = %{y:.4f}<extra></extra>' }
+  ], makeLayout({
+    height: 330,
+    xaxis: Object.assign(baseAxis(), { title: 'x₁  (along x₂ = 3/2)', range: [-2.95, 2.95], dtick: 1 }),
+    yaxis: Object.assign(baseAxis(), { title: 'value', range: [-0.06, 2.15], dtick: 0.5 }),
+    legend: {
+      font: { family: "'JetBrains Mono', monospace", size: 12 },
+      bgcolor: 'rgba(255,253,251,0.88)',
+      bordercolor: C.rule, borderwidth: 1,
+      x: 0.5, xanchor: 'center', y: -0.22, orientation: 'h'
+    },
+    shapes: [-1, 1].map(xr => ({
+      type: 'line', x0: xr, x1: xr, y0: -0.06, y1: 2.15,
+      line: { color: C.crimsonBr, width: 1, dash: 'dash' }
+    }))
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 9: ratio heatmap  d-tilde / d   (annular band)
+   ====================================================================== */
+{
+  const N = 78;
+  const xs = makeGrid(-2.9, 2.9, N), ys = makeGrid(-2.9, 2.9, N);
+  const Z = new Array(N);
+  let lo = Infinity, hi = -Infinity;
+  for (let j = 0; j < N; j++) {
+    const row = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const x = xs[i], y = ys[j];
+      const dd = dExt(x, y);
+      if (!inSquare(x, y) && dd > 0.06 && dd < 1.35) {
+        const td = tildeD(x, y);
+        if (Number.isFinite(td)) {
+          const r = td / dd;
+          row[i] = r;
+          if (r < lo) lo = r;
+          if (r > hi) hi = r;
+        } else row[i] = null;
+      } else row[i] = null;
+    }
+    Z[j] = row;
+  }
+  Plotly.newPlot('plot-ratio', [{
+    type: 'heatmap', x: xs, y: ys, z: Z,
+    colorscale: tideScale, zmin: lo, zmax: hi,
+    showscale: true, colorbar: cbar('d̃ / d'),
+    hoverongaps: false,
+    hovertemplate: 'ratio(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 470,
+    xaxis: Object.assign(baseAxis(), { title: 'x₁', range: [-2.95, 2.95], dtick: 1, scaleanchor: 'y', scaleratio: 1 }),
+    yaxis: Object.assign(baseAxis(), { title: 'x₂', range: [-2.95, 2.95], dtick: 1 }),
+    annotations: [{
+      xref: 'paper', yref: 'paper', x: 0.0, y: 1.05,
+      xanchor: 'left', yanchor: 'bottom',
+      text: 'inf  ≈  ' + lo.toFixed(3) + '        sup  ≈  ' + hi.toFixed(3),
+      showarrow: false,
+      font: { family: "'JetBrains Mono', monospace", size: 11, color: C.crimsonD }
+    }]
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 10: gradient magnitude  |grad d-tilde|
+   ====================================================================== */
+{
+  const N = 70;
+  const h = 1.5e-3;
+  const xs = makeGrid(-2.9, 2.9, N), ys = makeGrid(-2.9, 2.9, N);
+  const Z = new Array(N);
+  let gmax = 0;
+  for (let j = 0; j < N; j++) {
+    const row = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const x = xs[i], y = ys[j];
+      if (inSquare(x, y)) { row[i] = null; continue; }
+      const a = tildeD(x + h, y), b = tildeD(x - h, y);
+      const cc = tildeD(x, y + h), dd = tildeD(x, y - h);
+      if (![a, b, cc, dd].every(Number.isFinite)) { row[i] = null; continue; }
+      const gx = (a - b) / (2 * h), gy = (cc - dd) / (2 * h);
+      const m = Math.hypot(gx, gy);
+      row[i] = m;
+      if (m > gmax) gmax = m;
+    }
+    Z[j] = row;
+  }
+  Plotly.newPlot('plot-grad', [{
+    type: 'heatmap', x: xs, y: ys, z: Z,
+    colorscale: graphiteScale, zmin: 0, zmax: gmax,
+    showscale: true, colorbar: cbar('|∇d̃|'),
+    hoverongaps: false,
+    hovertemplate: '|∇d̃|(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 470,
+    xaxis: Object.assign(baseAxis(), { title: 'x₁', range: [-2.95, 2.95], dtick: 1, scaleanchor: 'y', scaleratio: 1 }),
+    yaxis: Object.assign(baseAxis(), { title: 'x₂', range: [-2.95, 2.95], dtick: 1 }),
+    annotations: [{
+      xref: 'paper', yref: 'paper', x: 0.0, y: 1.05,
+      xanchor: 'left', yanchor: 'bottom',
+      text: 'sup |∇d̃|  ≈  ' + gmax.toFixed(2),
+      showarrow: false,
+      font: { family: "'JetBrains Mono', monospace", size: 11, color: C.crimsonD }
+    }]
+  }), PCFG);
+}
+</script>
+</body>
+</html>

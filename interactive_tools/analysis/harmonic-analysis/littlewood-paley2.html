@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Littlewood–Paley Decomposition on ℝ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --crimson:#9E1B32;--crimson2:#7a1426;
+  --cream:#faf7f2;--paper:#fff;
+  --navy:#18284a;--navy2:#2c4070;
+  --gold:#c8a430;--gold2:#a07820;
+  --gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#fdf0f2;--acc-blue:#edf1fb;
+  --green:#1a6a40;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.66;}
+
+header{background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.45rem 2.5rem;font-size:.82rem;color:#f0c8d0;letter-spacing:.06em;text-transform:uppercase;}
+.hdr-main{padding:1.5rem 2.5rem;}
+header h1{font-family:var(--font-head);font-size:1.95rem;font-weight:700;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.3rem;font-size:1rem;}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;margin-bottom:1.2rem;box-shadow:0 2px 16px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.18rem;font-weight:600;color:var(--crimson);margin-bottom:.6rem;padding-bottom:.35rem;border-bottom:2px solid #f5dde2;}
+.card p{margin-bottom:.55rem;line-height:1.68;}
+
+.def-box{background:var(--acc-bg);border-left:3.5px solid var(--crimson);border-radius:0 6px 6px 0;padding:.55rem .9rem;margin:.55rem 0;font-size:.95rem;line-height:1.65;}
+.def-box strong{color:var(--crimson);}
+.thm-box{background:#f0f4ff;border-left:3.5px solid var(--navy2);border-radius:0 6px 6px 0;padding:.55rem .9rem;margin:.55rem 0;font-size:.95rem;line-height:1.65;}
+.thm-box strong{color:var(--navy2);}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:6px;padding:.55rem .9rem;margin:.55rem 0;font-size:.91rem;line-height:1.65;color:#4a3800;}
+.math-block{overflow-x:auto;margin:.6rem 0;text-align:center;}
+
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;margin-bottom:.45rem;}
+.ctrl-group label{display:block;font-size:.86rem;font-weight:600;color:var(--navy2);margin-bottom:.2rem;}
+.ctrl-group p{font-size:.8rem;color:var(--gray);margin-top:.2rem;line-height:1.45;}
+input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;}
+select,input[type=text]{width:100%;padding:.25rem .45rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.92rem;background:#fff;color:var(--navy);}
+select:focus,input[type=text]:focus{outline:none;border-color:var(--crimson);}
+.val-badge{display:inline-block;background:var(--crimson);color:#fff;border-radius:4px;padding:.02rem .45rem;font-size:.86rem;font-weight:700;min-width:32px;text-align:center;margin-left:.25rem;}
+.err-msg{color:var(--crimson);font-size:.83rem;margin-top:.2rem;font-style:italic;}
+
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.3rem .8rem;font-size:.9rem;transition:all .13s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--crimson);color:#fff;}.btn-primary:hover{background:var(--crimson2);}
+.btn-secondary{background:var(--acc-blue);color:var(--navy2);border:1px solid #b0c4e8;}.btn-secondary:hover{background:#c8daff;}
+.btn-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;align-items:center;}
+
+canvas{display:block;border-radius:6px;border:1.5px solid var(--border);background:#fff;}
+.cv-label{text-align:center;font-size:.83rem;color:var(--gray);margin-top:.3rem;font-style:italic;}
+.canvas-full{width:100%;display:block;}
+
+.legend{display:flex;flex-wrap:wrap;gap:.55rem;margin:.5rem 0;font-size:.83rem;justify-content:center;}
+.leg-swatch{width:20px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:.2rem;}
+.leg-item{display:flex;align-items:center;}
+
+.two-col{display:flex;gap:1.2rem;flex-wrap:wrap;}
+.two-col>.col-ctrl{flex:0 0 240px;min-width:210px;}
+.two-col>.col-plot{flex:1;min-width:300px;}
+@media(max-width:700px){.two-col>.col-ctrl,.two-col>.col-plot{flex:1 1 100%;}.hdr-main{padding:1.2rem 1rem;}main{padding:1rem .7rem;}.card{padding:1rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama — Harmonic Analysis · Littlewood–Paley Theory</div>
+  <div class="hdr-main">
+    <h1>Littlewood–Paley Decomposition on ℝ</h1>
+    <div class="subtitle">Dyadic frequency decomposition of L² functions on the real line</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<main>
+
+<!-- §1 Theory -->
+<div class="card">
+  <h2>§1 — Construction on ℝ</h2>
+  <p>Choose a smooth radial cutoff <span id="th_eta"></span>. Define the <strong>dyadic blocks</strong> in the <em>continuous</em> frequency variable ξ ∈ ℝ:</p>
+  <div class="math-block" id="th_block"></div>
+  <p>Each Δ_j captures one <strong>octave</strong>. The low-pass part <span id="th_S0"></span> captures DC. Together:</p>
+  <div class="math-block" id="th_pou"></div>
+  <div class="def-box">
+    <strong>Spatial interpretation.</strong>
+    <span id="th_fj"></span> where ψ_j is a band-pass kernel at scale 2<sup>−j</sup>.
+    Block Δ_j f captures oscillations of wavelength ∼ 2π / 2<sup>j</sup>.
+  </div>
+  <div class="thm-box">
+    <strong>LP square function theorem.</strong>
+    For 1 &lt; p &lt; ∞, <span id="th_equiv"></span>.
+  </div>
+  <div class="key-box">
+    <strong>Why ℝ, not the circle.</strong>
+    On ℝ the spectrum is continuous — the smooth partition of unity is essential.
+    Compactly supported functions have energy at <em>every</em> scale: no LP block is ever truly empty.
+    The LP blocks here act on the continuous Fourier transform <span id="th_ft"></span>.
+  </div>
+</div>
+
+<!-- §2 Filter bank -->
+<div class="card">
+  <h2>§2 — The Filter Bank</h2>
+  <p>Each coloured bump is one dyadic filter Δ_j(ξ) on the continuous frequency axis. The dashed gray line is their sum — identically 1.</p>
+  <canvas id="cvFilters" height="210" class="canvas-full"></canvas>
+  <div class="legend" id="filterLegend"></div>
+  <div class="cv-label">Continuous frequency |ξ| on log₂ scale — smooth partition of unity on ℝ</div>
+</div>
+
+<!-- §3 Decomposition -->
+<div class="card">
+  <h2>§3 — The Decomposition</h2>
+  <div class="two-col">
+    <div class="col-ctrl">
+      <div class="ctrl-group">
+        <label>f(x) ∈ L²(ℝ)</label>
+        <select id="funcSelect" onchange="onFuncChange()">
+          <option value="gaussian">Gaussian e^{−x²}</option>
+          <option value="modulated" selected>Modulated e^{−x²/2}cos(20x)</option>
+          <option value="twoscale">Two-scale mixture</option>
+          <option value="rect">Rectangular pulse 𝟏_{[−1,1]}</option>
+          <option value="sech">Sech 1/cosh(x)</option>
+          <option value="mexican">Mexican hat (1−2x²)e^{−x²}</option>
+          <option value="chirp">Chirp cos(3x²)·e^{−x²/8}</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <div id="customRow" style="display:none;margin-top:.3rem;">
+          <input type="text" id="customExpr" value="Math.exp(-x*x)*Math.cos(10*x)">
+          <p>Use <code>x</code> ∈ ℝ. <code>Math.sin</code>, etc.</p>
+          <div class="err-msg" id="exprErr"></div>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <label>Half-width L = <span class="val-badge" id="lVal">16</span></label>
+        <input type="range" id="lSlider" min="4" max="40" value="16" step="2" oninput="document.getElementById('lVal').textContent=this.value;">
+        <p>Domain [−L, L]. Increase for slow-decaying f.</p>
+      </div>
+      <div class="ctrl-group">
+        <label>FFT size N = <span class="val-badge" id="nVal">2048</span></label>
+        <select id="fftSize"><option value="1024">1024</option><option value="2048" selected>2048</option><option value="4096">4096</option></select>
+      </div>
+      <div class="btn-row"><button class="btn-primary" onclick="compute()">▶ Decompose</button></div>
+      <div class="key-box" style="margin-top:.6rem;font-size:.84rem;" id="infoBox">
+        The modulated Gaussian has spectrum peaked at |ξ|≈20, so blocks j ≈ 4–5 carry most energy.
+      </div>
+    </div>
+    <div class="col-plot">
+      <canvas id="cvFunc" height="150" class="canvas-full"></canvas>
+      <div class="cv-label">f(x) on [−L, L] and continuous Fourier spectrum |f̂(ξ)|</div>
+      <div style="height:.5rem;"></div>
+      <canvas id="cvBlocks" height="440" class="canvas-full"></canvas>
+      <div class="cv-label">Dyadic blocks Δ_j f(x) — each strip is one octave of ξ, low frequency on top</div>
+    </div>
+  </div>
+</div>
+
+<!-- §4 Reconstruction & square function -->
+<div class="card">
+  <h2>§4 — Reconstruction &amp; Square Function</h2>
+  <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+    <div class="ctrl-group" style="min-width:260px;flex:0 0 auto;">
+      <label>Include blocks j ≤ <span class="val-badge" id="jVal">9</span></label>
+      <input type="range" id="jSlider" min="-1" max="9" value="9" oninput="onJSlider()">
+    </div>
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn-primary" id="animBtn" onclick="toggleAnim()">▶ Animate</button>
+      <button class="btn-secondary" onclick="resetAnim()">↺ Reset</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:1.2rem;flex-wrap:wrap;">
+    <div style="flex:1;min-width:300px;">
+      <canvas id="cvRecon" height="220" class="canvas-full"></canvas>
+      <div class="legend"><div class="leg-item"><span class="leg-swatch" style="background:var(--gold);"></span> f(x)</div><div class="leg-item"><span class="leg-swatch" style="background:var(--crimson);"></span> Partial sum</div></div>
+      <div class="cv-label">Gold dashed = f(x) · Crimson = S_{−1}f + Σ_{j≤J} Δ_j f — building f one octave at a time</div>
+    </div>
+    <div style="flex:1;min-width:300px;">
+      <canvas id="cvSquare" height="220" class="canvas-full"></canvas>
+      <div class="legend"><div class="leg-item"><span class="leg-swatch" style="background:var(--navy2);"></span> S(f)(x)</div><div class="leg-item"><span class="leg-swatch" style="background:var(--gold);opacity:.5;"></span> |f(x)|</div></div>
+      <div class="cv-label">LP square function S(f) = (Σ|Δ_j f|²)^{1/2} — the LP theorem says ‖S(f)‖_p ~ ‖f‖_p</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ══════════════════════════════════════════
+   KaTeX
+══════════════════════════════════════════ */
+function rk(t,d){t=String(t).replace(/[\u200B-\u200D\uFEFF\u00AD]/g,'');try{return katex.renderToString(t,{throwOnError:false,displayMode:!!d});}catch(e){return t;}}
+function setK(id,t,d){var el=document.getElementById(id);if(el)el.innerHTML=rk(t,d);}
+function populateTheory(){
+  setK('th_eta','\\eta\\in C_c^\\infty(\\mathbb{R}),\\;\\eta(\\xi)=1\\text{ for }|\\xi|\\le1,\\;\\eta(\\xi)=0\\text{ for }|\\xi|\\ge2');
+  setK('th_block','\\Delta_j(\\xi)=\\eta(\\xi/2^j)-\\eta(\\xi/2^{j-1}),\\qquad\\mathrm{supp}\\,\\Delta_j\\subset\\{\\xi:\\,2^{j-1}\\le|\\xi|\\le 2^{j+1}\\}',true);
+  setK('th_S0','S_{-1}\\widehat{f}(\\xi)=\\eta(2\\xi)\\,\\widehat{f}(\\xi)');
+  setK('th_pou','\\eta(2\\xi)+\\sum_{j=0}^{\\infty}\\Delta_j(\\xi)\\equiv 1\\qquad\\forall\\,\\xi\\in\\mathbb{R}',true);
+  setK('th_fj','\\Delta_j f = f*\\psi_j,\\quad \\psi_j(x)=2^j\\,\\psi(2^j x)');
+  setK('th_equiv','c_p\\,\\|f\\|_{L^p(\\mathbb{R})}\\le\\|S(f)\\|_{L^p(\\mathbb{R})}\\le C_p\\,\\|f\\|_{L^p(\\mathbb{R})},\\quad S(f)=\\bigl(\\textstyle\\sum_j|\\Delta_j f|^2\\bigr)^{1/2}');
+  setK('th_ft','\\widehat{f}(\\xi)=\\int_{\\mathbb{R}}f(x)\\,e^{-i\\xi x}\\,dx');
+}
+
+/* ══════════════════════════════════════════
+   FFT
+══════════════════════════════════════════ */
+function fft(re,im,dir){
+  var N=re.length;
+  for(var i=1,j=0;i<N;i++){var b=N>>1;while(j&b){j^=b;b>>=1;}j^=b;if(i<j){var t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t;}}
+  for(var len=2;len<=N;len<<=1){var a=dir*2*Math.PI/len,wR=Math.cos(a),wI=Math.sin(a);
+    for(var i=0;i<N;i+=len){var cR=1,cI=0;for(var k=0;k<(len>>1);k++){
+      var uR=re[i+k],uI=im[i+k],vR=re[i+k+(len>>1)]*cR-im[i+k+(len>>1)]*cI,vI=re[i+k+(len>>1)]*cI+im[i+k+(len>>1)]*cR;
+      re[i+k]=uR+vR;im[i+k]=uI+vI;re[i+k+(len>>1)]=uR-vR;im[i+k+(len>>1)]=uI-vI;
+      var nR=cR*wR-cI*wI;cI=cR*wI+cI*wR;cR=nR;}}}
+  if(dir===-1)for(var i=0;i<N;i++){re[i]/=N;im[i]/=N;}
+}
+
+/* ══════════════════════════════════════════
+   Smooth cutoff η & LP multiplier
+══════════════════════════════════════════ */
+function eta(r){if(r<=1)return 1;if(r>=2)return 0;return(1+Math.cos(Math.PI*(r-1)))/2;}
+function lpMult(absXi,j){if(j<0)return eta(2*absXi);return eta(absXi/Math.pow(2,j))-eta(absXi/Math.pow(2,j-1));}
+function freqOf(idx,N,L){var k=idx<=N/2?idx:idx-N;return Math.PI*k/L;}
+
+/* ══════════════════════════════════════════
+   Presets
+══════════════════════════════════════════ */
+var PRESETS={
+  gaussian:{fn:function(x){return Math.exp(-x*x);},L:8,
+    info:'Smooth Gaussian — spectrum ∝ e<sup>−ξ²/4</sup> peaks at ξ=0. Almost all energy in the lowest blocks.'},
+  modulated:{fn:function(x){return Math.exp(-x*x/2)*Math.cos(20*x);},L:10,
+    info:'Modulated Gaussian — spectrum peaked at |ξ|≈20. Blocks j ≈ 4–5 carry the energy (octave 16–32).'},
+  twoscale:{fn:function(x){return Math.exp(-x*x)+0.4*Math.cos(40*x)*Math.exp(-x*x/4);},L:12,
+    info:'Two-scale: broad Gaussian (low ξ) + high-frequency modulation at |ξ|≈40. Energy in two distinct octaves.'},
+  rect:{fn:function(x){return Math.abs(x)<=1?1:0;},L:16,
+    info:'Rectangular pulse — compact support ⟹ energy at <em>every</em> scale. Spectrum ∝ sin(ξ)/ξ decays slowly.'},
+  sech:{fn:function(x){return 1/Math.cosh(x);},L:12,
+    info:'Sech(x) = 1/cosh(x) — smooth, rapidly decaying. Its FT is π·sech(πξ/2), also a sech.'},
+  mexican:{fn:function(x){return(1-2*x*x)*Math.exp(-x*x);},L:8,
+    info:'Mexican hat (2nd Hermite) — zero mean so S₋₁f ≈ 0. Energy peaks at moderate ξ.'},
+  chirp:{fn:function(x){return Math.cos(3*x*x)*Math.exp(-x*x/8);},L:14,
+    info:'Chirp — instantaneous frequency ∝ |x|. Different octaves excited at different spatial positions.'}
+};
+
+/* ══════════════════════════════════════════
+   State
+══════════════════════════════════════════ */
+var state={N:2048,L:16,xs:null,fVals:null,blocks:[],specRe:null,specIm:null,maxJ:9};
+var BC=['#c8a430','#d4852f','#c0502a','#9E1B32','#7a1426','#6b3fa0','#2c4070','#1a6a40','#38709c','#2c8c6f','#7a7a8a','#a07820'];
+
+function onFuncChange(){
+  var s=document.getElementById('funcSelect').value;
+  document.getElementById('customRow').style.display=s==='custom'?'block':'none';
+  if(s!=='custom'&&PRESETS[s]){document.getElementById('lSlider').value=PRESETS[s].L;document.getElementById('lVal').textContent=PRESETS[s].L;}
+  compute();
+}
+function getFunc(){
+  var s=document.getElementById('funcSelect').value;
+  if(s==='custom'){var e=document.getElementById('customExpr').value.trim();
+    try{var fn=new Function('x','return('+e+');');fn(1);document.getElementById('exprErr').textContent='';return{fn:fn,info:'Custom function.'};}
+    catch(er){document.getElementById('exprErr').textContent='Error: '+er.message;return null;}}
+  return PRESETS[s];
+}
+
+/* ══════════════════════════════════════════
+   Compute
+══════════════════════════════════════════ */
+function compute(){
+  var p=getFunc();if(!p)return;
+  var N=parseInt(document.getElementById('fftSize').value),L=parseInt(document.getElementById('lSlider').value);
+  state.N=N;state.L=L;document.getElementById('nVal').textContent=N;
+  var dx=2*L/N,xs=new Float64Array(N),fV=new Float64Array(N);
+  for(var i=0;i<N;i++){xs[i]=-L+i*dx;fV[i]=p.fn(xs[i]);}
+  state.xs=xs;state.fVals=fV;
+
+  var re=new Float64Array(N),im=new Float64Array(N);
+  for(var i=0;i<N;i++){re[i]=fV[i];im[i]=0;}
+  fft(re,im,1);
+  state.specRe=new Float64Array(re);state.specIm=new Float64Array(im);
+
+  var xiMax=Math.PI*N/(2*L),maxJ=Math.ceil(Math.log2(xiMax));
+  state.maxJ=maxJ;state.blocks=[];
+  for(var j=-1;j<=maxJ;j++){
+    var bR=new Float64Array(N),bI=new Float64Array(N);
+    for(var i=0;i<N;i++){var ax=Math.abs(freqOf(i,N,L)),m=lpMult(ax,j);bR[i]=re[i]*m;bI[i]=im[i]*m;}
+    fft(bR,bI,-1);state.blocks.push({j:j,vals:new Float64Array(bR)});
+  }
+
+  document.getElementById('jSlider').max=maxJ;document.getElementById('jSlider').value=maxJ;document.getElementById('jVal').textContent=maxJ;
+  document.getElementById('infoBox').innerHTML=p.info;
+  drawFunc();drawBlocks();drawRecon();drawSquare();
+}
+
+/* ══════════════════════════════════════════
+   Canvas helpers
+══════════════════════════════════════════ */
+function setupCV(cv){var dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),W=r.width,H=parseInt(cv.getAttribute('height'))||200;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);return{ctx:ctx,W:W,H:H};}
+var PAD={l:46,r:14,t:12,b:24};
+
+function drawGrid(ctx,W,H,pad,xMin,xMax,yMin,yMax,opts){
+  opts=opts||{};var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  function px(x){return pad.l+(x-xMin)/(xMax-xMin)*gW;}
+  function py(y){return pad.t+(1-(y-yMin)/(yMax-yMin))*gH;}
+  ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.7;
+  var nX=opts.nX||8,nY=opts.nY||4;
+  for(var i=0;i<=nX;i++){var x=xMin+(xMax-xMin)*i/nX;ctx.beginPath();ctx.moveTo(px(x),pad.t);ctx.lineTo(px(x),pad.t+gH);ctx.stroke();}
+  for(var i=0;i<=nY;i++){var y=yMin+(yMax-yMin)*i/nY;ctx.beginPath();ctx.moveTo(pad.l,py(y));ctx.lineTo(pad.l+gW,py(y));ctx.stroke();}
+  if(yMin<=0&&yMax>=0){ctx.strokeStyle='#b8b5ad';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,py(0));ctx.lineTo(pad.l+gW,py(0));ctx.stroke();}
+  if(!opts.noLabels){
+    ctx.font='10px "Crimson Pro",serif';ctx.fillStyle='#7a7a8a';ctx.textAlign='center';
+    for(var i=0;i<=nX;i++){var v=xMin+(xMax-xMin)*i/nX;ctx.fillText(opts.logX?Math.pow(2,v).toFixed(v<3?1:0):v.toFixed(Math.abs(v)>=10?0:1),px(v),pad.t+gH+14);}
+    ctx.textAlign='right';
+    for(var i=0;i<=nY;i++){var v=yMin+(yMax-yMin)*i/nY;ctx.fillText(v.toFixed(Math.abs(v)<1?2:1),pad.l-4,py(v)+3);}
+  }
+  ctx.strokeStyle='#ddd9d0';ctx.lineWidth=1;ctx.strokeRect(pad.l,pad.t,gW,gH);
+  return{px:px,py:py,gW:gW,gH:gH};
+}
+
+function drawCurve(ctx,pxs,pys,color,w,dash){
+  ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();var s=false;
+  for(var i=0;i<pxs.length;i++){if(!isFinite(pys[i])){s=false;continue;}if(!s){ctx.moveTo(pxs[i],pys[i]);s=true;}else ctx.lineTo(pxs[i],pys[i]);}
+  ctx.stroke();ctx.setLineDash([]);
+}
+
+/* ══════════════════════════════════════════
+   §2 Filter bank
+══════════════════════════════════════════ */
+function drawFilters(){
+  var cv=document.getElementById('cvFilters'),s=setupCV(cv),ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:46,r:14,t:14,b:28},logMin=-2,logMax=9;
+  var ax=drawGrid(ctx,W,H,pad,logMin,logMax,0,1.15,{nX:11,nY:4,logX:true});
+  var nP=600,leg=document.getElementById('filterLegend');leg.innerHTML='';
+  var sumV=new Float64Array(nP);
+  for(var j=-1;j<=9;j++){
+    var c=BC[(j+1)%BC.length],pxs=[],pys=[];
+    for(var i=0;i<nP;i++){var lk=logMin+(logMax-logMin)*i/(nP-1),xi=Math.pow(2,lk),m=lpMult(xi,j);sumV[i]+=m;pxs.push(ax.px(lk));pys.push(ax.py(m));}
+    ctx.fillStyle=c+'18';ctx.beginPath();ctx.moveTo(pxs[0],ax.py(0));for(var i=0;i<nP;i++)ctx.lineTo(pxs[i],pys[i]);ctx.lineTo(pxs[nP-1],ax.py(0));ctx.closePath();ctx.fill();
+    drawCurve(ctx,pxs,pys,c,1.5,[]);
+    var it=document.createElement('div');it.className='leg-item';it.innerHTML='<span class="leg-swatch" style="background:'+c+'"></span>'+(j<0?'S₋₁':'Δ'+j);leg.appendChild(it);
+  }
+  var sp=[],sy=[];for(var i=0;i<nP;i++){sp.push(ax.px(logMin+(logMax-logMin)*i/(nP-1)));sy.push(ax.py(sumV[i]));}
+  drawCurve(ctx,sp,sy,'#7a7a8a',2,[5,3]);
+  ctx.font='11px "Crimson Pro",serif';ctx.fillStyle='#7a7a8a';ctx.textAlign='center';
+  ctx.fillText('|ξ|  (log₂ scale — continuous frequency on ℝ)',pad.l+ax.gW/2,H-3);
+}
+
+/* ══════════════════════════════════════════
+   §3 f(x) + spectrum
+══════════════════════════════════════════ */
+function drawFunc(){
+  if(!state.fVals)return;
+  var cv=document.getElementById('cvFunc'),s=setupCV(cv),ctx=s.ctx,W=s.W,H=s.H;
+  var N=state.N,L=state.L,dx=2*L/N;
+  var midX=Math.round(W*0.55),pL={l:42,r:6,t:10,b:22},pR={l:midX+28,r:14,t:10,b:22};
+
+  var yMin=Infinity,yMax=-Infinity;
+  for(var i=0;i<N;i++)if(isFinite(state.fVals[i])){yMin=Math.min(yMin,state.fVals[i]);yMax=Math.max(yMax,state.fVals[i]);}
+  var mg=(yMax-yMin)*0.1||0.5;yMin-=mg;yMax+=mg;
+  var axL=drawGrid(ctx,midX,H,pL,-L,L,yMin,yMax,{nX:4,nY:3});
+  var pxs=[];for(var i=0;i<N;i++)pxs.push(axL.px(state.xs[i]));
+  drawCurve(ctx,pxs,Array.from(state.fVals).map(axL.py),'#c8a430',2,[]);
+  ctx.font='bold 11px "Crimson Pro",serif';ctx.fillStyle='#c8a430';ctx.textAlign='left';ctx.fillText('f(x)',pL.l+4,pL.t+13);
+
+  // Continuous spectrum |f̂(ξ)| ≈ dx·|F_k|
+  var gW2=W-pR.l-pR.r,gH2=H-pR.t-pR.b;
+  var specD=[],sMax=0,kMax=Math.min(N/2,Math.round(200*L/Math.PI));
+  for(var k=0;k<=kMax;k++){var mg2=Math.sqrt(state.specRe[k]*state.specRe[k]+state.specIm[k]*state.specIm[k])*dx;specD.push({xi:Math.PI*k/L,mag:mg2});if(k>0)sMax=Math.max(sMax,mg2);}
+  sMax*=1.2;if(sMax<0.01)sMax=0.01;
+  var xiPM=specD[specD.length-1].xi;
+  ctx.strokeStyle='#ddd9d0';ctx.lineWidth=1;ctx.strokeRect(pR.l,pR.t,gW2,gH2);
+  ctx.strokeStyle='#b8b5ad';ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(pR.l,pR.t+gH2);ctx.lineTo(pR.l+gW2,pR.t+gH2);ctx.stroke();
+  var sPx=[],sPy=[];
+  for(var i=0;i<specD.length;i++){sPx.push(pR.l+specD[i].xi/xiPM*gW2);sPy.push(pR.t+(1-specD[i].mag/sMax)*gH2);}
+  drawCurve(ctx,sPx,sPy,'#9E1B32',1.5,[]);
+  ctx.font='bold 11px "Crimson Pro",serif';ctx.fillStyle='#9E1B32';ctx.textAlign='left';ctx.fillText('|f̂(ξ)|',pR.l+4,pR.t+13);
+  ctx.font='10px "Crimson Pro",serif';ctx.fillStyle='#7a7a8a';ctx.textAlign='center';
+  for(var i=0;i<=4;i++){var xi=xiPM*i/4;ctx.fillText(xi.toFixed(0),pR.l+i/4*gW2,pR.t+gH2+13);}
+}
+
+/* ══════════════════════════════════════════
+   §3 LP blocks
+══════════════════════════════════════════ */
+function drawBlocks(){
+  if(!state.blocks.length)return;
+  var cv=document.getElementById('cvBlocks'),s=setupCV(cv),ctx=s.ctx,W=s.W,H=s.H;
+  var N=state.N,nB=state.blocks.length,stripH=H/nB,pad={l:56,r:14};
+
+  for(var b=0;b<nB;b++){
+    var bl=state.blocks[b],y0=Math.round(b*stripH),y1=Math.round((b+1)*stripH),sh=y1-y0;
+    var color=BC[b%BC.length],bMax=0;
+    for(var i=0;i<N;i++)bMax=Math.max(bMax,Math.abs(bl.vals[i]));
+    if(bMax<1e-12)bMax=1;bMax*=1.15;
+
+    ctx.fillStyle=b%2===0?'#faf7f2':'#fff';ctx.fillRect(0,y0,W,sh);
+    var zy=y0+sh/2;
+    ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(pad.l,zy);ctx.lineTo(W-pad.r,zy);ctx.stroke();
+
+    var gW=W-pad.l-pad.r;
+    ctx.fillStyle=color+'10';ctx.beginPath();ctx.moveTo(pad.l,zy);
+    for(var i=0;i<N;i++){ctx.lineTo(pad.l+i/(N-1)*gW,zy-bl.vals[i]/bMax*(sh/2-2));}
+    ctx.lineTo(pad.l+gW,zy);ctx.closePath();ctx.fill();
+
+    ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.lineJoin='round';ctx.beginPath();
+    for(var i=0;i<N;i++){var px=pad.l+i/(N-1)*gW,py=zy-bl.vals[i]/bMax*(sh/2-2);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+    ctx.stroke();
+
+    ctx.font='bold 10px "Crimson Pro",serif';ctx.fillStyle=color;ctx.textAlign='right';
+    ctx.fillText(bl.j<0?'S₋₁':'Δ'+bl.j,pad.l-5,zy+4);
+    ctx.font='9px "Crimson Pro",serif';ctx.fillStyle='#999';
+    if(bl.j<0)ctx.fillText('|ξ|<1',pad.l-5,zy+14);
+    else{var lo=Math.pow(2,bl.j-1),hi=Math.pow(2,bl.j+1);ctx.fillText((lo<1?lo.toFixed(1):lo.toFixed(0))+'–'+hi.toFixed(0),pad.l-5,zy+14);}
+
+    ctx.strokeStyle='#e0ddd5';ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(0,y1);ctx.lineTo(W,y1);ctx.stroke();
+  }
+  ctx.strokeStyle='#ddd9d0';ctx.lineWidth=1;ctx.strokeRect(0,0,W,H);
+}
+
+/* ══════════════════════════════════════════
+   §4 Reconstruction
+══════════════════════════════════════════ */
+function drawRecon(){
+  if(!state.blocks.length)return;
+  var cv=document.getElementById('cvRecon'),s=setupCV(cv),ctx=s.ctx,W=s.W,H=s.H;
+  var N=state.N,L=state.L,J=parseInt(document.getElementById('jSlider').value);
+  var partial=new Float64Array(N);
+  for(var b=0;b<state.blocks.length;b++)if(state.blocks[b].j<=J)for(var i=0;i<N;i++)partial[i]+=state.blocks[b].vals[i];
+
+  var yMin=Infinity,yMax=-Infinity;
+  for(var i=0;i<N;i++){yMin=Math.min(yMin,state.fVals[i],partial[i]);yMax=Math.max(yMax,state.fVals[i],partial[i]);}
+  var mg=(yMax-yMin)*0.1||0.5;yMin-=mg;yMax+=mg;
+
+  var ax=drawGrid(ctx,W,H,PAD,-L,L,yMin,yMax,{nX:6});
+  var pxs=[];for(var i=0;i<N;i++)pxs.push(ax.px(state.xs[i]));
+  drawCurve(ctx,pxs,Array.from(state.fVals).map(ax.py),'#c8a430',2.2,[7,4]);
+  drawCurve(ctx,pxs,Array.from(partial).map(ax.py),'#9E1B32',2,[]);
+
+  ctx.font='bold 12px "Crimson Pro",serif';ctx.fillStyle='#9E1B32';ctx.textAlign='left';
+  ctx.fillText('J = '+J+(J>=state.maxJ?' (full)':''),PAD.l+6,PAD.t+14);
+  var dx=2*L/N,err=0;for(var i=0;i<N;i++){var d=state.fVals[i]-partial[i];err+=d*d*dx;}err=Math.sqrt(err);
+  ctx.font='11px "Crimson Pro",serif';ctx.fillStyle='#1a6a40';
+  ctx.fillText('‖f − partial‖₂ ≈ '+err.toExponential(2),PAD.l+6,PAD.t+28);
+}
+
+function onJSlider(){document.getElementById('jVal').textContent=document.getElementById('jSlider').value;drawRecon();}
+
+/* ══════════════════════════════════════════
+   §4 Square function
+══════════════════════════════════════════ */
+function drawSquare(){
+  if(!state.blocks.length)return;
+  var cv=document.getElementById('cvSquare'),s=setupCV(cv),ctx=s.ctx,W=s.W,H=s.H;
+  var N=state.N,L=state.L,dx=2*L/N;
+  var sq=new Float64Array(N),absF=new Float64Array(N);
+  for(var b=0;b<state.blocks.length;b++){var bv=state.blocks[b].vals;for(var i=0;i<N;i++)sq[i]+=bv[i]*bv[i];}
+  for(var i=0;i<N;i++){sq[i]=Math.sqrt(sq[i]);absF[i]=Math.abs(state.fVals[i]);}
+  var yMax=0;for(var i=0;i<N;i++)yMax=Math.max(yMax,sq[i],absF[i]);yMax*=1.15;if(yMax<0.01)yMax=0.01;
+
+  var ax=drawGrid(ctx,W,H,PAD,-L,L,0,yMax,{nX:6});
+  var pxs=[];for(var i=0;i<N;i++)pxs.push(ax.px(state.xs[i]));
+  drawCurve(ctx,pxs,Array.from(absF).map(ax.py),'rgba(200,164,48,0.4)',2,[6,4]);
+  drawCurve(ctx,pxs,Array.from(sq).map(ax.py),'#2c4070',2,[]);
+
+  var nF=0,nS=0;for(var i=0;i<N;i++){nF+=state.fVals[i]*state.fVals[i]*dx;nS+=sq[i]*sq[i]*dx;}
+  nF=Math.sqrt(nF);nS=Math.sqrt(nS);
+  ctx.font='11px "Crimson Pro",serif';ctx.textAlign='left';
+  ctx.fillStyle='#2c4070';ctx.fillText('‖S(f)‖₂ = '+nS.toFixed(4),PAD.l+6,PAD.t+14);
+  ctx.fillStyle='#c8a430';ctx.fillText('‖f‖₂ = '+nF.toFixed(4),PAD.l+6,PAD.t+28);
+}
+
+/* ══════════════════════════════════════════
+   Animation
+══════════════════════════════════════════ */
+var animOn=false,animT=null;
+function toggleAnim(){var b=document.getElementById('animBtn');if(animOn){animOn=false;clearTimeout(animT);b.textContent='▶ Animate';return;}
+  animOn=true;b.textContent='■ Stop';document.getElementById('jSlider').value=-1;onJSlider();animStep();}
+function animStep(){if(!animOn)return;var sl=document.getElementById('jSlider'),v=parseInt(sl.value);
+  if(v>=parseInt(sl.max)){animOn=false;document.getElementById('animBtn').textContent='▶ Animate';return;}
+  sl.value=v+1;onJSlider();animT=setTimeout(animStep,400);}
+function resetAnim(){if(animOn)toggleAnim();document.getElementById('jSlider').value=-1;onJSlider();}
+
+/* ══════════════════════════════════════════
+   Init
+══════════════════════════════════════════ */
+var rT;window.addEventListener('resize',function(){clearTimeout(rT);rT=setTimeout(function(){drawFilters();if(state.fVals){drawFunc();drawBlocks();drawRecon();drawSquare();}},200);});
+window.addEventListener('DOMContentLoaded',function(){populateTheory();drawFilters();compute();});
+</script>
+</body>
+</html>

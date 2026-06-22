@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bessel & Riesz Potentials in 2D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#1a0a0e;
+  --panel-bg:#1f0f14;
+  --panel-border:#3d1520;
+  --crimson:#9E1B32;
+  --crimson-bright:#DC143C;
+  --crimson-light:#e8475f;
+  --white:#ffffff;
+  --offwhite:#f2ece8;
+  --silver:#c0b8b2;
+  --gray:#828A8F;
+  --text:#d4ccc6;
+  --text-dim:#8a7e78;
+  --text-bright:#f5f0ec;
+}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',Georgia,serif;overflow-x:hidden;}
+header{
+  padding:18px 28px 12px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid var(--panel-border);
+  background:linear-gradient(180deg, rgba(158,27,50,0.08) 0%, transparent 100%);
+}
+header h1{font-family:'Playfair Display',serif;font-weight:900;font-size:21px;color:var(--white);letter-spacing:0.02em;}
+header .params{font-size:13px;color:var(--silver);}
+
+.controls{
+  padding:12px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border-bottom:1px solid var(--panel-border);background:rgba(0,0,0,0.2);
+}
+.section-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;}
+.preset-btn{
+  padding:5px 11px;border:1px solid var(--panel-border);border-radius:6px;
+  background:transparent;color:var(--silver);font-family:'Crimson Pro',serif;
+  font-size:12.5px;cursor:pointer;transition:all 0.2s;
+}
+.preset-btn:hover{border-color:var(--crimson);color:var(--white);background:rgba(158,27,50,0.12);}
+.preset-btn.active{border-color:var(--crimson-bright);color:var(--white);background:rgba(158,27,50,0.2);}
+
+.three-panel{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid var(--panel-border);
+}
+.surface-panel{
+  border-right:1px solid var(--panel-border);
+  display:flex;flex-direction:column;align-items:center;position:relative;
+}
+.surface-panel:last-child{border-right:none;}
+.surface-panel h2{
+  font-family:'Playfair Display',serif;font-size:14px;font-weight:700;
+  color:var(--white);padding:10px 0 2px;text-align:center;
+}
+.surface-panel .subdesc{font-size:11px;color:var(--text-dim);padding-bottom:4px;text-align:center;}
+.surface-panel canvas{display:block;width:100%!important;height:auto!important;cursor:grab;}
+.surface-panel canvas:active{cursor:grabbing;}
+
+.norms-row{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+  padding:14px 28px;border-bottom:1px solid var(--panel-border);
+  background:rgba(0,0,0,0.15);
+}
+.norm-box{background:rgba(158,27,50,0.06);border:1px solid rgba(158,27,50,0.15);border-radius:7px;padding:8px 14px;text-align:center;}
+.norm-box .label{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:2px;}
+.norm-box .value{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--offwhite);}
+.norm-box .value.crimson{color:var(--crimson-bright);}
+.norm-box .value.white-accent{color:var(--white);}
+
+.explanation{padding:16px 28px;max-width:1400px;margin:0 auto;}
+.explanation p{font-size:13.5px;line-height:1.65;color:var(--text);margin-bottom:8px;}
+
+.computing{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(26,10,14,0.92);display:none;align-items:center;justify-content:center;
+  z-index:100;font-size:18px;color:var(--crimson-light);font-family:'Crimson Pro',serif;
+}
+</style>
+</head>
+<body>
+
+<div class="computing" id="computing">Computing FFT…</div>
+
+<header>
+  <h1>Potentials in 2D</h1>
+  <div class="params" id="header-params"></div>
+</header>
+
+<div class="controls">
+  <span class="section-label">Function:</span>
+  <button class="preset-btn active" onclick="pick(0,this)">Rectangle</button>
+  <button class="preset-btn" onclick="pick(1,this)">Disk</button>
+  <button class="preset-btn" onclick="pick(2,this)">Two rects</button>
+  <button class="preset-btn" onclick="pick(3,this)">L-shape</button>
+  <button class="preset-btn" onclick="pick(4,this)">Gaussian</button>
+  <button class="preset-btn" onclick="pick(5,this)">Ring</button>
+  <span style="flex:1"></span>
+  <span class="section-label" style="font-size:10px;color:var(--gray);">Drag any surface to rotate all</span>
+</div>
+
+<div class="three-panel" id="three-panel">
+  <div class="surface-panel" id="panel-f">
+    <h2>f(x₁, x₂)</h2>
+    <div class="subdesc" id="f-desc">Input</div>
+  </div>
+  <div class="surface-panel" id="panel-jf">
+    <h2>J₁f — Bessel</h2>
+    <div class="subdesc">(1+4π²|ξ|²)<sup>−½</sup> · f̂</div>
+  </div>
+  <div class="surface-panel" id="panel-if">
+    <h2>I₁f — Riesz</h2>
+    <div class="subdesc">(2π|ξ|)<sup>−1</sup> · f̂</div>
+  </div>
+</div>
+
+<div class="norms-row" id="norms-row"></div>
+<div class="explanation" id="explanation"></div>
+
+<script>
+// ═══════════════════════════════════
+//  FFT
+// ═══════════════════════════════════
+function fft1d(re,im,inv){
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){
+    let bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;
+    if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}
+  }
+  for(let len=2;len<=n;len<<=1){
+    const a=2*Math.PI/len*(inv?-1:1),wR=Math.cos(a),wI=Math.sin(a);
+    for(let i=0;i<n;i+=len){
+      let cR=1,cI=0;
+      for(let j=0;j<len/2;j++){
+        const uR=re[i+j],uI=im[i+j],k=i+j+len/2;
+        const vR=re[k]*cR-im[k]*cI, vI=re[k]*cI+im[k]*cR;
+        re[i+j]=uR+vR;im[i+j]=uI+vI;re[k]=uR-vR;im[k]=uI-vI;
+        const t=cR*wR-cI*wI;cI=cR*wI+cI*wR;cR=t;
+      }
+    }
+  }
+  if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}
+}
+function fft2d(re,im,N,inv){
+  const rR=new Float64Array(N),rI=new Float64Array(N);
+  for(let r=0;r<N;r++){
+    const o=r*N;for(let c=0;c<N;c++){rR[c]=re[o+c];rI[c]=im[o+c];}
+    fft1d(rR,rI,inv);for(let c=0;c<N;c++){re[o+c]=rR[c];im[o+c]=rI[c];}
+  }
+  const cR=new Float64Array(N),cI=new Float64Array(N);
+  for(let c=0;c<N;c++){
+    for(let r=0;r<N;r++){cR[r]=re[r*N+c];cI[r]=im[r*N+c];}
+    fft1d(cR,cI,inv);for(let r=0;r<N;r++){re[r*N+c]=cR[r];im[r*N+c]=cI[r];}
+  }
+}
+
+const N=256, L=10, h=L/N, ALPHA=1, P=4/3, Q=4;
+function coord(i){return -L/2+(i+0.5)*h;}
+function freq(k){return k<=N/2?k/L:(k-N)/L;}
+
+const FUNCS=[
+  {name:'Rectangle',desc:'\\chi_{[-1,1]\\times[-0.5,0.5]}',
+   fn:(x,y)=>(Math.abs(x)<=1&&Math.abs(y)<=0.5)?1:0},
+  {name:'Disk',desc:'\\chi_{B_1(0)}',
+   fn:(x,y)=>(x*x+y*y<=1)?1:0},
+  {name:'Two rects',desc:'\\chi_{[-2,-0.3]\\times[-0.5,0.5]}+\\chi_{[0.3,2]\\times[-0.5,0.5]}',
+   fn:(x,y)=>{if(Math.abs(y)<=0.5){if(x>=-2&&x<=-0.3)return 1;if(x>=0.3&&x<=2)return 1;}return 0;}},
+  {name:'L-shape',desc:'\\chi_L',
+   fn:(x,y)=>{if(x>=-1&&x<=1&&y>=-1&&y<=0)return 1;if(x>=-1&&x<=0&&y>=0&&y<=1)return 1;return 0;}},
+  {name:'Gaussian',desc:'e^{-(x_1^2+x_2^2)}',
+   fn:(x,y)=>Math.exp(-x*x-y*y)},
+  {name:'Ring',desc:'\\chi_{\\{0.7\\le|x|\\le 1.3\\}}',
+   fn:(x,y)=>{const r=Math.sqrt(x*x+y*y);return(r>=0.7&&r<=1.3)?1:0;}}
+];
+
+function computeAll(idx){
+  const fn=FUNCS[idx].fn;
+  const fD=new Float64Array(N*N);
+  for(let r=0;r<N;r++){const y=coord(r);for(let c=0;c<N;c++){fD[r*N+c]=fn(coord(c),y);}}
+
+  let reB=new Float64Array(fD),imB=new Float64Array(N*N);
+  fft2d(reB,imB,N,false);
+  for(let r=0;r<N;r++){const fy=freq(r);for(let c=0;c<N;c++){
+    const fx=freq(c),f2=fx*fx+fy*fy,m=Math.pow(1+4*Math.PI*Math.PI*f2,-ALPHA/2);
+    const i=r*N+c;reB[i]*=m;imB[i]*=m;
+  }}
+  fft2d(reB,imB,N,true);
+  const jfD=new Float64Array(N*N);
+  for(let i=0;i<N*N;i++)jfD[i]=reB[i];
+
+  let reR=new Float64Array(fD),imR=new Float64Array(N*N);
+  fft2d(reR,imR,N,false);
+  for(let r=0;r<N;r++){const fy=freq(r);for(let c=0;c<N;c++){
+    const fx=freq(c),fmag=Math.sqrt(fx*fx+fy*fy),i=r*N+c;
+    if(fmag<1e-12){reR[i]=0;imR[i]=0;}
+    else{const m=1/(2*Math.PI*fmag);reR[i]*=m;imR[i]*=m;}
+  }}
+  fft2d(reR,imR,N,true);
+  const ifD=new Float64Array(N*N);
+  for(let i=0;i<N*N;i++)ifD[i]=reR[i];
+
+  return{fD,jfD,ifD};
+}
+
+function lpNorm(d,p){let s=0;const a=h*h;for(let i=0;i<d.length;i++)s+=Math.pow(Math.abs(d[i]),p)*a;return Math.pow(s,1/p);}
+function supNorm(d){let m=0;for(let i=0;i<d.length;i++)m=Math.max(m,Math.abs(d[i]));return m;}
+
+// ═══════════════════════════════════
+//  Alabama colormap: dark maroon → crimson → white
+//  with white grid lines on the surface
+// ═══════════════════════════════════
+function cmap(t){
+  t=Math.max(0,Math.min(1,t));
+  let r,g,b;
+  if(t<0.15){
+    // Near-black to dark maroon
+    const s=t/0.15;
+    r=20+s*50;  g=8+s*5;   b=12+s*10;
+  } else if(t<0.4){
+    // Dark maroon to crimson
+    const s=(t-0.15)/0.25;
+    r=70+s*148; g=13+s*7;  b=22+s*28;
+  } else if(t<0.65){
+    // Crimson to light crimson/rose
+    const s=(t-0.4)/0.25;
+    r=218+s*22; g=20+s*60; b=50+s*60;
+  } else if(t<0.85){
+    // Rose to light pink
+    const s=(t-0.65)/0.2;
+    r=240+s*12; g=80+s*100; b=110+s*80;
+  } else {
+    // Light pink to white
+    const s=(t-0.85)/0.15;
+    r=252+s*3;  g=180+s*75; b=190+s*65;
+  }
+  return new THREE.Color(Math.min(r,255)/255,Math.min(g,255)/255,Math.min(b,255)/255);
+}
+
+// ═══════════════════════════════════
+//  Three.js
+// ═══════════════════════════════════
+const scenes=[],cameras=[],renderers=[],meshes=[];
+const panelIds=['panel-f','panel-jf','panel-if'];
+const MESH_RES=180;
+const BG_COLOR=0x1a0a0e;
+
+function initThree(){
+  for(let i=0;i<3;i++){
+    const panel=document.getElementById(panelIds[i]);
+    const w=panel.clientWidth, ht=Math.min(w*0.85,420);
+
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(BG_COLOR);
+    // Subtle fog for depth
+    scene.fog=new THREE.FogExp2(BG_COLOR, 0.015);
+    scenes.push(scene);
+
+    const camera=new THREE.PerspectiveCamera(40,w/ht,0.1,200);
+    cameras.push(camera);
+
+    const renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(w,ht);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    panel.appendChild(renderer.domElement);
+    renderers.push(renderer);
+
+    // Warm lighting
+    scene.add(new THREE.AmbientLight(0x2a1015,0.6));
+    const dl=new THREE.DirectionalLight(0xffeedd,0.8);dl.position.set(5,10,7);scene.add(dl);
+    const dl2=new THREE.DirectionalLight(0x9E1B32,0.25);dl2.position.set(-4,6,-4);scene.add(dl2);
+    const dl3=new THREE.DirectionalLight(0xffffff,0.2);dl3.position.set(0,8,-6);scene.add(dl3);
+
+    // Ground plane (very faint)
+    const gndGeo=new THREE.PlaneGeometry(16,16);
+    const gndMat=new THREE.MeshBasicMaterial({color:0x120810,side:THREE.DoubleSide,transparent:true,opacity:0.4});
+    const gnd=new THREE.Mesh(gndGeo,gndMat);
+    gnd.rotation.x=-Math.PI/2;gnd.position.y=-0.02;
+    scene.add(gnd);
+
+    // White grid lines on ground (Alabama white)
+    const gridMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.08});
+    for(let g=-4;g<=4;g+=1){
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(g,0,-4),new THREE.Vector3(g,0,4)]),gridMat));
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-4,0,g),new THREE.Vector3(4,0,g)]),gridMat));
+    }
+
+    // Axes in white
+    const axMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.15});
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-5,0.01,0),new THREE.Vector3(5,0.01,0)]),axMat));
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0,0.01,-5),new THREE.Vector3(0,0.01,5)]),axMat));
+
+    meshes.push(null);
+  }
+}
+
+function buildSurface(si,data,heightScale,clampMax){
+  const scene=scenes[si];
+  if(meshes[si]){scene.remove(meshes[si]);meshes[si].geometry.dispose();meshes[si].material.dispose();}
+  const oldW=scene.getObjectByName('w'+si);
+  if(oldW){scene.remove(oldW);oldW.geometry.dispose();oldW.material.dispose();}
+  // Remove old grid lines
+  const oldG=scene.getObjectByName('g'+si);
+  if(oldG){scene.remove(oldG);}
+
+  const geo=new THREE.PlaneGeometry(8,8,MESH_RES-1,MESH_RES-1);
+  const pos=geo.attributes.position;
+  const colors=new Float32Array(pos.count*3);
+
+  let dMin=Infinity,dMax=-Infinity;
+  for(let i=0;i<data.length;i++){if(data[i]<dMin)dMin=data[i];if(data[i]>dMax)dMax=data[i];}
+  const cMax=clampMax!==undefined?clampMax:dMax;
+  const cMin=Math.min(0,dMin);
+  const range=cMax-cMin||1;
+
+  for(let i=0;i<pos.count;i++){
+    const lx=pos.getX(i),ly=pos.getY(i);
+    const dx=(lx+4)/8, dy=(-ly+4)/8;
+    const dataC=Math.min(N-1,Math.max(0,Math.floor(dx*N)));
+    const dataR=Math.min(N-1,Math.max(0,Math.floor(dy*N)));
+    let val=data[dataR*N+dataC];
+    const cv=Math.min(val,cMax);
+    pos.setZ(i,cv*heightScale);
+    const t=(cv-cMin)/range;
+    const col=cmap(t);
+    colors[i*3]=col.r;colors[i*3+1]=col.g;colors[i*3+2]=col.b;
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  geo.computeVertexNormals();
+
+  const mat=new THREE.MeshPhongMaterial({
+    vertexColors:true,transparent:true,opacity:0.82,
+    side:THREE.DoubleSide,shininess:35,depthWrite:false,
+    specular:new THREE.Color(0x4a1520)
+  });
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.rotation.x=-Math.PI/2;
+  scene.add(mesh);meshes[si]=mesh;
+
+  // White wireframe overlay (like MATLAB white grid lines)
+  const wGeo=geo.clone();
+  const wMat=new THREE.MeshBasicMaterial({
+    color:0xffffff,transparent:true,opacity:0.06,wireframe:true
+  });
+  const wMesh=new THREE.Mesh(wGeo,wMat);
+  wMesh.rotation.x=-Math.PI/2;wMesh.name='w'+si;
+  scene.add(wMesh);
+
+  // White contour grid lines on the surface (like MATLAB's white grid)
+  const gridGroup=new THREE.Group();
+  gridGroup.name='g'+si;
+  const nLines=10;
+  const lineMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.18});
+
+  // Lines along x (fixed y values)
+  for(let li=0;li<nLines;li++){
+    const ty=li/(nLines-1); // 0 to 1
+    const dataRow=Math.min(N-1,Math.floor(ty*N));
+    const pts=[];
+    for(let c=0;c<N;c+=2){
+      const lx=-4+8*c/N;
+      const val=Math.min(data[dataRow*N+c],cMax);
+      pts.push(new THREE.Vector3(lx, val*heightScale, -4+8*ty));
+    }
+    if(pts.length>1){
+      const g2=new THREE.BufferGeometry().setFromPoints(pts);
+      gridGroup.add(new THREE.Line(g2,lineMat));
+    }
+  }
+  // Lines along y (fixed x values)
+  for(let li=0;li<nLines;li++){
+    const tx=li/(nLines-1);
+    const dataCol=Math.min(N-1,Math.floor(tx*N));
+    const pts=[];
+    for(let r=0;r<N;r+=2){
+      const lz=-4+8*r/N;
+      const val=Math.min(data[r*N+dataCol],cMax);
+      pts.push(new THREE.Vector3(-4+8*tx, val*heightScale, lz));
+    }
+    if(pts.length>1){
+      const g2=new THREE.BufferGeometry().setFromPoints(pts);
+      gridGroup.add(new THREE.Line(g2,lineMat));
+    }
+  }
+  scene.add(gridGroup);
+
+  return{min:dMin,max:dMax};
+}
+
+// ═══════════════════════════════════
+//  Camera
+// ═══════════════════════════════════
+let sph={theta:0.7,phi:0.65,radius:14};
+function updateCams(){
+  for(let i=0;i<3;i++){
+    const c=cameras[i];
+    c.position.x=sph.radius*Math.sin(sph.phi)*Math.cos(sph.theta);
+    c.position.y=sph.radius*Math.cos(sph.phi);
+    c.position.z=sph.radius*Math.sin(sph.phi)*Math.sin(sph.theta);
+    c.lookAt(0,0.5,0);
+  }
+}
+
+let isDrag=false,pm={x:0,y:0};
+function onDown(e){isDrag=true;const ev=e.touches?e.touches[0]:e;pm.x=ev.clientX;pm.y=ev.clientY;}
+function onMove(e){
+  if(!isDrag)return;e.preventDefault();
+  const ev=e.touches?e.touches[0]:e;
+  sph.theta-=(ev.clientX-pm.x)*0.006;
+  sph.phi-=(ev.clientY-pm.y)*0.006;
+  sph.phi=Math.max(0.15,Math.min(Math.PI*0.48,sph.phi));
+  pm.x=ev.clientX;pm.y=ev.clientY;updateCams();
+}
+function onUp(){isDrag=false;}
+function onWheel(e){e.preventDefault();sph.radius+=e.deltaY*0.015;sph.radius=Math.max(5,Math.min(40,sph.radius));updateCams();}
+
+function attachEvents(){
+  for(const r of renderers){
+    r.domElement.addEventListener('mousedown',onDown);
+    r.domElement.addEventListener('touchstart',onDown,{passive:true});
+    r.domElement.addEventListener('wheel',onWheel,{passive:false});
+  }
+  window.addEventListener('mousemove',onMove);
+  window.addEventListener('touchmove',onMove,{passive:false});
+  window.addEventListener('mouseup',onUp);
+  window.addEventListener('touchend',onUp);
+}
+
+function animate(){requestAnimationFrame(animate);for(let i=0;i<3;i++)renderers[i].render(scenes[i],cameras[i]);}
+
+// ═══════════════════════════════════
+//  Main
+// ═══════════════════════════════════
+function pick(idx,btn){
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');run(idx);
+}
+
+function run(idx){
+  document.getElementById('computing').style.display='flex';
+  setTimeout(()=>{
+    const{fD,jfD,ifD}=computeAll(idx);
+    const fMax=supNorm(fD),jfMax=supNorm(jfD),ifMax=supNorm(ifD);
+    const globalMax=Math.max(fMax,jfMax,ifMax)||1;
+    const baseH=3.5/globalMax;
+
+    buildSurface(0,fD,baseH,fMax);
+    buildSurface(1,jfD,baseH,jfMax);
+    const ifClamp=Math.min(ifMax,jfMax*3);
+    buildSurface(2,ifD,baseH,ifClamp);
+
+    const descEl=document.getElementById('f-desc');
+    descEl.innerHTML='';
+    const sp=document.createElement('span');
+    try{katex.render('f = '+FUNCS[idx].desc,sp,{displayMode:false});}catch(e){sp.textContent=FUNCS[idx].name;}
+    descEl.appendChild(sp);
+
+    const nfP=lpNorm(fD,P),njfQ=lpNorm(jfD,Q),nifQ=lpNorm(ifD,Q);
+    const ratioB=njfQ/nfP, ratioR=nifQ/nfP;
+
+    document.getElementById('norms-row').innerHTML=`
+      <div class="norm-box"><div class="label">‖f‖<sub>4/3</sub></div><div class="value">${nfP.toFixed(4)}</div></div>
+      <div class="norm-box"><div class="label">‖J₁f‖<sub>4</sub></div><div class="value white-accent">${njfQ.toFixed(4)}</div></div>
+      <div class="norm-box"><div class="label">‖J₁f‖₄ / ‖f‖<sub>4/3</sub></div><div class="value crimson">${ratioB.toFixed(4)}</div></div>
+      <div class="norm-box"><div class="label">‖I₁f‖<sub>4</sub></div><div class="value white-accent">${nifQ.toFixed(4)}</div></div>
+      <div class="norm-box"><div class="label">‖I₁f‖₄ / ‖f‖<sub>4/3</sub></div><div class="value crimson">${ratioR.toFixed(4)}</div></div>
+      <div class="norm-box"><div class="label">sup J₁f</div><div class="value">${jfMax.toFixed(3)}</div></div>
+      <div class="norm-box"><div class="label">sup I₁f</div><div class="value">${ifMax.toFixed(3)}</div></div>
+    `;
+    document.getElementById('computing').style.display='none';
+  },60);
+}
+
+function onResize(){
+  for(let i=0;i<3;i++){
+    const panel=document.getElementById(panelIds[i]);
+    const w=panel.clientWidth, ht=Math.min(w*0.85,420);
+    cameras[i].aspect=w/ht;cameras[i].updateProjectionMatrix();
+    renderers[i].setSize(w,ht);
+  }
+}
+
+// ═══════════════════════════════════
+//  Init
+// ═══════════════════════════════════
+const hp=document.getElementById('header-params');
+const hpS=document.createElement('span');
+try{katex.render('\\alpha=1,\\;\\; p=\\tfrac{4}{3},\\;\\; q=4,\\;\\; \\tfrac{1}{q}=\\tfrac{1}{p}-\\tfrac{\\alpha}{n}',hpS,{displayMode:false});}catch(e){}
+hp.appendChild(hpS);
+
+const ex=document.getElementById('explanation');
+ex.innerHTML=`
+<p style="color:var(--silver);">Left: input f. Center: Bessel potential J₁f via FFT with multiplier (1+4π²|ξ|²)<sup>−½</sup>.
+Right: Riesz potential I₁f with multiplier (2π|ξ|)<sup>−1</sup> (DC zeroed).
+White grid lines on each surface show the cross-sections, matching the MATLAB convention. Drag any surface to rotate all three together.</p>
+<p style="color:var(--silver);">The Bessel potential smooths f with <em>exponential</em> tail decay (built-in length scale from the kernel G₁).
+The Riesz potential smooths with <em>algebraic</em> decay (scale-invariant).
+Both obey the Sobolev embedding ‖·‖₄ ≤ C‖f‖<sub>4/3</sub> — the bounded ratios in the norm row confirm this numerically across all test functions.</p>
+`;
+
+initThree();attachEvents();updateCams();animate();
+window.addEventListener('resize',onResize);
+run(0);
+</script>
+</body>
+</html>

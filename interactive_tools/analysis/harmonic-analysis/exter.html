@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roll Tide — The Whitney Extension on the Exterior of [−1, 1]²</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.27.0/dist/plotly.min.js"></script>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], processEscapes: true },
+  chtml: { scale: 1.05 }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+  :root {
+    /* Alabama Crimson Tide palette */
+    --crimson:        #9E1B32;   /* Alabama crimson */
+    --crimson-deep:   #7A1226;
+    --crimson-bright: #C41E3A;
+    --crimson-pale:   #E8C5CB;
+    --crimson-mist:   #F7E6E9;
+    --bg:             #FAF7F2;   /* warm off-white "ivory" */
+    --bg-deeper:      #F2EBDF;
+    --bg-soft:        #FDFBF7;
+    --ink:            #1B1B1B;   /* near-black for text */
+    --ink-soft:       #3A3A3A;
+    --ink-faded:      #6B6B6B;
+    --rule:           #D4C9B5;
+    --grid:           #E2D9C9;
+    --gold:           #B8860B;   /* trim accent */
+    --houndstooth:    #1B1B1B;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 19px; line-height: 1.66;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Houndstooth band as background accent */
+  body {
+    background-image:
+      radial-gradient(circle at 90% 5%, rgba(158,27,50,0.06), transparent 35%),
+      radial-gradient(circle at 5% 95%, rgba(158,27,50,0.04), transparent 40%);
+    min-height: 100vh;
+  }
+
+  /* Houndstooth top border strip */
+  body::before {
+    content: "";
+    display: block;
+    height: 18px;
+    background-image:
+      linear-gradient(135deg, var(--houndstooth) 25%, transparent 25%),
+      linear-gradient(225deg, var(--houndstooth) 25%, transparent 25%),
+      linear-gradient(315deg, var(--houndstooth) 25%, transparent 25%),
+      linear-gradient(45deg,  var(--houndstooth) 25%, transparent 25%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+    background-color: var(--bg);
+    border-bottom: 3px solid var(--crimson);
+  }
+
+  article {
+    max-width: 880px; margin: 0 auto;
+    padding: 56px 32px 100px;
+  }
+
+  header {
+    margin-bottom: 56px; padding-bottom: 36px;
+    border-bottom: 3px double var(--crimson);
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 1.4em;
+    font-weight: 600;
+  }
+
+  .eyebrow::before, .eyebrow::after {
+    content: "✧";
+    margin: 0 0.8em;
+    color: var(--crimson);
+    font-size: 0.85em;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: clamp(2.4rem, 5.5vw, 3.7rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5em;
+    color: var(--crimson-deep);
+    text-transform: none;
+  }
+
+  h1 em {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    color: var(--crimson);
+  }
+
+  .subtitle {
+    font-style: italic;
+    font-size: 1.18rem;
+    color: var(--ink-soft);
+    max-width: 660px;
+    margin: 0.6em auto 0;
+    text-align: center;
+  }
+
+  /* Decorative rule under header */
+  .rolltide {
+    display: block;
+    margin: 1.5em auto 0;
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--crimson);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    font-size: 2.1rem;
+    margin-top: 3.2em; margin-bottom: 0.45em;
+    color: var(--crimson-deep);
+    letter-spacing: -0.005em;
+    border-bottom: 2px solid var(--crimson);
+    padding-bottom: 0.3em;
+  }
+
+  h2::before {
+    content: attr(data-step);
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.32em;
+    color: var(--crimson);
+    margin-bottom: 0.7em;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.32rem;
+    font-style: italic;
+    margin-top: 2.2em; margin-bottom: 0.3em;
+    color: var(--crimson-deep);
+  }
+
+  p { margin: 0.85em 0; text-align: justify; hyphens: auto; }
+
+  .plot {
+    background: #FFFFFF;
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--crimson);
+    margin: 32px 0 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(158,27,50,0.06), 0 14px 38px -16px rgba(158,27,50,0.20);
+  }
+
+  .plot-caption {
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    font-size: 0.97rem;
+    color: var(--ink-faded);
+    text-align: center;
+    margin: 8px 0 32px;
+    padding: 0 24px;
+    line-height: 1.5;
+  }
+
+  .plot-caption strong {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--crimson);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    margin-right: 0.85em;
+  }
+
+  .formula-box {
+    background: var(--crimson-mist);
+    border-left: 4px solid var(--crimson);
+    border-right: 1px solid var(--crimson-pale);
+    padding: 22px 32px;
+    margin: 28px 0;
+    font-size: 1.04rem;
+  }
+
+  .note {
+    background: rgba(184,134,11,0.07);
+    border-left: 3px solid var(--gold);
+    padding: 18px 24px;
+    margin: 26px 0;
+    font-size: 0.97rem;
+  }
+
+  .note::before {
+    content: "Remark.";
+    font-style: italic;
+    font-weight: 700;
+    color: var(--gold);
+    margin-right: 0.5em;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Picker — collegiate pill buttons */
+  .picker {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    background: #FFFFFF;
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--crimson);
+    padding: 18px 22px;
+    margin: 28px 0 0;
+    align-items: center;
+  }
+
+  .picker-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-right: 10px;
+    font-weight: 700;
+  }
+
+  .picker button {
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    background: #FFFFFF;
+    border: 1.5px solid var(--crimson);
+    color: var(--crimson-deep);
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+
+  .picker button:hover {
+    background: var(--crimson-mist);
+    color: var(--crimson-deep);
+  }
+
+  .picker button.active {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: #FFFFFF;
+    font-weight: 700;
+    box-shadow: 0 2px 6px -2px rgba(158,27,50,0.5);
+  }
+
+  /* The "ornament" between sections — letter A in Alabama style */
+  .ornament {
+    text-align: center;
+    margin: 64px 0 28px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--crimson);
+    letter-spacing: 1em;
+    padding-left: 1em;
+    font-weight: 700;
+  }
+
+  .ornament::before { content: "✧  "; }
+  .ornament::after  { content: "  ✧"; }
+
+  /* Houndstooth bottom band */
+  .houndstooth-band {
+    height: 14px;
+    background-image:
+      linear-gradient(135deg, var(--houndstooth) 25%, transparent 25%),
+      linear-gradient(225deg, var(--houndstooth) 25%, transparent 25%),
+      linear-gradient(315deg, var(--houndstooth) 25%, transparent 25%),
+      linear-gradient(45deg,  var(--houndstooth) 25%, transparent 25%);
+    background-size: 10px 10px;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+    background-color: var(--bg);
+    margin: 60px 0 0;
+    border-top: 2px solid var(--crimson);
+  }
+
+  mjx-container { color: var(--ink); }
+  mjx-container[display="true"] { margin: 1.2em 0 !important; }
+
+  @media (max-width: 600px) {
+    article { padding: 40px 18px 80px; }
+    html, body { font-size: 17px; }
+    .formula-box { padding: 16px 20px; }
+  }
+</style>
+</head>
+<body>
+<article>
+
+<header>
+  <div class="eyebrow">Tuscaloosa Mathematics · Whitney Extension · ℝ²</div>
+  <h1>The <em>Whitney Extension</em><br>on the Exterior of $[-1,1]^2$</h1>
+  <p class="subtitle">Take a function $f$ defined on the closed square $F = [-1,1]^2$ and extend it to a function on all of $\mathbb{R}^2$. In two dimensions the choice of nearest point $p_k$ becomes geometrically rich, and the extension is genuinely non‑trivial.</p>
+  <div class="rolltide">⟡ Roll Tide ⟡</div>
+</header>
+
+<section class="lead">
+<p>Given a closed set $F \subset \mathbb{R}^N$ and a function $f : F \to \mathbb{R}$, the <em>Whitney extension</em> is</p>
+<div class="formula-box">
+$$
+\mathscr{E}_0(f)(x) \;=\; \begin{cases} f(x), & x \in F, \\[6pt] \displaystyle \sum_k f(p_k)\,\varphi_k^{*}(x), & x \in \Omega := \mathbb{R}^N \setminus F, \end{cases}
+$$
+</div>
+<p>where $\{Q_k\}$ is a Whitney decomposition of $\Omega$, $\{\varphi_k^*\}$ is the associated $C^\infty$ partition of unity, and each $p_k \in F$ is a fixed nearest point of $F$ to $Q_k$.</p>
+<p>In one dimension with $F = [-1,1]$, every cube on the right of $F$ has $p_k = +1$ (the unique nearest point), so the extension collapses to the constant $f(+1)$ on $(1, \infty)$. <em>That</em> is why the 1‑D version of this exercise was — as you put it — not interesting at all. In two dimensions, the geometry of $F$ makes $p_k$ vary nontrivially with $k$, and the extension acquires structure.</p>
+</section>
+
+
+<h2 data-step="Step 1">The set $F$ and its distance function</h2>
+<p>Let $F = [-1, 1]^2$, the closed unit square (centered at the origin, side $2$). Its complement $\Omega = \mathbb{R}^2 \setminus F$ is connected. The distance function decomposes piecewise:
+$$
+d(x_1, x_2) \;=\; \sqrt{\bigl(\max(0, |x_1|{-}1)\bigr)^2 + \bigl(\max(0, |x_2|{-}1)\bigr)^2\,}.
+$$
+On the four <em>edge strips</em> (one coordinate outside $[-1,1]$, the other inside), $d$ is a linear ramp orthogonal to the corresponding edge of $F$. On the four <em>corner regions</em> (both coordinates outside), $d$ is the Euclidean distance to the nearest corner of $F$.</p>
+<div class="plot" id="plot-d"></div>
+<p class="plot-caption"><strong>Fig. 1</strong>The distance function $d(x_1, x_2)$ to $F = [-1, 1]^2$. Zero on $F$ (the central plateau), linear ramps along edges, conical bowls at the four corners. The red square outlines $\partial F$.</p>
+
+
+<h2 data-step="Step 2">Exterior Whitney decomposition</h2>
+<p>We tile $\Omega$ by closed dyadic squares $\{Q_k\}$ with disjoint interiors and side lengths comparable to their distance from $F$. Outer rings spread to infinity with side doubling at each level; inner rings accumulate dyadically toward $\partial F$:</p>
+<div class="formula-box">
+$$
+\begin{array}{l}
+\text{Outer rings (annular shells around } F\text{):} \\[4pt]
+\quad \text{Ring 0:}\;\;\text{cubes of side } 1/4 \text{ in } [-3/2,3/2]^2 \setminus [-5/4,5/4]^2 \\[2pt]
+\quad \text{Ring 1:}\;\;\text{cubes of side } 1/2 \text{ in } [-2,2]^2 \setminus [-3/2,3/2]^2 \\[2pt]
+\quad \text{Ring 2:}\;\;\text{cubes of side } 1 \text{ in } [-3,3]^2 \setminus [-2,2]^2 \\[2pt]
+\quad \text{Ring 3:}\;\;\text{cubes of side } 2 \text{ in } [-5,5]^2 \setminus [-3,3]^2 \\[2pt]
+\quad \quad \;\;\;\vdots \\[8pt]
+\text{Inner rings (toward }\partial F\text{):} \\[4pt]
+\quad \text{cubes of side } 1/8,\, 1/16,\, 1/32,\, \ldots
+\end{array}
+$$
+</div>
+<p>Each ring at level $\lvert k \rvert$ has side $\ell_k$ comparable to the distance of its cubes from $F$: by construction, $\ell_k \le \operatorname{dist}(Q, F) \le 2\ell_k$ for every $Q$ in ring $k$, well within the Whitney bound $\le 4\,\ell_k$.</p>
+<div class="plot" id="plot-whitney"></div>
+<p class="plot-caption"><strong>Fig. 2</strong>The exterior Whitney decomposition. Color encodes ring level — crimson family for outer rings (going outward), ink/gold for inner rings (accumulating toward $\partial F$). <em>Drag to pan, scroll to zoom, or use the controls in the upper right.</em> Zoom into any corner of $F$ to watch the dyadic refinement persist down to side $1/128$.</p>
+
+
+<h2 data-step="Step 3">The nearest‑point map $p_k$</h2>
+<p>For each $Q_k$ we choose $p_k \in F$ minimizing $\operatorname{dist}(Q_k, p_k)$. Because $F = [-1,1]^2$ is convex, the closest point of $F$ to any external point $(x_1, x_2)$ is the projection
+$$\operatorname{proj}_F(x_1, x_2) \;=\; \bigl(\,\operatorname{clip}(x_1; -1, 1),\; \operatorname{clip}(x_2; -1, 1)\,\bigr).$$
+We take $p_k = \operatorname{proj}_F(x^k)$ where $x^k$ is the center of $Q_k$. The map $\operatorname{proj}_F$ partitions $\Omega$ into eight regions:</p>
+<div class="formula-box">
+$$
+\begin{array}{ll}
+\textbf{Four edge strips:} & p_k \text{ slides along an edge of } \partial F. \\[2pt]
+\textbf{Four corner cones:} & p_k \text{ is fixed at a corner of } F.
+\end{array}
+$$
+</div>
+<p>This is the geometrically rich behavior absent from 1‑D. In the corner cones, $\mathscr{E}_0(f)$ will be nearly constant equal to the corner value of $f$. In the edge strips, $\mathscr{E}_0(f)$ will vary in the direction parallel to the edge — tracking the boundary values of $f$ along that edge — and be roughly constant transverse to it.</p>
+<div class="plot" id="plot-anchor"></div>
+<p class="plot-caption"><strong>Fig. 3</strong>The nearest‑point map $\operatorname{proj}_F$, visualized by region. Each color marks the part of $\partial F$ where $p_k$ lies for that region. Four edge strips (mapping to four edges) and four corner cones (mapping to four corners). Black arrows on a coarse grid show the direction from $x$ to $\operatorname{proj}_F(x)$.</p>
+
+
+<h2 data-step="Step 4">The mollifier</h2>
+<p>The construction begins with a single $C^\infty$ bump that we then translate and dilate to fit each Whitney cube. Start from the smooth ramp
+$$
+g(t) \;=\; \left\{ \begin{array}{ll}
+0, & t \le 0, \\[6pt]
+\displaystyle\frac{e^{-1/t}}{e^{-1/t} + e^{-1/(1-t)}}, & 0 < t < 1, \\[10pt]
+1, & t \ge 1.
+\end{array} \right.
+$$
+This $g$ belongs to $C^\infty(\mathbb{R})$. The numerator $e^{-1/t}$ and its derivatives all vanish as $t \to 0^+$, and similarly $e^{-1/(1-t)}$ vanishes to all orders as $t \to 1^-$, so every derivative of $g$ matches the constant value ($0$ on the left, $1$ on the right) where the pieces meet — no kinks, no jumps. From $g$, build the one-dimensional bump
+$$
+\psi(s) \;=\; g\!\left( \frac{3/4 - |s|}{1/4} \right) \;=\; g\bigl(3 - 4|s|\bigr).
+$$
+The argument exceeds $1$ when $|s| \le 1/2$, so $\psi \equiv 1$ on $[-1/2, 1/2]$. The argument is non-positive when $|s| \ge 3/4$, so $\psi \equiv 0$ outside $[-3/4, 3/4]$. In between, $\psi$ slides smoothly from $1$ down to $0$. Since $g$ is $C^\infty$ and the inner expression $3 - 4|s|$ is locally constant near its only singular point $s = 0$ (where the argument equals $3 > 1$, on the plateau of $g$), $\psi$ is $C^\infty$ on all of $\mathbb{R}$.</p>
+
+<p>Now tensor it for two variables:
+$$
+\varphi(s_1, s_2) \;=\; \psi(s_1)\,\psi(s_2).
+$$
+By construction $\varphi \in [0, 1]$, $\varphi \equiv 1$ on the unit cube $Q_0 = [-1/2,\,1/2]^2$, and $\varphi \equiv 0$ outside the inflated cube $Q_0^{*} = [-3/4,\,3/4]^2 = (1 + \varepsilon)\,Q_0$, with $\varepsilon = 1/2$.</p>
+
+<div class="plot" id="plot-mollifier"></div>
+<p class="plot-caption"><strong>Fig. 4</strong>The base mollifier $\varphi(s_1, s_2) = \psi(s_1)\,\psi(s_2)$. Drag to rotate. Square plateau over $Q_0 = [-1/2,\,1/2]^2$ where $\varphi \equiv 1$; smooth descent through the collar $Q_0^{*}\setminus Q_0$; identically $0$ beyond $|s_1| > 3/4$ or $|s_2| > 3/4$. Smoothness is inherited from the ramp $g$ via the chain and product rules.</p>
+
+<p>For each Whitney cube $Q_k$ with center $x^k = (x_1^k, x_2^k)$ and side $\ell_k$, translate and rescale:
+$$
+\varphi_k(x) \;=\; \varphi\!\left(\frac{x - x^k}{\ell_k}\right) \;=\; \psi\!\left(\frac{x_1 - x_1^k}{\ell_k}\right)\,\psi\!\left(\frac{x_2 - x_2^k}{\ell_k}\right).
+$$
+Then $\varphi_k \equiv 1$ on $Q_k$, $\varphi_k \equiv 0$ outside the enlarged cube $Q_k^{*} = (1 + \varepsilon)\,Q_k$, and the chain rule gives the scale-aware derivative bound
+$$
+\bigl|\partial^\alpha \varphi_k(x)\bigr| \;\le\; A_\alpha\,\ell_k^{-|\alpha|},
+$$
+with $A_\alpha$ depending only on the multi-index $\alpha$ — not on $k$ or $F$. So derivatives blow up exactly as fast as the cube shrinks, but no faster.</p>
+
+
+<h2 data-step="Step 5">Partition of unity</h2>
+<p>Sum and normalize:
+$$
+\Phi(x) \;=\; \sum_k \varphi_k(x), \qquad \varphi_k^{*}(x) \;=\; \frac{\varphi_k(x)}{\Phi(x)}, \qquad x \in \Omega.
+$$
+Every $x \in \Omega$ lies in some Whitney cube $Q_k$, where $\varphi_k(x) = 1$, so $\Phi(x) \ge 1$ — the division is harmless. At any single point at most $4$ enlargements $Q_k^{*}$ overlap (one cube plus up to three neighbors meeting at a vertex), so the sum is locally finite and $\Phi(x) \le 4$. Tautologically,
+$$
+\sum_k \varphi_k^{*}(x) \;\equiv\; 1, \qquad x \in \Omega,
+$$
+and each $\varphi_k^{*}$ inherits $C^\infty$ smoothness from $\varphi_k$ and $\Phi$. This gives a $C^\infty$ partition of unity subordinate to the open cover $\{Q_k^{*}\}$. The general $d$-dimensional bound is $1 \le \Phi \le 2^d$.</p>
+
+
+<h2 data-step="Step 6">The extension formula at work</h2>
+<p>With everything in place, the extension is
+$$\mathscr{E}_0(f)(x) \;=\; \sum_k f\bigl(p_k\bigr)\,\varphi_k^{*}(x), \qquad x \in \Omega.$$
+At each $x \in \Omega$, this is a smooth convex combination of values $f(p_k)$ where the $p_k$ are nearby points on $\partial F$. Geometrically:</p>
+<div class="formula-box">
+$$
+\mathscr{E}_0(f)(x) \;\approx\; f\bigl(\operatorname{proj}_F(x)\bigr).
+$$
+</div>
+<p>It is approximately a "smeared‑out" version of $f \circ \operatorname{proj}_F$ — the extension whose value at $x$ is the boundary value of $f$ at the closest boundary point. The partition of unity smooths the would‑be discontinuities along the rays where $\operatorname{proj}_F$ has kinks (the four diagonal rays from corners of $F$).</p>
+
+
+<h2 data-step="Step 7">Examples</h2>
+<p>Pick a function $f$ defined on $F = [-1, 1]^2$. The plot shows $\mathscr{E}_0(f)$ as a heatmap on the larger square $[-3, 3]^2$, with $\partial F$ outlined. Inside $F$ the heatmap shows $f$ itself; outside, $\mathscr{E}_0(f)$.</p>
+
+<div class="picker" id="picker">
+  <span class="picker-label">f(x₁, x₂) =</span>
+</div>
+<div class="plot" id="plot-extension"></div>
+<p class="plot-caption" id="plot-extension-caption"><strong>Fig. 5</strong>The extension $\mathscr{E}_0(f)$ as a heatmap. Inside the red‑outlined square: $f$ itself. Outside: the smooth extension. The four diagonal "creases" running from the corners of $F$ are the seams where $\operatorname{proj}_F$ changes which edge it lands on; the partition of unity smooths these into gentle ridges.</p>
+
+<div class="plot" id="plot-extension-3d"></div>
+<p class="plot-caption"><strong>Fig. 6</strong>The same extension as a 3‑D surface. Drag to rotate. Behavior is most visible from above the corners: the surface plateaus over corner cones (where $f \equiv f(\text{corner})$) and ramps along edge strips (where $f$ varies linearly with the edge coordinate).</p>
+
+
+<div class="ornament">ROLL TIDE</div>
+
+</article>
+
+<div class="houndstooth-band"></div>
+
+<script>
+/* ======================================================================
+   Mathematical core
+   ====================================================================== */
+function fexp(t) { return t > 0 ? Math.exp(-1.0 / t) : 0.0; }
+function ramp(t) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const a = fexp(t), b = fexp(1 - t);
+  return a / (a + b);
+}
+function psi(s) { return ramp((0.75 - Math.abs(s)) / 0.25); }
+function phiK(x, y, c) {
+  return psi((x - c.cx) / c.size) * psi((y - c.cy) / c.size);
+}
+function clip(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function projF(x, y) { return [clip(x, -1, 1), clip(y, -1, 1)]; }
+function dExt(x, y) {
+  const dx = Math.max(0, Math.abs(x) - 1);
+  const dy = Math.max(0, Math.abs(y) - 1);
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+// Exterior Whitney decomposition for F = [-1,1]^2.
+// Bridge rings 0–1 sit just outside F at sides 0.25 and 0.5; rings 2+ are
+// strict dyadic rings — annulus [2^(k-1), 2^k]² tiled by side-2^(k-2) cubes
+// (two rows thick), so 2*outer/sz and 2*inner/sz are always integers and the
+// tiling has no gaps no matter how far out we go.
+function gen2D(outerLevels, innerLevels) {
+  const cubes = [];
+
+  function addRing(innerEdge, outerEdge, sz, level, kind) {
+    const nRows  = Math.round((outerEdge - innerEdge) / sz);
+    const nOuter = Math.round(2 * outerEdge / sz);
+    const nInner = Math.round(2 * innerEdge / sz);
+    // Top + bottom strips (across full outer width)
+    for (let row = 0; row < nRows; row++) {
+      const cyTop = innerEdge + sz/2 + row * sz;
+      const cyBot = -innerEdge - sz/2 - row * sz;
+      for (let i = 0; i < nOuter; i++) {
+        const cx = -outerEdge + sz/2 + i * sz;
+        cubes.push({ cx, cy: cyTop, size: sz, level, kind });
+        cubes.push({ cx, cy: cyBot, size: sz, level, kind });
+      }
+    }
+    // Left + right strips (between top and bottom)
+    for (let col = 0; col < nRows; col++) {
+      const cxLeft  = -innerEdge - sz/2 - col * sz;
+      const cxRight =  innerEdge + sz/2 + col * sz;
+      for (let j = 0; j < nInner; j++) {
+        const cy = -innerEdge + sz/2 + j * sz;
+        cubes.push({ cx: cxLeft,  cy, size: sz, level, kind });
+        cubes.push({ cx: cxRight, cy, size: sz, level, kind });
+      }
+    }
+  }
+
+  // Outer rings 0–1: bridge rings between F's collar and the dyadic family.
+  if (outerLevels > 0) addRing(1.25, 1.50, 0.25, 0, 'outer');
+  if (outerLevels > 1) addRing(1.50, 2.00, 0.50, 1, 'outer');
+  // Outer rings 2+: dyadic. Ring k tiles annulus [2^(k-1), 2^k]² \ inner with
+  // cubes of side 2^(k-2). Two rows thick.
+  for (let lvl = 2; lvl < outerLevels; lvl++) {
+    const inner = Math.pow(2, lvl - 1);
+    const outer = Math.pow(2, lvl);
+    const sz    = Math.pow(2, lvl - 2);
+    addRing(inner, outer, sz, lvl, 'outer');
+  }
+
+  // Inner rings: accumulate dyadically toward ∂F (each ring one row thick).
+  let outerE = 1.25, isz = 0.125;
+  for (let lvl = 0; lvl < innerLevels; lvl++) {
+    const innerE = outerE - isz;
+    addRing(innerE, outerE, isz, lvl, 'inner');
+    outerE = innerE;
+    isz /= 2;
+  }
+
+  return cubes;
+}
+
+// 4 outer rings + 2 inner rings: 108 outer + 216 inner = 324 cubes
+const cubes = gen2D(4, 2);
+
+function PhiSum(x, y) {
+  let s = 0;
+  for (let i = 0; i < cubes.length; i++) s += phiK(x, y, cubes[i]);
+  return s;
+}
+
+function E0(f, x, y) {
+  // Inside F: identity
+  if (Math.abs(x) <= 1 && Math.abs(y) <= 1) return f(x, y);
+  let num = 0, den = 0;
+  for (let i = 0; i < cubes.length; i++) {
+    const c = cubes[i];
+    const v = phiK(x, y, c);
+    if (v === 0) continue;
+    const px = clip(c.cx, -1, 1), py = clip(c.cy, -1, 1);
+    num += f(px, py) * v;
+    den += v;
+  }
+  return den > 0 ? num / den : f(...projF(x, y));
+}
+
+function makeGrid(a, b, n) {
+  const arr = new Array(n);
+  for (let i = 0; i < n; i++) arr[i] = a + (b - a) * i / (n - 1);
+  return arr;
+}
+function evalGrid(f, xs, ys) {
+  const Z = new Array(ys.length);
+  for (let j = 0; j < ys.length; j++) {
+    const row = new Array(xs.length);
+    for (let i = 0; i < xs.length; i++) row[i] = f(xs[i], ys[j]);
+    Z[j] = row;
+  }
+  return Z;
+}
+
+/* ======================================================================
+   Plot styling — Alabama Crimson palette
+   ====================================================================== */
+const C = {
+  bg:           '#FDFBF7',   // ivory plot background
+  paper:        '#FAF7F2',
+  ink:          '#1B1B1B',
+  inkSoft:      '#3A3A3A',
+  inkFaded:     '#6B6B6B',
+  rule:         '#D4C9B5',
+  grid:         '#E2D9C9',
+  crimson:      '#9E1B32',
+  crimsonDeep:  '#7A1226',
+  crimsonBright:'#C41E3A',
+  crimsonPale:  '#E8C5CB',
+  gold:         '#B8860B',
+  goldLight:    '#D4A845',
+  houndstooth:  '#1B1B1B',
+  white:        '#FFFFFF'
+};
+
+// Crimson colorscales — sequential and divergent versions
+const crimsonScale = [
+  [0.00, '#FDFBF7'],
+  [0.20, '#F2D7DC'],
+  [0.45, '#D8929E'],
+  [0.70, '#9E1B32'],
+  [0.90, '#7A1226'],
+  [1.00, '#1B1B1B']
+];
+
+// Sequential gold → crimson → black for d, |grad|, etc.
+const tideScale = [
+  [0.00, '#FDFBF7'],
+  [0.25, '#F2D2A0'],
+  [0.50, '#D4A845'],
+  [0.75, '#9E1B32'],
+  [1.00, '#1B1B1B']
+];
+
+// Diverging black ↔ ivory ↔ crimson
+const divergeScale = [
+  [0.00, '#1B1B1B'],
+  [0.25, '#6B6B6B'],
+  [0.50, '#FDFBF7'],
+  [0.75, '#C41E3A'],
+  [1.00, '#7A1226']
+];
+
+// Step 6 extension scales — MATLAB-style 'cool' palette: light cyan → blue → magenta.
+// Sequential (for non-negative f).
+const extensionSeqScale = [
+  [0.00, '#CCFFFF'],   // pale cyan
+  [0.20, '#80E0FF'],   // light blue
+  [0.40, '#7FAFFF'],   // periwinkle
+  [0.60, '#A080FF'],   // soft purple
+  [0.80, '#D060E0'],   // light magenta
+  [1.00, '#FF40CC']    // magenta
+];
+
+// Divergent (for sign-changing f): cyan ↔ white ↔ magenta. Symmetric around zero.
+const extensionDivScale = [
+  [0.00, '#00CFFF'],   // saturated cyan (negative extreme)
+  [0.20, '#80E5FF'],
+  [0.40, '#D0F5FF'],
+  [0.50, '#FFFFFF'],   // white midpoint = zero
+  [0.60, '#FFD0F5'],
+  [0.80, '#FF80E0'],
+  [1.00, '#FF40CC']    // magenta (positive extreme)
+];
+
+const PCFG = { displayModeBar: false, responsive: true };
+
+const baseAxis = () => ({
+  gridcolor: C.grid, linecolor: C.crimsonDeep, tickcolor: C.crimsonDeep,
+  zerolinecolor: C.rule,
+  titlefont: { family: "'Playfair Display', serif", size: 14, color: C.crimsonDeep },
+  tickfont: { family: "'JetBrains Mono', monospace", size: 11, color: C.inkSoft }
+});
+const makeLayout = (extra) => Object.assign({
+  paper_bgcolor: C.bg, plot_bgcolor: C.bg,
+  font: { family: "'Crimson Text', Georgia, serif", size: 14, color: C.ink },
+  margin: { l: 60, r: 28, t: 24, b: 50 },
+  xaxis: baseAxis(), yaxis: baseAxis()
+}, extra || {});
+const makeScene = (extra) => {
+  const sceneAxis = {
+    gridcolor: C.grid, linecolor: C.crimsonDeep, zerolinecolor: C.rule,
+    backgroundcolor: C.bg, showbackground: true,
+    titlefont: { family: "'Playfair Display', serif", size: 13, color: C.crimsonDeep },
+    tickfont: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft }
+  };
+  return Object.assign({
+    xaxis: Object.assign({ title: 'x₁' }, sceneAxis),
+    yaxis: Object.assign({ title: 'x₂' }, sceneAxis),
+    zaxis: Object.assign({}, sceneAxis),
+    camera: { eye: { x: 1.55, y: -1.55, z: 1.05 }, up: { x: 0, y: 0, z: 1 } },
+    aspectratio: { x: 1, y: 1, z: 0.55 }
+  }, extra || {});
+};
+
+// Outline rectangle for F = [-1,1]^2 as a Plotly shape
+const F_OUTLINE = {
+  type: 'rect', x0: -1, x1: 1, y0: -1, y1: 1,
+  line: { color: C.crimsonDeep, width: 2.5 },
+  fillcolor: 'rgba(0,0,0,0)'
+};
+
+/* ======================================================================
+   Fig 1: distance function d(x1, x2)
+   ====================================================================== */
+{
+  const N = 80;
+  const xs = makeGrid(-3, 3, N), ys = makeGrid(-3, 3, N);
+  const Z = evalGrid(dExt, xs, ys);
+  Plotly.newPlot('plot-d', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: tideScale, cmin: 0,
+    showscale: true,
+    colorbar: { thickness: 12, len: 0.65, tickfont: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft } },
+    hovertemplate: 'd(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 460,
+    scene: makeScene({
+      xaxis: Object.assign({ title: 'x₁', range: [-3, 3] }, baseAxis()),
+      yaxis: Object.assign({ title: 'x₂', range: [-3, 3] }, baseAxis()),
+      zaxis: Object.assign({ title: 'd', range: [0, 3] }, baseAxis())
+    })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 4 (new): the base mollifier φ
+   ====================================================================== */
+{
+  const N = 80;
+  const xs = makeGrid(-1, 1, N), ys = makeGrid(-1, 1, N);
+  const Z = evalGrid((s1, s2) => psi(s1) * psi(s2), xs, ys);
+  Plotly.newPlot('plot-mollifier', [{
+    type: 'surface', x: xs, y: ys, z: Z,
+    colorscale: tideScale, cmin: 0, cmax: 1,
+    showscale: true,
+    colorbar: { thickness: 12, len: 0.65, tickfont: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft } },
+    contours: { z: { show: true, usecolormap: true, project: { z: true } } },
+    hovertemplate: 'φ(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 460,
+    scene: makeScene({
+      xaxis: Object.assign({ title: 's₁', range: [-1, 1] }, baseAxis()),
+      yaxis: Object.assign({ title: 's₂', range: [-1, 1] }, baseAxis()),
+      zaxis: Object.assign({ title: 'φ', range: [0, 1.08] }, baseAxis())
+    })
+  }), PCFG);
+}
+
+/* ======================================================================
+   Fig 2: Whitney decomposition (top-down) — interactive zoom/pan
+   ====================================================================== */
+{
+  // Visualization-only decomposition: deeper than the extension's `cubes`
+  // so that zooming in near the boundary keeps revealing finer dyadic detail.
+  // 7 outer rings + 5 inner rings ≈ 2200 cubes total.
+  const cubesViz = gen2D(7, 5);
+
+  // 12-color qualitative palette — every adjacent pair has strong hue contrast
+  // so neighboring rings remain distinguishable at any zoom level. Alabama
+  // crimson leads (outer ring 0, closest to F); the rest rotate around the
+  // color wheel for maximum distinctness.
+  const outerColors = [
+    '#C41E3A',  // crimson         — outer 0 (touching F's collar)
+    '#4E79A7',  // steel blue      — outer 1
+    '#F28E2B',  // orange          — outer 2
+    '#59A14F',  // green           — outer 3
+    '#B07AA1',  // mauve           — outer 4
+    '#EDC948',  // mustard         — outer 5
+    '#1B1B1B'   // black           — outer 6 (farthest out)
+  ];
+  const innerColors = [
+    '#76B7B2',  // teal            — inner 0 (closest to ∂F)
+    '#E15759',  // coral           — inner 1
+    '#9C755F',  // warm brown      — inner 2
+    '#FF9DA7',  // pink            — inner 3
+    '#303F9F'   // deep blue       — inner 4 (smallest cubes)
+  ];
+
+  const ringColor = (c) => (c.kind === 'inner' ? innerColors[c.level] : outerColors[c.level]);
+
+  // Build cube rectangles as layout shapes — much faster than thousands of
+  // individual scatter traces for static rendering, and zooms snappily.
+  const cubeShapes = [];
+  for (const c of cubesViz) {
+    const col = ringColor(c);
+    cubeShapes.push({
+      type: 'rect',
+      x0: c.cx - c.size/2, x1: c.cx + c.size/2,
+      y0: c.cy - c.size/2, y1: c.cy + c.size/2,
+      line: { color: col, width: 0.7 },
+      fillcolor: col + '40'  // ~25% alpha — stronger color identity
+    });
+  }
+  // F itself
+  cubeShapes.push({
+    type: 'rect',
+    x0: -1, x1: 1, y0: -1, y1: 1,
+    line: { color: C.crimsonDeep, width: 2.5 },
+    fillcolor: 'rgba(158,27,50,0.16)'
+  });
+
+  // Scatter dummies for the legend — every represented ring + F itself
+  const traces = [];
+  outerColors.forEach((col, lvl) => {
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: [null], y: [null],
+      line: { color: col, width: 6 },
+      name: 'Outer ring ' + lvl,
+      showlegend: true
+    });
+  });
+  innerColors.forEach((col, lvl) => {
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: [null], y: [null],
+      line: { color: col, width: 6 },
+      name: 'Inner ring ' + lvl,
+      showlegend: true
+    });
+  });
+  traces.push({
+    type: 'scatter', mode: 'lines',
+    x: [null], y: [null],
+    line: { color: C.crimsonDeep, width: 4 },
+    name: 'F = [−1, 1]²',
+    showlegend: true
+  });
+
+  Plotly.newPlot('plot-whitney', traces, makeLayout({
+    height: 620,
+    xaxis: Object.assign(baseAxis(), {
+      title: 'x₁', range: [-5.5, 5.5], dtick: 1,
+      scaleanchor: 'y', scaleratio: 1
+    }),
+    yaxis: Object.assign(baseAxis(), {
+      title: 'x₂', range: [-5.5, 5.5], dtick: 1
+    }),
+    shapes: cubeShapes,
+    legend: {
+      font: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft },
+      bgcolor: 'rgba(255,255,255,0.92)', bordercolor: C.rule, borderwidth: 1,
+      x: 1.02, xanchor: 'left', y: 0.98
+    },
+    annotations: [
+      { x: 0, y: 0, text: 'F', showarrow: false,
+        font: { family: "'Playfair Display', serif", size: 28, color: C.crimsonDeep } }
+    ]
+  }), {
+    responsive: true,
+    scrollZoom: true,
+    displayModeBar: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['select2d', 'lasso2d', 'toggleSpikelines']
+  });
+}
+
+/* ======================================================================
+   Fig 3: Anchor map  proj_F  with arrows
+   ====================================================================== */
+{
+  // Color regions by which part of ∂F p_k lies on:
+  //   regions: top edge, right edge, bottom edge, left edge, NE corner, SE corner, SW corner, NW corner
+  const N = 80;
+  const xs = makeGrid(-3, 3, N), ys = makeGrid(-3, 3, N);
+  const Z = new Array(N);
+  for (let j = 0; j < N; j++) {
+    const row = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const x = xs[i], y = ys[j];
+      const inX = x > -1 && x < 1, inY = y > -1 && y < 1;
+      let region;
+      if (inX && inY) region = 0;
+      else if (inX && y >  1) region = 1;  // top edge
+      else if (inX && y < -1) region = 2;  // bottom edge
+      else if (inY && x >  1) region = 3;  // right edge
+      else if (inY && x < -1) region = 4;  // left edge
+      else if (x >  1 && y >  1) region = 5;  // NE corner
+      else if (x < -1 && y >  1) region = 6;  // NW corner
+      else if (x >  1 && y < -1) region = 7;  // SE corner
+      else                       region = 8;  // SW corner
+      row[i] = region;
+    }
+    Z[j] = row;
+  }
+  // Custom colorscale: 9 distinct colors
+  // F itself is ivory; 4 edges in crimson family; 4 corners in gold/black family
+  const regionColors = ['#FDFBF7',                              // F interior
+                        '#9E1B32', '#7A1226', '#C41E3A', '#A93B4D',  // edges: top, bottom, right, left
+                        '#1B1B1B', '#3A3A3A', '#B8860B', '#8B6508']; // corners: NE, NW, SE, SW
+  // Plotly heatmap doesn't do discrete categorical natively, so we use a step colorscale
+  const cs = [];
+  for (let k = 0; k < 9; k++) {
+    cs.push([k/9,        regionColors[k]]);
+    cs.push([(k+1)/9,    regionColors[k]]);
+  }
+
+  const traces = [{
+    type: 'heatmap', x: xs, y: ys, z: Z,
+    colorscale: cs, zmin: 0, zmax: 9,
+    showscale: false,
+    hoverinfo: 'skip'
+  }];
+
+  // F outline
+  traces.push({
+    type: 'scatter', mode: 'lines',
+    x: [-1, 1, 1, -1, -1], y: [-1, -1, 1, 1, -1],
+    line: { color: '#1B1B1B', width: 2 },
+    showlegend: false, hoverinfo: 'skip'
+  });
+
+  // Arrows on a coarse grid
+  const arrowGrid = [];
+  const step = 0.6;
+  for (let x = -2.7; x <= 2.7; x += step) {
+    for (let y = -2.7; y <= 2.7; y += step) {
+      if (Math.abs(x) <= 1.05 && Math.abs(y) <= 1.05) continue;
+      const [px, py] = projF(x, y);
+      arrowGrid.push({ x, y, px, py });
+    }
+  }
+  for (const a of arrowGrid) {
+    const dx = a.px - a.x, dy = a.py - a.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.15) continue;
+    // arrow shaft
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: [a.x, a.px], y: [a.y, a.py],
+      line: { color: '#1B1B1B', width: 1.2 },
+      showlegend: false, hoverinfo: 'skip'
+    });
+    // arrowhead
+    traces.push({
+      type: 'scatter', mode: 'markers',
+      x: [a.px], y: [a.py],
+      marker: { color: '#1B1B1B', size: 4, symbol: 'circle' },
+      showlegend: false, hoverinfo: 'skip'
+    });
+  }
+
+  Plotly.newPlot('plot-anchor', traces, makeLayout({
+    height: 480,
+    xaxis: Object.assign(baseAxis(), { title: 'x₁', range: [-3, 3], dtick: 1, scaleanchor: 'y', scaleratio: 1 }),
+    yaxis: Object.assign(baseAxis(), { title: 'x₂', range: [-3, 3], dtick: 1 }),
+    annotations: [
+      { x: 0,    y:  2.0, text: 'top edge',    showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 13, color: '#FDFBF7' } },
+      { x: 0,    y: -2.0, text: 'bottom edge', showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 13, color: '#FDFBF7' } },
+      { x:  2.0, y: 0,    text: 'right edge',  showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 13, color: '#FDFBF7' } },
+      { x: -2.0, y: 0,    text: 'left edge',   showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 13, color: '#FDFBF7' } },
+      { x:  2.0, y:  2.0, text: 'NE corner', showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 12, color: '#FDFBF7' } },
+      { x: -2.0, y:  2.0, text: 'NW corner', showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 12, color: '#FDFBF7' } },
+      { x:  2.0, y: -2.0, text: 'SE corner', showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 12, color: '#1B1B1B' } },
+      { x: -2.0, y: -2.0, text: 'SW corner', showarrow: false, font: { family: "'Crimson Text', serif", style: 'italic', size: 12, color: '#1B1B1B' } },
+      { x: 0, y: 0, text: 'F', showarrow: false,
+        font: { family: "'Playfair Display', serif", size: 24, color: C.crimsonDeep } }
+    ]
+  }), PCFG);
+}
+
+/* ======================================================================
+   Function library and Figs 4–5: extension
+   ====================================================================== */
+const fLibrary = [
+  { id: 'x',      label: 'x₁',                f: (x,y) => x },
+  { id: 'xy',     label: 'x₁ · x₂',           f: (x,y) => x*y },
+  { id: 'sq',     label: 'x₁² + x₂²',         f: (x,y) => x*x + y*y },
+  { id: 'gauss',  label: 'exp(−2(x₁²+x₂²))',  f: (x,y) => Math.exp(-2*(x*x+y*y)) },
+  { id: 'sin',    label: 'sin(πx₁)·cos(πx₂)', f: (x,y) => Math.sin(Math.PI*x)*Math.cos(Math.PI*y) },
+  { id: 'corner', label: 'max(|x₁|, |x₂|)',   f: (x,y) => Math.max(Math.abs(x), Math.abs(y)) },
+  { id: 'sgn',    label: 'sgn(x₁ · x₂)',      f: (x,y) => { const p = x*y; return p > 0 ? 1 : (p < 0 ? -1 : 0); } },
+  { id: 'angle',  label: 'atan2(x₂, x₁) / π', f: (x,y) => Math.atan2(y, x) / Math.PI }
+];
+let currentFn = fLibrary[0];
+
+// Cache last-extension results to avoid recomputing for both figures
+let cachedXs, cachedYs, cachedZ, cachedFnId;
+
+function plotExtension() {
+  const f = currentFn.f;
+  const N = 80;  // heatmap resolution
+  const range_ = 3;
+  const xs = makeGrid(-range_, range_, N);
+  const ys = makeGrid(-range_, range_, N);
+  const Z = evalGrid((x, y) => E0(f, x, y), xs, ys);
+  cachedXs = xs; cachedYs = ys; cachedZ = Z; cachedFnId = currentFn.id;
+
+  // Find symmetric range for diverging palette
+  let zmin = Infinity, zmax = -Infinity;
+  for (const r of Z) for (const v of r) {
+    if (v < zmin) zmin = v;
+    if (v > zmax) zmax = v;
+  }
+  const a = Math.max(Math.abs(zmin), Math.abs(zmax));
+  const useDivergent = zmin < -1e-6 && zmax > 1e-6;
+
+  const colorscale = useDivergent ? extensionDivScale : extensionSeqScale;
+  const cmin = useDivergent ? -a : zmin;
+  const cmax = useDivergent ?  a : zmax;
+
+  // Heatmap traces
+  const traces = [{
+    type: 'heatmap',
+    x: xs, y: ys, z: Z,
+    colorscale, zmin: cmin, zmax: cmax,
+    showscale: true,
+    colorbar: { thickness: 12, len: 0.85, tickfont: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft } },
+    hovertemplate: 'E₀(f)(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }];
+  // F outline overlay
+  traces.push({
+    type: 'scatter', mode: 'lines',
+    x: [-1, 1, 1, -1, -1], y: [-1, -1, 1, 1, -1],
+    line: { color: C.crimsonDeep, width: 2.5 },
+    showlegend: false, hoverinfo: 'skip'
+  });
+  // Diagonal seam markers (rays from corners)
+  const seams = [];
+  for (const [sx, sy] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+    const t = 2.0;
+    seams.push({
+      type: 'scatter', mode: 'lines',
+      x: [sx, sx + t*sx], y: [sy, sy + t*sy],
+      line: { color: 'rgba(27,27,27,0.45)', width: 1, dash: 'dash' },
+      showlegend: false, hoverinfo: 'skip'
+    });
+  }
+  for (const s of seams) traces.push(s);
+
+  Plotly.react('plot-extension', traces, makeLayout({
+    height: 520,
+    xaxis: Object.assign(baseAxis(), { title: 'x₁', range: [-3, 3], dtick: 1, scaleanchor: 'y', scaleratio: 1 }),
+    yaxis: Object.assign(baseAxis(), { title: 'x₂', range: [-3, 3], dtick: 1 })
+  }), PCFG);
+
+  // 3-D surface
+  Plotly.react('plot-extension-3d', [{
+    type: 'surface',
+    x: xs, y: ys, z: Z,
+    colorscale, cmin, cmax,
+    showscale: true,
+    colorbar: { thickness: 12, len: 0.65, tickfont: { family: "'JetBrains Mono', monospace", size: 10, color: C.inkSoft } },
+    contours: { z: { show: true, usecolormap: true, project: { z: true } } },
+    hovertemplate: 'E₀(f)(%{x:.2f}, %{y:.2f}) = %{z:.3f}<extra></extra>'
+  }], makeLayout({
+    height: 520,
+    scene: makeScene({
+      xaxis: Object.assign({ title: 'x₁', range: [-3, 3] }, baseAxis()),
+      yaxis: Object.assign({ title: 'x₂', range: [-3, 3] }, baseAxis()),
+      zaxis: Object.assign({ title: 'E₀(f)', range: [cmin - 0.05*a, cmax + 0.05*a] }, baseAxis())
+    })
+  }), PCFG);
+}
+
+/* Picker UI */
+const picker = document.getElementById('picker');
+fLibrary.forEach((entry, i) => {
+  const btn = document.createElement('button');
+  btn.textContent = entry.label;
+  btn.dataset.id = entry.id;
+  if (i === 0) btn.classList.add('active');
+  btn.addEventListener('click', () => {
+    currentFn = entry;
+    picker.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    plotExtension();
+  });
+  picker.appendChild(btn);
+});
+
+plotExtension();
+</script>
+</body>
+</html>

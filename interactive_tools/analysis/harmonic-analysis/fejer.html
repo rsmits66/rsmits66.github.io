@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fejér Kernel — Cesàro Summability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --crimson:#9E1B32;--crimson2:#7a1426;--crimson-light:#fdf0f2;
+  --cream:#faf7f2;--paper:#fff;
+  --navy:#18284a;--navy2:#2c4070;
+  --gold:#c8a430;--gold2:#a07820;
+  --gray:#7a7a8a;--border:#ddd9d0;
+  --green:#1a6a40;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.66;}
+
+header{background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.45rem 2.5rem;font-size:.82rem;color:#f0c8d0;letter-spacing:.06em;text-transform:uppercase;}
+.hdr-main{padding:1.5rem 2.5rem;}
+header h1{font-family:var(--font-head);font-size:1.95rem;font-weight:700;letter-spacing:.01em;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.3rem;font-size:1rem;}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+
+main{max-width:1180px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;margin-bottom:1.2rem;box-shadow:0 2px 16px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.18rem;font-weight:600;color:var(--crimson);margin-bottom:.6rem;padding-bottom:.35rem;border-bottom:2px solid #f5dde2;}
+.card p{margin-bottom:.55rem;line-height:1.68;}
+
+.def-box{background:var(--crimson-light);border-left:3.5px solid var(--crimson);border-radius:0 6px 6px 0;padding:.55rem .9rem;margin:.55rem 0;font-size:.95rem;line-height:1.65;}
+.def-box strong{color:var(--crimson);}
+.thm-box{background:#f0f4ff;border-left:3.5px solid var(--navy2);border-radius:0 6px 6px 0;padding:.55rem .9rem;margin:.55rem 0;font-size:.95rem;line-height:1.65;}
+.thm-box strong{color:var(--navy2);}
+.math-block{overflow-x:auto;margin:.6rem 0;text-align:center;}
+
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;display:inline-block;margin:.2rem .3rem .2rem 0;}
+.ctrl-group label{display:block;font-size:.86rem;font-weight:600;color:var(--navy2);margin-bottom:.2rem;}
+input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;margin:.1rem 0;}
+select{width:100%;padding:.25rem .45rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.92rem;background:#fff;color:var(--navy);}
+select:focus{outline:none;border-color:var(--crimson);}
+.val-badge{display:inline-block;background:var(--crimson);color:#fff;border-radius:4px;padding:.02rem .45rem;font-size:.86rem;font-weight:700;min-width:32px;text-align:center;margin-left:.25rem;}
+
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.3rem .8rem;font-size:.9rem;transition:all .13s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--crimson);color:#fff;}
+.btn-primary:hover{background:var(--crimson2);}
+.btn-secondary{background:#edf1fb;color:var(--navy2);border:1px solid #b0c4e8;}
+.btn-secondary:hover{background:#c8daff;}
+
+.toggle-btn{font-family:var(--font-body);font-size:.82rem;padding:.25rem .6rem;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:#f8f5f0;color:var(--gray);transition:all .15s;}
+.toggle-btn.active{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+.toggle-btn:hover:not(.active){border-color:var(--crimson);color:var(--crimson);}
+
+canvas{display:block;border-radius:6px;border:1.5px solid var(--border);background:#fff;width:100%;}
+.cv-label{text-align:center;font-size:.83rem;color:var(--gray);margin-top:.3rem;font-style:italic;}
+
+.legend{display:flex;flex-wrap:wrap;gap:.55rem;margin:.5rem 0;font-size:.83rem;justify-content:center;}
+.leg-item{display:flex;align-items:center;gap:.25rem;}
+.leg-swatch{width:24px;height:3px;border-radius:2px;}
+
+.controls-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:flex-end;margin-bottom:.7rem;}
+
+@media(max-width:650px){.hdr-main{padding:1.2rem 1rem;}main{padding:1rem .7rem;}.card{padding:1rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama — Harmonic Analysis · Fejér's Theorem</div>
+  <div class="hdr-main">
+    <h1>The Fejér Kernel &amp; Cesàro Summability</h1>
+    <div class="subtitle">Approximate identities and the convergence of Fourier means</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<main>
+
+<!-- §1 Theory -->
+<div class="card">
+  <h2>§1 — The Fejér Kernel</h2>
+  <p>
+    The <em>n</em>-th <strong>Fejér kernel</strong> is the <em>n</em>-th Cesàro mean of the series
+    <span id="th_series"></span>:
+  </p>
+  <div class="math-block" id="th_Kn"></div>
+  <div class="def-box">
+    <strong>Closed form.</strong>
+    <span id="th_closed"></span>
+  </div>
+  <div class="thm-box">
+    <strong>Fejér's Theorem.</strong> If <em>f</em> is continuous and 2π-periodic, then the Cesàro means
+    <span id="th_sigma"></span> converge uniformly to <em>f</em>.
+    At a jump discontinuity the means converge to the midpoint of the jump.
+  </div>
+</div>
+
+<!-- §2 Kernel plots -->
+<div class="card">
+  <h2>§2 — The Kernel Sequence {K_n(x)}</h2>
+  <p>As <em>n</em> grows, the kernel concentrates around the origin — the hallmark of an approximate identity.</p>
+
+  <div class="controls-row">
+    <div style="font-size:.88rem;font-weight:600;color:var(--navy2);margin-right:.3rem;">Show n =</div>
+    <div id="kernelBtns" style="display:flex;flex-wrap:wrap;gap:.3rem;"></div>
+    <div style="margin-left:.8rem;display:flex;gap:.3rem;">
+      <button class="toggle-btn active" id="scaleAuto" onclick="setScale('auto')">Auto scale</button>
+      <button class="toggle-btn" id="scaleFixed" onclick="setScale('fixed')">Fixed scale</button>
+    </div>
+  </div>
+
+  <canvas id="cvKernel" height="380"></canvas>
+  <div class="legend" id="kernelLegend"></div>
+  <div class="cv-label">K_n(x) on [−π, π] — note the peak K_n(0) = n</div>
+</div>
+
+<!-- §3 Convolution convergence -->
+<div class="card">
+  <h2>§3 — Convergence of Convolutions</h2>
+  <p>
+    The convolution <span id="th_conv_formula"></span> converges to <em>f</em> as <em>n → ∞</em>.
+  </p>
+
+  <div class="controls-row">
+    <div class="ctrl-group" style="min-width:160px;">
+      <label>Target function f(x)</label>
+      <select id="funcSelect" onchange="drawConvolution()">
+        <option value="step">Step function</option>
+        <option value="sawtooth">Sawtooth wave</option>
+        <option value="abs">|x| (triangle)</option>
+        <option value="parabola">x² (shifted)</option>
+        <option value="spike">Narrow pulse</option>
+      </select>
+    </div>
+    <div class="ctrl-group" style="min-width:200px;">
+      <label>n = <span class="val-badge" id="convNVal">1</span></label>
+      <input type="range" id="convN" min="1" max="80" value="1" oninput="onConvSlider()">
+    </div>
+    <div style="display:flex;gap:.4rem;align-items:flex-end;">
+      <button class="btn-primary" id="animBtn" onclick="toggleAnim()">▶ Animate</button>
+      <button class="btn-secondary" onclick="resetConv()">↺ Reset</button>
+    </div>
+  </div>
+
+  <canvas id="cvConv" height="380"></canvas>
+  <div class="legend">
+    <div class="leg-item"><span class="leg-swatch" style="background:var(--gold);"></span> f(x)</div>
+    <div class="leg-item"><span class="leg-swatch" style="background:var(--crimson);"></span> (K_n ∗ f)(x)</div>
+  </div>
+  <div class="cv-label">Dashed gold = target f(x) · Solid crimson = Cesàro mean σ_n(f)</div>
+
+  <div class="thm-box" style="margin-top:.8rem;">
+    <strong>Observe:</strong> For continuous functions the crimson curve locks onto the gold curve as <em>n</em> grows.
+    For the step function, notice the means converge to the midpoint at the jump — no Gibbs phenomenon.
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ══════════════════════════════════════════
+   KaTeX rendering
+══════════════════════════════════════════ */
+function rk(t,disp){
+  t=String(t).replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/g,'');
+  try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}
+}
+function setK(id,t,disp){var el=document.getElementById(id);if(el)el.innerHTML=rk(t,disp);}
+
+function populateTheory(){
+  setK('th_series','\\sum_{k=-\\infty}^{\\infty}e^{ikx}');
+  setK('th_Kn','K_n(x)=\\frac{1}{n}\\left[\\frac{\\sin\\tfrac{n}{2}x}{\\sin\\tfrac{1}{2}x}\\right]^2',true);
+  setK('th_closed','K_n(0)=n,\\qquad \\frac{1}{2\\pi}\\int_{-\\pi}^{\\pi}K_n(x)\\,dx=1,\\qquad K_n\\ge 0');
+  setK('th_sigma','\\sigma_n(f;x)=(K_n*f)(x)=\\tfrac{1}{2\\pi}\\int_{-\\pi}^{\\pi}f(x-t)\\,K_n(t)\\,dt');
+  setK('th_conv_formula','(K_n*f)(x)=\\tfrac{1}{2\\pi}\\int_{-\\pi}^{\\pi}f(x-t)\\,K_n(t)\\,dt');
+}
+
+/* ══════════════════════════════════════════
+   Canvas helpers
+══════════════════════════════════════════ */
+function setupCV(canvas){
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  var W=rect.width, H=parseInt(canvas.getAttribute('height'))||380;
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+  canvas.style.height=H+'px';
+  var ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  return {ctx:ctx,W:W,H:H};
+}
+
+var PAD={l:52,r:18,t:16,b:34};
+
+function drawGrid(ctx,W,H,pad,xMin,xMax,yMin,yMax){
+  var gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  function px(x){return pad.l+(x-xMin)/(xMax-xMin)*gW;}
+  function py(y){return pad.t+(1-(y-yMin)/(yMax-yMin))*gH;}
+
+  ctx.strokeStyle='#e8e4de'; ctx.lineWidth=0.8;
+  var nX=6,nY=5;
+  for(var i=0;i<=nX;i++){
+    var x=xMin+(xMax-xMin)*i/nX;
+    ctx.beginPath();ctx.moveTo(px(x),pad.t);ctx.lineTo(px(x),pad.t+gH);ctx.stroke();
+  }
+  for(var i=0;i<=nY;i++){
+    var y=yMin+(yMax-yMin)*i/nY;
+    ctx.beginPath();ctx.moveTo(pad.l,py(y));ctx.lineTo(pad.l+gW,py(y));ctx.stroke();
+  }
+  if(yMin<=0 && yMax>=0){
+    ctx.strokeStyle='#c0bdb5';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(pad.l,py(0));ctx.lineTo(pad.l+gW,py(0));ctx.stroke();
+  }
+
+  ctx.font='11px "Crimson Pro",serif';ctx.fillStyle='#7a7a8a';
+  ctx.textAlign='center';
+  for(var i=0;i<=nX;i++){
+    var v=xMin+(xMax-xMin)*i/nX;
+    var pv=v/Math.PI;
+    var label;
+    if(Math.abs(pv)<0.01) label='0';
+    else if(Math.abs(pv-1)<0.05) label='π';
+    else if(Math.abs(pv+1)<0.05) label='−π';
+    else if(Math.abs(pv-0.5)<0.05) label='π/2';
+    else if(Math.abs(pv+0.5)<0.05) label='−π/2';
+    else label=(pv>0?'':'−')+Math.abs(pv).toFixed(1)+'π';
+    ctx.fillText(label,px(v),pad.t+gH+16);
+  }
+  ctx.textAlign='right';
+  for(var i=0;i<=nY;i++){
+    var v=yMin+(yMax-yMin)*i/nY;
+    ctx.fillText(v.toFixed(v>=10?0:1),pad.l-5,py(v)+4);
+  }
+  ctx.strokeStyle='#ddd9d0';ctx.lineWidth=1;
+  ctx.strokeRect(pad.l,pad.t,gW,gH);
+
+  return {px:px,py:py,gW:gW,gH:gH};
+}
+
+function drawCurve(ctx,pxs,pys,color,width,dash){
+  ctx.strokeStyle=color;ctx.lineWidth=width;
+  ctx.setLineDash(dash||[]);ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();
+  var started=false;
+  for(var i=0;i<pxs.length;i++){
+    if(!isFinite(pys[i])){started=false;continue;}
+    if(!started){ctx.moveTo(pxs[i],pys[i]);started=true;}
+    else ctx.lineTo(pxs[i],pys[i]);
+  }
+  ctx.stroke();ctx.setLineDash([]);
+}
+
+/* ══════════════════════════════════════════
+   Fejér kernel
+══════════════════════════════════════════ */
+function fejer(n,x){
+  if(n<=0) return 1;
+  var s=Math.sin(x/2);
+  if(Math.abs(s)<1e-14) return n;
+  var sn=Math.sin(n*x/2);
+  return (sn*sn)/(n*s*s);
+}
+
+/* ══════════════════════════════════════════
+   §2 Kernel plot
+══════════════════════════════════════════ */
+var KERNEL_NS=[1,2,3,5,10,15,20,40];
+var KERNEL_COLORS=['#9E1B32','#2c4070','#c8a430','#1a6a40','#7a1426','#38709c','#a07820','#6b3fa0'];
+var activeKernels=new Set([1,2,5,10,20]);
+var scaleMode='auto';
+
+var btnBox=document.getElementById('kernelBtns');
+KERNEL_NS.forEach(function(n){
+  var b=document.createElement('button');
+  b.className='toggle-btn'+(activeKernels.has(n)?' active':'');
+  b.textContent=n;
+  b.onclick=function(){
+    if(activeKernels.has(n)) activeKernels.delete(n); else activeKernels.add(n);
+    b.classList.toggle('active');
+    drawKernels();
+  };
+  btnBox.appendChild(b);
+});
+
+function setScale(mode){
+  scaleMode=mode;
+  document.getElementById('scaleAuto').className='toggle-btn'+(mode==='auto'?' active':'');
+  document.getElementById('scaleFixed').className='toggle-btn'+(mode==='fixed'?' active':'');
+  drawKernels();
+}
+
+function drawKernels(){
+  var cv=document.getElementById('cvKernel');
+  var s=setupCV(cv); var ctx=s.ctx, W=s.W, H=s.H;
+
+  var xMin=-Math.PI, xMax=Math.PI;
+  var nums=[]; activeKernels.forEach(function(n){nums.push(n);}); nums.sort(function(a,b){return a-b;});
+
+  var yMax=2;
+  if(nums.length>0){
+    if(scaleMode==='auto'){
+      yMax=0; nums.forEach(function(n){yMax=Math.max(yMax,n);});
+      yMax*=1.15;
+    } else {
+      yMax=40*1.15;
+    }
+  }
+  if(yMax<2) yMax=2;
+
+  var ax=drawGrid(ctx,W,H,PAD,xMin,xMax,0,yMax);
+
+  var STEPS=800;
+  nums.forEach(function(n){
+    var ci=KERNEL_NS.indexOf(n);
+    var color=KERNEL_COLORS[ci%KERNEL_COLORS.length];
+    var pxs=[], pys=[];
+    for(var i=0;i<=STEPS;i++){
+      var x=xMin+(xMax-xMin)*i/STEPS;
+      var y=fejer(n,x);
+      pxs.push(ax.px(x));
+      pys.push(ax.py(Math.min(y,yMax*1.5)));
+    }
+    drawCurve(ctx,pxs,pys,color,2,[]);
+  });
+
+  var leg=document.getElementById('kernelLegend');
+  leg.innerHTML='';
+  nums.forEach(function(n){
+    var ci=KERNEL_NS.indexOf(n);
+    var color=KERNEL_COLORS[ci%KERNEL_COLORS.length];
+    var it=document.createElement('div');it.className='leg-item';
+    it.innerHTML='<span class="leg-swatch" style="background:'+color+'"></span> n\u2009=\u2009'+n;
+    leg.appendChild(it);
+  });
+}
+
+/* ══════════════════════════════════════════
+   §3 Convolution
+══════════════════════════════════════════ */
+var testFunctions={
+  step:function(x){var t=((x%(2*Math.PI))+3*Math.PI)%(2*Math.PI)-Math.PI;return t>=0?1:-1;},
+  sawtooth:function(x){var t=((x%(2*Math.PI))+3*Math.PI)%(2*Math.PI)-Math.PI;return t/Math.PI;},
+  abs:function(x){var t=((x%(2*Math.PI))+3*Math.PI)%(2*Math.PI)-Math.PI;return Math.abs(t)/Math.PI;},
+  parabola:function(x){var t=((x%(2*Math.PI))+3*Math.PI)%(2*Math.PI)-Math.PI;return (t*t)/(Math.PI*Math.PI)-1/3;},
+  spike:function(x){var t=((x%(2*Math.PI))+3*Math.PI)%(2*Math.PI)-Math.PI;return Math.exp(-3*t*t);}
+};
+
+function convolve(f,n,x){
+  var M=500, sum=0, dt=2*Math.PI/M;
+  for(var i=0;i<M;i++){
+    var t=-Math.PI+(i+0.5)*dt;
+    sum+=f(x-t)*fejer(n,t)*dt;
+  }
+  return sum/(2*Math.PI);
+}
+
+function drawConvolution(){
+  var cv=document.getElementById('cvConv');
+  var s=setupCV(cv); var ctx=s.ctx, W=s.W, H=s.H;
+
+  var n=parseInt(document.getElementById('convN').value);
+  var funcName=document.getElementById('funcSelect').value;
+  var f=testFunctions[funcName];
+
+  var xMin=-Math.PI, xMax=Math.PI, STEPS=300;
+
+  var xs=[], fVals=[], cVals=[];
+  for(var i=0;i<=STEPS;i++){
+    var x=xMin+(xMax-xMin)*i/STEPS;
+    xs.push(x);
+    fVals.push(f(x));
+    cVals.push(convolve(f,n,x));
+  }
+
+  var yMin=Infinity, yMax=-Infinity;
+  for(var i=0;i<=STEPS;i++){
+    yMin=Math.min(yMin,fVals[i],cVals[i]);
+    yMax=Math.max(yMax,fVals[i],cVals[i]);
+  }
+  var margin=(yMax-yMin)*0.15||0.5;
+  yMin-=margin; yMax+=margin;
+
+  var ax=drawGrid(ctx,W,H,PAD,xMin,xMax,yMin,yMax);
+
+  var pxs=xs.map(ax.px);
+  // f(x) — dashed gold, thicker
+  drawCurve(ctx,pxs,fVals.map(ax.py),'#c8a430',2.5,[7,4]);
+  // convolution — solid crimson
+  drawCurve(ctx,pxs,cVals.map(ax.py),'#9E1B32',2.5,[]);
+
+  ctx.font='bold 13px "Crimson Pro",serif';
+  ctx.fillStyle='#9E1B32';ctx.textAlign='left';
+  ctx.fillText('n = '+n, PAD.l+10, PAD.t+18);
+}
+
+function onConvSlider(){
+  document.getElementById('convNVal').textContent=document.getElementById('convN').value;
+  drawConvolution();
+}
+
+function resetConv(){
+  document.getElementById('convN').value=1;
+  onConvSlider();
+  if(animRunning) toggleAnim();
+}
+
+var animRunning=false, animTimer=null;
+function toggleAnim(){
+  var btn=document.getElementById('animBtn');
+  if(animRunning){
+    animRunning=false; clearTimeout(animTimer);
+    btn.textContent='▶ Animate';
+  } else {
+    animRunning=true;
+    btn.textContent='■ Stop';
+    document.getElementById('convN').value=1;
+    onConvSlider();
+    animStep();
+  }
+}
+function animStep(){
+  if(!animRunning) return;
+  var slider=document.getElementById('convN');
+  var v=parseInt(slider.value);
+  if(v>=parseInt(slider.max)){
+    animRunning=false;
+    document.getElementById('animBtn').textContent='▶ Animate';
+    return;
+  }
+  slider.value=v+1;
+  onConvSlider();
+  animTimer=setTimeout(animStep,120);
+}
+
+/* ══════════════════════════════════════════
+   Init
+══════════════════════════════════════════ */
+var resizeTimer;
+window.addEventListener('resize',function(){
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(function(){drawKernels();drawConvolution();},200);
+});
+
+window.addEventListener('DOMContentLoaded',function(){
+  populateTheory();
+  drawKernels();
+  drawConvolution();
+});
+</script>
+</body>
+</html>
