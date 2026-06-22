@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Nowhere Differentiable Function — Rudin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --crimson:#9E1B32;--crimson2:#7a1426;--crimson-light:#c8354f;
+  --cream:#faf7f2;--paper:#fff;
+  --navy:#18284a;--navy2:#2c4070;
+  --gold:#c8a430;--gold2:#a07820;
+  --gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#fdf0f2;--acc-blue:#edf1fb;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.66;}
+
+header{background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.45rem 2.5rem;font-size:.82rem;color:#f0c8d0;letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:1.6rem 2.5rem;}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:700;letter-spacing:.01em;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.3rem;font-size:1.05rem;}
+header .meta{color:#e0a8b8;font-size:.88rem;margin-top:.15rem;}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 16px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.25rem;font-weight:600;color:var(--crimson);margin-bottom:.9rem;padding-bottom:.4rem;border-bottom:2px solid #f5dde2;}
+.card h3{font-family:var(--font-head);font-size:1.05rem;font-weight:600;color:var(--navy2);margin:.9rem 0 .4rem;}
+.card p{margin-bottom:.75rem;line-height:1.72;}
+
+.def-box{background:var(--acc-bg);border-left:3.5px solid var(--crimson);border-radius:0 6px 6px 0;padding:.8rem 1.1rem;margin:.8rem 0;font-size:.97rem;line-height:1.7;}
+.def-box strong{color:var(--crimson);}
+.thm-box{background:#f0f4ff;border-left:3.5px solid var(--navy2);border-radius:0 6px 6px 0;padding:.8rem 1.1rem;margin:.8rem 0;font-size:.97rem;line-height:1.7;}
+.thm-box strong{color:var(--navy2);}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:6px;padding:.8rem 1.1rem;margin:.8rem 0;font-size:.94rem;line-height:1.68;color:#4a3800;}
+.math-block{overflow-x:auto;margin:.9rem 0;text-align:center;padding:.2rem 0;}
+
+/* Controls */
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.38rem .95rem;font-size:.92rem;transition:all .14s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--crimson);color:#fff;}
+.btn-primary:hover{background:var(--crimson2);}
+.btn-secondary{background:#edf1fb;color:var(--navy2);border:1px solid #b8ccee;}
+.btn-secondary:hover{background:#c8daff;}
+.btn-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:7px;padding:.9rem 1rem;margin-bottom:.8rem;}
+.ctrl-group label{display:block;font-size:.87rem;font-weight:600;color:var(--navy2);margin-bottom:.3rem;}
+input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;}
+.val-badge{display:inline-block;background:var(--crimson);color:#fff;border-radius:4px;padding:.05rem .55rem;font-size:.9rem;font-weight:700;min-width:40px;text-align:center;margin-left:.4rem;}
+
+/* Canvas */
+canvas{display:block;border-radius:6px;border:1.5px solid var(--border);background:#fff;}
+.cv-label{text-align:center;font-size:.84rem;color:var(--gray);margin-top:.35rem;font-style:italic;}
+.canvas-center{display:flex;flex-direction:column;align-items:center;}
+
+/* Two-col layout */
+.two-col{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.two-col>.col-left{flex:0 0 240px;min-width:200px;}
+.two-col>.col-right{flex:1;min-width:280px;}
+
+/* Partial sums grid */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:.5rem;}
+.sum-cell{text-align:center;}
+.sum-cell canvas{width:100%!important;height:auto!important;}
+.sum-cell .sum-lbl{font-size:.82rem;color:var(--crimson);font-weight:600;margin-top:.25rem;}
+
+/* Number line */
+#cvNumLine{border-radius:4px;}
+
+/* Difference quotient chart */
+.dq-bar-row{display:flex;align-items:center;gap:.5rem;margin:.22rem 0;font-size:.86rem;}
+.dq-bar-bg{height:16px;background:#f0ece8;border-radius:3px;flex:1;overflow:hidden;position:relative;}
+.dq-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--crimson));transition:width .4s;}
+.dq-bar-val{min-width:80px;color:var(--navy);text-align:right;font-variant-numeric:tabular-nums;}
+.dq-bar-lbl{min-width:44px;color:var(--gray);}
+.dq-bound{font-size:.79rem;color:var(--crimson);min-width:70px;}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;gap:.55rem;font-size:.87rem;color:var(--navy2);margin:.3rem 0;}
+.toggle-row input[type=checkbox]{accent-color:var(--crimson);width:15px;height:15px;cursor:pointer;}
+
+/* Zoom info */
+.zoom-info{background:#f5f7fa;border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;font-size:.87rem;color:var(--navy2);margin-top:.5rem;}
+.zoom-info span{color:var(--crimson);font-weight:600;}
+
+@media(max-width:650px){.hdr-main{padding:1.2rem 1rem;}main{padding:1rem .7rem;}.card{padding:1.2rem 1rem;}.two-col{flex-direction:column;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr-top">🐘 &nbsp;The University of Alabama — Analysis I · Unexpected Findings · 2026</div>
+  <div class="hdr-main">
+    <h1>A Nowhere Differentiable Function</h1>
+    <div class="subtitle">Continuous everywhere, differentiable nowhere — Rudin, Principles of Mathematical Analysis</div>
+    <div class="meta">Robert G. Smits &nbsp;·&nbsp; Roll Tide</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<main>
+
+<!-- §1 Overview -->
+<div class="card">
+  <h2>§1 — Overview</h2>
+  <p>
+    At first, it seems impossible: a function that is <strong>continuous at every point</strong> of ℝ
+    yet has <strong>no derivative anywhere</strong>. Such functions were long believed not to exist —
+    until Weierstrass shocked the mathematical world in 1872. The construction here is Rudin's elegant
+    variant from <em>Principles of Mathematical Analysis</em>, built from a single lacunary series.
+  </p>
+  <div class="def-box">
+    <strong>The function.</strong>
+    <span id="f_def_inline"></span>
+    where <span id="phi_inline"></span> is the 2-periodic extension of <span id="abs_inline"></span>.
+    This function is continuous on all of ℝ but has no derivative at any point.
+  </div>
+  <div class="key-box">
+    <strong>The key tension:</strong> The factors <span id="r34"></span> ensure rapid decay → <em>uniform convergence → continuity</em>.
+    The factors <span id="lacun"></span> (the "lacunary gaps") ensure rapid growth of oscillations → <em>divergent difference quotients → no derivative</em>.
+  </div>
+</div>
+
+<!-- §2 Base Function -->
+<div class="card">
+  <h2>§2 — The Base Function φ(x)</h2>
+  <p>
+    Define <span id="phi_def"></span> for <span id="phi_range"></span>, then extend by
+    <span id="phi_period"></span>. This is simply the <strong>triangle wave</strong> — the periodic absolute value.
+  </p>
+  <div class="two-col">
+    <div class="col-left">
+      <div class="thm-box">
+        <strong>Lipschitz property.</strong>
+        For any <span id="lip_st"></span>:<br>
+        <div class="math-block" id="lip_ineq"></div>
+        This is the key analytic tool: it controls how much φ can change over a short interval.
+      </div>
+      <div class="thm-box">
+        <strong>Boundedness.</strong>
+        <span id="phi_bdd"></span> for all x, so each term
+        <span id="term_bdd"></span> is bounded by <span id="rn_bdd"></span>.
+      </div>
+    </div>
+    <div class="col-right canvas-center">
+      <canvas id="cvPhi" width="480" height="180"></canvas>
+      <div class="cv-label">φ(x) = |x| extended 2-periodically — the foundation of the construction</div>
+    </div>
+  </div>
+</div>
+
+<!-- §3 Partial Sums -->
+<div class="card">
+  <h2>§3 — Building f(x): Partial Sums</h2>
+  <p>
+    The series <span id="f_series"></span> is built by stacking copies of φ at exponentially
+    increasing frequencies (<span id="freq_4n"></span>) with exponentially decreasing amplitudes
+    (<span id="amp_34n"></span>). Each new term adds finer detail.
+  </p>
+  <div class="two-col">
+    <div class="col-left">
+      <div class="ctrl-group">
+        <label>Number of terms N <span class="val-badge" id="Nbadge">3</span></label>
+        <input type="range" id="sliderN" min="0" max="12" value="3">
+        <p style="font-size:.82rem;color:var(--gray);margin-top:.4rem;" id="Ndesc">Showing f₀+f₁+f₂+f₃</p>
+      </div>
+      <div class="ctrl-group">
+        <label>x range</label>
+        <div class="btn-row">
+          <button class="btn-secondary" onclick="setRange(-1,1)">[-1,1]</button>
+          <button class="btn-secondary" onclick="setRange(-0.5,0.5)">[-½,½]</button>
+          <button class="btn-secondary" onclick="setRange(0,1)">[0,1]</button>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <div class="toggle-row">
+          <input type="checkbox" id="chkTerms">
+          <span>Show individual terms</span>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="chkColor" checked>
+          <span>Color by term</span>
+        </div>
+      </div>
+      <div class="key-box" style="font-size:.88rem;">
+        <strong>What you see:</strong> At N=0, a simple triangle wave. Each new term multiplies the frequency by 4 and scales by ¾. By N≥6, the function is visually indistinguishable from a random fractal — yet it is the limit of smooth (piecewise-linear) partial sums.
+      </div>
+    </div>
+    <div class="col-right canvas-center">
+      <canvas id="cvMain" width="580" height="280"></canvas>
+      <div class="cv-label" id="mainLbl">f(x) — partial sum to N=3 terms</div>
+    </div>
+  </div>
+
+  <!-- 4-panel grid -->
+  <h3 style="margin-top:1rem;">Partial sums at key values of N</h3>
+  <div class="sum-grid" id="sumGrid"></div>
+</div>
+
+<!-- §4 Uniform Convergence -->
+<div class="card">
+  <h2>§4 — Continuity via Uniform Convergence</h2>
+  <p>
+    The series converges uniformly on all of ℝ because each term satisfies
+    <span id="term_uniform"></span>, and the tail beyond index N is bounded by the geometric series:
+  </p>
+  <div class="math-block" id="tail_bound"></div>
+  <p>
+    Since each partial sum is continuous (piecewise-linear) and the series converges uniformly,
+    the limit f is continuous on ℝ. The double-limit problem — simultaneously letting
+    <span id="s_to_t"></span> and the sum go to infinity — is resolved by first freezing the tail
+    at index N, then using the Lipschitz property of the finite sum.
+  </p>
+  <div class="two-col">
+    <div class="col-left">
+      <div class="ctrl-group">
+        <label>Freeze tail at N <span class="val-badge" id="Ntail">5</span></label>
+        <input type="range" id="sliderTail" min="0" max="12" value="5">
+      </div>
+      <div class="key-box" style="font-size:.88rem;">
+        <strong>Tail bound:</strong> <span id="tail_val"></span><br>
+        For N=5, the tail contributes less than <strong>0.24</strong>. By N=12, less than <strong>0.03</strong>.
+      </div>
+    </div>
+    <div class="col-right canvas-center">
+      <canvas id="cvTail" width="480" height="200"></canvas>
+      <div class="cv-label">f(x) vs f_N(x): the shaded band shows the tail error ≤ (¾)^{N+1}·4</div>
+    </div>
+  </div>
+</div>
+
+<!-- §5 Nowhere Differentiable Proof -->
+<div class="card">
+  <h2>§5 — Why f is Nowhere Differentiable</h2>
+  <p>
+    Fix any <span id="x_arb"></span>. For each positive integer m, define
+  </p>
+  <div class="math-block" id="delta_m_def"></div>
+  <p>
+    where the sign is chosen so that <strong>no integer lies strictly between
+    <span id="between1"></span> and <span id="between2"></span></strong>.
+    This is always possible since the two values are distance ½ apart.
+  </p>
+
+  <h3>The number-line view — choose m:</h3>
+  <div class="two-col">
+    <div class="col-left">
+      <div class="ctrl-group">
+        <label>m = <span class="val-badge" id="mBadge">2</span></label>
+        <input type="range" id="sliderM" min="1" max="6" value="2">
+        <p style="font-size:.82rem;color:var(--gray);margin-top:.4rem;">
+          Scale: 4ᵐ. The interval [4ᵐx, 4ᵐ(x+δ_m)] has length ½ and avoids integers.
+        </p>
+      </div>
+      <div class="ctrl-group">
+        <label>Base point x₀</label>
+        <input type="range" id="sliderX0" min="0" max="100" value="30" style="accent-color:var(--navy2);">
+        <div style="font-size:.88rem;color:var(--navy2);margin-top:.2rem;" id="x0Display">x₀ = 0.30</div>
+      </div>
+      <div class="thm-box" id="gammaBox">
+        <strong>Key values:</strong><br>
+        <div id="gammaDetails" style="font-size:.9rem;margin-top:.3rem;line-height:1.8;"></div>
+      </div>
+    </div>
+    <div class="col-right canvas-center">
+      <canvas id="cvNumLine" width="480" height="130"></canvas>
+      <div class="cv-label">Number line at scale 4ᵐ — integers (grey), 4ᵐx (crimson), 4ᵐ(x+δ_m) (gold)</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1rem;">The γ_n values and the estimate</h3>
+  <div class="def-box" style="margin-bottom:.6rem;">
+    Define <span id="gamma_def"></span>. Then:
+    <ul style="margin:.4rem 0 0 1.2rem;line-height:1.9;">
+      <li><strong>n &gt; m:</strong> <span id="gamma_tail"></span> is an even integer, so <span id="gamma_zero"></span>.</li>
+      <li><strong>0 ≤ n ≤ m:</strong> Lipschitz gives <span id="gamma_lip"></span>.</li>
+      <li><strong>n = m:</strong> No integer in the gap, so <span id="gamma_m_val"></span>.</li>
+    </ul>
+  </div>
+  <p>Therefore the difference quotient satisfies:</p>
+  <div class="math-block" id="dq_estimate"></div>
+  <p>
+    As m → ∞, δ_m → 0 but the difference quotient grows like
+    <span id="threepow"></span>. The derivative cannot exist.
+  </p>
+</div>
+
+<!-- §6 Difference Quotient -->
+<div class="card">
+  <h2>§6 — The Diverging Difference Quotient</h2>
+  <p>
+    Watch the difference quotient <span id="dq_label"></span> grow unboundedly as m → ∞ (δ_m → 0).
+    Adjust x₀ to see that <em>every</em> point leads to divergence.
+  </p>
+  <div class="two-col">
+    <div class="col-left">
+      <div class="ctrl-group">
+        <label>x₀ <span class="val-badge" id="dqX0badge">0.30</span></label>
+        <input type="range" id="sliderDQx" min="0" max="100" value="30" style="accent-color:var(--navy2);">
+      </div>
+      <div class="ctrl-group">
+        <label>Max m shown <span class="val-badge" id="dqMbadge">8</span></label>
+        <input type="range" id="sliderDQm" min="3" max="12" value="8">
+      </div>
+      <div class="key-box" style="font-size:.87rem;" id="dqKeyBox">
+        The bar lengths show |quotient|. The dashed line is the lower bound (3ᵐ+1)/2.
+      </div>
+    </div>
+    <div class="col-right">
+      <div id="dqBars" style="padding:.3rem 0;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- §7 Zoom: Never Straight -->
+<div class="card">
+  <h2>§7 — Zoom In: It Never Becomes Straight</h2>
+  <p>
+    A differentiable function must "look like a straight line" under sufficient magnification.
+    Click anywhere on the left panel to set the zoom center, then zoom in — no matter how far,
+    the function stays jagged.
+  </p>
+  <div class="two-col">
+    <div class="col-left">
+      <div class="ctrl-group">
+        <label>Zoom level <span class="val-badge" id="zoomBadge">1×</span></label>
+        <input type="range" id="sliderZoom" min="0" max="30" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>N terms for zoom <span class="val-badge" id="zoomNbadge">8</span></label>
+        <input type="range" id="sliderZoomN" min="3" max="12" value="8">
+      </div>
+      <div class="zoom-info" id="zoomInfo">
+        Click the right canvas to set center x₀.
+      </div>
+      <div class="key-box" style="margin-top:.6rem;font-size:.88rem;">
+        <strong>Differentiable?</strong> At each zoom level, the orange line shows the best linear approximation through the center. A differentiable function would eventually match this line — f never does.
+      </div>
+    </div>
+    <div class="col-right">
+      <div class="canvas-center">
+        <canvas id="cvZoom" width="580" height="280" style="cursor:crosshair;"></canvas>
+        <div class="cv-label" id="zoomLbl">f(x) — click to set zoom center, use slider to magnify</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- §8 Conclusion -->
+<div class="card">
+  <h2>§8 — Key Takeaways</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:.3rem;">
+    <div class="thm-box">
+      <strong>Continuity.</strong>
+      φ is Lipschitz. The factors (¾)ⁿ give a convergent geometric series bound. Uniform convergence → continuity.
+    </div>
+    <div class="thm-box">
+      <strong>No derivative.</strong>
+      For every x and every m, the perturbation δ_m is chosen so |γ_m|=4ᵐ while the tail vanishes. The quotient ≥ (3ᵐ+1)/2 → ∞.
+    </div>
+    <div class="thm-box">
+      <strong>Lacunary series.</strong>
+      The gaps 4ⁿ are the key: they map a typical x into a chaotic location far from where it started, frustrating any local linear behavior.
+    </div>
+    <div class="thm-box">
+      <strong>Historical context.</strong>
+      Weierstrass (1872) first exhibited such a function, shocking analysts who believed continuity implied "almost everywhere" differentiability.
+    </div>
+  </div>
+  <div style="margin-top:1rem;">
+    <h3>References</h3>
+    <p>Rudin, W. (1976). <em>Principles of Mathematical Analysis</em>, 3rd ed. McGraw-Hill. §7, pp. 154–155.</p>
+    <p>Weierstrass, K. (1872). Über continuirliche Functionen eines reellen Arguments, die für keinen Werth des letzteren einen bestimmten Differentialquotienten besitzen. <em>Mathematische Werke</em>, Vol. 2.</p>
+  </div>
+</div>
+
+</main>
+<script>
+/* ══════════════════════════════════════════
+   KaTeX
+══════════════════════════════════════════ */
+function rk(t,disp){try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}}
+function setK(id,t,disp){var el=document.getElementById(id);if(el)el.innerHTML=rk(t,disp);}
+
+/* ══════════════════════════════════════════
+   THEORY TEXT
+══════════════════════════════════════════ */
+function populateTheory(){
+  setK('f_def_inline','f(x)=\\displaystyle\\sum_{n=0}^{\\infty}\\!\\left(\\tfrac{3}{4}\\right)^{\\!n}\\varphi(4^n x)');
+  setK('phi_inline','\\varphi');
+  setK('abs_inline','|x|');
+  setK('r34','\\left(\\tfrac{3}{4}\\right)^n');
+  setK('lacun','4^n');
+  setK('phi_def','\\varphi(x)=|x|');
+  setK('phi_range','-1\\le x\\le 1');
+  setK('phi_period','\\varphi(x+2)=\\varphi(x)');
+  setK('lip_st','s,t\\in\\mathbb{R}');
+  setK('lip_ineq','|\\varphi(s)-\\varphi(t)|\\le|s-t|',true);
+  setK('phi_bdd','0\\le\\varphi(x)\\le 1');
+  setK('term_bdd','\\left(\\tfrac{3}{4}\\right)^n\\varphi(4^n x)');
+  setK('rn_bdd','\\left(\\tfrac{3}{4}\\right)^n');
+  setK('f_series','f(x)=\\sum_{n=0}^{\\infty}\\left(\\tfrac{3}{4}\\right)^n\\varphi(4^n x)');
+  setK('freq_4n','4^n');
+  setK('amp_34n','(\\tfrac{3}{4})^n');
+  setK('term_uniform','\\left(\\tfrac{3}{4}\\right)^n\\varphi(4^n x)\\le\\left(\\tfrac{3}{4}\\right)^n');
+  setK('tail_bound','\\sum_{n=N+1}^{\\infty}\\left(\\tfrac{3}{4}\\right)^n\\le\\left(\\tfrac{3}{4}\\right)^{N+1}\\cdot 4\\;\\xrightarrow{N\\to\\infty}\\;0',true);
+  setK('s_to_t','s\\to t');
+  setK('x_arb','x\\in\\mathbb{R}');
+  setK('delta_m_def','\\delta_m=\\pm\\tfrac{1}{2}\\cdot 4^{-m}',true);
+  setK('between1','4^m x');
+  setK('between2','4^m(x+\\delta_m)');
+  setK('gamma_def','\\gamma_n=\\dfrac{\\varphi(4^n(x+\\delta_m))-\\varphi(4^n x)}{\\delta_m}');
+  setK('gamma_tail','4^n\\delta_m=\\pm\\tfrac{1}{2}\\cdot 4^{n-m}');
+  setK('gamma_zero','\\gamma_n=0');
+  setK('gamma_lip','|\\gamma_n|\\le 4^n');
+  setK('gamma_m_val','|\\gamma_m|=4^m');
+  setK('dq_estimate',
+    '\\left|\\frac{f(x+\\delta_m)-f(x)}{\\delta_m}\\right|=\\left|\\sum_{n=0}^m\\left(\\tfrac{3}{4}\\right)^n\\gamma_n\\right|\\ge 3^m-\\sum_{n=0}^{m-1}3^n=\\tfrac{1}{2}(3^m+1)',true);
+  setK('threepow','\\tfrac{1}{2}(3^m+1)\\to\\infty');
+  setK('dq_label','\\left|\\dfrac{f(x_0+\\delta_m)-f(x_0)}{\\delta_m}\\right|');
+}
+
+/* ══════════════════════════════════════════
+   MATH
+══════════════════════════════════════════ */
+function phi(x){
+  var t=((x%2)+2)%2;
+  return t<=1?t:2-t;
+}
+function fPartial(x,N){
+  var s=0,r=1,p=1;
+  for(var n=0;n<=N;n++){s+=r*phi(p*x);r*=0.75;p*=4;}
+  return s;
+}
+function fMax(N){
+  // upper bound
+  var s=0,r=1;for(var n=0;n<=N;n++){s+=r;r*=0.75;}return s;
+}
+
+/* ══════════════════════════════════════════
+   CANVAS UTILS
+══════════════════════════════════════════ */
+function setupCanvas(cv){
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.offsetWidth||cv.width,cssH=cv.offsetHeight||cv.height;
+  cv.width=Math.round(cssW*dpr);cv.height=Math.round(cssH*dpr);
+  cv.style.width=cssW+'px';cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  return{ctx:ctx,W:cssW,H:cssH,dpr:dpr};
+}
+
+function drawAxes(ctx,W,H,pad,xLo,xHi,yLo,yHi,color){
+  color=color||'#18284a';
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  function px(x){return pad.l+(x-xLo)/(xHi-xLo)*gW;}
+  function py(y){return pad.t+(1-(y-yLo)/(yHi-yLo))*gH;}
+  // grid
+  ctx.strokeStyle='#ede9e2';ctx.lineWidth=0.7;
+  var yStep=niceStep((yHi-yLo),5),xStep=niceStep((xHi-xLo),6);
+  for(var yv=Math.ceil(yLo/yStep)*yStep;yv<=yHi+1e-9;yv+=yStep){
+    ctx.beginPath();ctx.moveTo(pad.l,py(yv));ctx.lineTo(pad.l+gW,py(yv));ctx.stroke();
+  }
+  for(var xv=Math.ceil(xLo/xStep)*xStep;xv<=xHi+1e-9;xv+=xStep){
+    ctx.beginPath();ctx.moveTo(px(xv),pad.t);ctx.lineTo(px(xv),pad.t+gH);ctx.stroke();
+  }
+  // axes
+  ctx.strokeStyle=color;ctx.lineWidth=1.2;
+  var y0=Math.max(pad.t,Math.min(pad.t+gH,py(0)));
+  var x0=Math.max(pad.l,Math.min(pad.l+gW,px(0)));
+  ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(pad.l+gW,y0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+gH);ctx.stroke();
+  // ticks & labels
+  ctx.fillStyle='#7a7a8a';ctx.font='10px "Crimson Pro",Georgia,serif';ctx.textAlign='center';
+  for(var xv=Math.ceil(xLo/xStep)*xStep;xv<=xHi+1e-9;xv+=xStep){
+    var lbl=parseFloat(xv.toFixed(4)).toString();
+    ctx.fillText(lbl,px(xv),y0+14);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.6;
+    ctx.beginPath();ctx.moveTo(px(xv),y0-3);ctx.lineTo(px(xv),y0+3);ctx.stroke();
+  }
+  ctx.textAlign='right';
+  for(var yv=Math.ceil(yLo/yStep)*yStep;yv<=yHi+1e-9;yv+=yStep){
+    if(Math.abs(yv)<1e-9) continue;
+    ctx.fillText(parseFloat(yv.toFixed(3)).toString(),pad.l-4,py(yv)+4);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.6;
+    ctx.beginPath();ctx.moveTo(x0-3,py(yv));ctx.lineTo(x0+3,py(yv));ctx.stroke();
+  }
+  return{px:px,py:py,y0:y0,x0:x0,gW:gW,gH:gH};
+}
+
+function niceStep(range,divs){
+  var raw=range/divs;
+  var mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  return [0.1,0.2,0.25,0.5,1,2,2.5,5].map(function(f){return f*mag;})
+         .find(function(s){return s>=raw*0.75;})||mag;
+}
+
+/* ══════════════════════════════════════════
+   §2: PHI CANVAS
+══════════════════════════════════════════ */
+function drawPhi(){
+  var cv=document.getElementById('cvPhi');
+  var s=setupCanvas(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:38,r:16,t:16,b:28};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var ax=drawAxes(ctx,W,H,pad,-2,2,0,1.1);
+  // filled area
+  ctx.fillStyle='rgba(158,27,50,0.07)';
+  ctx.beginPath();ctx.moveTo(ax.px(-2),ax.py(0));
+  for(var k=0;k<=400;k++){var t=-2+4*k/400;ctx.lineTo(ax.px(t),ax.py(phi(t)));}
+  ctx.lineTo(ax.px(2),ax.py(0));ctx.closePath();ctx.fill();
+  // curve
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=2.2;ctx.setLineDash([]);
+  ctx.beginPath();
+  for(var k=0;k<=400;k++){var t=-2+4*k/400;k===0?ctx.moveTo(ax.px(t),ax.py(phi(t))):ctx.lineTo(ax.px(t),ax.py(phi(t)));}
+  ctx.stroke();
+  // period braces
+  ctx.strokeStyle='#c8a430';ctx.lineWidth=1.2;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(ax.px(-2),ax.y0-4);ctx.lineTo(ax.px(0),ax.y0-4);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ax.px(0),ax.y0-4);ctx.lineTo(ax.px(2),ax.y0-4);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#a07820';ctx.font='italic 10px "Crimson Pro",serif';ctx.textAlign='center';
+  ctx.fillText('period 2',ax.px(-1),ax.y0-7);
+  ctx.fillText('period 2',ax.px(1),ax.y0-7);
+  // label
+  ctx.fillStyle='#9E1B32';ctx.font='bold 13px "Crimson Pro",serif';ctx.textAlign='left';
+  ctx.fillText('φ(x)',ax.px(-1.95),ax.py(0.92));
+}
+
+/* ══════════════════════════════════════════
+   §3: MAIN PARTIAL SUMS
+══════════════════════════════════════════ */
+var mainXLo=-1,mainXHi=1;
+var TERM_COLORS=['#9E1B32','#3a6eb5','#1a6a40','#c8a430','#6b21a8','#b33a2f','#2c4070'];
+
+function drawMain(){
+  var N=parseInt(document.getElementById('sliderN').value);
+  var showTerms=document.getElementById('chkTerms').checked;
+  var colorTerms=document.getElementById('chkColor').checked;
+  document.getElementById('Nbadge').textContent=N;
+  var desc='Showing';
+  if(N===0) desc='Showing f₀(x) = φ(x)';
+  else desc='Showing f₀+…+f'+N+' ('+( N+1)+' terms)';
+  document.getElementById('Ndesc').textContent=desc;
+  document.getElementById('mainLbl').textContent='f(x) — partial sum, N='+N+' terms';
+
+  var cv=document.getElementById('cvMain');
+  var s=setupCanvas(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:42,r:14,t:16,b:28};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var nPts=Math.min(4000,Math.max(800,200*Math.pow(4,Math.min(N,6))));
+  nPts=Math.min(nPts,4000);
+  var vals=new Float64Array(nPts+1);
+  var yMax=0;
+  for(var k=0;k<=nPts;k++){
+    var x=mainXLo+(mainXHi-mainXLo)*k/nPts;
+    vals[k]=fPartial(x,N);
+    if(vals[k]>yMax) yMax=vals[k];
+  }
+  yMax=Math.max(1,Math.ceil(yMax*10)/10);
+  var ax=drawAxes(ctx,W,H,pad,mainXLo,mainXHi,0,yMax*1.08);
+
+  // Individual terms
+  if(showTerms){
+    for(var n=Math.min(N,6);n>=0;n--){
+      ctx.strokeStyle=TERM_COLORS[n%TERM_COLORS.length]+'88';
+      ctx.lineWidth=1;ctx.globalAlpha=0.5;
+      ctx.beginPath();
+      var r=Math.pow(0.75,n),p=Math.pow(4,n);
+      for(var k=0;k<=nPts;k++){
+        var x=mainXLo+(mainXHi-mainXLo)*k/nPts;
+        var v=r*phi(p*x);
+        k===0?ctx.moveTo(ax.px(x),ax.py(v)):ctx.lineTo(ax.px(x),ax.py(v));
+      }
+      ctx.stroke();ctx.globalAlpha=1;
+    }
+  }
+
+  // Sum
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=2;ctx.setLineDash([]);
+  ctx.beginPath();
+  for(var k=0;k<=nPts;k++){
+    var x=mainXLo+(mainXHi-mainXLo)*k/nPts;
+    k===0?ctx.moveTo(ax.px(x),ax.py(vals[k])):ctx.lineTo(ax.px(x),ax.py(vals[k]));
+  }
+  ctx.stroke();
+
+  // N label watermark
+  ctx.fillStyle='rgba(158,27,50,0.08)';
+  ctx.font='bold 60px "Playfair Display",serif';ctx.textAlign='right';
+  ctx.fillText('N='+N,ax.px(mainXHi)-4,ax.py(0)+ax.gH*0.6);
+}
+
+function setRange(lo,hi){mainXLo=lo;mainXHi=hi;drawMain();}
+
+/* Small grid panels */
+function buildSumGrid(){
+  var panels=[1,5,10,40];
+  var grid=document.getElementById('sumGrid');
+  grid.innerHTML='';
+  panels.forEach(function(N){
+    var cell=document.createElement('div');cell.className='sum-cell';
+    var cv=document.createElement('canvas');cv.width=220;cv.height=160;
+    cell.appendChild(cv);
+    var lbl=document.createElement('div');lbl.className='sum-lbl';
+    lbl.textContent='N = '+N;
+    cell.appendChild(lbl);
+    grid.appendChild(cell);
+    drawSmallPanel(cv,N);
+  });
+}
+function drawSmallPanel(cv,N){
+  var s=setupCanvas(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:24,r:8,t:8,b:20};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var nPts=Math.min(2000,100*Math.pow(4,Math.min(N,5)));
+  var vals=new Float64Array(nPts+1),yMax=0;
+  for(var k=0;k<=nPts;k++){
+    var x=-1+2*k/nPts;vals[k]=fPartial(x,N);if(vals[k]>yMax)yMax=vals[k];
+  }
+  yMax=Math.max(1,Math.ceil(yMax*5)/5);
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  function px(x){return pad.l+(x+1)/2*gW;}
+  function py(y){return pad.t+(1-y/yMax)*gH;}
+  ctx.strokeStyle='#ede9e2';ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.moveTo(pad.l,py(0));ctx.lineTo(pad.l+gW,py(0));ctx.stroke();
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=1.5;
+  ctx.beginPath();
+  for(var k=0;k<=nPts;k++){var x=-1+2*k/nPts;k===0?ctx.moveTo(px(x),py(vals[k])):ctx.lineTo(px(x),py(vals[k]));}
+  ctx.stroke();
+  ctx.fillStyle='#7a7a8a';ctx.font='9px "Crimson Pro",serif';ctx.textAlign='left';
+  ctx.fillText('0',pad.l-3,py(0)+4);
+  ctx.fillText(yMax.toFixed(1),pad.l-3,py(yMax)+4);
+}
+
+/* ══════════════════════════════════════════
+   §4: TAIL / CONTINUITY
+══════════════════════════════════════════ */
+function updateTailBound(){
+  var N=parseInt(document.getElementById('sliderTail').value);
+  document.getElementById('Ntail').textContent=N;
+  var tail=Math.pow(0.75,N+1)*4;
+  document.getElementById('tail_val').innerHTML=
+    rk('\\text{tail}\\le\\left(\\tfrac{3}{4}\\right)^{'+(N+1)+'}\\cdot 4\\approx '+tail.toFixed(4));
+  drawTailCanvas(N);
+}
+function drawTailCanvas(N){
+  var cv=document.getElementById('cvTail');
+  var s=setupCanvas(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:38,r:14,t:14,b:26};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var nPts=1200;
+  var vN=new Float64Array(nPts+1),vFull=new Float64Array(nPts+1),yMax=0;
+  for(var k=0;k<=nPts;k++){
+    var x=-1+2*k/nPts;
+    vN[k]=fPartial(x,N);vFull[k]=fPartial(x,Math.max(N+8,18));
+    if(vFull[k]>yMax)yMax=vFull[k];
+  }
+  yMax=Math.ceil(yMax*5)/5||1;
+  var ax=drawAxes(ctx,W,H,pad,-1,1,0,yMax*1.08);
+  var tail=Math.pow(0.75,N+1)*4;
+  // shaded tail band
+  ctx.fillStyle='rgba(200,164,48,0.18)';
+  ctx.beginPath();
+  for(var k=0;k<=nPts;k++){
+    var x=-1+2*k/nPts;
+    k===0?ctx.moveTo(ax.px(x),ax.py(vN[k])):ctx.lineTo(ax.px(x),ax.py(vN[k]));
+  }
+  for(var k=nPts;k>=0;k--){
+    var x=-1+2*k/nPts;
+    ctx.lineTo(ax.px(x),ax.py(Math.min(yMax,vN[k]+tail)));
+  }
+  ctx.closePath();ctx.fill();
+  // f_N (gold)
+  ctx.strokeStyle='#c8a430';ctx.lineWidth=1.8;
+  ctx.beginPath();
+  for(var k=0;k<=nPts;k++){var x=-1+2*k/nPts;k===0?ctx.moveTo(ax.px(x),ax.py(vN[k])):ctx.lineTo(ax.px(x),ax.py(vN[k]));}
+  ctx.stroke();
+  // f_full (crimson)
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=1.4;ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  for(var k=0;k<=nPts;k++){var x=-1+2*k/nPts;k===0?ctx.moveTo(ax.px(x),ax.py(vFull[k])):ctx.lineTo(ax.px(x),ax.py(vFull[k]));}
+  ctx.stroke();ctx.setLineDash([]);
+  // legend
+  ctx.font='10px "Crimson Pro",serif';
+  ctx.strokeStyle='#c8a430';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ax.px(-0.98),20);ctx.lineTo(ax.px(-0.8),20);ctx.stroke();
+  ctx.fillStyle='#7a7a8a';ctx.textAlign='left';ctx.fillText('f_N(x)',ax.px(-0.78),24);
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(ax.px(-0.55),20);ctx.lineTo(ax.px(-0.37),20);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillText('f(x)',ax.px(-0.35),24);
+  ctx.fillStyle='rgba(200,164,48,0.4)';ctx.fillRect(ax.px(-0.1),12,18,10);
+  ctx.fillStyle='#7a7a8a';ctx.fillText('tail ≤'+tail.toFixed(3),ax.px(-0.1)+22,22);
+}
+
+/* ══════════════════════════════════════════
+   §5: DELTA_M / NUMBER LINE
+══════════════════════════════════════════ */
+function computeDeltaM(x0,m){
+  var scale=Math.pow(4,m);
+  var val=scale*x0;
+  var frac=val-Math.floor(val);
+  var sign=(frac<0.5)?-1:1;
+  var deltaM=sign*0.5*Math.pow(4,-m);
+  var val2=val+sign*0.5;
+  return{scale:scale,val:val,val2:val2,deltaM:deltaM,sign:sign};
+}
+
+function updateNumLine(){
+  var m=parseInt(document.getElementById('sliderM').value);
+  var x0=parseInt(document.getElementById('sliderX0').value)/100;
+  document.getElementById('mBadge').textContent=m;
+  document.getElementById('x0Display').textContent='x₀ = '+x0.toFixed(2);
+  var d=computeDeltaM(x0,m);
+  var gammaM=Math.pow(4,m);
+
+  // Compute actual difference quotient
+  var fm_x=fPartial(x0,m);
+  var fm_xd=fPartial(x0+d.deltaM,m);
+  var actual_dq=Math.abs((fm_xd-fm_x)/d.deltaM);
+
+  document.getElementById('gammaDetails').innerHTML=
+    rk('4^m x_0 = '+d.val.toFixed(4))+'<br>'+
+    rk('\\delta_m = '+(d.sign>0?'+':'-')+'\\tfrac{1}{2}\\cdot 4^{-'+m+'} = '+d.deltaM.toExponential(3))+'<br>'+
+    rk('4^m(x_0+\\delta_m) = '+d.val2.toFixed(4))+'<br>'+
+    rk('|\\gamma_m| = 4^m = '+gammaM)+'<br>'+
+    '<span style="color:var(--crimson);font-weight:600;">|quotient| ≈ '+actual_dq.toFixed(2)+'</span><br>'+
+    'Bound: ½(3<sup>'+m+'</sup>+1) = '+((Math.pow(3,m)+1)/2).toFixed(1);
+
+  drawNumLine(m,x0,d);
+}
+
+function drawNumLine(m,x0,d){
+  var cv=document.getElementById('cvNumLine');
+  var s=setupCanvas(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:30,r:30,t:30,b:30};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var midY=H/2;
+  // Range: show 4 integers centred on val
+  var cen=d.val;var lo=Math.floor(cen)-1.2,hi=Math.floor(cen)+2.2;
+  function px(v){return pad.l+(v-lo)/(hi-lo)*(W-pad.l-pad.r);}
+  // axis
+  ctx.strokeStyle='#18284a';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.l,midY);ctx.lineTo(W-pad.r,midY);ctx.stroke();
+  // integer ticks
+  ctx.fillStyle='#7a7a8a';ctx.font='11px "Crimson Pro",serif';ctx.textAlign='center';
+  for(var i=Math.ceil(lo);i<=Math.floor(hi);i++){
+    var xp=px(i);
+    ctx.strokeStyle='#7a7a8a';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(xp,midY-10);ctx.lineTo(xp,midY+10);ctx.stroke();
+    ctx.fillText(i,xp,midY+22);
+    // shade integer width ±0.5
+    ctx.fillStyle='rgba(120,120,140,0.08)';
+    ctx.fillRect(px(i-0.5),midY-12,px(i+0.5)-px(i-0.5),24);
+    ctx.fillStyle='#7a7a8a';
+  }
+  // The interval between val and val2
+  var x1=Math.min(px(d.val),px(d.val2));
+  var x2=Math.max(px(d.val),px(d.val2));
+  ctx.fillStyle='rgba(200,164,48,0.25)';
+  ctx.fillRect(x1,midY-8,x2-x1,16);
+  ctx.strokeStyle='#c8a430';ctx.lineWidth=1.5;
+  ctx.strokeRect(x1,midY-8,x2-x1,16);
+  // 4^m * x0 (crimson dot)
+  var vxp=px(d.val);
+  ctx.beginPath();ctx.arc(vxp,midY,7,0,2*Math.PI);
+  ctx.fillStyle='#9E1B32';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#9E1B32';ctx.font='bold 10px "Crimson Pro",serif';ctx.textAlign='center';
+  ctx.fillText('4ᵐx₀',vxp,midY-14);
+  // 4^m * (x0+d) (gold dot)
+  var vxp2=px(d.val2);
+  ctx.beginPath();ctx.arc(vxp2,midY,7,0,2*Math.PI);
+  ctx.fillStyle='#c8a430';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#a07820';ctx.textAlign='center';
+  ctx.fillText('4ᵐ(x₀+δₘ)',vxp2,midY-14);
+  // Caption
+  ctx.fillStyle='#18284a';ctx.font='11px "Crimson Pro",serif';ctx.textAlign='center';
+  ctx.fillText('Scale: 4ᵐ = '+Math.pow(4,m).toLocaleString()+'    |δₘ| = ½·4⁻ᵐ = '+(0.5*Math.pow(4,-m)).toExponential(3),W/2,H-8);
+}
+
+/* ══════════════════════════════════════════
+   §6: DIFFERENCE QUOTIENT BARS
+══════════════════════════════════════════ */
+function updateDQBars(){
+  var x0=parseInt(document.getElementById('sliderDQx').value)/100;
+  var maxM=parseInt(document.getElementById('sliderDQm').value);
+  document.getElementById('dqX0badge').textContent=x0.toFixed(2);
+  document.getElementById('dqMbadge').textContent=maxM;
+  var cont=document.getElementById('dqBars');
+  cont.innerHTML='';
+  var vals=[];
+  for(var m=1;m<=maxM;m++){
+    var d=computeDeltaM(x0,m);
+    var q=Math.abs((fPartial(x0+d.deltaM,m+4)-fPartial(x0,m+4))/d.deltaM);
+    var bound=(Math.pow(3,m)+1)/2;
+    vals.push({m:m,q:q,bound:bound});
+  }
+  var maxQ=vals[vals.length-1].q||1;
+  vals.forEach(function(v){
+    var row=document.createElement('div');row.className='dq-bar-row';
+    var lbl=document.createElement('span');lbl.className='dq-bar-lbl';lbl.textContent='m='+v.m;
+    var bg=document.createElement('div');bg.className='dq-bar-bg';
+    var fill=document.createElement('div');fill.className='dq-bar-fill';
+    fill.style.width=Math.min(100,v.q/maxQ*100)+'%';
+    // dashed bound line
+    var boundPct=Math.min(100,v.bound/maxQ*100);
+    fill.style.position='relative';
+    var bnd=document.createElement('div');
+    bnd.style.cssText='position:absolute;right:'+(100-boundPct)+'%;top:0;bottom:0;width:2px;background:#9E1B32;opacity:0.5;';
+    bg.appendChild(fill);bg.appendChild(bnd);
+    var val=document.createElement('span');val.className='dq-bar-val';val.textContent=v.q.toFixed(1);
+    var bndLbl=document.createElement('span');bndLbl.className='dq-bound';bndLbl.textContent='≥'+v.bound.toFixed(0);
+    row.appendChild(lbl);row.appendChild(bg);row.appendChild(val);row.appendChild(bndLbl);
+    cont.appendChild(row);
+  });
+}
+
+/* ══════════════════════════════════════════
+   §7: ZOOM
+══════════════════════════════════════════ */
+var zoomCenter=0.3;
+function updateZoom(){
+  var lvl=parseInt(document.getElementById('sliderZoom').value);
+  var N=parseInt(document.getElementById('sliderZoomN').value);
+  document.getElementById('zoomNbadge').textContent=N;
+  var eps=Math.pow(0.6,lvl);
+  var mag=Math.pow(1/0.6,lvl);
+  document.getElementById('zoomBadge').textContent=mag.toFixed(0)+'×';
+  document.getElementById('zoomLbl').textContent=
+    'Zoom '+(mag.toFixed(0))+'× around x₀='+zoomCenter.toFixed(4)+
+    '  ['+((zoomCenter-eps).toFixed(5))+', '+((zoomCenter+eps).toFixed(5))+']';
+  document.getElementById('zoomInfo').innerHTML=
+    'Center: <span>x₀ = '+zoomCenter.toFixed(6)+'</span><br>'+
+    'Window: <span>['+((zoomCenter-eps).toExponential(3))+', '+((zoomCenter+eps).toExponential(3))+']</span><br>'+
+    'Magnification: <span>'+mag.toFixed(1)+'×</span>';
+  drawZoom(zoomCenter,eps,N);
+}
+function drawZoom(cx,eps,N){
+  var cv=document.getElementById('cvZoom');
+  var s=setupCanvas(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:42,r:14,t:16,b:28};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var xLo=cx-eps,xHi=cx+eps;
+  var nPts=Math.min(3000,Math.max(600,600));
+  var vals=new Float64Array(nPts+1),yMin=Infinity,yMax=-Infinity;
+  for(var k=0;k<=nPts;k++){
+    var x=xLo+(xHi-xLo)*k/nPts;
+    vals[k]=fPartial(x,N);
+    if(vals[k]<yMin)yMin=vals[k];if(vals[k]>yMax)yMax=vals[k];
+  }
+  var yPad=(yMax-yMin)*0.2||0.1;
+  yMin-=yPad;yMax+=yPad;
+  var ax=drawAxes(ctx,W,H,pad,xLo,xHi,yMin,yMax);
+  // Best linear fit through center
+  var f0=fPartial(cx,N);
+  var h=eps/10;
+  var slope=(fPartial(cx+h,N)-fPartial(cx-h,N))/(2*h);
+  ctx.strokeStyle='rgba(200,164,48,0.7)';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+  var yl=f0+slope*(xLo-cx),yr=f0+slope*(xHi-cx);
+  if(isFinite(yl)&&isFinite(yr)){
+    ctx.beginPath();ctx.moveTo(ax.px(xLo),ax.py(yl));ctx.lineTo(ax.px(xHi),ax.py(yr));ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // curve
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=1.8;
+  ctx.beginPath();
+  for(var k=0;k<=nPts;k++){
+    var x=xLo+(xHi-xLo)*k/nPts;
+    k===0?ctx.moveTo(ax.px(x),ax.py(vals[k])):ctx.lineTo(ax.px(x),ax.py(vals[k]));
+  }
+  ctx.stroke();
+  // center dot
+  ctx.beginPath();ctx.arc(ax.px(cx),ax.py(f0),5,0,2*Math.PI);
+  ctx.fillStyle='#9E1B32';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  // legend
+  ctx.font='10px "Crimson Pro",serif';ctx.textAlign='left';
+  ctx.fillStyle='rgba(200,164,48,0.7)';ctx.fillRect(pad.l+4,12,24,3);
+  ctx.fillStyle='#7a7a8a';ctx.fillText('best linear approx (orange)',pad.l+32,16);
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(pad.l+4,22);ctx.lineTo(pad.l+28,22);ctx.stroke();
+  ctx.fillStyle='#7a7a8a';ctx.fillText('f(x)',pad.l+32,25);
+}
+
+document.getElementById('cvZoom').addEventListener('click',function(e){
+  var cv=this;var rect=cv.getBoundingClientRect();
+  var cssX=e.clientX-rect.left;
+  var lvl=parseInt(document.getElementById('sliderZoom').value);
+  var eps=Math.pow(0.6,lvl);
+  var N=parseInt(document.getElementById('sliderZoomN').value);
+  // map CSS pixel to x value
+  var cssW=cv.offsetWidth||580;
+  var pad=42;
+  var gW=cssW-pad-14;
+  var xLo=zoomCenter-eps,xHi=zoomCenter+eps;
+  if(lvl===0){xLo=-1;xHi=1;}
+  zoomCenter=xLo+(cssX-pad)/gW*(xHi-xLo);
+  updateZoom();
+});
+
+/* ══════════════════════════════════════════
+   EVENT WIRING
+══════════════════════════════════════════ */
+document.getElementById('sliderN').addEventListener('input',drawMain);
+document.getElementById('chkTerms').addEventListener('change',drawMain);
+document.getElementById('chkColor').addEventListener('change',drawMain);
+document.getElementById('sliderTail').addEventListener('input',updateTailBound);
+document.getElementById('sliderM').addEventListener('input',updateNumLine);
+document.getElementById('sliderX0').addEventListener('input',updateNumLine);
+document.getElementById('sliderDQx').addEventListener('input',updateDQBars);
+document.getElementById('sliderDQm').addEventListener('input',updateDQBars);
+document.getElementById('sliderZoom').addEventListener('input',updateZoom);
+document.getElementById('sliderZoomN').addEventListener('input',updateZoom);
+
+window.addEventListener('resize',function(){
+  clearTimeout(window._rt);
+  window._rt=setTimeout(function(){
+    drawPhi();drawMain();buildSumGrid();drawTailCanvas(parseInt(document.getElementById('sliderTail').value));
+    updateNumLine();updateZoom();
+  },180);
+});
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  populateTheory();
+  drawPhi();
+  drawMain();
+  buildSumGrid();
+  updateTailBound();
+  updateNumLine();
+  updateDQBars();
+  updateZoom();
+});
+</script>
+</body>
+</html>

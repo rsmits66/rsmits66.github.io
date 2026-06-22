@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taylor's Theorem in Several Variables</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0c0e13;
+    --bg-card: #13161d;
+    --bg-card-hover: #181c25;
+    --border: #252a36;
+    --text: #c8cdd8;
+    --text-dim: #6b7280;
+    --text-bright: #e8ecf4;
+    --accent: #e07850;
+    --accent-dim: #c0623e;
+    --surface-red: #d94040;
+    --surface-blue: #4080d9;
+    --surface-green: #40b080;
+    --approx-color: rgba(180, 180, 220, 0.45);
+    --font-serif: 'Crimson Pro', Georgia, serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+  }
+
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-serif);
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* --- Grain overlay --- */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* --- Layout --- */
+  .page { max-width: 1320px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+
+  header {
+    text-align: center;
+    margin-bottom: 3.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 2.6rem;
+    font-weight: 300;
+    color: var(--text-bright);
+    letter-spacing: 0.02em;
+    margin-bottom: 0.4rem;
+  }
+  header h1 span { color: var(--accent); font-weight: 600; }
+  header .subtitle {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* --- Two-column layout --- */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* --- 3D Canvas --- */
+  .canvas-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .canvas-wrap canvas { display: block; width: 100% !important; height: 560px !important; cursor: grab; }
+  .canvas-wrap canvas:active { cursor: grabbing; }
+  .canvas-label {
+    position: absolute; bottom: 12px; left: 16px;
+    font-family: var(--font-mono); font-size: 0.72rem;
+    color: var(--text-dim); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* --- Controls panel --- */
+  .controls {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.6rem;
+  }
+  .controls h2 {
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 1.4rem;
+  }
+
+  .control-group { margin-bottom: 1.5rem; }
+  .control-group:last-child { margin-bottom: 0; }
+  .control-group label {
+    display: block;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .control-group label .val {
+    float: right;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-bright);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 0 6px rgba(224,120,80,0.4);
+  }
+
+  select {
+    width: 100%; padding: 0.55rem 0.8rem;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-bright);
+    font-family: var(--font-mono); font-size: 0.82rem;
+    cursor: pointer; outline: none;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .legend { margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid var(--border); }
+  .legend-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 0.5rem; font-size: 0.88rem;
+  }
+  .legend-swatch {
+    width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+  }
+
+  .error-display {
+    margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .error-display .label { color: var(--text-dim); margin-bottom: 0.3rem; }
+  .error-display .value {
+    font-family: var(--font-mono); font-size: 0.9rem;
+    color: var(--accent);
+  }
+
+  /* --- Theory section --- */
+  .theory {
+    margin-top: 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  @media (max-width: 960px) {
+    .theory { grid-template-columns: 1fr; }
+  }
+  .theory-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.8rem 2rem;
+    transition: background 0.2s;
+  }
+  .theory-card:hover { background: var(--bg-card-hover); }
+  .theory-card h3 {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .theory-card p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .theory-card .math {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+    line-height: 2;
+    overflow-x: auto;
+    color: var(--text-bright);
+  }
+
+  .full-width { grid-column: 1 / -1; }
+
+  /* --- Footer --- */
+  footer {
+    margin-top: 4rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* Checkbox toggles */
+  .toggle-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 0.7rem; font-size: 0.88rem; color: var(--text);
+    cursor: pointer;
+  }
+  .toggle-row input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 15px; height: 15px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <h1>Taylor's Theorem in <span>Several Variables</span></h1>
+    <div class="subtitle">Interactive exploration of polynomial approximation for surfaces</div>
+  </header>
+
+  <div class="main-grid">
+    <!-- 3D canvas -->
+    <div class="canvas-wrap">
+      <div id="three-container"></div>
+      <div class="canvas-label">Click &amp; drag to rotate &middot; Scroll to zoom</div>
+    </div>
+
+    <!-- Controls panel -->
+    <div class="controls">
+      <h2>Parameters</h2>
+
+      <div class="control-group">
+        <label>Function
+          <select id="fnSelect">
+            <option value="0">(x² + y²) sin(2x) sin(2y) / 4</option>
+            <option value="1">sin(x) cos(y)</option>
+            <option value="2">exp(−(x² + y²)/4)</option>
+            <option value="3">cos(x² + y²) / (1 + x² + y²)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label>Expansion point x₀ <span class="val" id="x0Val">1.00</span></label>
+        <input type="range" id="x0" min="-2.5" max="2.5" step="0.05" value="1.0">
+      </div>
+
+      <div class="control-group">
+        <label>Expansion point y₀ <span class="val" id="y0Val">-1.00</span></label>
+        <input type="range" id="y0" min="-2.5" max="2.5" step="0.05" value="-1.0">
+      </div>
+
+      <div class="control-group">
+        <label>Approximation order
+          <select id="orderSelect">
+            <option value="0">Constant (order 0)</option>
+            <option value="1">Linear (order 1)</option>
+            <option value="2" selected>Quadratic (order 2)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label>Approximation radius <span class="val" id="radVal">1.50</span></label>
+        <input type="range" id="radius" min="0.5" max="3.0" step="0.1" value="1.5">
+      </div>
+
+      <div class="control-group">
+        <label class="toggle-row">
+          <input type="checkbox" id="showWire" checked> Show wireframe on surface
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="showPoint" checked> Show expansion point
+        </label>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(217,64,64,0.8)"></div> Original surface f(x, y)
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(140,160,220,0.7)"></div> Taylor approximation T(x, y)
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:var(--accent)"></div> Expansion point (x₀, y₀)
+        </div>
+      </div>
+
+      <div class="error-display">
+        <div class="label">Max |f − T| on patch</div>
+        <div class="value" id="maxError">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theory section -->
+  <div class="theory">
+    <div class="theory-card">
+      <h3>01 &mdash; The Idea</h3>
+      <p>
+        Taylor's theorem extends to functions of several variables: near a point
+        <strong>(x₀, y₀)</strong>, a smooth function <em>f(x, y)</em> can be approximated
+        by a polynomial built from the function's partial derivatives evaluated at that point.
+        The higher the order, the more closely the polynomial hugs the surface.
+      </p>
+    </div>
+    <div class="theory-card">
+      <h3>02 &mdash; Order 0: Constant</h3>
+      <p>The simplest approximation is just the function value at the expansion point:</p>
+      <div class="math">T₀(x, y) = f(x₀, y₀)</div>
+      <p>This gives a flat horizontal plane tangent to the surface only at the single point.</p>
+    </div>
+    <div class="theory-card">
+      <h3>03 &mdash; Order 1: Tangent Plane</h3>
+      <p>Adding first-order partial derivatives yields the tangent plane:</p>
+      <div class="math">T₁ = f(x₀,y₀) + fₓ(x₀,y₀)(x−x₀) + f_y(x₀,y₀)(y−y₀)</div>
+      <p>This is the best linear approximation — it matches both the value and the slope in every direction at the point.</p>
+    </div>
+    <div class="theory-card">
+      <h3>04 &mdash; Order 2: Osculating Paraboloid</h3>
+      <p>Including second-order terms captures the curvature of the surface:</p>
+      <div class="math">T₂ = T₁ + ½ fₓₓ(x−x₀)² + fₓᵧ(x−x₀)(y−y₀) + ½ f_yy(y−y₀)²</div>
+      <p>This quadratic surface matches the original function's value, gradient, and Hessian at (x₀, y₀). The error is O(‖Δ‖³).</p>
+    </div>
+    <div class="theory-card full-width">
+      <h3>05 &mdash; General Formula</h3>
+      <p>For a function <em>f</em> : ℝⁿ → ℝ expanded around point <strong>a</strong>, the order-<em>k</em> Taylor polynomial is:</p>
+      <div class="math">
+Tₖ(x) = Σ_{|α| ≤ k}  (1/α!) · Dᵅf(a) · (x − a)ᵅ
+      </div>
+      <p>
+        where α = (α₁, …, αₙ) is a multi-index, |α| = α₁ + ⋯ + αₙ, α! = α₁!⋯αₙ!, and Dᵅ denotes
+        the corresponding mixed partial derivative. The remainder satisfies
+        |f(x) − Tₖ(x)| ≤ C ‖x − a‖ᵏ⁺¹ for x near a.
+      </p>
+    </div>
+  </div>
+
+  <footer>Drag the surface to explore &middot; Adjust the controls to see how the approximation changes</footer>
+</div>
+
+<script>
+// =====================  FUNCTION LIBRARY  =====================
+
+const h = 1e-5; // finite-difference step
+
+// Each entry: { f, xRange, yRange, defaultX0, defaultY0 }
+const FUNCTIONS = [
+  {
+    label: '(x²+y²)sin(2x)sin(2y)/4',
+    f: (x,y) => (x*x + y*y) * Math.sin(2*x) * Math.sin(2*y) / 4,
+    xRange: [-3,3], yRange: [-3,3], defaultX0: 1.0, defaultY0: -1.0
+  },
+  {
+    label: 'sin(x)cos(y)',
+    f: (x,y) => Math.sin(x)*Math.cos(y),
+    xRange: [-4,4], yRange: [-4,4], defaultX0: 0.5, defaultY0: 0.5
+  },
+  {
+    label: 'exp(-(x²+y²)/4)',
+    f: (x,y) => Math.exp(-(x*x+y*y)/4),
+    xRange: [-4,4], yRange: [-4,4], defaultX0: 0.0, defaultY0: 0.0
+  },
+  {
+    label: 'cos(x²+y²)/(1+x²+y²)',
+    f: (x,y) => Math.cos(x*x+y*y)/(1+x*x+y*y),
+    xRange: [-3,3], yRange: [-3,3], defaultX0: 0.0, defaultY0: 0.0
+  }
+];
+
+// Numerical derivatives via central differences
+function df_dx(f,x,y){ return (f(x+h,y)-f(x-h,y))/(2*h); }
+function df_dy(f,x,y){ return (f(x,y+h)-f(x,y-h))/(2*h); }
+function d2f_dxx(f,x,y){ return (f(x+h,y)-2*f(x,y)+f(x-h,y))/(h*h); }
+function d2f_dyy(f,x,y){ return (f(x,y+h)-2*f(x,y)+f(x,y-h))/(h*h); }
+function d2f_dxy(f,x,y){ return (f(x+h,y+h)-f(x+h,y-h)-f(x-h,y+h)+f(x-h,y-h))/(4*h*h); }
+
+function taylorApprox(f, x0, y0, order){
+  const fv = f(x0,y0);
+  const fx = df_dx(f,x0,y0), fy = df_dy(f,x0,y0);
+  const fxx = d2f_dxx(f,x0,y0), fyy = d2f_dyy(f,x0,y0), fxy = d2f_dxy(f,x0,y0);
+  return (x,y) => {
+    const dx = x-x0, dy = y-y0;
+    let v = fv;
+    if(order >= 1) v += fx*dx + fy*dy;
+    if(order >= 2) v += 0.5*fxx*dx*dx + fxy*dx*dy + 0.5*fyy*dy*dy;
+    return v;
+  };
+}
+
+// =====================  THREE.JS SETUP  =====================
+
+const container = document.getElementById('three-container');
+const width = container.clientWidth || 800;
+const height = 560;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0c0e13);
+
+const camera = new THREE.PerspectiveCamera(42, width/height, 0.1, 100);
+camera.position.set(7, 5, 7);
+camera.lookAt(0,0,0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setSize(width, height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+// Lights
+const ambient = new THREE.AmbientLight(0x404050, 0.6);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xffeedd, 0.9);
+dirLight.position.set(5, 8, 6);
+scene.add(dirLight);
+const dirLight2 = new THREE.DirectionalLight(0xaabbdd, 0.4);
+dirLight2.position.set(-4, 3, -5);
+scene.add(dirLight2);
+
+// Grid helper
+const gridHelper = new THREE.GridHelper(8, 16, 0x252a36, 0x1a1e28);
+scene.add(gridHelper);
+
+// Axes (subtle)
+function makeAxis(start, end, color) {
+  const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.35 });
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(...start), new THREE.Vector3(...end)
+  ]);
+  scene.add(new THREE.Line(geo, mat));
+}
+makeAxis([-4,0,0],[4,0,0], 0xff6644);
+makeAxis([0,-3,0],[0,3,0], 0x44cc88);
+makeAxis([0,0,-4],[0,0,4], 0x4488dd);
+
+// =====================  SURFACE MESHES  =====================
+
+let surfaceMesh, surfaceWire, approxMesh, approxWire, pointSphere;
+
+const RES = 100; // grid resolution
+
+function buildSurfaceGeometry(evalFn, xMin, xMax, yMin, yMax, res) {
+  const geo = new THREE.BufferGeometry();
+  const vertices = [], indices = [];
+  for (let j = 0; j <= res; j++) {
+    for (let i = 0; i <= res; i++) {
+      const x = xMin + (xMax - xMin) * i / res;
+      const y = yMin + (yMax - yMin) * j / res;
+      let z = evalFn(x, y);
+      if (!isFinite(z)) z = 0;
+      vertices.push(x, z, y); // three.js: Y is up
+    }
+  }
+  for (let j = 0; j < res; j++) {
+    for (let i = 0; i < res; i++) {
+      const a = j * (res+1) + i;
+      const b = a + 1;
+      const c = a + (res+1);
+      const d = c + 1;
+      indices.push(a,c,b, b,c,d);
+    }
+  }
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function createSurfaces() {
+  // Remove old
+  if (surfaceMesh) { scene.remove(surfaceMesh); surfaceMesh.geometry.dispose(); }
+  if (surfaceWire) { scene.remove(surfaceWire); surfaceWire.geometry.dispose(); }
+  if (approxMesh)  { scene.remove(approxMesh);  approxMesh.geometry.dispose(); }
+  if (approxWire)  { scene.remove(approxWire);  approxWire.geometry.dispose(); }
+  if (pointSphere) { scene.remove(pointSphere); }
+
+  const fnIdx = parseInt(document.getElementById('fnSelect').value);
+  const fn = FUNCTIONS[fnIdx];
+  const x0 = parseFloat(document.getElementById('x0').value);
+  const y0 = parseFloat(document.getElementById('y0').value);
+  const order = parseInt(document.getElementById('orderSelect').value);
+  const rad = parseFloat(document.getElementById('radius').value);
+
+  // Main surface
+  const geo1 = buildSurfaceGeometry(fn.f, fn.xRange[0], fn.xRange[1], fn.yRange[0], fn.yRange[1], RES);
+  const mat1 = new THREE.MeshPhongMaterial({
+    color: 0xd94040, transparent: true, opacity: 0.55, side: THREE.DoubleSide,
+    shininess: 30, specular: 0x442222
+  });
+  surfaceMesh = new THREE.Mesh(geo1, mat1);
+  scene.add(surfaceMesh);
+
+  // Wireframe for main surface
+  const wireMat = new THREE.MeshBasicMaterial({
+    color: 0xd94040, wireframe: true, transparent: true, opacity: 0.08
+  });
+  surfaceWire = new THREE.Mesh(geo1, wireMat);
+  surfaceWire.visible = document.getElementById('showWire').checked;
+  scene.add(surfaceWire);
+
+  // Taylor approximation surface
+  const T = taylorApprox(fn.f, x0, y0, order);
+  const axMin = x0 - rad, axMax = x0 + rad, ayMin = y0 - rad, ayMax = y0 + rad;
+  const geo2 = buildSurfaceGeometry(T, axMin, axMax, ayMin, ayMax, 50);
+  const mat2 = new THREE.MeshPhongMaterial({
+    color: 0x8ca0dc, transparent: true, opacity: 0.65, side: THREE.DoubleSide,
+    shininess: 60, specular: 0x334466
+  });
+  approxMesh = new THREE.Mesh(geo2, mat2);
+  scene.add(approxMesh);
+
+  const aWire = new THREE.MeshBasicMaterial({
+    color: 0x8ca0dc, wireframe: true, transparent: true, opacity: 0.12
+  });
+  approxWire = new THREE.Mesh(geo2, aWire);
+  scene.add(approxWire);
+
+  // Expansion point
+  const fVal = fn.f(x0, y0);
+  const sGeo = new THREE.SphereGeometry(0.08, 16, 16);
+  const sMat = new THREE.MeshPhongMaterial({ color: 0xe07850, emissive: 0xe07850, emissiveIntensity: 0.5 });
+  pointSphere = new THREE.Mesh(sGeo, sMat);
+  pointSphere.position.set(x0, fVal, y0);
+  pointSphere.visible = document.getElementById('showPoint').checked;
+  scene.add(pointSphere);
+
+  // Compute max error on approximation patch
+  let maxErr = 0;
+  const steps = 30;
+  for (let j = 0; j <= steps; j++) {
+    for (let i = 0; i <= steps; i++) {
+      const x = axMin + (axMax - axMin) * i / steps;
+      const y = ayMin + (ayMax - ayMin) * j / steps;
+      const err = Math.abs(fn.f(x,y) - T(x,y));
+      if (isFinite(err) && err > maxErr) maxErr = err;
+    }
+  }
+  document.getElementById('maxError').textContent = maxErr.toFixed(6);
+}
+
+// =====================  ORBIT CONTROLS (minimal)  =====================
+
+let isDragging = false, prevMouse = {x:0,y:0};
+let spherical = { theta: Math.PI/4, phi: Math.PI/5, radius: 11 };
+
+function updateCamera() {
+  const r = spherical.radius;
+  camera.position.set(
+    r * Math.sin(spherical.phi) * Math.cos(spherical.theta),
+    r * Math.cos(spherical.phi),
+    r * Math.sin(spherical.phi) * Math.sin(spherical.theta)
+  );
+  camera.lookAt(0, 0, 0);
+}
+updateCamera();
+
+renderer.domElement.addEventListener('mousedown', e => { isDragging = true; prevMouse = {x:e.clientX, y:e.clientY}; });
+window.addEventListener('mouseup', () => isDragging = false);
+renderer.domElement.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - prevMouse.x, dy = e.clientY - prevMouse.y;
+  spherical.theta -= dx * 0.006;
+  spherical.phi = Math.max(0.15, Math.min(Math.PI/2 - 0.05, spherical.phi - dy*0.006));
+  prevMouse = {x:e.clientX, y:e.clientY};
+  updateCamera();
+});
+renderer.domElement.addEventListener('wheel', e => {
+  spherical.radius = Math.max(4, Math.min(22, spherical.radius + e.deltaY * 0.01));
+  updateCamera();
+  e.preventDefault();
+}, { passive: false });
+
+// Touch support
+renderer.domElement.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { isDragging = true; prevMouse = {x:e.touches[0].clientX, y:e.touches[0].clientY}; }
+});
+renderer.domElement.addEventListener('touchmove', e => {
+  if (!isDragging || e.touches.length !== 1) return;
+  const dx = e.touches[0].clientX - prevMouse.x, dy = e.touches[0].clientY - prevMouse.y;
+  spherical.theta -= dx * 0.006;
+  spherical.phi = Math.max(0.15, Math.min(Math.PI/2 - 0.05, spherical.phi - dy*0.006));
+  prevMouse = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  updateCamera();
+  e.preventDefault();
+}, { passive: false });
+renderer.domElement.addEventListener('touchend', () => isDragging = false);
+
+// =====================  EVENT WIRING  =====================
+
+function onParamChange() {
+  document.getElementById('x0Val').textContent = parseFloat(document.getElementById('x0').value).toFixed(2);
+  document.getElementById('y0Val').textContent = parseFloat(document.getElementById('y0').value).toFixed(2);
+  document.getElementById('radVal').textContent = parseFloat(document.getElementById('radius').value).toFixed(2);
+  createSurfaces();
+}
+
+document.getElementById('x0').addEventListener('input', onParamChange);
+document.getElementById('y0').addEventListener('input', onParamChange);
+document.getElementById('radius').addEventListener('input', onParamChange);
+document.getElementById('orderSelect').addEventListener('change', onParamChange);
+document.getElementById('fnSelect').addEventListener('change', () => {
+  const fnIdx = parseInt(document.getElementById('fnSelect').value);
+  const fn = FUNCTIONS[fnIdx];
+  document.getElementById('x0').value = fn.defaultX0;
+  document.getElementById('y0').value = fn.defaultY0;
+  onParamChange();
+});
+document.getElementById('showWire').addEventListener('change', () => {
+  if (surfaceWire) surfaceWire.visible = document.getElementById('showWire').checked;
+});
+document.getElementById('showPoint').addEventListener('change', () => {
+  if (pointSphere) pointSphere.visible = document.getElementById('showPoint').checked;
+});
+
+// =====================  RENDER LOOP  =====================
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+// Responsive resize
+window.addEventListener('resize', () => {
+  const w = container.clientWidth;
+  camera.aspect = w / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, height);
+});
+
+// Initialize
+createSurfaces();
+animate();
+</script>
+
+</body>
+</html>

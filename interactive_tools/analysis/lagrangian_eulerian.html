@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lagrangian vs Eulerian View of a Sequence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --cream:#FDF8F0;--cream-dark:#F5EDE0;
+    --navy:#1B2A4A;--navy-light:#2C3E6B;
+    --gold:#C8A951;--gold-muted:#B8963E;
+    --crimson:#A32D2D;--teal:#1D7A6A;
+    --purple:#534AB7;
+    --text-primary:#2C2418;--text-secondary:#6B5D4F;
+    --border:rgba(43,42,30,0.12);--border-strong:rgba(43,42,30,0.22);
+    --shadow-sm:0 1px 3px rgba(27,42,74,0.06);
+  }
+  body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--text-primary);line-height:1.65;font-size:16px}
+  .page-header{background:var(--navy);color:var(--cream);padding:2rem 1.5rem 1.6rem;text-align:center;position:relative}
+  .page-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--gold),var(--gold-muted),var(--gold))}
+  .page-header h1{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:clamp(1.3rem,3vw,1.8rem);letter-spacing:0.02em;margin-bottom:0.3rem}
+  .page-header .subtitle{font-size:1rem;opacity:0.7;font-weight:300}
+  .container{max-width:1000px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+  .card{background:white;border:1px solid var(--border);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+  .card.accent-navy{border-left:4px solid var(--navy)}
+  .controls-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0.6rem 1rem;background:white;border:1px solid var(--border);border-radius:6px;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+  .ctrl-btn{padding:5px 13px;font-family:'Crimson Pro',serif;font-size:0.88rem;border:1px solid var(--border-strong);border-radius:4px;background:white;cursor:pointer;transition:all 0.15s;color:var(--navy)}
+  .ctrl-btn:hover{background:var(--navy);color:var(--cream);border-color:var(--navy)}
+  .ctrl-btn.active{background:var(--navy);color:var(--cream);border-color:var(--navy);font-weight:600}
+  .ctrl-label{font-size:0.86rem;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+  .ctrl-label input[type="range"]{width:80px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--cream-dark);cursor:pointer}
+  .ctrl-label input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--navy)}
+  .ctrl-label input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;border:none;background:var(--navy)}
+  .ctrl-val{font-weight:600;color:var(--navy);min-width:22px;font-size:0.86rem}
+  .divider{width:1px;height:22px;background:var(--border-strong);margin:0 2px}
+  .seq-select{display:flex;gap:0}
+  .seq-tab{padding:5px 11px;font-family:'Crimson Pro',serif;font-size:0.82rem;border:1px solid var(--border-strong);background:white;cursor:pointer;color:var(--text-secondary);transition:all 0.15s}
+  .seq-tab:first-child{border-radius:4px 0 0 4px}
+  .seq-tab:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
+  .seq-tab:not(:first-child):not(:last-child){margin-left:-1px}
+  .seq-tab.active{background:var(--navy);color:var(--cream);border-color:var(--navy);font-weight:600;z-index:1}
+  .readouts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.75rem}
+  .readout{background:var(--cream);border:1px solid var(--border);border-radius:5px;padding:4px 9px;font-size:0.82rem}
+  .readout .ro-label{color:var(--text-secondary)}
+  .readout .ro-value{font-weight:600;color:var(--navy)}
+  .panel-label{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary);margin-bottom:3px}
+  .panel-sublabel{font-size:0.78rem;color:var(--text-secondary);font-style:italic;margin-bottom:3px}
+  .top-panel canvas{width:100%;display:block;border-radius:4px}
+  .bottom-panels{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+  .bottom-panel{background:white;border:1px solid var(--border);border-radius:6px;padding:0.75rem 1rem;box-shadow:var(--shadow-sm)}
+  .bottom-panel canvas{width:100%;display:block}
+  .legend-row{display:flex;flex-wrap:wrap;gap:12px;font-size:0.76rem;color:var(--text-secondary);padding-top:3px}
+  .legend-item{display:flex;align-items:center;gap:3px}
+  .legend-swatch{width:9px;height:9px;border-radius:2px}
+  .seq-note{font-size:0.88rem;color:var(--text-secondary);margin-top:0.5rem;padding:0.5rem 0.75rem;background:rgba(200,169,81,0.08);border-radius:5px;border:1px solid rgba(200,169,81,0.15)}
+  .katex{font-size:1em}
+  @media(max-width:700px){.bottom-panels{grid-template-columns:1fr}.container{padding:1rem 0.75rem 2rem}.controls-bar{gap:5px;padding:0.5rem 0.6rem}}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Lagrangian vs Eulerian View of a Sequence</h1>
+  <div class="subtitle">Tracking a particle vs. watching the flow</div>
+</div>
+
+<div class="container">
+
+<div class="card accent-navy">
+  <p>Think of index <span id="def-n"></span> as <em>time</em>. Two ways to watch a sequence:</p>
+  <p style="margin-left:1rem;margin-bottom:0.4rem">
+    <strong style="color:var(--teal);">Lagrangian (man-to-man):</strong> Follow the particle — where is <span id="def-an"></span> right now?
+  </p>
+  <p style="margin-left:1rem">
+    <strong style="color:var(--crimson);">Eulerian (zone defense):</strong> Watch fixed regions of space — how often does the sequence visit each zone?
+  </p>
+</div>
+
+<div class="controls-bar">
+  <div class="seq-select">
+    <button class="seq-tab active" id="sTab1" onclick="setSeq(1)">sin(n)</button>
+    <button class="seq-tab" id="sTab2" onclick="setSeq(2)">sin(n)/n</button>
+    <button class="seq-tab" id="sTab3" onclick="setSeq(3)">n!eⁿ/n<sup>n+1</sup></button>
+  </div>
+  <span class="divider"></span>
+  <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+  <button class="ctrl-btn" onclick="stepOnce()">Step</button>
+  <button class="ctrl-btn" onclick="resetAll()">Reset</button>
+  <span class="divider"></span>
+  <label class="ctrl-label">Speed <input type="range" id="speedSl" min="1" max="10" step="1" value="4"><span class="ctrl-val" id="speedV">4</span></label>
+  <label class="ctrl-label">Window <input type="range" id="winSl" min="3" max="30" step="1" value="5"><span class="ctrl-val" id="winV">5</span></label>
+</div>
+
+<div class="readouts">
+  <div class="readout"><span class="ro-label">n = </span><span class="ro-value" id="roN">0</span></div>
+  <div class="readout"><span class="ro-label" id="roAnLbl">a<sub>n</sub> = </span><span class="ro-value" id="roAn">—</span></div>
+  <div class="readout"><span class="ro-label">sequence: </span><span class="ro-value" id="roSeq">sin(n)</span></div>
+</div>
+
+<div class="top-panel">
+  <div class="panel-label">Sequence plot — terms appear over time</div>
+  <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:6px;box-shadow:var(--shadow-sm);">
+    <canvas id="topC"></canvas>
+  </div>
+  <div class="seq-note" id="seqNote" style="display:none;"></div>
+</div>
+
+<div class="bottom-panels">
+  <div class="bottom-panel">
+    <div class="panel-label" style="color:var(--teal);">Lagrangian (man-to-man)</div>
+    <div class="panel-sublabel">Follow the particle: where is a<sub>n</sub> now?</div>
+    <canvas id="lagC"></canvas>
+    <div class="legend-row">
+      <span class="legend-item"><span class="legend-swatch" style="background:#1D7A6A;"></span> current a<sub>n</sub></span>
+      <span class="legend-item"><span class="legend-swatch" style="background:rgba(29,122,106,0.2);"></span> trail (fading)</span>
+    </div>
+  </div>
+  <div class="bottom-panel">
+    <div class="panel-label" style="color:var(--crimson);">Eulerian (zone defense)</div>
+    <div class="panel-sublabel">How often is each zone visited?</div>
+    <canvas id="eulC"></canvas>
+    <div class="legend-row">
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--gold);"></span> last <span id="legW">5</span> terms</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--crimson);opacity:0.4;"></span> all-time</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+
+  function k(id,tex){var el=document.getElementById(id);if(el)katex.render(tex,el,{throwOnError:false});}
+  k('def-n','n'); k('def-an','a_n');
+
+  var seqType=1, curN=0, hist=[], playing=false, animId=null;
+  var NUM_ZONES=10;
+  var zoneTotals=new Array(NUM_ZONES).fill(0);
+
+  /* Stirling: compute via log to avoid overflow */
+  var logFactCache=[0,0]; /* logFactCache[n] = log(n!) */
+  function logFact(n){
+    while(logFactCache.length<=n){
+      var k=logFactCache.length;
+      logFactCache.push(logFactCache[k-1]+Math.log(k));
+    }
+    return logFactCache[n];
+  }
+
+  function seqFn(n){
+    if(seqType===1) return Math.sin(n);
+    if(seqType===2) return Math.sin(n)/n;
+    /* n! * e^n / n^(n+1) computed in log space */
+    var logVal = logFact(n) + n - (n+1)*Math.log(n);
+    return Math.exp(logVal);
+  }
+
+  var topC=document.getElementById('topC'), topCtx=topC.getContext('2d');
+  var lagC=document.getElementById('lagC'), lagCtx=lagC.getContext('2d');
+  var eulC=document.getElementById('eulC'), eulCtx=eulC.getContext('2d');
+  var speedSl=document.getElementById('speedSl'), speedV=document.getElementById('speedV');
+  var winSl=document.getElementById('winSl'), winV=document.getElementById('winV');
+
+  speedSl.addEventListener('input',function(){speedV.textContent=speedSl.value;});
+  winSl.addEventListener('input',function(){
+    winV.textContent=winSl.value;
+    document.getElementById('legW').textContent=winSl.value;
+    drawAll();
+  });
+
+  function getW(){return parseInt(winSl.value);}
+
+  /* adaptive range for the value axis */
+  function getRange(){
+    if(hist.length===0){
+      if(seqType<=2) return {lo:-1.15, hi:1.15};
+      return {lo:0, hi:3};
+    }
+    var lo=Infinity, hi=-Infinity;
+    for(var i=0;i<hist.length;i++){lo=Math.min(lo,hist[i]);hi=Math.max(hi,hist[i]);}
+    var span=hi-lo; if(span<0.01)span=1;
+    return {lo:lo-span*0.1, hi:hi+span*0.1};
+  }
+
+  function getZoneParams(){
+    var r=getRange();
+    var lo=r.lo, hi=r.hi;
+    /* nice zone boundaries */
+    if(seqType<=2){lo=-1;hi=1;}
+    else{lo=0; hi=Math.max(hi,0.5); hi=Math.ceil(hi*5)/5;}
+    var zw=(hi-lo)/NUM_ZONES;
+    return {lo:lo, hi:hi, zw:zw};
+  }
+
+  function zoneIndex(v,zp){
+    var idx=Math.floor((v-zp.lo)/zp.zw);
+    if(idx<0)idx=0; if(idx>=NUM_ZONES)idx=NUM_ZONES-1;
+    return idx;
+  }
+
+  function rebuildZoneTotals(){
+    var zp=getZoneParams();
+    zoneTotals=new Array(NUM_ZONES).fill(0);
+    for(var i=0;i<hist.length;i++) zoneTotals[zoneIndex(hist[i],zp)]++;
+  }
+
+  function resizeC(c,w,h){
+    var d=window.devicePixelRatio||1;
+    c.width=w*d;c.height=h*d;c.style.height=h+'px';
+    c.getContext('2d').setTransform(d,0,0,d,0,0);
+  }
+
+  /* ════════ TOP PANEL ════════ */
+  function drawTop(){
+    var rect=topC.parentElement.getBoundingClientRect();
+    var w=rect.width-12, h=Math.min(280,Math.max(200,w*0.35));
+    resizeC(topC,w,h);
+    var ctx=topCtx;
+    var p={l:48,r:16,t:14,b:32}, pw=w-p.l-p.r, ph=h-p.t-p.b;
+    var maxN=Math.max(50,curN+10);
+    var rng=getRange();
+
+    function toX(n){return p.l+(n/maxN)*pw;}
+    function toY(v){return p.t+(1-(v-rng.lo)/(rng.hi-rng.lo))*ph;}
+
+    ctx.clearRect(0,0,w,h);
+    var mut='rgba(44,36,24,0.25)',grd='rgba(44,36,24,0.06)';
+
+    /* grid */
+    ctx.strokeStyle=grd;ctx.lineWidth=0.5;
+    ctx.font='10px "Crimson Pro",serif';
+    var ySpan=rng.hi-rng.lo;
+    var yStep=ySpan<=2?0.2:ySpan<=5?0.5:ySpan<=12?1:Math.ceil(ySpan/8);
+    var y0=Math.ceil(rng.lo/yStep)*yStep;
+    for(var v=y0;v<=rng.hi;v+=yStep){
+      var y=toY(v);
+      if(y<p.t||y>h-p.b)continue;
+      ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();
+      ctx.fillStyle=mut;ctx.textAlign='right';ctx.textBaseline='middle';
+      ctx.fillText(Math.abs(v)<10?v.toFixed(1):v.toFixed(0),p.l-5,y);
+    }
+    var xStep=maxN<=60?10:maxN<=200?25:50;
+    for(var n=xStep;n<=maxN;n+=xStep){
+      var x=toX(n);
+      ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,h-p.b);ctx.stroke();
+      ctx.fillStyle=mut;ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.fillText(n,x,h-p.b+5);
+    }
+
+    /* zero line */
+    if(rng.lo<0&&rng.hi>0){
+      ctx.strokeStyle='rgba(44,36,24,0.15)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(p.l,toY(0));ctx.lineTo(w-p.r,toY(0));ctx.stroke();
+    }
+
+    /* dots */
+    for(var i=0;i<hist.length;i++){
+      var n=i+1, isLast=(i===hist.length-1);
+      if(isLast){
+        ctx.fillStyle='#1D7A6A';
+        ctx.beginPath();ctx.arc(toX(n),toY(hist[i]),4.5,0,2*Math.PI);ctx.fill();
+      }else{
+        var age=hist.length-1-i;
+        var a=Math.max(0.12,1-age/Math.max(1,hist.length));
+        ctx.fillStyle='rgba(27,42,74,'+(0.12+0.55*a).toFixed(2)+')';
+        ctx.beginPath();ctx.arc(toX(n),toY(hist[i]),2.5,0,2*Math.PI);ctx.fill();
+      }
+    }
+
+    /* axes */
+    ctx.strokeStyle=mut;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+    ctx.fillStyle='#2C2418';ctx.font='12px "Crimson Pro",serif';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText('n',p.l+pw/2,h-10);
+  }
+
+  /* ════════ LAGRANGIAN PANEL ════════ */
+  function drawLag(){
+    var rect=lagC.parentElement.getBoundingClientRect();
+    var w=rect.width-32, h=90;
+    resizeC(lagC,w,h);
+    var ctx=lagCtx;
+    var p={l:28,r:28,t:30,b:22};
+    var pw=w-p.l-p.r;
+    var cy=p.t+(h-p.t-p.b)/2;
+
+    var rng=getRange();
+    function toX(v){return p.l+((v-rng.lo)/(rng.hi-rng.lo))*pw;}
+
+    ctx.clearRect(0,0,w,h);
+
+    /* axis line */
+    ctx.strokeStyle='rgba(44,36,24,0.3)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(p.l,cy);ctx.lineTo(w-p.r,cy);ctx.stroke();
+
+    /* ticks */
+    ctx.font='10px "Crimson Pro",serif';
+    ctx.fillStyle='rgba(44,36,24,0.4)';ctx.textAlign='center';ctx.textBaseline='top';
+    var span=rng.hi-rng.lo;
+    var tStep=span<=2?0.2:span<=5?0.5:span<=12?1:Math.ceil(span/8);
+    var t0=Math.ceil(rng.lo/tStep)*tStep;
+    for(var v=t0;v<=rng.hi+0.001;v+=tStep){
+      var x=toX(v);
+      ctx.beginPath();ctx.moveTo(x,cy-4);ctx.lineTo(x,cy+4);ctx.stroke();
+      ctx.fillText(Math.abs(v)<10?v.toFixed(1):v.toFixed(0),x,cy+7);
+    }
+
+    if(hist.length===0)return;
+
+    /* trail */
+    var W=getW();
+    var start=Math.max(0,hist.length-W);
+    for(var i=start;i<hist.length-1;i++){
+      var age=hist.length-1-i;
+      var alpha=Math.max(0.08,0.35*(1-age/W));
+      ctx.fillStyle='rgba(29,122,106,'+alpha.toFixed(2)+')';
+      ctx.beginPath();ctx.arc(toX(hist[i]),cy,5,0,2*Math.PI);ctx.fill();
+    }
+
+    /* current dot */
+    var cur=hist[hist.length-1];
+    ctx.fillStyle='#1D7A6A';
+    ctx.beginPath();ctx.arc(toX(cur),cy,8,0,2*Math.PI);ctx.fill();
+    ctx.fillStyle='white';ctx.font='bold 8px "Crimson Pro",serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(curN,toX(cur),cy);
+
+    /* label */
+    ctx.fillStyle='#1D7A6A';ctx.font='11px "Crimson Pro",serif';
+    ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText('a\u2099 = '+cur.toFixed(4),toX(cur),cy-12);
+  }
+
+  /* ════════ EULERIAN PANEL ════════ */
+  function drawEul(){
+    var rect=eulC.parentElement.getBoundingClientRect();
+    var w=rect.width-32, h=180;
+    resizeC(eulC,w,h);
+    var ctx=eulCtx;
+    var p={l:28,r:28,t:10,b:52};
+    var pw=w-p.l-p.r, ph=h-p.t-p.b;
+
+    var zp=getZoneParams();
+    function toX(v){return p.l+((v-zp.lo)/(zp.hi-zp.lo))*pw;}
+
+    ctx.clearRect(0,0,w,h);
+
+    /* recent counts */
+    var W=getW();
+    var start=Math.max(0,hist.length-W);
+    var recent=new Array(NUM_ZONES).fill(0);
+    for(var i=start;i<hist.length;i++) recent[zoneIndex(hist[i],zp)]++;
+
+    var maxT=1;
+    for(var z=0;z<NUM_ZONES;z++) maxT=Math.max(maxT,zoneTotals[z]);
+    var maxR=Math.max(1,W);
+
+    var barW=(pw/NUM_ZONES)-4;
+
+    /* all-time bars */
+    for(var z=0;z<NUM_ZONES;z++){
+      var left=toX(zp.lo+z*zp.zw)+2;
+      var bh=(zoneTotals[z]/maxT)*ph*0.88;
+      ctx.fillStyle='rgba(163,45,45,0.18)';
+      ctx.fillRect(left,p.t+ph-bh,barW,bh);
+      ctx.strokeStyle='rgba(163,45,45,0.3)';ctx.lineWidth=0.5;
+      ctx.strokeRect(left,p.t+ph-bh,barW,bh);
+      if(zoneTotals[z]>0){
+        ctx.fillStyle='rgba(163,45,45,0.65)';ctx.font='9px "Crimson Pro",serif';
+        ctx.textAlign='center';ctx.textBaseline='bottom';
+        ctx.fillText(zoneTotals[z],left+barW/2,p.t+ph-bh-1);
+      }
+    }
+
+    /* recent bars */
+    for(var z=0;z<NUM_ZONES;z++){
+      var left=toX(zp.lo+z*zp.zw)+2;
+      var bh=(recent[z]/maxR)*ph*0.88;
+      ctx.fillStyle='rgba(200,169,81,0.55)';
+      ctx.fillRect(left+2,p.t+ph-bh,barW-4,bh);
+      if(recent[z]>0){
+        ctx.fillStyle='#8B6914';ctx.font='bold 10px "Crimson Pro",serif';
+        ctx.textAlign='center';ctx.textBaseline='bottom';
+        ctx.fillText(recent[z],left+barW/2,p.t+ph-bh-1);
+      }
+    }
+
+    /* baseline */
+    ctx.strokeStyle='rgba(44,36,24,0.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p.l,p.t+ph);ctx.lineTo(w-p.r,p.t+ph);ctx.stroke();
+
+    /* zone labels */
+    ctx.font='8px "Crimson Pro",serif';
+    ctx.fillStyle='rgba(44,36,24,0.5)';ctx.textAlign='center';ctx.textBaseline='top';
+    for(var z=0;z<NUM_ZONES;z++){
+      var lo=zp.lo+z*zp.zw, hi=lo+zp.zw;
+      var cx=toX(lo+zp.zw/2);
+      var loS=Math.abs(lo)<10?lo.toFixed(1):lo.toFixed(0);
+      var hiS=Math.abs(hi)<10?hi.toFixed(1):hi.toFixed(0);
+      ctx.fillText('['+loS+',',cx,p.t+ph+4);
+      ctx.fillText(hiS+')',cx,p.t+ph+14);
+    }
+
+    /* highlight current zone */
+    if(hist.length>0){
+      var zi=zoneIndex(hist[hist.length-1],zp);
+      var left=toX(zp.lo+zi*zp.zw)+2;
+      ctx.strokeStyle='#1D7A6A';ctx.lineWidth=2;
+      ctx.strokeRect(left-1,p.t,barW+2,ph+1);
+    }
+
+    /* scale */
+    ctx.fillStyle='rgba(44,36,24,0.3)';ctx.font='9px "Crimson Pro",serif';
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(maxT,p.l-4,p.t+ph*0.12);
+  }
+
+  function drawAll(){drawTop();drawLag();drawEul();}
+
+  function updateRO(){
+    document.getElementById('roN').textContent=curN;
+    document.getElementById('roAn').textContent=curN>0?hist[curN-1].toFixed(6):'—';
+  }
+
+  function addStep(){
+    curN++;
+    var val=seqFn(curN);
+    hist.push(val);
+    var zp=getZoneParams();
+    zoneTotals[zoneIndex(val,zp)]++;
+    updateRO();
+    drawAll();
+  }
+
+  window.stepOnce=function(){if(!playing)addStep();};
+
+  var lastT=0;
+  function anim(ts){
+    if(!playing)return;
+    var delays=[500,300,200,120,80,50,30,16,10,5];
+    var delay=delays[parseInt(speedSl.value)-1]||80;
+    if(ts-lastT>=delay){addStep();lastT=ts;}
+    animId=requestAnimationFrame(anim);
+  }
+
+  window.togglePlay=function(){
+    playing=!playing;
+    document.getElementById('playBtn').innerHTML=playing?'&#10074;&#10074; Pause':'&#9654; Play';
+    document.getElementById('playBtn').classList.toggle('active',playing);
+    if(playing){lastT=performance.now();animId=requestAnimationFrame(anim);}
+    else if(animId)cancelAnimationFrame(animId);
+  };
+
+  window.resetAll=function(){
+    playing=false;
+    if(animId)cancelAnimationFrame(animId);
+    document.getElementById('playBtn').innerHTML='&#9654; Play';
+    document.getElementById('playBtn').classList.remove('active');
+    curN=0;hist=[];zoneTotals=new Array(NUM_ZONES).fill(0);
+    updateRO();drawAll();
+  };
+
+  var seqLabels={1:'sin(n)',2:'sin(n)/n',3:'n! eⁿ / n^(n+1)'};
+  var seqNotes={
+    1:'<strong>Bounded, non-convergent.</strong> The histogram builds up a U-shaped (arcsine) distribution — the sequence spends more time near ±1 where sin slows down.',
+    2:'<strong>Convergent to 0.</strong> The oscillations are crushed by 1/n. The Eulerian histogram concentrates into the zone around 0.',
+    3:'<strong>Convergent to 0.</strong> By Stirling\'s approximation, n! eⁿ/n^(n+1) ≈ √(2π/n) → 0 monotonically from above. All zone activity migrates toward the leftmost bin.'
+  };
+
+  window.setSeq=function(s){
+    seqType=s;
+    for(var i=1;i<=3;i++) document.getElementById('sTab'+i).classList.toggle('active',i===s);
+    document.getElementById('roSeq').textContent=seqLabels[s];
+    document.getElementById('seqNote').innerHTML=seqNotes[s];
+    document.getElementById('seqNote').style.display='block';
+    resetAll();
+  };
+
+  window.addEventListener('resize',drawAll);
+  document.getElementById('roSeq').textContent='sin(n)';
+  drawAll();
+})();
+</script>
+
+</body>
+</html>

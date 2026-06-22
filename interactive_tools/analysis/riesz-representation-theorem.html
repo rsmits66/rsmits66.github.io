@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riesz Representation Theorem — via the Four Subspaces</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <style>
+    :root {
+      --cream:    #faf7f2;
+      --paper:    #ffffff;
+      --navy:     #18284a;
+      --navy2:    #2c4070;
+      --accent:   #3a6eb5;
+      --red:      #b33a2f;
+      --red-bg:   #fef0ee;
+      --gold:     #c8a430;
+      --gray:     #7a7a8a;
+      --border:   #ddd9d0;
+      --acc-bg:   #edf1fb;
+      --green:    #2e7d32;
+      --green-bg: #e8f5e9;
+      --warm-bg:  #fef6ea;
+      --font-body:'Crimson Pro', Georgia, serif;
+      --font-head:'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: var(--font-body); background: var(--cream); color: var(--navy); font-size:18px; line-height:1.6; }
+
+    header {
+      background: linear-gradient(135deg, #18284a 0%, #2c4070 100%);
+      color:#fff; padding:2.2rem 2.5rem 1.8rem; border-bottom:3px solid var(--gold);
+    }
+    header h1 { font-family: var(--font-head); font-size:2.1rem; font-weight:600; letter-spacing:.02em; }
+    header p  { color:#a0b8d8; font-size:1.05rem; font-style:italic; margin-top:.3rem; }
+
+    main { max-width:1100px; margin:0 auto; padding:2rem 1.5rem 3rem; }
+
+    .card {
+      background: var(--paper); border:1px solid var(--border); border-radius:8px;
+      padding:1.8rem 2rem; margin-bottom:2rem;
+      box-shadow:0 2px 14px rgba(24,40,74,.06);
+    }
+    .card h2 {
+      font-family: var(--font-head); font-size:1.3rem; font-weight:600;
+      color: var(--navy); margin-bottom:1rem;
+    }
+    .card h3 {
+      font-family: var(--font-head); font-size:1.1rem; font-weight:600;
+      color: var(--navy2); margin:1.4rem 0 .6rem;
+    }
+    .card p, .card li { margin-bottom:.6rem; }
+
+    .math-block {
+      background: #f8f6f1; border-left:3px solid var(--gold);
+      padding:.8rem 1.2rem; margin:1rem 0; border-radius:0 6px 6px 0;
+      overflow-x:auto;
+    }
+    .math-inline .katex { font-size:1.05em; }
+
+    /* Proof steps */
+    .proof-step {
+      position: relative; padding-left:2.8rem; margin-bottom:1.8rem;
+    }
+    .proof-step::before {
+      content: attr(data-step);
+      position: absolute; left:0; top:.15rem;
+      width:2rem; height:2rem; border-radius:50%;
+      background: var(--navy); color: var(--gold);
+      display:flex; align-items:center; justify-content:center;
+      font-size:.85rem; font-weight:700;
+      font-family: var(--font-body);
+      text-align:center; line-height:2rem;
+    }
+    .proof-step .step-title {
+      font-family: var(--font-head); font-weight:600; font-size:1.05rem;
+      color: var(--navy); margin-bottom:.3rem;
+    }
+
+    /* Case toggle */
+    .case-toggle { display:flex; gap:.5rem; margin:1.2rem 0; }
+    .case-btn {
+      font-family: var(--font-body); font-size:1rem; cursor:pointer;
+      border:2px solid var(--border); border-radius:6px;
+      padding:.5rem 1.4rem; background: var(--paper); color: var(--navy2);
+      transition: all .2s;
+    }
+    .case-btn:hover { border-color: var(--accent); }
+    .case-btn.active { background: var(--navy); color:#fff; border-color: var(--navy); }
+
+    /* Diagram */
+    .diagram-card {
+      background: var(--paper); border:1px solid var(--border); border-radius:8px;
+      padding:1.4rem; box-shadow:0 2px 14px rgba(24,40,74,.06);
+      margin-bottom:2rem; overflow-x:auto;
+    }
+    .diagram-card h2 {
+      font-family: var(--font-head); font-size:1.25rem; font-weight:600;
+      color: var(--navy); margin-bottom:.6rem; text-align:center;
+    }
+
+    .insight-box {
+      background: var(--warm-bg); border:1px solid #ddd0bb; border-radius:8px;
+      padding:1.2rem 1.5rem; margin:1.2rem 0;
+    }
+    .insight-box strong { color:#6b4c1e; }
+
+    .key-box {
+      background: var(--acc-bg); border:1px solid #c0ccdd;
+      border-radius:6px; padding:1rem 1.3rem; font-size:.95rem;
+      color: var(--navy2); line-height:1.65; margin:1rem 0;
+    }
+    .key-box strong { color: var(--navy); }
+
+    .analogy-table {
+      width:100%; border-collapse:collapse; margin:1rem 0; font-size:.95rem;
+    }
+    .analogy-table th, .analogy-table td {
+      padding:.55rem .8rem; border:1px solid var(--border); text-align:left;
+    }
+    .analogy-table thead th {
+      background: var(--navy); color:#fff;
+      font-family: var(--font-head); font-weight:400; font-size:.95rem;
+    }
+    .analogy-table tbody tr:nth-child(even) { background: #f8f6f3; }
+
+    @media(max-width:700px){
+      header { padding:1.2rem 1rem; }
+      header h1 { font-size:1.5rem; }
+      main { padding:1rem .75rem; }
+      .card { padding:1.2rem 1rem; }
+      .proof-step { padding-left:2.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>The Riesz Representation Theorem</h1>
+  <p>Seen through Strang's four fundamental subspaces — a functional has rank 0 or 1</p>
+</header>
+
+<main>
+
+<!-- ═══ Section 1: The analogy ═══ -->
+<div class="card" id="sec-analogy">
+  <h2>From Matrices to Functionals</h2>
+  <p>In finite dimensions, a matrix <span class="mi" data-tex="A: \mathbb{R}^n \to \mathbb{R}^m"></span>
+     gives rise to Strang's four fundamental subspaces. Now consider a Hilbert space <span class="mi" data-tex="H"></span>
+     and a <em>bounded linear functional</em></p>
+  <div class="math-block" data-tex="F: H \longrightarrow \mathbb{K} \qquad (\mathbb{K} = \mathbb{R} \text{ or } \mathbb{C})"></div>
+  <p>This is a linear map whose target is <em>one-dimensional</em>.
+     So the "matrix" of <span class="mi" data-tex="F"></span> has <strong>one row</strong>.
+     Its rank is either 0 or 1. The four subspaces become:</p>
+
+  <table class="analogy-table" id="analogyTable">
+    <thead>
+      <tr>
+        <th>Strang (matrix A)</th>
+        <th>Riesz (functional F)</th>
+        <th>Dimension</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="insight-box">
+    <strong>The punchline:</strong> The "row space" of a functional is at most 1-dimensional.
+    Riesz says that unique direction is generated by some
+    <span class="mi" data-tex="y \in H"></span> and the functional acts as
+    <span class="mi" data-tex="F(x) = (x, y)"></span>. The inner product <em>is</em> the only mechanism.
+  </div>
+</div>
+
+<!-- ═══ Section 2: Diagram ═══ -->
+<div class="diagram-card">
+  <h2>The Four Subspaces of a Bounded Linear Functional</h2>
+  <div class="case-toggle" style="justify-content:center;">
+    <button class="case-btn active" id="btnNonzero" onclick="setCase('nonzero')">Rank 1 — <em>F ≠ 0</em></button>
+    <button class="case-btn" id="btnZero" onclick="setCase('zero')">Rank 0 — <em>F = 0</em></button>
+  </div>
+  <div id="diagramContainer" style="text-align:center;"></div>
+  <p id="diagramCaption" style="text-align:center;font-size:.92rem;color:var(--gray);margin-top:.5rem;font-style:italic;"></p>
+</div>
+
+<!-- ═══ Section 3: Proof ═══ -->
+<div class="card" id="sec-proof">
+  <h2>Proof of the Riesz Representation Theorem</h2>
+  <p>
+    <strong>Theorem (Riesz).</strong> For every bounded linear functional
+    <span class="mi" data-tex="F"></span> on a Hilbert space
+    <span class="mi" data-tex="H"></span>, there is a unique
+    <span class="mi" data-tex="y \in H"></span> with
+    <span class="mi" data-tex="F(x) = (x, y)"></span> for all
+    <span class="mi" data-tex="x"></span>, and
+    <span class="mi" data-tex="\|y\| = \sup_{x \neq 0} |F(x)|/\|x\|"></span>.
+  </p>
+
+  <div class="proof-step" data-step="0">
+    <div class="step-title">Trivial case</div>
+    <p>If <span class="mi" data-tex="F = 0"></span> (rank 0), take
+       <span class="mi" data-tex="y = 0"></span>. Done — the kernel is all of
+       <span class="mi" data-tex="H"></span> and
+       <span class="mi" data-tex="N^\perp = \{0\}"></span>.</p>
+  </div>
+
+  <div class="proof-step" data-step="1">
+    <div class="step-title">The kernel N is a closed subspace</div>
+    <p>Set <span class="mi" data-tex="N = \ker F = \{x \in H : F(x) = 0\}"></span>.
+       Linearity makes <span class="mi" data-tex="N"></span> a subspace.
+       Boundedness (<span class="mi" data-tex="|F(x)| \le M\|x\|"></span>) makes it closed: if
+       <span class="mi" data-tex="x_n \to x"></span> with each
+       <span class="mi" data-tex="x_n \in N"></span>, then
+       <span class="mi" data-tex="|F(x)| = |F(x - x_n)| \le M\|x - x_n\| \to 0"></span>.</p>
+    <div class="key-box">
+      In the four-subspace picture, <span class="mi" data-tex="N"></span> is the <strong>null space</strong> — the vast codimension-1 subspace that <span class="mi" data-tex="F"></span> annihilates.
+    </div>
+  </div>
+
+  <div class="proof-step" data-step="2">
+    <div class="step-title">Orthogonal decomposition: H = N ⊕ N<sup>⊥</sup></div>
+    <p>Since <span class="mi" data-tex="N"></span> is a closed subspace of a Hilbert space,
+       every <span class="mi" data-tex="x \in H"></span> decomposes uniquely as
+       <span class="mi" data-tex="x = v + w"></span> with
+       <span class="mi" data-tex="v \in N"></span>,
+       <span class="mi" data-tex="w \in N^\perp"></span>.</p>
+    <p>This is the <em>closest-point theorem</em> — the infinite-dimensional "drop a perpendicular."
+       The proof uses completeness (Cauchy sequences converge) and the parallelogram law.</p>
+    <div class="key-box">
+      <span class="mi" data-tex="N^\perp"></span> is the <strong>"row space"</strong> of
+      <span class="mi" data-tex="F"></span>. Since
+      <span class="mi" data-tex="F \neq 0"></span>,
+      <span class="mi" data-tex="N \neq H"></span>, so
+      <span class="mi" data-tex="N^\perp"></span> is nontrivial.
+      In fact <span class="mi" data-tex="\dim N^\perp = 1"></span> — the rank is 1.
+    </div>
+  </div>
+
+  <div class="proof-step" data-step="3">
+    <div class="step-title">dim N<sup>⊥</sup> = 1</div>
+    <p>Take any nonzero <span class="mi" data-tex="y_0 \in N^\perp"></span>.
+       For any <span class="mi" data-tex="w \in N^\perp"></span>,
+       the vector
+       <span class="mi" data-tex="F(y_0)\,w - F(w)\,y_0"></span>
+       maps to 0 under <span class="mi" data-tex="F"></span> (by linearity), so it lies in
+       <span class="mi" data-tex="N"></span>. But it also lies in
+       <span class="mi" data-tex="N^\perp"></span>. Hence it lies in
+       <span class="mi" data-tex="N \cap N^\perp = \{0\}"></span>, giving
+       <span class="mi" data-tex="w = \tfrac{F(w)}{F(y_0)}\,y_0"></span>.
+       Every element of <span class="mi" data-tex="N^\perp"></span> is a multiple of
+       <span class="mi" data-tex="y_0"></span>.</p>
+  </div>
+
+  <div class="proof-step" data-step="4">
+    <div class="step-title">Recover y</div>
+    <p>Set <span class="mi" data-tex="y = \dfrac{\overline{F(y_0)}}{\|y_0\|^2}\,y_0"></span>.
+       For any <span class="mi" data-tex="x = v + w"></span> with
+       <span class="mi" data-tex="v \in N"></span>,
+       <span class="mi" data-tex="w \in N^\perp"></span>:</p>
+    <div class="math-block" data-tex="(x, y) = \underbrace{(v, y)}_{=\,0\text{ since }y \in N^\perp} + (w, y) = F(w) = F(v) + F(w) = F(x)"></div>
+    <p>The scalar is chosen so that <span class="mi" data-tex="(y_0, y) = F(y_0)"></span>,
+       which calibrates everything.</p>
+  </div>
+
+  <div class="proof-step" data-step="5">
+    <div class="step-title">Uniqueness and the norm identity</div>
+    <p>If <span class="mi" data-tex="(x, y_1) = (x, y_2)"></span> for all
+       <span class="mi" data-tex="x"></span>, take
+       <span class="mi" data-tex="x = y_1 - y_2"></span> to get
+       <span class="mi" data-tex="\|y_1 - y_2\|^2 = 0"></span>. By Schwarz,
+       <span class="mi" data-tex="|F(x)| \le \|x\|\,\|y\|"></span> with equality at
+       <span class="mi" data-tex="x = y"></span>, giving
+       <span class="mi" data-tex="\|F\| = \|y\|"></span>. ∎</p>
+  </div>
+</div>
+
+<!-- ═══ Section 4: Decomposition ═══ -->
+<div class="card" id="sec-decomposition">
+  <h2>The Decomposition in Action</h2>
+  <p>For any <span class="mi" data-tex="x \in H"></span>, the orthogonal decomposition
+     <span class="mi" data-tex="x = x_N + x_{N^\perp}"></span> separates</p>
+  <div class="math-block" data-tex="x = \underbrace{\left(x - \frac{F(x)}{\|y\|^2}\,y\right)}_{\in\, N\;(\text{killed by }F)} \;+\; \underbrace{\frac{F(x)}{\|y\|^2}\,y}_{\in\, N^\perp\;(\text{carries all info})}"></div>
+  <p>The functional reads off the coefficient along
+     <span class="mi" data-tex="y"></span> and ignores the rest.
+     This is exactly how a single-row matrix
+     <span class="mi" data-tex="[y^*]"></span> acts on
+     <span class="mi" data-tex="\mathbb{C}^n"></span> in finite dimensions.</p>
+
+  <div class="insight-box">
+    <strong>Why Hilbert?</strong> The proof uses three pillars that require a Hilbert space
+    (inner product + completeness):<br><br>
+    (i) <em>Orthogonal complement</em> makes sense because we have an inner product.<br>
+    (ii) The <em>closest-point projection</em> onto <span class="mi" data-tex="N"></span> exists because
+    <span class="mi" data-tex="H"></span> is complete.<br>
+    (iii) The <em>Riesz map</em> <span class="mi" data-tex="y \mapsto (\cdot\,,y)"></span>
+    is an isometric (anti-linear) isomorphism
+    <span class="mi" data-tex="H \cong H^*"></span>.<br><br>
+    In a general Banach space, <span class="mi" data-tex="X^*"></span> can be much larger or
+    "stranger" than <span class="mi" data-tex="X"></span>.
+  </div>
+</div>
+
+<!-- ═══ Section 5: Comparison ═══ -->
+<div class="card">
+  <h2>Beyond Hilbert: Where the Picture Breaks</h2>
+  <table class="analogy-table" id="compTable">
+    <thead>
+      <tr>
+        <th style="width:22%">Space</th>
+        <th style="width:35%">Dual space</th>
+        <th style="width:43%">Riesz-like?</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  KaTeX rendering
+// ═══════════════════════════════════════════════
+function rk(tex) {
+  try { return katex.renderToString(tex, {throwOnError:false}); }
+  catch(e){ return tex; }
+}
+
+function renderAllMath() {
+  document.querySelectorAll('.mi').forEach(el => {
+    const tex = el.getAttribute('data-tex') || el.textContent;
+    el.innerHTML = rk(tex);
+  });
+  document.querySelectorAll('.math-block').forEach(el => {
+    const tex = el.getAttribute('data-tex') || el.textContent;
+    el.innerHTML = katex.renderToString(tex, {throwOnError:false, displayMode:true});
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  Analogy & comparison tables
+// ═══════════════════════════════════════════════
+function buildAnalogyTable() {
+  const rows = [
+    [rk('C(A^T) \\subset \\mathbb{R}^n') + '<br><span style="color:#888;font-size:.88rem">Row space</span>',
+     rk('N^\\perp = \\mathrm{span}\\{y\\} \\subset H'),
+     '<strong>dim 1</strong>'],
+    [rk('N(A) \\subset \\mathbb{R}^n') + '<br><span style="color:#888;font-size:.88rem">Null space</span>',
+     rk('N = \\ker F \\subset H'),
+     '<strong>codim 1</strong> (closed)'],
+    [rk('C(A) \\subset \\mathbb{R}^m') + '<br><span style="color:#888;font-size:.88rem">Column space</span>',
+     rk('\\mathrm{Range}(F) = \\mathbb{K}'),
+     '<strong>dim 1</strong>'],
+    [rk('N(A^T) \\subset \\mathbb{R}^m') + '<br><span style="color:#888;font-size:.88rem">Left null space</span>',
+     rk('\\{0\\} \\subset \\mathbb{K}'),
+     '<strong>dim 0</strong>'],
+  ];
+  const tbody = document.querySelector('#analogyTable tbody');
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    r.forEach(c => { const td = document.createElement('td'); td.innerHTML = c; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+}
+
+function buildCompTable() {
+  const rows = [
+    [rk('H') + ' (Hilbert)',
+     rk('H^* \\cong H') + ' via Riesz',
+     'Yes — the four-subspace picture works perfectly'],
+    [rk('L^p') + ', ' + rk('p \\neq 2'),
+     rk('(L^p)^* = L^q') + ', ' + rk('\\tfrac{1}{p}+\\tfrac{1}{q}=1'),
+     'No natural inner product; dual is a <em>different</em> space'],
+    [rk('L^1'),
+     rk('(L^1)^* = L^\\infty'),
+     'Very different geometry — no reflexivity'],
+    [rk('C[0,1]'),
+     rk('C[0,1]^*') + ' = signed measures',
+     'Dual is not even a function space in the usual sense'],
+  ];
+  const tbody = document.querySelector('#compTable tbody');
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    r.forEach(c => { const td = document.createElement('td'); td.innerHTML = c; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  Four-subspace diagram
+// ═══════════════════════════════════════════════
+let currentCase = 'nonzero';
+
+function setCase(c) {
+  currentCase = c;
+  document.getElementById('btnNonzero').classList.toggle('active', c==='nonzero');
+  document.getElementById('btnZero').classList.toggle('active', c==='zero');
+  drawDiagram();
+}
+
+function drawDiagram() {
+  const container = document.getElementById('diagramContainer');
+  const caption = document.getElementById('diagramCaption');
+  container.innerHTML = '';
+
+  const isZero = currentCase === 'zero';
+  const W = 940, HH = 500;
+  const sq2 = Math.sqrt(2);
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${HH}`);
+  svg.setAttribute('width', '100%');
+  svg.style.display = 'block';
+  svg.style.maxWidth = '940px';
+  svg.style.margin = '0 auto';
+
+  // ── helpers ──
+  function rotRect(cx, cy, w, h, a, fill, stroke, sw) {
+    const rad = a * Math.PI / 180;
+    const c = Math.cos(rad), s = Math.sin(rad);
+    const corners = [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+    const pts = corners.map(([x,y]) => `${cx+x*c-y*s},${cy+x*s+y*c}`).join(' ');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', fill);
+    poly.setAttribute('stroke', stroke);
+    poly.setAttribute('stroke-width', sw || '1.8');
+    return poly;
+  }
+
+  function addText(x, y, text, size, color, anchor, weight, fstyle) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('font-size', size); t.setAttribute('fill', color);
+    t.setAttribute('text-anchor', anchor || 'middle');
+    t.setAttribute('font-family', "'Crimson Pro', Georgia, serif");
+    if (weight) t.setAttribute('font-weight', weight);
+    if (fstyle) t.setAttribute('font-style', fstyle);
+    t.textContent = text;
+    svg.appendChild(t);
+  }
+
+  function addLine(x1,y1,x2,y2,color,w,dash) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('stroke',color); l.setAttribute('stroke-width',w||1.5);
+    if(dash) l.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(l);
+  }
+
+  function addArrow(x1,y1,x2,y2,color,lw) {
+    const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    if(len<4) return;
+    const ux=dx/len, uy=dy/len;
+    addLine(x1,y1,x2-ux*8,y2-uy*8,color,lw||2.2);
+    const p1x=x2-ux*12+uy*5, p1y=y2-uy*12-ux*5;
+    const p2x=x2-ux*12-uy*5, p2y=y2-uy*12+ux*5;
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', `${x2},${y2} ${p1x},${p1y} ${p2x},${p2y}`);
+    poly.setAttribute('fill', color);
+    svg.appendChild(poly);
+  }
+
+  function addRightAngle(cx, cy, d, color, openRight) {
+    const inv2 = 1 / sq2;
+    const sign = openRight ? 1 : -1;
+    const c0x = cx, c0y = cy;
+    const c1x = cx + sign*d*inv2, c1y = cy - d*inv2;
+    const c2x = cx + sign*d*sq2,  c2y = cy;
+    const c3x = cx + sign*d*inv2, c3y = cy + d*inv2;
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', `${c0x},${c0y} ${c1x},${c1y} ${c2x},${c2y} ${c3x},${c3y}`);
+    poly.setAttribute('fill', 'rgba(255,255,255,0.9)');
+    poly.setAttribute('stroke', color);
+    poly.setAttribute('stroke-width', '1.4');
+    svg.appendChild(poly);
+  }
+
+  function addDot(cx, cy, r, fill) {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+    c.setAttribute('r', r); c.setAttribute('fill', fill);
+    svg.appendChild(c);
+  }
+
+  // ── layout ──
+  const LCX = 210, RCX = 730;
+  const midY = 255;
+
+  if (isZero) {
+    // ═══ RANK 0 ═══
+    // N = all of H — one big diamond
+    svg.appendChild(rotRect(LCX, midY, 280, 180, 45, '#edf1fb', '#3a6eb5'));
+    addText(LCX, midY - 22, 'N = ker F = H', 16, '#18284a', 'middle', '600');
+    addText(LCX, midY + 2, 'null space = everything', 12, '#3a6eb5', 'middle', '400');
+    addText(LCX, midY + 22, 'dim = ∞', 11, '#7a9cc8', 'middle', '400');
+
+    // N⊥ = {0} — dot above
+    addDot(LCX, midY - 168, 5, '#18284a');
+    addText(LCX, midY - 183, 'N⊥ = {0}', 12, '#18284a', 'middle', '600');
+    addText(LCX, midY - 198, '"row space"', 10, '#888', 'middle', '400', 'italic');
+
+    // Range = {0}
+    addDot(RCX, midY, 6, '#c8a430');
+    addText(RCX, midY - 20, 'Range(F) = {0}', 14, '#18284a', 'middle', '600');
+    addText(RCX, midY + 22, 'dim 0', 11, '#c8a430', 'middle', '400');
+
+    // Arrow
+    addArrow(LCX + 140, midY - 60, RCX - 30, midY - 6, '#aaa', 1.5);
+    addText((LCX + RCX)/2, midY - 82, 'F ≡ 0', 16, '#888', 'middle', '600');
+    addText((LCX + RCX)/2, midY - 62, 'everything maps to zero', 10.5, '#aaa', 'middle', '400', 'italic');
+
+    // Labels
+    addText(LCX, 30, 'H  (Hilbert space)', 18, '#18284a', 'middle', '600');
+    addText(RCX, 30, '𝕂  (scalars)', 18, '#18284a', 'middle', '600');
+
+    addText(W/2, HH - 14, 'Rank 0:  y = 0,  and  F(x) = (x, 0) = 0  for all x', 12, '#888', 'middle', '400');
+    caption.innerHTML = 'When <em>F</em> = 0 the kernel is everything. The Riesz representer is <em>y</em> = 0.';
+
+  } else {
+    // ═══ RANK 1 ═══
+    const RW_top = 130, RH_top = 65;       // small diamond for N⊥ (dim 1)
+    const RW_bot = 270, RH_bot = 170;      // large diamond for N (codim 1)
+    const tipTop = (RW_top + RH_top) / (2*sq2);
+    const tipBot = (RW_bot + RH_bot) / (2*sq2);
+    const hOffTop = (RW_top - RH_top) / (2*sq2);
+    const hOffBot = (RW_bot - RH_bot) / (2*sq2);
+
+    // Touching point on left side
+    const touchY_L = midY;
+    const TY_L = touchY_L - tipTop;   // centre of top shape
+    const BY_L = touchY_L + tipBot;   // centre of bottom shape — deliberately larger
+
+    // Actually let's keep it simpler: use fixed positions
+    // Top diamond (N⊥) — small
+    const topCY = midY - 85;
+    const botCY = midY + 110;
+    // They touch at midY roughly
+
+    // Left top: N⊥ = span{y}
+    svg.appendChild(rotRect(LCX - hOffTop, topCY, RW_top, RH_top, 45, '#edf4ff', '#3a6eb5'));
+    // Left bottom: N = ker F
+    svg.appendChild(rotRect(LCX + hOffBot, botCY, RW_bot, RH_bot, 45, '#f0f4fb', '#7a9cc8'));
+
+    // Right top: Range = K
+    const RW_r = 130, RH_r = 65;
+    const hOffR = (RW_r - RH_r) / (2*sq2);
+    svg.appendChild(rotRect(RCX + hOffR, topCY, RW_r, RH_r, -45, '#fef6ea', '#c8a430'));
+
+    // Right bottom: {0} — just a dot
+    addDot(RCX, botCY - 30, 5, '#c8a430');
+
+    // Right angle at touching point on left
+    addRightAngle(LCX, midY, 9, '#3a6eb5', true);
+
+    // {0} at touching
+    addText(LCX + 20, midY + 5, '{0}', 12, '#888', 'start', '400');
+
+    // ── Labels ──
+    // Left top
+    addText(LCX - hOffTop, topCY - 18, 'N⊥ = span{y}', 14, '#18284a', 'middle', '600');
+    addText(LCX - hOffTop, topCY + 4, '"row space" — dim 1', 11, '#3a6eb5', 'middle', '400');
+
+    // Left bottom
+    addText(LCX + hOffBot, botCY - 22, 'N = ker F', 16, '#18284a', 'middle', '600');
+    addText(LCX + hOffBot, botCY + 2, 'null space — codim 1', 12, '#7a9cc8', 'middle', '400');
+    addText(LCX + hOffBot, botCY + 22, 'F(x) = 0  ⟹  (x, y) = 0', 11, '#7a9cc8', 'middle', '400', 'italic');
+
+    // Right top
+    addText(RCX + hOffR, topCY - 18, 'Range(F) = 𝕂', 14, '#18284a', 'middle', '600');
+    addText(RCX + hOffR, topCY + 4, '"column space" — dim 1', 11, '#c8a430', 'middle', '400');
+
+    // Right bottom
+    addText(RCX, botCY - 50, '"co-kernel" = {0}', 12, '#b08830', 'middle', '400');
+    addText(RCX, botCY - 12, 'F is surjective', 10, '#b08830', 'middle', '400', 'italic');
+
+    // ── Arrows ──
+    // Top: N⊥ → K (the isomorphism)
+    const arrY = topCY - 40;
+    addArrow(LCX + 80, arrY, RCX - 80, arrY, '#b33a2f');
+    addText((LCX + RCX)/2, arrY - 14, 'F', 17, '#b33a2f', 'middle', '700');
+    addText((LCX + RCX)/2, arrY + 16, 'N⊥ maps isomorphically onto 𝕂', 11, '#888', 'middle', '400', 'italic');
+
+    // Bottom: N → {0}
+    const nsX1 = LCX + hOffBot + 130;
+    const nsY1 = botCY + 55;
+    addArrow(nsX1, nsY1, RCX - 14, botCY - 24, '#7a7a8a', 1.5);
+    addText((nsX1 + RCX)/2 - 10, (nsY1 + botCY - 24)/2 + 18, 'F(x) = 0', 12, '#7a7a8a', 'middle', '600');
+    addText((nsX1 + RCX)/2 - 10, (nsY1 + botCY - 24)/2 + 35, 'null space → {0}', 10, '#888', 'middle', '400', 'italic');
+
+    // Decomposition label
+    addText((LCX + RCX)/2, midY + 10, 'x  =  x_N  +  x_{N⊥}', 14, '#18284a', 'middle', '600');
+    addText((LCX + RCX)/2, midY + 30, 'F reads off the N⊥ component via (x, y)', 11, '#888', 'middle', '400', 'italic');
+
+    // Dimension annotations
+    addText(LCX - 120, topCY, 'dim 1', 11, '#3a6eb5', 'middle', '400');
+    addText(LCX - 120, botCY, 'codim 1', 11, '#7a9cc8', 'middle', '400');
+    addText(RCX + 110, topCY, 'dim 1', 11, '#c8a430', 'middle', '400');
+    addText(RCX + 110, botCY - 30, 'dim 0', 11, '#b08830', 'middle', '400');
+
+    // Field labels
+    addText(LCX, 30, 'H  (Hilbert space)', 18, '#18284a', 'middle', '600');
+    addText(RCX, 30, '𝕂  (scalars)', 18, '#18284a', 'middle', '600');
+
+    // Dashed dividers for ℝⁿ / ℝᵐ analogy
+    addLine(LCX - 155, midY, LCX + 155, midY, '#c0ccdd', 1, '4 3');
+    addText(LCX + 160, midY + 4, '⊥', 14, '#3a6eb5', 'start', '700');
+
+    addText(W/2, HH - 14, 'The Four Subspaces of a Bounded Linear Functional  —  Riesz Representation Theorem', 12, '#888', 'middle', '400');
+    caption.innerHTML = 'The functional <em>F</em> has rank 1: it kills the codimension-1 subspace <em>N</em> and maps <em>N</em><sup>⊥</sup> = span{<em>y</em>} isomorphically onto 𝕂.';
+  }
+
+  container.appendChild(svg);
+}
+
+// ═══════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  renderAllMath();
+  buildAnalogyTable();
+  buildCompTable();
+  drawDiagram();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Eight Fundamental Subspaces — A ∈ B(X,Y)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+  <style>
+    :root {
+      --cream:     #faf7f2;
+      --paper:     #ffffff;
+      --navy:      #18284a;
+      --navy2:     #2c4070;
+      --accent:    #3a6eb5;
+      --red:       #b33a2f;
+      --red-bg:    #fef0ee;
+      --gold:      #c8a430;
+      --gray:      #7a7a8a;
+      --border:    #ddd9d0;
+      --acc-bg:    #edf1fb;
+      --mod-bg:    #fff9f5;
+      --green:     #2e7d32;
+      --green-bg:  #e8f5e9;
+      --peach:     #fbe7df;
+      --peach-deep:#e8b9a6;
+      --steel:     #dbe0e8;
+      --steel-deep:#a8b4c4;
+      --plum:      #5b2a8a;
+      --plum-bg:   #f1ebf7;
+      --font-body: 'Crimson Pro', Georgia, serif;
+      --font-head: 'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: var(--font-body); background: var(--cream); color: var(--navy); font-size:18px; line-height:1.6; }
+
+    header {
+      background: var(--navy);
+      color:#fff;
+      padding:1.8rem 2.5rem;
+      border-bottom:3px solid var(--gold);
+    }
+    header h1 { font-family: var(--font-head); font-size:2rem; font-weight:400; letter-spacing:.02em; }
+    header p  { color:#a0b8d8; font-size:1.05rem; font-style:italic; margin-top:.25rem; }
+
+    main { max-width:1200px; margin:0 auto; padding:2rem 1.5rem; }
+
+    .card {
+      background: var(--paper);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:1.7rem 2rem;
+      margin-bottom:1.6rem;
+      box-shadow:0 2px 14px rgba(24,40,74,.06);
+    }
+    .card h2 {
+      font-family: var(--font-head);
+      font-size:1.35rem;
+      font-weight:600;
+      color: var(--navy);
+      margin-bottom:1.1rem;
+      padding-bottom:.55rem;
+      border-bottom:1px solid var(--border);
+    }
+    .card h3 {
+      font-family: var(--font-head);
+      font-size:1.08rem;
+      font-weight:600;
+      color: var(--navy2);
+      margin: 1.1rem 0 .55rem;
+    }
+    .card p { margin-bottom: .75rem; }
+    .card p:last-child { margin-bottom:0; }
+
+    .eight-grid {
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .9rem;
+    }
+    .ss {
+      border-radius:6px;
+      padding:.85rem 1.1rem;
+      border:1px solid var(--border);
+      position:relative;
+    }
+    .ss .num {
+      position:absolute;
+      top:-10px;
+      left:-10px;
+      width:26px; height:26px;
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-family: var(--font-head);
+      font-size:.85rem;
+      font-weight:600;
+      box-shadow:0 1px 4px rgba(0,0,0,.1);
+    }
+    .ss.dom-closed  { background: var(--red-bg); border-left:4px solid var(--red); }
+    .ss.dom-closed .num  { background: var(--red); color:#fff; }
+    .ss.dom-quot    { background: #fff5e8; border-left:4px solid var(--gold); }
+    .ss.dom-quot .num    { background: var(--gold); color: var(--navy); }
+    .ss.cod-closed  { background: var(--acc-bg); border-left:4px solid var(--accent); }
+    .ss.cod-closed .num  { background: var(--accent); color:#fff; }
+    .ss.cod-quot    { background: var(--green-bg); border-left:4px solid var(--green); }
+    .ss.cod-quot .num    { background: var(--green); color:#fff; }
+    .ss h4 { font-family: var(--font-head); font-size:1.02rem; font-weight:600; margin-bottom:.3rem; }
+    .ss .tag { display:inline-block; font-size:.78rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color: var(--gray); margin-bottom:.4rem; }
+    .ss .desc { font-size:.93rem; line-height:1.5; color: #44485a; }
+
+    .ambient-label {
+      display:inline-block;
+      font-family: var(--font-head);
+      font-size:.95rem;
+      font-weight:600;
+      letter-spacing:.05em;
+      color: var(--navy);
+      padding:.3rem .9rem;
+      background: #efe8d8;
+      border-radius:4px;
+      margin: 1.1rem 0 .7rem;
+    }
+
+    /* Diagram card */
+    .diagram-card {
+      background: var(--paper);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:1.5rem 1.5rem 1rem;
+      margin-bottom:1.6rem;
+      box-shadow:0 2px 14px rgba(24,40,74,.06);
+    }
+    .diagram-card h2 {
+      font-family: var(--font-head);
+      font-size:1.35rem;
+      font-weight:600;
+      color: var(--navy);
+      text-align:center;
+      margin-bottom:.4rem;
+    }
+    .diagram-card .caption {
+      text-align:center;
+      color: var(--gray);
+      font-size:.95rem;
+      font-style:italic;
+      margin-bottom:1rem;
+    }
+    .diagram-card .svg-wrap { overflow-x:auto; }
+    .diagram-card svg {
+      display:block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+      font-family: var(--font-body);
+    }
+    .legend {
+      display:flex;
+      flex-wrap:wrap;
+      gap:1rem 1.6rem;
+      justify-content:center;
+      margin-top:.8rem;
+      font-size:.88rem;
+      color: var(--navy2);
+    }
+    .legend .sw {
+      display:inline-block;
+      width:14px; height:14px;
+      border-radius:3px;
+      margin-right:.4rem;
+      vertical-align: middle;
+      border:1px solid rgba(0,0,0,.2);
+    }
+
+    /* Identity blocks */
+    .id-list { display:flex; flex-direction:column; gap:.55rem; }
+    .id-item {
+      background: var(--acc-bg);
+      border-left:3px solid var(--accent);
+      padding:.7rem 1rem;
+      border-radius:4px;
+      font-size:.96rem;
+    }
+    .id-item .id-lbl {
+      font-weight:600;
+      color: var(--navy);
+      margin-right:.4rem;
+    }
+    .id-item.warn { background:#fef4ee; border-left-color:#d68a3a; }
+    .id-item.warn .id-lbl { color:#995e1a; }
+
+    /* CRT card */
+    .crt-card {
+      background: linear-gradient(135deg, #fff7f0 0%, #fdebe1 100%);
+      border:1px solid #e8c5af;
+      border-radius:8px;
+      padding:1.6rem 2rem;
+      margin-bottom:1.6rem;
+      box-shadow:0 2px 14px rgba(179,58,47,.08);
+    }
+    .crt-card h2 {
+      font-family: var(--font-head);
+      font-size:1.35rem;
+      font-weight:600;
+      color: var(--red);
+      margin-bottom:.8rem;
+    }
+    .crt-card .intro {
+      font-style: italic;
+      color: var(--navy2);
+      margin-bottom:1rem;
+    }
+    .crt-grid {
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .7rem;
+    }
+    .crt-item {
+      background: var(--paper);
+      border:1px solid #e8c5af;
+      border-radius:5px;
+      padding: .7rem 1rem;
+      font-size:.94rem;
+      display:flex;
+      align-items:center;
+      gap:.7rem;
+    }
+    .crt-item .crt-num {
+      background: var(--red);
+      color:#fff;
+      width:24px; height:24px;
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.8rem;
+      font-weight:700;
+      flex-shrink:0;
+    }
+
+    /* Hilbert + Fredholm cards */
+    .hilbert-card {
+      background: linear-gradient(135deg, #f0f7f0 0%, #e3f0e4 100%);
+      border:1px solid #b8d2bb;
+      border-radius:8px;
+      padding:1.5rem 2rem;
+      margin-bottom:1.6rem;
+    }
+    .hilbert-card h2 {
+      font-family: var(--font-head);
+      font-size:1.3rem;
+      font-weight:600;
+      color: var(--green);
+      margin-bottom:.8rem;
+    }
+    .fredholm-card {
+      background: linear-gradient(135deg, var(--plum-bg) 0%, #e5d8f0 100%);
+      border:1px solid #ccb5dc;
+      border-radius:8px;
+      padding:1.5rem 2rem;
+      margin-bottom:1.6rem;
+    }
+    .fredholm-card h2 {
+      font-family: var(--font-head);
+      font-size:1.3rem;
+      font-weight:600;
+      color: var(--plum);
+      margin-bottom:.8rem;
+    }
+    .fredholm-card .index-box {
+      background: var(--paper);
+      border:1px solid #ccb5dc;
+      border-radius:5px;
+      padding:.8rem 1.2rem;
+      text-align:center;
+      margin:1rem 0;
+      font-size:1.05rem;
+    }
+
+    /* Summary table */
+    .summary-card { overflow-x:auto; }
+    .summary-table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:.95rem;
+    }
+    .summary-table th, .summary-table td {
+      border:1px solid var(--border);
+      padding:.55rem .9rem;
+      text-align:left;
+      vertical-align: top;
+    }
+    .summary-table thead th {
+      background: var(--navy);
+      color:#fff;
+      font-family: var(--font-head);
+      font-weight:400;
+      font-size:.92rem;
+      letter-spacing:.03em;
+    }
+    .summary-table tbody tr:nth-child(even) { background: #f7f3eb; }
+    .summary-table tbody tr:hover { background: var(--acc-bg); }
+
+    /* Pairing labels */
+    .pair-row {
+      display:flex;
+      align-items:center;
+      gap:.8rem;
+      margin: .5rem 0;
+      padding:.5rem .8rem;
+      background: #f9f6ef;
+      border-radius:5px;
+      border-left:2px solid var(--gold);
+      font-size:.95rem;
+    }
+    .pair-row .arr { color: var(--gold); font-weight:700; }
+
+    @media (max-width: 800px) {
+      .eight-grid, .crt-grid { grid-template-columns: 1fr; }
+      header { padding:1.2rem 1rem; }
+      header h1 { font-size:1.55rem; }
+      main { padding:1rem .75rem; }
+      .card { padding:1.2rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>The Eight Fundamental Subspaces</h1>
+  <p>For a bounded linear operator $A \in \mathcal{B}(X,Y)$ between Banach spaces</p>
+</header>
+
+<main>
+
+  <!-- ─────── 1. Setup ─────── -->
+  <div class="card">
+    <h2>From four subspaces to eight</h2>
+    <p>For a matrix $A \in \mathbb{R}^{m \times n}$, Strang's picture lives entirely inside two ambient spaces $\mathbb{R}^n$ and $\mathbb{R}^m$ because the dual $(\mathbb{R}^k)^* = \mathbb{R}^k$ is canonically identified with the space itself. In the Banach setting that identification is gone: $X^*$ and $Y^*$ are genuinely separate Banach spaces.</p>
+    <p>So we now have <strong>four ambient spaces</strong>: the domain $X$, its dual $X^*$, the codomain $Y$, and its dual $Y^*$. Each carries a distinguished closed subspace (the kernel or closed range of $A$ or $A^*$) and a complementary quotient. That gives <strong>eight</strong> objects in total, linked by:</p>
+    <ul style="margin: .4rem 0 .8rem 1.4rem;">
+      <li>the operator $A : X \to Y$ and its adjoint $A^* : Y^* \to X^*$, defined by $\;(A^* y^*)(x) = y^*(Ax)$;</li>
+      <li>the duality pairings $X \leftrightarrow X^*$ and $Y \leftrightarrow Y^*$;</li>
+      <li>the annihilator operations $S \mapsto S^\perp$ (subspace of $X$ to subspace of $X^*$) and $T \mapsto {}^\perp T$ (subspace of $X^*$ to subspace of $X$).</li>
+    </ul>
+    <p>What follows lists the eight objects, draws the picture, and writes out every relationship that links them.</p>
+  </div>
+
+  <!-- ─────── 2. The Eight Subspaces ─────── -->
+  <div class="card">
+    <h2>The eight subspaces</h2>
+    <p>The four ambient spaces $X$, $X^*$, $Y$, $Y^*$, each split into a closed subspace and a quotient.</p>
+
+    <div class="ambient-label">Domain side &mdash; $X$ and $X^*$</div>
+    <div class="eight-grid">
+      <div class="ss dom-closed">
+        <span class="num">1</span>
+        <span class="tag">closed subspace of $X$</span>
+        <h4>$N(A) \;\subset\; X$</h4>
+        <p class="desc">The kernel of $A$. Always closed because $A$ is bounded. The first identity says $N(A) = {}^\perp R(A^*)$: it is exactly the set of $x$ annihilated by every functional in the range of $A^*$.</p>
+      </div>
+      <div class="ss dom-quot">
+        <span class="num">2</span>
+        <span class="tag">quotient Banach space</span>
+        <h4>$X / N(A)$</h4>
+        <p class="desc">The effective domain. $A$ factors as $X \twoheadrightarrow X/N(A) \xrightarrow{\tilde A} Y$ with $\tilde A$ injective. The quotient norm makes $X/N(A)$ a Banach space.</p>
+      </div>
+      <div class="ss cod-closed">
+        <span class="num">3</span>
+        <span class="tag">closed subspace of $X^*$</span>
+        <h4>$\overline{R(A^*)} \;\subset\; X^*$</h4>
+        <p class="desc">The closed range of the adjoint. Always sits inside $N(A)^\perp$; equals $N(A)^\perp$ if and only if $R(A)$ is closed in $Y$ (the Closed Range Theorem).</p>
+      </div>
+      <div class="ss cod-quot">
+        <span class="num">4</span>
+        <span class="tag">quotient of $X^*$</span>
+        <h4>$X^* / \overline{R(A^*)}$</h4>
+        <p class="desc">When $R(A)$ is closed this becomes $X^* / N(A)^\perp \cong N(A)^*$: the dual of the kernel. The complementary piece in $X^*$.</p>
+      </div>
+    </div>
+
+    <div class="ambient-label">Codomain side &mdash; $Y$ and $Y^*$</div>
+    <div class="eight-grid">
+      <div class="ss dom-closed">
+        <span class="num">5</span>
+        <span class="tag">closed subspace of $Y$</span>
+        <h4>$\overline{R(A)} \;\subset\; Y$</h4>
+        <p class="desc">The closed range of $A$. Equals $R(A)$ exactly when the range is closed. By Hahn&ndash;Banach, $\overline{R(A)} = {}^\perp N(A^*)$: the set of $y$ killed by every functional that annihilates the range.</p>
+      </div>
+      <div class="ss dom-quot">
+        <span class="num">6</span>
+        <span class="tag">quotient (the cokernel)</span>
+        <h4>$Y / \overline{R(A)}$</h4>
+        <p class="desc">Measures how far $A$ is from surjective &mdash; the obstruction to solving $Ax = y$. Its dual is canonically $N(A^*)$.</p>
+      </div>
+      <div class="ss cod-closed">
+        <span class="num">7</span>
+        <span class="tag">closed subspace of $Y^*$</span>
+        <h4>$N(A^*) \;\subset\; Y^*$</h4>
+        <p class="desc">The kernel of the adjoint &mdash; equivalently, $R(A)^\perp$. Detects the unsolvable equations: $y \in \overline{R(A)} \iff y^*(y) = 0$ for every $y^* \in N(A^*)$.</p>
+      </div>
+      <div class="ss cod-quot">
+        <span class="num">8</span>
+        <span class="tag">quotient of $Y^*$</span>
+        <h4>$Y^* / N(A^*)$</h4>
+        <p class="desc">Naturally isomorphic to $\overline{R(A)}^*$. $A^*$ factors as $Y^* \twoheadrightarrow Y^*/N(A^*) \xrightarrow{\widetilde{A^*}} X^*$.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────── 3. The Big Picture (SVG) ─────── -->
+  <div class="diagram-card">
+    <h2>The Big Picture</h2>
+    <p class="caption">Two "books": each pairs a space with its dual along the shared edge (the duality pairing). The operator $A$ and its adjoint $A^*$ link the books in opposite directions.</p>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 1200 680" xmlns="http://www.w3.org/2000/svg" aria-label="Eight subspaces diagram">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#18284a"/>
+          </marker>
+          <marker id="arrGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#c8a430"/>
+          </marker>
+          <linearGradient id="peachGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fbe7df"/>
+            <stop offset="100%" stop-color="#f4cdbb"/>
+          </linearGradient>
+          <linearGradient id="steelGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e2e6ee"/>
+            <stop offset="100%" stop-color="#bcc5d4"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ─── Left book: (X, X*) ─── -->
+        <!-- X* standing plane (drawn first so X overlays the hinge) -->
+        <polygon points="200,460 110,300 160,140 240,340"
+                 fill="url(#steelGrad)" stroke="#5a6577" stroke-width="1.6" opacity="0.92"/>
+        <!-- R(A*) inner region of X* -->
+        <polygon points="190,396 141,303 168,212 212,330"
+                 fill="#3a6eb5" stroke="#1c4178" stroke-width="1.4" opacity="0.78"/>
+        <!-- X horizontal plane -->
+        <polygon points="200,460 480,460 520,340 240,340"
+                 fill="url(#peachGrad)" stroke="#7a3a2e" stroke-width="1.6" opacity="0.95"/>
+        <!-- N(A) inner region of X -->
+        <polygon points="272,433 426,433 448,367 294,367"
+                 fill="#b33a2f" stroke="#7a1f17" stroke-width="1.4" opacity="0.82"/>
+
+        <!-- Labels for X book (all horizontal) -->
+        <text x="535" y="365" font-size="28" font-style="italic" fill="#7a3a2e" font-weight="700">X</text>
+        <text x="350" y="411" font-size="14" fill="#fff" text-anchor="middle" font-weight="600">N(A)</text>
+        <!-- pointer from label up to the band region inside X but outside N(A) -->
+        <line x1="385" y1="500" x2="475" y2="450" stroke="#7a3a2e" stroke-width="0.8"/>
+        <text x="350" y="513" font-size="13" fill="#7a3a2e" font-style="italic" text-anchor="middle">X / N(A)</text>
+
+        <text x="30" y="135" font-size="26" font-style="italic" fill="#3c4a64" font-weight="700">X*</text>
+        <text x="178" y="314" font-size="13" fill="#fff" text-anchor="middle" font-weight="600">R(A*)</text>
+        <!-- pointer to the band of X* (region inside X* outside R(A*)) -->
+        <line x1="75" y1="200" x2="148" y2="230" stroke="#3c4a64" stroke-width="0.8"/>
+        <text x="50" y="190" font-size="13" fill="#3c4a64" font-style="italic" text-anchor="middle">X* / R(A*)</text>
+
+        <!-- Hinge highlight (duality pairing) -->
+        <line x1="200" y1="460" x2="240" y2="340" stroke="#c8a430" stroke-width="2.5"/>
+        <text x="190" y="490" font-size="11" fill="#8c7320" font-style="italic" text-anchor="middle">⟨ X, X* ⟩</text>
+
+        <!-- ─── Right book: (Y, Y*) ─── -->
+        <!-- Y* standing plane (mirror of X*) -->
+        <polygon points="1000,460 1090,300 1040,140 960,340"
+                 fill="url(#steelGrad)" stroke="#5a6577" stroke-width="1.6" opacity="0.92"/>
+        <!-- N(A*) inner region of Y* -->
+        <polygon points="1010,396 1059,303 1032,212 988,330"
+                 fill="#b33a2f" stroke="#7a1f17" stroke-width="1.4" opacity="0.78"/>
+        <!-- Y horizontal plane -->
+        <polygon points="1000,460 720,460 680,340 960,340"
+                 fill="url(#peachGrad)" stroke="#7a3a2e" stroke-width="1.6" opacity="0.95"/>
+        <!-- R(A) inner region of Y -->
+        <polygon points="928,433 774,433 752,367 906,367"
+                 fill="#3a6eb5" stroke="#1c4178" stroke-width="1.4" opacity="0.82"/>
+
+        <!-- Labels for Y book (all horizontal) -->
+        <text x="650" y="365" font-size="28" font-style="italic" fill="#7a3a2e" font-weight="700">Y</text>
+        <text x="850" y="411" font-size="14" fill="#fff" text-anchor="middle" font-weight="600">R(A)</text>
+        <line x1="815" y1="500" x2="725" y2="450" stroke="#7a3a2e" stroke-width="0.8"/>
+        <text x="850" y="513" font-size="13" fill="#7a3a2e" font-style="italic" text-anchor="middle">Y / R(A)</text>
+
+        <text x="1150" y="135" font-size="26" font-style="italic" fill="#3c4a64" font-weight="700">Y*</text>
+        <text x="1023" y="314" font-size="13" fill="#fff" text-anchor="middle" font-weight="600">N(A*)</text>
+        <line x1="1125" y1="200" x2="1052" y2="230" stroke="#3c4a64" stroke-width="0.8"/>
+        <text x="1150" y="190" font-size="13" fill="#3c4a64" font-style="italic" text-anchor="middle">Y* / N(A*)</text>
+
+        <!-- Hinge highlight (duality pairing) -->
+        <line x1="1000" y1="460" x2="960" y2="340" stroke="#c8a430" stroke-width="2.5"/>
+        <text x="1010" y="490" font-size="11" fill="#8c7320" font-style="italic" text-anchor="middle">⟨ Y, Y* ⟩</text>
+
+        <!-- ─── A arrow: X → Y ─── -->
+        <path d="M 525 400 C 580 380, 620 380, 675 400"
+              stroke="#18284a" stroke-width="2.4" fill="none" marker-end="url(#arr)"/>
+        <text x="600" y="375" font-size="22" font-style="italic" fill="#18284a" text-anchor="middle" font-weight="600">A</text>
+
+        <!-- ─── A* arrow: Y* → X*  (over the top) ─── -->
+        <path d="M 1070 215 C 850 50, 350 50, 130 215"
+              stroke="#18284a" stroke-width="2.4" fill="none" marker-end="url(#arr)"/>
+        <text x="600" y="80" font-size="22" font-style="italic" fill="#18284a" text-anchor="middle" font-weight="600">A*</text>
+
+        <!-- Annotations -->
+        <text x="600" y="650" font-size="13" fill="#7a7a8a" text-anchor="middle" font-style="italic">
+          Solid arrows: A and A*  ·  Gold hinge: duality pairing between a space and its dual  ·  Inner box: the highlighted closed subspace
+        </text>
+
+      </svg>
+    </div>
+    <div class="legend">
+      <span><span class="sw" style="background:#b33a2f;"></span>kernel-side: N(A), N(A*)</span>
+      <span><span class="sw" style="background:#3a6eb5;"></span>range-side: R(A), R(A*)</span>
+      <span><span class="sw" style="background:#fbe7df; border-color:#7a3a2e;"></span>primal space: X, Y</span>
+      <span><span class="sw" style="background:#dbe0e8; border-color:#5a6577;"></span>dual space: X*, Y*</span>
+      <span><span class="sw" style="background:#c8a430;"></span>duality pairing (book hinge)</span>
+    </div>
+  </div>
+
+  <!-- ─────── 4. Annihilator Identities ─────── -->
+  <div class="card">
+    <h2>The four annihilator identities (always hold)</h2>
+    <p>For any $A \in \mathcal{B}(X,Y)$ &mdash; no hypothesis on the range &mdash; the following are immediate from the definition of $A^*$ and Hahn&ndash;Banach:</p>
+    <div class="id-list">
+      <div class="id-item">
+        <span class="id-lbl">(I)</span> $\;N(A) = {}^\perp R(A^*)$ &nbsp; — $\;x \in N(A) \Longleftrightarrow (A^*y^*)(x) = 0$ for all $y^* \in Y^*$.
+      </div>
+      <div class="id-item">
+        <span class="id-lbl">(II)</span> $\;N(A^*) = R(A)^\perp$ &nbsp; — $\;y^* \in N(A^*) \Longleftrightarrow y^*(Ax) = 0$ for all $x \in X$.
+      </div>
+      <div class="id-item">
+        <span class="id-lbl">(III)</span> $\;\overline{R(A)} = {}^\perp N(A^*)$ &nbsp; — Hahn&ndash;Banach: a closed subspace equals the pre-annihilator of its annihilator.
+      </div>
+      <div class="id-item warn">
+        <span class="id-lbl">(IV)</span> $\;\overline{R(A^*)} \;\subseteq\; N(A)^\perp$ &nbsp; — but equality requires $R(A)$ to be closed. Weak-$*$ closure of $R(A^*)$ <em>does</em> equal $N(A)^\perp$ always.
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────── 5. Canonical duality pairings ─────── -->
+  <div class="card">
+    <h2>Canonical duality pairings between the eight subspaces</h2>
+    <p>Each closed subspace pairs with a quotient on the dual side via a natural isometric isomorphism. These are <em>independent</em> of the closed-range hypothesis &mdash; they hold for any closed subspace $M$ of any Banach space $Z$ via $(Z/M)^* \cong M^\perp$ and $M^* \cong Z^*/M^\perp$.</p>
+    <div class="id-list">
+      <div class="id-item">
+        <span class="id-lbl">(a)</span> $\;(X/N(A))^* \;\cong\; N(A)^\perp \;\subset\; X^*$ &nbsp; — the dual of the effective domain is the annihilator of the kernel.
+      </div>
+      <div class="id-item">
+        <span class="id-lbl">(b)</span> $\;N(A)^* \;\cong\; X^* / N(A)^\perp$ &nbsp; — the dual of the kernel is the quotient by its annihilator.
+      </div>
+      <div class="id-item">
+        <span class="id-lbl">(c)</span> $\;\big(Y / \overline{R(A)}\big)^* \;\cong\; \overline{R(A)}^\perp \;=\; N(A^*)$ &nbsp; — the dual of the cokernel is the kernel of the adjoint.
+      </div>
+      <div class="id-item">
+        <span class="id-lbl">(d)</span> $\;\big(\overline{R(A)}\big)^* \;\cong\; Y^* / N(A^*)$ &nbsp; — the dual of the closed range is the corresponding quotient of $Y^*$.
+      </div>
+    </div>
+    <p style="margin-top:.9rem;">Schematically, the four annihilator pairings (gold dashes in the diagram) are:</p>
+    <div class="pair-row">$N(A) \;\subset\; X$ <span class="arr">⇄</span> $X^* / N(A)^\perp \;\cong\; N(A)^*$</div>
+    <div class="pair-row">$X/N(A) \;$ <span class="arr">⇄</span> $\; N(A)^\perp \;\subset\; X^*$ &nbsp;(containing $\overline{R(A^*)}$)</div>
+    <div class="pair-row">$\overline{R(A)} \;\subset\; Y$ <span class="arr">⇄</span> $Y^*/N(A^*)$</div>
+    <div class="pair-row">$Y/\overline{R(A)} \;$ <span class="arr">⇄</span> $\; N(A^*) \;\subset\; Y^*$</div>
+  </div>
+
+  <!-- ─────── 6. Closed Range Theorem ─────── -->
+  <div class="crt-card">
+    <h2>The Closed Range Theorem (Banach)</h2>
+    <p class="intro">The single hypothesis that turns the inclusion in (IV) into equality, and that makes $A$ and $A^*$ behave symmetrically. The following four statements are equivalent:</p>
+    <div class="crt-grid">
+      <div class="crt-item"><span class="crt-num">1</span> $R(A)$ is closed in $Y$</div>
+      <div class="crt-item"><span class="crt-num">2</span> $R(A^*)$ is closed in $X^*$</div>
+      <div class="crt-item"><span class="crt-num">3</span> $R(A) \;=\; {}^\perp N(A^*)$</div>
+      <div class="crt-item"><span class="crt-num">4</span> $R(A^*) \;=\; N(A)^\perp$</div>
+    </div>
+    <p style="margin-top:.9rem;">Equivalently, $A$ is <em>bounded below on the quotient</em>: there exists $c > 0$ with $\|Ax\|_Y \;\ge\; c\,\|x + N(A)\|_{X/N(A)}$ for all $x$. Closed range is what upgrades the always-true inclusion $\overline{R(A^*)} \subseteq N(A)^\perp$ to an equality &mdash; and dually for $R(A) \subseteq {}^\perp N(A^*)$.</p>
+  </div>
+
+  <!-- ─────── 7. Induced bijections ─────── -->
+  <div class="card">
+    <h2>Induced bijections (Strang's row-space ↔ column-space map)</h2>
+    <p>Strang's matrix theorem says $A$ restricts to a bijection $C(A^T) \to C(A)$. The Banach analogue runs through quotients on the domain side and through subspaces on the dual side. Both maps are <em>always</em> continuous bijections; they are topological isomorphisms exactly when the Closed Range Theorem applies.</p>
+    <div class="id-list">
+      <div class="id-item">
+        <span class="id-lbl">Primal</span> $\;\tilde A : X / N(A) \;\hookrightarrow\; \overline{R(A)} \;\subset\; Y$ &nbsp; — continuous injection with dense image; topological iso onto $R(A)$ iff $R(A)$ is closed.
+      </div>
+      <div class="id-item">
+        <span class="id-lbl">Dual</span> $\;\widetilde{A^*} : Y^* / N(A^*) \;\hookrightarrow\; \overline{R(A^*)} \;\subset\; X^*$ &nbsp; — same statement on the dual side.
+      </div>
+    </div>
+    <p style="margin-top:.7rem;">When $R(A)$ is closed, these two bijections are <em>dual to each other</em>: $\widetilde{A^*}$ is the Banach-space adjoint of $\tilde A$ under the identifications $(X/N(A))^* \cong N(A)^\perp$ and $\big(\overline{R(A)}\big)^* \cong Y^*/N(A^*)$. The whole picture &mdash; eight subspaces, four annihilator pairings, two induced bijections &mdash; commutes.</p>
+  </div>
+
+  <!-- ─────── 8. Hilbert special case ─────── -->
+  <div class="hilbert-card">
+    <h2>Hilbert special case &mdash; orthogonal direct sums return</h2>
+    <p>When $X$ and $Y$ are Hilbert spaces, the Riesz representation theorem gives canonical isometric anti-isomorphisms $X \cong X^*$ and $Y \cong Y^*$. Under these:</p>
+    <ul style="margin: .4rem 0 .8rem 1.4rem;">
+      <li>Annihilators become <em>orthogonal complements</em>;</li>
+      <li>Quotients have canonical isometric realizations as orthogonal complements inside the space itself;</li>
+      <li>The two "books" collapse onto themselves &mdash; $X$ and $X^*$ identify, as do $Y$ and $Y^*$.</li>
+    </ul>
+    <p>The eight subspaces reduce to Strang's four, organized into two orthogonal direct sums:</p>
+    <p style="text-align:center; font-size:1.05rem; margin: .7rem 0;">
+      $X \;=\; N(A) \;\oplus\; \overline{R(A^*)}, \qquad Y \;=\; \overline{R(A)} \;\oplus\; N(A^*).$
+    </p>
+    <p>$A$ restricts to a bounded bijection $\overline{R(A^*)} \to \overline{R(A)}$ with dense image (an isomorphism iff $R(A)$ is closed). This is Strang's theorem verbatim.</p>
+  </div>
+
+  <!-- ─────── 9. Fredholm theory ─────── -->
+  <div class="fredholm-card">
+    <h2>Fredholm operators &mdash; rank-nullity survives as the index</h2>
+    <p>$A \in \mathcal{B}(X,Y)$ is <strong>Fredholm</strong> when $\dim N(A) < \infty$, $R(A)$ is closed, and $\dim Y/R(A) < \infty$. (The closed range is automatic once both defect dimensions are finite.) Strang's identities $\dim N(A) + \mathrm{rank} = n$ and $\dim N(A^T) + \mathrm{rank} = m$ subtract to $n - m$; in infinite dimensions, the analogous invariant is the <strong>Fredholm index</strong>:</p>
+    <div class="index-box">
+      $\mathrm{ind}(A) \;=\; \dim N(A) \;-\; \dim N(A^*) \;=\; \dim N(A) \;-\; \dim \big(Y/R(A)\big)$
+    </div>
+    <p>The second equality uses the duality $(Y/R(A))^* \cong N(A^*)$ from pairing (c), which makes their dimensions equal in the finite case. The index is invariant under:</p>
+    <ul style="margin: .4rem 0 .8rem 1.4rem;">
+      <li>norm-continuous deformation of $A$ through Fredholm operators;</li>
+      <li>compact perturbations: $\mathrm{ind}(A + K) = \mathrm{ind}(A)$ for $K$ compact (Atkinson);</li>
+      <li>composition: $\mathrm{ind}(BA) = \mathrm{ind}(A) + \mathrm{ind}(B)$.</li>
+    </ul>
+    <p>For a matrix this recovers $\mathrm{ind}(A) = n - m$, independent of the entries.</p>
+  </div>
+
+  <!-- ─────── 10. Summary dictionary ─────── -->
+  <div class="card summary-card">
+    <h2>Dictionary: Strang's four subspaces ↔ the Banach eight</h2>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Strang (finite-dim)</th>
+          <th>Banach generalization</th>
+          <th>Lives in</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>$N(A)$</td>
+          <td>$N(A)$</td>
+          <td>$X$</td>
+          <td>always closed (boundedness of $A$)</td>
+        </tr>
+        <tr>
+          <td>$C(A^T) = N(A)^\perp$</td>
+          <td>$\overline{R(A^*)}$, sitting inside $N(A)^\perp$</td>
+          <td>$X^*$</td>
+          <td>equals $N(A)^\perp$ iff $R(A)$ closed</td>
+        </tr>
+        <tr>
+          <td>$C(A)$</td>
+          <td>$\overline{R(A)}$</td>
+          <td>$Y$</td>
+          <td>equals $R(A)$ iff $R(A)$ closed</td>
+        </tr>
+        <tr>
+          <td>$N(A^T) = C(A)^\perp$</td>
+          <td>$N(A^*) = R(A)^\perp$</td>
+          <td>$Y^*$</td>
+          <td>always closed; identity (II)</td>
+        </tr>
+        <tr>
+          <td>$\mathbb{R}^n / N(A) \cong C(A^T)$</td>
+          <td>$X / N(A)$ (no canonical complement)</td>
+          <td>quotient</td>
+          <td>$\tilde A : X/N(A) \to R(A)$ a continuous bijection</td>
+        </tr>
+        <tr>
+          <td>$\mathbb{R}^m / C(A) \cong N(A^T)$</td>
+          <td>$Y / \overline{R(A)}$, paired with $N(A^*)$</td>
+          <td>quotient</td>
+          <td>the cokernel; finite-dim if $A$ is Fredholm</td>
+        </tr>
+        <tr>
+          <td>$\mathrm{rank}(A) = \mathrm{rank}(A^T)$</td>
+          <td>$R(A)$ closed $\;\Longleftrightarrow\;$ $R(A^*)$ closed</td>
+          <td>—</td>
+          <td>Closed Range Theorem</td>
+        </tr>
+        <tr>
+          <td>$\dim N(A) - \dim N(A^T) = n - m$</td>
+          <td>$\mathrm{ind}(A) = \dim N(A) - \dim N(A^*)$</td>
+          <td>—</td>
+          <td>Fredholm index</td>
+        </tr>
+        <tr>
+          <td>$\mathbb{R}^n = N(A) \oplus C(A^T)$ (orthogonal)</td>
+          <td>$X / N(A)$ &mdash; <strong>no direct sum</strong> in general Banach</td>
+          <td>$X$</td>
+          <td>holds with $\oplus$ in Hilbert</td>
+        </tr>
+        <tr>
+          <td>$\mathbb{R}^m = C(A) \oplus N(A^T)$ (orthogonal)</td>
+          <td>$Y / \overline{R(A)}$ &mdash; no canonical complement</td>
+          <td>$Y$</td>
+          <td>holds with $\oplus$ in Hilbert</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$',  right: '$',  display: false}
+      ],
+      throwOnError: false,
+      strict: false
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fourier Series — An Orthogonal Basis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --crimson: #9E1B32;
+  --crimson-dark: #6B0F22;
+  --crimson-light: rgba(158, 27, 50, 0.08);
+  --cream: #F5EFE3;
+  --paper: #FBF7EF;
+  --ink: #1A1614;
+  --ink-soft: rgba(26, 22, 20, 0.65);
+  --ink-faint: rgba(26, 22, 20, 0.4);
+  --gold: #C9A961;
+  --rule: rgba(26, 22, 20, 0.14);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% -260px, rgba(158, 27, 50, 0.07), transparent),
+    radial-gradient(ellipse 700px 350px at 100% 900px, rgba(201, 169, 97, 0.06), transparent);
+  min-height: 100vh;
+}
+
+/* ── Banded ornamental rule (Alabama crimson, gold accent) ── */
+.editorial-band {
+  height: 14px;
+  background: var(--crimson);
+  position: relative;
+}
+.editorial-band::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 3px 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.editorial-band::after {
+  content: '';
+  position: absolute;
+  inset: 3px 0 auto 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.gold-rule {
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.85;
+}
+
+/* ── Hero ── */
+header.hero {
+  padding: 5rem 2rem 3.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 1.8rem;
+}
+.eyebrow .dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+  vertical-align: middle;
+  margin: 0 0.7em;
+  transform: translateY(-2px);
+}
+
+h1.display {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(54px, 9vw, 108px);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 1.4rem;
+}
+h1.display em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--crimson);
+}
+
+.dek {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-soft);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* ── Body ── */
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 2rem 6rem;
+}
+
+section {
+  margin-top: 5.5rem;
+  scroll-margin-top: 2rem;
+}
+
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 38px;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  margin-bottom: 1.6rem;
+  position: relative;
+  padding-bottom: 0.4rem;
+}
+h2::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 3px;
+  background: var(--crimson);
+  margin-top: 0.6rem;
+}
+h2 .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--crimson);
+  display: block;
+  margin-bottom: 0.4rem;
+  text-transform: none;
+}
+
+h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 23px;
+  margin: 2rem 0 0.7rem;
+  color: var(--ink);
+}
+
+p { margin: 0.95em 0; }
+
+.lead {
+  font-size: 22px;
+  line-height: 1.55;
+  margin-top: 1.2rem;
+}
+.lead::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 4.4em;
+  line-height: 0.85;
+  float: left;
+  margin: 0.08em 0.12em -0.05em 0;
+  color: var(--crimson);
+}
+
+em { color: var(--ink); }
+strong { font-weight: 600; color: var(--ink); }
+
+/* ── Proof blocks ── */
+.proof {
+  background: var(--crimson-light);
+  border-left: 3px solid var(--gold);
+  padding: 1.2rem 1.6rem 1.3rem;
+  margin: 1.6rem 0;
+  font-size: 18px;
+  line-height: 1.6;
+  border-radius: 0 2px 2px 0;
+}
+.proof .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+.proof p { margin: 0.5em 0; }
+.qed {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: var(--crimson);
+  margin-left: 0.5em;
+  transform: rotate(45deg) translateY(-1px);
+  vertical-align: middle;
+}
+
+/* ── Aside / callout ── */
+.aside {
+  border-left: 2px solid var(--ink);
+  padding: 0.4rem 0 0.4rem 1.4rem;
+  margin: 1.8rem 0;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 19px;
+}
+
+/* ── DI Table ── */
+.di-wrap {
+  margin: 1.8rem 0;
+}
+.di-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 18px;
+  background: #FFFCF7;
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 14px 36px rgba(26, 22, 20, 0.07);
+}
+.di-table th {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0.85rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-align: center;
+}
+.di-table th:first-child { text-align: center; width: 70px; }
+.di-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+  vertical-align: middle;
+}
+.di-table tr:last-child td { border-bottom: none; }
+.di-table .sign {
+  color: var(--crimson);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 17px;
+}
+.di-table .zero {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* ── Coefficient table ── */
+.coef-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.6rem 0;
+  font-size: 18px;
+}
+.coef-table th {
+  text-align: left;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 2px solid var(--ink);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 19px;
+}
+.coef-table td {
+  padding: 0.95rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+.coef-table tbody tr:last-child td { border-bottom: none; }
+.coef-table td:first-child {
+  font-style: italic;
+  color: var(--crimson);
+  font-weight: 500;
+}
+
+/* ── Interactive viz ── */
+.viz {
+  background: #FFFCF7;
+  border: 1px solid var(--rule);
+  padding: 1.6rem;
+  margin: 2rem 0 1rem;
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 16px 40px rgba(26, 22, 20, 0.07);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.3rem;
+  padding-bottom: 1.3rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.control-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.fn-buttons {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+.fn-buttons button {
+  font-family: 'EB Garamond', serif;
+  font-size: 19px;
+  font-style: italic;
+  background: transparent;
+  border: 1.5px solid var(--rule);
+  padding: 0.35rem 0.95rem;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.18s ease;
+  line-height: 1.2;
+}
+.fn-buttons button:hover {
+  border-color: var(--crimson);
+  color: var(--crimson);
+}
+.fn-buttons button.active {
+  background: var(--crimson);
+  color: var(--cream);
+  border-color: var(--crimson);
+}
+
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex: 1;
+  min-width: 220px;
+}
+input[type=range] {
+  flex: 1;
+  accent-color: var(--crimson);
+  cursor: pointer;
+}
+.n-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--crimson);
+  font-weight: 500;
+  min-width: 32px;
+  text-align: right;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.legend {
+  display: flex;
+  gap: 1.8rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  margin-top: 0.9rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  flex-wrap: wrap;
+}
+.legend .swatch {
+  display: inline-block;
+  width: 22px;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+.legend .target {
+  border-top: 1.5px dashed rgba(26, 22, 20, 0.55);
+  height: 1px;
+}
+.legend .fourier {
+  background: var(--crimson);
+  height: 3px;
+}
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 3rem 2rem 2.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+footer .sep {
+  display: inline-block;
+  margin: 0 1em;
+  color: var(--crimson);
+}
+
+/* ── MathJax tuning ── */
+mjx-container { font-size: 1.03em !important; }
+mjx-container[display="true"] { margin: 1.2em 0 !important; }
+
+@media (max-width: 640px) {
+  body { font-size: 18px; }
+  main { padding: 0 1.2rem 4rem; }
+  header.hero { padding: 3.5rem 1.2rem 2.5rem; }
+  h2 { font-size: 30px; }
+  .lead { font-size: 20px; }
+  .di-table, .coef-table { font-size: 15px; }
+  .di-table th, .di-table td,
+  .coef-table th, .coef-table td { padding: 0.55rem 0.4rem; }
+  mjx-container { font-size: 0.92em !important; }
+  .controls { gap: 1rem; }
+  .viz { padding: 1.1rem; }
+}
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+  },
+  svg: { fontCache: 'global' },
+  startup: {
+    ready: () => {
+      MathJax.startup.defaultReady();
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+</head>
+<body>
+
+<div class="editorial-band"></div>
+<div class="gold-rule"></div>
+
+<header class="hero">
+  <div class="eyebrow">A Note on Linear Algebra <span class="dot"></span> Vol. I</div>
+  <h1 class="display">Fourier Series<br><em>an orthogonal basis</em></h1>
+  <p class="dek">An infinite orthogonal basis, a projection formula, and a small mountain of integration by parts — all on the interval $[0, 2\pi]$.</p>
+</header>
+
+<main>
+
+<section id="setup">
+  <h2><span class="num">§ 01</span>The Inner Product</h2>
+  <p class="lead">Linear algebra, all the way down. Treat continuous functions on $[0,2\pi]$ as vectors in the space $C[0,2\pi]$, and equip them with the inner product</p>
+
+  $$\langle f, g \rangle \;=\; \int_0^{2\pi} f(x)\, g(x)\, dx.$$
+
+  <p>This is symmetric, bilinear, and positive definite, so it behaves like the dot product. Two functions are orthogonal when their integrated product vanishes; the norm of $f$ is $\|f\| = \sqrt{\langle f, f\rangle}.$</p>
+
+  <p>The whole claim — the entire pitch — is that the trigonometric family</p>
+
+  $$\{\, 1,\; \cos x,\; \sin x,\; \cos 2x,\; \sin 2x,\; \cos 3x,\; \sin 3x,\; \ldots \,\}$$
+
+  <p>is an orthogonal set in this inner product space. Normalize the vectors. You get an orthonormal basis. Project any reasonable function onto it. You get its <em>Fourier series</em>. That's it. That's the trick.</p>
+</section>
+
+<section id="orthogonality">
+  <h2><span class="num">§ 02</span>Orthogonality, via the Angle Formulas</h2>
+
+  <p>Three identities do all the work. Each is just a rearrangement of the sum-and-difference formulas you already know:</p>
+
+  $$\cos A \cos B = \tfrac{1}{2}\!\bigl[\cos(A-B) + \cos(A+B)\bigr]$$
+  $$\sin A \sin B = \tfrac{1}{2}\!\bigl[\cos(A-B) - \cos(A+B)\bigr]$$
+  $$\sin A \cos B = \tfrac{1}{2}\!\bigl[\sin(A+B) + \sin(A-B)\bigr]$$
+
+  <p>Each product becomes a sum of two single trig functions, and over a full period $[0, 2\pi]$, every $\sin(kx)$ and every nonzero $\cos(kx)$ integrates to zero. That's the whole argument; the lemmas below are bookkeeping.</p>
+
+  <div class="proof">
+    <span class="tag">Lemma · cos ⊥ cos</span>
+    <p>For nonnegative integers $m \neq n$,</p>
+    $$\int_0^{2\pi} \!\cos(mx)\cos(nx)\,dx \;=\; \tfrac{1}{2}\!\int_0^{2\pi}\!\bigl[\cos((m-n)x) + \cos((m+n)x)\bigr]\,dx \;=\; 0.$$
+    <p>When $m = n \geq 1$, the integrand is $\tfrac{1}{2}\bigl[1 + \cos(2nx)\bigr]$, integrating to $\pi$. <span class="qed"></span></p>
+  </div>
+
+  <div class="proof">
+    <span class="tag">Lemma · sin ⊥ sin</span>
+    <p>Identically, for $m \neq n$ both $\geq 1$,</p>
+    $$\int_0^{2\pi}\!\sin(mx)\sin(nx)\,dx \;=\; \tfrac{1}{2}\!\int_0^{2\pi}\!\bigl[\cos((m-n)x) - \cos((m+n)x)\bigr]\,dx \;=\; 0,$$
+    <p>and $\int_0^{2\pi}\!\sin^2(nx)\,dx = \pi$. <span class="qed"></span></p>
+  </div>
+
+  <div class="proof">
+    <span class="tag">Lemma · sin ⊥ cos (always)</span>
+    <p>For every $m, n$,</p>
+    $$\int_0^{2\pi}\!\sin(mx)\cos(nx)\,dx \;=\; \tfrac{1}{2}\!\int_0^{2\pi}\!\bigl[\sin((m+n)x) + \sin((m-n)x)\bigr]\,dx \;=\; 0,$$
+    <p>since each $\sin(kx)$ has integral zero over a full period (and is literally zero when $k = 0$). <span class="qed"></span></p>
+  </div>
+
+  <p>The constant function $1$ is also orthogonal to every $\sin(nx)$ and $\cos(nx)$ for $n \geq 1$, since each integrates to zero on its own. So the entire family is orthogonal.</p>
+</section>
+
+<section id="normalize">
+  <h2><span class="num">§ 03</span>Normalize the Basis</h2>
+
+  <p>Reading the diagonals from the lemmas above:</p>
+
+  $$\|1\|^2 = 2\pi, \qquad \|\cos(nx)\|^2 = \pi, \qquad \|\sin(nx)\|^2 = \pi \quad (n \geq 1).$$
+
+  <p>So the orthonormal basis is</p>
+
+  $$\mathcal{B} \;=\; \left\{\, \frac{1}{\sqrt{2\pi}},\;\; \frac{\cos(nx)}{\sqrt{\pi}},\;\; \frac{\sin(nx)}{\sqrt{\pi}}\,\right\}_{n \,\geq\, 1}.$$
+
+  <p>For any $f \in C[0,2\pi]$, orthogonal projection — the same formula you used to decompose a vector along orthogonal axes in $\mathbb{R}^n$ — gives</p>
+
+  $$f \;\sim\; \sum_{u \in \mathcal{B}} \langle f, u\rangle\, u.$$
+
+  <p>Collecting the $\pi$ factors and using the convenient $a_0/2$ convention, this is exactly the classical form</p>
+
+  $$\boxed{\;f(x) \;\sim\; \frac{a_0}{2} + \sum_{n=1}^{\infty} \bigl[\, a_n \cos(nx) + b_n \sin(nx)\,\bigr]\;}$$
+
+  <p>with</p>
+
+  $$a_n = \frac{1}{\pi}\!\int_0^{2\pi}\! f(x)\cos(nx)\,dx, \qquad b_n = \frac{1}{\pi}\!\int_0^{2\pi}\! f(x)\sin(nx)\,dx.$$
+
+  <div class="aside">The constant term $a_0/2$ is just $\langle f, 1\rangle / \|1\|^2$ — the projection onto the constant function. The factor of two there is a notational habit, not a deep truth.</div>
+
+  <p>Computing the coefficients is now an integration problem. For polynomial $f$, that means integration by parts. Repeatedly.</p>
+</section>
+
+<section id="ibp">
+  <h2><span class="num">§ 04</span>Tabular Integration by Parts</h2>
+
+  <p>To compute $\int x^3 \cos(nx)\,dx$ honestly requires integrating by parts four times. The standard $u\,dv$ notation is a mess after the second pass. The <strong>DI table</strong> (also called "tic-tac-toe IBP") cleans it up: differentiate the polynomial column down to zero, integrate the trig column an equal number of times, and read the answer off the diagonals with alternating signs.</p>
+
+  <h3>The recipe</h3>
+  <p>Build two columns side by side. In the <em>D</em> column, write your polynomial and keep differentiating until you hit zero. In the <em>I</em> column, write the other factor and keep integrating it the same number of times. Then multiply each <em>D</em> entry by the entry one row down in the <em>I</em> column, attaching alternating signs $+,\,-,\,+,\,-,\ldots$ starting with $+$.</p>
+
+  <div class="di-wrap">
+  <table class="di-table">
+    <thead>
+      <tr>
+        <th>Sign</th>
+        <th>D — differentiate</th>
+        <th>I — integrate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="sign">+</td><td>$x^3$</td><td>$\cos(nx)$</td></tr>
+      <tr><td class="sign">−</td><td>$3x^2$</td><td>$\dfrac{\sin(nx)}{n}$</td></tr>
+      <tr><td class="sign">+</td><td>$6x$</td><td>$-\dfrac{\cos(nx)}{n^2}$</td></tr>
+      <tr><td class="sign">−</td><td>$6$</td><td>$-\dfrac{\sin(nx)}{n^3}$</td></tr>
+      <tr><td class="sign">+</td><td class="zero">$0$</td><td>$\dfrac{\cos(nx)}{n^4}$</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Pairing each $D$ entry with the next row's $I$ entry, attaching the sign on the $D$ row, and stopping when $D$ hits zero:</p>
+
+  $$\int x^3 \cos(nx)\,dx \;=\; \frac{x^3 \sin(nx)}{n} \;+\; \frac{3x^2 \cos(nx)}{n^2} \;-\; \frac{6x \sin(nx)}{n^3} \;-\; \frac{6 \cos(nx)}{n^4} \;+\; C.$$
+
+  <p>Differentiate that mess to check it really does give $x^3 \cos(nx)$ — the cross terms collapse exactly the way they should.</p>
+
+  <h3>Evaluating at the endpoints</h3>
+  <p>Now evaluate from $0$ to $2\pi$. Because $\sin(2\pi n) = 0$ and $\cos(2\pi n) = 1$ for every integer $n$, every sine term vanishes at both endpoints and only the cosine terms contribute. The $x^2\cos(nx)/n^2$ term gives $(2\pi)^2 \cdot 3 / n^2 - 0$, and the constant cosine terms cancel beautifully:</p>
+
+  $$\int_0^{2\pi}\! x^3 \cos(nx)\,dx \;=\; \underbrace{\frac{3 (2\pi)^2}{n^2}}_{\text{at } 2\pi} \;-\; \underbrace{\frac{6}{n^4}}_{\text{at } 2\pi} \;-\; \underbrace{\left(-\frac{6}{n^4}\right)}_{\text{at } 0} \;=\; \frac{12\pi^2}{n^2}.$$
+
+  <p>So $a_n = (1/\pi)(12\pi^2/n^2) = 12\pi / n^2$ for $f(x) = x^3$. A parallel DI table starting with $\sin(nx)$ in the integrate column delivers $b_n = 12/n^3 - 8\pi^2/n$. Same machinery, every time.</p>
+</section>
+
+<section id="examples">
+  <h2><span class="num">§ 05</span>A Small Catalog of Coefficients</h2>
+
+  <p>Running the same procedure on a handful of presets, here are the Fourier series on $[0, 2\pi]$. Each converges to the function on the open interval $(0, 2\pi)$ and to the average $\tfrac{1}{2}\bigl[f(0) + f(2\pi)\bigr]$ at the endpoints — the periodic extension introduces a jump there, and the series can only see the average.</p>
+
+  <table class="coef-table">
+    <thead>
+      <tr>
+        <th>$f(x)$</th>
+        <th>$a_0/2$</th>
+        <th>$a_n$</th>
+        <th>$b_n$</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>$1$</td>
+        <td>$1$</td>
+        <td>$0$</td>
+        <td>$0$</td>
+      </tr>
+      <tr>
+        <td>$x$</td>
+        <td>$\pi$</td>
+        <td>$0$</td>
+        <td>$-\dfrac{2}{n}$</td>
+      </tr>
+      <tr>
+        <td>$x^2$</td>
+        <td>$\dfrac{4\pi^2}{3}$</td>
+        <td>$\dfrac{4}{n^2}$</td>
+        <td>$-\dfrac{4\pi}{n}$</td>
+      </tr>
+      <tr>
+        <td>$x^3$</td>
+        <td>$2\pi^3$</td>
+        <td>$\dfrac{12\pi}{n^2}$</td>
+        <td>$\dfrac{12}{n^3} - \dfrac{8\pi^2}{n}$</td>
+      </tr>
+      <tr>
+        <td>$e^x$</td>
+        <td>$\dfrac{e^{2\pi}-1}{2\pi}$</td>
+        <td>$\dfrac{e^{2\pi}-1}{\pi(1+n^2)}$</td>
+        <td>$-\dfrac{n(e^{2\pi}-1)}{\pi(1+n^2)}$</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Written out</h3>
+  <p>Plugging in $n = 1, 2, 3, \ldots$ gives the first handful of coefficients explicitly:</p>
+
+  $$1 \;\sim\; 1$$
+
+  $$x \;\sim\; \pi \;-\; 2\sin x \;-\; \sin 2x \;-\; \tfrac{2}{3}\sin 3x \;-\; \tfrac{1}{2}\sin 4x \;-\; \cdots$$
+
+  $$\begin{aligned}
+  x^2 \;\sim\; \tfrac{4\pi^2}{3} \;&+\; 4\cos x \;+\; \cos 2x \;+\; \tfrac{4}{9}\cos 3x \;+\; \tfrac{1}{4}\cos 4x \;+\; \cdots \\
+  \;&-\; 4\pi\sin x \;-\; 2\pi\sin 2x \;-\; \tfrac{4\pi}{3}\sin 3x \;-\; \pi\sin 4x \;-\; \cdots
+  \end{aligned}$$
+
+  $$\begin{aligned}
+  x^3 \;\sim\; 2\pi^3 \;&+\; 12\pi\cos x \;+\; 3\pi\cos 2x \;+\; \tfrac{4\pi}{3}\cos 3x \;+\; \tfrac{3\pi}{4}\cos 4x \;+\; \cdots \\
+  \;&+\; (12 - 8\pi^2)\sin x \;+\; \bigl(\tfrac{3}{2} - 4\pi^2\bigr)\sin 2x \;+\; \bigl(\tfrac{4}{9} - \tfrac{8\pi^2}{3}\bigr)\sin 3x \;+\; \cdots
+  \end{aligned}$$
+
+  $$e^x \;\sim\; \frac{e^{2\pi}-1}{2\pi} \;+\; \frac{e^{2\pi}-1}{\pi}\!\left[\,\frac{\cos x - \sin x}{2} \;+\; \frac{\cos 2x - 2\sin 2x}{5} \;+\; \frac{\cos 3x - 3\sin 3x}{10} \;+\; \cdots\,\right]$$
+
+  <p>A few sanity checks worth pausing on. The constant $1$ is its own Fourier series — it lives along a single basis vector, with no component anywhere else. The function $f(x) = x$ has zero cosine content because $x - \pi$ is odd about the midpoint $x = \pi$, and the sines $\sin(nx)$ are exactly the basis of functions odd about $\pi$ on this interval. For $e^x$, the ratio $b_n / a_n = -n$ is the fingerprint of differentiating a function that equals its own derivative.</p>
+
+  <p>And $x^3$ at the midpoint $x = \pi$? The series gives $2\pi^3 + \sum 12\pi (-1)^n / n^2 = 2\pi^3 + 12\pi \cdot (-\pi^2/12) = \pi^3$. The function value, exactly.</p>
+</section>
+
+<section id="viz">
+  <h2><span class="num">§ 06</span>Reconstruction</h2>
+
+  <p>Pick a function. Move the slider. Watch finite sums of trig polynomials chase the target. Near $x = 0$ and $x = 2\pi$, where the periodic extension is discontinuous, the partial sums overshoot the jump by a fixed percentage no matter how large $N$ grows — that's <em>Gibbs' phenomenon</em>, a permanent artifact of approximating a discontinuity with smooth basis functions.</p>
+
+  <div class="viz">
+    <div class="controls">
+      <div class="control-group">
+        <span class="control-label">f(x)</span>
+        <div class="fn-buttons" id="fnBtns">
+          <button data-fn="1">1</button>
+          <button data-fn="x">x</button>
+          <button data-fn="x2">x²</button>
+          <button data-fn="x3" class="active">x³</button>
+          <button data-fn="ex">eˣ</button>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <span class="control-label">N</span>
+        <input type="range" id="nSlider" min="0" max="80" value="10" step="1" aria-label="Number of Fourier terms">
+        <span class="n-value" id="nVal">10</span>
+      </div>
+    </div>
+    <canvas id="plot" width="1200" height="720" aria-label="Plot of target function and Fourier partial sum"></canvas>
+    <div class="legend">
+      <span><span class="swatch target"></span>target $f(x)$</span>
+      <span><span class="swatch fourier"></span>partial sum $S_N(x)$</span>
+    </div>
+  </div>
+
+  <p>What you are looking at is orthogonal projection in real time. Every new term is one more axis in an infinite-dimensional vector space, picked off by an inner product. The function isn't being "approximated" in any vague sense — it's being decomposed into its components along an orthonormal frame, exactly the way a vector in $\mathbb{R}^3$ is decomposed along $\mathbf{i}, \mathbf{j}, \mathbf{k}$. The space is just bigger, and the basis is trigonometric.</p>
+</section>
+
+</main>
+
+<div class="gold-rule"></div>
+<div class="editorial-band"></div>
+
+<footer>
+  Linear Algebra <span class="sep">◆</span> Inner Product Spaces <span class="sep">◆</span> Roll Tide
+</footer>
+
+<script>
+// ─── Fourier coefficient registry ─────────────────────────────────────────
+const TWO_PI = 2 * Math.PI;
+const E2PI_M1 = Math.exp(TWO_PI) - 1;
+
+const FN = {
+  '1':  {
+    f: x => 1,
+    a0_half: 1,
+    an: n => 0,
+    bn: n => 0,
+    yRange: [-0.4, 1.6]
+  },
+  'x':  {
+    f: x => x,
+    a0_half: Math.PI,
+    an: n => 0,
+    bn: n => -2 / n,
+    yRange: [-1.2, TWO_PI + 1.2]
+  },
+  'x2': {
+    f: x => x * x,
+    a0_half: 4 * Math.PI * Math.PI / 3,
+    an: n => 4 / (n * n),
+    bn: n => -4 * Math.PI / n,
+    yRange: [-6, TWO_PI * TWO_PI + 6]
+  },
+  'x3': {
+    f: x => x * x * x,
+    a0_half: 2 * Math.PI ** 3,
+    an: n => 12 * Math.PI / (n * n),
+    bn: n => 12 / (n ** 3) - 8 * Math.PI * Math.PI / n,
+    yRange: [-30, Math.pow(TWO_PI, 3) + 30]
+  },
+  'ex': {
+    f: x => Math.exp(x),
+    a0_half: E2PI_M1 / TWO_PI,
+    an: n => E2PI_M1 / (Math.PI * (1 + n * n)),
+    bn: n => -n * E2PI_M1 / (Math.PI * (1 + n * n)),
+    yRange: [-40, Math.exp(TWO_PI) + 40]
+  }
+};
+
+function partialSum(spec, N, x) {
+  let s = spec.a0_half;
+  for (let n = 1; n <= N; n++) {
+    s += spec.an(n) * Math.cos(n * x) + spec.bn(n) * Math.sin(n * x);
+  }
+  return s;
+}
+
+// ─── Canvas plotter ───────────────────────────────────────────────────────
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+
+let currentFn = 'x3';
+let currentN = 10;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = Math.round(cssW * 0.58);
+  canvas.style.height = cssH + 'px';
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function draw() {
+  resizeCanvas();
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+
+  const spec = FN[currentFn];
+  const N = currentN;
+
+  const padL = 56, padR = 28, padTop = 24, padBottom = 42;
+  const plotW = W - padL - padR;
+  const plotH = H - padTop - padBottom;
+
+  // sample target & partial sum
+  const samples = 1200;
+  const targetPts = new Array(samples + 1);
+  const fourierPts = new Array(samples + 1);
+  let yMin = spec.yRange[0], yMax = spec.yRange[1];
+
+  for (let i = 0; i <= samples; i++) {
+    const x = (i / samples) * TWO_PI;
+    const yt = spec.f(x);
+    const yf = partialSum(spec, N, x);
+    targetPts[i] = [x, yt];
+    fourierPts[i] = [x, yf];
+    if (yf < yMin) yMin = Math.max(yf, spec.yRange[0] - (spec.yRange[1] - spec.yRange[0]) * 0.5);
+    if (yf > yMax) yMax = Math.min(yf, spec.yRange[1] + (spec.yRange[1] - spec.yRange[0]) * 0.5);
+  }
+
+  const X = x => padL + (x / TWO_PI) * plotW;
+  const Y = y => padTop + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+
+  // background grid lines at π/2 multiples
+  const xTicks = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2, TWO_PI];
+  const xLabels = ['0', 'π/2', 'π', '3π/2', '2π'];
+
+  ctx.strokeStyle = 'rgba(26, 22, 20, 0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (const xt of xTicks) {
+    ctx.moveTo(X(xt), padTop);
+    ctx.lineTo(X(xt), padTop + plotH);
+  }
+  ctx.stroke();
+
+  // horizontal zero line (if 0 in range)
+  if (yMin < 0 && yMax > 0) {
+    ctx.strokeStyle = 'rgba(26, 22, 20, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, Y(0));
+    ctx.lineTo(padL + plotW, Y(0));
+    ctx.stroke();
+  }
+
+  // y-axis labels (a few nice values)
+  ctx.fillStyle = 'rgba(26, 22, 20, 0.5)';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const yTicks = niceTicks(yMin, yMax, 5);
+  for (const yt of yTicks) {
+    ctx.fillText(formatNum(yt), padL - 8, Y(yt));
+    ctx.strokeStyle = 'rgba(26, 22, 20, 0.06)';
+    ctx.beginPath();
+    ctx.moveTo(padL, Y(yt));
+    ctx.lineTo(padL + plotW, Y(yt));
+    ctx.stroke();
+  }
+
+  // x-axis labels
+  ctx.fillStyle = 'rgba(26, 22, 20, 0.55)';
+  ctx.font = '12px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i < xTicks.length; i++) {
+    ctx.fillText(xLabels[i], X(xTicks[i]), padTop + plotH + 10);
+  }
+
+  // target (dashed)
+  ctx.strokeStyle = 'rgba(26, 22, 20, 0.55)';
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash([6, 5]);
+  ctx.beginPath();
+  drawPolyline(ctx, targetPts, X, Y, yMin, yMax);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // partial Fourier sum (crimson)
+  ctx.strokeStyle = '#9E1B32';
+  ctx.lineWidth = 2.6;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  drawPolyline(ctx, fourierPts, X, Y, yMin, yMax);
+  ctx.stroke();
+
+  // frame around plot area
+  ctx.strokeStyle = 'rgba(26, 22, 20, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(padL, padTop, plotW, plotH);
+}
+
+function drawPolyline(ctx, pts, X, Y, yMin, yMax) {
+  let started = false;
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = pts[i];
+    if (y < yMin - (yMax - yMin) * 0.5 || y > yMax + (yMax - yMin) * 0.5) {
+      started = false;
+      continue;
+    }
+    if (!started) {
+      ctx.moveTo(X(x), Y(y));
+      started = true;
+    } else {
+      ctx.lineTo(X(x), Y(y));
+    }
+  }
+}
+
+function niceTicks(lo, hi, target) {
+  const range = hi - lo;
+  const rawStep = range / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalized = rawStep / mag;
+  let step;
+  if (normalized < 1.5) step = 1 * mag;
+  else if (normalized < 3) step = 2 * mag;
+  else if (normalized < 7) step = 5 * mag;
+  else step = 10 * mag;
+  const ticks = [];
+  const start = Math.ceil(lo / step) * step;
+  for (let v = start; v <= hi + step * 0.0001; v += step) {
+    ticks.push(Math.round(v / step) * step);
+  }
+  return ticks;
+}
+
+function formatNum(v) {
+  if (Math.abs(v) < 1e-9) return '0';
+  if (Math.abs(v) >= 1000) return v.toExponential(1);
+  if (Math.abs(v) < 0.01) return v.toExponential(1);
+  return Number(v.toPrecision(3)).toString();
+}
+
+// ─── Wire up controls ─────────────────────────────────────────────────────
+document.querySelectorAll('#fnBtns button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#fnBtns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFn = btn.dataset.fn;
+    draw();
+  });
+});
+
+const slider = document.getElementById('nSlider');
+const nVal = document.getElementById('nVal');
+slider.addEventListener('input', () => {
+  currentN = parseInt(slider.value);
+  nVal.textContent = currentN;
+  draw();
+});
+
+window.addEventListener('resize', draw);
+window.addEventListener('load', draw);
+draw();
+</script>
+
+</body>
+</html>

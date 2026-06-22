@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>When do two limits commute?</title>
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+  :root {
+    --text: #1a1a1a;
+    --muted: #555;
+    --bg: #fcfbf7;
+    --panel: #f2efe6;
+    --rule: #d8d3c4;
+    --accent-red: #c43a3a;
+    --accent-blue: #2a6fc4;
+    --link: #2a6fc4;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 18px;
+    line-height: 1.65;
+  }
+  .wrap {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+  h1 {
+    font-size: 2rem;
+    line-height: 1.25;
+    margin: 0 0 0.3rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 1.32rem;
+    margin: 2.4rem 0 0.6rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  h3 {
+    font-size: 1.1rem;
+    margin: 1.6rem 0 0.4rem;
+    font-weight: 600;
+    font-style: italic;
+  }
+  p { margin: 0.7rem 0; }
+  .subtitle {
+    color: var(--muted);
+    font-style: italic;
+    margin: 0 0 2rem;
+    font-size: 1.05rem;
+  }
+  .lead { font-size: 1.05rem; }
+  .figure {
+    margin: 2rem 0 2.2rem;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 1rem 1rem 0.6rem;
+  }
+  #plot {
+    width: 100%;
+    height: 500px;
+    touch-action: none;
+    position: relative;
+  }
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: center;
+    margin: 0.6rem 0 0.3rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    flex-wrap: wrap;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .swatch {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  .caption {
+    font-size: 0.88rem;
+    color: var(--muted);
+    text-align: center;
+    margin: 0.4rem 0 0.3rem;
+    font-style: italic;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  blockquote {
+    margin: 1rem 0;
+    padding: 0.2rem 1.1rem;
+    border-left: 3px solid var(--rule);
+    color: #333;
+    font-style: italic;
+  }
+  .theorem {
+    background: var(--panel);
+    border-left: 3px solid #8a795d;
+    padding: 0.7rem 1.1rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .theorem .label {
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: #6a5b42;
+    font-size: 0.92rem;
+    margin-right: 0.4em;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2.5rem 0;
+  }
+  a { color: var(--link); }
+  .signoff {
+    color: var(--muted);
+    font-size: 0.92rem;
+    text-align: center;
+    margin-top: 3rem;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>When do two limits commute?</h1>
+<p class="subtitle">A small example, and the shadow it casts across analysis.</p>
+
+<p class="lead">
+Start with a very elementary object. For natural numbers $m, n \geq 1$, put
+$$
+f(m, n) \;=\; \frac{m}{m + n}.
+$$
+We sample it on the grid $1 \leq m, n \leq 20$ below. This is a function on the lattice $\mathbb{N} \times \mathbb{N}$, and we can ask two different questions about its behaviour at infinity.
+Fix $m$ and let $n$ grow: the denominator swamps the numerator, and $f(m,n) \to 0$. Fix $n$ and let $m$ grow instead: now the numerator dominates, and $f(m,n) \to 1$. The order in which we push the two indices to infinity matters:
+$$
+\lim_{m \to \infty}\; \lim_{n \to \infty}\; f(m, n) \;=\; \lim_{m \to \infty} 0 \;=\; 0,
+$$
+$$
+\lim_{n \to \infty}\; \lim_{m \to \infty}\; f(m, n) \;=\; \lim_{n \to \infty} 1 \;=\; 1.
+$$
+A change of order, a change of answer.
+</p>
+
+<div class="figure">
+  <div id="plot"></div>
+  <div class="legend">
+    <span><span class="swatch" style="background:#E24B4A;"></span>$m = 3$ fixed, $n \to \infty$: &nbsp; $f \to 0$</span>
+    <span><span class="swatch" style="background:#378ADD;"></span>$n = 3$ fixed, $m \to \infty$: &nbsp; $f \to 1$</span>
+  </div>
+  <p class="caption">Drag to rotate, scroll to zoom. The NW ridge rises to 1; the NE ridge falls to 0.</p>
+</div>
+
+<p>
+The 3D stem plot makes the asymmetry geometric. Spikes in the NW direction (large $m$, small $n$) climb toward $1$; spikes in the NE direction (small $m$, large $n$) sink toward $0$. The diagonal $m = n$ is flat at exactly $\tfrac{1}{2}$. The surface has a saddle rather than a plateau, and that saddle is the whole story.
+</p>
+
+<h2>The general question</h2>
+
+<p>
+Behind this toy example lies one of the recurring preoccupations of analysis. Given any doubly-indexed family $a_{m,n}$, we have two iterated limits
+$$
+L_1 \;=\; \lim_{m \to \infty} \lim_{n \to \infty} a_{m, n}, \qquad
+L_2 \;=\; \lim_{n \to \infty} \lim_{m \to \infty} a_{m, n},
+$$
+whenever they exist, and there is no reason in general for them to agree. The question analysts keep asking, in one form after another, is:
+</p>
+
+<blockquote>
+Under what hypotheses can we swap two limiting operations without changing the answer?
+</blockquote>
+
+<p>
+Almost every interchange theorem in analysis is a special case of this. The answer, again and again, is the same: you can swap two limits when the convergence of one of them is <em>uniform</em> in the parameter of the other — or some equivalent condition that prevents the "mass" of the problem from sliding off to infinity as the parameters move. The clean abstract version is:
+</p>
+
+<div class="theorem">
+<span class="label">Moore–Osgood.</span>
+Suppose $a_{m,n} \to b_m$ as $n \to \infty$ for each $m$, and $a_{m,n} \to c_n$ as $m \to \infty$ <em>uniformly in $n$</em>. Then both iterated limits exist, are equal, and coincide with $\lim_{(m,n)\to \infty} a_{m,n}$.
+</div>
+
+<p>
+In our toy example the hypothesis fails: $m/(m+n) \to 1$ as $m \to \infty$, but the convergence is not uniform in $n$ — for every $m$ you can find an $n$ so large that $f(m,n)$ is back close to $0$. Nothing controls both indices at once, and the two iterated limits are free to differ. Let me now run through the places this same tension reappears.
+</p>
+
+<h2>Pointwise versus uniform convergence of functions</h2>
+
+<p>
+Take a sequence of functions $f_n : [0,1] \to \mathbb{R}$, each continuous, converging pointwise to a limit $f$. Is $f$ continuous? Continuity of $f$ at a point $x_0$ says
+$$
+\lim_{x \to x_0} f(x) \;=\; f(x_0),
+\qquad \text{i.e.} \qquad
+\lim_{x \to x_0}\; \lim_{n \to \infty}\; f_n(x) \;=\; \lim_{n \to \infty}\; \lim_{x \to x_0}\; f_n(x).
+$$
+The question of whether the pointwise limit of continuous functions is continuous is, letter for letter, a question of interchanging two limits.
+</p>
+
+<p>
+It can fail. The textbook example is $f_n(x) = x^n$ on $[0, 1]$. Each $f_n$ is continuous; pointwise the sequence converges to $0$ on $[0,1)$ and to $1$ at $x = 1$, a discontinuous function. The remedy is a uniformity condition: if $f_n \to f$ <em>uniformly</em>, then $f$ is continuous. That is exactly the Moore–Osgood hypothesis in disguise.
+</p>
+
+<h2>Limit and integral</h2>
+
+<p>
+The same structure appears when we ask whether
+$$
+\lim_{n \to \infty} \int f_n \;=\; \int \lim_{n \to \infty} f_n.
+$$
+Since an integral is itself a limit (of Riemann sums, or a sup of simple-function integrals), this is again a commutation of two limits. And it can fail spectacularly.
+</p>
+
+<p>
+The moving bump: let $f_n(x) = n \cdot \mathbf{1}_{[0, 1/n]}(x)$. Each $f_n$ has integral $1$. But for every $x > 0$ we have $f_n(x) = 0$ eventually, so $f_n \to 0$ pointwise almost everywhere. Then $\int \lim f_n = 0$ while $\lim \int f_n = 1$. All the mass of the sequence slides off to infinity — vertically, in this case — as $n$ grows, and the integral cannot see where it went.
+</p>
+
+<p>
+The classical remedies — the monotone convergence theorem and the dominated convergence theorem — are again uniformity conditions, this time on the size of the functions: monotone growth, or domination by a fixed integrable envelope, rules out the escape of mass. Once that's ruled out, the two limits commute.
+</p>
+
+<h2>Differentiation under the integral</h2>
+
+<p>
+Leibniz's rule says
+$$
+\frac{d}{dt} \int_A f(x, t)\, dx \;=\; \int_A \frac{\partial f}{\partial t}(x, t)\, dx.
+$$
+A derivative is the limit of a difference quotient and an integral is a limit of sums, so the rule asserts that these two limits commute. In good cases — $\partial f/\partial t$ continuous, dominated uniformly in $t$ near the point of interest — they do. In less good cases they don't, and the formula produces wrong answers.
+</p>
+
+<p>
+Feynman famously used this identity as a calculational trick; the trick works only because the hypotheses are usually satisfied silently. Push the setup just hard enough, and the same "mass escapes" mechanism as the moving bump reappears and the formula breaks.
+</p>
+
+<h2>Equality of mixed partial derivatives</h2>
+
+<p>
+Does it matter in which order one differentiates a function of two variables? The question is whether
+$$
+\frac{\partial^2 f}{\partial x\, \partial y} \;=\; \frac{\partial^2 f}{\partial y\, \partial x}.
+$$
+Expand each side as a limit of difference quotients and this becomes a four-fold limit whose value depends on the order in which limits are taken. Clairaut's theorem says the two orders agree provided the second partials are continuous — once more, a regularity hypothesis that enforces uniformity.
+</p>
+
+<p>
+The standard counterexample is
+$$
+f(x, y) \;=\; \begin{cases} \dfrac{xy(x^2 - y^2)}{x^2 + y^2}, & (x,y) \neq (0, 0), \\ 0, & (x, y) = (0, 0). \end{cases}
+$$
+A direct computation gives $f_{xy}(0,0) = -1$ and $f_{yx}(0,0) = +1$. The function is smooth enough to differentiate twice, but not smooth enough to have continuous second partials at the origin, and the two orders of differentiation disagree by $2$ — a saddle of exactly the same flavour as our $m/(m+n)$.
+</p>
+
+<h2>Order of integration: Fubini</h2>
+
+<p>
+For a function $f(x, y)$ on a product space,
+$$
+\int\!\!\!\int f(x, y)\, dx\, dy \;=\; \int \!\Bigl( \int f(x, y)\, dx \Bigr) dy \;=\; \int \!\Bigl( \int f(x, y)\, dy \Bigr) dx?
+$$
+Fubini's theorem says yes, <em>provided</em> $f$ is integrable over the product (e.g. $\int \!\!\int |f| &lt; \infty$). Without that hypothesis the two iterated integrals can disagree.
+</p>
+
+<p>
+A discrete counterexample makes the pattern vivid. Let $a_{m,n}$ be $+1$ on the diagonal $m=n$, $-1$ on the sub-diagonal $m = n+1$, and $0$ elsewhere. Every row sums to $0$ except the first (which sums to $1$); every column sums to $0$. Hence
+$$
+\sum_m \sum_n a_{m,n} = 1, \qquad \sum_n \sum_m a_{m,n} = 0.
+$$
+The problem is exactly that the absolute sum $\sum |a_{m,n}|$ is infinite; there is no integrable envelope and mass can get shuffled around during reordering. This is the same failure mechanism as the moving bump, simply transposed into a combinatorial key.
+</p>
+
+<h2>Double series and rearrangement</h2>
+
+<p>
+Even one-dimensional series exhibit a faint version of this: Riemann's rearrangement theorem says a conditionally convergent series can be rearranged to sum to any real number you like, or to $\pm \infty$. Absolute convergence forbids this. Extending to doubly-indexed series, the iterated sums $\sum_m \sum_n$ and $\sum_n \sum_m$ agree whenever $\sum |a_{m,n}| &lt; \infty$ — the absolute-integrability hypothesis of Fubini, in its discrete avatar.
+</p>
+
+<hr />
+
+<h2>The common thread</h2>
+
+<p>
+Each of these theorems says the same thing, dressed in different clothes.
+</p>
+
+<ul>
+  <li><em>Continuity of the limit</em>: allowed when convergence is uniform.</li>
+  <li><em>Limit under the integral</em>: allowed when the functions are monotone, or dominated by an integrable envelope.</li>
+  <li><em>Differentiation under the integral</em>: allowed when $\partial f / \partial t$ is dominated locally.</li>
+  <li><em>Mixed partials commute</em>: when the second partials are continuous.</li>
+  <li><em>Order of integration</em>: when the absolute double integral is finite.</li>
+  <li><em>Rearrangement of double series</em>: when the sum converges absolutely.</li>
+</ul>
+
+<p>
+Every one of these hypotheses does the same job: it prevents mass — whether a bump of integrand, a concentration of derivative, or a tail of series — from sliding off to infinity as one of the two limiting parameters moves. When no mass can escape, the two operations can be performed in either order, and the same answer emerges. When mass is allowed to escape, the order of operations encodes a physical question: at which stage was the mass allowed to leave? Different orders correspond to different answers because they correspond to different moments at which one chose to look.
+</p>
+
+<p>
+The little example $f(m, n) = m / (m + n)$ is the smallest honest witness to all of this. The spikes in the NW direction are the mass sliding one way; the spikes in the NE direction are the mass sliding the other. There is no dominating envelope, no uniformity, and no Fubini. The saddle in the middle of the picture is the saddle at the heart of the subject.
+</p>
+
+<p class="signoff">— a note on iterated limits</p>
+
+</div>
+
+<script>
+(function () {
+  const box = document.getElementById('plot');
+  if (typeof THREE === 'undefined') {
+    box.innerHTML = '<p style="padding:1rem;color:#888;">Could not load 3D library.</p>';
+    return;
+  }
+
+  const N = 20;
+  let W = box.clientWidth, H = box.clientHeight;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  box.appendChild(renderer.domElement);
+
+  const Z = N;
+  const group = new THREE.Group();
+
+  function viridis(t) {
+    const stops = [
+      [0.267, 0.005, 0.329], [0.229, 0.322, 0.546], [0.127, 0.566, 0.551],
+      [0.369, 0.788, 0.382], [0.993, 0.906, 0.144]
+    ];
+    t = Math.max(0, Math.min(1, t));
+    const s = t * (stops.length - 1);
+    const i = Math.min(stops.length - 2, Math.floor(s));
+    const f = s - i; const a = stops[i], b = stops[i+1];
+    return new THREE.Color(a[0]+f*(b[0]-a[0]), a[1]+f*(b[1]-a[1]), a[2]+f*(b[2]-a[2]));
+  }
+
+  const gridMat  = new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.18 });
+  const frameMat = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 });
+  for (let i = 1; i <= N; i++) {
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      [new THREE.Vector3(i,1,0), new THREE.Vector3(i,N,0)]), gridMat));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      [new THREE.Vector3(1,i,0), new THREE.Vector3(N,i,0)]), gridMat));
+  }
+  const corners = [[1,1],[N,1],[N,N],[1,N]];
+  corners.forEach(([x,y]) => {
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      [new THREE.Vector3(x,y,0), new THREE.Vector3(x,y,Z)]), frameMat));
+  });
+  const topRing = corners.concat([corners[0]]).map(([x,y]) => new THREE.Vector3(x,y,Z));
+  group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(topRing), frameMat));
+  [0.25, 0.5, 0.75, 1.0].forEach(v => {
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      [new THREE.Vector3(1,1,v*Z), new THREE.Vector3(1.5,1,v*Z)]), frameMat));
+  });
+
+  const sphereGeo = new THREE.SphereGeometry(0.07, 10, 10);
+  for (let m = 1; m <= N; m++) {
+    for (let n = 1; n <= N; n++) {
+      const f = m / (m + n);
+      const color = viridis(f);
+      const stemGeo = new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(n, m, 0), new THREE.Vector3(n, m, f * Z)]);
+      group.add(new THREE.Line(stemGeo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 })));
+      const sph = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7 }));
+      sph.position.set(n, m, f * Z);
+      group.add(sph);
+    }
+  }
+
+  function thickPath(points, color, radius) {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({ color });
+    const upY = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < points.length - 1; i++) {
+      const p1 = points[i], p2 = points[i+1];
+      const len = p1.distanceTo(p2);
+      if (len < 1e-6) continue;
+      const geo = new THREE.CylinderGeometry(radius, radius, len, 10);
+      const cyl = new THREE.Mesh(geo, mat);
+      cyl.position.copy(p1).lerp(p2, 0.5);
+      const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+      cyl.setRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(upY, dir));
+      g.add(cyl);
+    }
+    return g;
+  }
+  function pathMarkers(points, color, radius) {
+    const g = new THREE.Group();
+    const geo = new THREE.SphereGeometry(radius, 16, 16);
+    const mat = new THREE.MeshBasicMaterial({ color });
+    points.forEach(p => { const s = new THREE.Mesh(geo, mat); s.position.copy(p); g.add(s); });
+    return g;
+  }
+
+  const red = new THREE.Color(0xE24B4A);
+  const pathNE = [];
+  for (let n = 1; n <= N; n++) pathNE.push(new THREE.Vector3(n, 3, (3/(3+n))*Z));
+  group.add(thickPath(pathNE, red, 0.06));
+  group.add(pathMarkers(pathNE, red, 0.14));
+  group.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(1,3,0), new THREE.Vector3(N,3,0)]),
+    new THREE.LineBasicMaterial({ color: red, transparent: true, opacity: 0.7 })));
+
+  const blue = new THREE.Color(0x378ADD);
+  const pathNW = [];
+  for (let m = 1; m <= N; m++) pathNW.push(new THREE.Vector3(3, m, (m/(m+3))*Z));
+  group.add(thickPath(pathNW, blue, 0.06));
+  group.add(pathMarkers(pathNW, blue, 0.14));
+  group.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(3,1,0), new THREE.Vector3(3,N,0)]),
+    new THREE.LineBasicMaterial({ color: blue, transparent: true, opacity: 0.7 })));
+
+  function label(text, size, color) {
+    color = color || '#1a1a1a';
+    const c = document.createElement('canvas');
+    c.width = 384; c.height = 128;
+    const g = c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    g.fillStyle = color; g.font = '600 56px sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, 192, 64);
+    const tex = new THREE.CanvasTexture(c); tex.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(size * 1.5, size * 0.5, 1);
+    return sp;
+  }
+
+  const nLbl = label('n  \u2192', 2.2); nLbl.position.set(N+1, 0.4, 0); group.add(nLbl);
+  const mLbl = label('m  \u2192', 2.2); mLbl.position.set(0.4, N+1, 0); group.add(mLbl);
+  const fLbl = label('f(m,n)', 2.2); fLbl.position.set(1, 0.4, Z + 1); group.add(fLbl);
+  [1,10,20].forEach(v => { const l = label(String(v), 0.9); l.position.set(v, 0.3, 0); group.add(l); });
+  [1,10,20].forEach(v => { const l = label(String(v), 0.9); l.position.set(0.3, v, 0); group.add(l); });
+  [0, 0.5, 1].forEach(v => { const l = label(v.toString(), 0.9); l.position.set(2, 1, v * Z); group.add(l); });
+  const zeroLbl = label('f \u2192 0', 1.7, '#E24B4A'); zeroLbl.position.set(N+1.5, 3, 0.6); group.add(zeroLbl);
+  const oneLbl  = label('f \u2192 1', 1.7, '#378ADD'); oneLbl.position.set(3, N+1.5, Z * 0.85); group.add(oneLbl);
+
+  const mid = (N + 1) / 2;
+  group.position.set(-mid, -mid, -Z / 2);
+  scene.add(group);
+
+  let theta = Math.PI * 1.25, phi = Math.PI * 0.38, radius = 42;
+  function place() {
+    camera.up.set(0, 0, 1);
+    camera.position.set(
+      radius * Math.sin(phi) * Math.cos(theta),
+      radius * Math.sin(phi) * Math.sin(theta),
+      radius * Math.cos(phi));
+    camera.lookAt(0, 0, 0);
+  }
+  place();
+
+  const dom = renderer.domElement; dom.style.cursor = 'grab';
+  let dragging = false, lx = 0, ly = 0;
+  function startDrag(x,y){dragging=true;lx=x;ly=y;dom.style.cursor='grabbing';}
+  function moveDrag(x,y){if(!dragging)return;const dx=x-lx,dy=y-ly;lx=x;ly=y;
+    theta-=dx*0.008;phi-=dy*0.008;phi=Math.max(0.08,Math.min(Math.PI-0.08,phi));place();}
+  function endDrag(){dragging=false;dom.style.cursor='grab';}
+  dom.addEventListener('mousedown', e=>startDrag(e.clientX,e.clientY));
+  window.addEventListener('mousemove', e=>moveDrag(e.clientX,e.clientY));
+  window.addEventListener('mouseup', endDrag);
+  dom.addEventListener('touchstart', e=>{if(e.touches.length===1)startDrag(e.touches[0].clientX,e.touches[0].clientY);}, {passive:true});
+  dom.addEventListener('touchmove', e=>{if(e.touches.length===1){e.preventDefault();moveDrag(e.touches[0].clientX,e.touches[0].clientY);}}, {passive:false});
+  dom.addEventListener('touchend', endDrag);
+  dom.addEventListener('wheel', e=>{e.preventDefault();radius*=1+e.deltaY*0.001;radius=Math.max(18,Math.min(80,radius));place();}, {passive:false});
+
+  const ro = new ResizeObserver(()=>{W=box.clientWidth;H=box.clientHeight;
+    camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);});
+  ro.observe(box);
+
+  (function loop(){requestAnimationFrame(loop);renderer.render(scene,camera);})();
+})();
+</script>
+</body></html>

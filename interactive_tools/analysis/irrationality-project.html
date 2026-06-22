@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Irrationality of Square Roots — A Project Walkthrough</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #3d3d52;
+    --ink-mute: #6b6b7a;
+    --paper: #faf6ee;
+    --paper-deep: #f3ecdc;
+    --rule: #d4cab3;
+    --accent: #8b1e3f;
+    --accent-soft: #b84766;
+    --ochre: #c8941e;
+    --ochre-soft: #e4b846;
+    --forest: #2a4a3e;
+    --forest-soft: #4a7a6a;
+    --hint-bg: #fdf6e3;
+    --soln-bg: #ecf3ec;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--paper);
+    margin: 0;
+    padding: 0;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(200, 148, 30, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(139, 30, 63, 0.04) 0%, transparent 40%);
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 4rem 2.5rem 6rem;
+  }
+
+  /* Masthead */
+  .masthead {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  .masthead::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 5px;
+    background: var(--paper);
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+  }
+  .eyebrow {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(2.1rem, 4.8vw, 3rem);
+    line-height: 1.12;
+    color: var(--ink);
+    margin: 0 0 1rem;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); font-weight: 600; }
+  .subtitle {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--ink-mute);
+    margin-top: 0.8rem;
+  }
+
+  h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    color: var(--ink);
+    margin: 3.5rem 0 1.2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h2 .section-num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+  }
+
+  p { margin: 0.9rem 0; }
+  p + p { text-indent: 1.5em; }
+  p.lede { font-size: 1.1rem; color: var(--ink-soft); }
+  p.lede + p { text-indent: 0; }
+
+  .drop-cap::first-letter {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: 4.2rem;
+    float: left;
+    line-height: 0.88;
+    margin: 0.08em 0.08em 0 -0.05em;
+    color: var(--accent);
+  }
+
+  /* Callout boxes — theorem, tool, setup */
+  .callout {
+    background: var(--paper-deep);
+    border-left: 3px solid var(--accent);
+    padding: 1.6rem 2rem 1.4rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .callout::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -0.6rem;
+    left: 1.5rem;
+    background: var(--paper);
+    padding: 0 0.6rem;
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .callout p { margin: 0.5rem 0; }
+  .callout p:first-child { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.tool { border-left-color: var(--forest); }
+  .callout.tool::before { color: var(--forest); }
+  .callout.setup { border-left-color: var(--ochre); }
+  .callout.setup::before { color: var(--ochre); }
+
+  /* Inline examples */
+  .examples {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    background: rgba(200, 148, 30, 0.1);
+    padding: 0.8rem 1.2rem;
+    border-radius: 3px;
+    margin: 1.2rem 0;
+    color: var(--ink-soft);
+    overflow-x: auto;
+  }
+
+  /* Figures */
+  .graph-figure {
+    margin: 2.5rem 0 3rem;
+    padding: 1.5rem 1rem 1.2rem;
+    background: #fffdf7;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(26, 26, 46, 0.04), 0 8px 24px rgba(26, 26, 46, 0.04);
+  }
+  .graph-figure svg { display: block; margin: 0 auto; width: 100%; height: auto; max-width: 680px; }
+  .figure-caption {
+    text-align: center;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-mute);
+    margin-top: 1rem;
+    padding: 0 1rem;
+    line-height: 1.55;
+  }
+  .figure-caption strong { font-style: normal; color: var(--ink); font-weight: 600; }
+  .figure-caption .fig-label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-variant: small-caps;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  /* Problems */
+  .problem {
+    margin: 2.8rem 0;
+    padding: 1.8rem 2rem 1.6rem;
+    background: #fffdf7;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    position: relative;
+    transition: box-shadow 0.3s ease;
+  }
+  .problem:hover { box-shadow: 0 2px 4px rgba(26, 26, 46, 0.04), 0 12px 28px rgba(26, 26, 46, 0.06); }
+  .problem-tag {
+    position: absolute;
+    top: -0.75rem;
+    left: 1.5rem;
+    background: var(--accent);
+    color: var(--paper);
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    border-radius: 2px;
+  }
+  .problem h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.35rem;
+    color: var(--ink);
+    margin: 0.3rem 0 1rem;
+    line-height: 1.3;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .disclosure-btn {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.1rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .disclosure-btn::before {
+    content: "›";
+    font-size: 1.1rem;
+    line-height: 0.8;
+    transition: transform 0.18s ease;
+    display: inline-block;
+  }
+  .disclosure-btn.hint-btn { border-color: var(--ochre); color: var(--ochre); }
+  .disclosure-btn.hint-btn:hover { background: var(--ochre); color: var(--paper); }
+  .disclosure-btn.soln-btn { border-color: var(--forest); color: var(--forest); }
+  .disclosure-btn.soln-btn:hover { background: var(--forest); color: var(--paper); }
+  .disclosure-btn.open::before { transform: rotate(90deg); }
+
+  .reveal {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .reveal.open { max-height: 3000px; }
+  .reveal-inner {
+    margin-top: 1rem;
+    padding: 1.3rem 1.6rem;
+    border-radius: 2px;
+    border-left: 3px solid;
+  }
+  .reveal-inner p:first-child { margin-top: 0; }
+  .reveal-inner p:last-child { margin-bottom: 0; }
+  .reveal-inner p + p { text-indent: 1.5em; }
+  .reveal-inner .label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  .hint .reveal-inner { background: var(--hint-bg); border-left-color: var(--ochre); }
+  .hint .label { color: var(--ochre); }
+  .solution .reveal-inner { background: var(--soln-bg); border-left-color: var(--forest); }
+  .solution .label { color: var(--forest); }
+
+  .step-label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    color: var(--accent);
+    font-style: italic;
+    display: inline-block;
+    margin-right: 0.2em;
+  }
+
+  .qed {
+    display: inline-block;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    color: var(--forest);
+    float: right;
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+  .qed::before { content: "■ "; color: var(--ochre); }
+
+  .coda {
+    margin-top: 5rem;
+    padding: 2rem 0 0;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    font-style: italic;
+    color: var(--ink-mute);
+  }
+  .coda .ornament {
+    color: var(--accent);
+    font-size: 1.5rem;
+    letter-spacing: 0.5em;
+    margin-bottom: 0.8rem;
+  }
+
+  /* ToC */
+  .toc {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: 1.3rem 1.8rem 1.3rem 2.2rem;
+    margin: 2rem 0 3rem;
+    border-radius: 2px;
+  }
+  .toc-label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0 0 0 1.2rem;
+    list-style: decimal;
+    column-count: 2;
+    column-gap: 2.5rem;
+  }
+  @media (max-width: 600px) { .toc ol { column-count: 1; } }
+  .toc li { padding: 0.18rem 0; break-inside: avoid; }
+  .toc a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .toc a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .page { padding: 2.5rem 1.3rem 4rem; }
+    body { font-size: 17px; }
+    .problem { padding: 1.3rem 1.2rem; }
+    .callout { padding: 1.3rem 1.3rem; }
+    .reveal-inner { padding: 1.1rem 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">Well-ordering in action</div>
+    <h1>On the Irrationality of <em>√p</em> for Non-Square <em>p</em></h1>
+    <p class="subtitle">A proof by infinite descent</p>
+  </header>
+
+  <p class="lede drop-cap">The purpose of this project is to use the well-ordering principle to prove that certain square roots are irrational. The argument is a single, carefully engineered contradiction: assume the square root is rational and the well-ordering principle will hand you a smallest witness $m$; a little algebra then manufactures an even smaller witness, which cannot exist.</p>
+
+  <div class="callout" data-label="Theorem">
+    <p>If $p$ is a positive integer that is not the square of an integer, and $x^2 = p$, then $x$ is irrational.</p>
+  </div>
+
+  <p>The theorem sweeps up a great many familiar irrationals in a single statement:</p>
+
+  <div class="examples">
+    √2, √3, √5, √6, √7, √8, √10, √11, √12, √13, √14, √15, √17, √18, &nbsp;&hellip;&nbsp; are all irrational.
+  </div>
+
+  <p>Only the values of $p$ that <em>are</em> perfect squares — $1, 4, 9, 16, 25, \ldots$ — produce integer (hence rational) roots.</p>
+
+  <nav class="toc">
+    <span class="toc-label">The four steps</span>
+    <ol>
+      <li><a href="#p1">$A$ is nonempty; extract the minimum $m$</a></li>
+      <li><a href="#p2">Locate $x$ between consecutive integers $k$ and $k{+}1$</a></li>
+      <li><a href="#p3">Construct $z = mx - mk$ and show $0 < z < m$</a></li>
+      <li><a href="#p4">Show $z \in A$ — the contradiction</a></li>
+    </ol>
+  </nav>
+
+  <h2><span class="section-num">Preliminaries</span>Tools and setup</h2>
+
+  <p>Two preliminary observations and one indispensable tool power the entire argument.</p>
+
+  <div class="callout tool" data-label="Well-ordering principle">
+    <p>Every nonempty subset of $\mathbb{N}$ has a smallest element.</p>
+  </div>
+
+  <div class="callout setup" data-label="Observation — p ≥ 2">
+    <p>Since $1 = 1^2$ is itself a perfect square, the hypothesis that $p$ is <em>not</em> a perfect square forces $p \geq 2$. Consequently $x = \sqrt{p} \geq \sqrt{2} > 1$.</p>
+  </div>
+
+  <div class="callout setup" data-label="The set A">
+    <p>Assume, for contradiction, that $x$ is a positive rational number with $x^2 = p$. Define
+    $$A = \{\,n \in \mathbb{N} : nx \text{ is an integer}\,\}.$$
+    The whole proof will revolve around the smallest element of $A$.</p>
+  </div>
+
+  <h2><span class="section-num">Figure 1</span>The construction of $z$</h2>
+
+  <p>Before diving into the four steps, a picture of what is about to happen. Imagine the number $x$ sitting between two consecutive integers $k$ and $k+1$ on the number line. Its <em>fractional part</em> $x - k$ is some number strictly between $0$ and $1$. Now multiply everything by $m$. The interval $[k, k+1]$ is stretched into $[mk,\, mk + m]$, a stretch of length $m$. The fractional part becomes $z = m(x - k)$, still strictly between $0$ and $m$ — but now, miraculously, $z$ is also an integer:</p>
+
+  <figure class="graph-figure">
+    <svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" aria-labelledby="fig1-title">
+      <title id="fig1-title">The scaling construction producing z</title>
+
+      <!-- ============================================ -->
+      <!-- TOP NUMBER LINE: the interval [k, k+1]      -->
+      <!-- ============================================ -->
+
+      <!-- Bracket above showing fractional part x - k -->
+      <path d="M 90 85 L 90 75 L 274 75 L 274 85"
+            fill="none" stroke="#c8941e" stroke-width="1.4"/>
+      <text x="182" y="62" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-style="italic" font-size="16" fill="#c8941e">
+        the fractional part &nbsp;x − k &nbsp; (between 0 and 1)
+      </text>
+
+      <!-- the horizontal line -->
+      <line x1="70" y1="130" x2="640" y2="130" stroke="#1a1a2e" stroke-width="1.5"/>
+      <polygon points="70,130 78,126 78,134" fill="#1a1a2e"/>
+      <polygon points="640,130 632,126 632,134" fill="#1a1a2e"/>
+
+      <!-- ticks at k, x, k+1 -->
+      <line x1="90" y1="122" x2="90" y2="138" stroke="#1a1a2e" stroke-width="1.7"/>
+      <line x1="550" y1="122" x2="550" y2="138" stroke="#1a1a2e" stroke-width="1.7"/>
+
+      <!-- highlighted fractional part segment -->
+      <line x1="90" y1="130" x2="274" y2="130" stroke="#c8941e" stroke-width="5" opacity="0.65"/>
+
+      <!-- the point x -->
+      <line x1="274" y1="118" x2="274" y2="142" stroke="#8b1e3f" stroke-width="2.2"/>
+      <circle cx="274" cy="130" r="5" fill="#8b1e3f"/>
+
+      <!-- labels below -->
+      <text x="90" y="160" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="20" fill="#1a1a2e">k</text>
+      <text x="274" y="160" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="20" fill="#8b1e3f" font-weight="600">x</text>
+      <text x="550" y="160" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="20" fill="#1a1a2e">k + 1</text>
+
+      <!-- tiny caption above -->
+      <text x="50" y="105" font-family="Fraunces, Georgia, serif" font-style="italic"
+            font-size="13" fill="#6b6b7a" letter-spacing="0.08em">UNSCALED</text>
+
+      <!-- ============================================ -->
+      <!-- CENTER: multiplication by m arrow            -->
+      <!-- ============================================ -->
+      <g transform="translate(360, 250)">
+        <!-- the downward arrow on the left -->
+        <path d="M -30 -55 Q -80 0 -30 55" fill="none" stroke="#2a4a3e"
+              stroke-width="1.3" stroke-dasharray="4,3"/>
+        <polygon points="-30,55 -38,47 -22,47" fill="#2a4a3e"/>
+        <!-- the "× m" label -->
+        <text x="-105" y="5" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="18" fill="#2a4a3e" font-weight="600">multiply by m</text>
+        <!-- a right-side label about what this does -->
+        <text x="100" y="-3" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="13" fill="#6b6b7a">(stretch by factor m;</text>
+        <text x="100" y="14" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="13" fill="#6b6b7a">integers land on integers)</text>
+      </g>
+
+      <!-- ============================================ -->
+      <!-- BOTTOM NUMBER LINE: the interval [mk, mk+m]  -->
+      <!-- Illustrative scale: m = 5, z = 2             -->
+      <!-- So mx sits at 2/5 of the way from mk to mk+m -->
+      <!-- ============================================ -->
+
+      <!-- tiny caption above -->
+      <text x="50" y="355" font-family="Fraunces, Georgia, serif" font-style="italic"
+            font-size="13" fill="#6b6b7a" letter-spacing="0.08em">SCALED BY m</text>
+
+      <!-- the horizontal line -->
+      <line x1="70" y1="380" x2="640" y2="380" stroke="#1a1a2e" stroke-width="1.5"/>
+      <polygon points="70,380 78,376 78,384" fill="#1a1a2e"/>
+      <polygon points="640,380 632,376 632,384" fill="#1a1a2e"/>
+
+      <!-- main ticks at mk, mx, mk+m -->
+      <line x1="90" y1="372" x2="90" y2="388" stroke="#1a1a2e" stroke-width="1.7"/>
+      <line x1="550" y1="372" x2="550" y2="388" stroke="#1a1a2e" stroke-width="1.7"/>
+
+      <!-- intermediate integer ticks showing the scale (m = 5) -->
+      <!-- Between mk at 90 and mk+m at 550, width 460, each unit = 92 px -->
+      <!-- mk+1 at 182, mk+2 at 274 (=mx for z=2), mk+3 at 366, mk+4 at 458 -->
+      <line x1="182" y1="375" x2="182" y2="385" stroke="#6b6b7a" stroke-width="1.2"/>
+      <line x1="366" y1="375" x2="366" y2="385" stroke="#6b6b7a" stroke-width="1.2"/>
+      <line x1="458" y1="375" x2="458" y2="385" stroke="#6b6b7a" stroke-width="1.2"/>
+
+      <!-- the key tick at mx (emphasized) -->
+      <line x1="274" y1="368" x2="274" y2="392" stroke="#8b1e3f" stroke-width="2.2"/>
+      <circle cx="274" cy="380" r="5" fill="#8b1e3f"/>
+
+      <!-- highlighted z segment from mk to mx -->
+      <line x1="90" y1="380" x2="274" y2="380" stroke="#8b1e3f" stroke-width="5" opacity="0.65"/>
+
+      <!-- labels below ticks -->
+      <text x="90" y="410" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="20" fill="#1a1a2e">mk</text>
+      <text x="274" y="410" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="20" fill="#8b1e3f" font-weight="600">mx</text>
+      <text x="550" y="410" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="20" fill="#1a1a2e">mk + m</text>
+
+      <!-- small labels for the intermediate integer ticks -->
+      <text x="182" y="404" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-size="11" fill="#8a8a9a" font-style="italic">mk+1</text>
+      <text x="366" y="404" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-size="11" fill="#8a8a9a" font-style="italic">mk+3</text>
+      <text x="458" y="404" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-size="11" fill="#8a8a9a" font-style="italic">mk+4</text>
+
+      <!-- bracket below for z -->
+      <path d="M 90 430 L 90 440 L 274 440 L 274 430"
+            fill="none" stroke="#8b1e3f" stroke-width="1.4"/>
+      <text x="182" y="455" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-style="italic" font-size="16" fill="#8b1e3f">
+        z = mx − mk &nbsp; (integer, strictly between 0 and m)
+      </text>
+    </svg>
+
+    <figcaption class="figure-caption">
+      <span class="fig-label">Figure 1.</span>&nbsp; Scaling by $m$ stretches the interval $[k,\, k+1]$ into $[mk,\, mk+m]$. The fractional part $x - k$, which is some irrational-looking sliver on the top, becomes the integer $z = mx - mk$ on the bottom — integer because $mx$ and $mk$ are both integers, and strictly between $0$ and $m$ because $x$ was strictly between $k$ and $k+1$. The illustration uses $m = 5$ and $z = 2$, but the point is purely structural.
+    </figcaption>
+  </figure>
+
+  <h2><span class="section-num">The four steps</span>Proofs to complete</h2>
+
+  <p>Each step below is followed by a <em>hint</em> and a <em>full solution</em>. Work on each part yourself first; reveal the hint only when stuck, and the solution only to check.</p>
+
+  <!-- ============ PROBLEM 1 ============ -->
+  <section class="problem" id="p1">
+    <span class="problem-tag">Step 1</span>
+    <h3>Show that $A$ is nonempty, and let $m$ be its smallest member.</h3>
+    <p>Recall $A = \{n \in \mathbb{N} : nx \in \mathbb{Z}\}$ and that we are assuming $x$ is a positive rational. You must exhibit at least one element of $A$, then invoke the well-ordering principle.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h1">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s1">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h1"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>The word <em>rational</em> is there to be unpacked. Write $x$ as a ratio of two positive integers — what does that immediately tell you about one specific multiple of $x$?</p>
+    </div></div>
+
+    <div class="reveal solution" id="s1"><div class="reveal-inner">
+      <span class="label">Solution</span>
+      <p>Since $x$ is a positive rational, we may write $x = a/b$ for some positive integers $a, b \in \mathbb{N}$. Then
+      $$b \cdot x \;=\; b \cdot \tfrac{a}{b} \;=\; a,$$
+      which is an integer. Hence $b \in A$, so $A$ is nonempty.</p>
+      <p>Since $A \subseteq \mathbb{N}$ is a nonempty set of positive integers, the well-ordering principle furnishes a smallest element $m \in A$. By construction, $m$ is a positive integer and $mx$ is an integer. <span class="qed">Q.E.D.</span></p>
+    </div></div>
+  </section>
+
+  <!-- ============ PROBLEM 2 ============ -->
+  <section class="problem" id="p2">
+    <span class="problem-tag">Step 2</span>
+    <h3>Show that there exists $k \in \mathbb{N}$ with $k < x < k+1$.</h3>
+    <p>Two facts must come together here: $x$ is at least $\sqrt{2}$, and $x$ is not an integer.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h2">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s2">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h2"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>Why is $x > 1$? Why is $x$ not itself an integer? Once you have both, $x$ must fall strictly between two consecutive positive integers — take $k$ to be the larger-or-equal one just below $x$.</p>
+    </div></div>
+
+    <div class="reveal solution" id="s2"><div class="reveal-inner">
+      <span class="label">Solution</span>
+      <p><span class="step-label">Why $x > 1$.</span> Since $p$ is a positive integer that is not a perfect square and $1 = 1^2$ is a perfect square, we must have $p \geq 2$. Therefore $x = \sqrt{p} \geq \sqrt{2} > 1$.</p>
+
+      <p><span class="step-label">Why $x$ is not an integer.</span> If $x$ were an integer, then $x^2 = p$ would express $p$ as the square of an integer — directly contradicting our hypothesis. So $x \notin \mathbb{Z}$.</p>
+
+      <p><span class="step-label">Producing $k$.</span> Let $k = \lfloor x \rfloor$, the greatest integer that does not exceed $x$. Because $x > 1$ we have $k \geq 1$, so $k \in \mathbb{N}$. By the defining property of the floor, $k \leq x < k + 1$. And since $x$ is not an integer, equality $x = k$ is ruled out: we have
+      $$k \;<\; x \;<\; k+1. \qquad \square$$</p>
+    </div></div>
+  </section>
+
+  <!-- ============ PROBLEM 3 ============ -->
+  <section class="problem" id="p3">
+    <span class="problem-tag">Step 3</span>
+    <h3>Let $z = mx - mk$. Show that $0 < z < m$.</h3>
+    <p>You have the inequalities from Step 2. Multiply through by the positive integer $m$ and rearrange.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h3">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s3">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h3"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>The inequality $k < x < k+1$ can be multiplied through by $m$ (a positive integer, so the inequalities are preserved). Subtract $mk$ from all three parts of the resulting chain.</p>
+    </div></div>
+
+    <div class="reveal solution" id="s3"><div class="reveal-inner">
+      <span class="label">Solution</span>
+      <p>Because $m > 0$, multiplying each part of $k < x < k+1$ by $m$ preserves the inequalities:
+      $$mk \;<\; mx \;<\; mk + m.$$
+      Subtracting $mk$ throughout gives
+      $$0 \;<\; mx - mk \;<\; m,$$
+      that is, $0 < z < m$. <span class="qed">Q.E.D.</span></p>
+      <p><em>In particular $z \neq 0$, which will matter in Step 4 when we claim $z \in \mathbb{N}$.</em></p>
+    </div></div>
+  </section>
+
+  <!-- ============ PROBLEM 4 ============ -->
+  <section class="problem" id="p4">
+    <span class="problem-tag">Step 4</span>
+    <h3>Show that $z$ and $xz$ are both integers; hence $z \in A$. Derive the contradiction.</h3>
+    <p>This is the payoff. Once $z$ is in $A$, the fact that $z < m$ collides with the fact that $m$ was the <em>smallest</em> element of $A$.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h4">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s4">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h4"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>For $z$: $mx$ is an integer because $m \in A$; $mk$ is an integer because $m, k \in \mathbb{Z}$. Difference of two integers.</p>
+      <p>For $xz$: multiply out $x(mx - mk)$ and remember that $x^2 = p$. You should find that $xz$ is expressed as $\text{(integer)} - \text{(integer)}$, so it too is an integer.</p>
+      <p>Then $z \in A$ by definition. What does $z < m$ force?</p>
+    </div></div>
+
+    <div class="reveal solution" id="s4"><div class="reveal-inner">
+      <span class="label">Solution</span>
+
+      <p><span class="step-label">$z$ is an integer.</span> Since $m \in A$, the number $mx$ is an integer. Since $m, k \in \mathbb{Z}$, so is $mk$. Therefore
+      $$z \;=\; mx - mk$$
+      is a difference of integers, hence an integer. Combined with Step 3, $z$ is a <em>positive</em> integer: $z \in \mathbb{N}$.</p>
+
+      <p><span class="step-label">$xz$ is an integer.</span> Here we use $x^2 = p$. Compute:
+      $$xz \;=\; x(mx - mk) \;=\; m x^2 - k(mx) \;=\; mp \;-\; k(mx).$$
+      Now $mp$ is an integer ($m, p \in \mathbb{Z}$), and $k(mx)$ is an integer ($k \in \mathbb{Z}$ and $mx \in \mathbb{Z}$ since $m \in A$). So $xz$ is a difference of integers, hence an integer.</p>
+
+      <p><span class="step-label">$z$ belongs to $A$.</span> We have shown $z \in \mathbb{N}$ and $zx = xz \in \mathbb{Z}$. These are exactly the requirements for membership in $A$, so $z \in A$.</p>
+
+      <p><span class="step-label">The contradiction.</span> By Step 3, $z < m$. But $m$ was chosen as the <em>smallest</em> element of $A$, which would require $m \leq z$. The inequalities $z < m$ and $m \leq z$ cannot both hold, so our original assumption — that $x$ is rational — must be false.</p>
+
+      <p>Therefore $x$ is irrational, as was to be shown. <span class="qed">Q.E.D.</span></p>
+    </div></div>
+  </section>
+
+  <h2><span class="section-num">Epilogue</span>Why this works</h2>
+
+  <p>The technique used here is called <em>infinite descent</em>, and it is one of the most elegant tools in elementary number theory. The idea is simple: if a counterexample to a claim existed, you would be able to use it to build a <em>smaller</em> counterexample. Iterating, this would produce an infinite descending chain of positive integers — which the well-ordering principle forbids.</p>
+
+  <p>In our proof, the well-ordering principle did its work in advance: we singled out the smallest element $m$ of $A$, and then the "descent step" (the construction of $z \in A$ with $z < m$) only had to be performed <em>once</em> to contradict minimality. The well-ordering principle is thus not merely an accessory to the argument; it is the whole engine.</p>
+
+  <p>Finally, note how mild the hypothesis is. We assumed only that $p$ is a non-square positive integer and that $x^2 = p$. We never needed unique factorization or any other arithmetic heavy machinery. The method extends, with care, to rule out rational roots of many polynomial equations — a fact whose grown-up version is the Rational Root Theorem.</p>
+
+  <div class="coda">
+    <div class="ornament">❦</div>
+    <p>If a smallest thing exists,<br>and something smaller still must exist,<br>then no such things exist at all.</p>
+  </div>
+
+</div>
+
+<script>
+  // Disclosure toggles
+  (function() {
+    document.querySelectorAll('.disclosure-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        const isOpen = target.classList.toggle('open');
+        btn.classList.toggle('open', isOpen);
+        // Update button text
+        btn.childNodes.forEach(node => {
+          if (node.nodeType === 3 && node.textContent.trim()) {
+            node.textContent = node.textContent.replace(/^\s*(Show|Hide)\s+/, (isOpen ? 'Hide ' : 'Show '));
+          }
+        });
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

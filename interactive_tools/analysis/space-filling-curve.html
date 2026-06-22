@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Continuous Space-Filling Curve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --crimson:#9E1B32; --crimson2:#7a1426; --crimson-light:#c8354f;
+  --cream:#faf7f2;   --paper:#ffffff;
+  --navy:#18284a;    --navy2:#2c4070;
+  --gold:#c8a430;    --gold2:#a07820;
+  --gray:#7a7a8a;    --border:#ddd9d0;
+  --acc-bg:#fdf0f2;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.65;}
+
+/* ── Header ── */
+header{background:var(--crimson);color:#fff;padding:0;border-bottom:4px solid var(--gold);position:relative;}
+.hdr-top{background:var(--crimson2);padding:.5rem 2.5rem;display:flex;align-items:center;gap:1rem;}
+.hdr-top .ua-badge{font-size:.82rem;color:#f0c8d0;letter-spacing:.08em;text-transform:uppercase;}
+.hdr-main{padding:1.6rem 2.5rem;}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:700;line-height:1.2;letter-spacing:.01em;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.35rem;font-size:1.05rem;}
+header .meta{color:#e0a8b8;font-size:.9rem;margin-top:.2rem;}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold) 0%,var(--gold2) 100%);}
+
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+/* ── Cards ── */
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 16px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.25rem;font-weight:600;color:var(--crimson);margin-bottom:.9rem;padding-bottom:.45rem;border-bottom:2px solid #f5dde2;}
+.card h3{font-family:var(--font-head);font-size:1.05rem;font-weight:600;color:var(--navy2);margin:.9rem 0 .4rem;}
+.card p{margin-bottom:.75rem;line-height:1.72;}
+.card p:last-child{margin-bottom:0;}
+
+.def-box{background:var(--acc-bg);border-left:3.5px solid var(--crimson);border-radius:0 6px 6px 0;padding:.8rem 1.1rem;margin:.8rem 0;font-size:.97rem;line-height:1.7;}
+.def-box strong{color:var(--crimson);}
+.thm-box{background:#f0f4ff;border-left:3.5px solid var(--navy2);border-radius:0 6px 6px 0;padding:.8rem 1.1rem;margin:.8rem 0;font-size:.97rem;line-height:1.7;}
+.thm-box strong{color:var(--navy2);}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:6px;padding:.8rem 1.1rem;margin:.8rem 0;font-size:.95rem;line-height:1.68;color:#4a3800;}
+.math-block{overflow-x:auto;margin:.9rem 0;padding:.3rem 0;text-align:center;}
+
+/* ── Interactive visualization ── */
+.viz-layout{display:flex;gap:1.6rem;flex-wrap:wrap;align-items:flex-start;}
+.viz-controls{flex:0 0 260px;min-width:220px;}
+.viz-canvases{flex:1;min-width:300px;}
+
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:7px;padding:1rem 1.1rem;margin-bottom:.9rem;}
+.ctrl-group label{display:block;font-size:.88rem;font-weight:600;color:var(--navy2);margin-bottom:.35rem;}
+.ctrl-group p{font-size:.83rem;color:var(--gray);line-height:1.5;margin-top:.3rem;}
+
+input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;margin:.2rem 0;}
+.N-display{text-align:center;font-family:var(--font-head);font-size:1.5rem;font-weight:700;color:var(--crimson);line-height:1;margin:.15rem 0;}
+.N-sub{text-align:center;font-size:.8rem;color:var(--gray);}
+
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.38rem .95rem;font-size:.92rem;transition:all .14s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--crimson);color:#fff;padding:.45rem 1.3rem;}
+.btn-primary:hover{background:var(--crimson2);}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed;}
+.btn-secondary{background:#edf1fb;color:var(--navy2);border:1px solid #b8ccee;}
+.btn-secondary:hover{background:#c8daff;}
+.btn-row{display:flex;gap:.5rem;flex-wrap:wrap;}
+
+/* color-mode toggle */
+.toggle-row{display:flex;align-items:center;gap:.6rem;font-size:.88rem;color:var(--navy2);}
+.toggle-row input[type=checkbox]{accent-color:var(--crimson);width:15px;height:15px;cursor:pointer;}
+
+/* Canvas styling */
+.canvas-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;}
+.cv-wrap{position:relative;}
+.cv-wrap canvas{display:block;border-radius:6px;border:1.5px solid var(--border);}
+.cv-label{text-align:center;font-size:.85rem;color:var(--gray);margin-top:.35rem;font-style:italic;}
+
+/* progress bar */
+.prog-bar{height:5px;background:#e8e4de;border-radius:3px;margin:.5rem 0;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--crimson));border-radius:3px;width:0%;transition:width .05s linear;}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.5rem 0;font-size:.82rem;}
+.leg-item{display:flex;align-items:center;gap:.3rem;}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* stats row */
+.stats-row{display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:.5rem;}
+.stat-item{font-size:.85rem;color:var(--gray);}
+.stat-item strong{color:var(--navy);}
+
+/* density bar */
+.dens-bar-bg{height:10px;background:#e8e4de;border-radius:3px;flex:1;overflow:hidden;}
+.dens-bar-fill{height:100%;background:linear-gradient(90deg,#f5dde2,var(--crimson));border-radius:3px;transition:width .4s;}
+
+@media(max-width:700px){
+  header{padding:0;}
+  .hdr-main{padding:1.2rem 1rem;}
+  main{padding:1rem .7rem;}
+  .card{padding:1.2rem 1rem;}
+  .viz-controls{flex:0 0 100%;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <span style="font-size:1.2rem;">🐘</span>
+    <span class="ua-badge">The University of Alabama &mdash; Department of Mathematics</span>
+  </div>
+  <div class="hdr-main">
+    <h1>A Continuous Space-Filling Curve</h1>
+    <div class="subtitle">Brownian Motion Anticipation &mdash; Stochastic Processes 2024</div>
+    <div class="meta">Robert G. Smits &nbsp;&middot;&nbsp; Math 498 &nbsp;&middot;&nbsp; Roll Tide</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<main>
+
+<!-- §1 Introduction -->
+<div class="card">
+  <h2>§1 — Introduction</h2>
+  <p>
+    A <strong>space-filling curve</strong> is a continuous surjection from a one-dimensional interval
+    onto a multi-dimensional region — such as the entire unit square. This challenges intuition:
+    how can a continuous path, which we think of as "one-dimensional," cover every point of a two-dimensional area?
+  </p>
+  <div class="def-box">
+    <strong>Goal.</strong> Construct a continuous function
+    <span id="phi_def"></span> that is <em>surjective</em> —
+    i.e., every point <span id="xy0"></span> is hit by some <span id="t0"></span>.
+  </div>
+  <p>
+    The construction uses <strong>lacunary series</strong>: sums whose frequencies grow geometrically
+    (here as powers of 3). The key insight is that the discontinuities of the base function are placed
+    exactly on a <em>Cantor set</em>, so that the corresponding lacunary series is nevertheless continuous.
+  </p>
+</div>
+
+<!-- §2 Base function -->
+<div class="card">
+  <h2>§2 — The Base Function f(t)</h2>
+  <p>
+    We begin with a continuous, 2-periodic function
+    <span id="f_map"></span> defined by:
+  </p>
+  <div class="math-block" id="f_def"></div>
+  <p>
+    On <span id="f_mid"></span> the function rises linearly from 0 to 1;
+    by 2-periodicity it also falls back on <span id="f_fall"></span>.
+    The result is a "plateau" function: flat at 0, then 1, then back to 0 each period.
+  </p>
+
+  <div class="canvas-row" style="justify-content:center;">
+    <div class="cv-wrap">
+      <canvas id="cvF" width="580" height="170"></canvas>
+      <div class="cv-label">The base function f(t) over two full periods</div>
+    </div>
+  </div>
+
+  <div class="key-box" style="margin-top:.9rem;">
+    <strong>Why this shape?</strong> The flat regions [0, ⅓] (value 0) and [⅔, 1] (value 1)
+    ensure that when we compose f with rapidly growing arguments 3<sup>k</sup>t, the output
+    locks onto 0 or 1 for most values of t — exactly the Cantor set structure needed for surjectivity.
+  </div>
+</div>
+
+<!-- §3 Construction -->
+<div class="card">
+  <h2>§3 — Constructing Φ(t) = (x(t), y(t))</h2>
+  <p>Define the mapping <span id="Phi_def"></span> by the lacunary series:</p>
+  <div class="math-block" id="xy_def"></div>
+
+  <p>
+    Odd powers of 3 drive the <em>x</em>-coordinate; even powers drive <em>y</em>.
+    Each successive term adds detail at a scale three times finer than the previous.
+  </p>
+
+  <div class="thm-box">
+    <strong>Continuity.</strong>
+    Both series converge uniformly because each term is bounded by <span id="bound_n"></span>
+    and <span id="geom_series"></span>. Uniform convergence of continuous functions gives a continuous limit.
+    The double-limit argument (letting <em>s → t</em> and the tail of the series both go to zero)
+    is handled by first freezing the tail at index N, then applying uniform continuity of the finite sum.
+  </div>
+
+  <div class="thm-box">
+    <strong>Surjectivity.</strong>
+    Given any target <span id="xy0b"></span>, write each coordinate in binary:
+    <div class="math-block" id="binary_exp"></div>
+    Interleave the bits to build
+    <div class="math-block" id="t0_def"></div>
+    This <span id="t0b"></span> lies in the Cantor set (only 0s and 2s in base 3) and satisfies
+    <span id="verify"></span>.
+  </div>
+</div>
+
+<!-- §4 Interactive Visualization -->
+<div class="card">
+  <h2>§4 — Interactive Visualization</h2>
+  <p>
+    Adjust the number of terms <em>N</em> in the lacunary series and watch Φ(t) progressively fill the unit square.
+    The curve is colored by <em>t</em> — early times in gold, late times in crimson — to show how a single
+    path weaves through every region.
+  </p>
+
+  <div class="viz-layout">
+
+    <!-- Controls -->
+    <div class="viz-controls">
+      <div class="ctrl-group">
+        <label>Number of terms N</label>
+        <input type="range" id="sliderN" min="1" max="5" step="1" value="2">
+        <div class="N-display" id="Nval">2</div>
+        <div class="N-sub" id="Nsub">405 sample points</div>
+        <p>Higher N adds finer detail. At N = 5 the curve has sampled ~295k oscillations.</p>
+      </div>
+
+      <div class="ctrl-group">
+        <label>Animation</label>
+        <div class="btn-row">
+          <button class="btn-primary" id="btnAnim" onclick="toggleAnim()">▶ Animate t</button>
+          <button class="btn-secondary" onclick="resetAnim()">↺ Reset</button>
+        </div>
+        <div class="prog-bar" style="margin-top:.5rem;"><div class="prog-fill" id="progFill"></div></div>
+        <div style="font-size:.82rem;color:var(--gray);margin-top:.2rem;" id="tDisplay">t = 0.000</div>
+        <p>Watch the curve trace through the square as t goes from 0 to 1.</p>
+      </div>
+
+      <div class="ctrl-group">
+        <label>Display options</label>
+        <div class="toggle-row">
+          <input type="checkbox" id="chkColor" checked>
+          <span>Color by t value</span>
+        </div>
+        <div class="toggle-row" style="margin-top:.4rem;">
+          <input type="checkbox" id="chkDots">
+          <span>Show sample points</span>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <label>Coverage statistics</label>
+        <div id="statsDiv">
+          <div class="stat-item">Computing…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvases -->
+    <div class="viz-canvases">
+      <div class="canvas-row" style="justify-content:center;">
+        <div class="cv-wrap">
+          <canvas id="cvMain" width="520" height="520"></canvas>
+          <div class="cv-label">Φ(t) = (x(t), y(t)) — the unit square [0,1]²</div>
+          <div class="legend" style="justify-content:center;">
+            <div class="leg-item"><div class="leg-dot" style="background:var(--gold);"></div><span>t = 0</span></div>
+            <div class="leg-item"><div class="leg-dot" style="background:#9E1B32;"></div><span>t = 1</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Partial sums panel -->
+      <div style="margin-top:1rem;">
+        <h3 style="font-size:.95rem;color:var(--navy2);margin-bottom:.5rem;">Term-by-term breakdown (x component, first 3 terms)</h3>
+        <div class="canvas-row" style="justify-content:center;gap:.6rem;" id="termCanvases"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- §5 Cantor Set Connection -->
+<div class="card">
+  <h2>§5 — The Cantor Set and Surjectivity</h2>
+  <p>
+    The Cantor set <span id="C_def"></span> consists of numbers in [0,1] whose base-3 expansion
+    uses only the digits 0 and 2. It is a closed, nowhere-dense set of Lebesgue measure zero —
+    yet it has the same cardinality as [0,1].
+  </p>
+  <div class="def-box">
+    <strong>Key fact.</strong> The map Φ restricted to the Cantor set is already surjective onto [0,1]².
+    The construction <span id="t0c"></span> with interleaved bits <span id="ai_def"></span>
+    gives a point in <span id="Cc"></span>, and Φ maps <em>C</em> onto the entire unit square.
+    On the middle-thirds gaps, Φ is extended linearly — this is why f was chosen to be linear on (⅓, ⅔).
+  </div>
+  <p>
+    This is the precise analogue of the Cantor function ("devil's staircase"): a function that rises
+    entirely on the Cantor set but is constant on every removed interval. Here, Φ fills the entire square
+    from the Cantor set alone.
+  </p>
+</div>
+
+<!-- §6 Properties -->
+<div class="card">
+  <h2>§6 — Properties of Φ</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:.3rem;">
+    <div class="thm-box">
+      <strong>Continuous.</strong>
+      Φ(t) is a uniform limit of continuous functions. Both x(t) and y(t) are continuous.
+    </div>
+    <div class="thm-box">
+      <strong>Surjective.</strong>
+      Every (x₀, y₀) ∈ [0,1]² is the image of some t₀ constructed by bit-interleaving.
+    </div>
+    <div class="thm-box">
+      <strong>Not injective.</strong>
+      Many values of t map to the same point. The curve crosses itself uncountably many times.
+    </div>
+    <div class="thm-box">
+      <strong>Nowhere differentiable</strong> (in direction).
+      The curve has no consistent tangent — it is a fractal path at every scale.
+    </div>
+  </div>
+</div>
+
+<!-- §7 References -->
+<div class="card">
+  <h2>§7 — References</h2>
+  <p>Peano, G. (1890). Sur une courbe, qui remplit toute une aire plane. <em>Mathematische Annalen</em>, 36(1), 157–160.</p>
+  <p>Sagan, H. (1994). <em>Space-Filling Curves</em>. Springer-Verlag.</p>
+  <p>Bader, M. (2013). <em>Space-Filling Curves: An Introduction with Applications in Scientific Computing</em>. Springer.</p>
+</div>
+
+</main>
+<script>
+/* ══════════════════════════════════════════
+   KaTeX helpers
+══════════════════════════════════════════ */
+function rk(t,disp){try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}}
+function setK(id,t,disp){var el=document.getElementById(id);if(el)el.innerHTML=rk(t,disp);}
+function setH(id,h){var el=document.getElementById(id);if(el)el.innerHTML=h;}
+
+/* ══════════════════════════════════════════
+   POPULATE THEORY
+══════════════════════════════════════════ */
+function populateTheory(){
+  setK('phi_def','\\Phi:[0,1]\\to[0,1]^2');
+  setK('xy0','(x_0,y_0)\\in[0,1]^2');
+  setK('t0','t_0\\in[0,1]');
+  setK('f_map','f:\\mathbb{R}\\to[0,1]');
+  setK('f_def',
+    'f(t+2)=f(t),\\qquad f(t)=\\begin{cases}0&0\\le t\\le\\tfrac{1}{3}\\\\3t-1&\\tfrac{1}{3}<t<\\tfrac{2}{3}\\\\1&\\tfrac{2}{3}\\le t\\le\\tfrac{4}{3}\\\\5-3t&\\tfrac{4}{3}<t<\\tfrac{5}{3}\\\\0&\\tfrac{5}{3}\\le t\\le 2\\end{cases}',true);
+  setK('f_mid','\\bigl(\\tfrac{1}{3},\\tfrac{2}{3}\\bigr)');
+  setK('f_fall','\\bigl(\\tfrac{4}{3},\\tfrac{5}{3}\\bigr)');
+  setK('Phi_def','\\Phi:[0,1]\\to[0,1]^2');
+  setK('xy_def',
+    'x(t)=\\sum_{n=1}^{\\infty}2^{-n}f\\!\\left(3^{2n-1}t\\right),\\qquad y(t)=\\sum_{n=1}^{\\infty}2^{-n}f\\!\\left(3^{2n}t\\right)',true);
+  setK('bound_n','2^{-n}\\cdot 1 = 2^{-n}');
+  setK('geom_series','\\sum_{n=1}^\\infty 2^{-n}=1');
+  setK('xy0b','(x_0,y_0)\\in[0,1]^2');
+  setK('binary_exp',
+    'x_0=\\sum_{n=1}^{\\infty}2^{-n}a_{2n-1},\\qquad y_0=\\sum_{n=1}^{\\infty}2^{-n}a_{2n},\\quad a_i\\in\\{0,1\\}',true);
+  setK('t0_def','t_0=\\sum_{i=1}^{\\infty}3^{-i}(2a_i)',true);
+  setK('t0b','t_0');
+  setK('verify',
+    'x(t_0)=\\sum_n 2^{-n}f(3^{2n-1}t_0)=\\sum_n 2^{-n}a_{2n-1}=x_0');
+  setK('C_def','C\\subset[0,1]');
+  setK('t0c','t_0=\\sum_{i}3^{-i}(2a_i)');
+  setK('ai_def','a_i\\in\\{0,1\\}');
+  setK('Cc','C');
+}
+
+/* ══════════════════════════════════════════
+   BASE FUNCTION  f(t)  — 2-periodic plateau
+══════════════════════════════════════════ */
+function fBase(t){
+  t=t%2; if(t<0)t+=2;
+  if(t<=1/3) return 0;
+  if(t<=2/3) return (t-1/3)*3;
+  if(t<=4/3) return 1;
+  if(t<=5/3) return (5/3-t)*3;
+  return 0;
+}
+
+/* ══════════════════════════════════════════
+   SPACE-FILLING CURVE
+══════════════════════════════════════════ */
+function phiXY(t,N){
+  var x=0,y=0;
+  for(var n=1;n<=N;n++){
+    var wn=Math.pow(2,-n);
+    x+=wn*fBase(Math.pow(3,2*n-1)*t);
+    y+=wn*fBase(Math.pow(3,2*n)*t);
+  }
+  return[x,y];
+}
+
+// Sample points for given N
+function nSamples(N){
+  var lookup=[500,2000,8000,35000,80000];
+  return lookup[N-1]||500;
+}
+
+function buildCurve(N){
+  var nPts=nSamples(N);
+  var xs=new Float64Array(nPts+1);
+  var ys=new Float64Array(nPts+1);
+  for(var i=0;i<=nPts;i++){
+    var t=i/nPts;
+    var p=phiXY(t,N);
+    xs[i]=p[0]; ys[i]=p[1];
+  }
+  return{xs:xs,ys:ys,nPts:nPts};
+}
+
+/* ══════════════════════════════════════════
+   COLOR  by t  (gold → crimson gradient)
+══════════════════════════════════════════ */
+function curveColor(frac,alpha){
+  // frac=0 → gold (#c8a430), frac=1 → crimson (#9E1B32)
+  var r=Math.round(200-110*frac);
+  var g=Math.round(164-148*frac);
+  var b=Math.round(48 +2*frac);
+  return alpha===undefined?
+    'rgb('+r+','+g+','+b+')':
+    'rgba('+r+','+g+','+b+','+alpha+')';
+}
+
+/* ══════════════════════════════════════════
+   DRAW BASE FUNCTION
+══════════════════════════════════════════ */
+function drawBase(){
+  var cv=document.getElementById('cvF');
+  if(!cv) return;
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.offsetWidth||580, cssH=cv.offsetHeight||170;
+  cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+  cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  var W=cssW,H=cssH;
+  var pad={l:42,r:18,t:18,b:32};
+
+  // Two periods: t in [0, 2]
+  var tLo=0,tHi=4;
+  var gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  function px(t){return pad.l+(t-tLo)/(tHi-tLo)*gW;}
+  function py(v){return pad.t+(1-v)*gH;}
+
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='#ede9e2'; ctx.lineWidth=0.8;
+  [0,0.5,1].forEach(function(v){
+    ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(pad.l+gW,py(v));ctx.stroke();
+  });
+  [0,1/3,2/3,1,4/3,5/3,2,7/3,8/3,3,10/3,11/3,4].forEach(function(t){
+    ctx.beginPath();ctx.moveTo(px(t),pad.t);ctx.lineTo(px(t),pad.t+gH);ctx.stroke();
+  });
+
+  // Axes
+  ctx.strokeStyle='#18284a'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,py(0));ctx.lineTo(pad.l+gW,py(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle='#7a7a8a'; ctx.font='10px "Crimson Pro",Georgia,serif'; ctx.textAlign='center';
+  [[0,'0'],[1/3,'⅓'],[2/3,'⅔'],[1,'1'],[2,'2'],[3,'3'],[4,'4']].forEach(function(a){
+    ctx.fillText(a[1],px(a[0]),pad.t+gH+16);
+  });
+  ctx.textAlign='right';
+  ctx.fillText('0',pad.l-4,py(0)+4);
+  ctx.fillText('1',pad.l-4,py(1)+4);
+
+  // Axis labels
+  ctx.fillStyle='#18284a'; ctx.font='12px "Crimson Pro",Georgia,serif'; ctx.textAlign='center';
+  ctx.fillText('t',px(tHi)+8,py(0));
+  ctx.save();ctx.translate(10,py(0.5));ctx.rotate(-Math.PI/2);ctx.fillText('f(t)',0,0);ctx.restore();
+
+  // Fill under curve
+  var N=400;
+  ctx.beginPath();ctx.moveTo(px(0),py(0));
+  for(var k=1;k<=N;k++){
+    var t=tLo+(tHi-tLo)*k/N;
+    ctx.lineTo(px(t),py(fBase(t)));
+  }
+  ctx.lineTo(px(tHi),py(0));ctx.closePath();
+  ctx.fillStyle='rgba(158,27,50,0.08)';ctx.fill();
+
+  // Curve
+  ctx.strokeStyle='#9E1B32'; ctx.lineWidth=2; ctx.setLineDash([]);
+  ctx.beginPath();
+  for(var k=0;k<=N;k++){
+    var t=tLo+(tHi-tLo)*k/N;
+    k===0?ctx.moveTo(px(t),py(fBase(t))):ctx.lineTo(px(t),py(fBase(t)));
+  }
+  ctx.stroke();
+
+  // Mark the flat regions
+  ctx.fillStyle='rgba(200,164,48,0.3)';
+  [[0,1/3],[2/3,4/3],[5/3,2],[7/3,8/3],[8/3+1/3,8/3+2/3+1/3],[8/3+2/3+1/3,4]].forEach(function(seg,i){
+    if(i%3===0){
+      ctx.fillRect(px(seg[0]),py(0),px(seg[1])-px(seg[0]),gH);
+    }
+  });
+  // Simpler: mark f=0 regions gold and f=1 regions blue
+  for(var k=0;k<=N;k++){
+    var t=tLo+(tHi-tLo)*k/N;
+    var v=fBase(t);
+    var w=(tHi-tLo)/N*gW/(tHi-tLo);
+    if(v<0.01){ctx.fillStyle='rgba(200,164,48,0.15)';ctx.fillRect(px(t)-w/2,pad.t,w,gH);}
+    else if(v>0.99){ctx.fillStyle='rgba(58,110,181,0.10)';ctx.fillRect(px(t)-w/2,pad.t,w,gH);}
+  }
+
+  // Redraw curve on top
+  ctx.strokeStyle='#9E1B32'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for(var k=0;k<=N;k++){
+    var t=tLo+(tHi-tLo)*k/N;
+    k===0?ctx.moveTo(px(t),py(fBase(t))):ctx.lineTo(px(t),py(fBase(t)));
+  }
+  ctx.stroke();
+
+  // Period markers
+  ctx.strokeStyle='#c8a430'; ctx.lineWidth=1.2; ctx.setLineDash([4,3]);
+  [2,4].forEach(function(t){
+    ctx.beginPath();ctx.moveTo(px(t),pad.t);ctx.lineTo(px(t),pad.t+gH);ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.fillStyle='#a07820'; ctx.font='italic 10px "Crimson Pro",Georgia,serif'; ctx.textAlign='center';
+  ctx.fillText('period 2',px(1),pad.t+10);
+  ctx.fillText('period 4',px(3),pad.t+10);
+}
+
+/* ══════════════════════════════════════════
+   MAIN CURVE DRAW
+══════════════════════════════════════════ */
+var curveCache={};  // N -> {xs, ys, nPts}
+var currentN=2;
+var animFrame=null;
+var animT=0;
+var isAnimating=false;
+
+function getCurve(N){
+  if(!curveCache[N]){
+    curveCache[N]=buildCurve(N);
+  }
+  return curveCache[N];
+}
+
+function drawMain(upToFrac){
+  var cv=document.getElementById('cvMain');
+  if(!cv) return;
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.offsetWidth||520;
+  var cssH=cv.offsetHeight||520;
+  cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+  cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  var W=cssW, H=cssH;
+  var pad=30;
+  var gW=W-2*pad, gH=H-2*pad;
+
+  function px(x){return pad+x*gW;}
+  function py(y){return pad+(1-y)*gH;}
+
+  // Background
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='#ede9e2'; ctx.lineWidth=0.7;
+  [0,.25,.5,.75,1].forEach(function(v){
+    ctx.beginPath();ctx.moveTo(pad,py(v));ctx.lineTo(pad+gW,py(v));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px(v),pad);ctx.lineTo(px(v),pad+gH);ctx.stroke();
+  });
+
+  // Border
+  ctx.strokeStyle='#18284a'; ctx.lineWidth=1.4;
+  ctx.strokeRect(pad,pad,gW,gH);
+
+  // Axes labels
+  ctx.fillStyle='#7a7a8a'; ctx.font='11px "Crimson Pro",Georgia,serif'; ctx.textAlign='center';
+  [0,.25,.5,.75,1].forEach(function(v){
+    ctx.fillText(v.toString(),px(v),pad+gH+16);
+    ctx.textAlign='right';
+    ctx.fillText(v.toString(),pad-5,py(v)+4);
+    ctx.textAlign='center';
+  });
+  ctx.fillStyle='#18284a'; ctx.font='13px "Crimson Pro",Georgia,serif';
+  ctx.fillText('x(t)',W/2,H-4);
+  ctx.save();ctx.translate(10,H/2);ctx.rotate(-Math.PI/2);ctx.fillText('y(t)',0,0);ctx.restore();
+
+  // Curve
+  var curve=getCurve(currentN);
+  var nPts=curve.nPts;
+  var colorBy=document.getElementById('chkColor')&&document.getElementById('chkColor').checked;
+  var showDots=document.getElementById('chkDots')&&document.getElementById('chkDots').checked;
+  var upTo=upToFrac===undefined?1:upToFrac;
+  var lastIdx=Math.floor(upTo*nPts);
+
+  if(colorBy){
+    // Draw each segment with its color
+    var segSize=Math.max(1,Math.floor(nPts/800));
+    for(var i=0;i<lastIdx;i+=segSize){
+      var i2=Math.min(i+segSize,lastIdx);
+      ctx.strokeStyle=curveColor(i/nPts);
+      ctx.lineWidth=1.4;
+      ctx.beginPath();
+      ctx.moveTo(px(curve.xs[i]),py(curve.ys[i]));
+      for(var k=i+1;k<=i2;k++) ctx.lineTo(px(curve.xs[k]),py(curve.ys[k]));
+      ctx.stroke();
+    }
+  } else {
+    ctx.strokeStyle='#9E1B32'; ctx.lineWidth=1.4;
+    ctx.beginPath();
+    ctx.moveTo(px(curve.xs[0]),py(curve.ys[0]));
+    for(var i=1;i<=lastIdx;i++) ctx.lineTo(px(curve.xs[i]),py(curve.ys[i]));
+    ctx.stroke();
+  }
+
+  if(showDots){
+    var step=Math.max(1,Math.floor(nPts/200));
+    for(var i=0;i<=lastIdx;i+=step){
+      ctx.beginPath();ctx.arc(px(curve.xs[i]),py(curve.ys[i]),1.5,0,2*Math.PI);
+      ctx.fillStyle=curveColor(i/nPts);ctx.fill();
+    }
+  }
+
+  // Leading dot
+  if(upTo<1&&lastIdx>=0){
+    var lx=px(curve.xs[lastIdx]),ly=py(curve.ys[lastIdx]);
+    ctx.beginPath();ctx.arc(lx,ly,5,0,2*Math.PI);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.strokeStyle='#9E1B32';ctx.lineWidth=2;ctx.stroke();
+  }
+
+  // N label
+  ctx.fillStyle='rgba(158,27,50,0.12)';
+  ctx.font='bold 48px "Playfair Display",serif';
+  ctx.textAlign='left';
+  ctx.fillText('N = '+currentN,pad+8,pad+gH-10);
+
+  updateStats(lastIdx,nPts,curve);
+}
+
+/* ══════════════════════════════════════════
+   TERM CANVASES (individual f(3^k t) terms)
+══════════════════════════════════════════ */
+function buildTermCanvases(){
+  var cont=document.getElementById('termCanvases');
+  if(!cont) return;
+  cont.innerHTML='';
+  var terms=Math.min(currentN,3);
+  for(var n=1;n<=terms;n++){
+    var wrap=document.createElement('div');wrap.className='cv-wrap';
+    var cv=document.createElement('canvas');
+    cv.id='cvTerm'+n; cv.width=150; cv.height=90;
+    cv.style.border='1px solid #ddd'; cv.style.borderRadius='5px';
+    wrap.appendChild(cv);
+    var lbl=document.createElement('div');lbl.className='cv-label';
+    lbl.innerHTML='2<sup>-'+n+'</sup>f(3<sup>'+(2*n-1)+'</sup>t)';
+    wrap.appendChild(lbl);
+    cont.appendChild(wrap);
+    drawTermCanvas(cv,n);
+  }
+}
+
+function drawTermCanvas(cv,n){
+  var dpr=window.devicePixelRatio||1;
+  cv.width=150*dpr; cv.height=90*dpr; cv.style.width='150px'; cv.style.height='90px';
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  var W=150,H=90,pad=12;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#ede9e2'; ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.moveTo(pad,pad+(H-2*pad)/2);ctx.lineTo(W-pad,pad+(H-2*pad)/2);ctx.stroke();
+
+  var scale=Math.pow(2,-n);
+  var freq=Math.pow(3,2*n-1);
+  var color=curveColor((n-1)/3);
+  ctx.strokeStyle=color; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  var nPts=1000;
+  for(var k=0;k<=nPts;k++){
+    var t=k/nPts;
+    var v=scale*fBase(freq*t);
+    var xp=pad+(W-2*pad)*t;
+    var yp=pad+(H-2*pad)*(1-v/1); // scale to [0,1]
+    k===0?ctx.moveTo(xp,yp):ctx.lineTo(xp,yp);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle='#18284a'; ctx.font='9px "Crimson Pro",Georgia,serif'; ctx.textAlign='left';
+  ctx.fillText('×'+scale.toFixed(3),pad,pad+10);
+  ctx.fillText('freq: 3^'+(2*n-1),pad,H-pad+2);
+}
+
+/* ══════════════════════════════════════════
+   STATS
+══════════════════════════════════════════ */
+function updateStats(lastIdx,nPts,curve){
+  var frac=lastIdx/nPts;
+  // Estimate coverage: divide unit square into 20x20 grid
+  var G=20;
+  var hits=new Uint8Array(G*G);
+  var step=Math.max(1,Math.floor(lastIdx/5000));
+  var count=0;
+  for(var i=0;i<=lastIdx;i+=step){
+    var gx=Math.min(G-1,Math.floor(curve.xs[i]*G));
+    var gy=Math.min(G-1,Math.floor(curve.ys[i]*G));
+    var idx=gy*G+gx;
+    if(!hits[idx]){hits[idx]=1;count++;}
+  }
+  var pct=(count/(G*G)*100).toFixed(1);
+  var div=document.getElementById('statsDiv');
+  if(!div) return;
+  div.innerHTML=
+    '<div class="stat-item">t coverage: <strong>'+frac.toFixed(3)+'</strong></div>'+
+    '<div class="stat-item">Grid cells hit: <strong>'+count+' / '+(G*G)+'</strong></div>'+
+    '<div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem;">'+
+    '<div class="dens-bar-bg"><div class="dens-bar-fill" style="width:'+pct+'%"></div></div>'+
+    '<span style="font-size:.82rem;color:var(--crimson);font-weight:600;">'+pct+'%</span></div>'+
+    '<div class="stat-item" style="margin-top:.3rem;">Sample points: <strong>'+nPts.toLocaleString()+'</strong></div>';
+}
+
+/* ══════════════════════════════════════════
+   ANIMATION
+══════════════════════════════════════════ */
+function toggleAnim(){
+  if(isAnimating){
+    isAnimating=false;
+    cancelAnimationFrame(animFrame);
+    document.getElementById('btnAnim').textContent='▶ Animate t';
+  } else {
+    if(animT>=1) animT=0;
+    isAnimating=true;
+    document.getElementById('btnAnim').textContent='⏸ Pause';
+    animStep();
+  }
+}
+function resetAnim(){
+  isAnimating=false;
+  cancelAnimationFrame(animFrame);
+  animT=0;
+  document.getElementById('btnAnim').textContent='▶ Animate t';
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('tDisplay').textContent='t = 0.000';
+  drawMain(0);
+}
+function animStep(){
+  if(!isAnimating) return;
+  animT+=0.002;
+  if(animT>1){animT=1;isAnimating=false;document.getElementById('btnAnim').textContent='▶ Animate t';}
+  document.getElementById('progFill').style.width=(animT*100)+'%';
+  document.getElementById('tDisplay').textContent='t = '+animT.toFixed(3);
+  drawMain(animT);
+  if(isAnimating) animFrame=requestAnimationFrame(animStep);
+}
+
+/* ══════════════════════════════════════════
+   SLIDER
+══════════════════════════════════════════ */
+document.getElementById('sliderN').addEventListener('input',function(){
+  currentN=parseInt(this.value);
+  document.getElementById('Nval').textContent=currentN;
+  var labels=['45 pts (N=1)','405 pts (N=2)','3,645 pts (N=3)','32,805 pts (N=4)','295,245 pts (N=5)'];
+  document.getElementById('Nsub').textContent=labels[currentN-1]||'';
+  if(isAnimating){isAnimating=false;cancelAnimationFrame(animFrame);document.getElementById('btnAnim').textContent='▶ Animate t';}
+  // Pre-compute async for larger N
+  if(currentN>=4){
+    document.getElementById('statsDiv').innerHTML='<div class="stat-item" style="color:var(--crimson);">Computing '+nSamples(currentN).toLocaleString()+' points…</div>';
+    setTimeout(function(){
+      drawMain(animT||1);
+      buildTermCanvases();
+    },20);
+  } else {
+    drawMain(animT||1);
+    buildTermCanvases();
+  }
+});
+
+document.getElementById('chkColor').addEventListener('change',function(){drawMain(animT||1);});
+document.getElementById('chkDots').addEventListener('change',function(){drawMain(animT||1);});
+
+/* ══════════════════════════════════════════
+   RESIZE HANDLING
+══════════════════════════════════════════ */
+var resizeTimer;
+window.addEventListener('resize',function(){
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(function(){drawBase();drawMain(animT||1);},150);
+});
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  populateTheory();
+  drawBase();
+  // Pre-warm N=1,2 silently
+  getCurve(1); getCurve(2);
+  drawMain(1);
+  buildTermCanvases();
+});
+</script>
+</body>
+</html>

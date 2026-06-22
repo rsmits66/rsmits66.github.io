@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>p-Laplacian Solver</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+:root {
+  --bg: #0a0c10;
+  --surface: #12151c;
+  --surface2: #1a1e28;
+  --border: #2a2f3c;
+  --text: #e2e4e9;
+  --text-dim: #7a8194;
+  --accent: #f0803c;
+  --accent2: #e05a2a;
+  --accent-glow: rgba(240,128,60,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  gap: 0;
+}
+
+header {
+  grid-column: 1 / -1;
+  padding: 16px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+header h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+}
+
+header h1 span { color: var(--accent); }
+
+header .subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.panel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.panel-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.field select, .field input[type="number"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field select:focus, .field input:focus {
+  border-color: var(--accent);
+}
+
+.field select option { background: var(--bg); }
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+}
+
+.slider-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  min-width: 36px;
+  text-align: right;
+  color: var(--accent);
+}
+
+.btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-primary:disabled {
+  background: var(--border);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-secondary:hover { border-color: var(--accent); }
+
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; }
+
+.status-bar {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.status-bar .val { color: var(--green); }
+.status-bar .warn { color: var(--red); }
+.status-bar .label { color: var(--text-dim); }
+
+.main-area {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
+}
+
+.viz-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.viz-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+}
+
+.viz-panel .viz-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 4px;
+}
+
+.formula-bar {
+  grid-column: 1 / -1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.formula-bar .math { color: var(--text); font-weight: 500; }
+.formula-bar .hl { color: var(--accent); }
+
+.cross-section-panel {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cross-section-panel .viz-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .viz-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1><span>Δ</span><sub>p</sub> <span>u</span> = 0</h1>
+    </div>
+    <div class="subtitle">Semi-Lagrangian solver for the p-Laplacian equation with Dirichlet boundary conditions</div>
+  </header>
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-title">Domain</div>
+      <div class="field">
+        <label>Geometry</label>
+        <select id="domain">
+          <option value="square">Square [-1, 1]²</option>
+          <option value="circle">Unit Disk (r ≤ 1)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Grid Size (N×N)</label>
+        <div class="slider-row">
+          <input type="range" id="gridSize" min="21" max="81" step="10" value="51">
+          <span class="slider-val" id="gridSizeVal">51</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Operator</div>
+      <div class="field">
+        <label>Value of p</label>
+        <select id="pValue">
+          <option value="2">p = 2  (Laplacian)</option>
+          <option value="3">p = 3</option>
+          <option value="4">p = 4</option>
+          <option value="6">p = 6</option>
+          <option value="10">p = 10</option>
+          <option value="20">p = 20</option>
+          <option value="50">p = 50</option>
+          <option value="0" selected>p = ∞  (Infinity Laplacian)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Angular Control Points</label>
+        <div class="slider-row">
+          <input type="range" id="Nu" min="8" max="64" step="4" value="24">
+          <span class="slider-val" id="NuVal">24</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Boundary Data F</div>
+      <div class="field">
+        <label>Dirichlet Condition u = F on ∂Ω</label>
+        <select id="bdry">
+          <option value="zero">F = 0</option>
+          <option value="one">F = 1</option>
+          <option value="xpy">F = x + y</option>
+          <option value="x2y2" selected>F = |x|²|y|²</option>
+          <option value="x2my2">F = x² − y²</option>
+          <option value="sincos">F = sin(πx)cos(πy)</option>
+          <option value="aronsson">F = |x|^(4/3) − |y|^(4/3)</option>
+          <option value="dist">F = 1 − r  (distance to boundary)</option>
+          <option value="wedge">F = max(x, 0)</option>
+          <option value="step">F = sign(x)</option>
+          <option value="corner">F = 1 at corners, 0 elsewhere</option>
+          <option value="custom">Custom (enter expression)</option>
+        </select>
+      </div>
+      <div class="field" id="customExprField" style="display:none;">
+        <label>Expression in x, y (JS syntax)</label>
+        <input type="text" id="customExpr" value="Math.sin(3*Math.atan2(y,x))" 
+               style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;">
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Solver</div>
+      <div class="field">
+        <label>Max Iterations</label>
+        <div class="slider-row">
+          <input type="range" id="maxIter" min="50" max="1000" step="50" value="300">
+          <span class="slider-val" id="maxIterVal">300</span>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="runBtn" onclick="startSolve()">▶ Solve</button>
+        <button class="btn btn-secondary" id="stopBtn" onclick="stopSolve()">◼ Stop</button>
+      </div>
+    </div>
+
+    <div class="status-bar" id="status">
+      <span class="label">Status:</span> Ready<br>
+      <span class="label">Iteration:</span> <span class="val" id="iterCount">0</span><br>
+      <span class="label">Max change:</span> <span class="val" id="errVal">—</span><br>
+      <span class="label">u(0,0):</span> <span class="val" id="centerVal">—</span>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="formula-bar" id="formulaBar">
+      <span class="math">Δ<sub class="hl">∞</sub> u = 0</span> &nbsp;on&nbsp;
+      <span class="math hl">[-1,1]²</span>,&nbsp;&nbsp;
+      <span class="math">u = <span class="hl">|x|²|y|²</span></span> &nbsp;on ∂Ω
+    </div>
+    <div class="viz-row">
+      <div class="viz-panel">
+        <div class="viz-title">Heatmap / Contour</div>
+        <div class="canvas-wrap"><canvas id="heatCanvas"></canvas></div>
+      </div>
+      <div class="viz-panel">
+        <div class="viz-title">3D Surface</div>
+        <div class="canvas-wrap"><canvas id="surfCanvas"></canvas></div>
+      </div>
+    </div>
+    <div class="cross-section-panel">
+      <div class="viz-title">Cross-Sections (y=0 solid, x=0 dashed, diagonal dotted)</div>
+      <div class="canvas-wrap" style="flex:1;min-height:160px;"><canvas id="crossCanvas"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let solving = false;
+let animId = null;
+let V = null, Vnew = null;
+let Mx, My, dx, dy, xArr, yArr;
+let domainMask = null; // for circle domain
+let iteration = 0;
+let lastErr = Infinity;
+
+// Slider readouts
+document.getElementById('gridSize').oninput = function() { document.getElementById('gridSizeVal').textContent = this.value; };
+document.getElementById('Nu').oninput = function() { document.getElementById('NuVal').textContent = this.value; };
+document.getElementById('maxIter').oninput = function() { document.getElementById('maxIterVal').textContent = this.value; };
+document.getElementById('bdry').onchange = function() {
+  document.getElementById('customExprField').style.display = this.value === 'custom' ? 'block' : 'none';
+};
+
+// ============================================================
+// BOUNDARY DATA
+// ============================================================
+function bdryFunc(x, y) {
+  const choice = document.getElementById('bdry').value;
+  switch(choice) {
+    case 'zero': return 0;
+    case 'one': return 1;
+    case 'xpy': return x + y;
+    case 'x2y2': return Math.abs(x)**2 * Math.abs(y)**2;
+    case 'x2my2': return x*x - y*y;
+    case 'sincos': return Math.sin(Math.PI*x) * Math.cos(Math.PI*y);
+    case 'aronsson': return Math.pow(Math.abs(x), 4/3) - Math.pow(Math.abs(y), 4/3);
+    case 'dist': {
+      const dom = document.getElementById('domain').value;
+      if (dom === 'circle') return 1 - Math.sqrt(x*x + y*y);
+      else return Math.min(1 - Math.abs(x), 1 - Math.abs(y));
+    }
+    case 'wedge': return Math.max(x, 0);
+    case 'step': return x >= 0 ? 1 : -1;
+    case 'corner': {
+      const dom = document.getElementById('domain').value;
+      if (dom === 'square') {
+        const cx = Math.abs(x), cy = Math.abs(y);
+        return (cx > 0.9 && cy > 0.9) ? 1 : 0;
+      }
+      return Math.cos(4 * Math.atan2(y, x)) > 0.8 ? 1 : 0;
+    }
+    case 'custom': {
+      try { return Function('x','y','return ' + document.getElementById('customExpr').value)(x, y); }
+      catch(e) { return 0; }
+    }
+    default: return 0;
+  }
+}
+
+// ============================================================
+// L^p CENTER (aver2)
+// ============================================================
+function aver2(a, p, tol, xol) {
+  let x = xol;
+  let L = 0, U = 0;
+  for (let i = 0; i < a.length; i++) U += Math.pow(Math.max(Math.abs(a[i] - x), 1e-15), p);
+  U = Math.pow(U, 1/p);
+  const U0 = Math.max(U, 1e-15);
+  
+  for (let iter = 0; iter < 50; iter++) {
+    if ((U - L) / U0 <= tol) break;
+    const M = 0.7 * U + 0.3 * L;
+    const xold = x;
+    
+    let px = 0;
+    for (let i = 0; i < a.length; i++) px += Math.pow(Math.max(Math.abs(a[i] - x), 1e-15), p);
+    if (px < 1e-30) break;
+    
+    let den = 0;
+    const coeff = Math.pow(px, 1/p - 1);
+    for (let i = 0; i < a.length; i++) {
+      const d = a[i] - x;
+      const ad = Math.max(Math.abs(d), 1e-15);
+      den += Math.pow(ad, p - 2) * d;
+    }
+    den *= coeff;
+    const num = Math.pow(px, 1/p);
+    
+    if (Math.abs(den) < 1e-30) break;
+    x = x + (num - M) / den;
+    
+    let newCost = 0;
+    for (let i = 0; i < a.length; i++) newCost += Math.pow(Math.max(Math.abs(a[i] - x), 1e-15), p);
+    
+    if (newCost < px) {
+      U = Math.pow(newCost, 1/p);
+    } else {
+      L = M;
+      x = xold;
+    }
+  }
+  return x;
+}
+
+// ============================================================
+// INITIALIZE GRID
+// ============================================================
+function initGrid() {
+  const N = parseInt(document.getElementById('gridSize').value);
+  const dom = document.getElementById('domain').value;
+  Mx = N; My = N;
+  const Xmin = -1, Xmax = 1, Ymin = -1, Ymax = 1;
+  dx = (Xmax - Xmin) / (Mx - 1);
+  dy = (Ymax - Ymin) / (My - 1);
+  xArr = new Float64Array(Mx);
+  yArr = new Float64Array(My);
+  for (let i = 0; i < Mx; i++) xArr[i] = Xmin + i * dx;
+  for (let j = 0; j < My; j++) yArr[j] = Ymin + j * dy;
+  
+  V = new Float64Array(Mx * My);
+  Vnew = new Float64Array(Mx * My);
+  domainMask = new Uint8Array(Mx * My); // 0=exterior, 1=interior, 2=boundary
+  
+  if (dom === 'square') {
+    // All points inside, boundary on edges
+    for (let i = 0; i < Mx; i++) {
+      for (let j = 0; j < My; j++) {
+        const idx = i * My + j;
+        if (i === 0 || i === Mx-1 || j === 0 || j === My-1) {
+          domainMask[idx] = 2;
+          V[idx] = bdryFunc(xArr[i], yArr[j]);
+        } else {
+          domainMask[idx] = 1;
+          V[idx] = 0;
+        }
+      }
+    }
+  } else {
+    // Circle: mask by distance from origin
+    for (let i = 0; i < Mx; i++) {
+      for (let j = 0; j < My; j++) {
+        const idx = i * My + j;
+        const r2 = xArr[i]*xArr[i] + yArr[j]*yArr[j];
+        if (r2 > 1.0) {
+          domainMask[idx] = 0; // exterior
+          V[idx] = 0;
+        } else {
+          // Check if any neighbor is outside
+          let isBdry = false;
+          if (r2 > (1 - 2*dx)*(1 - 2*dx)) {
+            // Near boundary - check stencil reach
+            for (let di = -1; di <= 1; di++) {
+              for (let dj = -1; dj <= 1; dj++) {
+                const ni = i + di, nj = j + dj;
+                if (ni < 0 || ni >= Mx || nj < 0 || nj >= My) { isBdry = true; break; }
+                const nr2 = xArr[ni]*xArr[ni] + yArr[nj]*yArr[nj];
+                if (nr2 > 1.0) { isBdry = true; break; }
+              }
+              if (isBdry) break;
+            }
+          }
+          if (isBdry) {
+            domainMask[idx] = 2;
+            // Project to unit circle for boundary value
+            const r = Math.sqrt(r2);
+            if (r > 0.001) {
+              V[idx] = bdryFunc(xArr[i]/r, yArr[j]/r);
+            } else {
+              V[idx] = bdryFunc(xArr[i], yArr[j]);
+            }
+          } else {
+            domainMask[idx] = 1;
+            V[idx] = 0;
+          }
+        }
+      }
+    }
+  }
+  
+  Vnew.set(V);
+  iteration = 0;
+  lastErr = Infinity;
+}
+
+// ============================================================
+// SOLVER STEP
+// ============================================================
+function solveStep() {
+  const pVal = parseInt(document.getElementById('pValue').value);
+  const NC = parseInt(document.getElementById('Nu').value);
+  const dom = document.getElementById('domain').value;
+  const rmax = 0.99;
+  const tol = 0.01;
+  const dtheta = 2 * Math.PI / NC;
+  const Xmin = -1;
+  const Ymin = -1;
+  
+  // Precompute angles
+  const cosA = new Float64Array(NC);
+  const sinA = new Float64Array(NC);
+  for (let lp = 0; lp < NC; lp++) {
+    const a = (lp + 1) * dtheta;
+    cosA[lp] = Math.cos(a);
+    sinA[lp] = Math.sin(a);
+  }
+  
+  const Vu = new Float64Array(NC);
+  let maxChange = 0;
+  
+  for (let i = 1; i < Mx-1; i++) {
+    for (let j = 1; j < My-1; j++) {
+      const idx = i * My + j;
+      if (domainMask[idx] !== 1) continue; // skip non-interior
+      
+      // Multiplier based on distance to edge
+      let distToEdge;
+      if (dom === 'square') {
+        distToEdge = Math.min(i, Mx-1-i, j, My-1-j);
+      } else {
+        // For circle: distance in grid cells to nearest boundary/exterior
+        let d = Infinity;
+        for (let r = 1; r < 5; r++) {
+          let found = false;
+          for (let di = -r; di <= r; di++) {
+            for (let dj = -r; dj <= r; dj++) {
+              if (Math.abs(di) !== r && Math.abs(dj) !== r) continue;
+              const ni = i + di, nj = j + dj;
+              if (ni < 0 || ni >= Mx || nj < 0 || nj >= My) { d = Math.min(d, r); found = true; continue; }
+              if (domainMask[ni * My + nj] !== 1) { d = Math.min(d, r); found = true; }
+            }
+          }
+          if (found) break;
+        }
+        distToEdge = d;
+      }
+      
+      let mult;
+      if (distToEdge <= 1) mult = 1.0;
+      else if (distToEdge <= 2) mult = 1.99;
+      else if (distToEdge <= 3) mult = 2.99;
+      else mult = 3.99;
+      
+      // Sample on circle with bilinear interpolation
+      for (let lp = 0; lp < NC; lp++) {
+        let x1 = xArr[i] + mult * rmax * dx * cosA[lp];
+        let y1 = yArr[j] + mult * rmax * dy * sinA[lp];
+        
+        // For circle domain: if sample goes outside, clamp to boundary
+        if (dom === 'circle') {
+          const sr2 = x1*x1 + y1*y1;
+          if (sr2 > 1.0) {
+            const sr = Math.sqrt(sr2);
+            x1 = x1 / sr * 0.999;
+            y1 = y1 / sr * 0.999;
+          }
+        }
+        
+        let m = Math.floor((x1 - Xmin) / dx);
+        let l = Math.floor((y1 - Ymin) / dy);
+        m = Math.max(0, Math.min(m, Mx-2));
+        l = Math.max(0, Math.min(l, My-2));
+        
+        let p = (x1 - xArr[m]) / dx;
+        let q = (y1 - yArr[l]) / dy;
+        p = Math.max(0, Math.min(p, 1));
+        q = Math.max(0, Math.min(q, 1));
+        
+        Vu[lp] = (1-p)*(1-q)*V[m*My+l] + p*(1-q)*V[(m+1)*My+l] +
+                  (1-p)*q*V[m*My+l+1] + p*q*V[(m+1)*My+l+1];
+      }
+      
+      // Compute average
+      let Av;
+      if (pVal === 0) {
+        // p = infinity: midrange
+        let vmin = Vu[0], vmax = Vu[0];
+        for (let k = 1; k < NC; k++) {
+          if (Vu[k] < vmin) vmin = Vu[k];
+          if (Vu[k] > vmax) vmax = Vu[k];
+        }
+        Av = 0.5 * (vmax + vmin);
+      } else if (pVal === 2) {
+        // p = 2: arithmetic mean
+        let s = 0;
+        for (let k = 0; k < NC; k++) s += Vu[k];
+        Av = s / NC;
+      } else {
+        // General p
+        Av = aver2(Vu, pVal, tol, V[idx]);
+      }
+      
+      Vnew[idx] = Av; // f=0 so no rightside term
+      
+      const ch = Math.abs(Vnew[idx] - V[idx]);
+      if (ch > maxChange) maxChange = ch;
+    }
+  }
+  
+  // Swap
+  V.set(Vnew);
+  iteration++;
+  lastErr = maxChange;
+  return maxChange;
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+
+// Hot colormap (matches MATLAB 'hot')
+function hotColor(t) {
+  t = Math.max(0, Math.min(1, t));
+  let r, g, b;
+  if (t < 0.375) {
+    r = t / 0.375;
+    g = 0; b = 0;
+  } else if (t < 0.75) {
+    r = 1;
+    g = (t - 0.375) / 0.375;
+    b = 0;
+  } else {
+    r = 1; g = 1;
+    b = (t - 0.75) / 0.25;
+  }
+  return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+}
+
+function renderHeatmap() {
+  const canvas = document.getElementById('heatCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = Math.floor(rect.width * devicePixelRatio);
+  const H = Math.floor(rect.height * devicePixelRatio);
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  
+  // Find value range
+  let vmin = Infinity, vmax = -Infinity;
+  for (let i = 0; i < Mx; i++) {
+    for (let j = 0; j < My; j++) {
+      const idx = i * My + j;
+      if (domainMask[idx] === 0) continue;
+      const v = V[idx];
+      if (v < vmin) vmin = v;
+      if (v > vmax) vmax = v;
+    }
+  }
+  if (vmax === vmin) vmax = vmin + 1;
+  const range = vmax - vmin;
+  
+  // Draw pixel grid
+  const pad = 30 * devicePixelRatio;
+  const plotW = W - 2*pad;
+  const plotH = H - 2*pad;
+  const imgData = ctx.createImageData(W, H);
+  const data = imgData.data;
+  
+  // Fill background
+  for (let p = 0; p < data.length; p += 4) {
+    data[p] = 10; data[p+1] = 12; data[p+2] = 16; data[p+3] = 255;
+  }
+  
+  for (let px = 0; px < plotW; px++) {
+    for (let py = 0; py < plotH; py++) {
+      // Map pixel to grid
+      const fi = (px / plotW) * (Mx - 1);
+      const fj = ((plotH - 1 - py) / plotH) * (My - 1);
+      const i = Math.min(Math.floor(fi), Mx-2);
+      const j = Math.min(Math.floor(fj), My-2);
+      const u = fi - i, w = fj - j;
+      
+      const idx00 = i*My+j, idx10 = (i+1)*My+j, idx01 = i*My+j+1, idx11 = (i+1)*My+j+1;
+      
+      // Skip if exterior (circle)
+      if (domainMask[idx00] === 0 && domainMask[idx10] === 0 && 
+          domainMask[idx01] === 0 && domainMask[idx11] === 0) continue;
+      
+      const val = (1-u)*(1-w)*V[idx00] + u*(1-w)*V[idx10] + (1-u)*w*V[idx01] + u*w*V[idx11];
+      const t = (val - vmin) / range;
+      const [r,g,b] = hotColor(t);
+      
+      const pidx = ((py + Math.round(pad)) * W + (px + Math.round(pad))) * 4;
+      data[pidx] = r; data[pidx+1] = g; data[pidx+2] = b; data[pidx+3] = 255;
+    }
+  }
+  
+  ctx.putImageData(imgData, 0, 0);
+  
+  // Draw contour lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 0.8 * devicePixelRatio;
+  const nContours = 12;
+  for (let c = 1; c < nContours; c++) {
+    const level = vmin + (c / nContours) * range;
+    // Marching squares (simplified)
+    for (let i = 0; i < Mx-1; i++) {
+      for (let j = 0; j < My-1; j++) {
+        const v00 = V[i*My+j], v10 = V[(i+1)*My+j];
+        const v01 = V[i*My+j+1], v11 = V[(i+1)*My+j+1];
+        if (domainMask[i*My+j] === 0) continue;
+        
+        const edges = [];
+        if ((v00-level)*(v10-level) < 0) {
+          const t = (level-v00)/(v10-v00);
+          edges.push([pad + (i+t)/Mx*plotW, pad + plotH - j/My*plotH]);
+        }
+        if ((v10-level)*(v11-level) < 0) {
+          const t = (level-v10)/(v11-v10);
+          edges.push([pad + (i+1)/Mx*plotW, pad + plotH - (j+t)/My*plotH]);
+        }
+        if ((v01-level)*(v11-level) < 0) {
+          const t = (level-v01)/(v11-v01);
+          edges.push([pad + (i+t)/Mx*plotW, pad + plotH - (j+1)/My*plotH]);
+        }
+        if ((v00-level)*(v01-level) < 0) {
+          const t = (level-v00)/(v01-v00);
+          edges.push([pad + i/Mx*plotW, pad + plotH - (j+t)/My*plotH]);
+        }
+        if (edges.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(edges[0][0], edges[0][1]);
+          ctx.lineTo(edges[1][0], edges[1][1]);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+  
+  // Axis labels
+  ctx.fillStyle = '#7a8194';
+  ctx.font = `${10*devicePixelRatio}px JetBrains Mono`;
+  ctx.textAlign = 'center';
+  ctx.fillText('-1', pad, H - 5*devicePixelRatio);
+  ctx.fillText('0', pad + plotW/2, H - 5*devicePixelRatio);
+  ctx.fillText('1', pad + plotW, H - 5*devicePixelRatio);
+  ctx.textAlign = 'right';
+  ctx.fillText('-1', pad - 4*devicePixelRatio, pad + plotH);
+  ctx.fillText('0', pad - 4*devicePixelRatio, pad + plotH/2);
+  ctx.fillText('1', pad - 4*devicePixelRatio, pad);
+  
+  // Colorbar
+  const cbW = 12 * devicePixelRatio;
+  const cbX = W - 20 * devicePixelRatio;
+  for (let py = 0; py < plotH; py++) {
+    const t = 1 - py / plotH;
+    const [r,g,b] = hotColor(t);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(cbX, pad + py, cbW, 1);
+  }
+  ctx.fillStyle = '#7a8194';
+  ctx.textAlign = 'left';
+  ctx.font = `${9*devicePixelRatio}px JetBrains Mono`;
+  ctx.fillText(vmax.toFixed(2), cbX + cbW + 3*devicePixelRatio, pad + 8*devicePixelRatio);
+  ctx.fillText(vmin.toFixed(2), cbX + cbW + 3*devicePixelRatio, pad + plotH);
+}
+
+function renderSurface() {
+  const canvas = document.getElementById('surfCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = Math.floor(rect.width * devicePixelRatio);
+  const H = Math.floor(rect.height * devicePixelRatio);
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0a0c10';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Find range
+  let vmin = Infinity, vmax = -Infinity;
+  for (let k = 0; k < V.length; k++) {
+    if (domainMask[k] === 0) continue;
+    if (V[k] < vmin) vmin = V[k];
+    if (V[k] > vmax) vmax = V[k];
+  }
+  if (vmax === vmin) vmax = vmin + 1;
+  const range = vmax - vmin;
+  
+  // 3D projection params
+  const cx = W/2, cy = H * 0.45;
+  const scale = Math.min(W, H) * 0.32;
+  const az = -0.7, el = 0.55;
+  const cosA = Math.cos(az), sinA = Math.sin(az);
+  const cosE = Math.cos(el), sinE = Math.sin(el);
+  
+  function project(x, y, z) {
+    const x1 = x * cosA - y * sinA;
+    const y1 = x * sinA + y * cosA;
+    const y2 = y1 * cosE - z * sinE;
+    const z2 = y1 * sinE + z * cosE;
+    return [cx + x1 * scale, cy - z2 * scale * 0.9, y2];
+  }
+  
+  // Subsample for performance
+  const step = Math.max(1, Math.floor(Mx / 40));
+  
+  // Collect quads with depth
+  const quads = [];
+  for (let i = 0; i < Mx - step; i += step) {
+    for (let j = 0; j < My - step; j += step) {
+      const i2 = Math.min(i + step, Mx-1);
+      const j2 = Math.min(j + step, My-1);
+      const idx00 = i*My+j, idx10 = i2*My+j, idx01 = i*My+j2, idx11 = i2*My+j2;
+      
+      // Skip exterior
+      if (domainMask[idx00] === 0 && domainMask[idx10] === 0 &&
+          domainMask[idx01] === 0 && domainMask[idx11] === 0) continue;
+      
+      const v00 = (V[idx00]-vmin)/range, v10 = (V[idx10]-vmin)/range;
+      const v01 = (V[idx01]-vmin)/range, v11 = (V[idx11]-vmin)/range;
+      const vavg = (v00+v10+v01+v11)/4;
+      
+      const x0 = xArr[i], x1 = xArr[i2], y0 = yArr[j], y1 = yArr[j2];
+      
+      const p00 = project(x0, y0, v00);
+      const p10 = project(x1, y0, v10);
+      const p01 = project(x0, y1, v01);
+      const p11 = project(x1, y1, v11);
+      
+      const depth = (p00[2] + p10[2] + p01[2] + p11[2]) / 4;
+      quads.push({ p00, p10, p01, p11, vavg, depth });
+    }
+  }
+  
+  // Sort back to front
+  quads.sort((a, b) => a.depth - b.depth);
+  
+  // Draw
+  for (const q of quads) {
+    const [r,g,b] = hotColor(q.vavg);
+    // Simple shading
+    const shade = 0.6 + 0.4 * q.vavg;
+    ctx.fillStyle = `rgb(${Math.round(r*shade)},${Math.round(g*shade)},${Math.round(b*shade)})`;
+    ctx.strokeStyle = `rgba(${Math.round(r*shade*0.5)},${Math.round(g*shade*0.5)},${Math.round(b*shade*0.5)},0.4)`;
+    ctx.lineWidth = 0.5;
+    
+    ctx.beginPath();
+    ctx.moveTo(q.p00[0], q.p00[1]);
+    ctx.lineTo(q.p10[0], q.p10[1]);
+    ctx.lineTo(q.p11[0], q.p11[1]);
+    ctx.lineTo(q.p01[0], q.p01[1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  
+  // Axes
+  ctx.strokeStyle = '#4a5068';
+  ctx.lineWidth = 1;
+  const o = project(0, 0, 0);
+  const ax = project(1.15, 0, 0);
+  const ay = project(0, 1.15, 0);
+  const azz = project(0, 0, 1.15);
+  
+  ctx.beginPath(); ctx.moveTo(o[0],o[1]); ctx.lineTo(ax[0],ax[1]); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(o[0],o[1]); ctx.lineTo(ay[0],ay[1]); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(o[0],o[1]); ctx.lineTo(azz[0],azz[1]); ctx.stroke();
+  
+  ctx.fillStyle = '#7a8194';
+  ctx.font = `${11*devicePixelRatio}px JetBrains Mono`;
+  ctx.fillText('x', ax[0]+4, ax[1]);
+  ctx.fillText('y', ay[0]+4, ay[1]);
+  ctx.fillText('u', azz[0]+4, azz[1]);
+}
+
+function renderCrossSection() {
+  const canvas = document.getElementById('crossCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = Math.floor(rect.width * devicePixelRatio);
+  const H = Math.floor(rect.height * devicePixelRatio);
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0a0c10';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Find range
+  let vmin = Infinity, vmax = -Infinity;
+  for (let k = 0; k < V.length; k++) {
+    if (domainMask[k] === 0) continue;
+    if (V[k] < vmin) vmin = V[k];
+    if (V[k] > vmax) vmax = V[k];
+  }
+  if (vmax === vmin) { vmax = vmin + 1; }
+  const vpad = (vmax - vmin) * 0.1;
+  vmin -= vpad; vmax += vpad;
+  
+  const pad = { l: 50*devicePixelRatio, r: 20*devicePixelRatio, t: 10*devicePixelRatio, b: 25*devicePixelRatio };
+  const pW = W - pad.l - pad.r;
+  const pH = H - pad.t - pad.b;
+  
+  function toScreen(t, v) {
+    const sx = pad.l + ((t + 1) / 2) * pW;
+    const sy = pad.t + pH - ((v - vmin) / (vmax - vmin)) * pH;
+    return [sx, sy];
+  }
+  
+  // Grid lines
+  ctx.strokeStyle = '#1a1e28';
+  ctx.lineWidth = 1;
+  for (let v = Math.ceil(vmin*5)/5; v <= vmax; v += Math.max(0.2, (vmax-vmin)/5)) {
+    const [,sy] = toScreen(0, v);
+    ctx.beginPath(); ctx.moveTo(pad.l, sy); ctx.lineTo(pad.l+pW, sy); ctx.stroke();
+  }
+  
+  const midJ = Math.floor(My / 2);
+  const midI = Math.floor(Mx / 2);
+  
+  // y=0 cross-section (solid)
+  ctx.strokeStyle = '#f0803c';
+  ctx.lineWidth = 2.5 * devicePixelRatio;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < Mx; i++) {
+    if (domainMask[i*My+midJ] === 0) { started = false; continue; }
+    const [sx, sy] = toScreen(xArr[i], V[i*My+midJ]);
+    if (!started) { ctx.moveTo(sx, sy); started = true; }
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+  
+  // x=0 cross-section (dashed)
+  ctx.strokeStyle = '#4ade80';
+  ctx.lineWidth = 2 * devicePixelRatio;
+  ctx.setLineDash([8*devicePixelRatio, 5*devicePixelRatio]);
+  ctx.beginPath();
+  started = false;
+  for (let j = 0; j < My; j++) {
+    if (domainMask[midI*My+j] === 0) { started = false; continue; }
+    const [sx, sy] = toScreen(yArr[j], V[midI*My+j]);
+    if (!started) { ctx.moveTo(sx, sy); started = true; }
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+  
+  // Diagonal (dotted)
+  ctx.strokeStyle = '#a78bfa';
+  ctx.lineWidth = 2 * devicePixelRatio;
+  ctx.setLineDash([3*devicePixelRatio, 4*devicePixelRatio]);
+  ctx.beginPath();
+  started = false;
+  const nd = Math.min(Mx, My);
+  for (let k = 0; k < nd; k++) {
+    const idx = k * My + k;
+    if (domainMask[idx] === 0) { started = false; continue; }
+    const t = xArr[k];
+    const [sx, sy] = toScreen(t, V[idx]);
+    if (!started) { ctx.moveTo(sx, sy); started = true; }
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  // Legend
+  const lx = pad.l + 12*devicePixelRatio, ly = pad.t + 14*devicePixelRatio;
+  ctx.font = `${10*devicePixelRatio}px JetBrains Mono`;
+  
+  ctx.strokeStyle = '#f0803c'; ctx.lineWidth = 2.5*devicePixelRatio;
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx+20*devicePixelRatio, ly); ctx.stroke();
+  ctx.fillStyle = '#f0803c'; ctx.fillText('y=0', lx+25*devicePixelRatio, ly+3*devicePixelRatio);
+  
+  ctx.strokeStyle = '#4ade80'; ctx.setLineDash([6*devicePixelRatio,4*devicePixelRatio]);
+  ctx.beginPath(); ctx.moveTo(lx+70*devicePixelRatio, ly); ctx.lineTo(lx+90*devicePixelRatio, ly); ctx.stroke();
+  ctx.fillStyle = '#4ade80'; ctx.fillText('x=0', lx+95*devicePixelRatio, ly+3*devicePixelRatio);
+  
+  ctx.strokeStyle = '#a78bfa'; ctx.setLineDash([3*devicePixelRatio,3*devicePixelRatio]);
+  ctx.beginPath(); ctx.moveTo(lx+140*devicePixelRatio, ly); ctx.lineTo(lx+160*devicePixelRatio, ly); ctx.stroke();
+  ctx.fillStyle = '#a78bfa'; ctx.fillText('x=y', lx+165*devicePixelRatio, ly+3*devicePixelRatio);
+  ctx.setLineDash([]);
+  
+  // Axis labels
+  ctx.fillStyle = '#7a8194';
+  ctx.font = `${9*devicePixelRatio}px JetBrains Mono`;
+  ctx.textAlign = 'center';
+  ctx.fillText('-1', pad.l, H - 5*devicePixelRatio);
+  ctx.fillText('0', pad.l + pW/2, H - 5*devicePixelRatio);
+  ctx.fillText('1', pad.l + pW, H - 5*devicePixelRatio);
+  
+  ctx.textAlign = 'right';
+  const nTicks = 5;
+  for (let k = 0; k <= nTicks; k++) {
+    const v = vmin + k/nTicks*(vmax-vmin);
+    const [,sy] = toScreen(0, v);
+    ctx.fillText(v.toFixed(2), pad.l - 4*devicePixelRatio, sy + 3*devicePixelRatio);
+  }
+}
+
+function renderAll() {
+  renderHeatmap();
+  renderSurface();
+  renderCrossSection();
+}
+
+// ============================================================
+// FORMULA BAR UPDATE
+// ============================================================
+function updateFormulaBar() {
+  const pVal = document.getElementById('pValue').value;
+  const dom = document.getElementById('domain').value;
+  const bdry = document.getElementById('bdry');
+  const bdryText = bdry.options[bdry.selectedIndex].text;
+  
+  let pStr = pVal === '0' ? '∞' : pVal;
+  let domStr = dom === 'square' ? '[-1,1]²' : 'D (unit disk)';
+  
+  document.getElementById('formulaBar').innerHTML = 
+    `<span class="math">Δ<sub class="hl">${pStr}</sub> u = 0</span> &nbsp;on&nbsp;` +
+    `<span class="math hl">${domStr}</span>,&nbsp;&nbsp;` +
+    `<span class="math">u = <span class="hl">${bdryText}</span></span> &nbsp;on ∂Ω`;
+}
+
+// ============================================================
+// SOLVER LOOP
+// ============================================================
+function startSolve() {
+  if (solving) return;
+  solving = true;
+  document.getElementById('runBtn').disabled = true;
+  updateFormulaBar();
+  
+  initGrid();
+  renderAll();
+  
+  const maxIter = parseInt(document.getElementById('maxIter').value);
+  const batchSize = 1; // iterations per frame
+  
+  function step() {
+    if (!solving) return;
+    
+    for (let b = 0; b < batchSize; b++) {
+      if (iteration >= maxIter || lastErr < 1e-7) {
+        solving = false;
+        document.getElementById('runBtn').disabled = false;
+        const statusEl = document.getElementById('status');
+        if (lastErr < 1e-7) {
+          statusEl.innerHTML = `<span class="label">Status:</span> <span class="val">Converged!</span><br>` +
+            `<span class="label">Iteration:</span> <span class="val">${iteration}</span><br>` +
+            `<span class="label">Max change:</span> <span class="val">${lastErr.toExponential(2)}</span><br>` +
+            `<span class="label">u(0,0):</span> <span class="val">${V[Math.floor(Mx/2)*My + Math.floor(My/2)].toFixed(6)}</span>`;
+        } else {
+          statusEl.innerHTML = `<span class="label">Status:</span> <span class="warn">Max iterations reached</span><br>` +
+            `<span class="label">Iteration:</span> <span class="val">${iteration}</span><br>` +
+            `<span class="label">Max change:</span> <span class="warn">${lastErr.toExponential(2)}</span><br>` +
+            `<span class="label">u(0,0):</span> <span class="val">${V[Math.floor(Mx/2)*My + Math.floor(My/2)].toFixed(6)}</span>`;
+        }
+        renderAll();
+        return;
+      }
+      solveStep();
+    }
+    
+    document.getElementById('iterCount').textContent = iteration;
+    document.getElementById('errVal').textContent = lastErr.toExponential(2);
+    document.getElementById('centerVal').textContent = V[Math.floor(Mx/2)*My + Math.floor(My/2)].toFixed(6);
+    
+    // Render every few iterations
+    if (iteration % 3 === 0 || iteration <= 5) {
+      renderAll();
+    }
+    
+    animId = requestAnimationFrame(step);
+  }
+  
+  animId = requestAnimationFrame(step);
+}
+
+function stopSolve() {
+  solving = false;
+  if (animId) cancelAnimationFrame(animId);
+  document.getElementById('runBtn').disabled = false;
+}
+
+// Listen for setting changes
+['domain', 'pValue', 'bdry'].forEach(id => {
+  document.getElementById(id).addEventListener('change', updateFormulaBar);
+});
+
+// Initial render with default settings
+window.addEventListener('load', () => {
+  updateFormulaBar();
+  initGrid();
+  renderAll();
+});
+
+// Resize handler
+window.addEventListener('resize', () => { if (V) renderAll(); });
+</script>
+</body>
+</html>

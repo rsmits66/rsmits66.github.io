@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farey Fractions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --cream:#FDF8F0;--cream-dark:#F5EDE0;
+    --navy:#1B2A4A;--navy-light:#2C3E6B;
+    --gold:#C8A951;--gold-muted:#B8963E;
+    --crimson:#A32D2D;--teal:#1D7A6A;
+    --blue:#2264A8;--blue-light:#3A8FE0;--blue-bg:rgba(34,100,168,0.08);
+    --purple:#534AB7;
+    --text-primary:#2C2418;--text-secondary:#6B5D4F;
+    --border:rgba(43,42,30,0.12);--border-strong:rgba(43,42,30,0.22);
+    --shadow-sm:0 1px 3px rgba(27,42,74,0.06);
+  }
+  body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--text-primary);line-height:1.65;font-size:16px}
+  .page-header{background:var(--navy);color:var(--cream);padding:2rem 1.5rem 1.6rem;text-align:center;position:relative}
+  .page-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--gold),var(--gold-muted),var(--gold))}
+  .page-header h1{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:clamp(1.4rem,3.5vw,2rem);letter-spacing:0.02em;margin-bottom:0.3rem}
+  .page-header .subtitle{font-size:1rem;opacity:0.7;font-weight:300}
+  .container{max-width:960px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+
+  .card{background:white;border:1px solid var(--border);border-radius:6px;padding:1.1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+  .card.accent-navy{border-left:4px solid var(--navy)}
+  .card.accent-gold{border-left:4px solid var(--gold)}
+
+  .controls-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0.6rem 1rem;background:white;border:1px solid var(--border);border-radius:6px;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+  .ctrl-btn{padding:5px 14px;font-family:'Crimson Pro',serif;font-size:0.9rem;border:1px solid var(--border-strong);border-radius:4px;background:white;cursor:pointer;transition:all 0.15s;color:var(--navy)}
+  .ctrl-btn:hover{background:var(--navy);color:var(--cream);border-color:var(--navy)}
+  .ctrl-btn.active{background:var(--navy);color:var(--cream);border-color:var(--navy);font-weight:600}
+  .ctrl-btn:disabled{opacity:0.35;cursor:default}
+  .ctrl-btn:disabled:hover{background:white;color:var(--navy)}
+  .ctrl-label{font-size:0.86rem;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+  .ctrl-label input[type="range"]{width:80px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--cream-dark);cursor:pointer}
+  .ctrl-label input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--navy)}
+  .ctrl-label input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;border:none;background:var(--navy)}
+  .ctrl-val{font-weight:600;color:var(--navy);min-width:22px;font-size:0.86rem}
+  .divider{width:1px;height:22px;background:var(--border-strong);margin:0 2px}
+
+  .readouts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.75rem}
+  .readout{background:var(--cream);border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:0.84rem}
+  .readout .ro-label{color:var(--text-secondary)}
+  .readout .ro-value{font-weight:600;color:var(--navy)}
+
+  .panel-label{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary);margin-bottom:5px}
+
+  /* Farey rows display */
+  .farey-rows{background:white;border:1px solid var(--border);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm);overflow:hidden}
+  .farey-row{display:flex;align-items:center;height:44px;border-bottom:1px solid rgba(43,42,30,0.05)}
+  .farey-row:last-child{border-bottom:none}
+  .farey-row .row-label{font-family:'Playfair Display',Georgia,serif;font-weight:600;color:var(--navy);font-size:0.9rem;flex-shrink:0;width:48px;text-align:right;padding-right:8px}
+  .farey-row .frac-area{position:relative;flex:1;height:100%}
+  .farey-row .frac{position:absolute;top:50%;transform:translate(-50%,-50%);display:inline-flex;flex-direction:column;align-items:center;font-size:0.85rem;line-height:1.15;padding:2px 3px;border-radius:3px;transition:all 0.3s;white-space:nowrap}
+  .farey-row .frac .num{border-bottom:1px solid currentColor;padding-bottom:1px;min-width:10px;text-align:center;opacity:0.7}
+  .farey-row .frac .den{padding-top:1px;min-width:10px;text-align:center;opacity:0.7}
+  .farey-row .frac.old{color:var(--text-secondary)}
+  .farey-row .frac.new{color:var(--crimson);font-weight:600}
+  .farey-row .frac.new .num,.farey-row .frac.new .den{opacity:1}
+  .farey-row .frac.new::before{content:'';position:absolute;inset:-4px;border:2px solid var(--crimson);border-radius:50%;pointer-events:none}
+
+  /* Number line canvas */
+  .numline-panel{background:white;border:1px solid var(--border);border-radius:6px;padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+  .numline-panel canvas{width:100%;display:block}
+
+  /* Approximation panel */
+  .approx-panel{background:white;border:1px solid var(--border);border-radius:6px;padding:1rem 1.25rem;box-shadow:var(--shadow-sm)}
+  .approx-table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:0.5rem}
+  .approx-table th{background:var(--navy);color:var(--cream);padding:5px 10px;text-align:center;font-family:'Playfair Display',serif;font-weight:500;font-size:0.78rem;letter-spacing:0.04em}
+  .approx-table td{padding:5px 10px;text-align:center;border-bottom:1px solid var(--border)}
+  .approx-table tr.hit{background:rgba(163,45,45,0.06);font-weight:600}
+  .approx-table tr.hit td{color:var(--crimson)}
+  .approx-table .check{color:var(--teal);font-weight:700}
+  .approx-table .cross{color:var(--text-secondary);opacity:0.4}
+
+  .katex{font-size:1em}
+
+  @media(max-width:640px){
+    .container{padding:1rem 0.75rem 2rem}
+    .farey-row .frac{font-size:0.75rem;padding:2px 3px}
+    .farey-rows{padding:0.75rem}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>The Farey Fractions</h1>
+  <div class="subtitle">Rational approximation and the structure of fractions</div>
+</div>
+
+<div class="container">
+
+<div class="card accent-navy">
+  <p>The <strong>Farey sequence</strong> <span id="def-Fn"></span> of order <span id="def-n"></span> is the set of all reduced fractions <span id="def-hk"></span> with <span id="def-cond"></span>, arranged in increasing order.</p>
+  <p style="margin-top:0.5rem;">Each new level <span id="def-Fn2"></span> inserts the <em>mediants</em> <span id="def-med"></span> of consecutive Farey neighbors from the previous level whenever <span id="def-medcond"></span>.</p>
+</div>
+
+<div class="card accent-gold" style="font-size:0.95rem;">
+  <p><strong>Diophantine approximation:</strong> We mark an irrational <span id="def-chi"></span> on the number line. A fraction <span id="def-hk2"></span> is highlighted in <strong style="color:var(--crimson);">red</strong> whenever it satisfies <span id="def-ineq"></span> — these are the <em>exceptionally good</em> rational approximants.</p>
+</div>
+
+<div class="controls-bar">
+  <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+  <button class="ctrl-btn" id="stepBtn" onclick="stepOnce()">Next F<sub>n</sub></button>
+  <button class="ctrl-btn" onclick="resetAll()">Reset</button>
+  <span class="divider"></span>
+  <label class="ctrl-label">Speed <input type="range" id="speedSl" min="1" max="5" step="1" value="2"><span class="ctrl-val" id="speedV">2</span></label>
+</div>
+
+<div class="readouts">
+  <div class="readout"><span class="ro-label">Current: </span><span class="ro-value" id="roLevel">F<sub>0</sub></span></div>
+  <div class="readout"><span class="ro-label">|F<sub>n</sub>| = </span><span class="ro-value" id="roSize">0</span></div>
+  <div class="readout"><span class="ro-label">New fractions: </span><span class="ro-value" id="roNew" style="color:var(--blue);">0</span></div>
+  <div class="readout"><span class="ro-label">χ = √2/2 ≈ </span><span class="ro-value" id="roChi"></span></div>
+  <div class="readout"><span class="ro-label">Best approx: </span><span class="ro-value" id="roBest" style="color:var(--crimson);">—</span></div>
+</div>
+
+<!-- Farey rows -->
+<div class="panel-label">Farey sequences F<sub>1</sub> through F<sub>5</sub> — <span style="color:var(--crimson);">red circles = new fractions</span></div>
+<div class="farey-rows" id="fareyRows"></div>
+
+<!-- Stem plot -->
+<div class="numline-panel">
+  <div class="panel-label">Stem plot on [0, 1] — height = 1/denominator, <span style="color:var(--crimson);">red = new</span></div>
+  <canvas id="numlineC"></canvas>
+</div>
+
+<!-- Approximation table -->
+<div class="approx-panel">
+  <div class="panel-label" style="color:var(--crimson);">Diophantine approximants satisfying |χ − h/k| &lt; 1/k²</div>
+  <table class="approx-table" id="approxTable">
+    <thead><tr><th>h/k</th><th>k</th><th>|χ − h/k|</th><th>1/k²</th><th>|χ − h/k| &lt; 1/k²?</th><th>First appears in</th></tr></thead>
+    <tbody id="approxBody"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+(function(){
+
+  var CHI = Math.SQRT2 / 2;
+
+  function k(id,tex){var el=document.getElementById(id);if(el)katex.render(tex,el,{throwOnError:false});}
+  k('def-Fn','F_n');k('def-n','n');k('def-hk','h/k');k('def-cond','0 \\leq h/k \\leq 1,\\; k \\leq n');
+  k('def-Fn2','F_n');k('def-med','(a+c)/(b+d)');k('def-medcond','b+d \\leq n');
+  k('def-chi','\\chi = \\tfrac{\\sqrt{2}}{2} \\approx 0.7071');
+  k('def-hk2','h/k');k('def-ineq','|\\chi - h/k| < 1/k^2');
+  document.getElementById('roChi').textContent = CHI.toFixed(6);
+
+  /* ── Farey computation ── */
+  function gcd(a,b){while(b){var t=b;b=a%b;a=t;}return a;}
+
+  function fareySequence(n){
+    var fracs=[];
+    for(var k=1;k<=n;k++){
+      for(var h=0;h<=k;h++){
+        if(gcd(h,k)===1) fracs.push({h:h,k:k});
+      }
+    }
+    fracs.sort(function(a,b){return a.h/a.k - b.h/b.k;});
+    return fracs;
+  }
+
+  function fracKey(f){return f.h+'/'+f.k;}
+
+  var curLevel=0;
+  var allFarey=[]; /* current full Farey set */
+  var prevKeys=new Set();
+  var newKeys=new Set();
+  var approxHits=[]; /* fractions satisfying the Diophantine condition */
+  var approxKeySet=new Set();
+  var playing=false, animId=null;
+
+  var speedSl=document.getElementById('speedSl'),speedV=document.getElementById('speedV');
+  speedSl.addEventListener('input',function(){speedV.textContent=speedSl.value;});
+
+  /* level history for rendering rows */
+  var levelData=[]; /* levelData[i] = {n, fracs, newFracs} */
+
+  function advanceLevel(){
+    curLevel++;
+    var fracs=fareySequence(curLevel);
+    var curKeys=new Set(fracs.map(fracKey));
+    var newF=fracs.filter(function(f){return !prevKeys.has(fracKey(f));});
+    newKeys=new Set(newF.map(fracKey));
+
+    /* check Diophantine condition for new fractions */
+    newF.forEach(function(f){
+      if(f.k===0)return;
+      var err=Math.abs(CHI - f.h/f.k);
+      var thresh=1/(f.k*f.k);
+      if(err<thresh && !approxKeySet.has(fracKey(f))){
+        approxHits.push({h:f.h,k:f.k,err:err,thresh:thresh,level:curLevel});
+        approxKeySet.add(fracKey(f));
+      }
+    });
+
+    levelData.push({n:curLevel, fracs:fracs, newKeys:new Set(newF.map(fracKey))});
+    allFarey=fracs;
+    prevKeys=curKeys;
+
+    updateReadouts();
+    renderRows();
+    drawNumline();
+    renderApproxTable();
+  }
+
+  function updateReadouts(){
+    document.getElementById('roLevel').innerHTML='F<sub>'+curLevel+'</sub>';
+    document.getElementById('roSize').textContent=allFarey.length;
+    document.getElementById('roNew').textContent=newKeys.size;
+    if(approxHits.length>0){
+      var best=approxHits[approxHits.length-1];
+      document.getElementById('roBest').textContent=best.h+'/'+best.k+' (err='+best.err.toFixed(8)+')';
+    }
+  }
+
+  var MAX_ROW_DISPLAY = 5;
+
+  /* ── Render Farey rows ── */
+  function renderRows(){
+    var container=document.getElementById('fareyRows');
+    var html='';
+    var pad=3; /* percent padding so edge fractions don't clip */
+
+    var showUpTo=Math.min(levelData.length, MAX_ROW_DISPLAY);
+    for(var li=0;li<showUpTo;li++){
+      var ld=levelData[li];
+      html+='<div class="farey-row">';
+      html+='<span class="row-label">F<sub>'+ld.n+'</sub> =</span>';
+      html+='<div class="frac-area">';
+
+      for(var fi=0;fi<ld.fracs.length;fi++){
+        var f=ld.fracs[fi];
+        var fk=fracKey(f);
+        var isNew=ld.newKeys.has(fk);
+        var cls=isNew?'new':'old';
+        var pct=pad + (f.h/f.k)*(100-2*pad);
+        html+='<span class="frac '+cls+'" style="left:'+pct.toFixed(2)+'%"><span class="num">'+f.h+'</span><span class="den">'+f.k+'</span></span>';
+      }
+      html+='</div></div>';
+    }
+
+    if(curLevel>MAX_ROW_DISPLAY){
+      html+='<div style="padding:8px 0 2px;font-size:0.88rem;color:var(--text-secondary);font-style:italic;border-top:1px solid var(--border);">';
+      html+='Now at F<sub>'+curLevel+'</sub> with '+allFarey.length+' fractions — see the stem plot below for new arrivals.';
+      html+='</div>';
+    }
+
+    container.innerHTML=html;
+  }
+
+  /* ── Number line ── */
+  var numC=document.getElementById('numlineC'), numCtx=numC.getContext('2d');
+
+  function drawNumline(){
+    var rect=numC.parentElement.getBoundingClientRect();
+    var w=rect.width-32, h=220;
+    var dpr=window.devicePixelRatio||1;
+    numC.width=w*dpr;numC.height=h*dpr;numC.style.height=h+'px';
+    numCtx.setTransform(dpr,0,0,dpr,0,0);
+    var ctx=numCtx;
+
+    var pad={l:36,r:36,t:20,b:35};
+    var pw=w-pad.l-pad.r;
+    var ph=h-pad.t-pad.b;
+
+    function toX(v){return pad.l+v*pw;}
+    function stemH(k){return (1/k)*ph;} /* height in pixels for denominator k */
+    var baseY=pad.t+ph; /* baseline y coordinate */
+
+    ctx.clearRect(0,0,w,h);
+
+    /* baseline */
+    ctx.strokeStyle='rgba(44,36,24,0.4)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(pad.l,baseY);ctx.lineTo(w-pad.r,baseY);ctx.stroke();
+
+    /* baseline labels */
+    ctx.fillStyle='#2C2418';ctx.font='12px "Crimson Pro",serif';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText('0',toX(0),baseY+6);
+    ctx.fillText('1',toX(1),baseY+6);
+
+    /* y-axis ticks for stem height reference */
+    ctx.font='10px "Crimson Pro",serif';ctx.fillStyle='rgba(44,36,24,0.3)';
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    var refs=[1, 0.5, 0.25];
+    var refLabels=['1','1/2','1/4'];
+    ctx.strokeStyle='rgba(44,36,24,0.06)';ctx.lineWidth=0.5;
+    for(var ri=0;ri<refs.length;ri++){
+      var y=baseY-refs[ri]*ph;
+      ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
+      ctx.fillText(refLabels[ri],pad.l-5,y);
+    }
+
+    /* χ marker — full height, behind stems */
+    var chiX=toX(CHI);
+    ctx.strokeStyle='rgba(163,45,45,0.2)';ctx.lineWidth=1.5;
+    ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(chiX,pad.t);ctx.lineTo(chiX,baseY);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#A32D2D';ctx.font='bold 11px "Crimson Pro",serif';
+    ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText('\u03C7 = \u221A2/2',chiX,pad.t-2);
+
+    /* stems — draw old first, then new on top */
+    for(var pass=0;pass<2;pass++){
+      for(var i=0;i<allFarey.length;i++){
+        var f=allFarey[i];
+        var fk=fracKey(f);
+        var isNew=newKeys.has(fk);
+        if(pass===0 && isNew) continue;  /* draw old first */
+        if(pass===1 && !isNew) continue; /* draw new second */
+
+        var x=toX(f.h/f.k);
+        var sh=stemH(f.k);
+
+        if(isNew){
+          ctx.strokeStyle='#A32D2D';ctx.lineWidth=2;
+        }else{
+          ctx.strokeStyle='rgba(27,42,74,0.5)';ctx.lineWidth=1;
+        }
+        ctx.beginPath();ctx.moveTo(x,baseY);ctx.lineTo(x,baseY-sh);ctx.stroke();
+
+        /* dot at top of stem */
+        ctx.fillStyle=isNew?'#A32D2D':'rgba(27,42,74,0.5)';
+        ctx.beginPath();ctx.arc(x,baseY-sh,isNew?3:1.5,0,2*Math.PI);ctx.fill();
+
+        /* label new stems if not too crowded */
+        if(isNew && allFarey.length<=80){
+          ctx.fillStyle='#A32D2D';ctx.font='bold 9px "Crimson Pro",serif';
+          ctx.textAlign='center';ctx.textBaseline='bottom';
+          ctx.fillText(f.h+'/'+f.k,x,baseY-sh-4);
+        }
+      }
+    }
+
+    /* endpoint ticks */
+    ctx.strokeStyle='rgba(44,36,24,0.5)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(toX(0),baseY-3);ctx.lineTo(toX(0),baseY+3);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(toX(1),baseY-3);ctx.lineTo(toX(1),baseY+3);ctx.stroke();
+  }
+
+  /* ── Approximation table ── */
+  function renderApproxTable(){
+    var tbody=document.getElementById('approxBody');
+    var html='';
+    for(var i=0;i<approxHits.length;i++){
+      var a=approxHits[i];
+      html+='<tr class="hit">';
+      html+='<td>'+a.h+'/'+a.k+'</td>';
+      html+='<td>'+a.k+'</td>';
+      html+='<td>'+a.err.toFixed(8)+'</td>';
+      html+='<td>'+(a.thresh).toFixed(8)+'</td>';
+      html+='<td class="check">✓</td>';
+      html+='<td>F<sub>'+a.level+'</sub></td>';
+      html+='</tr>';
+    }
+    if(html==='') html='<tr><td colspan="6" style="color:var(--text-secondary);font-style:italic;padding:12px;">No approximants found yet — advance to higher F<sub>n</sub></td></tr>';
+    tbody.innerHTML=html;
+  }
+
+  /* ── Controls ── */
+  window.stepOnce=function(){
+    if(playing)return;
+    if(curLevel>=40){document.getElementById('stepBtn').disabled=true;return;}
+    advanceLevel();
+  };
+
+  var lastT=0;
+  function anim(ts){
+    if(!playing)return;
+    var delays=[2500,1500,800,400,150];
+    var delay=delays[parseInt(speedSl.value)-1]||800;
+    if(ts-lastT>=delay){
+      if(curLevel>=35){togglePlay();return;}
+      advanceLevel();
+      lastT=ts;
+    }
+    animId=requestAnimationFrame(anim);
+  }
+
+  window.togglePlay=function(){
+    playing=!playing;
+    document.getElementById('playBtn').innerHTML=playing?'&#10074;&#10074; Pause':'&#9654; Play';
+    document.getElementById('playBtn').classList.toggle('active',playing);
+    if(playing){lastT=performance.now();animId=requestAnimationFrame(anim);}
+    else if(animId)cancelAnimationFrame(animId);
+  };
+
+  window.resetAll=function(){
+    playing=false;
+    if(animId)cancelAnimationFrame(animId);
+    document.getElementById('playBtn').innerHTML='&#9654; Play';
+    document.getElementById('playBtn').classList.remove('active');
+    document.getElementById('stepBtn').disabled=false;
+    curLevel=0;allFarey=[];prevKeys=new Set();newKeys=new Set();
+    approxHits=[];approxKeySet=new Set();levelData=[];
+    document.getElementById('roLevel').innerHTML='F<sub>0</sub>';
+    document.getElementById('roSize').textContent='0';
+    document.getElementById('roNew').textContent='0';
+    document.getElementById('roBest').textContent='—';
+    document.getElementById('fareyRows').innerHTML='';
+    document.getElementById('approxBody').innerHTML='<tr><td colspan="6" style="color:var(--text-secondary);font-style:italic;padding:12px;">No approximants found yet — advance to higher F<sub>n</sub></td></tr>';
+    var rect=numC.parentElement.getBoundingClientRect();
+    var w=rect.width-32,h=220,dpr=window.devicePixelRatio||1;
+    numC.width=w*dpr;numC.height=h*dpr;numC.style.height=h+'px';
+    numCtx.setTransform(dpr,0,0,dpr,0,0);
+    numCtx.clearRect(0,0,w,h);
+    drawNumline();
+  };
+
+  window.addEventListener('resize',function(){if(allFarey.length>0)drawNumline();});
+  renderApproxTable();
+  drawNumline();
+})();
+</script>
+
+</body>
+</html>

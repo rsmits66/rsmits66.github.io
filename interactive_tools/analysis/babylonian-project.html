@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Divide-and-Average Method — A Project Walkthrough</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #3d3d52;
+    --ink-mute: #6b6b7a;
+    --paper: #faf6ee;
+    --paper-deep: #f3ecdc;
+    --rule: #d4cab3;
+    --accent: #8b1e3f;
+    --accent-soft: #b84766;
+    --ochre: #c8941e;
+    --ochre-soft: #e4b846;
+    --forest: #2a4a3e;
+    --forest-soft: #4a7a6a;
+    --hint-bg: #fdf6e3;
+    --soln-bg: #ecf3ec;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--paper);
+    margin: 0;
+    padding: 0;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(200, 148, 30, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(139, 30, 63, 0.04) 0%, transparent 40%);
+  }
+
+  .page { max-width: 820px; margin: 0 auto; padding: 4rem 2.5rem 6rem; }
+
+  .masthead {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  .masthead::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 5px;
+    background: var(--paper);
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+  }
+  .eyebrow {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 4.6vw, 2.9rem);
+    line-height: 1.12;
+    color: var(--ink);
+    margin: 0 0 1rem;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); font-weight: 600; }
+  .subtitle {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--ink-mute);
+    margin-top: 0.8rem;
+  }
+
+  h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    color: var(--ink);
+    margin: 3.5rem 0 1.2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h2 .section-num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+  }
+
+  p { margin: 0.9rem 0; }
+  p + p { text-indent: 1.5em; }
+  p.lede { font-size: 1.1rem; color: var(--ink-soft); }
+  p.lede + p { text-indent: 0; }
+
+  .drop-cap::first-letter {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: 4.2rem;
+    float: left;
+    line-height: 0.88;
+    margin: 0.08em 0.08em 0 -0.05em;
+    color: var(--accent);
+  }
+
+  .callout {
+    background: var(--paper-deep);
+    border-left: 3px solid var(--accent);
+    padding: 1.6rem 2rem 1.4rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .callout::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -0.6rem;
+    left: 1.5rem;
+    background: var(--paper);
+    padding: 0 0.6rem;
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .callout p { margin: 0.5rem 0; }
+  .callout p:first-child { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.tool { border-left-color: var(--forest); }
+  .callout.tool::before { color: var(--forest); }
+  .callout.setup { border-left-color: var(--ochre); }
+  .callout.setup::before { color: var(--ochre); }
+
+  .examples {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    background: rgba(200, 148, 30, 0.1);
+    padding: 0.9rem 1.2rem;
+    border-radius: 3px;
+    margin: 1.2rem 0;
+    color: var(--ink-soft);
+    overflow-x: auto;
+    line-height: 1.7;
+  }
+
+  .graph-figure {
+    margin: 2.5rem 0 3rem;
+    padding: 1.5rem 1rem 1.2rem;
+    background: #fffdf7;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(26, 26, 46, 0.04), 0 8px 24px rgba(26, 26, 46, 0.04);
+  }
+  .graph-figure svg { display: block; margin: 0 auto; width: 100%; height: auto; max-width: 680px; }
+  .figure-caption {
+    text-align: center;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-mute);
+    margin-top: 1rem;
+    padding: 0 1rem;
+    line-height: 1.55;
+  }
+  .figure-caption strong { font-style: normal; color: var(--ink); font-weight: 600; }
+  .figure-caption .fig-label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-variant: small-caps;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  .problem {
+    margin: 2.8rem 0;
+    padding: 1.8rem 2rem 1.6rem;
+    background: #fffdf7;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    position: relative;
+    transition: box-shadow 0.3s ease;
+  }
+  .problem:hover { box-shadow: 0 2px 4px rgba(26, 26, 46, 0.04), 0 12px 28px rgba(26, 26, 46, 0.06); }
+  .problem-tag {
+    position: absolute;
+    top: -0.75rem;
+    left: 1.5rem;
+    background: var(--accent);
+    color: var(--paper);
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    border-radius: 2px;
+  }
+  .problem h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.35rem;
+    color: var(--ink);
+    margin: 0.3rem 0 1rem;
+    line-height: 1.3;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .disclosure-btn {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.1rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .disclosure-btn::before {
+    content: "›";
+    font-size: 1.1rem;
+    line-height: 0.8;
+    transition: transform 0.18s ease;
+    display: inline-block;
+  }
+  .disclosure-btn.hint-btn { border-color: var(--ochre); color: var(--ochre); }
+  .disclosure-btn.hint-btn:hover { background: var(--ochre); color: var(--paper); }
+  .disclosure-btn.soln-btn { border-color: var(--forest); color: var(--forest); }
+  .disclosure-btn.soln-btn:hover { background: var(--forest); color: var(--paper); }
+  .disclosure-btn.open::before { transform: rotate(90deg); }
+
+  .reveal { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .reveal.open { max-height: 4500px; }
+  .reveal-inner {
+    margin-top: 1rem;
+    padding: 1.3rem 1.6rem;
+    border-radius: 2px;
+    border-left: 3px solid;
+  }
+  .reveal-inner p:first-child { margin-top: 0; }
+  .reveal-inner p:last-child { margin-bottom: 0; }
+  .reveal-inner p + p { text-indent: 1.5em; }
+  .reveal-inner .label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  .hint .reveal-inner { background: var(--hint-bg); border-left-color: var(--ochre); }
+  .hint .label { color: var(--ochre); }
+  .solution .reveal-inner { background: var(--soln-bg); border-left-color: var(--forest); }
+  .solution .label { color: var(--forest); }
+
+  .step-label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    color: var(--accent);
+    font-style: italic;
+    display: inline-block;
+    margin-right: 0.2em;
+  }
+
+  .qed {
+    display: inline-block;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    color: var(--forest);
+    float: right;
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+  .qed::before { content: "■ "; color: var(--ochre); }
+
+  .coda {
+    margin-top: 5rem;
+    padding: 2rem 0 0;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    font-style: italic;
+    color: var(--ink-mute);
+  }
+  .coda .ornament {
+    color: var(--accent);
+    font-size: 1.5rem;
+    letter-spacing: 0.5em;
+    margin-bottom: 0.8rem;
+  }
+
+  .toc {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: 1.3rem 1.8rem 1.3rem 2.2rem;
+    margin: 2rem 0 3rem;
+    border-radius: 2px;
+  }
+  .toc-label {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0 0 0 1.2rem;
+    list-style: decimal;
+    column-count: 2;
+    column-gap: 2.5rem;
+  }
+  @media (max-width: 600px) { .toc ol { column-count: 1; } }
+  .toc li { padding: 0.18rem 0; break-inside: avoid; }
+  .toc a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .toc a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+
+  /* Iteration table */
+  .iter-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem;
+  }
+  .iter-table caption {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--ink-mute);
+    caption-side: bottom;
+    margin-top: 0.6rem;
+    text-align: left;
+  }
+  .iter-table th, .iter-table td {
+    padding: 0.5rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+  }
+  .iter-table th {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--accent);
+    font-size: 0.95rem;
+    border-bottom: 2px solid var(--rule);
+  }
+  .iter-table td:nth-child(2) { color: var(--ink); }
+  .iter-table td:nth-child(3) { color: var(--ink-mute); font-style: italic; }
+
+  @media (max-width: 600px) {
+    .page { padding: 2.5rem 1.3rem 4rem; }
+    body { font-size: 17px; }
+    .problem { padding: 1.3rem 1.2rem; }
+    .callout { padding: 1.3rem 1.3rem; }
+    .reveal-inner { padding: 1.1rem 1.1rem; }
+    .iter-table { font-size: 0.82rem; }
+    .iter-table th, .iter-table td { padding: 0.4rem 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">Sequences and convergence</div>
+    <h1>The <em>Divide-and-Average</em> Method</h1>
+    <p class="subtitle">An ancient algorithm for computing square roots</p>
+  </header>
+
+  <p class="lede drop-cap">The purpose of this project is to establish the convergence of a familiar iterative process for approximating square roots — the divide-and-average method. The idea is so natural that it was known to Babylonian mathematicians nearly four thousand years ago: if your current guess $a$ for $\sqrt{2}$ is too large, then $2/a$ will be too small; and averaging the two gives a new guess that is better than either.</p>
+
+  <div class="callout" data-label="The sequence">
+    <p>Let $a_1 = 2$, and for $n \geq 2$ define
+    $$a_n \;=\; \frac{1}{2}\!\left(a_{n-1} + \frac{2}{a_{n-1}}\right).$$
+    We will show that $\{a_n\}$ converges to $\sqrt{2}$.</p>
+  </div>
+
+  <p>Before proving anything, let us compute. Starting from $a_1 = 2$ and pressing the recursion forward gives the following sequence of rational approximations. The true value $\sqrt{2} = 1.41421356\ldots$ is shown for comparison.</p>
+
+  <table class="iter-table" aria-describedby="iter-caption">
+    <thead>
+      <tr><th>n</th><th>a<sub>n</sub></th><th>error&nbsp; a<sub>n</sub> − √2</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>2.000000000000</td><td>≈ 5.86 × 10⁻¹</td></tr>
+      <tr><td>2</td><td>1.500000000000</td><td>≈ 8.58 × 10⁻²</td></tr>
+      <tr><td>3</td><td>1.416666666667</td><td>≈ 2.45 × 10⁻³</td></tr>
+      <tr><td>4</td><td>1.414215686275</td><td>≈ 2.12 × 10⁻⁶</td></tr>
+      <tr><td>5</td><td>1.414213562375</td><td>≈ 1.59 × 10⁻¹²</td></tr>
+      <tr><td>6</td><td>1.414213562373</td><td>≈ 10⁻²⁴ &nbsp;(beyond this display)</td></tr>
+    </tbody>
+    <caption id="iter-caption">The number of correct digits roughly <em>doubles</em> at each step — a hallmark of what is now called quadratic convergence.</caption>
+  </table>
+
+  <p>Our job is to prove that this sequence converges (and to $\sqrt 2$) without appealing to the computation. The argument proceeds along a classical route: establish a lower bound for the sequence, show it is monotonically decreasing, invoke the Monotone Convergence Theorem to get <em>some</em> limit, and then identify that limit by passing to the limit in the recursion.</p>
+
+  <nav class="toc">
+    <span class="toc-label">The four steps</span>
+    <ol>
+      <li><a href="#p1">$a_n \geq \sqrt{2}$ for all $n$</a></li>
+      <li><a href="#p2">The sequence is decreasing</a></li>
+      <li><a href="#p3">The sequence converges to $\sqrt{2}$</a></li>
+      <li><a href="#p4">Generalization to $\sqrt{a}$</a></li>
+    </ol>
+  </nav>
+
+  <h2><span class="section-num">Preliminaries</span>The strategy and a key tool</h2>
+
+  <div class="callout tool" data-label="Monotone convergence theorem">
+    <p>A bounded, monotone sequence of real numbers converges.</p>
+  </div>
+
+  <p>Step 1 shows $\{a_n\}$ is bounded below by $\sqrt{2}$; Step 2 shows it is decreasing. Together these give convergence via the Monotone Convergence Theorem. Step 3 identifies the limit by the standard technique of <em>passing to the limit</em>: if $a_n \to L$, then the recursion $a_n = \frac{1}{2}(a_{n-1} + 2/a_{n-1})$ implies $L = \frac{1}{2}(L + 2/L)$, and solving for $L$ pins down the value.</p>
+
+  <h2><span class="section-num">Figure 1</span>A geometric picture of the iteration</h2>
+
+  <p>The divide-and-average step has a geometric interpretation that makes its cleverness transparent. Imagine a rectangle of area $2$ with one side equal to your current guess $a$. Then the other side must be $2/a$. If $a$ is too large, the rectangle is long and thin; if $a$ is too small, it is short and stubby. A <em>square</em> of area $2$ has side $\sqrt{2}$. Averaging the two sides of the rectangle produces a new rectangle — closer to being a square than the one you started with.</p>
+
+  <figure class="graph-figure">
+    <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" aria-labelledby="fig1-title">
+      <title id="fig1-title">Rectangle-to-square view of the divide-and-average step</title>
+
+      <!-- Title -->
+      <text x="360" y="28" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="14" fill="#6b6b7a" letter-spacing="0.08em">
+        FROM RECTANGLE TOWARD SQUARE
+      </text>
+
+      <!-- ============================================= -->
+      <!-- LEFT: tall-thin rectangle (a=2, other side 1) -->
+      <!-- Position: (60, 70) to (140, 230)             -->
+      <!-- ============================================= -->
+      <g transform="translate(60, 70)">
+        <rect x="0" y="0" width="80" height="160"
+              fill="#f3ecdc" stroke="#8b1e3f" stroke-width="1.6"/>
+
+        <!-- interior: "Area = 2" -->
+        <text x="40" y="86" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="15" fill="#8b1e3f">Area = 2</text>
+
+        <!-- side labels: left side = "a = 2", bottom = "2/a = 1" -->
+        <text x="-10" y="86" text-anchor="end" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="16" fill="#1a1a2e">a = 2</text>
+        <text x="40" y="180" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="16" fill="#1a1a2e">2/a = 1</text>
+
+        <!-- caption below -->
+        <text x="40" y="200" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="14" fill="#6b6b7a">tall &amp; thin</text>
+      </g>
+
+      <!-- ============================================= -->
+      <!-- FIRST ARROW:  from x=160 to x=250 (len=90)   -->
+      <!-- Labels stacked above the arrow               -->
+      <!-- ============================================= -->
+      <text x="205" y="125" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="15" fill="#2a4a3e">average</text>
+      <text x="205" y="141" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-style="italic" font-size="12" fill="#6b6b7a">the sides</text>
+      <line x1="160" y1="150" x2="245" y2="150" stroke="#2a4a3e"
+            stroke-width="1.4" stroke-dasharray="4,3"/>
+      <polygon points="250,150 242,146 242,154" fill="#2a4a3e"/>
+
+      <!-- ============================================= -->
+      <!-- MIDDLE: new rectangle (3/2 × 4/3)            -->
+      <!-- Position: (315, 97) to (435, 204)            -->
+      <!-- 3/2 label at (305, 155) end-anchored         -->
+      <!-- gap to arrow end (250): ~35px ✓              -->
+      <!-- ============================================= -->
+      <g transform="translate(315, 97)">
+        <rect x="0" y="0" width="120" height="107"
+              fill="#fdf6e3" stroke="#c8941e" stroke-width="1.6"/>
+
+        <!-- interior -->
+        <text x="60" y="60" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="15" fill="#c8941e">Area = 2</text>
+
+        <!-- side labels -->
+        <text x="-10" y="58" text-anchor="end" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="16" fill="#1a1a2e">3/2</text>
+        <text x="60" y="127" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="16" fill="#1a1a2e">4/3</text>
+
+        <!-- caption below -->
+        <text x="60" y="165" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="14" fill="#6b6b7a">closer to square</text>
+      </g>
+
+      <!-- ============================================= -->
+      <!-- SECOND ARROW: from x=450 to x=525 (len=75)   -->
+      <!-- Labels stacked above; lighter to suggest     -->
+      <!-- "continue iterating"                          -->
+      <!-- ============================================= -->
+      <text x="487" y="125" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+            font-style="italic" font-size="15" fill="#6b6b7a">iterate</text>
+      <text x="487" y="141" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-style="italic" font-size="12" fill="#a09686">converges</text>
+      <line x1="450" y1="150" x2="520" y2="150" stroke="#6b6b7a"
+            stroke-width="1.2" stroke-dasharray="3,3"/>
+      <polygon points="525,150 517,146 517,154" fill="#6b6b7a"/>
+
+      <!-- ============================================= -->
+      <!-- TARGET: ghost square of side √2               -->
+      <!-- Position: (560, 97) to (673, 210)            -->
+      <!-- √2 label at (550, 158) end-anchored          -->
+      <!-- gap to arrow end (525): ~10px ✓              -->
+      <!-- ============================================= -->
+      <g transform="translate(560, 97)">
+        <rect x="0" y="0" width="113" height="113"
+              fill="none" stroke="#2a4a3e" stroke-width="1.3" stroke-dasharray="5,4"/>
+
+        <!-- interior: "the target / side √2" -->
+        <text x="56.5" y="53" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+              font-style="italic" font-size="14" fill="#2a4a3e">the target</text>
+        <text x="56.5" y="72" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="14" fill="#2a4a3e" font-weight="600">side √2</text>
+
+        <!-- side labels -->
+        <text x="-10" y="61" text-anchor="end" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="15" fill="#2a4a3e">√2</text>
+        <text x="56.5" y="133" text-anchor="middle" font-family="Fraunces, Georgia, serif"
+              font-style="italic" font-size="15" fill="#2a4a3e">√2</text>
+      </g>
+
+      <!-- Footer caption -->
+      <text x="360" y="285" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-style="italic" font-size="14" fill="#1a1a2e">
+        averaging the sides shrinks the tall rectangle toward a square of side √2
+      </text>
+
+      <!-- Area-preservation subnote -->
+      <text x="360" y="309" text-anchor="middle" font-family="EB Garamond, Georgia, serif"
+            font-style="italic" font-size="12" fill="#6b6b7a">
+        (area stays 2 throughout; only the shape changes)
+      </text>
+    </svg>
+
+    <figcaption class="figure-caption">
+      <span class="fig-label">Figure 1.</span>&nbsp; The rectangle with sides $a$ and $2/a$ has area $2$. Averaging the two sides produces a new rectangle — still of area at least $2$ — whose shape is closer to a square. The target, a true square of area $2$, has side $\sqrt{2}$. Iterating this averaging squeezes the rectangle toward that square.
+    </figcaption>
+  </figure>
+
+  <h2><span class="section-num">The four steps</span>Proofs to complete</h2>
+
+  <!-- ============ PROBLEM 1 ============ -->
+  <section class="problem" id="p1">
+    <span class="problem-tag">Step 1</span>
+    <h3>Prove that $a_n \geq \sqrt{2}$ for all $n$.</h3>
+    <p>The hint from the project: use algebra to write $\left(a_n + \tfrac{2}{a_n}\right)^2 - 8$ as a square, thereby establishing $\left(a_n + \tfrac{2}{a_n}\right)^2 \geq 8$.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h1">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s1">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h1"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>First, a quick induction shows $a_n > 0$ for all $n$ (so you can freely divide by $a_n$). Next, expand $\left(a_n + \tfrac{2}{a_n}\right)^2 - 8$ and recombine to recognize the <em>perfect square</em> $\left(a_n - \tfrac{2}{a_n}\right)^2$. That identity is the algebraic heart of the proof.</p>
+      <p>For $n \geq 2$, the recursion says $a_n = \tfrac{1}{2}\!\left(a_{n-1} + \tfrac{2}{a_{n-1}}\right)$, so $a_n^2 = \tfrac{1}{4}\!\left(a_{n-1} + \tfrac{2}{a_{n-1}}\right)^2$. Use the bound on $\left(a_{n-1} + \tfrac{2}{a_{n-1}}\right)^2$ to conclude $a_n^2 \geq 2$. Don't forget to check $a_1$ separately.</p>
+    </div></div>
+
+    <div class="reveal solution" id="s1"><div class="reveal-inner">
+      <span class="label">Solution</span>
+
+      <p><span class="step-label">Every term is positive.</span> We first note, by induction, that $a_n > 0$ for all $n$. The base case $a_1 = 2 > 0$ is immediate. If $a_{n-1} > 0$, then $\tfrac{2}{a_{n-1}} > 0$, so their average $a_n$ is positive as well.</p>
+
+      <p><span class="step-label">The algebraic identity.</span> For any $x > 0$,
+      $$\left(x + \tfrac{2}{x}\right)^2 - 8 \;=\; x^2 + 2 \cdot x \cdot \tfrac{2}{x} + \tfrac{4}{x^2} - 8 \;=\; x^2 - 4 + \tfrac{4}{x^2} \;=\; \left(x - \tfrac{2}{x}\right)^2.$$
+      Since $\left(x - \tfrac{2}{x}\right)^2 \geq 0$, this gives
+      $$\left(x + \tfrac{2}{x}\right)^2 \;\geq\; 8 \qquad \text{for all } x > 0. \quad (\star)$$</p>
+
+      <p><span class="step-label">Conclusion.</span> Check the base case directly: $a_1 = 2 \geq \sqrt{2}$. Now let $n \geq 2$ and apply $(\star)$ with $x = a_{n-1} > 0$:
+      $$4 a_n^2 \;=\; \left(a_{n-1} + \tfrac{2}{a_{n-1}}\right)^2 \;\geq\; 8,$$
+      so $a_n^2 \geq 2$. Since $a_n > 0$, taking positive square roots yields $a_n \geq \sqrt{2}$. <span class="qed">Q.E.D.</span></p>
+    </div></div>
+  </section>
+
+  <!-- ============ PROBLEM 2 ============ -->
+  <section class="problem" id="p2">
+    <span class="problem-tag">Step 2</span>
+    <h3>Prove that $\{a_n\}$ is decreasing.</h3>
+    <p>Show that $a_{n+1} \leq a_n$ for every $n \geq 1$. Use the bound you just proved in Step 1.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h2">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s2">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h2"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>Compute $a_n - a_{n+1}$ directly from the recursion. You should be able to factor out $\tfrac{1}{2a_n}$ and be left with $a_n^2 - 2$, which is $\geq 0$ by Step 1.</p>
+    </div></div>
+
+    <div class="reveal solution" id="s2"><div class="reveal-inner">
+      <span class="label">Solution</span>
+      <p>Fix $n \geq 1$. We compute
+      $$a_n - a_{n+1} \;=\; a_n - \tfrac{1}{2}\!\left(a_n + \tfrac{2}{a_n}\right) \;=\; \tfrac{1}{2}a_n - \tfrac{1}{a_n} \;=\; \frac{a_n^2 - 2}{2 a_n}.$$</p>
+
+      <p>By Step 1, $a_n \geq \sqrt{2}$, so $a_n^2 \geq 2$, i.e., $a_n^2 - 2 \geq 0$. Also $a_n > 0$, so $2 a_n > 0$. Therefore
+      $$a_n - a_{n+1} \;=\; \frac{a_n^2 - 2}{2 a_n} \;\geq\; 0,$$
+      which gives $a_{n+1} \leq a_n$. The sequence is decreasing (monotonically non-increasing). <span class="qed">Q.E.D.</span></p>
+    </div></div>
+  </section>
+
+  <!-- ============ PROBLEM 3 ============ -->
+  <section class="problem" id="p3">
+    <span class="problem-tag">Step 3</span>
+    <h3>Prove that $\{a_n\}$ converges to $\sqrt{2}$.</h3>
+    <p>Combine Steps 1 and 2 to get convergence; then pass to the limit in the recursion to identify the limit.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h3">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s3">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h3"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>The Monotone Convergence Theorem gives you a limit $L$. To find $L$, note that since $a_n \to L$, also $a_{n-1} \to L$ (it's the same sequence, just reindexed). Take limits on both sides of the recursion $a_n = \tfrac{1}{2}(a_{n-1} + 2/a_{n-1})$. But first: why is $L \neq 0$, so that $2/a_{n-1} \to 2/L$ is legitimate?</p>
+    </div></div>
+
+    <div class="reveal solution" id="s3"><div class="reveal-inner">
+      <span class="label">Solution</span>
+
+      <p><span class="step-label">Existence of the limit.</span> From Step 1, the sequence is bounded below by $\sqrt{2}$. From Step 2, it is decreasing. By the Monotone Convergence Theorem, $\{a_n\}$ converges to some limit $L$:
+      $$\lim_{n \to \infty} a_n \;=\; L.$$
+      Moreover, $L \geq \sqrt{2}$ since every term satisfies $a_n \geq \sqrt{2}$ and limits preserve weak inequalities. In particular $L > 0$, so dividing by $a_n$ (or by $L$) is safe.</p>
+
+      <p><span class="step-label">Identifying the limit.</span> The sequence $\{a_{n-1}\}$ is just $\{a_n\}$ reindexed, so it has the same limit $L$. Using the algebra of limits — the sum, constant multiple, and quotient rules (the quotient rule applies because $L > 0$):
+      $$L \;=\; \lim_{n \to \infty} a_n \;=\; \lim_{n \to \infty} \tfrac{1}{2}\!\left(a_{n-1} + \tfrac{2}{a_{n-1}}\right) \;=\; \tfrac{1}{2}\!\left(L + \tfrac{2}{L}\right).$$
+      Multiplying through by $2L$:
+      $$2L^2 \;=\; L^2 + 2, \qquad \text{so} \qquad L^2 \;=\; 2.$$
+      Since $L > 0$, we conclude $L = \sqrt{2}$. <span class="qed">Q.E.D.</span></p>
+    </div></div>
+  </section>
+
+  <!-- ============ PROBLEM 4 ============ -->
+  <section class="problem" id="p4">
+    <span class="problem-tag">Step 4</span>
+    <h3>Generalize to $\sqrt{a}$ for any positive real number $a$.</h3>
+    <p>State the generalized recursion, identify what must be modified in the arguments from Steps 1–3, and explain why they still work.</p>
+
+    <div class="controls">
+      <button class="disclosure-btn hint-btn" data-target="h4">Show hint</button>
+      <button class="disclosure-btn soln-btn" data-target="s4">Show solution</button>
+    </div>
+
+    <div class="reveal hint" id="h4"><div class="reveal-inner">
+      <span class="label">Hint</span>
+      <p>Replace every $2$ inside the recursion with $a$. The starting value must be positive and can be chosen freely — but for the "decreasing" and "bounded below by $\sqrt{a}$" arguments to work from step one, you want to start above $\sqrt{a}$. Any $b_1 \geq \sqrt{a}$ works; a convenient choice is $b_1 = \max(1, a)$ or simply $b_1 = a$ (when $a \geq 1$) or $b_1 = 1$ (when $a < 1$).</p>
+      <p>The algebraic identity from Step 1 becomes $\left(x + \tfrac{a}{x}\right)^2 - 4a = \left(x - \tfrac{a}{x}\right)^2$. Verify this.</p>
+    </div></div>
+
+    <div class="reveal solution" id="s4"><div class="reveal-inner">
+      <span class="label">Solution</span>
+
+      <p>Let $a > 0$. Choose any $b_1 > 0$ with $b_1 \geq \sqrt{a}$ (for instance $b_1 = a$ if $a \geq 1$, or $b_1 = 1$ if $0 < a < 1$), and define
+      $$b_n \;=\; \tfrac{1}{2}\!\left(b_{n-1} + \tfrac{a}{b_{n-1}}\right) \qquad (n \geq 2).$$
+      We claim $b_n \to \sqrt{a}$. The argument mirrors Steps 1–3.</p>
+
+      <p><span class="step-label">Generalized identity.</span> For every $x > 0$,
+      $$\left(x + \tfrac{a}{x}\right)^2 - 4a \;=\; x^2 + 2a + \tfrac{a^2}{x^2} - 4a \;=\; x^2 - 2a + \tfrac{a^2}{x^2} \;=\; \left(x - \tfrac{a}{x}\right)^2 \;\geq\; 0,$$
+      so $\left(x + \tfrac{a}{x}\right)^2 \geq 4a$.</p>
+
+      <p><span class="step-label">Lower bound.</span> An easy induction shows $b_n > 0$ for all $n$. For the base case, we assumed $b_1 \geq \sqrt{a}$. For $n \geq 2$, applying the identity with $x = b_{n-1}$:
+      $$4 b_n^2 \;=\; \left(b_{n-1} + \tfrac{a}{b_{n-1}}\right)^2 \;\geq\; 4a, \qquad \text{so} \qquad b_n^2 \geq a,$$
+      giving $b_n \geq \sqrt{a}$ (since $b_n > 0$).</p>
+
+      <p><span class="step-label">Decreasing.</span> Exactly as in Step 2,
+      $$b_n - b_{n+1} \;=\; \frac{b_n^2 - a}{2 b_n} \;\geq\; 0,$$
+      where the inequality uses $b_n^2 \geq a$ and $b_n > 0$.</p>
+
+      <p><span class="step-label">Limit.</span> The sequence is decreasing and bounded below by $\sqrt{a}$, so by the Monotone Convergence Theorem it converges to some limit $L \geq \sqrt{a} > 0$. Passing to the limit in the recursion,
+      $$L \;=\; \tfrac{1}{2}\!\left(L + \tfrac{a}{L}\right) \;\Longrightarrow\; 2L^2 = L^2 + a \;\Longrightarrow\; L^2 = a,$$
+      and so $L = \sqrt{a}$. <span class="qed">Q.E.D.</span></p>
+
+      <p style="margin-top: 1.2rem;"><em>Remark on the choice of $b_1$.</em> Even if $b_1$ is chosen <em>below</em> $\sqrt{a}$, the next term $b_2$ automatically lands above $\sqrt{a}$ (because of the identity), and from $b_2$ onward the argument proceeds identically. So in fact <em>any</em> positive starting value $b_1 > 0$ works — the sequence merely takes one step to enter the regime where it is monotone decreasing.</p>
+    </div></div>
+  </section>
+
+  <h2><span class="section-num">Epilogue</span>A calculus remark — why so fast</h2>
+
+  <p>The table at the beginning of this project suggested that the number of correct digits doubles at each step. We can now see why, at least informally. If $\varepsilon_n = a_n - \sqrt{2}$ is the error at step $n$, a short calculation shows
+  $$\varepsilon_{n+1} \;=\; \frac{\varepsilon_n^2}{2 a_n}.$$
+  The error at step $n+1$ is proportional to the <em>square</em> of the error at step $n$. So if at some point your error is about $10^{-6}$, the next step's error is about $10^{-12}$, then $10^{-24}$, and so on. This is the defining feature of <em>quadratic convergence</em>, and it is the reason the method remains the algorithm of choice inside modern floating-point square-root routines.</p>
+
+  <p>The divide-and-average iteration is the oldest known instance of what we now call <em>Newton's method</em>, applied to the function $f(x) = x^2 - a$. Newton's method in full generality produces quadratically convergent sequences for finding roots of differentiable functions. The Babylonians, four millennia ago, discovered the simplest nontrivial case.</p>
+
+  <div class="coda">
+    <div class="ornament">❦</div>
+    <p>If your guess is too large,<br>its partner in the rectangle is too small.<br>Their average is closer to the truth than either.</p>
+  </div>
+
+</div>
+
+<script>
+  // Disclosure toggles
+  (function() {
+    document.querySelectorAll('.disclosure-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        const isOpen = target.classList.toggle('open');
+        btn.classList.toggle('open', isOpen);
+        btn.childNodes.forEach(node => {
+          if (node.nodeType === 3 && node.textContent.trim()) {
+            node.textContent = node.textContent.replace(/^\s*(Show|Hide)\s+/, (isOpen ? 'Hide ' : 'Show '));
+          }
+        });
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

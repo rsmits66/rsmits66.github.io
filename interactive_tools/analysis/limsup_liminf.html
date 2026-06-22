@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lim Sup and Lim Inf of a Sequence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #FDF8F0; --cream-dark: #F5EDE0;
+    --navy: #1B2A4A; --navy-light: #2C3E6B;
+    --gold: #C8A951; --gold-muted: #B8963E;
+    --crimson: #A32D2D; --teal: #1D7A6A;
+    --purple: #534AB7;
+    --text-primary: #2C2418; --text-secondary: #6B5D4F;
+    --border: rgba(43,42,30,0.12); --border-strong: rgba(43,42,30,0.22);
+    --shadow-sm: 0 1px 3px rgba(27,42,74,0.06);
+  }
+  body {
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--cream); color: var(--text-primary);
+    line-height: 1.72; min-height: 100vh; font-size: 17px;
+  }
+  .page-header {
+    background: var(--navy); color: var(--cream);
+    padding: 2.5rem 2rem 2rem; text-align: center; position: relative;
+  }
+  .page-header::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-muted), var(--gold));
+  }
+  .page-header h1 {
+    font-family: 'Playfair Display', Georgia, serif; font-weight: 600;
+    font-size: clamp(1.4rem, 3.5vw, 2rem); letter-spacing: 0.02em; margin-bottom: 0.4rem;
+  }
+  .page-header .subtitle { font-size: 1.05rem; opacity: 0.7; font-weight: 300; }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .section-heading {
+    font-family: 'Playfair Display', Georgia, serif; font-weight: 600; font-size: 1.3rem;
+    color: var(--navy); margin: 2.5rem 0 1rem; padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--gold); display: inline-block;
+  }
+  .section-heading:first-of-type { margin-top: 0; }
+  p { margin-bottom: 1rem; }
+  .card {
+    background: white; border: 1px solid var(--border); border-radius: 6px;
+    padding: 1.3rem 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);
+  }
+  .card.accent-navy { border-left: 4px solid var(--navy); }
+  .card.accent-gold { border-left: 4px solid var(--gold); }
+  .card.accent-teal { border-left: 4px solid var(--teal); }
+  .card.accent-purple { border-left: 4px solid var(--purple); }
+  .card-label {
+    font-family: 'Playfair Display', Georgia, serif; font-weight: 600;
+    font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.6rem;
+  }
+  .card-label.navy { color: var(--navy); }
+  .card-label.gold { color: var(--gold-muted); }
+  .card-label.teal { color: var(--teal); }
+  .card-label.purple { color: var(--purple); }
+  .callout {
+    background: rgba(200,169,81,0.08); border: 1px solid rgba(200,169,81,0.2);
+    border-radius: 6px; padding: 1rem 1.25rem; margin: 1.25rem 0; font-size: 0.98rem;
+  }
+  .callout strong { color: var(--gold-muted); }
+  .callout.teal-callout { background: rgba(29,122,106,0.06); border-color: rgba(29,122,106,0.2); }
+  .callout.teal-callout strong { color: var(--teal); }
+  .katex-display { margin: 0.6rem 0; }
+  .katex { font-size: 1.05em; }
+  .example-tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 0; border-bottom: 2px solid var(--border-strong); }
+  .example-tab {
+    padding: 9px 14px; font-family: 'Crimson Pro', Georgia, serif; font-size: 0.9rem; font-weight: 500;
+    background: var(--cream-dark); border: 1px solid var(--border-strong); border-bottom: none;
+    border-radius: 6px 6px 0 0; cursor: pointer; color: var(--text-secondary);
+    transition: all 0.2s; margin-right: -1px; position: relative;
+  }
+  .example-tab:hover { background: white; color: var(--navy); }
+  .example-tab.active {
+    background: white; color: var(--navy); font-weight: 600;
+    border-bottom: 2px solid white; margin-bottom: -2px; z-index: 1;
+  }
+  .chart-panel {
+    background: white; border: 1px solid var(--border-strong); border-top: none;
+    border-radius: 0 0 6px 6px; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);
+  }
+  .seq-formula-row { text-align: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+  .controls-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 0.75rem; }
+  .controls-row label { font-size: 0.92rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+  .controls-row input[type="range"] {
+    width: 130px; -webkit-appearance: none; appearance: none;
+    height: 5px; border-radius: 3px; background: var(--cream-dark); cursor: pointer;
+  }
+  .controls-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--navy); cursor: pointer;
+  }
+  .controls-row input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%; border: none; background: var(--navy);
+  }
+  .val-out { font-weight: 600; color: var(--navy); min-width: 36px; font-size: 0.92rem; }
+  .toggle-group { display: flex; flex-wrap: wrap; gap: 5px; }
+  .toggle-btn {
+    padding: 4px 11px; font-family: 'Crimson Pro', Georgia, serif; font-size: 0.84rem;
+    border: 1px solid var(--border-strong); border-radius: 4px; background: white;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px;
+  }
+  .toggle-btn:hover { background: var(--cream-dark); }
+  .toggle-btn.on { font-weight: 600; }
+  .toggle-btn .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .toggle-btn.off .swatch { opacity: 0.25; }
+  .readouts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0.75rem; }
+  .readout { background: var(--cream); border: 1px solid var(--border); border-radius: 5px; padding: 5px 10px; font-size: 0.86rem; }
+  .readout .ro-label { color: var(--text-secondary); font-weight: 300; }
+  .readout .ro-value { font-weight: 600; }
+  .readout.sup-ro .ro-value { color: var(--crimson); }
+  .readout.inf-ro .ro-value { color: #1455A0; }
+  .readout.lim-ro .ro-value { color: var(--teal); }
+  .eps-readout { background: rgba(83,74,183,0.06); border: 1px solid rgba(83,74,183,0.2); border-radius: 5px; padding: 5px 10px; font-size: 0.86rem; }
+  .eps-readout .ro-label { color: var(--purple); }
+  .eps-readout .ro-value { font-weight: 600; color: var(--purple); }
+  canvas { width: 100%; display: block; cursor: crosshair; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; padding: 0.6rem 0 0; font-size: 0.82rem; color: var(--text-secondary); }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+  .legend-area { width: 14px; height: 10px; border-radius: 2px; flex-shrink: 0; opacity: 0.5; }
+  .legend-dash { width: 18px; height: 0; border-top: 2px dashed; flex-shrink: 0; }
+  .tooltip {
+    position: absolute; background: var(--navy); color: var(--cream);
+    padding: 5px 10px; border-radius: 4px; font-size: 0.78rem;
+    pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: nowrap; z-index: 10;
+  }
+  .eps-number {
+    width: 80px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 4px;
+    font-family: 'Crimson Pro', serif; font-size: 0.92rem; text-align: center; background: white;
+  }
+  .eps-number:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(83,74,183,0.12); }
+  @media (max-width: 700px) {
+    .container { padding: 1.25rem 1rem 3rem; }
+    .chart-panel { padding: 0.75rem; }
+    body { font-size: 16px; }
+    .example-tab { padding: 7px 9px; font-size: 0.78rem; }
+    .controls-row input[type="range"] { width: 90px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Lim Sup and Lim Inf of a Sequence</h1>
+  <div class="subtitle">Visualizing the eventual envelope of a sequence</div>
+</div>
+
+<div class="container">
+
+<h2 class="section-heading">Definitions</h2>
+
+<div class="card accent-navy">
+  <div class="card-label navy">Limit superior and limit inferior</div>
+  <p>Given a bounded sequence <span id="def-xn"></span>, define the running supremum and infimum:</p>
+  <div id="def-DI"></div>
+  <p style="margin-top:0.6rem;">Then:</p>
+  <div id="def-limsup"></div>
+  <p style="margin-top:0.6rem;">Since <span id="def-Dn-mono"></span> is non-increasing and <span id="def-In-mono"></span> is non-decreasing, both limits always exist.</p>
+</div>
+
+<div class="callout teal-callout">
+  <strong>Key fact:</strong> The limit <span id="key-lim"></span> exists if and only if
+  <span id="key-eq"></span>, in which case all three are equal.
+</div>
+
+<h2 class="section-heading">Interactive examples</h2>
+
+<div class="example-tabs">
+  <button class="example-tab active" id="tab1" onclick="switchExample(1)">Divergent oscillation</button>
+  <button class="example-tab" id="tab2" onclick="switchExample(2)">sin(n)/n → 0</button>
+  <button class="example-tab" id="tab3" onclick="switchExample(3)">a<sub>n</sub> &minus; ½ → 0</button>
+  <button class="example-tab" id="tab4" onclick="switchExample(4)">Both convergent</button>
+</div>
+
+<div class="chart-panel">
+  <div class="seq-formula-row" id="formula-row"></div>
+
+  <div class="controls-row">
+    <label>
+      n<sub>max</sub> =
+      <input type="range" id="nMaxSlider" min="50" max="600" step="10" value="400">
+      <span class="val-out" id="nMaxOut">400</span>
+    </label>
+    <div class="toggle-group">
+      <button class="toggle-btn on" id="togSeq" onclick="toggleLayer('seq')"><span class="swatch" style="background:#1B2A4A;"></span> Seq</button>
+      <button class="toggle-btn on" id="togSup" onclick="toggleLayer('sup')"><span class="swatch" style="background:#A32D2D;"></span> D<sub>n</sub></button>
+      <button class="toggle-btn on" id="togInf" onclick="toggleLayer('inf')"><span class="swatch" style="background:#1455A0;"></span> I<sub>n</sub></button>
+      <button class="toggle-btn on" id="togTube" onclick="toggleLayer('tube')"><span class="swatch" style="background:#8B6914; opacity:0.35;"></span> Tube</button>
+    </div>
+  </div>
+
+  <div class="controls-row" id="epsRow" style="display:none; border-top:1px solid var(--border); padding-top:0.6rem;">
+    <label style="color:var(--purple); font-weight:500;">
+      ε =
+      <input type="range" id="epsSlider" min="0.001" max="0.5" step="0.0005" value="0.15" style="width:150px;">
+      <input type="number" id="epsInput" class="eps-number" min="0.0005" max="2" step="0.0005" value="0.1500">
+    </label>
+    <div class="toggle-group">
+      <button class="toggle-btn on" id="togEps" onclick="toggleLayer('eps')"><span class="swatch" style="background:#534AB7; opacity:0.4;"></span> ε-tube</button>
+    </div>
+  </div>
+
+  <div class="readouts">
+    <div class="readout sup-ro"><span class="ro-label">lim sup = </span><span class="ro-value" id="roLimsup">1</span></div>
+    <div class="readout inf-ro"><span class="ro-label">lim inf = </span><span class="ro-value" id="roLiminf">&minus;1</span></div>
+    <div class="readout lim-ro"><span class="ro-label" id="roLimLabel">limit: </span><span class="ro-value" id="roLim">does not exist</span></div>
+    <div class="readout"><span class="ro-label">D<sub><span id="roN1"></span></sub> = </span><span class="ro-value" id="roDn"></span></div>
+    <div class="readout"><span class="ro-label">I<sub><span id="roN2"></span></sub> = </span><span class="ro-value" id="roIn"></span></div>
+  </div>
+  <div class="readouts" id="epsReadouts" style="display:none;">
+    <div class="eps-readout"><span class="ro-label">N(ε) = </span><span class="ro-value" id="roNeps">—</span></div>
+    <div class="eps-readout"><span class="ro-label">ε-tube: </span><span class="ro-value" id="roEpsTube">—</span></div>
+  </div>
+
+  <div style="position:relative;">
+    <canvas id="mainCanvas"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="legend" id="legendBox"></div>
+</div>
+
+<!-- EXPLANATION CARDS -->
+
+<div id="explanation1">
+  <div class="card accent-gold">
+    <div class="card-label gold">Divergent oscillation</div>
+    <p>The sequence <span id="e1-xn"></span> oscillates with amplitude envelope <span id="e1-env"></span> that decays to 1. The oscillations never die out.</p>
+    <p>The red curve <span id="e1-Dn"></span> converges to <span id="e1-ls"></span> while the blue curve <span id="e1-In"></span> converges to <span id="e1-li"></span>. Since they differ, the limit does not exist. The tube stabilizes at width 2.</p>
+  </div>
+</div>
+
+<div id="explanation2" style="display:none;">
+  <div class="card accent-teal">
+    <div class="card-label teal">sin(n)/n → 0</div>
+    <p>The sequence <span id="e2-xn"></span> oscillates with amplitude decaying like <span id="e2-env"></span>, crushing the oscillations to zero. Both envelopes converge to 0 and the tube collapses:</p>
+    <div id="e2-lim"></div>
+    <p>Use the <strong style="color:var(--purple);">ε slider</strong> to see the ε–N definition layered with the envelopes. The purple band marks <span id="e2-tube"></span>, and the amber line marks <span id="e2-Neps"></span> — the smallest index guaranteeing <span id="e2-ineq"></span> for all <span id="e2-ngeN"></span>.</p>
+  </div>
+</div>
+
+<div id="explanation3" style="display:none;">
+  <div class="card accent-purple">
+    <div class="card-label purple">Centered rational sequence → 0</div>
+    <p>The sequence <span id="e3-xn"></span> is strictly positive and monotonically decreasing toward <span id="e3-L"></span>.</p>
+    <p>Since the sequence is monotone decreasing and positive, the sup envelope <span id="e3-Dn"></span> and both envelopes converge to 0. The tube collapses from above:</p>
+    <div id="e3-lim"></div>
+    <p>Drag the <strong style="color:var(--purple);">ε slider</strong> down to see N(ε) grow. Because this sequence approaches 0 from one side only (all terms positive), the envelope picture is especially clean — <span id="e3-D-eq"></span> hugs the sequence exactly.</p>
+  </div>
+</div>
+
+<div id="explanation4" style="display:none;">
+  <div class="card accent-navy">
+    <div class="card-label navy">Two sequences, both → 0, different rates</div>
+    <p>Both <span id="e4-an"></span> (navy) and <span id="e4-bn"></span> (teal) converge to the same limit <span id="e4-L0"></span>, but at dramatically different rates.</p>
+    <p>The centered rational sequence <span id="e4-an2"></span> decays like <span id="e4-rate-a"></span> — quadratically fast, monotonically, and always positive. Meanwhile <span id="e4-bn2"></span> oscillates through zero with amplitude decaying only like <span id="e4-rate-b"></span>.</p>
+    <p>Since <span id="e4-faster"></span> is <span id="e4-bigO-a"></span> while <span id="e4-slower"></span> is only <span id="e4-bigO-b"></span>, the rational sequence hugs the axis far more tightly. By n = 100, for instance, <span id="e4-faster2"></span> is on the order of 10<sup>&minus;4</sup> while sin(n)/n is still on the order of 10<sup>&minus;2</sup>. The combined tube width is entirely dominated by the slower, oscillating sequence.</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+
+  function k(id, tex, d) {
+    var el = document.getElementById(id);
+    if (el) katex.render(tex, el, { throwOnError: false, displayMode: !!d });
+  }
+
+  k('def-xn', '(x_n)');
+  k('def-DI', 'D_n = \\sup_{m \\geq n} x_m, \\qquad I_n = \\inf_{m \\geq n} x_m', true);
+  k('def-limsup', '\\limsup_{n\\to\\infty} x_n = \\lim_{n\\to\\infty} D_n, \\qquad \\liminf_{n\\to\\infty} x_n = \\lim_{n\\to\\infty} I_n', true);
+  k('def-Dn-mono', 'D_n'); k('def-In-mono', 'I_n');
+  k('key-lim', '\\lim x_n'); k('key-eq', '\\limsup x_n = \\liminf x_n');
+
+  k('e1-xn', 'x_n = (1+3/\\sqrt{n})\\sin(n/15)');
+  k('e1-env', '1+3/\\sqrt{n}'); k('e1-Dn', 'D_n'); k('e1-In', 'I_n');
+  k('e1-ls', '\\limsup x_n = 1'); k('e1-li', '\\liminf x_n = -1');
+
+  k('e2-xn', 'x_n = \\sin(n)/n'); k('e2-env', '1/n');
+  k('e2-lim', '\\limsup = \\liminf = 0 \\;\\Longrightarrow\\; \\lim x_n = 0', true);
+  k('e2-tube', '(L-\\varepsilon,\\,L+\\varepsilon)'); k('e2-Neps', 'N(\\varepsilon)');
+  k('e2-ineq', '|x_n - L| < \\varepsilon'); k('e2-ngeN', 'n \\geq N');
+
+  k('e3-xn', 'a_n - \\tfrac{1}{2} = \\tfrac{4n^2+3n+2}{8n^2+6n+1} - \\tfrac{1}{2} = \\tfrac{3}{2(8n^2+6n+1)}');
+  k('e3-L', 'L = 0'); k('e3-Dn', 'D_n = a_n - \\tfrac{1}{2}');
+  k('e3-lim', '\\limsup\\! \\left(a_n - \\tfrac{1}{2}\\right) = \\liminf\\! \\left(a_n - \\tfrac{1}{2}\\right) = 0 \\;\\Longrightarrow\\; \\lim_{n\\to\\infty} \\left(a_n - \\tfrac{1}{2}\\right) = 0', true);
+  k('e3-D-eq', 'D_n');
+
+  k('e4-an', 'a_n - \\tfrac{1}{2}');
+  k('e4-bn', 'x_n = \\sin(n)/n');
+  k('e4-L0', 'L = 0');
+  k('e4-an2', 'a_n - \\tfrac{1}{2} = 3/[2(8n^2+6n+1)]');
+  k('e4-rate-a', '1/n^2'); k('e4-rate-b', '1/n');
+  k('e4-bigO-a', 'O(1/n^2)'); k('e4-bigO-b', 'O(1/n)');
+  k('e4-faster', 'a_n - \\tfrac{1}{2}');
+  k('e4-bn2', '\\sin(n)/n');
+  k('e4-slower', '\\sin(n)/n');
+  k('e4-faster2', 'a_n - \\tfrac{1}{2}');
+
+  var cur = 1;
+  var layers = { seq: true, sup: true, inf: true, tube: true, eps: true };
+  var NMAX = 2000;
+
+  var canvas = document.getElementById('mainCanvas');
+  var ctx = canvas.getContext('2d');
+  var nMaxSlider = document.getElementById('nMaxSlider');
+  var nMaxOut = document.getElementById('nMaxOut');
+  var tooltipEl = document.getElementById('tooltip');
+  var epsSlider = document.getElementById('epsSlider');
+  var epsInput = document.getElementById('epsInput');
+
+  function seq1(n) { return (1 + 3/Math.sqrt(n)) * Math.sin(n/15); }
+  function seq2(n) { return Math.sin(n)/n; }
+  function seq3(n) { return (4*n*n + 3*n + 2)/(8*n*n + 6*n + 1) - 0.5; }
+
+  var EX = {
+    1: { fns:[seq1], ls:1, li:-1, L:null, cols:['#1B2A4A'], names:['x\u2099'] },
+    2: { fns:[seq2], ls:0, li:0, L:0, cols:['#1B2A4A'], names:['x\u2099'] },
+    3: { fns:[seq3], ls:0, li:0, L:0, cols:['#1B2A4A'], names:['a\u2099\u2212\u00BD'] },
+    4: { fns:[seq3, seq2], ls:0, li:0, L:0, cols:['#1B2A4A','#1D7A6A'], names:['a\u2099\u2212\u00BD','x\u2099'] }
+  };
+
+  function computeEnv(fns, N) {
+    var nf = fns.length;
+    var x = [];
+    for (var f = 0; f < nf; f++) {
+      x[f] = new Float64Array(N+1);
+      for (var n = 1; n <= N; n++) x[f][n] = fns[f](n);
+    }
+    var mx = new Float64Array(N+1), mn = new Float64Array(N+1);
+    for (var n = 1; n <= N; n++) {
+      var h = -1e30, l = 1e30;
+      for (var f = 0; f < nf; f++) { h = Math.max(h, x[f][n]); l = Math.min(l, x[f][n]); }
+      mx[n] = h; mn[n] = l;
+    }
+    var D = new Float64Array(N+1), I = new Float64Array(N+1);
+    D[N] = mx[N]; I[N] = mn[N];
+    for (var n = N-1; n >= 1; n--) { D[n] = Math.max(mx[n], D[n+1]); I[n] = Math.min(mn[n], I[n+1]); }
+    return { x:x, D:D, I:I };
+  }
+
+  var cache = {};
+  function getEnv() {
+    if (!cache[cur]) cache[cur] = computeEnv(EX[cur].fns, NMAX);
+    return cache[cur];
+  }
+
+  function findNeps(xArr, L, eps, N) {
+    var last = 0;
+    for (var n = 1; n <= N; n++) { if (Math.abs(xArr[n] - L) >= eps) last = n; }
+    return last < N ? last + 1 : -1;
+  }
+
+  var pad, pw, ph, cw, ch, ylo, yhi, nv;
+
+  function resize() {
+    var r = canvas.parentElement.getBoundingClientRect();
+    cw = r.width; ch = Math.min(480, Math.max(310, cw*0.5));
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = cw*dpr; canvas.height = ch*dpr;
+    canvas.style.height = ch+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    pad = { l:52, r:20, t:26, b:42 };
+    pw = cw - pad.l - pad.r; ph = ch - pad.t - pad.b;
+  }
+
+  function toX(n) { return pad.l + ((n-1)/(nv-1))*pw; }
+  function toY(v) { return pad.t + (1 - (v-ylo)/(yhi-ylo))*ph; }
+  function fromX(px) { return Math.round((px - pad.l)/pw*(nv-1) + 1); }
+
+  function draw() {
+    resize();
+    nv = parseInt(nMaxSlider.value);
+    nMaxOut.textContent = nv;
+    var info = EX[cur], env = getEnv();
+    var N = Math.min(nv, NMAX), nf = info.fns.length;
+
+    var lo = 1e30, hi = -1e30;
+    for (var n = 1; n <= N; n++) {
+      hi = Math.max(hi, env.D[n]); lo = Math.min(lo, env.I[n]);
+      for (var f = 0; f < nf; f++) { hi = Math.max(hi, env.x[f][n]); lo = Math.min(lo, env.x[f][n]); }
+    }
+    var span = hi - lo || 1;
+    ylo = lo - span*0.08; yhi = hi + span*0.08;
+
+    var ls = info.ls, li = info.li;
+    document.getElementById('roLimsup').textContent = ls !== null ? ls.toFixed(4) : '—';
+    document.getElementById('roLiminf').textContent = li !== null ? li.toFixed(4) : '—';
+    var limOk = ls !== null && li !== null && Math.abs(ls - li) < 1e-10;
+    document.getElementById('roLimLabel').textContent = limOk ? 'limit = ' : 'limit: ';
+    document.getElementById('roLim').textContent = limOk ? ls.toFixed(4) : 'does not exist';
+    document.getElementById('roN1').textContent = N;
+    document.getElementById('roN2').textContent = N;
+    document.getElementById('roDn').textContent = env.D[N].toFixed(4);
+    document.getElementById('roIn').textContent = env.I[N].toFixed(4);
+
+    ctx.clearRect(0, 0, cw, ch);
+    var mut = 'rgba(44,36,24,0.3)', grd = 'rgba(44,36,24,0.06)';
+
+    ctx.strokeStyle = grd; ctx.lineWidth = 0.5;
+    ctx.font = '11px "Crimson Pro", serif';
+    for (var i = 0; i <= 8; i++) {
+      var v = ylo + (yhi-ylo)*i/8, y = toY(v);
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cw-pad.r, y); ctx.stroke();
+      ctx.fillStyle = mut; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(v.toFixed(2), pad.l-6, y);
+    }
+    var xs = nv <= 100 ? 10 : nv <= 300 ? 50 : 100;
+    for (var n = xs; n <= nv; n += xs) {
+      var px = toX(n);
+      ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, ch-pad.b); ctx.stroke();
+      ctx.fillStyle = mut; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(n, px, ch-pad.b+6);
+    }
+    ctx.fillStyle = '#2C2418'; ctx.font = '13px "Crimson Pro", serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('n', pad.l+pw/2, ch-12);
+    ctx.save(); ctx.translate(14, pad.t+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText('value', 0, 0); ctx.restore();
+
+    /* tube */
+    if (layers.tube) {
+      ctx.fillStyle = 'rgba(200,169,81,0.12)';
+      ctx.beginPath(); ctx.moveTo(toX(1), toY(env.D[1]));
+      for (var n = 2; n <= N; n++) ctx.lineTo(toX(n), toY(env.D[n]));
+      for (var n = N; n >= 1; n--) ctx.lineTo(toX(n), toY(env.I[n]));
+      ctx.closePath(); ctx.fill();
+    }
+
+    /* epsilon tube */
+    var showEps = (cur === 2 || cur === 3);
+    var Neps = -1;
+    if (showEps) {
+      var eps = parseFloat(epsSlider.value);
+      var L = info.L;
+      Neps = findNeps(env.x[0], L, eps, NMAX);
+      document.getElementById('roNeps').textContent = Neps > 0 ? Neps : '> '+NMAX;
+      document.getElementById('roEpsTube').textContent = '['+(L-eps).toFixed(4)+', '+(L+eps).toFixed(4)+']';
+      if (layers.eps) {
+        var et = Math.max(pad.t, toY(L+eps)), eb = Math.min(ch-pad.b, toY(L-eps));
+        ctx.fillStyle = 'rgba(83,74,183,0.08)';
+        ctx.fillRect(pad.l, et, pw, eb-et);
+        ctx.strokeStyle = 'rgba(83,74,183,0.4)'; ctx.lineWidth = 1;
+        ctx.setLineDash([5,3]);
+        ctx.beginPath(); ctx.moveTo(pad.l, et); ctx.lineTo(cw-pad.r, et); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pad.l, eb); ctx.lineTo(cw-pad.r, eb); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#534AB7'; ctx.font = '11px "Crimson Pro", serif'; ctx.textAlign = 'right';
+        if (et > pad.t+10) ctx.fillText('L+\u03b5', cw-pad.r-4, et-5);
+        if (eb < ch-pad.b-10) ctx.fillText('L\u2212\u03b5', cw-pad.r-4, eb+13);
+        if (Neps > 0 && Neps <= nv) {
+          var nx = toX(Neps);
+          ctx.strokeStyle = 'rgba(186,117,23,0.6)'; ctx.lineWidth = 1.5;
+          ctx.setLineDash([4,3]);
+          ctx.beginPath(); ctx.moveTo(nx, pad.t); ctx.lineTo(nx, ch-pad.b); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#8B6914'; ctx.font = 'bold 12px "Crimson Pro", serif'; ctx.textAlign = 'center';
+          ctx.fillText('N(\u03b5)='+Neps, nx, pad.t-9);
+        }
+      }
+    }
+
+    /* limsup / liminf dashed lines */
+    if (cur !== 4) {
+      ctx.setLineDash([8,5]); ctx.lineWidth = 1.5;
+      if (ls !== null && ylo <= ls && ls <= yhi) {
+        ctx.strokeStyle = limOk ? '#1D7A6A' : '#A32D2D';
+        ctx.beginPath(); ctx.moveTo(pad.l, toY(ls)); ctx.lineTo(cw-pad.r, toY(ls)); ctx.stroke();
+        ctx.fillStyle = ctx.strokeStyle; ctx.font = 'bold 12px "Crimson Pro", serif'; ctx.textAlign = 'right';
+        ctx.fillText(limOk ? 'L = '+ls : 'lim sup = '+ls, cw-pad.r-4, toY(ls)-8);
+      }
+      if (li !== null && ylo <= li && li <= yhi && Math.abs(ls-li) > 0.02) {
+        ctx.strokeStyle = '#1455A0';
+        ctx.beginPath(); ctx.moveTo(pad.l, toY(li)); ctx.lineTo(cw-pad.r, toY(li)); ctx.stroke();
+        ctx.fillStyle = '#1455A0'; ctx.font = 'bold 12px "Crimson Pro", serif'; ctx.textAlign = 'right';
+        ctx.fillText('lim inf = '+li, cw-pad.r-4, toY(li)+16);
+      }
+      ctx.setLineDash([]);
+    } else {
+      ctx.setLineDash([8,5]); ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#1D7A6A';
+      ctx.beginPath(); ctx.moveTo(pad.l, toY(0)); ctx.lineTo(cw-pad.r, toY(0)); ctx.stroke();
+      ctx.fillStyle = '#1D7A6A'; ctx.font = 'bold 12px "Crimson Pro", serif'; ctx.textAlign = 'right';
+      ctx.fillText('L = 0', cw-pad.r-4, toY(0)-8);
+      ctx.setLineDash([]);
+    }
+
+    /* D_n */
+    if (layers.sup) {
+      ctx.strokeStyle = '#A32D2D'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(toX(1), toY(env.D[1]));
+      for (var n = 2; n <= N; n++) ctx.lineTo(toX(n), toY(env.D[n]));
+      ctx.stroke();
+    }
+    /* I_n */
+    if (layers.inf) {
+      ctx.strokeStyle = '#1455A0'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(toX(1), toY(env.I[1]));
+      for (var n = 2; n <= N; n++) ctx.lineTo(toX(n), toY(env.I[n]));
+      ctx.stroke();
+    }
+
+    /* dots */
+    if (layers.seq) {
+      var dr = N > 200 ? 1.8 : N > 100 ? 2.5 : 3.5;
+      for (var f = 0; f < nf; f++) {
+        for (var n = 1; n <= N; n++) {
+          var px = toX(n), py = toY(env.x[f][n]);
+          if (py < pad.t-4 || py > ch-pad.b+4) continue;
+          if (showEps && layers.eps && Neps > 0 && nf === 1) {
+            ctx.fillStyle = n >= Neps ? '#1D7A6A' : '#A32D2D';
+          } else {
+            ctx.fillStyle = info.cols[f];
+          }
+          ctx.beginPath(); ctx.arc(px, py, dr, 0, 2*Math.PI); ctx.fill();
+        }
+      }
+    }
+
+    /* axes */
+    ctx.strokeStyle = mut; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, ch-pad.b); ctx.lineTo(cw-pad.r, ch-pad.b); ctx.stroke();
+  }
+
+  /* tooltip */
+  canvas.addEventListener('mousemove', function(e) {
+    var r = canvas.getBoundingClientRect();
+    var mx = e.clientX-r.left, my = e.clientY-r.top;
+    var n = fromX(mx), N = Math.min(nv, NMAX);
+    if (n >= 1 && n <= N) {
+      var env = getEnv(), info = EX[cur], parts = ['n='+n];
+      for (var f = 0; f < info.fns.length; f++) parts.push(info.names[f]+'='+env.x[f][n].toFixed(4));
+      parts.push('D='+env.D[n].toFixed(4)); parts.push('I='+env.I[n].toFixed(4));
+      tooltipEl.style.opacity = '1'; tooltipEl.textContent = parts.join('  ');
+      var tx = mx+14; if (tx+340 > cw) tx = mx-340;
+      tooltipEl.style.left = tx+'px'; tooltipEl.style.top = (my-30)+'px';
+      return;
+    }
+    tooltipEl.style.opacity = '0';
+  });
+  canvas.addEventListener('mouseleave', function() { tooltipEl.style.opacity = '0'; });
+
+  nMaxSlider.addEventListener('input', draw);
+  epsSlider.addEventListener('input', function() { epsInput.value = parseFloat(epsSlider.value).toFixed(4); draw(); });
+  epsInput.addEventListener('input', function() { var v = parseFloat(epsInput.value); if (!isNaN(v) && v > 0) epsSlider.value = v; draw(); });
+  epsInput.addEventListener('change', function() { var v = parseFloat(epsInput.value); if (!isNaN(v) && v > 0) epsSlider.value = v; draw(); });
+
+  window.toggleLayer = function(name) {
+    layers[name] = !layers[name];
+    var btn = document.getElementById('tog'+name.charAt(0).toUpperCase()+name.slice(1));
+    btn.classList.toggle('on', layers[name]); btn.classList.toggle('off', !layers[name]);
+    draw();
+  };
+
+  function buildLegend() {
+    var box = document.getElementById('legendBox'), h = '', info = EX[cur];
+    var showEps = (cur === 2 || cur === 3);
+    for (var f = 0; f < info.fns.length; f++)
+      h += '<span class="legend-item"><span class="legend-dot" style="background:'+info.cols[f]+';"></span> '+info.names[f]+'</span>';
+    h += '<span class="legend-item"><span class="legend-line" style="background:#A32D2D;"></span> D<sub>n</sub></span>';
+    h += '<span class="legend-item"><span class="legend-line" style="background:#1455A0;"></span> I<sub>n</sub></span>';
+    h += '<span class="legend-item"><span class="legend-area" style="background:#C8A951;"></span> Tube</span>';
+    if (cur !== 4) {
+      h += '<span class="legend-item"><span class="legend-dash" style="border-color:#A32D2D;"></span> lim sup</span>';
+      h += '<span class="legend-item"><span class="legend-dash" style="border-color:#1455A0;"></span> lim inf</span>';
+    }
+    if (showEps) {
+      h += '<span class="legend-item"><span class="legend-area" style="background:#534AB7;"></span> \u03b5-tube</span>';
+      h += '<span class="legend-item"><span class="legend-dash" style="border-color:rgba(186,117,23,0.7);"></span> N(\u03b5)</span>';
+      h += '<span class="legend-item"><span class="legend-dot" style="background:#A32D2D;"></span> n&lt;N</span>';
+      h += '<span class="legend-item"><span class="legend-dot" style="background:#1D7A6A;"></span> n\u2265N</span>';
+    }
+    if (cur === 4) {
+      h += '<span class="legend-item"><span class="legend-dash" style="border-color:#1D7A6A;"></span> L = 0</span>';
+    }
+    box.innerHTML = h;
+  }
+
+  var formulas = {
+    1: 'x_n = \\left(1 + \\frac{3}{\\sqrt{n}}\\right)\\sin\\!\\left(\\frac{n}{15}\\right)',
+    2: 'x_n = \\frac{\\sin(n)}{n}',
+    3: 'a_n - \\tfrac{1}{2} = \\frac{4n^2 + 3n + 2}{8n^2 + 6n + 1} - \\frac{1}{2} = \\frac{3}{2(8n^2+6n+1)}',
+    4: 'a_n - \\tfrac{1}{2} = \\frac{3}{2(8n^2+6n+1)} \\qquad\\text{and}\\qquad x_n = \\frac{\\sin(n)}{n}'
+  };
+
+  window.switchExample = function(ex) {
+    cur = ex;
+    for (var i = 1; i <= 4; i++) {
+      document.getElementById('tab'+i).classList.toggle('active', i === ex);
+      var el = document.getElementById('explanation'+i);
+      if (el) el.style.display = i === ex ? '' : 'none';
+    }
+    var showEps = (ex === 2 || ex === 3);
+    document.getElementById('epsRow').style.display = showEps ? '' : 'none';
+    document.getElementById('epsReadouts').style.display = showEps ? '' : 'none';
+    katex.render(formulas[ex], document.getElementById('formula-row'), { throwOnError: false, displayMode: true });
+    buildLegend();
+    draw();
+  };
+
+  window.addEventListener('resize', draw);
+  switchExample(1);
+})();
+</script>
+
+</body>
+</html>
