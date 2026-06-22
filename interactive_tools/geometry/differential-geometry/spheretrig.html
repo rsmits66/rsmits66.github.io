@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sphere Trigonometry — Isosceles Cone Builder</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f7f4;color:#222;padding:24px;max-width:960px;margin:0 auto;line-height:1.5}
+@media(prefers-color-scheme:dark){body{background:#1a1a18;color:#ddd}}
+h1{font-size:20px;font-weight:500;margin:0 0 4px}
+.sub{font-size:13px;color:#888;margin:0 0 16px}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.presets button{font-size:12px;padding:5px 12px;border-radius:6px;border:0.5px solid #ccc;background:#fff;color:#444;cursor:pointer;transition:background .15s}
+.presets button:hover{background:#eee}
+@media(prefers-color-scheme:dark){.presets button{background:#2c2c2a;color:#ccc;border-color:#555}.presets button:hover{background:#3a3a38}}
+.inp-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:0 0 10px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:12px;color:#888}
+.field input{font-size:14px;padding:6px 10px;border-radius:6px;border:0.5px solid #ccc;background:#fff;color:#222;outline:none;transition:border-color .15s}
+.field input:focus{border-color:#7F77DD}
+@media(prefers-color-scheme:dark){.field input{background:#2c2c2a;color:#ddd;border-color:#555}}
+.angles-wrap{flex:1;min-width:200px}
+.angles-wrap input{width:100%}
+button.build{height:36px;padding:0 22px;font-size:14px;border-radius:6px;border:0.5px solid #7F77DD;background:#7F77DD;color:#fff;cursor:pointer;font-weight:500;transition:opacity .15s}
+button.build:hover{opacity:0.85}
+.status{min-height:22px;margin:0 0 8px}
+.err{font-size:13px;color:#E24B4A}
+.ok{font-size:13px;color:#1D9E75}
+#results{display:none}
+.metrics{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.m{background:#f1efe8;border-radius:8px;padding:10px 14px;flex:1;min-width:90px}
+@media(prefers-color-scheme:dark){.m{background:#2c2c2a}}
+.m .ml{font-size:11px;color:#888;margin:0 0 2px}
+.m .mv{font-size:16px;font-weight:500;margin:0;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px}
+.tbl{width:100%;font-size:12px;border-collapse:collapse;margin:0 0 10px}
+.tbl th{text-align:left;font-weight:500;padding:5px 6px;border-bottom:1px solid #ddd;color:#888;font-size:11px}
+@media(prefers-color-scheme:dark){.tbl th{border-color:#444}}
+.tbl td{padding:5px 6px;border-bottom:0.5px solid #eee;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px}
+@media(prefers-color-scheme:dark){.tbl td{border-color:#333}}
+.view{display:flex;gap:6px;margin:0 0 4px}
+.vpanel{flex:1;text-align:center;position:relative}
+.vpanel canvas{width:100%;aspect-ratio:1;border-radius:10px;border:0.5px solid #ddd;cursor:grab;touch-action:none;display:block}
+@media(prefers-color-scheme:dark){.vpanel canvas{border-color:#444}}
+.vpanel p{margin:4px 0 0;font-size:11px;color:#888}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.lbl{position:absolute;font-size:11px;font-weight:600;white-space:nowrap;transform:translate(-50%,-50%)}
+.hint{font-size:11px;color:#aaa;text-align:center;margin:4px 0 0}
+.eq{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#888;padding:10px 14px;background:#f1efe8;border-radius:8px;margin:0 0 14px;line-height:1.7}
+@media(prefers-color-scheme:dark){.eq{background:#2c2c2a}}
+</style>
+</head>
+<body>
+
+<h1>Sphere trigonometry — isosceles cone builder</h1>
+<p class="sub">Given angles θ₁, …, θₙ with defect Ω = 2π − Σθᵢ > 0, find r such that
+Σ arcsin(sin(θᵢ/2) / r) = π. Then d = √(1 − r²) and the base vertices sit at
+(r cos φᵢ, r sin φᵢ, −d) on the unit sphere.</p>
+
+<div class="presets">
+  <span style="font-size:12px;color:#888;line-height:30px">Presets:</span>
+  <button onclick="preset('36, 72, 36, 108, 36')">Original (36,72,36,108,36)</button>
+  <button onclick="preset('60, 60, 60, 60, 60')">5 × 60° (Ω=60°)</button>
+  <button onclick="preset('90, 90, 90')">3 × 90° (octant)</button>
+  <button onclick="preset('80, 80, 80, 80')">4 × 80°</button>
+  <button onclick="preset('30, 30, 30, 30, 30, 30, 30, 30')">8 × 30° (sharp)</button>
+  <button onclick="preset('50, 60, 70, 80, 90')">50–90 ramp</button>
+  <button onclick="preset('120, 120')">2 × 120°</button>
+  <button onclick="preset('40, 40, 40, 40, 40, 40, 40, 40, 40')">9 × 40° (flat)</button>
+</div>
+
+<div class="inp-row">
+  <div class="field angles-wrap">
+    <label>Angles in degrees (comma-separated, must sum to less than 360°)</label>
+    <input id="angIn" value="36, 72, 36, 108, 36" onkeydown="if(event.key==='Enter')build()">
+  </div>
+  <button class="build" onclick="build()">Build</button>
+</div>
+
+<div class="status" id="status"></div>
+
+<div id="results">
+  <div class="metrics" id="mets"></div>
+  <div id="tblWrap"></div>
+  <div class="view">
+    <div class="vpanel"><canvas id="cL"></canvas><p>Cone + unit sphere</p></div>
+    <div class="vpanel"><canvas id="cR"></canvas><div class="overlay" id="ov"></div><p>Base circle in plane P</p></div>
+  </div>
+  <p class="hint">Drag either view to rotate both. Scroll to zoom.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const PI=Math.PI;
+const dk=matchMedia('(prefers-color-scheme:dark)').matches;
+const palette=[0x7F77DD,0x1D9E75,0xBA7517,0xD85A30,0x378ADD,0xD4537E,0x639922,0xE24B4A,0x1D9E75,0x534AB7,0x854F0B,0x993C1D];
+const palHex=['#7F77DD','#1D9E75','#BA7517','#D85A30','#378ADD','#D4537E','#639922','#E24B4A','#1D9E75','#534AB7','#854F0B','#993C1D'];
+const edgeC=dk?0xcccccc:0x222222;
+const bgC=dk?0x1a1a18:0xf8f7f4;
+
+let s1,s2,th=0.3,ph2=PI/3.5,rad=2.8;
+let tgtL=new THREE.Vector3(),tgtR=new THREE.Vector3();
+let built=false,curBv=[],dragInit=false;
+
+function mkR(cv){
+  const w=cv.clientWidth,h=cv.clientHeight;
+  cv.width=w*devicePixelRatio;cv.height=h*devicePixelRatio;
+  const R=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  R.setPixelRatio(devicePixelRatio);R.setSize(w,h,false);
+  R.setClearColor(bgC);
+  const S=new THREE.Scene();
+  const C=new THREE.PerspectiveCamera(40,w/h,0.01,100);
+  S.add(new THREE.AmbientLight(0xffffff,0.7));
+  const dl=new THREE.DirectionalLight(0xffffff,0.45);dl.position.set(3,4,5);S.add(dl);
+  const d2=new THREE.DirectionalLight(0xffffff,0.2);d2.position.set(-3,-2,-3);S.add(d2);
+  return{R,S,C,w,h};
+}
+
+function clearScene(s){while(s.children.length>3)s.remove(s.children[3])}
+
+window.preset=function(v){document.getElementById('angIn').value=v;build()};
+
+window.build=function(){
+  const raw=document.getElementById('angIn').value;
+  const parts=raw.split(/[,\s]+/).filter(x=>x.length>0);
+  const degs=parts.map(Number);
+  const n=degs.length;
+  if(n<2){showErr('Need at least 2 angles.');return}
+  if(degs.some(isNaN)||degs.some(x=>x<=0)){showErr('All angles must be positive numbers.');return}
+  if(degs.some(x=>x>=180)){showErr('Each angle must be less than 180°.');return}
+  const thetas=degs.map(x=>x*PI/180);
+  const thetaSum=thetas.reduce((a,b)=>a+b,0);
+  if(thetaSum>=2*PI){showErr('Angles sum to '+(thetaSum*180/PI).toFixed(1)+'° — must be less than 360° (need a defect).');return}
+  const defect=2*PI-thetaSum;
+  const hSin=thetas.map(t=>Math.sin(t/2));
+  const rMin=Math.max(...hSin);
+
+  let lo=rMin+1e-14,hi=1-1e-14;
+  for(let i=0;i<500;i++){
+    const m=(lo+hi)/2;
+    const v=hSin.reduce((a,h)=>a+Math.asin(h/m),0);
+    if(v>PI)lo=m;else hi=m;
+  }
+  const r=(lo+hi)/2;
+  const dd=Math.sqrt(1-r*r);
+  const dPhi=thetas.map(t=>2*Math.asin(Math.sin(t/2)/r));
+  const phi=[0];for(let i=0;i<n-1;i++)phi.push(phi[i]+dPhi[i]);
+  const bases=thetas.map(t=>2*Math.sin(t/2));
+  const bv=phi.map(p=>new THREE.Vector3(r*Math.cos(p),-r*Math.sin(p),-dd));
+  curBv=bv;
+
+  const verify=[];
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    const dot=bv[i].x*bv[j].x+bv[i].y*bv[j].y+bv[i].z*bv[j].z;
+    verify.push(Math.acos(Math.min(1,Math.max(-1,dot))));
+  }
+
+  document.getElementById('status').innerHTML='<p class="ok">Solved: '+n+' triangles, defect = '+(defect*180/PI).toFixed(2)+'°</p>';
+
+  let mh='';
+  mh+='<div class="m"><p class="ml">n</p><p class="mv">'+n+'</p></div>';
+  mh+='<div class="m"><p class="ml">r (base radius)</p><p class="mv">'+r.toFixed(6)+'</p></div>';
+  mh+='<div class="m"><p class="ml">d = √(1−r²)</p><p class="mv">'+dd.toFixed(6)+'</p></div>';
+  mh+='<div class="m"><p class="ml">Defect Ω</p><p class="mv">'+(defect*180/PI).toFixed(2)+'°</p></div>';
+  document.getElementById('mets').innerHTML=mh;
+
+  let tb='<table class="tbl"><tr><th>i</th><th>θᵢ</th><th>Δφᵢ</th><th>φᵢ</th><th>Base bᵢ</th><th>Verify θᵢ</th></tr>';
+  for(let i=0;i<n;i++){
+    tb+='<tr><td style="color:'+palHex[i%12]+';font-weight:600">'+(i+1)+'</td>';
+    tb+='<td>'+(thetas[i]*180/PI).toFixed(2)+'°</td>';
+    tb+='<td>'+(dPhi[i]*180/PI).toFixed(2)+'°</td>';
+    tb+='<td>'+(phi[i]*180/PI).toFixed(2)+'°</td>';
+    tb+='<td>'+bases[i].toFixed(4)+'</td>';
+    tb+='<td>'+(verify[i]*180/PI).toFixed(2)+'°</td></tr>';
+  }
+  tb+='</table>';
+  document.getElementById('tblWrap').innerHTML=tb;
+  document.getElementById('results').style.display='block';
+
+  if(!s1){
+    s1=mkR(document.getElementById('cL'));
+    s2=mkR(document.getElementById('cR'));
+  }
+  tgtL.set(0,0,-dd*0.4);tgtR.set(0,0,-dd);
+  th=0.3;ph2=PI/3.5;rad=2.8;
+
+  clearScene(s1.S);clearScene(s2.S);
+  const dotG=new THREE.SphereGeometry(0.022,10,10);
+  const dotM=new THREE.MeshBasicMaterial({color:dk?0xffffff:0x000000});
+
+  s1.S.add(new THREE.Mesh(new THREE.SphereGeometry(1,48,48),new THREE.MeshPhongMaterial({color:dk?0x556677:0xc0d0e0,transparent:true,opacity:0.1,side:THREE.DoubleSide,depthWrite:false})));
+  s1.S.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(1,24,14)),new THREE.LineBasicMaterial({color:dk?0x556666:0xaabbcc,transparent:true,opacity:0.06})));
+
+  const pg=new THREE.PlaneGeometry(3,3);pg.rotateX(PI/2);pg.translate(0,0,-dd);
+  s1.S.add(new THREE.Mesh(pg,new THREE.MeshBasicMaterial({color:dk?0x444433:0xe8e8dd,transparent:true,opacity:0.15,side:THREE.DoubleSide,depthWrite:false})));
+
+  const cp=[];for(let i=0;i<=80;i++){const a=i/80*2*PI;cp.push(new THREE.Vector3(r*Math.cos(a),-r*Math.sin(a),-dd))}
+  s1.S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cp),new THREE.LineBasicMaterial({color:dk?0xccbb88:0x887744})));
+
+  s1.S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-dd)]),new THREE.LineBasicMaterial({color:dk?0xee9966:0xcc6633})));
+
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array([0,0,0,bv[i].x,bv[i].y,bv[i].z,bv[j].x,bv[j].y,bv[j].z]),3));
+    geo.computeVertexNormals();
+    s1.S.add(new THREE.Mesh(geo,new THREE.MeshPhongMaterial({color:palette[i%12],transparent:true,opacity:0.45,side:THREE.DoubleSide,depthWrite:false})));
+    s1.S.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:edgeC})));
+  }
+
+  s1.S.add(new THREE.Mesh(dotG.clone(),dotM.clone()));
+  bv.forEach(b=>{const m=new THREE.Mesh(dotG.clone(),dotM.clone());m.position.copy(b);s1.S.add(m)});
+
+  const cp2=[];for(let i=0;i<=80;i++){const a=i/80*2*PI;cp2.push(new THREE.Vector3(r*Math.cos(a),-r*Math.sin(a),-dd))}
+  s2.S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cp2),new THREE.LineBasicMaterial({color:dk?0xccbb88:0x887744})));
+
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    s2.S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([bv[i],bv[j]]),new THREE.LineBasicMaterial({color:palette[i%12]})));
+  }
+
+  const dPcum=[0];for(let i=0;i<n;i++)dPcum.push(dPcum[i]+dPhi[i]);
+  for(let i=0;i<n;i++){
+    const a0=dPcum[i],a1=dPcum[i+1],arcR=r*0.2;
+    const pts=[];for(let s=0;s<=20;s++){const t=s/20;const a=a0+(a1-a0)*t;pts.push(new THREE.Vector3(arcR*Math.cos(a),-arcR*Math.sin(a),-dd))}
+    s2.S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:palette[i%12]})));
+  }
+
+  const pg2=new THREE.PlaneGeometry(2.2,2.2);pg2.rotateX(PI/2);pg2.translate(0,0,-dd);
+  s2.S.add(new THREE.Mesh(pg2,new THREE.MeshBasicMaterial({color:dk?0x444433:0xe8e8dd,transparent:true,opacity:0.08,side:THREE.DoubleSide,depthWrite:false})));
+
+  const ctr2=new THREE.Mesh(dotG.clone(),new THREE.MeshBasicMaterial({color:dk?0x888888:0x999999}));
+  ctr2.position.set(0,0,-dd);s2.S.add(ctr2);
+  bv.forEach(b=>{const m=new THREE.Mesh(dotG.clone(),dotM.clone());m.position.copy(b);s2.S.add(m)});
+
+  built=true;
+  if(!dragInit){initDrag();dragInit=true}
+  setCams();
+};
+
+function showErr(msg){document.getElementById('status').innerHTML='<p class="err">'+msg+'</p>'}
+
+const proj=new THREE.Vector3();
+function updateLabels(){
+  if(!built)return;
+  const ov=document.getElementById('ov');
+  const cv=document.getElementById('cR');
+  const w=cv.clientWidth,h=cv.clientHeight;
+  let html='';
+  for(let i=0;i<curBv.length;i++){
+    proj.copy(curBv[i]).project(s2.C);
+    if(proj.z>1)continue;
+    const sx=(proj.x*0.5+0.5)*w,sy=(-proj.y*0.5+0.5)*h;
+    const cx2=w/2,cy2=h/2;
+    const dx=sx-cx2,dy=sy-cy2;
+    const dist=Math.sqrt(dx*dx+dy*dy)||1;
+    const ox=dx/dist*14,oy=dy/dist*14;
+    html+='<div class="lbl" style="left:'+(sx+ox)+'px;top:'+(sy+oy)+'px;color:'+palHex[i%12]+'">B<sub>'+(i+1)+'</sub></div>';
+  }
+  ov.innerHTML=html;
+}
+
+function setCams(){
+  if(!built)return;
+  const sx=Math.sin(ph2)*Math.sin(th),sy=Math.cos(ph2),sz=Math.sin(ph2)*Math.cos(th);
+  s1.C.position.set(tgtL.x+rad*sx,tgtL.y+rad*sy,tgtL.z+rad*sz);s1.C.lookAt(tgtL);
+  const r2=rad*0.65;
+  s2.C.position.set(tgtR.x+r2*sx,tgtR.y+r2*sy,tgtR.z+r2*sz);s2.C.lookAt(tgtR);
+  s1.R.render(s1.S,s1.C);s2.R.render(s2.S,s2.C);
+  updateLabels();
+}
+
+function initDrag(){
+  [document.getElementById('cL'),document.getElementById('cR')].forEach(function(cv){
+    var drag=false,px=0,py=0;
+    cv.addEventListener('mousedown',function(e){drag=true;px=e.clientX;py=e.clientY;document.querySelectorAll('#cL,#cR').forEach(function(c){c.style.cursor='grabbing'})});
+    cv.addEventListener('touchstart',function(e){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY},{passive:true});
+    window.addEventListener('mouseup',function(){drag=false;document.querySelectorAll('#cL,#cR').forEach(function(c){c.style.cursor='grab'})});
+    window.addEventListener('touchend',function(){drag=false});
+    window.addEventListener('mousemove',function(e){if(!drag)return;th+=(e.clientX-px)*0.008;ph2=Math.max(0.05,Math.min(PI-0.05,ph2+(e.clientY-py)*0.008));px=e.clientX;py=e.clientY;setCams()});
+    window.addEventListener('touchmove',function(e){if(!drag)return;var t=e.touches[0];th+=(t.clientX-px)*0.008;ph2=Math.max(0.05,Math.min(PI-0.05,ph2+(t.clientY-py)*0.008));px=t.clientX;py=t.clientY;setCams()},{passive:true});
+    cv.addEventListener('wheel',function(e){e.preventDefault();rad=Math.max(1.5,Math.min(6,rad+e.deltaY*0.003));setCams()},{passive:false});
+  });
+}
+
+window.addEventListener('resize',function(){
+  if(!s1)return;
+  [['cL',s1],['cR',s2]].forEach(function(pair){
+    var cv=document.getElementById(pair[0]),obj=pair[1];
+    var w=cv.clientWidth,h=cv.clientHeight;
+    cv.width=w*devicePixelRatio;cv.height=h*devicePixelRatio;
+    obj.R.setSize(w,h,false);
+    obj.C.aspect=w/h;obj.C.updateProjectionMatrix();
+  });
+  setCams();
+});
+
+build();
+</script>
+</body>
+</html>
