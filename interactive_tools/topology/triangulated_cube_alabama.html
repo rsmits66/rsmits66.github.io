@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boundary Maps on a Triangulated Cube — Crimson Tide Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500;1,700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+:root {
+  --bama-crimson:       #9E1B32;
+  --bama-crimson-deep:  #6e0f1f;
+  --bama-crimson-light: #c4334d;
+  --bama-cream:         #f5ecd7;
+  --bama-cream-light:   #faf3e3;
+  --bama-cream-dark:    #e8dcc1;
+  --bama-ink:           #1a1410;
+  --bama-ink-soft:      #4a3f33;
+  --bama-mute:          #8a7f6b;
+  --bama-faint:         #c4b89d;
+  --rule:               #d4c8a8;
+  --pos:                #2a6b3d;
+  --neg:                #6e0f1f;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bama-cream);
+  color: var(--bama-ink);
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.6;
+  font-feature-settings: 'kern','liga','onum';
+  -webkit-font-smoothing: antialiased;
+}
+
+article {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 80px 48px 140px;
+}
+
+@media (max-width: 720px) {
+  article { padding: 48px 22px 100px; }
+  body { font-size: 18px; }
+}
+
+/* ─── Header ─── */
+header {
+  text-align: center;
+  margin-bottom: 70px;
+  position: relative;
+}
+
+header::before {
+  content: "";
+  display: block;
+  height: 14px;
+  margin-bottom: 36px;
+  background-color: var(--bama-cream);
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      var(--bama-crimson) 0,
+      var(--bama-crimson) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  background-size: 12px 14px;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.kicker {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--bama-crimson);
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: clamp(38px, 6vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.012em;
+  margin: 0 0 16px;
+  color: var(--bama-ink);
+}
+
+h1 em {
+  color: var(--bama-crimson);
+  font-style: italic;
+  font-weight: 700;
+}
+
+header .sub {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--bama-ink-soft);
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+header::after {
+  content: "❧";
+  display: block;
+  text-align: center;
+  margin: 28px auto 0;
+  color: var(--bama-crimson);
+  font-size: 22px;
+}
+
+/* ─── Section headers with varsity ornament ─── */
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 34px;
+  margin: 78px 0 18px;
+  color: var(--bama-ink);
+  letter-spacing: -0.005em;
+  position: relative;
+  padding-left: 64px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+h2 .roman {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0;
+  border-radius: 1px;
+  box-shadow: 3px 3px 0 var(--bama-crimson-deep);
+}
+
+h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 23px;
+  margin: 36px 0 10px;
+  color: var(--bama-crimson-deep);
+}
+
+p { margin: 0 0 16px; }
+
+.lead {
+  font-size: 22px;
+  line-height: 1.55;
+  color: var(--bama-ink-soft);
+  font-style: italic;
+  margin-bottom: 36px;
+  font-family: 'Crimson Text', serif;
+}
+
+code, .mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84em;
+}
+
+.callout {
+  background: var(--bama-cream-light);
+  border-left: 4px solid var(--bama-crimson);
+  padding: 18px 26px;
+  margin: 26px 0;
+  font-size: 18px;
+  line-height: 1.55;
+  position: relative;
+}
+
+.callout::before {
+  content: "A";
+  position: absolute;
+  top: -10px;
+  left: -16px;
+  width: 28px;
+  height: 28px;
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 var(--bama-crimson-deep);
+}
+
+/* ─── Interactive cube widget ─── */
+.cube-widget {
+  margin: 36px 0 28px;
+  background: var(--bama-cream-light);
+  border: 1px solid var(--rule);
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+}
+
+.cube-widget-header {
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  padding: 12px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.cube-widget-header .badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-style: normal;
+  opacity: 0.85;
+}
+
+#cube-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  background: var(--bama-cream-light);
+  cursor: grab;
+}
+#cube-canvas-wrap:active { cursor: grabbing; }
+#cube-canvas-wrap canvas { display: block; }
+
+.cube-instr {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--bama-mute);
+  pointer-events: none;
+  user-select: none;
+}
+
+.cube-eqn-display {
+  position: absolute;
+  bottom: 14px;
+  left: 18px;
+  right: 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--bama-ink);
+  background: rgba(245,236,215,0.92);
+  padding: 8px 14px;
+  border-left: 3px solid var(--bama-crimson);
+  pointer-events: none;
+  user-select: none;
+  min-height: 22px;
+  display: none;
+}
+.cube-eqn-display.show { display: block; }
+.cube-eqn-display .lbl {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--bama-crimson);
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* labels (CSS2DRenderer divs) */
+.vlabel, .elabel, .tlabel {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.vlabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--bama-ink);
+  text-shadow: 0 0 3px var(--bama-cream-light), 0 0 3px var(--bama-cream-light);
+}
+.elabel {
+  font-size: 12px;
+  color: var(--bama-mute);
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+}
+.tlabel {
+  font-size: 13px;
+  color: var(--bama-crimson);
+  font-weight: 700;
+}
+
+/* control panel */
+.cube-controls {
+  padding: 18px 22px 22px;
+  border-top: 1px solid var(--rule);
+  background: var(--bama-cream-light);
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.control-row:last-child { margin-bottom: 0; }
+
+.control-label {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--bama-ink-soft);
+  margin-right: 6px;
+  min-width: 92px;
+}
+
+.tri-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .tri-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.bama-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bama-cream);
+  color: var(--bama-ink);
+  border: 1px solid var(--rule);
+  padding: 6px 8px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.12s ease;
+  text-align: center;
+}
+.bama-btn:hover {
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  border-color: var(--bama-crimson);
+}
+.bama-btn.active {
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  border-color: var(--bama-crimson);
+  box-shadow: 1px 1px 0 var(--bama-crimson-deep);
+}
+.bama-btn.wide {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Crimson Text', serif;
+  font-size: 16px;
+  color: var(--bama-ink-soft);
+  user-select: none;
+  padding: 4px 10px;
+  border-radius: 1px;
+}
+.toggle input { accent-color: var(--bama-crimson); width: 14px; height: 14px; cursor: pointer; }
+
+/* ─── Static cube fig (kept) ─── */
+.cube-fig { margin: 28px auto 36px; text-align: center; }
+.cube-fig svg { max-width: 100%; height: auto; }
+.cube-fig figcaption {
+  font-style: italic;
+  color: var(--bama-ink-soft);
+  font-size: 16px;
+  margin-top: 12px;
+}
+
+/* ─── Ordering tables ─── */
+.ordering-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(252px, 1fr));
+  gap: 28px;
+  margin: 24px 0 32px;
+}
+
+.ord-block {
+  background: var(--bama-cream-light);
+  padding: 22px 24px 18px;
+  border: 1px solid var(--rule);
+  position: relative;
+}
+
+.ord-block::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--bama-crimson);
+}
+
+.ord-block h3 { margin-top: 0; margin-bottom: 14px; font-size: 19px; }
+
+.ord-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.85;
+}
+.ord-list li {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  padding: 2px 0;
+  border-bottom: 1px dotted var(--rule);
+}
+.ord-list li:last-child { border-bottom: none; }
+.ord-list .lbl {
+  color: var(--bama-crimson);
+  text-align: right;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ─── Matrix tables ─── */
+.matrix-wrap {
+  margin: 28px -8px 36px;
+  overflow-x: auto;
+  padding: 8px;
+}
+.matrix-wrap-center { text-align: center; }
+.matrix-card {
+  display: inline-block;
+  background: var(--bama-cream-light);
+  padding: 22px 16px 16px;
+  border: 1px solid var(--rule);
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+}
+
+table.matrix {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  border-collapse: collapse;
+}
+table.matrix th {
+  font-weight: 400;
+  color: var(--bama-mute);
+  padding: 3px 4px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 13px;
+}
+table.matrix th.col-h {
+  border-bottom: 1.5px solid var(--bama-crimson);
+  padding-bottom: 6px;
+  min-width: 26px;
+  color: var(--bama-crimson);
+  font-weight: 700;
+}
+table.matrix th.row-h {
+  border-right: 1.5px solid var(--bama-crimson);
+  text-align: right;
+  padding-right: 10px;
+  padding-left: 6px;
+  color: var(--bama-crimson);
+  font-weight: 700;
+}
+table.matrix td {
+  width: 26px;
+  height: 22px;
+  text-align: center;
+  color: var(--bama-faint);
+  font-variant-numeric: tabular-nums;
+}
+table.matrix td.z { color: var(--bama-faint); }
+table.matrix td.p { color: var(--pos); font-weight: 600; }
+table.matrix td.n { color: var(--neg); font-weight: 600; }
+
+.matrix-label {
+  position: absolute;
+  top: -16px;
+  left: 18px;
+  background: var(--bama-cream);
+  padding: 0 12px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--bama-crimson);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.matrix-key {
+  display: flex;
+  gap: 22px;
+  font-size: 15px;
+  color: var(--bama-ink-soft);
+  margin: 8px 0 22px;
+  align-items: center;
+  justify-content: center;
+  font-style: italic;
+  font-family: 'Crimson Text', serif;
+}
+.matrix-key .sw {
+  display: inline-block;
+  width: 14px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.boundary-eqs {
+  list-style: none;
+  margin: 18px 0 24px;
+  padding: 22px 26px;
+  background: var(--bama-cream-light);
+  border: 1px solid var(--rule);
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+  font-size: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 36px;
+}
+@media (max-width: 600px) {
+  .boundary-eqs { grid-template-columns: 1fr; }
+}
+.boundary-eqs li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 4px 0;
+  align-items: baseline;
+}
+.boundary-eqs .tlbl {
+  color: var(--bama-crimson);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dimsummary {
+  text-align: center;
+  margin: 36px 0;
+  font-size: 24px;
+  color: var(--bama-ink);
+  letter-spacing: 0.01em;
+  padding: 26px;
+  background: var(--bama-cream-light);
+  border-top: 4px solid var(--bama-crimson);
+  border-bottom: 4px solid var(--bama-crimson);
+}
+
+.bigeq {
+  text-align: center;
+  margin: 28px 0;
+  font-size: 21px;
+}
+
+hr.mark {
+  border: none;
+  text-align: center;
+  margin: 60px 0 24px;
+  color: var(--bama-crimson);
+  font-size: 20px;
+}
+hr.mark::before { content: "❦"; }
+
+footer {
+  margin-top: 80px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+  font-style: italic;
+  color: var(--bama-mute);
+  font-size: 16px;
+  text-align: center;
+  position: relative;
+}
+
+footer::before {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--bama-crimson);
+  margin: 0 auto 24px;
+}
+
+footer .rolltide {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--bama-crimson);
+  letter-spacing: 0.04em;
+  margin-top: 10px;
+  display: block;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  background: var(--bama-cream);
+  border: 1px solid var(--rule);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--bama-mute);
+}
+
+/* KaTeX color fix */
+.katex { color: var(--bama-ink); }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<article>
+
+<header>
+  <div class="kicker">A Crimson Tide Monograph · Discrete Differential Geometry</div>
+  <h1>Boundary maps on a <em>triangulated cube</em></h1>
+  <p class="sub">Orderings, orientations, the matrices in full, and the homology that follows.</p>
+</header>
+
+<p class="lead">The surface of a cube — split each square face along one diagonal — is one of the smallest closed triangulated 2-manifolds you can write down: 8 vertices, 18 edges, 12 triangles. Below we fix orderings once, write the boundary maps as explicit integer matrices, verify $\partial_1 \circ \partial_2 = 0$, and read off the homology. The verdict, which topology demands, is the homology of $S^2$.</p>
+
+<!-- ════════ I: Triangulation + interactive cube ════════ -->
+<section>
+  <h2><span class="roman">I</span>The triangulation</h2>
+
+  <p>Take the unit cube $[0,1]^3$, its 8 corner vertices, and its 12 cube-edges; on each of the 6 square faces, add one diagonal. The result is a simplicial 2-complex with 8 vertices, $12 + 6 = 18$ edges, and 12 triangles. The Euler check is immediate:</p>
+
+  <p class="bigeq">$V - E + F \;=\; 8 - 18 + 12 \;=\; 2 \;=\; \chi(S^2)\,. \quad \checkmark$</p>
+
+  <p>Below — drag to rotate, click any triangle button to highlight its boundary, watch what $\partial_2$ actually <em>does</em>.</p>
+
+  <div class="cube-widget">
+    <div class="cube-widget-header">
+      <span>Drag to rotate · click t<sub>k</sub> for boundary</span>
+      <span class="badge">∂₂ live</span>
+    </div>
+    <div id="cube-canvas-wrap">
+      <div class="cube-instr">drag to rotate · scroll to zoom</div>
+      <div class="cube-eqn-display" id="eqn-display"></div>
+    </div>
+    <div class="cube-controls">
+
+      <div class="control-row">
+        <span class="control-label">triangles</span>
+        <div class="tri-grid" id="tri-grid">
+          <!-- buttons injected -->
+        </div>
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">special</span>
+        <button class="bama-btn wide" id="btn-fc">Σ fundamental class</button>
+        <button class="bama-btn wide" id="btn-reset">↺ reset</button>
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">labels</span>
+        <label class="toggle"><input type="checkbox" id="tog-vlabels" checked> vertices</label>
+        <label class="toggle"><input type="checkbox" id="tog-elabels"> edges</label>
+        <label class="toggle"><input type="checkbox" id="tog-faces" checked> face fills</label>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════ II: Orderings ════════ -->
+<section>
+  <h2><span class="roman">II</span>Orderings &amp; orientations</h2>
+
+  <p>Three ordered lists, fixed once and for all. Edges run from the lower-indexed vertex to the higher-indexed one. Triangles are oriented so that, by the right-hand rule, the normal points <em>outward</em> from the cube — this consistency is what allows the sum of all twelve triangles to be a 2-cycle.</p>
+
+  <div class="ordering-grid">
+
+    <div class="ord-block">
+      <h3>Vertices · $C_0 \cong \mathbb{R}^8$</h3>
+      <ul class="ord-list">
+        <li><span class="lbl">v₁</span><span>(0, 0, 0)</span></li>
+        <li><span class="lbl">v₂</span><span>(1, 0, 0)</span></li>
+        <li><span class="lbl">v₃</span><span>(1, 1, 0)</span></li>
+        <li><span class="lbl">v₄</span><span>(0, 1, 0)</span></li>
+        <li><span class="lbl">v₅</span><span>(0, 0, 1)</span></li>
+        <li><span class="lbl">v₆</span><span>(1, 0, 1)</span></li>
+        <li><span class="lbl">v₇</span><span>(1, 1, 1)</span></li>
+        <li><span class="lbl">v₈</span><span>(0, 1, 1)</span></li>
+      </ul>
+    </div>
+
+    <div class="ord-block">
+      <h3>Edges · $C_1 \cong \mathbb{R}^{18}$</h3>
+      <ul class="ord-list">
+        <li><span class="lbl">e₁</span><span>[v₁, v₂]</span></li>
+        <li><span class="lbl">e₂</span><span>[v₂, v₃]</span></li>
+        <li><span class="lbl">e₃</span><span>[v₃, v₄]</span></li>
+        <li><span class="lbl">e₄</span><span>[v₁, v₄]</span></li>
+        <li><span class="lbl">e₅</span><span>[v₅, v₆]</span></li>
+        <li><span class="lbl">e₆</span><span>[v₆, v₇]</span></li>
+        <li><span class="lbl">e₇</span><span>[v₇, v₈]</span></li>
+        <li><span class="lbl">e₈</span><span>[v₅, v₈]</span></li>
+        <li><span class="lbl">e₉</span><span>[v₁, v₅]</span></li>
+        <li><span class="lbl">e₁₀</span><span>[v₂, v₆]</span></li>
+        <li><span class="lbl">e₁₁</span><span>[v₃, v₇]</span></li>
+        <li><span class="lbl">e₁₂</span><span>[v₄, v₈]</span></li>
+        <li><span class="lbl">e₁₃</span><span>[v₁, v₃] <span class="tag">bot</span></span></li>
+        <li><span class="lbl">e₁₄</span><span>[v₅, v₇] <span class="tag">top</span></span></li>
+        <li><span class="lbl">e₁₅</span><span>[v₁, v₆] <span class="tag">frnt</span></span></li>
+        <li><span class="lbl">e₁₆</span><span>[v₃, v₈] <span class="tag">back</span></span></li>
+        <li><span class="lbl">e₁₇</span><span>[v₁, v₈] <span class="tag">left</span></span></li>
+        <li><span class="lbl">e₁₈</span><span>[v₂, v₇] <span class="tag">rght</span></span></li>
+      </ul>
+    </div>
+
+    <div class="ord-block">
+      <h3>Triangles · $C_2 \cong \mathbb{R}^{12}$</h3>
+      <ul class="ord-list">
+        <li><span class="lbl">t₁</span><span>[v₁, v₃, v₂] <span class="tag">bot</span></span></li>
+        <li><span class="lbl">t₂</span><span>[v₁, v₄, v₃] <span class="tag">bot</span></span></li>
+        <li><span class="lbl">t₃</span><span>[v₅, v₆, v₇] <span class="tag">top</span></span></li>
+        <li><span class="lbl">t₄</span><span>[v₅, v₇, v₈] <span class="tag">top</span></span></li>
+        <li><span class="lbl">t₅</span><span>[v₁, v₂, v₆] <span class="tag">frnt</span></span></li>
+        <li><span class="lbl">t₆</span><span>[v₁, v₆, v₅] <span class="tag">frnt</span></span></li>
+        <li><span class="lbl">t₇</span><span>[v₃, v₄, v₈] <span class="tag">back</span></span></li>
+        <li><span class="lbl">t₈</span><span>[v₃, v₈, v₇] <span class="tag">back</span></span></li>
+        <li><span class="lbl">t₉</span><span>[v₁, v₈, v₄] <span class="tag">left</span></span></li>
+        <li><span class="lbl">t₁₀</span><span>[v₁, v₅, v₈] <span class="tag">left</span></span></li>
+        <li><span class="lbl">t₁₁</span><span>[v₂, v₃, v₇] <span class="tag">rght</span></span></li>
+        <li><span class="lbl">t₁₂</span><span>[v₂, v₇, v₆] <span class="tag">rght</span></span></li>
+      </ul>
+    </div>
+  </div>
+
+  <p>The chain complex is</p>
+  <p class="bigeq">$0 \;\longrightarrow\; \mathbb{R}^{12} \;\xrightarrow{\;\partial_2\;}\; \mathbb{R}^{18} \;\xrightarrow{\;\partial_1\;}\; \mathbb{R}^{8} \;\longrightarrow\; 0\,.$</p>
+  <p>So $\partial_1$ is an $8 \times 18$ matrix and $\partial_2$ an $18 \times 12$ matrix. We write both, in full.</p>
+</section>
+
+<hr class="mark">
+
+<!-- ════════ III: ∂₁ ════════ -->
+<section>
+  <h2><span class="roman">III</span>The boundary $\partial_1\colon C_1 \to C_0$</h2>
+
+  <p>For each edge $e_k = [v_i, v_j]$ with $i < j$, the boundary is</p>
+  <p class="bigeq">$\partial_1 \, e_k \;=\; v_j - v_i\,.$</p>
+  <p>The corresponding column of $\partial_1$ has $-1$ in row $i$, $+1$ in row $j$, zeros elsewhere — the signed incidence matrix of the 1-skeleton. (It's the same matrix Kirchhoff would write down for circuits on this graph.)</p>
+
+  <div class="matrix-key">
+    <span><span class="sw" style="color:var(--neg)">−1</span> coefficient $-1$</span>
+    <span><span class="sw" style="color:var(--pos)">+1</span> coefficient $+1$</span>
+    <span><span class="sw" style="color:var(--bama-faint)">·</span> zero</span>
+  </div>
+
+  <div class="matrix-wrap matrix-wrap-center">
+    <div class="matrix-card">
+      <span class="matrix-label">∂₁ &nbsp; (8 × 18)</span>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="col-h">e₁</th><th class="col-h">e₂</th><th class="col-h">e₃</th><th class="col-h">e₄</th>
+            <th class="col-h">e₅</th><th class="col-h">e₆</th><th class="col-h">e₇</th><th class="col-h">e₈</th>
+            <th class="col-h">e₉</th><th class="col-h">e₁₀</th><th class="col-h">e₁₁</th><th class="col-h">e₁₂</th>
+            <th class="col-h">e₁₃</th><th class="col-h">e₁₄</th><th class="col-h">e₁₅</th><th class="col-h">e₁₆</th>
+            <th class="col-h">e₁₇</th><th class="col-h">e₁₈</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th class="row-h">v₁</th><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td></tr>
+          <tr><th class="row-h">v₂</th><td class="p">+1</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td></tr>
+          <tr><th class="row-h">v₃</th><td class="z">·</td><td class="p">+1</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">v₄</th><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">v₅</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">v₆</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">v₇</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td></tr>
+          <tr><th class="row-h">v₈</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="p">+1</td><td class="z">·</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p>Two checks the matrix wears on its sleeve: every column has one $+1$ and one $-1$ (each edge has two endpoints), and every row sum is $0$ (each vertex appears as head of as many edges as it appears as tail).</p>
+</section>
+
+<!-- ════════ IV: ∂₂ ════════ -->
+<section>
+  <h2><span class="roman">IV</span>The boundary $\partial_2\colon C_2 \to C_1$</h2>
+
+  <p>For an oriented triangle $t = [v_a, v_b, v_c]$ the boundary is</p>
+  <p class="bigeq">$\partial_2 [v_a, v_b, v_c] \;=\; [v_b, v_c] \;-\; [v_a, v_c] \;+\; [v_a, v_b]\,.$</p>
+  <p>Each $[v_i, v_j]$ then matches one of our oriented edges $e_k$ (lower index → higher index) — possibly with a minus sign if the orientation is reversed. Computing for all twelve triangles:</p>
+
+  <ul class="boundary-eqs">
+    <li><span class="tlbl">∂t₁ =</span><span> &minus;e₁ &minus; e₂ + e₁₃</span></li>
+    <li><span class="tlbl">∂t₂ =</span><span> +e₄ &minus; e₃ &minus; e₁₃</span></li>
+    <li><span class="tlbl">∂t₃ =</span><span> +e₅ + e₆ &minus; e₁₄</span></li>
+    <li><span class="tlbl">∂t₄ =</span><span> +e₇ &minus; e₈ + e₁₄</span></li>
+    <li><span class="tlbl">∂t₅ =</span><span> +e₁ + e₁₀ &minus; e₁₅</span></li>
+    <li><span class="tlbl">∂t₆ =</span><span> &minus;e₅ &minus; e₉ + e₁₅</span></li>
+    <li><span class="tlbl">∂t₇ =</span><span> +e₃ + e₁₂ &minus; e₁₆</span></li>
+    <li><span class="tlbl">∂t₈ =</span><span> &minus;e₇ &minus; e₁₁ + e₁₆</span></li>
+    <li><span class="tlbl">∂t₉ =</span><span> &minus;e₄ &minus; e₁₂ + e₁₇</span></li>
+    <li><span class="tlbl">∂t₁₀ =</span><span> +e₈ + e₉ &minus; e₁₇</span></li>
+    <li><span class="tlbl">∂t₁₁ =</span><span> +e₂ + e₁₁ &minus; e₁₈</span></li>
+    <li><span class="tlbl">∂t₁₂ =</span><span> &minus;e₆ &minus; e₁₀ + e₁₈</span></li>
+  </ul>
+
+  <p>Each row above becomes a column of $\partial_2$:</p>
+
+  <div class="matrix-wrap matrix-wrap-center">
+    <div class="matrix-card">
+      <span class="matrix-label">∂₂ &nbsp; (18 × 12)</span>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="col-h">t₁</th><th class="col-h">t₂</th><th class="col-h">t₃</th><th class="col-h">t₄</th>
+            <th class="col-h">t₅</th><th class="col-h">t₆</th><th class="col-h">t₇</th><th class="col-h">t₈</th>
+            <th class="col-h">t₉</th><th class="col-h">t₁₀</th><th class="col-h">t₁₁</th><th class="col-h">t₁₂</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th class="row-h">e₁</th><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₂</th><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₃</th><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₄</th><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₅</th><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₆</th><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td></tr>
+          <tr><th class="row-h">e₇</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₈</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₉</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₀</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td></tr>
+          <tr><th class="row-h">e₁₁</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₂</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="z">·</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₃</th><td class="p">+1</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₄</th><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₅</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₆</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="p">+1</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₇</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="p">+1</td><td class="n">−1</td><td class="z">·</td><td class="z">·</td></tr>
+          <tr><th class="row-h">e₁₈</th><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="z">·</td><td class="n">−1</td><td class="p">+1</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p>Each column has exactly three nonzero entries — a triangle's three signed boundary edges. Each <em>row</em> has exactly two nonzero entries with opposite signs: every edge sits in exactly two triangles, and because all twelve are oriented outward, those two appearances cancel. This row pattern is the geometric face of $\partial^2 = 0$.</p>
+</section>
+
+<!-- ════════ V: verification ════════ -->
+<section>
+  <h2><span class="roman">V</span>Verifying $\partial_1 \circ \partial_2 = 0$</h2>
+
+  <p>Take triangle $t_5 = [v_1, v_2, v_6]$. From the table,</p>
+  <p class="bigeq">$\partial_2 t_5 \;=\; e_1 + e_{10} - e_{15}\,,$</p>
+  <p>and applying $\partial_1$,</p>
+  <p class="bigeq">$\partial_1\bigl(e_1 + e_{10} - e_{15}\bigr) \;=\; (v_2 - v_1) + (v_6 - v_2) - (v_6 - v_1) \;=\; 0\,. \quad \checkmark$</p>
+
+  <div class="callout">
+    <p style="margin: 0;">More structurally, the $(i,j)$-entry of $\partial_1 \partial_2$ counts, with sign, how many times vertex $v_i$ appears at the boundary of triangle $t_j$. For any triangle $[v_a, v_b, v_c]$, each of $v_a, v_b, v_c$ appears once with $+$ and once with $-$ in the boundary expansion, so every column of the product is zero. Multiplying the explicit $8 \times 18$ and $18 \times 12$ matrices above gives the zero matrix exactly.</p>
+  </div>
+</section>
+
+<hr class="mark">
+
+<!-- ════════ VI: homology ════════ -->
+<section>
+  <h2><span class="roman">VI</span>Homology, computed</h2>
+
+  <h3>$H_0$ — connected components</h3>
+  <p>$H_0 = \ker(\partial_0)/\mathrm{im}(\partial_1) = \mathbb{R}^8/\mathrm{im}(\partial_1)$. The image of $\partial_1$ is spanned by the 18 vectors $\{v_j - v_i\}$. Because the 1-skeleton is connected (any vertex reaches any other through edges), this image is exactly the 7-dimensional subspace</p>
+  <p class="bigeq">$\Bigl\{ \textstyle\sum_i a_i v_i \;:\; \sum_i a_i = 0 \Bigr\} \subset \mathbb{R}^8\,.$</p>
+  <p>Hence $\mathrm{rank}(\partial_1) = 7$ and</p>
+  <p class="bigeq">$\dim H_0 \;=\; 8 - 7 \;=\; 1\,.$</p>
+
+  <h3>$H_2$ — top-dimensional cycles</h3>
+  <p>$H_2 = \ker(\partial_2)$, since there is no $\partial_3$. We claim the kernel is $1$-dimensional, spanned by the <em>fundamental class</em></p>
+  <p class="bigeq">$[\Sigma] \;:=\; t_1 + t_2 + t_3 + t_4 + t_5 + t_6 + t_7 + t_8 + t_9 + t_{10} + t_{11} + t_{12}\,.$</p>
+  <p>Why is $\partial_2 [\Sigma] = 0$? Sum the 12 boundary equations from §IV. Every edge $e_k$ appears in <em>exactly two</em> triangle boundaries (the two triangles incident to it), with opposite signs because the triangles are consistently outward-oriented. The signs cancel, leaving zero.</p>
+  <p>For example, $e_5 = [v_5, v_6]$ appears in $\partial t_3$ with coefficient $+1$ and in $\partial t_6$ with coefficient $-1$, so its total contribution to $\partial[\Sigma]$ is zero. The same pattern holds for all 18 edges (the rows of $\partial_2$ all sum to zero, encoding this).</p>
+  <p>To see the kernel is no bigger: any 2-cycle is determined up to scalar by a single triangle's coefficient. The cancellation condition on shared edges forces neighbouring triangle coefficients to be equal, and the surface is connected, so all twelve coefficients must agree. Therefore</p>
+  <p class="bigeq">$\dim H_2 \;=\; \dim \ker(\partial_2) \;=\; 1\,, \qquad \mathrm{rank}(\partial_2) \;=\; 12 - 1 \;=\; 11\,.$</p>
+
+  <h3>$H_1$ — loops modulo boundaries</h3>
+  <p>By rank–nullity for $\partial_1$,</p>
+  <p class="bigeq">$\dim \ker(\partial_1) \;=\; 18 - \mathrm{rank}(\partial_1) \;=\; 18 - 7 \;=\; 11\,.$</p>
+  <p>And we just computed $\mathrm{rank}(\partial_2) = 11$. Since $\mathrm{im}(\partial_2) \subseteq \ker(\partial_1)$ and they share the same dimension, they coincide:</p>
+  <p class="bigeq">$\dim H_1 \;=\; \dim \ker(\partial_1) - \mathrm{rank}(\partial_2) \;=\; 11 - 11 \;=\; 0\,.$</p>
+
+  <div class="dimsummary">
+    $H_0 \,\cong\, \mathbb{R}\,, \qquad H_1 \,=\, 0\,, \qquad H_2 \,\cong\, \mathbb{R}\,.$
+  </div>
+
+  <p>This is the homology of the 2-sphere: one connected component, no nontrivial loops, one enclosed void. The answer is independent of the triangulation, of orientations, of orderings — those are scaffolding. The output is a topological invariant, and it correctly sees that this collection of 38 simplices is a sphere.</p>
+
+  <p>An Euler-characteristic accounting confirms the count from another direction:</p>
+  <p class="bigeq">$\chi \;=\; \dim H_0 - \dim H_1 + \dim H_2 \;=\; 1 - 0 + 1 \;=\; 2 \;=\; V - E + F\,. \quad \checkmark$</p>
+</section>
+
+<footer>
+  Coefficients in $\mathbb{R}$. Over $\mathbb{Z}$ the same calculation gives $H_0 \cong H_2 \cong \mathbb{Z}$,
+  since the cube surface is orientable and torsion-free.
+  <span class="rolltide">— Roll Tide —</span>
+</footer>
+
+</article>
+
+<!-- ════════ Three.js cube widget ════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ─── Geometry data (matches the math exactly) ───
+// Vertices (centered at origin)
+const verts = [
+  [-0.5,-0.5,-0.5], [ 0.5,-0.5,-0.5], [ 0.5, 0.5,-0.5], [-0.5, 0.5,-0.5],
+  [-0.5,-0.5, 0.5], [ 0.5,-0.5, 0.5], [ 0.5, 0.5, 0.5], [-0.5, 0.5, 0.5],
+].map(v => new THREE.Vector3(...v));
+
+// Edges: [vertex_i, vertex_j] (0-indexed) with type 'cube' or 'diag'
+// Index in this array + 1 = e_k label
+const edges = [
+  [0,1,'cube'], [1,2,'cube'], [2,3,'cube'], [0,3,'cube'],   // bottom square
+  [4,5,'cube'], [5,6,'cube'], [6,7,'cube'], [4,7,'cube'],   // top square
+  [0,4,'cube'], [1,5,'cube'], [2,6,'cube'], [3,7,'cube'],   // verticals
+  [0,2,'diag'], [4,6,'diag'], [0,5,'diag'], [2,7,'diag'],   // bot, top, frnt, back diagonals
+  [0,7,'diag'], [1,6,'diag'],                                // left, right diagonals
+];
+
+// Triangles: [a,b,c] (0-indexed). Index +1 = t_k label.
+const tris = [
+  [0,2,1], [0,3,2],    // bottom (t1, t2)
+  [4,5,6], [4,6,7],    // top (t3, t4)
+  [0,1,5], [0,5,4],    // front (t5, t6)
+  [2,3,7], [2,7,6],    // back (t7, t8)
+  [0,7,3], [0,4,7],    // left (t9, t10)
+  [1,2,6], [1,6,5],    // right (t11, t12)
+];
+
+// Edge lookup: given (i,j) with i<j, what's the edge index?
+const edgeIdx = {};
+edges.forEach((e, idx) => { edgeIdx[`${e[0]}-${e[1]}`] = idx; });
+
+function findEdge(i, j) {
+  if (i < j) return { idx: edgeIdx[`${i}-${j}`], sign: +1 };
+  else       return { idx: edgeIdx[`${j}-${i}`], sign: -1 };
+}
+
+// Boundary of triangle [a,b,c] = +[b,c] - [a,c] + [a,b]
+//                              = +(directed b→c) + (directed c→a) + (directed a→b)
+// Each directed edge maps to ±e_k.
+function boundaryEdges(tri) {
+  const [a,b,c] = tri;
+  // directed edges around the boundary cycle a→b, b→c, c→a (consistent with right-hand rule)
+  const dirs = [[a,b],[b,c],[c,a]];
+  return dirs.map(([p,q]) => {
+    const { idx, sign } = findEdge(p, q);
+    return { idx, sign, from: verts[p], to: verts[q] };
+  });
+}
+
+// ─── Three.js setup ───
+const wrap = document.getElementById('cube-canvas-wrap');
+const W = () => wrap.clientWidth;
+const H = () => wrap.clientHeight;
+
+const scene = new THREE.Scene();
+scene.background = null;
+
+const camera = new THREE.PerspectiveCamera(38, W()/H(), 0.1, 100);
+camera.position.set(1.9, 1.5, 2.4);
+camera.lookAt(0,0,0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W(), H());
+wrap.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(W(), H());
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.left = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+wrap.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.enablePan = false;
+controls.minDistance = 1.6;
+controls.maxDistance = 6;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+const dl = new THREE.DirectionalLight(0xffffff, 0.55);
+dl.position.set(2.5, 3.5, 2);
+scene.add(dl);
+const dl2 = new THREE.DirectionalLight(0xffffff, 0.25);
+dl2.position.set(-2, -1, -2);
+scene.add(dl2);
+
+// ─── Color palette ───
+const COL = {
+  ink:      new THREE.Color('#1a1410'),
+  inkSoft:  new THREE.Color('#4a3f33'),
+  mute:     new THREE.Color('#8a7f6b'),
+  faint:    new THREE.Color('#c4b89d'),
+  cube:     new THREE.Color('#3a2f23'),
+  diag:     new THREE.Color('#9E1B32'),
+  crimson:  new THREE.Color('#9E1B32'),
+  crimsonD: new THREE.Color('#6e0f1f'),
+  cream:    new THREE.Color('#f5ecd7'),
+  pos:      new THREE.Color('#2a6b3d'),
+  neg:      new THREE.Color('#9E1B32'),
+  faceBase: new THREE.Color('#9E1B32'),
+};
+
+// ─── Build vertices (small spheres + labels) ───
+const vertGroup = new THREE.Group();
+const vertMeshes = [];
+const sphereGeom = new THREE.SphereGeometry(0.026, 16, 12);
+verts.forEach((v, i) => {
+  const m = new THREE.Mesh(sphereGeom, new THREE.MeshBasicMaterial({ color: COL.ink }));
+  m.position.copy(v);
+  vertGroup.add(m);
+  vertMeshes.push(m);
+});
+scene.add(vertGroup);
+
+// Vertex labels
+const vLabels = [];
+verts.forEach((v, i) => {
+  const div = document.createElement('div');
+  div.className = 'vlabel';
+  // subscripts
+  const subs = ['₁','₂','₃','₄','₅','₆','₇','₈'];
+  div.innerHTML = `v${subs[i]}`;
+  const obj = new CSS2DObject(div);
+  // offset outward from cube center
+  const offset = v.clone().normalize().multiplyScalar(0.14);
+  obj.position.copy(v).add(offset);
+  scene.add(obj);
+  vLabels.push(obj);
+});
+
+// ─── Build edges (each as its own LineSegments for individual control) ───
+const edgeGroup = new THREE.Group();
+const edgeObjs = []; // { line, baseColor, baseOpacity, baseWidth, vA, vB, type }
+edges.forEach((e, idx) => {
+  const [i, j, type] = e;
+  const a = verts[i], b = verts[j];
+  const geom = new THREE.BufferGeometry().setFromPoints([a, b]);
+  const baseColor = type === 'cube' ? COL.cube : COL.diag;
+  const mat = new THREE.LineBasicMaterial({
+    color: baseColor.clone(),
+    transparent: true,
+    opacity: type === 'cube' ? 0.9 : 0.55,
+    linewidth: 1,
+  });
+  const line = new THREE.Line(geom, mat);
+  edgeGroup.add(line);
+  edgeObjs.push({ line, baseColor, baseOpacity: mat.opacity, type, vA: a, vB: b, idx });
+});
+scene.add(edgeGroup);
+
+// Edge labels (hidden by default)
+const eLabels = [];
+const subEdge = ['₁','₂','₃','₄','₅','₆','₇','₈','₉','₁₀','₁₁','₁₂','₁₃','₁₄','₁₅','₁₆','₁₇','₁₈'];
+edges.forEach((e, idx) => {
+  const [i, j] = e;
+  const mid = verts[i].clone().add(verts[j]).multiplyScalar(0.5);
+  const div = document.createElement('div');
+  div.className = 'elabel';
+  div.innerHTML = `e${subEdge[idx]}`;
+  const obj = new CSS2DObject(div);
+  obj.position.copy(mid);
+  obj.visible = false;
+  scene.add(obj);
+  eLabels.push(obj);
+});
+
+// ─── Build triangle faces (each its own Mesh) ───
+const triGroup = new THREE.Group();
+const triMeshes = []; // { mesh, baseColor }
+const subTri = ['₁','₂','₃','₄','₅','₆','₇','₈','₉','₁₀','₁₁','₁₂'];
+tris.forEach((t, idx) => {
+  const [a, b, c] = t;
+  const positions = new Float32Array([
+    verts[a].x, verts[a].y, verts[a].z,
+    verts[b].x, verts[b].y, verts[b].z,
+    verts[c].x, verts[c].y, verts[c].z,
+  ]);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  const mat = new THREE.MeshLambertMaterial({
+    color: new THREE.Color('#e8c4ab'),
+    transparent: true,
+    opacity: 0.30,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  triGroup.add(mesh);
+  triMeshes.push({ mesh, idx });
+});
+scene.add(triGroup);
+
+// Triangle centroid labels (hidden until hovered/selected)
+const tLabels = [];
+tris.forEach((t, idx) => {
+  const [a, b, c] = t;
+  const cen = verts[a].clone().add(verts[b]).add(verts[c]).multiplyScalar(1/3);
+  const div = document.createElement('div');
+  div.className = 'tlabel';
+  div.innerHTML = `t${subTri[idx]}`;
+  const obj = new CSS2DObject(div);
+  obj.position.copy(cen).multiplyScalar(1.06);
+  obj.visible = false;
+  scene.add(obj);
+  tLabels.push(obj);
+});
+
+// ─── Highlight helpers ───
+const arrowHelpers = []; // for boundary arrows
+function clearArrows() {
+  arrowHelpers.forEach(a => scene.remove(a));
+  arrowHelpers.length = 0;
+}
+
+function resetEdges() {
+  edgeObjs.forEach(eo => {
+    eo.line.material.color.copy(eo.baseColor);
+    eo.line.material.opacity = eo.baseOpacity;
+    eo.line.material.linewidth = 1;
+  });
+}
+
+function resetTriangles() {
+  triMeshes.forEach(({ mesh }) => {
+    mesh.material.color.set('#e8c4ab');
+    mesh.material.opacity = facesVisible ? 0.30 : 0.0;
+    mesh.material.emissive = new THREE.Color(0,0,0);
+  });
+}
+
+function hideAllTriLabels() { tLabels.forEach(o => o.visible = false); }
+
+let activeTri = null;
+let facesVisible = true;
+
+function highlightTriangle(idx) {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+
+  // Dim all other triangles
+  triMeshes.forEach(({ mesh }, i) => {
+    if (i === idx) {
+      mesh.material.color.set('#9E1B32');
+      mesh.material.opacity = 0.78;
+    } else {
+      mesh.material.color.set('#e8c4ab');
+      mesh.material.opacity = facesVisible ? 0.10 : 0.0;
+    }
+  });
+
+  // Dim non-boundary edges
+  const bd = boundaryEdges(tris[idx]);
+  const bdEdgeIdxs = new Set(bd.map(b => b.idx));
+  edgeObjs.forEach((eo, i) => {
+    if (!bdEdgeIdxs.has(i)) {
+      eo.line.material.opacity = 0.12;
+    }
+  });
+
+  // Highlight boundary edges + add arrows showing direction
+  bd.forEach(({ idx: ei, sign, from, to }) => {
+    const eo = edgeObjs[ei];
+    eo.line.material.color.set(sign > 0 ? '#2a6b3d' : '#9E1B32');
+    eo.line.material.opacity = 1.0;
+
+    // Arrow along the directed boundary (a→b→c→a). 'from' and 'to' are the vertex positions
+    // in directed order, so the arrow always points from→to regardless of edge sign.
+    const dir = to.clone().sub(from).normalize();
+    const len = to.distanceTo(from);
+    const ah = new THREE.ArrowHelper(
+      dir, from.clone().add(dir.clone().multiplyScalar(0.08)),
+      len * 0.84,
+      sign > 0 ? 0x2a6b3d : 0x9E1B32,
+      0.14, 0.07,
+    );
+    scene.add(ah);
+    arrowHelpers.push(ah);
+  });
+
+  // Show triangle label
+  tLabels[idx].visible = true;
+
+  // Update equation display
+  showEquation(idx, bd);
+  activeTri = idx;
+  updateButtonStates();
+}
+
+function showFundamentalClass() {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+
+  // All 12 triangles in crimson at moderate opacity
+  triMeshes.forEach(({ mesh }, i) => {
+    // Use slightly varied tints by face for visual interest
+    const faceIdx = Math.floor(i / 2);
+    const tints = ['#9E1B32','#9E1B32','#b32540','#b32540','#8c1729','#8c1729'];
+    mesh.material.color.set(tints[faceIdx]);
+    mesh.material.opacity = 0.62;
+  });
+
+  // Edges all in deep ink
+  edgeObjs.forEach(eo => {
+    eo.line.material.opacity = 1.0;
+    eo.line.material.color.copy(eo.type === 'cube' ? COL.ink : COL.crimsonD);
+  });
+
+  showEquationFC();
+  activeTri = -1;
+  updateButtonStates();
+}
+
+function resetView() {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+  hideEquation();
+  // Animate camera back
+  const target = new THREE.Vector3(1.9, 1.5, 2.4);
+  const start = camera.position.clone();
+  let t = 0;
+  function tween() {
+    t += 0.06;
+    if (t >= 1) { camera.position.copy(target); controls.target.set(0,0,0); return; }
+    const k = 1 - Math.pow(1-t, 3);
+    camera.position.lerpVectors(start, target, k);
+    controls.target.set(0,0,0);
+    requestAnimationFrame(tween);
+  }
+  tween();
+  activeTri = null;
+  updateButtonStates();
+}
+
+// Equation display
+const eqnEl = document.getElementById('eqn-display');
+function showEquation(idx, bd) {
+  // Build the boundary expression as it appears in our math:
+  // Use the canonical edge labels (lower→higher orientation) with signs.
+  const parts = bd.map(({ idx: ei, sign }) => {
+    const lbl = `e${subEdge[ei]}`;
+    return { sign, lbl };
+  });
+  // Render: ∂t_k = ±e_a ±e_b ±e_c
+  let html = `<span class="lbl">∂t${subTri[idx]}</span>= `;
+  parts.forEach((p, i) => {
+    if (i === 0) {
+      html += (p.sign > 0 ? '' : '−') + p.lbl;
+    } else {
+      html += ' ' + (p.sign > 0 ? '+' : '−') + ' ' + p.lbl;
+    }
+  });
+  eqnEl.innerHTML = html;
+  eqnEl.classList.add('show');
+}
+function showEquationFC() {
+  eqnEl.innerHTML = `<span class="lbl">[Σ] =</span> t₁ + t₂ + t₃ + t₄ + t₅ + t₆ + t₇ + t₈ + t₉ + t₁₀ + t₁₁ + t₁₂ &nbsp; — &nbsp; the fundamental class &nbsp; ( ∂[Σ] = 0 )`;
+  eqnEl.classList.add('show');
+}
+function hideEquation() {
+  eqnEl.classList.remove('show');
+  eqnEl.innerHTML = '';
+}
+
+// ─── Build triangle buttons ───
+const triGrid = document.getElementById('tri-grid');
+const triButtons = [];
+for (let i = 0; i < 12; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'bama-btn';
+  btn.innerHTML = `t${subTri[i]}`;
+  btn.addEventListener('click', () => highlightTriangle(i));
+  triGrid.appendChild(btn);
+  triButtons.push(btn);
+}
+
+const fcBtn = document.getElementById('btn-fc');
+fcBtn.addEventListener('click', showFundamentalClass);
+const resetBtn = document.getElementById('btn-reset');
+resetBtn.addEventListener('click', resetView);
+
+function updateButtonStates() {
+  triButtons.forEach((b, i) => {
+    b.classList.toggle('active', i === activeTri);
+  });
+  fcBtn.classList.toggle('active', activeTri === -1);
+}
+
+// ─── Toggles ───
+const togV = document.getElementById('tog-vlabels');
+togV.addEventListener('change', () => {
+  vLabels.forEach(o => o.visible = togV.checked);
+});
+
+const togE = document.getElementById('tog-elabels');
+togE.addEventListener('change', () => {
+  eLabels.forEach(o => o.visible = togE.checked);
+});
+
+const togF = document.getElementById('tog-faces');
+togF.addEventListener('change', () => {
+  facesVisible = togF.checked;
+  if (activeTri === null) {
+    // default state
+    triMeshes.forEach(({ mesh }) => {
+      mesh.material.opacity = facesVisible ? 0.30 : 0.0;
+    });
+  } else if (activeTri >= 0) {
+    // re-apply highlight
+    highlightTriangle(activeTri);
+  } else if (activeTri === -1) {
+    // re-apply fundamental class
+    showFundamentalClass();
+  }
+});
+
+// ─── Resize ───
+function onResize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  labelRenderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+
+// ─── Animation loop ───
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+animate();
+</script>
+
+</body>
+</html>

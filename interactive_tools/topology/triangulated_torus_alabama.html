@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boundary Maps on a Box Torus — Crimson Tide Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500;1,700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+:root {
+  --bama-crimson:       #9E1B32;
+  --bama-crimson-deep:  #6e0f1f;
+  --bama-crimson-light: #c4334d;
+  --bama-cream:         #f5ecd7;
+  --bama-cream-light:   #faf3e3;
+  --bama-cream-dark:    #e8dcc1;
+  --bama-ink:           #1a1410;
+  --bama-ink-soft:      #4a3f33;
+  --bama-mute:          #8a7f6b;
+  --bama-faint:         #c4b89d;
+  --rule:               #d4c8a8;
+  --pos:                #2a6b3d;
+  --neg:                #6e0f1f;
+  --meridian:           #1d4f8c;
+  --longitude:          #b8721c;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bama-cream);
+  color: var(--bama-ink);
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.6;
+  font-feature-settings: 'kern','liga','onum';
+  -webkit-font-smoothing: antialiased;
+}
+
+article {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 80px 48px 140px;
+}
+@media (max-width: 720px) {
+  article { padding: 48px 22px 100px; }
+  body { font-size: 18px; }
+}
+
+/* ─── Header ─── */
+header { text-align: center; margin-bottom: 70px; position: relative; }
+header::before {
+  content: "";
+  display: block;
+  height: 14px;
+  margin-bottom: 36px;
+  background-image: repeating-linear-gradient(90deg,
+    var(--bama-crimson) 0, var(--bama-crimson) 6px,
+    transparent 6px, transparent 12px);
+  background-size: 12px 14px;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+.kicker {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--bama-crimson);
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: clamp(38px, 6vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.012em;
+  margin: 0 0 16px;
+  color: var(--bama-ink);
+}
+h1 em { color: var(--bama-crimson); font-style: italic; font-weight: 700; }
+header .sub {
+  font-style: italic;
+  font-size: 22px;
+  color: var(--bama-ink-soft);
+  margin: 0 auto;
+  max-width: 640px;
+}
+header::after {
+  content: "❧";
+  display: block;
+  margin: 28px auto 0;
+  color: var(--bama-crimson);
+  font-size: 22px;
+}
+
+/* ─── Section headers ─── */
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 34px;
+  margin: 78px 0 18px;
+  color: var(--bama-ink);
+  letter-spacing: -0.005em;
+  position: relative;
+  padding-left: 64px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+}
+h2 .roman {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1px;
+  box-shadow: 3px 3px 0 var(--bama-crimson-deep);
+}
+h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 23px;
+  margin: 36px 0 10px;
+  color: var(--bama-crimson-deep);
+}
+
+p { margin: 0 0 16px; }
+
+.lead {
+  font-size: 22px;
+  line-height: 1.55;
+  color: var(--bama-ink-soft);
+  font-style: italic;
+  margin-bottom: 36px;
+}
+
+code, .mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84em;
+}
+
+.callout {
+  background: var(--bama-cream-light);
+  border-left: 4px solid var(--bama-crimson);
+  padding: 18px 26px;
+  margin: 26px 0;
+  font-size: 18px;
+  line-height: 1.55;
+  position: relative;
+}
+.callout::before {
+  content: "A";
+  position: absolute;
+  top: -10px;
+  left: -16px;
+  width: 28px;
+  height: 28px;
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 var(--bama-crimson-deep);
+}
+
+/* ─── Cube/torus widget ─── */
+.cube-widget {
+  margin: 36px 0 28px;
+  background: var(--bama-cream-light);
+  border: 1px solid var(--rule);
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+}
+.cube-widget-header {
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  padding: 12px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+.cube-widget-header .badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-style: normal;
+  opacity: 0.85;
+}
+#cube-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  background: var(--bama-cream-light);
+  cursor: grab;
+}
+#cube-canvas-wrap:active { cursor: grabbing; }
+#cube-canvas-wrap canvas { display: block; }
+.cube-instr {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--bama-mute);
+  pointer-events: none;
+  user-select: none;
+}
+.cube-eqn-display {
+  position: absolute;
+  bottom: 14px;
+  left: 18px;
+  right: 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--bama-ink);
+  background: rgba(245,236,215,0.92);
+  padding: 8px 14px;
+  border-left: 3px solid var(--bama-crimson);
+  pointer-events: none;
+  user-select: none;
+  min-height: 22px;
+  display: none;
+}
+.cube-eqn-display.show { display: block; }
+.cube-eqn-display .lbl {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--bama-crimson);
+  margin-right: 8px;
+  font-size: 16px;
+}
+.cube-eqn-display.meridian-style { border-left-color: var(--meridian); }
+.cube-eqn-display.meridian-style .lbl { color: var(--meridian); }
+.cube-eqn-display.longitude-style { border-left-color: var(--longitude); }
+.cube-eqn-display.longitude-style .lbl { color: var(--longitude); }
+
+/* labels */
+.vlabel, .elabel, .tlabel {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.vlabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bama-ink);
+  text-shadow: 0 0 3px var(--bama-cream-light), 0 0 3px var(--bama-cream-light);
+}
+.elabel {
+  font-size: 11px;
+  color: var(--bama-mute);
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+}
+.tlabel {
+  font-size: 12px;
+  color: var(--bama-crimson);
+  font-weight: 700;
+}
+
+.cube-controls {
+  padding: 18px 22px 22px;
+  border-top: 1px solid var(--rule);
+  background: var(--bama-cream-light);
+}
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.control-row:last-child { margin-bottom: 0; }
+.control-label {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--bama-ink-soft);
+  margin-right: 6px;
+  min-width: 92px;
+}
+.tri-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .tri-grid { grid-template-columns: repeat(8, 1fr); }
+}
+.tri-grid-row-label {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--bama-mute);
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  margin-bottom: 1px;
+  border-bottom: 1px dotted var(--rule);
+  padding-bottom: 1px;
+}
+
+.bama-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bama-cream);
+  color: var(--bama-ink);
+  border: 1px solid var(--rule);
+  padding: 5px 4px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: all 0.12s ease;
+  text-align: center;
+}
+.bama-btn:hover {
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  border-color: var(--bama-crimson);
+}
+.bama-btn.active {
+  background: var(--bama-crimson);
+  color: var(--bama-cream-light);
+  border-color: var(--bama-crimson);
+  box-shadow: 1px 1px 0 var(--bama-crimson-deep);
+}
+.bama-btn.wide { padding: 6px 14px; font-size: 13px; }
+.bama-btn.h1-meridian.active {
+  background: var(--meridian);
+  border-color: var(--meridian);
+  box-shadow: 1px 1px 0 #0d2c52;
+}
+.bama-btn.h1-longitude.active {
+  background: var(--longitude);
+  border-color: var(--longitude);
+  box-shadow: 1px 1px 0 #6a4108;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Crimson Text', serif;
+  font-size: 16px;
+  color: var(--bama-ink-soft);
+  user-select: none;
+  padding: 4px 10px;
+}
+.toggle input { accent-color: var(--bama-crimson); width: 14px; height: 14px; cursor: pointer; }
+
+/* ─── Compact orderings tables ─── */
+.ord-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 28px;
+  font-size: 14px;
+  background: var(--bama-cream-light);
+  border: 1px solid var(--rule);
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+}
+.ord-table th {
+  text-align: left;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--bama-cream-light);
+  background: var(--bama-crimson);
+  padding: 8px 12px;
+  letter-spacing: 0.02em;
+}
+.ord-table td {
+  padding: 7px 12px;
+  border-bottom: 1px dotted var(--rule);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+}
+.ord-table tr:last-child td { border-bottom: none; }
+.ord-table .group {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  color: var(--bama-ink-soft);
+  font-size: 14.5px;
+}
+.ord-table .lbl {
+  color: var(--bama-crimson);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+.vert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 4px 24px;
+  margin: 16px 0 28px;
+  background: var(--bama-cream-light);
+  border: 1px solid var(--rule);
+  padding: 18px 22px;
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.vert-grid div {
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--rule);
+}
+.vert-grid div:last-child { border-bottom: none; }
+
+/* ─── Sparsity matrices ─── */
+.matrix-section {
+  text-align: center;
+  margin: 28px 0;
+}
+.matrix-card {
+  display: inline-block;
+  background: var(--bama-cream-light);
+  padding: 26px 22px 22px;
+  border: 1px solid var(--rule);
+  position: relative;
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+  margin: 0 auto;
+  max-width: 100%;
+}
+.matrix-card-inner {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.matrix-label {
+  position: absolute;
+  top: -14px;
+  left: 18px;
+  background: var(--bama-cream);
+  padding: 0 12px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--bama-crimson);
+  font-size: 18px;
+  font-weight: 700;
+}
+.matrix-key {
+  display: flex;
+  gap: 22px;
+  font-size: 14px;
+  color: var(--bama-ink-soft);
+  margin: 12px 0 0;
+  align-items: center;
+  justify-content: center;
+  font-style: italic;
+}
+.matrix-key .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ─── Boundary equations grid ─── */
+.boundary-eqs {
+  list-style: none;
+  margin: 18px 0 24px;
+  padding: 22px 26px;
+  background: var(--bama-cream-light);
+  border: 1px solid var(--rule);
+  box-shadow: 4px 4px 0 var(--bama-cream-dark);
+  font-size: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 32px;
+}
+@media (max-width: 720px) { .boundary-eqs { grid-template-columns: 1fr; } }
+.boundary-eqs li {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  align-items: baseline;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.boundary-eqs .tlbl {
+  color: var(--bama-crimson);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 15px;
+}
+.boundary-eqs .group-hdr {
+  grid-column: 1 / -1;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--bama-ink-soft);
+  font-size: 14px;
+  margin-top: 12px;
+  border-bottom: 1px dotted var(--rule);
+  padding-bottom: 2px;
+}
+.boundary-eqs .group-hdr:first-child { margin-top: 0; }
+
+.dimsummary {
+  text-align: center;
+  margin: 36px 0;
+  font-size: 24px;
+  color: var(--bama-ink);
+  letter-spacing: 0.01em;
+  padding: 26px;
+  background: var(--bama-cream-light);
+  border-top: 4px solid var(--bama-crimson);
+  border-bottom: 4px solid var(--bama-crimson);
+}
+
+.bigeq { text-align: center; margin: 28px 0; font-size: 21px; }
+
+.live-result {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  background: var(--bama-cream);
+  padding: 1px 8px;
+  border-bottom: 2px solid var(--bama-crimson);
+  font-size: 0.95em;
+}
+
+hr.mark {
+  border: none;
+  text-align: center;
+  margin: 60px 0 24px;
+  color: var(--bama-crimson);
+  font-size: 20px;
+}
+hr.mark::before { content: "❦"; }
+
+footer {
+  margin-top: 80px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+  font-style: italic;
+  color: var(--bama-mute);
+  font-size: 16px;
+  text-align: center;
+}
+footer::before {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--bama-crimson);
+  margin: 0 auto 24px;
+}
+footer .rolltide {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--bama-crimson);
+  letter-spacing: 0.04em;
+  margin-top: 10px;
+  display: block;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  background: var(--bama-cream);
+  border: 1px solid var(--rule);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--bama-mute);
+}
+
+.legend-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 12px;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--bama-ink-soft);
+}
+.legend-line .swatch {
+  display: inline-block;
+  width: 24px;
+  height: 3px;
+}
+
+.katex { color: var(--bama-ink); }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<article>
+
+<header>
+  <div class="kicker">A Crimson Tide Monograph · Discrete Differential Geometry · vol. ii</div>
+  <h1>Boundary maps on a <em>box torus</em></h1>
+  <p class="sub">A polytope of genus one, triangulated; the chain complex; and the homology that finally has somewhere to go.</p>
+</header>
+
+<p class="lead">Take a flat box and bore a square hole through it. The boundary surface is topologically a torus — genus 1, Euler characteristic $0$. Below we triangulate it explicitly (16 vertices, 48 edges, 32 triangles), write down both boundary maps, and watch $H_1$ stop being zero. The two surviving 1-classes are the cycles every torus has: a meridian around the tube, a longitude around the hole.</p>
+
+<!-- ════════ I: Polytope + 3D widget ════════ -->
+<section>
+  <h2><span class="roman">I</span>The polytope, triangulated</h2>
+
+  <p>The polytope is the surface of $\,[-X,X]\times[-Y,Y]\times[-H,H]\,$ with the rectangular tunnel $\,[-x,x]\times[-y,y]\times[-H,H]\,$ removed. Eight outer corners and eight inner corners give $V = 16$. The faces, before triangulation, are: four <em>outer</em> side rectangles (E, N, W, S), four <em>inner</em> side rectangles facing into the tunnel, and the top &amp; bottom <em>annuli</em> (each a square with a square hole). We triangulate every rectangle by one diagonal, and each annulus by splitting it into 4 trapezoids and giving each one a diagonal — that gives $E = 48$ and $F = 32$.</p>
+
+  <p class="bigeq">$\chi \;=\; V - E + F \;=\; 16 - 48 + 32 \;=\; 0 \;=\; \chi(T^2)\,. \quad \checkmark$</p>
+
+  <p>Drag to rotate. The buttons highlight one triangle's boundary at a time, the full fundamental class, and the two generators of $H_1$ — meridian and longitude.</p>
+
+  <div class="cube-widget">
+    <div class="cube-widget-header">
+      <span>Drag to rotate · click t<sub>k</sub> for boundary · L &amp; M for H<sub>1</sub> generators</span>
+      <span class="badge">∂₂ live</span>
+    </div>
+    <div id="cube-canvas-wrap">
+      <div class="cube-instr">drag to rotate · scroll to zoom</div>
+      <div class="cube-eqn-display" id="eqn-display"></div>
+    </div>
+    <div class="cube-controls">
+
+      <div class="control-row" style="align-items: flex-start;">
+        <span class="control-label" style="padding-top:6px;">triangles</span>
+        <div class="tri-grid" id="tri-grid"></div>
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">cycles</span>
+        <button class="bama-btn wide" id="btn-fc">Σ &nbsp; fundamental class</button>
+        <button class="bama-btn wide h1-meridian" id="btn-meridian">M &nbsp; meridian</button>
+        <button class="bama-btn wide h1-longitude" id="btn-longitude">L &nbsp; longitude</button>
+        <button class="bama-btn wide" id="btn-reset">↺ &nbsp; reset</button>
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">labels</span>
+        <label class="toggle"><input type="checkbox" id="tog-vlabels" checked> vertices</label>
+        <label class="toggle"><input type="checkbox" id="tog-elabels"> edges</label>
+        <label class="toggle"><input type="checkbox" id="tog-faces" checked> face fills</label>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════ II: Orderings ════════ -->
+<section>
+  <h2><span class="roman">II</span>Orderings &amp; orientations</h2>
+
+  <p>Three ordered lists, fixed once and for all. Edges run lower-index → higher-index. Triangles are oriented so their normals point <em>outward</em> from the solid material — outward from the bulk for outer faces, into the tunnel for inner faces, and $\pm z$ for the top/bottom annuli. With this convention, the sum of all 32 triangles is a 2-cycle.</p>
+
+  <h3>Vertices · $C_0 \cong \mathbb{R}^{16}$</h3>
+  <div class="vert-grid">
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁</span>&nbsp; (X, −Y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₂</span>&nbsp; (X,  Y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₃</span>&nbsp; (−X, Y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₄</span>&nbsp; (−X,−Y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₅</span>&nbsp; (X, −Y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₆</span>&nbsp; (X,  Y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₇</span>&nbsp; (−X, Y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₈</span>&nbsp; (−X,−Y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₉</span>&nbsp; (x, −y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₀</span>(x,  y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₁</span>(−x, y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₂</span>(−x,−y, −H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₃</span>(x, −y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₄</span>(x,  y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₅</span>(−x, y,  H)</div>
+    <div><span class="lbl" style="color:var(--bama-crimson);font-family:'Playfair Display';font-style:italic;font-weight:700;">v₁₆</span>(−x,−y,  H)</div>
+  </div>
+
+  <h3>Edges · $C_1 \cong \mathbb{R}^{48}$</h3>
+  <table class="ord-table">
+    <thead><tr><th style="width: 36%;">group</th><th>edges</th></tr></thead>
+    <tbody>
+      <tr><td class="group">bottom outer square</td><td><span class="lbl">e₁</span>[1,2] &nbsp; <span class="lbl">e₂</span>[2,3] &nbsp; <span class="lbl">e₃</span>[3,4] &nbsp; <span class="lbl">e₄</span>[1,4]</td></tr>
+      <tr><td class="group">top outer square</td><td><span class="lbl">e₅</span>[5,6] &nbsp; <span class="lbl">e₆</span>[6,7] &nbsp; <span class="lbl">e₇</span>[7,8] &nbsp; <span class="lbl">e₈</span>[5,8]</td></tr>
+      <tr><td class="group">outer verticals</td><td><span class="lbl">e₉</span>[1,5] &nbsp; <span class="lbl">e₁₀</span>[2,6] &nbsp; <span class="lbl">e₁₁</span>[3,7] &nbsp; <span class="lbl">e₁₂</span>[4,8]</td></tr>
+      <tr><td class="group">bottom inner square</td><td><span class="lbl">e₁₃</span>[9,10] &nbsp; <span class="lbl">e₁₄</span>[10,11] &nbsp; <span class="lbl">e₁₅</span>[11,12] &nbsp; <span class="lbl">e₁₆</span>[9,12]</td></tr>
+      <tr><td class="group">top inner square</td><td><span class="lbl">e₁₇</span>[13,14] &nbsp; <span class="lbl">e₁₈</span>[14,15] &nbsp; <span class="lbl">e₁₉</span>[15,16] &nbsp; <span class="lbl">e₂₀</span>[13,16]</td></tr>
+      <tr><td class="group">inner verticals</td><td><span class="lbl">e₂₁</span>[9,13] &nbsp; <span class="lbl">e₂₂</span>[10,14] &nbsp; <span class="lbl">e₂₃</span>[11,15] &nbsp; <span class="lbl">e₂₄</span>[12,16]</td></tr>
+      <tr><td class="group">bottom radials</td><td><span class="lbl">e₂₅</span>[1,9] &nbsp; <span class="lbl">e₂₆</span>[2,10] &nbsp; <span class="lbl">e₂₇</span>[3,11] &nbsp; <span class="lbl">e₂₈</span>[4,12]</td></tr>
+      <tr><td class="group">top radials</td><td><span class="lbl">e₂₉</span>[5,13] &nbsp; <span class="lbl">e₃₀</span>[6,14] &nbsp; <span class="lbl">e₃₁</span>[7,15] &nbsp; <span class="lbl">e₃₂</span>[8,16]</td></tr>
+      <tr><td class="group">outer face diagonals</td><td><span class="lbl">e₃₃</span>[1,6] &nbsp; <span class="lbl">e₃₄</span>[2,7] &nbsp; <span class="lbl">e₃₅</span>[3,8] &nbsp; <span class="lbl">e₃₆</span>[4,5]</td></tr>
+      <tr><td class="group">inner face diagonals</td><td><span class="lbl">e₃₇</span>[9,14] &nbsp; <span class="lbl">e₃₈</span>[10,15] &nbsp; <span class="lbl">e₃₉</span>[11,16] &nbsp; <span class="lbl">e₄₀</span>[12,13]</td></tr>
+      <tr><td class="group">bottom annulus diags</td><td><span class="lbl">e₄₁</span>[1,10] &nbsp; <span class="lbl">e₄₂</span>[2,11] &nbsp; <span class="lbl">e₄₃</span>[3,12] &nbsp; <span class="lbl">e₄₄</span>[4,9]</td></tr>
+      <tr><td class="group">top annulus diags</td><td><span class="lbl">e₄₅</span>[5,14] &nbsp; <span class="lbl">e₄₆</span>[6,15] &nbsp; <span class="lbl">e₄₇</span>[7,16] &nbsp; <span class="lbl">e₄₈</span>[8,13]</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Triangles · $C_2 \cong \mathbb{R}^{32}$</h3>
+  <table class="ord-table">
+    <thead><tr><th style="width: 36%;">group</th><th>triangles</th></tr></thead>
+    <tbody>
+      <tr><td class="group">outer side faces</td><td><span class="lbl">t₁</span>[1,2,6] <span class="lbl">t₂</span>[1,6,5] <span class="lbl">t₃</span>[2,3,7] <span class="lbl">t₄</span>[2,7,6]<br><span class="lbl">t₅</span>[3,4,8] <span class="lbl">t₆</span>[3,8,7] <span class="lbl">t₇</span>[4,1,5] <span class="lbl">t₈</span>[4,5,8]</td></tr>
+      <tr><td class="group">inner side faces</td><td><span class="lbl">t₉</span>[9,13,14] <span class="lbl">t₁₀</span>[9,14,10] <span class="lbl">t₁₁</span>[10,14,15] <span class="lbl">t₁₂</span>[10,15,11]<br><span class="lbl">t₁₃</span>[11,15,16] <span class="lbl">t₁₄</span>[11,16,12] <span class="lbl">t₁₅</span>[12,16,13] <span class="lbl">t₁₆</span>[12,13,9]</td></tr>
+      <tr><td class="group">bottom annulus</td><td><span class="lbl">t₁₇</span>[1,9,10] <span class="lbl">t₁₈</span>[1,10,2] <span class="lbl">t₁₉</span>[2,10,11] <span class="lbl">t₂₀</span>[2,11,3]<br><span class="lbl">t₂₁</span>[3,11,12] <span class="lbl">t₂₂</span>[3,12,4] <span class="lbl">t₂₃</span>[4,12,9] <span class="lbl">t₂₄</span>[4,9,1]</td></tr>
+      <tr><td class="group">top annulus</td><td><span class="lbl">t₂₅</span>[5,6,14] <span class="lbl">t₂₆</span>[5,14,13] <span class="lbl">t₂₇</span>[6,7,15] <span class="lbl">t₂₈</span>[6,15,14]<br><span class="lbl">t₂₉</span>[7,8,16] <span class="lbl">t₃₀</span>[7,16,15] <span class="lbl">t₃₁</span>[8,5,13] <span class="lbl">t₃₂</span>[8,13,16]</td></tr>
+    </tbody>
+  </table>
+
+  <p>The chain complex:</p>
+  <p class="bigeq">$0 \;\longrightarrow\; \mathbb{R}^{32} \;\xrightarrow{\;\partial_2\;}\; \mathbb{R}^{48} \;\xrightarrow{\;\partial_1\;}\; \mathbb{R}^{16} \;\longrightarrow\; 0\,.$</p>
+</section>
+
+<hr class="mark">
+
+<!-- ════════ III: ∂_1 ════════ -->
+<section>
+  <h2><span class="roman">III</span>The boundary $\partial_1\colon C_1 \to C_0$</h2>
+
+  <p>For each oriented edge $e_k = [v_i, v_j]$ with $i < j$, the boundary is</p>
+  <p class="bigeq">$\partial_1\, e_k \;=\; v_j - v_i\,.$</p>
+  <p>The corresponding column of $\partial_1$ has $-1$ in row $i$, $+1$ in row $j$, and zeros elsewhere — the signed incidence matrix of the 1-skeleton.</p>
+
+  <div class="matrix-section">
+    <div class="matrix-card">
+      <span class="matrix-label">∂₁ &nbsp; (16 × 48)</span>
+      <div class="matrix-card-inner">
+        <svg id="d1-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="matrix-key">
+        <span><span class="swatch" style="background:var(--pos);"></span>+1</span>
+        <span><span class="swatch" style="background:var(--neg);"></span>−1</span>
+        <span><span class="swatch" style="background:var(--bama-cream-dark);border:1px solid var(--rule);"></span>0</span>
+      </div>
+    </div>
+  </div>
+
+  <p>Two checks visible from the picture: every column has exactly one $+1$ (green) and one $-1$ (crimson) — every edge has two endpoints. Every row sum is $0$ — at each vertex, the number of edges arriving equals the number leaving. The 12 columns from $e_{37}$ to $e_{48}$ (face and annulus diagonals) are concentrated in the upper or lower halves of the matrix according to whether the diagonal is on the bottom-half ($v_1\!-\!v_{12}$) or crosses to the top half.</p>
+</section>
+
+<!-- ════════ IV: ∂_2 ════════ -->
+<section>
+  <h2><span class="roman">IV</span>The boundary $\partial_2\colon C_2 \to C_1$</h2>
+
+  <p>For an oriented triangle $t_k = [v_a, v_b, v_c]$,</p>
+  <p class="bigeq">$\partial_2[v_a, v_b, v_c] \;=\; [v_b, v_c] \;-\; [v_a, v_c] \;+\; [v_a, v_b]\,.$</p>
+  <p>Each $[v_p, v_q]$ matches one canonical edge $e_m$ (with $p<q$), or its negative. Computing for all 32 triangles:</p>
+
+  <ul class="boundary-eqs" id="boundary-eqs-list"></ul>
+
+  <p>Each row above becomes a column of $\partial_2$. The full matrix:</p>
+
+  <div class="matrix-section">
+    <div class="matrix-card">
+      <span class="matrix-label">∂₂ &nbsp; (48 × 32)</span>
+      <div class="matrix-card-inner">
+        <svg id="d2-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="matrix-key">
+        <span><span class="swatch" style="background:var(--pos);"></span>+1</span>
+        <span><span class="swatch" style="background:var(--neg);"></span>−1</span>
+        <span><span class="swatch" style="background:var(--bama-cream-dark);border:1px solid var(--rule);"></span>0</span>
+      </div>
+    </div>
+  </div>
+
+  <p>Each column has exactly three nonzero entries — one triangle's three signed boundary edges. Each <em>row</em> has exactly two nonzero entries with opposite signs: every edge sits in exactly two triangles, and because all 32 are oriented outward, those appearances cancel. The "∂² = 0" geometry sits in those row patterns.</p>
+</section>
+
+<!-- ════════ V: verification ════════ -->
+<section>
+  <h2><span class="roman">V</span>Verifying $\partial_1 \circ \partial_2 = 0$</h2>
+
+  <p>Take triangle $t_{17} = [v_1, v_9, v_{10}]$, one of the bottom-annulus triangles. From the list,</p>
+  <p class="bigeq">$\partial_2 t_{17} \;=\; e_{13} + e_{25} - e_{41}\,,$</p>
+  <p>i.e. $+[v_9, v_{10}] + [v_1, v_9] - [v_1, v_{10}]$. Apply $\partial_1$:</p>
+  <p class="bigeq">$\partial_1\bigl(e_{13} + e_{25} - e_{41}\bigr) \;=\; (v_{10} - v_9) + (v_9 - v_1) - (v_{10} - v_1) \;=\; 0\,. \quad \checkmark$</p>
+
+  <div class="callout">
+    <p style="margin:0;">In code, the full product $\partial_1 \partial_2$ is computed at page-load and is checked to be the zero matrix: <span class="live-result" id="d1d2-check">…</span>. Equivalently, every column of $\partial_2$ sends to zero under $\partial_1$ — for any triangle $[v_a, v_b, v_c]$, each of $v_a, v_b, v_c$ appears once with $+$ and once with $-$ in the boundary, so the column's image cancels.</p>
+  </div>
+</section>
+
+<hr class="mark">
+
+<!-- ════════ VI: homology ════════ -->
+<section>
+  <h2><span class="roman">VI</span>Homology</h2>
+
+  <p>The dimensions follow from two ranks, computed at page load by row-reducing the matrices above:</p>
+  <p class="bigeq">$\mathrm{rank}(\partial_1) \;=\;$ <span class="live-result" id="r1-display">…</span>$,\qquad \mathrm{rank}(\partial_2) \;=\;$ <span class="live-result" id="r2-display">…</span>$.$</p>
+
+  <h3>$H_0$ — connectedness</h3>
+  <p>The 1-skeleton is connected (every vertex is reachable from every other through the edges), so $\mathrm{im}(\partial_1)$ is the 15-dimensional subspace $\{\sum a_i v_i : \sum a_i = 0\} \subset \mathbb{R}^{16}$, and</p>
+  <p class="bigeq">$\dim H_0 \;=\; 16 - \mathrm{rank}(\partial_1) \;=\; 16 - 15 \;=\; 1\,.$</p>
+
+  <h3>$H_2$ — top dimension</h3>
+  <p>$H_2 = \ker(\partial_2)$. The fundamental class $[\Sigma] = t_1 + t_2 + \cdots + t_{32}$ lies in this kernel: every edge appears in exactly two triangle boundaries with opposite signs, so $\partial_2 [\Sigma] = 0$. The connectedness argument from before shows the kernel can't be larger than this one-dimensional span, so</p>
+  <p class="bigeq">$\dim H_2 \;=\; 32 - \mathrm{rank}(\partial_2) \;=\; 32 - 31 \;=\; 1\,.$</p>
+
+  <h3>$H_1$ — the holes</h3>
+  <p>By rank–nullity for $\partial_1$,</p>
+  <p class="bigeq">$\dim \ker(\partial_1) \;=\; 48 - 15 \;=\; 33\,.$</p>
+  <p>The image of $\partial_2$ has rank $31$, and is contained in $\ker(\partial_1)$. So</p>
+  <p class="bigeq">$\dim H_1 \;=\; 33 - 31 \;=\; 2\,.$</p>
+
+  <p>The two-dimensional homology has explicit generators visible on the polytope:</p>
+
+  <p>
+    <strong style="color:var(--longitude);font-family:'Playfair Display';font-style:italic;">L · longitude</strong>, the bottom outer square
+    $\;v_1 \to v_2 \to v_3 \to v_4 \to v_1\;$ written as $\;e_1 + e_2 + e_3 - e_4\,.\;$
+    It loops once around the donut hole. It is a 1-cycle ($\partial_1$ of it $= 0$, immediate check), and it is not a boundary — it would have to bound a disk on the surface, but every disk it could bound has been removed.
+  </p>
+
+  <p>
+    <strong style="color:var(--meridian);font-family:'Playfair Display';font-style:italic;">M · meridian</strong>, the cross-section
+    $\;v_1 \to v_9 \to v_{13} \to v_5 \to v_1\;$ written as $\;-e_9 + e_{21} - e_{29} + e_{25}\,.\;$
+    It loops once around the tube of the donut, threading the hole. It is also a non-bounding 1-cycle.
+  </p>
+
+  <p>Click the L and M buttons on the widget above and you can see them traced out. You can verify (by augmenting the matrix $\partial_2$ with these two columns and recomputing the rank) that they are linearly independent in $H_1$: the page does this on load — augmented rank = <span class="live-result" id="aug-rank">…</span>, which is $\mathrm{rank}(\partial_2) + 2$, confirming both L and M are nonzero in $H_1$ and not multiples of each other modulo boundaries.</p>
+
+  <h3>The result</h3>
+  <div class="dimsummary">
+    $H_0 \,\cong\, \mathbb{R}\,, \qquad H_1 \,\cong\, \mathbb{R}^2\,, \qquad H_2 \,\cong\, \mathbb{R}\,.$
+  </div>
+
+  <p>This is the homology of $T^2$. The two-dimensional $H_1$ is the entire reason the torus is interesting in algebraic topology — it's where holes show up and refuse to be filled. Euler check:</p>
+  <p class="bigeq">$\chi \;=\; \dim H_0 - \dim H_1 + \dim H_2 \;=\; 1 - 2 + 1 \;=\; 0 \;=\; V - E + F\,. \quad \checkmark$</p>
+</section>
+
+<footer>
+  Coefficients in $\mathbb{R}$. Over $\mathbb{Z}$ the same calculation gives
+  $H_0 \cong H_2 \cong \mathbb{Z}$ and $H_1 \cong \mathbb{Z}^2$,
+  since the box torus surface is orientable and torsion-free.
+  <span class="rolltide">— Roll Tide —</span>
+</footer>
+
+</article>
+
+<!-- ════════ Page logic ════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ─── Geometry ─────────────────────────────────────────
+const X = 1.5, Y = 1.5, H = 0.4;
+const xx = 0.7, yy = 0.7;
+
+// 16 vertices (0-indexed; v_k = verts[k-1] in display)
+const verts = [
+  // outer bottom (z = -H), CCW from above
+  [ X, -Y, -H], [ X,  Y, -H], [-X,  Y, -H], [-X, -Y, -H],
+  // outer top (z = +H)
+  [ X, -Y,  H], [ X,  Y,  H], [-X,  Y,  H], [-X, -Y,  H],
+  // inner bottom (z = -H)
+  [ xx, -yy, -H], [ xx,  yy, -H], [-xx,  yy, -H], [-xx, -yy, -H],
+  // inner top (z = +H)
+  [ xx, -yy,  H], [ xx,  yy,  H], [-xx,  yy,  H], [-xx, -yy,  H],
+].map(v => new THREE.Vector3(...v));
+
+// 48 edges (0-indexed pairs, lower→higher)
+const edges = [
+  [0,1],[1,2],[2,3],[0,3],          //  e1..e4   bot outer
+  [4,5],[5,6],[6,7],[4,7],          //  e5..e8   top outer
+  [0,4],[1,5],[2,6],[3,7],          //  e9..e12  outer verticals
+  [8,9],[9,10],[10,11],[8,11],      //  e13..e16 bot inner
+  [12,13],[13,14],[14,15],[12,15],  //  e17..e20 top inner
+  [8,12],[9,13],[10,14],[11,15],    //  e21..e24 inner verticals
+  [0,8],[1,9],[2,10],[3,11],        //  e25..e28 bot radials
+  [4,12],[5,13],[6,14],[7,15],      //  e29..e32 top radials
+  [0,5],[1,6],[2,7],[3,4],          //  e33..e36 outer face diagonals
+  [8,13],[9,14],[10,15],[11,12],    //  e37..e40 inner face diagonals
+  [0,9],[1,10],[2,11],[3,8],        //  e41..e44 bot annulus diagonals
+  [4,13],[5,14],[6,15],[7,12],      //  e45..e48 top annulus diagonals
+];
+const edgeIdx = {};
+edges.forEach((e, i) => { edgeIdx[`${e[0]}-${e[1]}`] = i; });
+function findEdge(p, q) {
+  if (p < q) return { idx: edgeIdx[`${p}-${q}`], sign: +1 };
+  else       return { idx: edgeIdx[`${q}-${p}`], sign: -1 };
+}
+
+// 32 triangles (0-indexed). Order: outer (1-8), inner (9-16), bot-annulus (17-24), top-annulus (25-32).
+const tris = [
+  // outer side faces
+  [0,1,5],[0,5,4],         // t1,t2  outer east
+  [1,2,6],[1,6,5],         // t3,t4  outer north
+  [2,3,7],[2,7,6],         // t5,t6  outer west
+  [3,0,4],[3,4,7],         // t7,t8  outer south
+  // inner side faces (normals point INTO the tunnel)
+  [8,12,13],[8,13,9],      // t9,t10  inner east
+  [9,13,14],[9,14,10],     // t11,t12 inner north
+  [10,14,15],[10,15,11],   // t13,t14 inner west
+  [11,15,12],[11,12,8],    // t15,t16 inner south
+  // bottom annulus (normals point -z)
+  [0,8,9],[0,9,1],         // t17,t18 bot east trap
+  [1,9,10],[1,10,2],       // t19,t20 bot north
+  [2,10,11],[2,11,3],      // t21,t22 bot west
+  [3,11,8],[3,8,0],        // t23,t24 bot south
+  // top annulus (normals point +z)
+  [4,5,13],[4,13,12],      // t25,t26 top east
+  [5,6,14],[5,14,13],      // t27,t28 top north
+  [6,7,15],[6,15,14],      // t29,t30 top west
+  [7,4,12],[7,12,15],      // t31,t32 top south
+];
+
+// ─── Boundaries (compute at runtime from triangle vertex sequence) ───
+function boundaryEdges(tri) {
+  const [a,b,c] = tri;
+  return [[a,b],[b,c],[c,a]].map(([p,q]) => {
+    const { idx, sign } = findEdge(p, q);
+    return { idx, sign, fromVtx: p, toVtx: q, from: verts[p], to: verts[q] };
+  });
+}
+
+// ─── Build matrices ─────────────────────────────
+function buildD1() {
+  const M = Array.from({length: 16}, () => new Array(48).fill(0));
+  edges.forEach(([a,b], j) => {
+    M[a][j] = -1;
+    M[b][j] = +1;
+  });
+  return M;
+}
+function buildD2() {
+  const M = Array.from({length: 48}, () => new Array(32).fill(0));
+  tris.forEach((tri, k) => {
+    boundaryEdges(tri).forEach(({ idx, sign }) => {
+      M[idx][k] += sign;
+    });
+  });
+  return M;
+}
+
+// ─── Linear algebra ─────────────────────────────
+function rank(M) {
+  if (!M.length) return 0;
+  const A = M.map(r => r.slice());
+  const rows = A.length, cols = A[0].length;
+  let r = 0;
+  for (let c = 0; c < cols && r < rows; c++) {
+    let p = -1;
+    for (let i = r; i < rows; i++) {
+      if (Math.abs(A[i][c]) > 1e-9) { p = i; break; }
+    }
+    if (p < 0) continue;
+    [A[r], A[p]] = [A[p], A[r]];
+    for (let i = 0; i < rows; i++) {
+      if (i === r) continue;
+      const f = A[i][c] / A[r][c];
+      if (Math.abs(f) < 1e-12) continue;
+      for (let j = c; j < cols; j++) A[i][j] -= f * A[r][j];
+    }
+    r++;
+  }
+  return r;
+}
+function matmul(A, B) {
+  const m = A.length, n = B[0].length, p = B.length;
+  const C = Array.from({length: m}, () => new Array(n).fill(0));
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      for (let k = 0; k < p; k++) C[i][j] += A[i][k] * B[k][j];
+  return C;
+}
+function isZeroMatrix(M) {
+  for (const row of M) for (const v of row) if (Math.abs(v) > 1e-9) return false;
+  return true;
+}
+
+const D1 = buildD1();
+const D2 = buildD2();
+const r1 = rank(D1);
+const r2 = rank(D2);
+const product = matmul(D1, D2);
+const productZero = isZeroMatrix(product);
+
+// Augmented rank check for H_1 generators
+// Longitude:  v1→v2→v3→v4→v1  =  +e1 + e2 + e3 - e4
+// Meridian :  v1→v9→v13→v5→v1 =  +e25 + e21 - e29 - e9
+const longitude = new Array(48).fill(0);
+longitude[0]=+1; longitude[1]=+1; longitude[2]=+1; longitude[3]=-1;
+const meridian = new Array(48).fill(0);
+meridian[24]=+1; meridian[20]=+1; meridian[28]=-1; meridian[8]=-1;
+// Build augmented matrix [D2 | longitude | meridian] (48 x 34)
+const augmented = D1.map((_, _r) => null); // we want columns. Build it as 48 rows × 34 cols.
+const aug = [];
+for (let i = 0; i < 48; i++) {
+  const row = new Array(34);
+  for (let j = 0; j < 32; j++) row[j] = D2[i][j];
+  row[32] = longitude[i];
+  row[33] = meridian[i];
+  aug.push(row);
+}
+const augRank = rank(aug);
+
+// Update DOM
+document.getElementById('r1-display').textContent = r1;
+document.getElementById('r2-display').textContent = r2;
+document.getElementById('d1d2-check').textContent =
+  productZero ? 'every entry is 0  ✓' : 'NONZERO ENTRY DETECTED ✗';
+document.getElementById('aug-rank').textContent = augRank;
+
+// ─── Render boundary equations list ───
+const subTri = i => `t${toSub(i+1)}`;
+const subEdge = i => `e${toSub(i+1)}`;
+function toSub(n) {
+  const map = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉'};
+  return String(n).split('').map(c => map[c]).join('');
+}
+const eqList = document.getElementById('boundary-eqs-list');
+const groupHeaders = [
+  { from: 0,  to: 7,  label: 'outer side faces (t₁ – t₈)' },
+  { from: 8,  to: 15, label: 'inner side faces (t₉ – t₁₆)' },
+  { from: 16, to: 23, label: 'bottom annulus (t₁₇ – t₂₄)' },
+  { from: 24, to: 31, label: 'top annulus (t₂₅ – t₃₂)' },
+];
+groupHeaders.forEach(g => {
+  const hdr = document.createElement('li');
+  hdr.className = 'group-hdr';
+  hdr.textContent = g.label;
+  eqList.appendChild(hdr);
+  for (let k = g.from; k <= g.to; k++) {
+    const bd = boundaryEdges(tris[k]);
+    let parts = '';
+    bd.forEach((b, i) => {
+      const lbl = subEdge(b.idx);
+      if (i === 0) parts += (b.sign > 0 ? '' : '−') + lbl;
+      else parts += ' ' + (b.sign > 0 ? '+' : '−') + ' ' + lbl;
+    });
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="tlbl">∂${subTri(k)} =</span><span>${parts}</span>`;
+    eqList.appendChild(li);
+  }
+});
+
+// ─── Render sparsity SVG matrices ───
+function renderSparsity(svgId, matrix, opts) {
+  const svg = document.getElementById(svgId);
+  const rows = matrix.length, cols = matrix[0].length;
+  const cell = opts.cell || 10;
+  const lblL = opts.leftLabel || 36;   // for row labels
+  const lblT = opts.topLabel || 22;    // for column labels
+  const w = lblL + cols * cell;
+  const h = lblT + rows * cell;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  let html = '';
+  // gridlines (every 4)
+  for (let c = 0; c <= cols; c++) {
+    if (c % 4 !== 0) continue;
+    const x = lblL + c * cell;
+    html += `<line x1="${x}" y1="${lblT}" x2="${x}" y2="${h}" stroke="#d4c8a8" stroke-width="0.5"/>`;
+  }
+  for (let r = 0; r <= rows; r++) {
+    if (r % 4 !== 0) continue;
+    const y = lblT + r * cell;
+    html += `<line x1="${lblL}" y1="${y}" x2="${w}" y2="${y}" stroke="#d4c8a8" stroke-width="0.5"/>`;
+  }
+  // cells
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      const v = matrix[i][j];
+      const x = lblL + j * cell;
+      const y = lblT + i * cell;
+      let fill;
+      if (v > 0) fill = '#2a6b3d';
+      else if (v < 0) fill = '#9E1B32';
+      else fill = '#e8dcc1';
+      html += `<rect x="${x+0.5}" y="${y+0.5}" width="${cell-1}" height="${cell-1}" fill="${fill}" />`;
+    }
+  }
+  // column labels (every 4)
+  for (let c = 0; c < cols; c += 4) {
+    const x = lblL + c * cell + 2;
+    html += `<text x="${x}" y="${lblT - 6}" font-family="Playfair Display, serif" font-style="italic" font-size="9" fill="#9E1B32">${opts.colPrefix}${toSub(c+1)}</text>`;
+  }
+  // row labels (every 4)
+  for (let r = 0; r < rows; r += 4) {
+    const y = lblT + r * cell + 8;
+    html += `<text x="${lblL - 4}" y="${y}" font-family="Playfair Display, serif" font-style="italic" font-size="9" fill="#9E1B32" text-anchor="end">${opts.rowPrefix}${toSub(r+1)}</text>`;
+  }
+  svg.innerHTML = html;
+}
+renderSparsity('d1-svg', D1, { cell: 10, rowPrefix: 'v', colPrefix: 'e', leftLabel: 28, topLabel: 22 });
+renderSparsity('d2-svg', D2, { cell: 10, rowPrefix: 'e', colPrefix: 't', leftLabel: 28, topLabel: 22 });
+
+// ═══════════════════════════════════════════════════════════════
+// 3D widget
+// ═══════════════════════════════════════════════════════════════
+const wrap = document.getElementById('cube-canvas-wrap');
+const W_ = () => wrap.clientWidth;
+const H_ = () => wrap.clientHeight;
+
+const scene = new THREE.Scene();
+scene.background = null;
+
+const camera = new THREE.PerspectiveCamera(40, W_()/H_(), 0.1, 100);
+camera.position.set(3.0, 2.6, 4.2);
+camera.lookAt(0,0,0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W_(), H_());
+wrap.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(W_(), H_());
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.left = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+wrap.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.enablePan = false;
+controls.minDistance = 2.5;
+controls.maxDistance = 9;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+const dl = new THREE.DirectionalLight(0xffffff, 0.55);
+dl.position.set(3, 4, 3);
+scene.add(dl);
+const dl2 = new THREE.DirectionalLight(0xffffff, 0.25);
+dl2.position.set(-2, -1, -2);
+scene.add(dl2);
+
+// ─── Build vertices ───
+const sphereGeom = new THREE.SphereGeometry(0.04, 14, 10);
+const vertMeshes = [];
+verts.forEach((v) => {
+  const m = new THREE.Mesh(sphereGeom, new THREE.MeshBasicMaterial({ color: 0x1a1410 }));
+  m.position.copy(v);
+  scene.add(m);
+  vertMeshes.push(m);
+});
+
+// Vertex labels
+const vLabels = [];
+verts.forEach((v, i) => {
+  const div = document.createElement('div');
+  div.className = 'vlabel';
+  div.innerHTML = `v${toSub(i+1)}`;
+  const obj = new CSS2DObject(div);
+  // Push label outward radially (in xy) and along z slightly
+  const offsetXY = new THREE.Vector3(v.x, v.y, 0).normalize().multiplyScalar(0.18);
+  const offset = offsetXY.clone();
+  if (Math.abs(v.z) > 0.01) offset.z = Math.sign(v.z) * 0.10;
+  obj.position.copy(v).add(offset);
+  scene.add(obj);
+  vLabels.push(obj);
+});
+
+// ─── Build edges ───
+const edgeObjs = [];
+edges.forEach(([i, j], idx) => {
+  const a = verts[i], b = verts[j];
+  const geom = new THREE.BufferGeometry().setFromPoints([a, b]);
+  // Categorize edge type for default color/opacity
+  let baseColor = 0x3a2f23;       // structural (cube/inner squares/verticals)
+  let baseOpacity = 0.85;
+  if (idx >= 32 && idx < 48) { baseColor = 0x9E1B32; baseOpacity = 0.55; } // diagonals
+  const mat = new THREE.LineBasicMaterial({
+    color: baseColor, transparent: true, opacity: baseOpacity,
+  });
+  const line = new THREE.Line(geom, mat);
+  scene.add(line);
+  edgeObjs.push({ line, baseColor, baseOpacity, idx, vA: a, vB: b });
+});
+
+// Edge labels
+const eLabels = [];
+edges.forEach(([i, j], idx) => {
+  const mid = verts[i].clone().add(verts[j]).multiplyScalar(0.5);
+  const div = document.createElement('div');
+  div.className = 'elabel';
+  div.innerHTML = `e${toSub(idx+1)}`;
+  const obj = new CSS2DObject(div);
+  obj.position.copy(mid);
+  obj.visible = false;
+  scene.add(obj);
+  eLabels.push(obj);
+});
+
+// ─── Build triangle meshes ───
+const triMeshes = [];
+const tLabels = [];
+tris.forEach((t, idx) => {
+  const [a, b, c] = t;
+  const positions = new Float32Array([
+    verts[a].x, verts[a].y, verts[a].z,
+    verts[b].x, verts[b].y, verts[b].z,
+    verts[c].x, verts[c].y, verts[c].z,
+  ]);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  const mat = new THREE.MeshLambertMaterial({
+    color: new THREE.Color('#e8c4ab'),
+    transparent: true,
+    opacity: 0.30,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  scene.add(mesh);
+  triMeshes.push({ mesh, idx });
+
+  // centroid label
+  const cen = verts[a].clone().add(verts[b]).add(verts[c]).multiplyScalar(1/3);
+  const div = document.createElement('div');
+  div.className = 'tlabel';
+  div.innerHTML = `t${toSub(idx+1)}`;
+  const obj = new CSS2DObject(div);
+  obj.position.copy(cen).multiplyScalar(1.06);
+  obj.visible = false;
+  scene.add(obj);
+  tLabels.push(obj);
+});
+
+// ─── Highlight machinery ───
+const arrowHelpers = [];
+function clearArrows() { arrowHelpers.forEach(a => scene.remove(a)); arrowHelpers.length = 0; }
+
+let facesVisible = true;
+let activeMode = null; // null | {type:'tri', idx} | {type:'fc'} | {type:'meridian'} | {type:'longitude'}
+
+function resetEdges() {
+  edgeObjs.forEach(eo => {
+    eo.line.material.color.setHex(eo.baseColor);
+    eo.line.material.opacity = eo.baseOpacity;
+  });
+}
+function resetTriangles() {
+  triMeshes.forEach(({ mesh }) => {
+    mesh.material.color.set('#e8c4ab');
+    mesh.material.opacity = facesVisible ? 0.30 : 0.0;
+  });
+}
+function hideAllTriLabels() { tLabels.forEach(o => o.visible = false); }
+
+function highlightTriangle(idx) {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+
+  triMeshes.forEach(({ mesh }, i) => {
+    if (i === idx) {
+      mesh.material.color.set('#9E1B32');
+      mesh.material.opacity = 0.78;
+    } else {
+      mesh.material.color.set('#e8c4ab');
+      mesh.material.opacity = facesVisible ? 0.10 : 0.0;
+    }
+  });
+  const bd = boundaryEdges(tris[idx]);
+  const bdEdgeIdxs = new Set(bd.map(b => b.idx));
+  edgeObjs.forEach((eo, i) => {
+    if (!bdEdgeIdxs.has(i)) eo.line.material.opacity = 0.10;
+  });
+  bd.forEach(({ idx: ei, sign, from, to }) => {
+    const eo = edgeObjs[ei];
+    eo.line.material.color.set(sign > 0 ? '#2a6b3d' : '#9E1B32');
+    eo.line.material.opacity = 1.0;
+    const dir = to.clone().sub(from).normalize();
+    const len = to.distanceTo(from);
+    const ah = new THREE.ArrowHelper(
+      dir, from.clone().add(dir.clone().multiplyScalar(0.06)),
+      len * 0.86,
+      sign > 0 ? 0x2a6b3d : 0x9E1B32,
+      0.13, 0.07
+    );
+    scene.add(ah); arrowHelpers.push(ah);
+  });
+  tLabels[idx].visible = true;
+  showEqnTri(idx, bd);
+  activeMode = { type: 'tri', idx };
+  updateButtons();
+}
+
+function highlightFundamental() {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+  triMeshes.forEach(({ mesh }, i) => {
+    const groupIdx = Math.floor(i / 8);
+    const tints = ['#9E1B32','#b32540','#a92038','#8c1729'];
+    mesh.material.color.set(tints[groupIdx]);
+    mesh.material.opacity = 0.60;
+  });
+  edgeObjs.forEach(eo => {
+    eo.line.material.opacity = 1.0;
+    eo.line.material.color.setHex(0x6e0f1f);
+  });
+  showEqnFC();
+  activeMode = { type: 'fc' };
+  updateButtons();
+}
+
+// Show a directed cycle as a sequence of arrows in a given color.
+// `cycle` is an array of [vertex_p, vertex_q] pairs in directed order.
+function highlightCycle(cycle, colorHex, kind) {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+  triMeshes.forEach(({ mesh }) => {
+    mesh.material.opacity = facesVisible ? 0.10 : 0.0;
+  });
+  edgeObjs.forEach(eo => { eo.line.material.opacity = 0.12; });
+
+  const cycleEdgeIdxs = new Set();
+  cycle.forEach(([p, q]) => {
+    const { idx, sign } = findEdge(p, q);
+    cycleEdgeIdxs.add(idx);
+    edgeObjs[idx].line.material.color.setHex(colorHex);
+    edgeObjs[idx].line.material.opacity = 1.0;
+    const a = verts[p], b = verts[q];
+    const dir = b.clone().sub(a).normalize();
+    const len = b.distanceTo(a);
+    const ah = new THREE.ArrowHelper(
+      dir, a.clone().add(dir.clone().multiplyScalar(0.06)),
+      len * 0.86, colorHex, 0.16, 0.09
+    );
+    scene.add(ah); arrowHelpers.push(ah);
+  });
+  showEqnCycle(kind);
+  activeMode = { type: kind };
+  updateButtons();
+}
+
+const meridianCycle  = [[0,8],[8,12],[12,4],[4,0]];   // v1→v9→v13→v5→v1
+const longitudeCycle = [[0,1],[1,2],[2,3],[3,0]];     // v1→v2→v3→v4→v1
+
+function resetView() {
+  resetEdges();
+  resetTriangles();
+  clearArrows();
+  hideAllTriLabels();
+  hideEqn();
+  const target = new THREE.Vector3(3.0, 2.6, 4.2);
+  const start = camera.position.clone();
+  let t = 0;
+  function tween() {
+    t += 0.06;
+    if (t >= 1) { camera.position.copy(target); controls.target.set(0,0,0); return; }
+    const k = 1 - Math.pow(1-t, 3);
+    camera.position.lerpVectors(start, target, k);
+    controls.target.set(0,0,0);
+    requestAnimationFrame(tween);
+  }
+  tween();
+  activeMode = null;
+  updateButtons();
+}
+
+// Equation display
+const eqnEl = document.getElementById('eqn-display');
+function showEqnTri(idx, bd) {
+  let s = `<span class="lbl">∂t${toSub(idx+1)}</span>= `;
+  bd.forEach((b, i) => {
+    const lbl = `e${toSub(b.idx+1)}`;
+    if (i === 0) s += (b.sign > 0 ? '' : '−') + lbl;
+    else         s += ' ' + (b.sign > 0 ? '+' : '−') + ' ' + lbl;
+  });
+  eqnEl.className = 'cube-eqn-display show';
+  eqnEl.innerHTML = s;
+}
+function showEqnFC() {
+  eqnEl.className = 'cube-eqn-display show';
+  eqnEl.innerHTML = `<span class="lbl">[Σ] =</span> t₁ + t₂ + ⋯ + t₃₂ &nbsp; — &nbsp; the fundamental class &nbsp; ( ∂[Σ] = 0 )`;
+}
+function showEqnCycle(kind) {
+  if (kind === 'meridian') {
+    eqnEl.className = 'cube-eqn-display show meridian-style';
+    eqnEl.innerHTML = `<span class="lbl">M =</span> −e₉ + e₂₁ − e₂₉ + e₂₅ &nbsp; (cross-section: v₁ → v₉ → v₁₃ → v₅ → v₁)`;
+  } else if (kind === 'longitude') {
+    eqnEl.className = 'cube-eqn-display show longitude-style';
+    eqnEl.innerHTML = `<span class="lbl">L =</span> e₁ + e₂ + e₃ − e₄ &nbsp; (around the hole: v₁ → v₂ → v₃ → v₄ → v₁)`;
+  }
+}
+function hideEqn() {
+  eqnEl.className = 'cube-eqn-display';
+  eqnEl.innerHTML = '';
+}
+
+// ─── Build buttons ───
+const triGrid = document.getElementById('tri-grid');
+const triButtons = [];
+const groupLabels = ['outer side faces (t₁ – t₈)', 'inner side faces (t₉ – t₁₆)', 'bottom annulus (t₁₇ – t₂₄)', 'top annulus (t₂₅ – t₃₂)'];
+groupLabels.forEach((label, gi) => {
+  const lbl = document.createElement('div');
+  lbl.className = 'tri-grid-row-label';
+  lbl.textContent = label;
+  triGrid.appendChild(lbl);
+  for (let k = gi*8; k < (gi+1)*8; k++) {
+    const btn = document.createElement('button');
+    btn.className = 'bama-btn';
+    btn.innerHTML = `t${toSub(k+1)}`;
+    btn.addEventListener('click', () => highlightTriangle(k));
+    triGrid.appendChild(btn);
+    triButtons.push(btn);
+  }
+});
+
+document.getElementById('btn-fc').addEventListener('click', highlightFundamental);
+document.getElementById('btn-meridian').addEventListener('click',
+  () => highlightCycle(meridianCycle, 0x1d4f8c, 'meridian'));
+document.getElementById('btn-longitude').addEventListener('click',
+  () => highlightCycle(longitudeCycle, 0xb8721c, 'longitude'));
+document.getElementById('btn-reset').addEventListener('click', resetView);
+
+function updateButtons() {
+  triButtons.forEach((b, i) => {
+    b.classList.toggle('active', activeMode && activeMode.type === 'tri' && activeMode.idx === i);
+  });
+  document.getElementById('btn-fc').classList.toggle('active', activeMode && activeMode.type === 'fc');
+  document.getElementById('btn-meridian').classList.toggle('active', activeMode && activeMode.type === 'meridian');
+  document.getElementById('btn-longitude').classList.toggle('active', activeMode && activeMode.type === 'longitude');
+}
+
+// ─── Toggles ───
+document.getElementById('tog-vlabels').addEventListener('change', e => {
+  vLabels.forEach(o => o.visible = e.target.checked);
+});
+document.getElementById('tog-elabels').addEventListener('change', e => {
+  eLabels.forEach(o => o.visible = e.target.checked);
+});
+document.getElementById('tog-faces').addEventListener('change', e => {
+  facesVisible = e.target.checked;
+  if (!activeMode) {
+    triMeshes.forEach(({ mesh }) => { mesh.material.opacity = facesVisible ? 0.30 : 0.0; });
+  } else if (activeMode.type === 'tri')      highlightTriangle(activeMode.idx);
+  else if (activeMode.type === 'fc')         highlightFundamental();
+  else if (activeMode.type === 'meridian')   highlightCycle(meridianCycle,  0x1d4f8c, 'meridian');
+  else if (activeMode.type === 'longitude')  highlightCycle(longitudeCycle, 0xb8721c, 'longitude');
+});
+
+// ─── Resize ───
+function onResize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  labelRenderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+
+// ─── Animation loop ───
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+animate();
+</script>
+
+</body>
+</html>

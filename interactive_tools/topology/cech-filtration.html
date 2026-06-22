@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Čech Complex Filtration</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #050810;
+  --panel: #070b18;
+  --border: #101830;
+  --accent: #5578d8;
+  --accent-glow: rgba(85,120,216,0.35);
+  --tri-col: rgba(55,190,160,0.22);
+  --tri-stroke: #3ab898;
+  --edge-col: #4a78c8;
+  --pt-col: #b8ceff;
+  --text: #7088b0;
+  --text-bright: #a0b8e8;
+  --tick-e: #4a78c8;
+  --tick-t: #3ab898;
+  --font: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+body {
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 28px;
+  gap: 14px;
+  min-height: 100vh;
+}
+
+header { text-align: center; }
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 1.5px;
+}
+
+.subtitle {
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--text);
+  margin-top: 3px;
+  opacity: 0.7;
+}
+
+.canvas-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0,0,10,0.6);
+}
+
+canvas { display: block; }
+
+/* ── Controls ── */
+.controls {
+  width: 860px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alpha-disp {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  color: var(--accent);
+  min-width: 88px;
+  white-space: nowrap;
+}
+
+.slider-wrap {
+  flex: 1;
+  position: relative;
+  padding-bottom: 22px;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--text-bright);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* tick container */
+#ticks {
+  position: absolute;
+  top: 9px;
+  left: 0; right: 0;
+  height: 20px;
+  pointer-events: none;
+}
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  line-height: 1;
+  color: var(--text);
+  opacity: 0.55;
+}
+.tick-bar {
+  width: 1px;
+  height: 5px;
+}
+.tick.edge .tick-bar { background: var(--tick-e); }
+.tick.tri  .tick-bar { background: var(--tick-t); }
+
+.btns {
+  display: flex;
+  gap: 8px;
+}
+button {
+  padding: 4px 13px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+button:hover { border-color: var(--accent); color: var(--text-bright); }
+
+/* ── Info bar ── */
+.info-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 0.77rem;
+  color: var(--border);
+  font-family: var(--mono);
+  transition: color 0.3s;
+}
+.info-bar .item { transition: color 0.3s; }
+.info-bar .item.active { color: var(--text); }
+
+.dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.dv { background: var(--pt-col); }
+.de { background: var(--tick-e); }
+.dt { background: var(--tick-t); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Čech Complex Filtration</h1>
+  <div class="subtitle">drag α or press play — watch the simplicial complex grow</div>
+</header>
+
+<div class="canvas-wrap">
+  <canvas id="c" width="860" height="448"></canvas>
+</div>
+
+<div class="controls">
+  <div class="row1">
+    <div class="alpha-disp">α = <span id="aVal">0.000</span></div>
+    <div class="slider-wrap">
+      <input type="range" id="sl" min="0" max="140" value="0" step="1">
+      <div id="ticks"></div>
+    </div>
+    <div class="btns">
+      <button id="animBtn">▶ Play</button>
+      <button id="rstBtn">↺ Reset</button>
+    </div>
+  </div>
+  <div class="info-bar">
+    <span class="item active" id="iv"><span class="dot dv"></span>5 vertices</span>
+    <span class="item" id="ie"><span class="dot de"></span>0 / 10 edges</span>
+    <span class="item" id="it"><span class="dot dt"></span>0 / 10 triangles</span>
+  </div>
+</div>
+
+<script>
+const CV = document.getElementById('c');
+const ctx = CV.getContext('2d');
+
+/* ─── Geometry ─── */
+const pts = [[0,0],[1.4,0.2],[2.2,1.0],[1.2,1.6],[-0.2,1.1]];
+const N = pts.length;
+const S = 72, BCX = 1.0, BCY = 0.8;
+const LX = 215, LY = 242;
+const RX = 647, RY = 242;
+const MAX_A = 1.4;
+
+const toC = (wx,wy,cx,cy) => [cx+(wx-BCX)*S, cy-(wy-BCY)*S];
+const lP = pts.map(([x,y])=>toC(x,y,LX,LY));
+const rP = pts.map(([x,y])=>toC(x,y,RX,RY));
+const wd  = (i,j) => Math.hypot(pts[i][0]-pts[j][0],pts[i][1]-pts[j][1]);
+
+function minEncRad(i,j,k){
+  const a=wd(j,k), b=wd(i,k), c=wd(i,j);
+  if(a*a >= b*b+c*c-1e-9) return a/2;
+  if(b*b >= a*a+c*c-1e-9) return b/2;
+  if(c*c >= a*a+b*b-1e-9) return c/2;
+  const s=(a+b+c)/2, A2=Math.max(0,s*(s-a)*(s-b)*(s-c));
+  return Math.sqrt(A2)<1e-10 ? Infinity : a*b*c/(4*Math.sqrt(A2));
+}
+
+const edges=[], tris=[];
+for(let i=0;i<N;i++) for(let j=i+1;j<N;j++)
+  edges.push({i,j,th:wd(i,j)/2});
+for(let i=0;i<N;i++) for(let j=i+1;j<N;j++) for(let k=j+1;k<N;k++)
+  tris.push({i,j,k,th:minEncRad(i,j,k)});
+
+const ptLabels = ['p₀','p₁','p₂','p₃','p₄'];
+
+/* ─── Build slider ticks ─── */
+(function buildTicks(){
+  const container = document.getElementById('ticks');
+  // Deduplicate close thresholds for display
+  const shown = new Set();
+  [...edges.map(e=>({th:e.th,cls:'edge'})),...tris.map(t=>({th:t.th,cls:'tri'}))]
+    .sort((a,b)=>a.th-b.th)
+    .forEach(({th,cls})=>{
+      const key = Math.round(th*20)/20;
+      if(shown.has(key+''+cls)) return;
+      shown.add(key+''+cls);
+      const pct = (th/MAX_A)*100;
+      const tick = document.createElement('div');
+      tick.className = `tick ${cls}`;
+      tick.style.left = pct+'%';
+      const bar = document.createElement('div');
+      bar.className = 'tick-bar';
+      tick.appendChild(bar);
+      container.appendChild(tick);
+    });
+})();
+
+/* ─── Draw ─── */
+function draw(alpha){
+  const W=CV.width, H=CV.height;
+
+  /* Background */
+  ctx.fillStyle='#050810';
+  ctx.fillRect(0,0,W,H);
+
+  /* Subtle grid texture */
+  ctx.strokeStyle='rgba(255,255,255,0.013)';
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=28){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
+  for(let y=0;y<H;y+=28){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+
+  /* Panel headers */
+  ctx.font='italic 13px Georgia';
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(100,120,180,0.35)';
+  ctx.fillText('∪ B(xᵢ, α)', LX, 28);
+  ctx.fillText('Čech(P, α)', RX, 28);
+
+  /* Divider */
+  ctx.strokeStyle='rgba(16,24,48,1)';
+  ctx.lineWidth=1;
+  ctx.setLineDash([4,6]);
+  ctx.beginPath(); ctx.moveTo(432,38); ctx.lineTo(432,H-12); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const r = alpha * S;
+
+  /* ── LEFT: growing balls ── */
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,432,H); ctx.clip();
+
+  if(r > 0.5){
+    // Overlap glow — use additive blending pass
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=0;i<N;i++){
+      const [px,py]=lP[i];
+      const g=ctx.createRadialGradient(px,py,0,px,py,r);
+      g.addColorStop(0,'rgba(50,90,200,0.18)');
+      g.addColorStop(0.6,'rgba(30,60,160,0.07)');
+      g.addColorStop(1,'rgba(10,20,80,0)');
+      ctx.beginPath(); ctx.arc(px,py,r,0,2*Math.PI);
+      ctx.fillStyle=g; ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Ball outlines
+    ctx.lineWidth = 1.3;
+    for(let i=0;i<N;i++){
+      const [px,py]=lP[i];
+      ctx.beginPath(); ctx.arc(px,py,r,0,2*Math.PI);
+      ctx.strokeStyle='rgba(75,130,240,0.48)';
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Left point labels & dots
+  ctx.font='11px Georgia';
+  for(let i=0;i<N;i++){
+    const [px,py]=lP[i];
+    ctx.beginPath(); ctx.arc(px,py,3.5,0,2*Math.PI);
+    ctx.fillStyle='#b8ceff'; ctx.fill();
+    ctx.fillStyle='rgba(100,120,180,0.55)';
+    ctx.textAlign='left';
+    ctx.fillText(ptLabels[i], px+7, py-3);
+  }
+
+  /* ── RIGHT: Čech complex ── */
+
+  // Filled 2-simplices
+  for(const {i,j,k,th} of tris){
+    if(th > alpha) continue;
+    ctx.beginPath();
+    ctx.moveTo(rP[i][0],rP[i][1]);
+    ctx.lineTo(rP[j][0],rP[j][1]);
+    ctx.lineTo(rP[k][0],rP[k][1]);
+    ctx.closePath();
+    ctx.fillStyle='rgba(40,185,155,0.18)';
+    ctx.fill();
+    // subtle border
+    ctx.strokeStyle='rgba(55,190,160,0.28)';
+    ctx.lineWidth=0.8;
+    ctx.stroke();
+  }
+
+  // 1-simplices (edges)
+  ctx.lineWidth = 1.8;
+  for(const {i,j,th} of edges){
+    if(th > alpha) continue;
+    ctx.beginPath();
+    ctx.moveTo(rP[i][0],rP[i][1]);
+    ctx.lineTo(rP[j][0],rP[j][1]);
+    ctx.strokeStyle='#4a78c8';
+    ctx.stroke();
+  }
+
+  // 0-simplices (vertices)
+  for(let i=0;i<N;i++){
+    const [px,py]=rP[i];
+    ctx.beginPath(); ctx.arc(px,py,4.5,0,2*Math.PI);
+    ctx.fillStyle='#b8ceff'; ctx.fill();
+    ctx.strokeStyle='rgba(184,206,255,0.3)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='rgba(100,120,180,0.55)';
+    ctx.font='11px Georgia'; ctx.textAlign='left';
+    ctx.fillText(ptLabels[i], px+7, py-3);
+  }
+
+  /* ── Betti number annotation (rough) ── */
+  const ec = edges.filter(e=>e.th<=alpha).length;
+  const tc = tris.filter(t=>t.th<=alpha).length;
+  // Euler char χ = V - E + F
+  const chi = N - ec + tc;
+  // Very rough: β₀ decreases as edges connect, β₁ is cycle count
+  ctx.font='italic 11px Georgia';
+  ctx.textAlign='right';
+  ctx.fillStyle='rgba(80,100,160,0.5)';
+  ctx.fillText(`χ = ${chi}`, RX+110, H-8);
+
+  /* ── Update DOM info ── */
+  const ie = document.getElementById('ie');
+  const it = document.getElementById('it');
+  ie.textContent=''; it.textContent='';
+  const de = document.createElement('span'); de.className='dot de'; ie.appendChild(de);
+  ie.appendChild(document.createTextNode(`${ec} / ${edges.length} edges`));
+  const dt = document.createElement('span'); dt.className='dot dt'; it.appendChild(dt);
+  it.appendChild(document.createTextNode(`${tc} / ${tris.length} triangles`));
+  ie.classList.toggle('active', ec > 0);
+  it.classList.toggle('active', tc > 0);
+}
+
+/* ─── Controls ─── */
+let animating=false, animId=null, curA=0;
+const sl = document.getElementById('sl');
+const aVal = document.getElementById('aVal');
+const animBtn = document.getElementById('animBtn');
+
+sl.addEventListener('input', () => {
+  curA = parseInt(sl.value)/100;
+  aVal.textContent = curA.toFixed(3);
+  draw(curA);
+});
+
+animBtn.addEventListener('click', () => {
+  if(animating){
+    animating=false;
+    cancelAnimationFrame(animId);
+    animBtn.textContent='▶ Play';
+    return;
+  }
+  animating=true;
+  animBtn.textContent='⏸ Pause';
+
+  // Ease-in-out quad
+  const ease = t => t<0.5 ? 2*t*t : 1-2*(1-t)*(1-t);
+  const UP=7000, HOLD=1400, CYCLE=UP+HOLD+300;
+  let t0=null;
+
+  function frame(ts){
+    if(!t0) t0=ts;
+    const phase=(ts-t0)%CYCLE;
+    let frac;
+    if(phase<UP)        frac = ease(phase/UP);
+    else if(phase<UP+HOLD) frac = 1;
+    else                frac = 0; // reset frame
+    curA = frac*MAX_A;
+    sl.value = Math.round(curA*100);
+    aVal.textContent = curA.toFixed(3);
+    draw(curA);
+    if(animating) animId=requestAnimationFrame(frame);
+  }
+  animId=requestAnimationFrame(frame);
+});
+
+document.getElementById('rstBtn').addEventListener('click', () => {
+  animating=false; cancelAnimationFrame(animId);
+  animBtn.textContent='▶ Play';
+  curA=0; sl.value=0; aVal.textContent='0.000';
+  draw(0);
+});
+
+draw(0);
+</script>
+</body>
+</html>
