@@ -1,0 +1,1467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Geometric Meaning of Maximum Likelihood Estimation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --crimson:#9E1B32;
+    --ink:#1a1a1a;
+    --muted:#666;
+    --bg:#fafafa;
+    --panel:#ffffff;
+    --accent:#1f4e79;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.45}
+  header{background:var(--crimson);color:#fff;padding:18px 28px}
+  header h1{margin:0;font-size:1.35rem;font-weight:600}
+  header p{margin:4px 0 0;opacity:.9;font-size:.9rem}
+  main{max-width:1280px;margin:0 auto;padding:22px}
+
+  .tabs{display:flex;gap:4px;border-bottom:2px solid #e2e2e2;margin-bottom:18px}
+  .tab{
+    padding:10px 18px;cursor:pointer;background:none;border:none;
+    font:inherit;color:var(--muted);border-bottom:3px solid transparent;
+    margin-bottom:-2px;
+  }
+  .tab.active{color:var(--crimson);border-bottom-color:var(--crimson);font-weight:600}
+  .tab:hover{color:var(--ink)}
+  .view{display:none}
+  .view.active{display:block}
+
+  .panel{background:var(--panel);border:1px solid #e2e2e2;border-radius:10px;
+         padding:18px 22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+  .controls label{font-size:.9rem;color:var(--muted)}
+  .controls .group{display:flex;align-items:center;gap:8px}
+  select,button,input[type=text],input[type=number]{
+    font:inherit;padding:6px 12px;border:1px solid #ccc;border-radius:6px;background:#fff}
+  button{cursor:pointer}
+  button.primary{background:var(--crimson);color:#fff;border-color:var(--crimson)}
+  button.primary:hover{filter:brightness(1.08)}
+  input[type=range]{width:220px;accent-color:var(--crimson)}
+  input[type=text]{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+  input[type=number]{width:80px}
+  .cval{font-variant-numeric:tabular-nums;font-weight:600;color:var(--crimson);min-width:3.5em;display:inline-block}
+  canvas{display:block;width:100%;background:#fff}
+  .h360 canvas{height:360px}
+  .h420 canvas{height:420px}
+  .plots{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:900px){.plots{grid-template-columns:1fr}}
+  h2{font-size:1.0rem;margin:0 0 8px;color:var(--crimson)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:6px}
+  .legend span::before{content:"";display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}
+  .lg-pdf::before{background:var(--accent)}
+  .lg-pts::before{background:var(--crimson);width:10px!important;height:10px!important;border-radius:50%}
+  .lg-stem::before{background:#666;height:0!important;border-top:2px dashed #666}
+  .lg-tan::before{background:#e08e00}
+  .data-row{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .data-row label{font-size:.85rem;color:var(--muted);white-space:nowrap}
+  .err{color:var(--crimson);font-size:.82rem;margin-top:4px;min-height:1.1em}
+  .note{font-size:.85rem;color:var(--muted);margin:8px 0 0}
+  .formula{background:#f5f5f7;border-left:3px solid var(--crimson);
+           padding:8px 12px;border-radius:4px;font-family:"Cambria Math",Georgia,serif;
+           font-size:.95rem;margin:8px 0}
+  .mle-readout{
+    display:inline-block;padding:6px 12px;background:#eef2f7;border-radius:6px;
+    color:var(--accent);font-variant-numeric:tabular-nums;font-weight:600;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Geometric Meaning of Maximum Likelihood Estimation</h1>
+  <p>Three views of the same idea: the likelihood is a function of the parameter, and the MLE is where it peaks.</p>
+</header>
+
+<main>
+
+<div class="tabs">
+  <button class="tab active" data-view="loc">Location families</button>
+  <button class="tab" data-view="bin">Binomial</button>
+  <button class="tab" data-view="nrm">Normal (μ, σ²)</button>
+  <button class="tab" data-view="uni">Uniform(0, θ)</button>
+  <button class="tab" data-view="fish">Capture–recapture</button>
+</div>
+
+<!-- =================== TAB 1: LOCATION =================== -->
+<div class="view active" id="view-loc">
+
+<section class="panel">
+  <div class="controls">
+    <div class="group">
+      <label for="dist">Distribution:</label>
+      <select id="dist">
+        <option value="laplace">Laplace &nbsp; f(x|c) = ½ e<sup>−|x−c|</sup></option>
+        <option value="normal">Normal(μ, 1) &nbsp; f(x|μ) = (2π)<sup>−½</sup> e<sup>−(x−μ)²/2</sup></option>
+        <option value="ggauss">Generalized Gaussian (shape 4) &nbsp; f(x|c) ∝ e<sup>−(x−c)⁴</sup></option>
+      </select>
+    </div>
+    <div class="group">
+      <label for="c">c =</label>
+      <input id="c" type="range" min="0" max="4" step="0.01" value="1.5">
+      <span class="cval" id="cval">1.50</span>
+    </div>
+    <div class="group">
+      <button id="play" class="primary">▶ Animate</button>
+      <button id="snap">Snap to MLE</button>
+    </div>
+  </div>
+  <div class="data-row">
+    <label for="dataIn">Data:</label>
+    <input id="dataIn" type="text"
+      value="0.3114, 1.4391, 1.7690, 3.8012, 2.0710, 0.5612, 1.2898, 1.1892, 2.1054, 2.7151">
+    <button id="apply">Apply</button>
+  </div>
+  <div class="err" id="err"></div>
+</section>
+
+<section class="panel h360">
+  <div class="plots">
+    <div>
+      <h2>1. Geometric picture</h2>
+      <canvas id="cvs1"></canvas>
+      <div class="legend">
+        <span class="lg-pdf">PDF f(x|c)</span>
+        <span class="lg-pts">data x<sub>i</sub></span>
+        <span class="lg-stem">stem height = f(x<sub>i</sub>|c)</span>
+      </div>
+      <p class="note">Stems show f(x<sub>i</sub>|c) at each data point. The likelihood L(c) is the
+        <em>product</em> of those stem heights.</p>
+    </div>
+    <div>
+      <h2>2. Log-likelihood as a function of c</h2>
+      <canvas id="cvs2"></canvas>
+      <div class="legend">
+        <span style="color:var(--crimson)">● current c</span>
+        <span style="color:var(--accent)">● MLE ĉ</span>
+      </div>
+      <p class="note">
+        The MLE is the c at which this curve <strong>peaks</strong> — equivalently, where its
+        derivative (the <em>score function</em>) is zero:
+        &nbsp;<code>d/dc&nbsp;ln&nbsp;L(c)&nbsp;=&nbsp;0</code>.
+        For a smooth concave log-likelihood, that is exactly the standard calculus condition for a maximum.
+      </p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- =================== TAB 2: BINOMIAL =================== -->
+<div class="view" id="view-bin">
+
+<section class="panel">
+  <div class="controls">
+    <div class="group">
+      <label for="binN">n (trials):</label>
+      <input id="binN" type="number" min="1" max="500" value="20">
+    </div>
+    <div class="group">
+      <label for="binY">y (successes):</label>
+      <input id="binY" type="number" min="0" max="500" value="13">
+    </div>
+    <div class="group">
+      <label for="pSlider">p =</label>
+      <input id="pSlider" type="range" min="0.001" max="0.999" step="0.001" value="0.5">
+      <span class="cval" id="pval">0.500</span>
+    </div>
+    <div class="group">
+      <button id="snapBin">Snap to MLE</button>
+    </div>
+  </div>
+  <p class="note">
+    The likelihood for <em>y</em> successes in <em>n</em> independent Bernoulli(<em>p</em>) trials is
+  </p>
+  <div class="formula">L(p) = p<sup>y</sup>(1−p)<sup>n−y</sup>,&nbsp;&nbsp;&nbsp;
+    ln L(p) = y ln p + (n−y) ln(1−p)</div>
+  <p class="note">
+    Setting the derivative to zero gives the MLE in closed form:
+  </p>
+  <div class="formula">d/dp ln L(p) = y/p − (n−y)/(1−p) = 0 &nbsp;⟹&nbsp;
+    <strong>p̂ = y/n</strong></div>
+  <div id="binMLE" class="mle-readout"></div>
+</section>
+
+<section class="panel h360">
+  <div class="plots">
+    <div>
+      <h2>1. Likelihood L(p)</h2>
+      <canvas id="binL"></canvas>
+      <p class="note">
+        L(p) is a single bump on [0, 1]. It peaks at p̂ = y/n. The orange line is the
+        tangent at the current p — at the MLE it is exactly horizontal.
+      </p>
+    </div>
+    <div>
+      <h2>2. Log-likelihood ln L(p)</h2>
+      <canvas id="binLL"></canvas>
+      <div class="legend">
+        <span style="color:var(--crimson)">● current p</span>
+        <span style="color:var(--accent)">● MLE p̂</span>
+        <span class="lg-tan">tangent (slope = score)</span>
+      </div>
+      <p class="note">
+        Working with ln L is easier: the score d/dp ln L(p) = y/p − (n−y)/(1−p) is a
+        clean function of p, and the maximum is the unique zero of that score.
+      </p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- =================== TAB 3: NORMAL 2-PARAMETER =================== -->
+<div class="view" id="view-nrm">
+
+<section class="panel">
+  <div class="controls">
+    <div class="group">
+      <label for="muSlider">μ =</label>
+      <input id="muSlider" type="range" min="-2" max="6" step="0.01" value="1.5">
+      <span class="cval" id="muVal">1.50</span>
+    </div>
+    <div class="group">
+      <label for="sigSlider">σ =</label>
+      <input id="sigSlider" type="range" min="0.2" max="3" step="0.01" value="1.0">
+      <span class="cval" id="sigVal">1.00</span>
+    </div>
+    <div class="group">
+      <button id="snapNrm" class="primary">Snap to MLE</button>
+    </div>
+  </div>
+  <div class="data-row">
+    <label for="dataIn2">Data:</label>
+    <input id="dataIn2" type="text"
+      value="0.3114, 1.4391, 1.7690, 3.8012, 2.0710, 0.5612, 1.2898, 1.1892, 2.1054, 2.7151">
+    <button id="apply2">Apply</button>
+  </div>
+  <div class="err" id="err2"></div>
+  <p class="note">
+    For two parameters the log-likelihood is a function of the <strong>pair</strong> (μ, σ²).
+    Geometrically it lives on a surface over the (μ, σ) plane; we visualize it as a heatmap
+    with contour lines. The MLE is the highest point — the point where <em>both</em>
+    partial derivatives vanish:
+  </p>
+  <div class="formula">
+    ∂/∂μ ln L = (1/σ²)Σ(x<sub>i</sub>−μ) = 0 &nbsp;⟹&nbsp; μ̂ = x̄ <br>
+    ∂/∂σ² ln L = −n/(2σ²) + (1/(2σ⁴))Σ(x<sub>i</sub>−μ)² = 0 &nbsp;⟹&nbsp;
+    σ̂² = (1/n)Σ(x<sub>i</sub>−x̄)²
+  </div>
+  <div id="nrmMLE" class="mle-readout"></div>
+</section>
+
+<section class="panel h420">
+  <div class="plots">
+    <div>
+      <h2>1. PDF for current (μ, σ)</h2>
+      <canvas id="nrmPdf"></canvas>
+      <p class="note">As you change μ the bump slides; as you change σ it gets wider or narrower.</p>
+    </div>
+    <div>
+      <h2>2. ln L(μ, σ) over the parameter plane</h2>
+      <canvas id="nrmHeat"></canvas>
+      <div class="legend">
+        <span style="color:var(--crimson)">● current (μ, σ)</span>
+        <span style="color:#fff;background:#000;padding:0 4px;border-radius:2px">✕</span>
+        <span>&nbsp;MLE (μ̂, σ̂)</span>
+      </div>
+      <p class="note">Brighter = higher log-likelihood. Both partial derivatives are zero at the bullseye.</p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- =================== TAB 4: UNIFORM(0, θ) =================== -->
+<div class="view" id="view-uni">
+
+<section class="panel">
+  <div class="controls">
+    <div class="group">
+      <label for="thSlider">θ =</label>
+      <input id="thSlider" type="range" min="0.1" max="10" step="0.01" value="3">
+      <span class="cval" id="thVal">3.00</span>
+    </div>
+    <div class="group">
+      <button id="playUni" class="primary">▶ Animate</button>
+      <button id="snapUni">Snap to MLE</button>
+    </div>
+  </div>
+  <div class="data-row">
+    <label for="dataInU">Data:</label>
+    <input id="dataInU" type="text"
+      value="0.31, 1.44, 1.77, 3.80, 2.07, 0.56, 1.29, 1.19, 2.11, 2.72">
+    <button id="applyU">Apply</button>
+  </div>
+  <div class="err" id="errU"></div>
+  <p class="note">
+    For Y₁,…,Yₙ ~ Uniform(0, θ), the joint density is 1/θⁿ provided every yᵢ ≤ θ, and zero otherwise:
+  </p>
+  <div class="formula">
+    L(θ) = (1/θⁿ) · 1{θ ≥ max(y₁,…,yₙ)}
+  </div>
+  <p class="note">
+    L(θ) is <strong>discontinuous</strong>: it is exactly zero for θ &lt; max(yᵢ), then jumps up and
+    monotonically decreases for θ ≥ max(yᵢ). So the maximum sits at the <em>boundary</em> of
+    the feasible region — derivative-equals-zero <strong>fails</strong> here. The MLE is
+  </p>
+  <div class="formula">θ̂ = max(y₁, …, yₙ)</div>
+  <div id="uniMLE" class="mle-readout"></div>
+</section>
+
+<section class="panel h360">
+  <div class="plots">
+    <div>
+      <h2>1. Geometric picture</h2>
+      <canvas id="uniPdf"></canvas>
+      <p class="note">
+        The Uniform(0, θ) density is a flat box of height 1/θ. As θ shrinks the box gets
+        taller — but the moment θ falls below any data point, that point lies outside the
+        support and the joint density collapses to 0.
+      </p>
+    </div>
+    <div>
+      <h2>2. Likelihood L(θ)</h2>
+      <canvas id="uniLik"></canvas>
+      <div class="legend">
+        <span style="color:var(--crimson)">● current θ</span>
+        <span style="color:var(--accent)">● MLE θ̂ = max(yᵢ)</span>
+      </div>
+      <p class="note">
+        Note the cliff at θ̂. The maximum sits right on top of the cliff, not at an
+        interior critical point.
+      </p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- =================== TAB 5: CAPTURE–RECAPTURE =================== -->
+<div class="view" id="view-fish">
+
+<section class="panel">
+  <div class="controls">
+    <div class="group">
+      <label for="fK">K (tagged in 1st catch):</label>
+      <input id="fK" type="number" min="1" max="10000" value="30">
+    </div>
+    <div class="group">
+      <label for="fn">n (recaptured):</label>
+      <input id="fn" type="number" min="1" max="10000" value="50">
+    </div>
+    <div class="group">
+      <label for="fk">k (tagged among recaptured):</label>
+      <input id="fk" type="number" min="0" max="10000" value="10">
+    </div>
+    <div class="group">
+      <label for="NSlider">N =</label>
+      <input id="NSlider" type="range" min="50" max="400" step="1" value="120">
+      <span class="cval" id="NVal">120</span>
+    </div>
+    <div class="group">
+      <button id="snapFish" class="primary">Snap to MLE</button>
+    </div>
+  </div>
+  <p class="note">
+    Tag K fish, release them, later catch n fish and observe k of them tagged.
+    Assuming a closed, well-mixed population, the count of tagged fish in the second
+    catch is hypergeometric, so the likelihood for the unknown total population N is
+  </p>
+  <div class="formula">
+    L(N) = C(K, k) · C(N − K, n − k) / C(N, n)
+  </div>
+  <p class="note">
+    N is a positive <em>integer</em>, so we cannot just set a derivative to zero.
+    Instead, examine the ratio L(N+1)/L(N): it is &gt; 1 while N is below the peak and
+    &lt; 1 once N passes it. Solving L(N+1)/L(N) = 1 gives the closed-form integer MLE
+  </p>
+  <div class="formula">
+    N̂ = ⌊ K · n / k ⌋
+  </div>
+  <p class="note">
+    With K = 30, n = 50, k = 10 this gives N̂ = ⌊1500/10⌋ = <strong>150</strong>.
+  </p>
+  <div id="fishMLE" class="mle-readout"></div>
+</section>
+
+<section class="panel h360">
+  <div class="plots">
+    <div>
+      <h2>1. Likelihood L(N)</h2>
+      <canvas id="fishLik"></canvas>
+      <p class="note">
+        Each marker is one integer value of N. The likelihood rises, peaks at N̂, and
+        then decays.
+      </p>
+    </div>
+    <div>
+      <h2>2. Log-likelihood ln L(N)</h2>
+      <canvas id="fishLogLik"></canvas>
+      <div class="legend">
+        <span style="color:var(--crimson)">● current N</span>
+        <span style="color:var(--accent)">● MLE N̂</span>
+      </div>
+      <p class="note">
+        The discrete analogue of "derivative = 0" is "L(N+1)/L(N) crosses 1" — equivalently,
+        ln L stops increasing and starts decreasing.
+      </p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+</main>
+
+<script>
+/* ========================================================================
+   Shared canvas / axis helpers
+   ======================================================================== */
+function fitCanvas(c){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  const w = rect.width  || c.clientWidth  || 500;
+  const h = rect.height || c.clientHeight || 360;
+  c.width  = Math.max(1, Math.floor(w*dpr));
+  c.height = Math.max(1, Math.floor(h*dpr));
+  c.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+  return {w,h};
+}
+function axes(ctx, w, h, pad, xmin, xmax, ymin, ymax, xlabel, ylabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = "#ececec"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let i=0;i<=10;i++){
+    const gx = pad.l + (w-pad.l-pad.r)*i/10;
+    ctx.moveTo(gx, pad.t); ctx.lineTo(gx, h-pad.b);
+  }
+  for(let i=0;i<=5;i++){
+    const gy = pad.t + (h-pad.t-pad.b)*i/5;
+    ctx.moveTo(pad.l, gy); ctx.lineTo(w-pad.r, gy);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = "#333"; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, h-pad.b); ctx.lineTo(w-pad.r, h-pad.b);
+  ctx.stroke();
+  ctx.fillStyle = "#555"; ctx.font = "11px -apple-system,Segoe UI,sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for(let i=0;i<=6;i++){
+    const v = xmin + (xmax-xmin)*i/6;
+    const gx = pad.l + (w-pad.l-pad.r)*i/6;
+    ctx.fillText(v.toFixed(2), gx, h-pad.b+4);
+  }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for(let i=0;i<=5;i++){
+    const v = ymin + (ymax-ymin)*(1 - i/5);
+    const gy = pad.t + (h-pad.t-pad.b)*i/5;
+    const lab = (Math.abs(v)>=100||(Math.abs(v)<0.01&&v!==0)) ? v.toExponential(1) : v.toFixed(2);
+    ctx.fillText(lab, pad.l-5, gy);
+  }
+  ctx.fillStyle = "#333"; ctx.font = "12px -apple-system,Segoe UI,sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText(xlabel, (pad.l + w-pad.r)/2, h-2);
+  ctx.save();
+  ctx.translate(12, (pad.t + h-pad.b)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textBaseline = "top";
+  ctx.fillText(ylabel, 0, 0);
+  ctx.restore();
+}
+const xToPx = (x,w,pad,xmin,xmax) => pad.l + (w-pad.l-pad.r)*(x-xmin)/(xmax-xmin);
+const yToPx = (y,h,pad,ymin,ymax) => h-pad.b - (h-pad.t-pad.b)*(y-ymin)/(ymax-ymin);
+
+/* ========================================================================
+   TAB 1 — Location families (existing)
+   ======================================================================== */
+let data = [0.3114, 1.4391, 1.7690, 3.8012, 2.0710,
+            0.5612, 1.2898, 1.1892, 2.1054, 2.7151];
+const SQRT_2PI = Math.sqrt(2*Math.PI);
+const dists = {
+  laplace:{ pdf:(x,c)=>0.5*Math.exp(-Math.abs(x-c)), yMax:0.6 },
+  normal :{ pdf:(x,c)=>Math.exp(-0.5*(x-c)*(x-c))/SQRT_2PI, yMax:0.5 },
+  ggauss :{ pdf:(x,c)=>0.5516287990762032*Math.exp(-Math.pow(Math.abs(x-c),4)), yMax:0.7 }
+};
+let currentC = 1.5, currentDist = "laplace";
+let X_MIN=-1, X_MAX=5, C_MIN=0, C_MAX=4;
+let likelihoodCurve=[], llMax=-Infinity, mleC=0;
+
+function recomputeRanges(){
+  const lo = Math.min(...data), hi = Math.max(...data);
+  const pad = Math.max(1, (hi-lo)*0.25);
+  X_MIN = lo - pad; X_MAX = hi + pad;
+  C_MIN = lo - pad*0.5; C_MAX = hi + pad*0.5;
+  const cs = document.getElementById('c');
+  cs.min = C_MIN.toFixed(3); cs.max = C_MAX.toFixed(3);
+  cs.step = ((C_MAX-C_MIN)/400).toFixed(4);
+  if(currentC<C_MIN) currentC = C_MIN;
+  if(currentC>C_MAX) currentC = C_MAX;
+  cs.value = currentC;
+  document.getElementById('cval').textContent = currentC.toFixed(2);
+}
+function computeLikelihoodCurve(){
+  const dist = dists[currentDist];
+  const N = 401;
+  likelihoodCurve = [];
+  llMax = -Infinity; mleC = C_MIN;
+  for(let i=0;i<N;i++){
+    const c = C_MIN + (C_MAX-C_MIN)*i/(N-1);
+    let logL = 0;
+    for(const x of data) logL += Math.log(dist.pdf(x,c));
+    likelihoodCurve.push({c, logL});
+    if(logL > llMax){ llMax = logL; mleC = c; }
+  }
+}
+const cvs1 = document.getElementById('cvs1');
+const cvs2 = document.getElementById('cvs2');
+const ctx1 = cvs1.getContext('2d');
+const ctx2 = cvs2.getContext('2d');
+let dim1, dim2;
+function refit1(){ dim1 = fitCanvas(cvs1); dim2 = fitCanvas(cvs2); }
+
+function drawLoc(){
+  const dist = dists[currentDist];
+  const yMax = dist.yMax;
+  const pad1 = {l:55,r:18,t:18,b:34};
+  axes(ctx1, dim1.w, dim1.h, pad1, X_MIN, X_MAX, 0, yMax, "x", "f(x | c)");
+
+  ctx1.strokeStyle = "#1f4e79"; ctx1.lineWidth = 2.2;
+  ctx1.beginPath();
+  const NX = 600;
+  for(let i=0;i<NX;i++){
+    const x = X_MIN + (X_MAX-X_MIN)*i/(NX-1);
+    const px = xToPx(x, dim1.w, pad1, X_MIN, X_MAX);
+    const py = yToPx(dist.pdf(x,currentC), dim1.h, pad1, 0, yMax);
+    if(i===0) ctx1.moveTo(px,py); else ctx1.lineTo(px,py);
+  }
+  ctx1.stroke();
+
+  const cPx = xToPx(currentC, dim1.w, pad1, X_MIN, X_MAX);
+  const yBase = yToPx(0, dim1.h, pad1, 0, yMax);
+  ctx1.strokeStyle = "rgba(158,27,50,0.4)"; ctx1.setLineDash([3,3]);
+  ctx1.beginPath(); ctx1.moveTo(cPx, pad1.t); ctx1.lineTo(cPx, yBase); ctx1.stroke();
+  ctx1.setLineDash([]);
+  ctx1.fillStyle = "#9E1B32"; ctx1.font = "11px -apple-system,sans-serif"; ctx1.textAlign="left";
+  ctx1.fillText("c = "+currentC.toFixed(2), cPx+4, pad1.t+10);
+
+  ctx1.strokeStyle = "#666"; ctx1.setLineDash([4,3]); ctx1.lineWidth = 1.2;
+  for(const x of data){
+    const px = xToPx(x, dim1.w, pad1, X_MIN, X_MAX);
+    const py = yToPx(dist.pdf(x,currentC), dim1.h, pad1, 0, yMax);
+    ctx1.beginPath(); ctx1.moveTo(px, yBase); ctx1.lineTo(px, py); ctx1.stroke();
+  }
+  ctx1.setLineDash([]);
+
+  ctx1.fillStyle = "#9E1B32";
+  for(const x of data){
+    const px = xToPx(x, dim1.w, pad1, X_MIN, X_MAX);
+    ctx1.beginPath(); ctx1.arc(px, yBase, 5, 0, Math.PI*2); ctx1.fill();
+  }
+  ctx1.fillStyle = "#1f4e79";
+  for(const x of data){
+    const px = xToPx(x, dim1.w, pad1, X_MIN, X_MAX);
+    const py = yToPx(dist.pdf(x,currentC), dim1.h, pad1, 0, yMax);
+    ctx1.beginPath(); ctx1.arc(px, py, 3, 0, Math.PI*2); ctx1.fill();
+  }
+
+  // log-likelihood curve
+  const pad2 = {l:65,r:18,t:18,b:34};
+  let ymin = Infinity, ymax = -Infinity;
+  for(const p of likelihoodCurve) if(isFinite(p.logL)){
+    if(p.logL<ymin) ymin = p.logL;
+    if(p.logL>ymax) ymax = p.logL;
+  }
+  if(!isFinite(ymin)){ ymin=-1; ymax=0; }
+  const span = ymax - ymin || 1;
+  ymin -= span*0.08; ymax += span*0.08;
+
+  axes(ctx2, dim2.w, dim2.h, pad2, C_MIN, C_MAX, ymin, ymax, "c", "ln L(c)");
+
+  ctx2.strokeStyle = "#9E1B32"; ctx2.lineWidth = 2.2;
+  ctx2.beginPath();
+  for(let i=0;i<likelihoodCurve.length;i++){
+    const p = likelihoodCurve[i];
+    const px = xToPx(p.c, dim2.w, pad2, C_MIN, C_MAX);
+    const py = yToPx(p.logL, dim2.h, pad2, ymin, ymax);
+    if(i===0) ctx2.moveTo(px,py); else ctx2.lineTo(px,py);
+  }
+  ctx2.stroke();
+
+  const mPx = xToPx(mleC, dim2.w, pad2, C_MIN, C_MAX);
+  const mPy = yToPx(llMax, dim2.h, pad2, ymin, ymax);
+  ctx2.strokeStyle = "#1f4e79"; ctx2.setLineDash([4,4]);
+  ctx2.beginPath(); ctx2.moveTo(mPx, dim2.h-pad2.b); ctx2.lineTo(mPx, mPy); ctx2.stroke();
+  ctx2.setLineDash([]);
+  ctx2.fillStyle = "#1f4e79";
+  ctx2.beginPath(); ctx2.arc(mPx, mPy, 5, 0, Math.PI*2); ctx2.fill();
+  ctx2.font = "11px -apple-system,sans-serif"; ctx2.textAlign="left";
+  ctx2.fillText("ĉ = "+mleC.toFixed(3), mPx+6, mPy-6);
+
+  let curLogL = 0;
+  for(const x of data) curLogL += Math.log(dist.pdf(x,currentC));
+  const curPx = xToPx(currentC, dim2.w, pad2, C_MIN, C_MAX);
+  const curPy = yToPx(curLogL, dim2.h, pad2, ymin, ymax);
+  ctx2.fillStyle = "#9E1B32";
+  ctx2.beginPath(); ctx2.arc(curPx, curPy, 5, 0, Math.PI*2); ctx2.fill();
+}
+
+document.getElementById('c').addEventListener('input', e=>{
+  currentC = parseFloat(e.target.value);
+  document.getElementById('cval').textContent = currentC.toFixed(2);
+  drawLoc();
+});
+document.getElementById('dist').addEventListener('change', e=>{
+  currentDist = e.target.value;
+  computeLikelihoodCurve();
+  drawLoc();
+});
+let animId = null;
+document.getElementById('play').addEventListener('click', e=>{
+  if(animId){ cancelAnimationFrame(animId); animId=null; e.target.textContent="▶ Animate"; return; }
+  e.target.textContent = "❚❚ Pause";
+  const start = performance.now();
+  const PERIOD = 14000;
+  function step(now){
+    const t = ((now-start) % PERIOD) / PERIOD;
+    const u = 0.5 - 0.5*Math.cos(2*Math.PI*t);
+    currentC = C_MIN + (C_MAX-C_MIN)*u;
+    document.getElementById('c').value = currentC;
+    document.getElementById('cval').textContent = currentC.toFixed(2);
+    drawLoc();
+    animId = requestAnimationFrame(step);
+  }
+  animId = requestAnimationFrame(step);
+});
+document.getElementById('snap').addEventListener('click', ()=>{
+  if(animId){ cancelAnimationFrame(animId); animId=null;
+    document.getElementById('play').textContent="▶ Animate"; }
+  currentC = mleC;
+  document.getElementById('c').value = currentC;
+  document.getElementById('cval').textContent = currentC.toFixed(2);
+  drawLoc();
+});
+document.getElementById('apply').addEventListener('click', applyData);
+document.getElementById('dataIn').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') applyData();
+});
+function applyData(){
+  const raw = document.getElementById('dataIn').value;
+  const parts = raw.split(/[\s,;]+/).filter(s=>s.length>0);
+  const nums = parts.map(Number);
+  const err = document.getElementById('err');
+  if(nums.length<2 || nums.some(v=>!isFinite(v))){
+    err.textContent = "Please enter at least 2 valid numbers, separated by commas or spaces.";
+    return;
+  }
+  err.textContent = "";
+  data = nums;
+  recomputeRanges();
+  computeLikelihoodCurve();
+  drawLoc();
+}
+
+/* ========================================================================
+   TAB 2 — Binomial
+   ======================================================================== */
+const binL  = document.getElementById('binL');
+const binLL = document.getElementById('binLL');
+const ctxBL = binL.getContext('2d');
+const ctxBLL= binLL.getContext('2d');
+let dimBL, dimBLL;
+function refitBin(){ dimBL = fitCanvas(binL); dimBLL = fitCanvas(binLL); }
+
+let binN = 20, binY = 13, binP = 0.5;
+
+function drawBin(){
+  const padL = {l:55,r:18,t:18,b:34};
+  // L(p)
+  // compute curve
+  const NP = 401;
+  let Larr = new Array(NP), LLarr = new Array(NP);
+  let lmax = 0;
+  for(let i=0;i<NP;i++){
+    const p = i/(NP-1);
+    let val = 0, logv = -Infinity;
+    if(p>0 && p<1){
+      logv = binY*Math.log(p) + (binN-binY)*Math.log(1-p);
+      val = Math.exp(logv);
+    } else if(p===0){
+      val = binY===0 ? 1 : 0;
+      logv = binY===0 ? 0 : -Infinity;
+    } else {
+      val = binY===binN ? 1 : 0;
+      logv = binY===binN ? 0 : -Infinity;
+    }
+    Larr[i] = val; LLarr[i] = logv;
+    if(val>lmax) lmax = val;
+  }
+  const pHat = binY/binN;
+
+  // --- Likelihood plot ---
+  axes(ctxBL, dimBL.w, dimBL.h, padL, 0, 1, 0, lmax*1.15 || 1, "p", "L(p)");
+  ctxBL.strokeStyle = "#1f4e79"; ctxBL.lineWidth = 2.2;
+  ctxBL.beginPath();
+  for(let i=0;i<NP;i++){
+    const p = i/(NP-1);
+    const px = xToPx(p, dimBL.w, padL, 0, 1);
+    const py = yToPx(Larr[i], dimBL.h, padL, 0, lmax*1.15 || 1);
+    if(i===0) ctxBL.moveTo(px,py); else ctxBL.lineTo(px,py);
+  }
+  ctxBL.stroke();
+
+  // tangent at current p (in L space)
+  if(binP>0 && binP<1){
+    const Lcur = Math.exp(binY*Math.log(binP) + (binN-binY)*Math.log(1-binP));
+    const score = binY/binP - (binN-binY)/(1-binP);    // d/dp ln L
+    const slopeL = Lcur * score;                       // d/dp L = L*score
+    const half = 0.12;
+    const x1 = Math.max(0.001, binP-half), x2 = Math.min(0.999, binP+half);
+    const y1 = Lcur + slopeL*(x1-binP);
+    const y2 = Lcur + slopeL*(x2-binP);
+    ctxBL.strokeStyle = "#e08e00"; ctxBL.lineWidth = 2;
+    ctxBL.beginPath();
+    ctxBL.moveTo(xToPx(x1,dimBL.w,padL,0,1), yToPx(y1,dimBL.h,padL,0,lmax*1.15 || 1));
+    ctxBL.lineTo(xToPx(x2,dimBL.w,padL,0,1), yToPx(y2,dimBL.h,padL,0,lmax*1.15 || 1));
+    ctxBL.stroke();
+    // current point
+    ctxBL.fillStyle = "#9E1B32";
+    ctxBL.beginPath();
+    ctxBL.arc(xToPx(binP,dimBL.w,padL,0,1), yToPx(Lcur,dimBL.h,padL,0,lmax*1.15 || 1), 5, 0, Math.PI*2);
+    ctxBL.fill();
+  }
+  // MLE marker on L
+  if(pHat>0 && pHat<1){
+    const Lhat = Math.exp(binY*Math.log(pHat) + (binN-binY)*Math.log(1-pHat));
+    ctxBL.strokeStyle = "#1f4e79"; ctxBL.setLineDash([4,4]);
+    ctxBL.beginPath();
+    ctxBL.moveTo(xToPx(pHat,dimBL.w,padL,0,1), dimBL.h-padL.b);
+    ctxBL.lineTo(xToPx(pHat,dimBL.w,padL,0,1), yToPx(Lhat,dimBL.h,padL,0,lmax*1.15 || 1));
+    ctxBL.stroke();
+    ctxBL.setLineDash([]);
+    ctxBL.fillStyle = "#1f4e79";
+    ctxBL.beginPath();
+    ctxBL.arc(xToPx(pHat,dimBL.w,padL,0,1), yToPx(Lhat,dimBL.h,padL,0,lmax*1.15 || 1), 5, 0, Math.PI*2);
+    ctxBL.fill();
+  }
+
+  // --- log-likelihood ---
+  let lmin = Infinity, lmaxLL = -Infinity;
+  for(const v of LLarr) if(isFinite(v)){ if(v<lmin) lmin=v; if(v>lmaxLL) lmaxLL=v; }
+  if(!isFinite(lmin)){ lmin=-10; lmaxLL=0; }
+  const sp = lmaxLL - lmin || 1;
+  // clip lower bound so curve is visible
+  const yloLL = lmaxLL - sp*1.6;
+  const yhiLL = lmaxLL + sp*0.15;
+
+  axes(ctxBLL, dimBLL.w, dimBLL.h, padL, 0, 1, yloLL, yhiLL, "p", "ln L(p)");
+  ctxBLL.strokeStyle = "#9E1B32"; ctxBLL.lineWidth = 2.2;
+  ctxBLL.beginPath();
+  let started = false;
+  for(let i=0;i<NP;i++){
+    const p = i/(NP-1);
+    const v = LLarr[i];
+    if(!isFinite(v) || v < yloLL) { started = false; continue; }
+    const px = xToPx(p, dimBLL.w, padL, 0, 1);
+    const py = yToPx(v, dimBLL.h, padL, yloLL, yhiLL);
+    if(!started){ ctxBLL.moveTo(px,py); started = true; }
+    else ctxBLL.lineTo(px,py);
+  }
+  ctxBLL.stroke();
+
+  // tangent at current p in ln L space
+  if(binP>0 && binP<1){
+    const llcur = binY*Math.log(binP) + (binN-binY)*Math.log(1-binP);
+    const score = binY/binP - (binN-binY)/(1-binP);
+    const half = 0.12;
+    const x1 = Math.max(0.001, binP-half), x2 = Math.min(0.999, binP+half);
+    const y1 = llcur + score*(x1-binP);
+    const y2 = llcur + score*(x2-binP);
+    ctxBLL.strokeStyle = "#e08e00"; ctxBLL.lineWidth = 2;
+    ctxBLL.beginPath();
+    ctxBLL.moveTo(xToPx(x1,dimBLL.w,padL,0,1), yToPx(y1,dimBLL.h,padL,yloLL,yhiLL));
+    ctxBLL.lineTo(xToPx(x2,dimBLL.w,padL,0,1), yToPx(y2,dimBLL.h,padL,yloLL,yhiLL));
+    ctxBLL.stroke();
+    ctxBLL.fillStyle = "#9E1B32";
+    ctxBLL.beginPath();
+    ctxBLL.arc(xToPx(binP,dimBLL.w,padL,0,1), yToPx(llcur,dimBLL.h,padL,yloLL,yhiLL), 5, 0, Math.PI*2);
+    ctxBLL.fill();
+    // slope text
+    ctxBLL.fillStyle = "#e08e00"; ctxBLL.font = "11px -apple-system,sans-serif";
+    ctxBLL.textAlign = "left";
+    ctxBLL.fillText("score = "+score.toFixed(2), xToPx(binP,dimBLL.w,padL,0,1)+8, yToPx(llcur,dimBLL.h,padL,yloLL,yhiLL)-8);
+  }
+  // MLE marker
+  if(pHat>0 && pHat<1){
+    const llhat = binY*Math.log(pHat) + (binN-binY)*Math.log(1-pHat);
+    ctxBLL.strokeStyle = "#1f4e79"; ctxBLL.setLineDash([4,4]);
+    ctxBLL.beginPath();
+    ctxBLL.moveTo(xToPx(pHat,dimBLL.w,padL,0,1), dimBLL.h-padL.b);
+    ctxBLL.lineTo(xToPx(pHat,dimBLL.w,padL,0,1), yToPx(llhat,dimBLL.h,padL,yloLL,yhiLL));
+    ctxBLL.stroke();
+    ctxBLL.setLineDash([]);
+    ctxBLL.fillStyle = "#1f4e79";
+    ctxBLL.beginPath();
+    ctxBLL.arc(xToPx(pHat,dimBLL.w,padL,0,1), yToPx(llhat,dimBLL.h,padL,yloLL,yhiLL), 5, 0, Math.PI*2);
+    ctxBLL.fill();
+    ctxBLL.font = "11px -apple-system,sans-serif"; ctxBLL.textAlign="left";
+    ctxBLL.fillText("p̂ = "+pHat.toFixed(3), xToPx(pHat,dimBLL.w,padL,0,1)+6, yToPx(llhat,dimBLL.h,padL,yloLL,yhiLL)-6);
+  }
+
+  document.getElementById('binMLE').textContent =
+    `MLE: p̂ = y/n = ${binY}/${binN} = ${(binY/binN).toFixed(4)}`;
+}
+
+document.getElementById('binN').addEventListener('input', e=>{
+  binN = Math.max(1, parseInt(e.target.value)||1);
+  if(binY>binN) { binY = binN; document.getElementById('binY').value = binY; }
+  drawBin();
+});
+document.getElementById('binY').addEventListener('input', e=>{
+  binY = Math.max(0, Math.min(binN, parseInt(e.target.value)||0));
+  drawBin();
+});
+document.getElementById('pSlider').addEventListener('input', e=>{
+  binP = parseFloat(e.target.value);
+  document.getElementById('pval').textContent = binP.toFixed(3);
+  drawBin();
+});
+document.getElementById('snapBin').addEventListener('click', ()=>{
+  binP = binY/binN;
+  if(binP<=0) binP = 0.001;
+  if(binP>=1) binP = 0.999;
+  document.getElementById('pSlider').value = binP;
+  document.getElementById('pval').textContent = binP.toFixed(3);
+  drawBin();
+});
+
+/* ========================================================================
+   TAB 3 — Normal (μ, σ²)
+   ======================================================================== */
+let dataN = data.slice();
+let muCur = 1.5, sigCur = 1.0;
+const nrmPdf  = document.getElementById('nrmPdf');
+const nrmHeat = document.getElementById('nrmHeat');
+const ctxNP   = nrmPdf.getContext('2d');
+const ctxNH   = nrmHeat.getContext('2d');
+let dimNP, dimNH;
+function refitNrm(){ dimNP = fitCanvas(nrmPdf); dimNH = fitCanvas(nrmHeat); }
+
+function nrmStats(){
+  const n = dataN.length;
+  const xbar = dataN.reduce((a,b)=>a+b,0)/n;
+  let s2 = 0;
+  for(const x of dataN) s2 += (x-xbar)*(x-xbar);
+  s2 /= n;
+  return {n, xbar, sigHat: Math.sqrt(s2)};
+}
+function nrmLogLik(mu, sig){
+  const n = dataN.length;
+  let s = 0;
+  for(const x of dataN) s += (x-mu)*(x-mu);
+  return -n/2*Math.log(2*Math.PI) - n*Math.log(sig) - s/(2*sig*sig);
+}
+// viridis-ish colormap
+function colormap(t){
+  // t in [0,1]
+  t = Math.max(0, Math.min(1, t));
+  const r = Math.round(68 + (253-68)*Math.pow(t,1.4));
+  const g = Math.round(1  + (231-1) *Math.pow(t,0.9));
+  const b = Math.round(84 + (37-84) *Math.pow(t,0.6));
+  return [r,g,b];
+}
+
+function drawNrm(){
+  const {n, xbar, sigHat} = nrmStats();
+  document.getElementById('nrmMLE').textContent =
+    `MLE: μ̂ = x̄ = ${xbar.toFixed(4)},  σ̂² = ${(sigHat*sigHat).toFixed(4)},  σ̂ = ${sigHat.toFixed(4)}`;
+
+  // ---- PDF panel ----
+  const lo = Math.min(...dataN), hi = Math.max(...dataN);
+  const xpad = Math.max(1.5, (hi-lo)*0.4);
+  const xMin = lo - xpad, xMax = hi + xpad;
+  const yMaxP = Math.max(0.6, 1/(sigHat*SQRT_2PI)*1.3);
+
+  const padP = {l:55,r:18,t:18,b:34};
+  axes(ctxNP, dimNP.w, dimNP.h, padP, xMin, xMax, 0, yMaxP, "x", "f(x | μ, σ)");
+
+  // PDF
+  ctxNP.strokeStyle = "#1f4e79"; ctxNP.lineWidth = 2.2;
+  ctxNP.beginPath();
+  const NX = 600;
+  for(let i=0;i<NX;i++){
+    const x = xMin + (xMax-xMin)*i/(NX-1);
+    const v = Math.exp(-0.5*((x-muCur)/sigCur)**2)/(sigCur*SQRT_2PI);
+    const px = xToPx(x, dimNP.w, padP, xMin, xMax);
+    const py = yToPx(v, dimNP.h, padP, 0, yMaxP);
+    if(i===0) ctxNP.moveTo(px,py); else ctxNP.lineTo(px,py);
+  }
+  ctxNP.stroke();
+
+  const yBase = yToPx(0, dimNP.h, padP, 0, yMaxP);
+  ctxNP.strokeStyle = "#666"; ctxNP.setLineDash([4,3]);
+  for(const x of dataN){
+    const v = Math.exp(-0.5*((x-muCur)/sigCur)**2)/(sigCur*SQRT_2PI);
+    const px = xToPx(x, dimNP.w, padP, xMin, xMax);
+    const py = yToPx(v, dimNP.h, padP, 0, yMaxP);
+    ctxNP.beginPath(); ctxNP.moveTo(px,yBase); ctxNP.lineTo(px,py); ctxNP.stroke();
+  }
+  ctxNP.setLineDash([]);
+  ctxNP.fillStyle = "#9E1B32";
+  for(const x of dataN){
+    const px = xToPx(x, dimNP.w, padP, xMin, xMax);
+    ctxNP.beginPath(); ctxNP.arc(px, yBase, 5, 0, Math.PI*2); ctxNP.fill();
+  }
+
+  // ---- Heatmap of ln L over (mu, sig) ----
+  // ranges
+  const muMin = xbar - 4*sigHat, muMax = xbar + 4*sigHat;
+  const sigMin = Math.max(0.05, sigHat*0.25);
+  const sigMax = sigHat*3;
+  const padH = {l:60,r:18,t:18,b:34};
+  axes(ctxNH, dimNH.w, dimNH.h, padH, muMin, muMax, sigMin, sigMax, "μ", "σ");
+
+  // compute heatmap
+  const W = Math.floor(dimNH.w - padH.l - padH.r);
+  const H = Math.floor(dimNH.h - padH.t - padH.b);
+  if(W>0 && H>0){
+    const grid = new Float32Array(W*H);
+    let gmin = Infinity, gmax = -Infinity;
+    for(let j=0;j<H;j++){
+      const sig = sigMax - (sigMax-sigMin)*j/(H-1);  // top = high sigma
+      for(let i=0;i<W;i++){
+        const mu = muMin + (muMax-muMin)*i/(W-1);
+        const v = nrmLogLik(mu, sig);
+        grid[j*W+i] = v;
+        if(v<gmin) gmin = v;
+        if(v>gmax) gmax = v;
+      }
+    }
+    // clip dynamic range so the peak stands out
+    const span = gmax - gmin;
+    const lo2 = gmax - span*0.5;
+    const img = ctxNH.createImageData(W, H);
+    for(let j=0;j<H;j++){
+      for(let i=0;i<W;i++){
+        const v = grid[j*W+i];
+        const t = (v - lo2)/(gmax - lo2);
+        const [r,g,b] = colormap(t);
+        const k = (j*W + i)*4;
+        img.data[k]=r; img.data[k+1]=g; img.data[k+2]=b; img.data[k+3]=255;
+      }
+    }
+    ctxNH.putImageData(img, padH.l, padH.t);
+
+    // contour lines: a few iso-ln L levels
+    ctxNH.strokeStyle = "rgba(255,255,255,0.55)"; ctxNH.lineWidth = 1;
+    const levels = [0.92, 0.84, 0.74, 0.62, 0.48].map(t => lo2 + t*(gmax-lo2));
+    for(const L of levels){
+      // marching squares-lite: scan and draw segments where row crosses L
+      ctxNH.beginPath();
+      for(let j=0;j<H-1;j++){
+        for(let i=0;i<W-1;i++){
+          const a = grid[j*W+i],     b = grid[j*W+i+1];
+          const c = grid[(j+1)*W+i], d = grid[(j+1)*W+i+1];
+          // check horizontal edge top
+          if((a-L)*(b-L) < 0){
+            const t = (L-a)/(b-a);
+            ctxNH.moveTo(padH.l + i + t, padH.t + j);
+            ctxNH.lineTo(padH.l + i + t, padH.t + j + 0.6);
+          }
+          if((a-L)*(c-L) < 0){
+            const t = (L-a)/(c-a);
+            ctxNH.moveTo(padH.l + i,       padH.t + j + t);
+            ctxNH.lineTo(padH.l + i + 0.6, padH.t + j + t);
+          }
+        }
+      }
+      ctxNH.stroke();
+    }
+  }
+
+  // axes overlay (re-draw frame so heatmap doesn't bleed)
+  ctxNH.strokeStyle = "#333"; ctxNH.lineWidth = 1.2;
+  ctxNH.strokeRect(padH.l, padH.t, dimNH.w-padH.l-padH.r, dimNH.h-padH.t-padH.b);
+
+  // MLE marker (μ̂, σ̂)
+  const mxPx = xToPx(xbar, dimNH.w, padH, muMin, muMax);
+  const myPx = yToPx(sigHat, dimNH.h, padH, sigMin, sigMax);
+  ctxNH.strokeStyle = "#000"; ctxNH.lineWidth = 2.4;
+  ctxNH.beginPath();
+  ctxNH.moveTo(mxPx-7,myPx-7); ctxNH.lineTo(mxPx+7,myPx+7);
+  ctxNH.moveTo(mxPx+7,myPx-7); ctxNH.lineTo(mxPx-7,myPx+7);
+  ctxNH.stroke();
+  ctxNH.strokeStyle = "#fff"; ctxNH.lineWidth = 1.2;
+  ctxNH.beginPath();
+  ctxNH.moveTo(mxPx-7,myPx-7); ctxNH.lineTo(mxPx+7,myPx+7);
+  ctxNH.moveTo(mxPx+7,myPx-7); ctxNH.lineTo(mxPx-7,myPx+7);
+  ctxNH.stroke();
+
+  // current point
+  if(muCur>=muMin && muCur<=muMax && sigCur>=sigMin && sigCur<=sigMax){
+    const cx = xToPx(muCur, dimNH.w, padH, muMin, muMax);
+    const cy = yToPx(sigCur, dimNH.h, padH, sigMin, sigMax);
+    ctxNH.fillStyle = "#9E1B32";
+    ctxNH.beginPath(); ctxNH.arc(cx,cy,6,0,Math.PI*2); ctxNH.fill();
+    ctxNH.strokeStyle = "#fff"; ctxNH.lineWidth = 1.5;
+    ctxNH.beginPath(); ctxNH.arc(cx,cy,6,0,Math.PI*2); ctxNH.stroke();
+  }
+}
+
+document.getElementById('muSlider').addEventListener('input', e=>{
+  muCur = parseFloat(e.target.value);
+  document.getElementById('muVal').textContent = muCur.toFixed(2);
+  drawNrm();
+});
+document.getElementById('sigSlider').addEventListener('input', e=>{
+  sigCur = parseFloat(e.target.value);
+  document.getElementById('sigVal').textContent = sigCur.toFixed(2);
+  drawNrm();
+});
+document.getElementById('snapNrm').addEventListener('click', ()=>{
+  const {xbar, sigHat} = nrmStats();
+  muCur = xbar; sigCur = sigHat;
+  // expand sliders if needed
+  const muSlider = document.getElementById('muSlider');
+  const sigSlider = document.getElementById('sigSlider');
+  if(muCur < parseFloat(muSlider.min)) muSlider.min = (muCur-1).toFixed(2);
+  if(muCur > parseFloat(muSlider.max)) muSlider.max = (muCur+1).toFixed(2);
+  if(sigCur > parseFloat(sigSlider.max)) sigSlider.max = (sigCur*1.5).toFixed(2);
+  muSlider.value = muCur;
+  sigSlider.value = sigCur;
+  document.getElementById('muVal').textContent = muCur.toFixed(2);
+  document.getElementById('sigVal').textContent = sigCur.toFixed(2);
+  drawNrm();
+});
+document.getElementById('apply2').addEventListener('click', applyData2);
+document.getElementById('dataIn2').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') applyData2();
+});
+function applyData2(){
+  const raw = document.getElementById('dataIn2').value;
+  const parts = raw.split(/[\s,;]+/).filter(s=>s.length>0);
+  const nums = parts.map(Number);
+  const err = document.getElementById('err2');
+  if(nums.length<2 || nums.some(v=>!isFinite(v))){
+    err.textContent = "Please enter at least 2 valid numbers.";
+    return;
+  }
+  err.textContent = "";
+  dataN = nums;
+  drawNrm();
+}
+
+/* ========================================================================
+   TAB 4 — Uniform(0, θ)
+   ======================================================================== */
+let dataU = [0.31, 1.44, 1.77, 3.80, 2.07, 0.56, 1.29, 1.19, 2.11, 2.72];
+let thCur = null;  // initialized to MLE on first draw
+const uniPdf = document.getElementById('uniPdf');
+const uniLik = document.getElementById('uniLik');
+const ctxUP  = uniPdf.getContext('2d');
+const ctxUL  = uniLik.getContext('2d');
+let dimUP, dimUL;
+function refitUni(){ dimUP = fitCanvas(uniPdf); dimUL = fitCanvas(uniLik); }
+
+function drawUni(){
+  const n = dataU.length;
+  const ymax = Math.max(...dataU);
+  if(thCur === null) thCur = ymax;   // start at the MLE
+  document.getElementById('uniMLE').textContent =
+    `MLE: θ̂ = max(yᵢ) = ${ymax.toFixed(4)}`;
+
+  // adapt slider range to data
+  const slider = document.getElementById('thSlider');
+  const sMin = Math.max(0.05, ymax*0.3);
+  const sMax = ymax*3;
+  slider.min = sMin.toFixed(2);
+  slider.max = sMax.toFixed(2);
+  slider.step = ((sMax-sMin)/400).toFixed(4);
+  if(thCur<sMin) thCur = sMin;
+  if(thCur>sMax) thCur = sMax;
+  slider.value = thCur;
+  document.getElementById('thVal').textContent = thCur.toFixed(2);
+
+  // ---- PDF panel ----
+  // y-axis sized so the MLE box (height 1/ymax) fills ~60% of the plot
+  const xMin = 0, xMax = sMax;
+  const yMaxP = (1/ymax) * 1.7;
+  const padP = {l:55,r:18,t:18,b:34};
+  axes(ctxUP, dimUP.w, dimUP.h, padP, xMin, xMax, 0, yMaxP, "x", "f(x | θ)");
+
+  // clip drawing to plot area so tall (invalid) boxes don't overflow axes
+  ctxUP.save();
+  ctxUP.beginPath();
+  ctxUP.rect(padP.l, padP.t, dimUP.w-padP.l-padP.r, dimUP.h-padP.t-padP.b);
+  ctxUP.clip();
+
+  // box of height 1/θ on [0, θ]
+  const valid = thCur >= ymax;
+  const h = 1/thCur;
+  const x0 = xToPx(0, dimUP.w, padP, xMin, xMax);
+  const x1 = xToPx(thCur, dimUP.w, padP, xMin, xMax);
+  const y0 = yToPx(0, dimUP.h, padP, 0, yMaxP);
+  const y1 = yToPx(h, dimUP.h, padP, 0, yMaxP);
+  ctxUP.fillStyle = valid ? "rgba(31,78,121,0.20)" : "rgba(158,27,50,0.20)";
+  ctxUP.fillRect(x0, y1, x1-x0, y0-y1);
+  ctxUP.strokeStyle = valid ? "#1f4e79" : "#9E1B32";
+  ctxUP.lineWidth = 2.2;
+  ctxUP.beginPath();
+  ctxUP.moveTo(x0, y0); ctxUP.lineTo(x0, y1); ctxUP.lineTo(x1, y1); ctxUP.lineTo(x1, y0);
+  ctxUP.stroke();
+
+  ctxUP.restore();
+
+  // current theta marker label (outside clip so always visible)
+  ctxUP.fillStyle = "#9E1B32"; ctxUP.font = "11px -apple-system,sans-serif"; ctxUP.textAlign="center";
+  const labelY = Math.max(padP.t+12, Math.min(y1-6, dimUP.h-padP.b-4));
+  ctxUP.fillText("θ = "+thCur.toFixed(2), x1, labelY);
+
+  // dashed stems from each data point up to f(x_i|θ)
+  // (= 1/θ if x_i ≤ θ, else 0 → no stem)
+  ctxUP.save();
+  ctxUP.beginPath();
+  ctxUP.rect(padP.l, padP.t, dimUP.w-padP.l-padP.r, dimUP.h-padP.t-padP.b);
+  ctxUP.clip();
+  ctxUP.strokeStyle = "#666"; ctxUP.setLineDash([4,3]); ctxUP.lineWidth = 1.2;
+  for(const x of dataU){
+    if(x > thCur) continue;             // outside support → density is 0
+    const px = xToPx(x, dimUP.w, padP, xMin, xMax);
+    ctxUP.beginPath();
+    ctxUP.moveTo(px, y0); ctxUP.lineTo(px, y1);
+    ctxUP.stroke();
+  }
+  ctxUP.setLineDash([]);
+  ctxUP.restore();
+
+  // data points (red dots on the x-axis; ✕ if outside the support)
+  for(const x of dataU){
+    const px = xToPx(x, dimUP.w, padP, xMin, xMax);
+    const inside = x <= thCur;
+    ctxUP.fillStyle = inside ? "#9E1B32" : "#000";
+    ctxUP.beginPath(); ctxUP.arc(px, y0, 5, 0, Math.PI*2); ctxUP.fill();
+    if(!inside){
+      ctxUP.strokeStyle = "#000"; ctxUP.lineWidth = 1.5;
+      ctxUP.beginPath();
+      ctxUP.moveTo(px-5, y0-5); ctxUP.lineTo(px+5, y0+5);
+      ctxUP.moveTo(px+5, y0-5); ctxUP.lineTo(px-5, y0+5);
+      ctxUP.stroke();
+    }
+  }
+  // small blue dot where each stem meets the box top
+  ctxUP.fillStyle = "#1f4e79";
+  for(const x of dataU){
+    if(x > thCur) continue;
+    const px = xToPx(x, dimUP.w, padP, xMin, xMax);
+    ctxUP.beginPath(); ctxUP.arc(px, y1, 3, 0, Math.PI*2); ctxUP.fill();
+  }
+  if(!valid){
+    ctxUP.fillStyle = "#9E1B32"; ctxUP.textAlign="left"; ctxUP.font = "12px -apple-system,sans-serif";
+    ctxUP.fillText("θ < max(yᵢ)  →  L(θ) = 0", padP.l+8, padP.t+14);
+  }
+
+  // ---- L(θ) panel ----
+  // L(θ) = (1/θ^n) for θ ≥ ymax, else 0
+  const padL = {l:65,r:18,t:18,b:34};
+  const tMin = sMin, tMax = sMax;
+  // compute Lmax for scaling: max occurs at theta = ymax
+  const Lpeak = Math.pow(1/ymax, n);
+  axes(ctxUL, dimUL.w, dimUL.h, padL, tMin, tMax, 0, Lpeak*1.15, "θ", "L(θ)");
+
+  // zero region
+  ctxUL.strokeStyle = "#9E1B32"; ctxUL.lineWidth = 2.2;
+  ctxUL.beginPath();
+  ctxUL.moveTo(xToPx(tMin, dimUL.w, padL, tMin, tMax), yToPx(0, dimUL.h, padL, 0, Lpeak*1.15));
+  ctxUL.lineTo(xToPx(ymax, dimUL.w, padL, tMin, tMax), yToPx(0, dimUL.h, padL, 0, Lpeak*1.15));
+  ctxUL.stroke();
+  // cliff (vertical jump at ymax)
+  ctxUL.strokeStyle = "#9E1B32"; ctxUL.setLineDash([3,3]);
+  ctxUL.beginPath();
+  ctxUL.moveTo(xToPx(ymax, dimUL.w, padL, tMin, tMax), yToPx(0, dimUL.h, padL, 0, Lpeak*1.15));
+  ctxUL.lineTo(xToPx(ymax, dimUL.w, padL, tMin, tMax), yToPx(Lpeak, dimUL.h, padL, 0, Lpeak*1.15));
+  ctxUL.stroke();
+  ctxUL.setLineDash([]);
+  // decreasing 1/θ^n branch
+  ctxUL.strokeStyle = "#1f4e79"; ctxUL.lineWidth = 2.2;
+  ctxUL.beginPath();
+  const NT = 400;
+  for(let i=0;i<=NT;i++){
+    const t = ymax + (tMax-ymax)*i/NT;
+    const v = Math.pow(1/t, n);
+    const px = xToPx(t, dimUL.w, padL, tMin, tMax);
+    const py = yToPx(v, dimUL.h, padL, 0, Lpeak*1.15);
+    if(i===0) ctxUL.moveTo(px,py); else ctxUL.lineTo(px,py);
+  }
+  ctxUL.stroke();
+  // MLE marker
+  ctxUL.fillStyle = "#1f4e79";
+  ctxUL.beginPath();
+  ctxUL.arc(xToPx(ymax, dimUL.w, padL, tMin, tMax), yToPx(Lpeak, dimUL.h, padL, 0, Lpeak*1.15), 6, 0, Math.PI*2);
+  ctxUL.fill();
+  ctxUL.font = "11px -apple-system,sans-serif"; ctxUL.textAlign="left";
+  ctxUL.fillText("θ̂ = "+ymax.toFixed(3), xToPx(ymax, dimUL.w, padL, tMin, tMax)+8, yToPx(Lpeak, dimUL.h, padL, 0, Lpeak*1.15)-6);
+
+  // current theta marker
+  const Lcur = thCur >= ymax ? Math.pow(1/thCur, n) : 0;
+  ctxUL.fillStyle = "#9E1B32";
+  ctxUL.beginPath();
+  ctxUL.arc(xToPx(thCur, dimUL.w, padL, tMin, tMax), yToPx(Lcur, dimUL.h, padL, 0, Lpeak*1.15), 5, 0, Math.PI*2);
+  ctxUL.fill();
+}
+
+document.getElementById('thSlider').addEventListener('input', e=>{
+  thCur = parseFloat(e.target.value);
+  document.getElementById('thVal').textContent = thCur.toFixed(2);
+  drawUni();
+});
+document.getElementById('snapUni').addEventListener('click', ()=>{
+  if(uniAnimId){ cancelAnimationFrame(uniAnimId); uniAnimId=null;
+    document.getElementById('playUni').textContent="▶ Animate"; }
+  thCur = Math.max(...dataU);
+  drawUni();
+});
+
+let uniAnimId = null;
+document.getElementById('playUni').addEventListener('click', e=>{
+  if(uniAnimId){ cancelAnimationFrame(uniAnimId); uniAnimId=null; e.target.textContent="▶ Animate"; return; }
+  e.target.textContent = "❚❚ Pause";
+  const start = performance.now();
+  const PERIOD = 14000;
+  function step(now){
+    const ymax = Math.max(...dataU);
+    const sMin = Math.max(0.05, ymax*0.3);
+    const sMax = ymax*3;
+    const t = ((now-start) % PERIOD) / PERIOD;
+    const u = 0.5 - 0.5*Math.cos(2*Math.PI*t);
+    thCur = sMin + (sMax-sMin)*u;
+    drawUni();
+    uniAnimId = requestAnimationFrame(step);
+  }
+  uniAnimId = requestAnimationFrame(step);
+});
+document.getElementById('applyU').addEventListener('click', applyDataU);
+document.getElementById('dataInU').addEventListener('keydown', e=>{
+  if(e.key==='Enter') applyDataU();
+});
+function applyDataU(){
+  const raw = document.getElementById('dataInU').value;
+  const parts = raw.split(/[\s,;]+/).filter(s=>s.length>0);
+  const nums = parts.map(Number);
+  const err = document.getElementById('errU');
+  if(nums.length<2 || nums.some(v=>!isFinite(v) || v<0)){
+    err.textContent = "Please enter at least 2 non-negative numbers.";
+    return;
+  }
+  err.textContent = "";
+  dataU = nums;
+  thCur = null;   // re-snap to new MLE
+  drawUni();
+}
+
+/* ========================================================================
+   TAB 5 — Capture–recapture (hypergeometric MLE)
+   ======================================================================== */
+// Lanczos lgamma
+function lgamma(x){
+  const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+             -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  let y = x, tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j = 0; j < 6; j++) ser += c[j] / ++y;
+  return -tmp + Math.log(2.5066282746310005 * ser / x);
+}
+function lbinom(n,k){
+  if(k<0 || k>n) return -Infinity;
+  return lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1);
+}
+
+let fK = 30, fn_ = 50, fk = 10, fNCur = 120;
+const fishLik    = document.getElementById('fishLik');
+const fishLogLik = document.getElementById('fishLogLik');
+const ctxFL  = fishLik.getContext('2d');
+const ctxFLL = fishLogLik.getContext('2d');
+let dimFL, dimFLL;
+function refitFish(){ dimFL = fitCanvas(fishLik); dimFLL = fitCanvas(fishLogLik); }
+
+function fishLogL(N){
+  // valid: N >= K, N - K >= n - k, N >= n
+  if(N < fK) return -Infinity;
+  if(N - fK < fn_ - fk) return -Infinity;
+  if(N < fn_) return -Infinity;
+  return lbinom(fK, fk) + lbinom(N - fK, fn_ - fk) - lbinom(N, fn_);
+}
+
+function drawFish(){
+  // MLE
+  const Nhat = (fk>0) ? Math.floor(fK*fn_/fk) : Infinity;
+  document.getElementById('fishMLE').textContent =
+    `MLE: N̂ = ⌊K·n/k⌋ = ⌊${fK}·${fn_}/${fk}⌋ = ${isFinite(Nhat)?Nhat:"∞"}`;
+
+  // determine N range
+  const Nmin = Math.max(fK, fn_, fK + fn_ - fk);
+  const Nmax = isFinite(Nhat) ? Math.max(Nmin+30, Math.round(Nhat*2.8)) : Nmin+200;
+  // update slider
+  const sl = document.getElementById('NSlider');
+  sl.min = Nmin; sl.max = Nmax; sl.step = 1;
+  if(fNCur < Nmin) fNCur = Nmin;
+  if(fNCur > Nmax) fNCur = Nmax;
+  sl.value = fNCur;
+  document.getElementById('NVal').textContent = fNCur;
+
+  // compute curves
+  const Ns = [], lls = [], Ls = [];
+  let llMax = -Infinity;
+  for(let N=Nmin; N<=Nmax; N++){
+    const ll = fishLogL(N);
+    Ns.push(N); lls.push(ll);
+    if(ll>llMax) llMax = ll;
+  }
+  // L scaled so that peak = 1
+  for(const ll of lls) Ls.push(isFinite(ll) ? Math.exp(ll - llMax) : 0);
+
+  // ---- L(N) plot ----
+  const padL = {l:55,r:18,t:18,b:34};
+  axes(ctxFL, dimFL.w, dimFL.h, padL, Nmin, Nmax, 0, 1.1, "N", "L(N) / L(N̂)");
+
+  ctxFL.strokeStyle = "#1f4e79"; ctxFL.lineWidth = 2.2;
+  ctxFL.beginPath();
+  let started = false;
+  for(let i=0;i<Ns.length;i++){
+    const px = xToPx(Ns[i], dimFL.w, padL, Nmin, Nmax);
+    const py = yToPx(Ls[i], dimFL.h, padL, 0, 1.1);
+    if(!started){ ctxFL.moveTo(px,py); started = true; }
+    else ctxFL.lineTo(px,py);
+  }
+  ctxFL.stroke();
+  // MLE marker
+  if(isFinite(Nhat) && Nhat>=Nmin && Nhat<=Nmax){
+    const Lh = Math.exp(fishLogL(Nhat) - llMax);
+    ctxFL.strokeStyle = "#1f4e79"; ctxFL.setLineDash([4,4]);
+    ctxFL.beginPath();
+    ctxFL.moveTo(xToPx(Nhat, dimFL.w, padL, Nmin, Nmax), dimFL.h-padL.b);
+    ctxFL.lineTo(xToPx(Nhat, dimFL.w, padL, Nmin, Nmax), yToPx(Lh, dimFL.h, padL, 0, 1.1));
+    ctxFL.stroke();
+    ctxFL.setLineDash([]);
+    ctxFL.fillStyle = "#1f4e79";
+    ctxFL.beginPath();
+    ctxFL.arc(xToPx(Nhat, dimFL.w, padL, Nmin, Nmax), yToPx(Lh, dimFL.h, padL, 0, 1.1), 6, 0, Math.PI*2);
+    ctxFL.fill();
+    ctxFL.font = "11px -apple-system,sans-serif"; ctxFL.textAlign="left";
+    ctxFL.fillText("N̂ = "+Nhat, xToPx(Nhat, dimFL.w, padL, Nmin, Nmax)+8, yToPx(Lh, dimFL.h, padL, 0, 1.1)-6);
+  }
+  // current N marker
+  const llCur = fishLogL(fNCur);
+  const LCur = isFinite(llCur) ? Math.exp(llCur - llMax) : 0;
+  ctxFL.fillStyle = "#9E1B32";
+  ctxFL.beginPath();
+  ctxFL.arc(xToPx(fNCur, dimFL.w, padL, Nmin, Nmax), yToPx(LCur, dimFL.h, padL, 0, 1.1), 5, 0, Math.PI*2);
+  ctxFL.fill();
+
+  // ---- ln L(N) plot ----
+  let ymin = Infinity, ymax = -Infinity;
+  for(const v of lls) if(isFinite(v)){ if(v<ymin) ymin=v; if(v>ymax) ymax=v; }
+  if(!isFinite(ymin)){ ymin=-1; ymax=0; }
+  const sp = ymax-ymin || 1;
+  const ylo = ymin - sp*0.08, yhi = ymax + sp*0.08;
+  axes(ctxFLL, dimFLL.w, dimFLL.h, padL, Nmin, Nmax, ylo, yhi, "N", "ln L(N)");
+  ctxFLL.strokeStyle = "#9E1B32"; ctxFLL.lineWidth = 2.2;
+  ctxFLL.beginPath();
+  let st = false;
+  for(let i=0;i<Ns.length;i++){
+    const v = lls[i];
+    if(!isFinite(v)) { st = false; continue; }
+    const px = xToPx(Ns[i], dimFLL.w, padL, Nmin, Nmax);
+    const py = yToPx(v, dimFLL.h, padL, ylo, yhi);
+    if(!st){ ctxFLL.moveTo(px,py); st = true; }
+    else ctxFLL.lineTo(px,py);
+  }
+  ctxFLL.stroke();
+  // MLE on ln L
+  if(isFinite(Nhat) && Nhat>=Nmin && Nhat<=Nmax){
+    const vh = fishLogL(Nhat);
+    ctxFLL.strokeStyle = "#1f4e79"; ctxFLL.setLineDash([4,4]);
+    ctxFLL.beginPath();
+    ctxFLL.moveTo(xToPx(Nhat, dimFLL.w, padL, Nmin, Nmax), dimFLL.h-padL.b);
+    ctxFLL.lineTo(xToPx(Nhat, dimFLL.w, padL, Nmin, Nmax), yToPx(vh, dimFLL.h, padL, ylo, yhi));
+    ctxFLL.stroke();
+    ctxFLL.setLineDash([]);
+    ctxFLL.fillStyle = "#1f4e79";
+    ctxFLL.beginPath();
+    ctxFLL.arc(xToPx(Nhat, dimFLL.w, padL, Nmin, Nmax), yToPx(vh, dimFLL.h, padL, ylo, yhi), 6, 0, Math.PI*2);
+    ctxFLL.fill();
+    ctxFLL.font = "11px -apple-system,sans-serif"; ctxFLL.textAlign="left";
+    ctxFLL.fillText("N̂ = "+Nhat, xToPx(Nhat, dimFLL.w, padL, Nmin, Nmax)+8, yToPx(vh, dimFLL.h, padL, ylo, yhi)-6);
+  }
+  // current N
+  if(isFinite(llCur)){
+    ctxFLL.fillStyle = "#9E1B32";
+    ctxFLL.beginPath();
+    ctxFLL.arc(xToPx(fNCur, dimFLL.w, padL, Nmin, Nmax), yToPx(llCur, dimFLL.h, padL, ylo, yhi), 5, 0, Math.PI*2);
+    ctxFLL.fill();
+  }
+}
+
+document.getElementById('fK').addEventListener('input', e=>{
+  fK = Math.max(1, parseInt(e.target.value)||1);
+  drawFish();
+});
+document.getElementById('fn').addEventListener('input', e=>{
+  fn_ = Math.max(1, parseInt(e.target.value)||1);
+  drawFish();
+});
+document.getElementById('fk').addEventListener('input', e=>{
+  fk = Math.max(0, Math.min(Math.min(fK,fn_), parseInt(e.target.value)||0));
+  drawFish();
+});
+document.getElementById('NSlider').addEventListener('input', e=>{
+  fNCur = parseInt(e.target.value);
+  document.getElementById('NVal').textContent = fNCur;
+  drawFish();
+});
+document.getElementById('snapFish').addEventListener('click', ()=>{
+  if(fk>0){ fNCur = Math.floor(fK*fn_/fk); drawFish(); }
+});
+
+/* ========================================================================
+   Tab switching + initialization
+   ======================================================================== */
+const tabs = document.querySelectorAll('.tab');
+const views = document.querySelectorAll('.view');
+tabs.forEach(t=>{
+  t.addEventListener('click', ()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    views.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('view-'+t.dataset.view).classList.add('active');
+    requestAnimationFrame(()=>{
+      if(t.dataset.view==='loc'){ refit1(); drawLoc(); }
+      if(t.dataset.view==='bin'){ refitBin(); drawBin(); }
+      if(t.dataset.view==='nrm'){ refitNrm(); drawNrm(); }
+      if(t.dataset.view==='uni'){ refitUni(); drawUni(); }
+      if(t.dataset.view==='fish'){ refitFish(); drawFish(); }
+    });
+  });
+});
+
+function initAll(){
+  refit1(); recomputeRanges(); computeLikelihoodCurve(); drawLoc();
+  refitBin(); drawBin();
+  refitNrm(); drawNrm();
+  refitUni(); drawUni();
+  refitFish(); drawFish();
+}
+window.addEventListener('load', initAll);
+window.addEventListener('resize', ()=>{
+  refit1(); refitBin(); refitNrm(); refitUni(); refitFish();
+  drawLoc(); drawBin(); drawNrm(); drawUni(); drawFish();
+});
+initAll();
+</script>
+</body>
+</html>

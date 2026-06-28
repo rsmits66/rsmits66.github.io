@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multinomial Logistic Regression — Palmer Penguins — University of Washington</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#C79900; --goldDk:#8E632A;
+  --crimson:#39275B; --crimson2:#2a1d44; --crimsonLt:#e8e3f0;
+  --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+  --adelie:#4a2f6b; --chinstrap:#b07a1e; --gentoo:#1a6a40;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:24px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#c4bdd0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#c4bdd0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+/* penguin legend strip */
+.pengstrip{width:100%;max-width:1200px;display:flex;justify-content:center;gap:34px;
+  padding:8px 16px 2px;flex-wrap:wrap;}
+.peng{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.peng .pname{font-family:'Playfair Display',Georgia,serif;font-size:.82rem;font-weight:700;}
+.peng .pmeta{font-size:.7rem;color:var(--muted);font-style:italic;}
+
+details.bg{max-width:1200px;width:100%;padding:4px 16px 0;}
+details.bg>summary{font-family:'Playfair Display',Georgia,serif;font-size:.82rem;
+  color:var(--crimson);cursor:pointer;padding:5px 0;list-style:none;}
+details.bg>summary::-webkit-details-marker{display:none;}
+details.bg>summary::before{content:"▸ ";color:var(--gold);}
+details.bg[open]>summary::before{content:"▾ ";}
+.bg-body{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);padding:12px 18px;font-size:.84rem;line-height:1.62;}
+.bg-body p{margin:5px 0;}
+.bg-body h4{font-family:'Playfair Display',Georgia,serif;font-size:.82rem;color:var(--crimson);
+  margin:11px 0 3px;}
+.bg-body h4:first-child{margin-top:0;}
+.eq{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);
+  border-radius:0 3px 3px 0;padding:7px 14px;margin:7px 0;font-style:italic;
+  text-align:center;font-size:.92rem;color:var(--navy);}
+.eq small{font-style:normal;color:var(--muted);font-size:.74rem;}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px 4px;
+          max-width:1200px;width:100%;}
+.controls label.fld{display:flex;align-items:center;gap:5px;font-size:.8rem;color:var(--muted);
+  font-style:italic;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.83rem;padding:3px 6px;
+  border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--navy);cursor:pointer;}
+select:focus{outline:none;border-color:var(--crimson);}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:4px 11px;font-size:.84rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+.toggle{display:flex;align-items:center;gap:4px;font-size:.78rem;color:var(--muted);cursor:pointer;}
+.toggle input{accent-color:var(--crimson);cursor:pointer;}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+.sep{color:var(--border);}
+.lamrow{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--muted);font-style:italic;}
+.lamrow input[type=range]{accent-color:var(--crimson);cursor:pointer;width:130px;}
+.lamrow .lamval{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;
+  font-style:normal;min-width:30px;}
+
+.wrap{max-width:1200px;width:100%;padding:6px 16px 0;}
+.grid{display:grid;grid-template-columns:540px 1fr;gap:12px;align-items:start;}
+.col{display:flex;flex-direction:column;gap:12px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:5px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;}
+
+.stats{padding:11px 16px;font-size:.82rem;line-height:1.55;}
+.stats h3{font-family:'Playfair Display',Georgia,serif;font-size:.85rem;color:var(--crimson);
+          margin-top:9px;margin-bottom:2px;border-bottom:1px solid var(--border);padding-bottom:1px;}
+.stats h3:first-child{margin-top:0;}
+.stat-row{display:flex;justify-content:space-between;gap:8px;font-size:.79rem;}
+.stat-key{color:var(--muted);}
+.stat-val{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;}
+.note{font-size:.72rem;color:var(--muted);font-style:italic;margin-top:3px;}
+.warnbox{background:#fbf3e4;border:1px solid var(--gold);border-radius:3px;
+  padding:6px 9px;font-size:.74rem;line-height:1.5;color:var(--goldDk);margin-top:6px;}
+.warnbox b{color:var(--crimson);}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:3px;}
+.tbl th{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:.69rem;
+  text-transform:uppercase;letter-spacing:.03em;color:var(--muted);text-align:right;
+  padding:2px 5px;border-bottom:1px solid var(--border);}
+.tbl th:first-child{text-align:left;}
+.tbl td{text-align:right;padding:2px 5px;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #efece4;}
+.tbl td:first-child{text-align:left;color:var(--muted);}
+.tbl td.v{color:var(--crimson);font-weight:600;}
+
+.qry{padding:9px 14px 4px;}
+.qry .slabel{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);
+  font-style:italic;margin-top:5px;}
+.qry .slabel b{color:var(--crimson);font-style:normal;font-variant-numeric:tabular-nums;}
+.qry input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;margin-top:1px;}
+.barwrap{padding:6px 0 2px;}
+.barrow{display:flex;align-items:center;gap:7px;margin:4px 0;font-size:.78rem;}
+.barlbl{width:62px;color:var(--navy);}
+.bartrack{flex:1;height:15px;background:var(--panel);border:1px solid var(--border);
+  border-radius:3px;overflow:hidden;}
+.barfill{height:100%;transition:width .18s;}
+.barpct{width:42px;text-align:right;font-variant-numeric:tabular-nums;color:var(--crimson);
+  font-weight:600;}
+.predbox{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);
+  border-top:1px solid var(--border);}
+.predtext{font-size:.84rem;line-height:1.4;}
+.predtext .big{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem;font-weight:700;}
+
+footer{max-width:1200px;width:100%;padding:14px 16px 0;display:flex;align-items:center;
+  gap:10px;justify-content:center;color:var(--muted);font-size:.74rem;font-style:italic;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Multinomial Logistic Regression</div>
+  <div class="hdr-main">
+    <h1>Multinomial Logistic Regression &thinsp;&mdash;&thinsp; Classifying Palmer Penguins</h1>
+    <div class="subtitle">
+      Pr(Y = k | x) = e<sup>&eta;<sub>k</sub></sup> &frasl; &sum;<sub>j</sub> e<sup>&eta;<sub>j</sub></sup> &ensp;&middot;&ensp;
+      three species, two body measurements &ensp;&middot;&ensp;
+      softmax decision regions &ensp;&middot;&ensp;
+      fit by penalized maximum likelihood &ensp;&middot;&ensp; click the chart to classify a penguin
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="pengstrip" id="pengStrip"></div>
+
+<details class="bg" open>
+  <summary>Background &mdash; how logistic regression stretches from two classes to several</summary>
+  <div class="bg-body">
+    <h4>When the answer has more than two boxes</h4>
+    <p>Ordinary logistic regression answers a yes/no question with a single probability. A penguin,
+    though, is not a yes/no: every bird in this dataset is an <span style="color:var(--adelie);font-weight:600">Ad&eacute;lie</span>,
+    a <span style="color:var(--chinstrap);font-weight:600">Chinstrap</span>, or a
+    <span style="color:var(--gentoo);font-weight:600">Gentoo</span>. With K = 3 possible labels the model
+    must report three probabilities at once &mdash; one per species &mdash; and, since the bird is
+    certainly <em>some</em> species, those three numbers have to add up to 1. Write them p<sub>k</sub>(x) =
+    Pr(Y = k | x), each a function of the measurements x taken from the bird.</p>
+
+    <h4>One linear score per species, then a shared squash</h4>
+    <p>The idea that carries over from the two-class case is the linear predictor. Give every species its
+    own linear score from the measurements,</p>
+    <div class="eq">&eta;<sub>k</sub>(x) = &beta;<sub>k0</sub> + &beta;<sub>k1</sub>x<sub>1</sub> + &beta;<sub>k2</sub>x<sub>2</sub></div>
+    <p>A score is just a number on the whole real line &mdash; larger means &ldquo;this measurement
+    profile looks more like species k.&rdquo; To turn three scores into three probabilities that are
+    positive and sum to 1, they are passed together through the <em>softmax</em> transform: exponentiate
+    each score and divide by the total.</p>
+    <div class="eq">p<sub>k</sub>(x) = e<sup>&eta;<sub>k</sub>(x)</sup> &frasl; &sum;<sub>&thinsp;j</sub> e<sup>&eta;<sub>j</sub>(x)</sup></div>
+    <p>Only the <em>differences</em> between scores matter to the softmax, so one species can be pinned
+    as a reference with its score fixed at zero (here Ad&eacute;lie, &eta;<sub>0</sub> &equiv; 0). That
+    leaves two genuine score equations to estimate &mdash; Chinstrap-versus-Ad&eacute;lie and
+    Gentoo-versus-Ad&eacute;lie &mdash; and reading e<sup>&beta;</sup> still gives an odds interpretation,
+    now an odds <em>relative to the reference species</em>.</p>
+
+    <h4>From probabilities to a map</h4>
+    <p>At any point in the measurement plane the model produces three probabilities; the species with
+    the largest one is its prediction. Sweep across the whole plane and those predictions tile it into
+    <em>decision regions</em> &mdash; the coloured patches in the main chart. The borders between regions
+    are where the top two species are tied, and because each score is linear, every border is a straight
+    line. The three per-species panels below show the same fit a different way: each is the smooth
+    probability surface for one species on its own.</p>
+
+    <h4>Fitting, and a gentle brake</h4>
+    <p>Estimation works exactly as in the two-class case. Each candidate set of coefficients assigns
+    every observed penguin the probability the model gives to that bird's true species; multiplying those
+    across all 342 birds gives the likelihood, and the fit climbs the log-likelihood with Newton's
+    method. One wrinkle is special to clean data: the three penguin species separate so neatly that, left
+    unchecked, the coefficients would race off toward infinity chasing a perfect fit. A small <em>ridge
+    penalty</em> &minus;(&lambda;/2)&sum;&beta;<sup>2</sup> on the slopes acts as a brake &mdash; it
+    subtracts a little for large coefficients, so the fit settles at finite, sensible values. The
+    &lambda; slider sets how firm that brake is; nudging it to 0 on a well-separated pair of measurements
+    shows the coefficients beginning to bolt.</p>
+    <p class="note">Both measurements are standardized (each centred and scaled to unit standard
+    deviation) before fitting, so the estimated slopes are directly comparable and Newton's method stays
+    well-conditioned.</p>
+  </div>
+</details>
+
+<div class="controls">
+  <label class="fld">x-axis: <select id="selX"></select></label>
+  <label class="fld">y-axis: <select id="selY"></select></label>
+  <span class="sep">|</span>
+  <span class="lamrow">ridge &lambda;
+    <input type="range" id="lamSlider" min="0" max="12" step="0.25" value="1">
+    <span class="lamval" id="lamVal">1.00</span>
+  </span>
+  <span class="sep">|</span>
+  <label class="toggle"><input type="checkbox" id="tgRegions" checked> decision regions</label>
+  <label class="toggle"><input type="checkbox" id="tgPoints" checked> penguins</label>
+  <span class="hint">&mdash; click the main chart to drop a test penguin</span>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <div class="phdr" id="hdrMain">Measurement plane &ensp;&middot;&ensp; softmax decision regions</div>
+        <canvas id="main" width="540" height="380"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr">Per-species probability surfaces &ensp;&middot;&ensp; p<sub>k</sub>(x) across the plane</div>
+        <canvas id="panelB" width="540" height="214"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr">Confusion matrix &ensp;&middot;&ensp; predicted species vs. true species</div>
+        <canvas id="panelC" width="540" height="200"></canvas>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <div class="phdr">Fitted model &amp; inference</div>
+        <div class="stats" id="statsPanel"></div>
+      </div>
+      <div class="card">
+        <div class="phdr">Classify a penguin &ensp;&middot;&ensp; the softmax for your test point</div>
+        <div class="qry">
+          <div class="slabel"><span id="qxName">x</span><b id="qxVal"></b></div>
+          <input type="range" id="qxSlider">
+          <div class="slabel"><span id="qyName">y</span><b id="qyVal"></b></div>
+          <input type="range" id="qySlider">
+          <div class="barwrap" id="barWrap"></div>
+        </div>
+        <div class="predbox">
+          <div id="predPeng"></div>
+          <div class="predtext">
+            most probable species:<br>
+            <span class="big" id="predName"></span><br>
+            <span class="hint" id="predConf"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span id="footPeng"></span>
+  <span>Palmer Penguins &mdash; 342 birds measured at Palmer Station, Antarctica &middot; data: Gorman, Williams &amp; Fraser (2014)</span>
+</footer>
+
+<script>
+/* ===================================================================
+   DATA  —  Palmer Penguins, 342 complete cases
+   packed as "species,bill_len,bill_dep,flipper_len,body_mass" rows
+   species code : 0 Adélie · 1 Chinstrap · 2 Gentoo
+   =================================================================== */
+const PENGUIN_DATA = "0,39.1,18.7,181,3750;0,39.5,17.4,186,3800;0,40.3,18,195,3250;0,36.7,19.3,193,3450;0,39.3,20.6,190,3650;0,38.9,17.8,181,3625;0,39.2,19.6,195,4675;0,34.1,18.1,193,3475;0,42,20.2,190,4250;0,37.8,17.1,186,3300;0,37.8,17.3,180,3700;0,41.1,17.6,182,3200;0,38.6,21.2,191,3800;0,34.6,21.1,198,4400;0,36.6,17.8,185,3700;0,38.7,19,195,3450;0,42.5,20.7,197,4500;0,34.4,18.4,184,3325;0,46,21.5,194,4200;0,37.8,18.3,174,3400;0,37.7,18.7,180,3600;0,35.9,19.2,189,3800;0,38.2,18.1,185,3950;0,38.8,17.2,180,3800;0,35.3,18.9,187,3800;0,40.6,18.6,183,3550;0,40.5,17.9,187,3200;0,37.9,18.6,172,3150;0,40.5,18.9,180,3950;0,39.5,16.7,178,3250;0,37.2,18.1,178,3900;0,39.5,17.8,188,3300;0,40.9,18.9,184,3900;0,36.4,17,195,3325;0,39.2,21.1,196,4150;0,38.8,20,190,3950;0,42.2,18.5,180,3550;0,37.6,19.3,181,3300;0,39.8,19.1,184,4650;0,36.5,18,182,3150;0,40.8,18.4,195,3900;0,36,18.5,186,3100;0,44.1,19.7,196,4400;0,37,16.9,185,3000;0,39.6,18.8,190,4600;0,41.1,19,182,3425;0,37.5,18.9,179,2975;0,36,17.9,190,3450;0,42.3,21.2,191,4150;0,39.6,17.7,186,3500;0,40.1,18.9,188,4300;0,35,17.9,190,3450;0,42,19.5,200,4050;0,34.5,18.1,187,2900;0,41.4,18.6,191,3700;0,39,17.5,186,3550;0,40.6,18.8,193,3800;0,36.5,16.6,181,2850;0,37.6,19.1,194,3750;0,35.7,16.9,185,3150;0,41.3,21.1,195,4400;0,37.6,17,185,3600;0,41.1,18.2,192,4050;0,36.4,17.1,184,2850;0,41.6,18,192,3950;0,35.5,16.2,195,3350;0,41.1,19.1,188,4100;0,35.9,16.6,190,3050;0,41.8,19.4,198,4450;0,33.5,19,190,3600;0,39.7,18.4,190,3900;0,39.6,17.2,196,3550;0,45.8,18.9,197,4150;0,35.5,17.5,190,3700;0,42.8,18.5,195,4250;0,40.9,16.8,191,3700;0,37.2,19.4,184,3900;0,36.2,16.1,187,3550;0,42.1,19.1,195,4000;0,34.6,17.2,189,3200;0,42.9,17.6,196,4700;0,36.7,18.8,187,3800;0,35.1,19.4,193,4200;0,37.3,17.8,191,3350;0,41.3,20.3,194,3550;0,36.3,19.5,190,3800;0,36.9,18.6,189,3500;0,38.3,19.2,189,3950;0,38.9,18.8,190,3600;0,35.7,18,202,3550;0,41.1,18.1,205,4300;0,34,17.1,185,3400;0,39.6,18.1,186,4450;0,36.2,17.3,187,3300;0,40.8,18.9,208,4300;0,38.1,18.6,190,3700;0,40.3,18.5,196,4350;0,33.1,16.1,178,2900;0,43.2,18.5,192,4100;0,35,17.9,192,3725;0,41,20,203,4725;0,37.7,16,183,3075;0,37.8,20,190,4250;0,37.9,18.6,193,2925;0,39.7,18.9,184,3550;0,38.6,17.2,199,3750;0,38.2,20,190,3900;0,38.1,17,181,3175;0,43.2,19,197,4775;0,38.1,16.5,198,3825;0,45.6,20.3,191,4600;0,39.7,17.7,193,3200;0,42.2,19.5,197,4275;0,39.6,20.7,191,3900;0,42.7,18.3,196,4075;0,38.6,17,188,2900;0,37.3,20.5,199,3775;0,35.7,17,189,3350;0,41.1,18.6,189,3325;0,36.2,17.2,187,3150;0,37.7,19.8,198,3500;0,40.2,17,176,3450;0,41.4,18.5,202,3875;0,35.2,15.9,186,3050;0,40.6,19,199,4000;0,38.8,17.6,191,3275;0,41.5,18.3,195,4300;0,39,17.1,191,3050;0,44.1,18,210,4000;0,38.5,17.9,190,3325;0,43.1,19.2,197,3500;0,36.8,18.5,193,3500;0,37.5,18.5,199,4475;0,38.1,17.6,187,3425;0,41.1,17.5,190,3900;0,35.6,17.5,191,3175;0,40.2,20.1,200,3975;0,37,16.5,185,3400;0,39.7,17.9,193,4250;0,40.2,17.1,193,3400;0,40.6,17.2,187,3475;0,32.1,15.5,188,3050;0,40.7,17,190,3725;0,37.3,16.8,192,3000;0,39,18.7,185,3650;0,39.2,18.6,190,4250;0,36.6,18.4,184,3475;0,36,17.8,195,3450;0,37.8,18.1,193,3750;0,36,17.1,187,3700;0,41.5,18.5,201,4000;2,46.1,13.2,211,4500;2,50,16.3,230,5700;2,48.7,14.1,210,4450;2,50,15.2,218,5700;2,47.6,14.5,215,5400;2,46.5,13.5,210,4550;2,45.4,14.6,211,4800;2,46.7,15.3,219,5200;2,43.3,13.4,209,4400;2,46.8,15.4,215,5150;2,40.9,13.7,214,4650;2,49,16.1,216,5550;2,45.5,13.7,214,4650;2,48.4,14.6,213,5850;2,45.8,14.6,210,4200;2,49.3,15.7,217,5850;2,42,13.5,210,4150;2,49.2,15.2,221,6300;2,46.2,14.5,209,4800;2,48.7,15.1,222,5350;2,50.2,14.3,218,5700;2,45.1,14.5,215,5000;2,46.5,14.5,213,4400;2,46.3,15.8,215,5050;2,42.9,13.1,215,5000;2,46.1,15.1,215,5100;2,44.5,14.3,216,4100;2,47.8,15,215,5650;2,48.2,14.3,210,4600;2,50,15.3,220,5550;2,47.3,15.3,222,5250;2,42.8,14.2,209,4700;2,45.1,14.5,207,5050;2,59.6,17,230,6050;2,49.1,14.8,220,5150;2,48.4,16.3,220,5400;2,42.6,13.7,213,4950;2,44.4,17.3,219,5250;2,44,13.6,208,4350;2,48.7,15.7,208,5350;2,42.7,13.7,208,3950;2,49.6,16,225,5700;2,45.3,13.7,210,4300;2,49.6,15,216,4750;2,50.5,15.9,222,5550;2,43.6,13.9,217,4900;2,45.5,13.9,210,4200;2,50.5,15.9,225,5400;2,44.9,13.3,213,5100;2,45.2,15.8,215,5300;2,46.6,14.2,210,4850;2,48.5,14.1,220,5300;2,45.1,14.4,210,4400;2,50.1,15,225,5000;2,46.5,14.4,217,4900;2,45,15.4,220,5050;2,43.8,13.9,208,4300;2,45.5,15,220,5000;2,43.2,14.5,208,4450;2,50.4,15.3,224,5550;2,45.3,13.8,208,4200;2,46.2,14.9,221,5300;2,45.7,13.9,214,4400;2,54.3,15.7,231,5650;2,45.8,14.2,219,4700;2,49.8,16.8,230,5700;2,46.2,14.4,214,4650;2,49.5,16.2,229,5800;2,43.5,14.2,220,4700;2,50.7,15,223,5550;2,47.7,15,216,4750;2,46.4,15.6,221,5000;2,48.2,15.6,221,5100;2,46.5,14.8,217,5200;2,46.4,15,216,4700;2,48.6,16,230,5800;2,47.5,14.2,209,4600;2,51.1,16.3,220,6000;2,45.2,13.8,215,4750;2,45.2,16.4,223,5950;2,49.1,14.5,212,4625;2,52.5,15.6,221,5450;2,47.4,14.6,212,4725;2,50,15.9,224,5350;2,44.9,13.8,212,4750;2,50.8,17.3,228,5600;2,43.4,14.4,218,4600;2,51.3,14.2,218,5300;2,47.5,14,212,4875;2,52.1,17,230,5550;2,47.5,15,218,4950;2,52.2,17.1,228,5400;2,45.5,14.5,212,4750;2,49.5,16.1,224,5650;2,44.5,14.7,214,4850;2,50.8,15.7,226,5200;2,49.4,15.8,216,4925;2,46.9,14.6,222,4875;2,48.4,14.4,203,4625;2,51.1,16.5,225,5250;2,48.5,15,219,4850;2,55.9,17,228,5600;2,47.2,15.5,215,4975;2,49.1,15,228,5500;2,47.3,13.8,216,4725;2,46.8,16.1,215,5500;2,41.7,14.7,210,4700;2,53.4,15.8,219,5500;2,43.3,14,208,4575;2,48.1,15.1,209,5500;2,50.5,15.2,216,5000;2,49.8,15.9,229,5950;2,43.5,15.2,213,4650;2,51.5,16.3,230,5500;2,46.2,14.1,217,4375;2,55.1,16,230,5850;2,44.5,15.7,217,4875;2,48.8,16.2,222,6000;2,47.2,13.7,214,4925;2,46.8,14.3,215,4850;2,50.4,15.7,222,5750;2,45.2,14.8,212,5200;2,49.9,16.1,213,5400;1,46.5,17.9,192,3500;1,50,19.5,196,3900;1,51.3,19.2,193,3650;1,45.4,18.7,188,3525;1,52.7,19.8,197,3725;1,45.2,17.8,198,3950;1,46.1,18.2,178,3250;1,51.3,18.2,197,3750;1,46,18.9,195,4150;1,51.3,19.9,198,3700;1,46.6,17.8,193,3800;1,51.7,20.3,194,3775;1,47,17.3,185,3700;1,52,18.1,201,4050;1,45.9,17.1,190,3575;1,50.5,19.6,201,4050;1,50.3,20,197,3300;1,58,17.8,181,3700;1,46.4,18.6,190,3450;1,49.2,18.2,195,4400;1,42.4,17.3,181,3600;1,48.5,17.5,191,3400;1,43.2,16.6,187,2900;1,50.6,19.4,193,3800;1,46.7,17.9,195,3300;1,52,19,197,4150;1,50.5,18.4,200,3400;1,49.5,19,200,3800;1,46.4,17.8,191,3700;1,52.8,20,205,4550;1,40.9,16.6,187,3200;1,54.2,20.8,201,4300;1,42.5,16.7,187,3350;1,51,18.8,203,4100;1,49.7,18.6,195,3600;1,47.5,16.8,199,3900;1,47.6,18.3,195,3850;1,52,20.7,210,4800;1,46.9,16.6,192,2700;1,53.5,19.9,205,4500;1,49,19.5,210,3950;1,46.2,17.5,187,3650;1,50.9,19.1,196,3550;1,45.5,17,196,3500;1,50.9,17.9,196,3675;1,50.8,18.5,201,4450;1,50.1,17.9,190,3400;1,49,19.6,212,4300;1,51.5,18.7,187,3250;1,49.8,17.3,198,3675;1,48.1,16.4,199,3325;1,51.4,19,201,3950;1,45.7,17.3,193,3600;1,50.7,19.7,203,4050;1,42.5,17.3,187,3350;1,52.2,18.8,197,3450;1,45.2,16.6,191,3250;1,49.3,19.9,203,4050;1,50.2,18.8,202,3800;1,45.6,19.4,194,3525;1,51.9,19.5,206,3950;1,46.8,16.5,189,3650;1,45.7,17,195,3650;1,55.8,19.8,207,4000;1,43.5,18.1,202,3400;1,49.6,18.2,193,3775;1,50.8,19,210,4100;1,50.2,18.7,198,3775";
+const data = PENGUIN_DATA.split(';').map(rec=>{
+  const p=rec.split(',');
+  return {s:+p[0], f:[+p[1],+p[2],+p[3],+p[4]]};
+});
+
+const FEATURES=[
+  {name:'bill length',     unit:'mm', abbr:'bill len'},
+  {name:'bill depth',      unit:'mm', abbr:'bill dep'},
+  {name:'flipper length',  unit:'mm', abbr:'flipper'},
+  {name:'body mass',       unit:'g',  abbr:'mass'}
+];
+const SPECIES=['Adélie','Chinstrap','Gentoo'];
+const SP_COL =['#4a2f6b','#b07a1e','#1a6a40'];
+const SP_RGB =[[74,47,107],[176,122,30],[26,106,64]];
+
+/* ---- state ---- */
+let fx=0, fy=1;            // chosen feature indices
+let lambda=1.0;            // ridge penalty
+let model=null;
+let qx=0, qy=0;            // query point in original feature units
+let tgRegions=true, tgPoints=true;
+
+/* ===================================================================
+   PENGUIN ARTWORK  (inline SVG, varies by species marking)
+   =================================================================== */
+function penguinSVG(sp,size){
+  const w=size, h=size*152/120;
+  const beak = sp===2 ? '#f59324' : '#e8902e';
+  let mark='';
+  if(sp===0){           // Adélie — white eye-rings on a black head
+    mark =
+     '<circle cx="47" cy="53" r="9.5" fill="#f7f4ee"/>'+
+     '<circle cx="73" cy="53" r="9.5" fill="#f7f4ee"/>'+
+     '<circle cx="47" cy="53" r="4.2" fill="#26242e"/>'+
+     '<circle cx="73" cy="53" r="4.2" fill="#26242e"/>'+
+     '<circle cx="48.6" cy="51.4" r="1.3" fill="#fff"/>'+
+     '<circle cx="74.6" cy="51.4" r="1.3" fill="#fff"/>';
+  }else if(sp===1){     // Chinstrap — white face, thin chin line
+    mark =
+     '<ellipse cx="60" cy="55" rx="28" ry="23" fill="#f7f4ee"/>'+
+     '<path d="M33 55 Q60 82 87 55" stroke="#33303c" stroke-width="3.8" '+
+       'fill="none" stroke-linecap="round"/>'+
+     '<circle cx="50" cy="49" r="3.8" fill="#26242e"/>'+
+     '<circle cx="70" cy="49" r="3.8" fill="#26242e"/>'+
+     '<circle cx="51.2" cy="47.8" r="1.2" fill="#fff"/>'+
+     '<circle cx="71.2" cy="47.8" r="1.2" fill="#fff"/>';
+  }else{                // Gentoo — white bonnet over the crown
+    mark =
+     '<path d="M29 57 Q33 30 60 27 Q87 30 91 57 Q75 47 60 47 Q45 47 29 57 Z" '+
+       'fill="#f7f4ee"/>'+
+     '<circle cx="46" cy="50" r="4.2" fill="#26242e"/>'+
+     '<circle cx="74" cy="50" r="4.2" fill="#26242e"/>'+
+     '<circle cx="47.4" cy="48.6" r="1.3" fill="#fff"/>'+
+     '<circle cx="75.4" cy="48.6" r="1.3" fill="#fff"/>';
+  }
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 120 152" '+
+    'xmlns="http://www.w3.org/2000/svg">'+
+    '<ellipse cx="60" cy="147" rx="37" ry="6" fill="rgba(57,39,91,0.13)"/>'+
+    '<ellipse cx="45" cy="140" rx="14" ry="7.5" fill="'+beak+'"/>'+
+    '<ellipse cx="75" cy="140" rx="14" ry="7.5" fill="'+beak+'"/>'+
+    '<ellipse cx="18" cy="86" rx="11" ry="33" fill="#33303c" transform="rotate(21 18 86)"/>'+
+    '<ellipse cx="102" cy="86" rx="11" ry="33" fill="#33303c" transform="rotate(-21 102 86)"/>'+
+    '<ellipse cx="60" cy="80" rx="43" ry="63" fill="#33303c"/>'+
+    '<ellipse cx="60" cy="94" rx="30" ry="47" fill="#f7f4ee"/>'+
+    mark+
+    '<path d="M51 62 L69 62 L60 75 Z" fill="'+beak+'"/>'+
+    '</svg>';
+}
+
+/* ===================================================================
+   CORE MATH  —  multinomial logistic regression
+   =================================================================== */
+function clampExp(v){ return Math.exp(Math.max(-60,Math.min(60,v))); }
+
+// solve A x = b  (n×n, Gaussian elimination w/ partial pivot); null if singular
+function solveLinear(A,b,n){
+  const M=A.map((row,i)=>row.slice().concat([b[i]]));
+  for(let c=0;c<n;c++){
+    let piv=c;
+    for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
+    if(Math.abs(M[piv][c])<1e-12) return null;
+    [M[c],M[piv]]=[M[piv],M[c]];
+    for(let r=0;r<n;r++){
+      if(r===c) continue;
+      const f=M[r][c]/M[c][c];
+      for(let cc=c;cc<=n;cc++) M[r][cc]-=f*M[c][cc];
+    }
+  }
+  return M.map((row,i)=>row[n]/row[i]);
+}
+
+// softmax probabilities for standardized point (z1,z2) given B = [[b10,b11,b12],[b20,b21,b22]]
+function softmax(B,z1,z2){
+  const e1=clampExp(B[0][0]+B[0][1]*z1+B[0][2]*z2);
+  const e2=clampExp(B[1][0]+B[1][1]*z1+B[1][2]*z2);
+  const s=1+e1+e2;
+  return [1/s, e1/s, e2/s];
+}
+
+function fitModel(){
+  const n=data.length;
+  const c1=data.map(d=>d.f[fx]), c2=data.map(d=>d.f[fy]);
+  const mx=c1.reduce((a,b)=>a+b,0)/n, my=c2.reduce((a,b)=>a+b,0)/n;
+  const sx=Math.sqrt(c1.reduce((a,b)=>a+(b-mx)*(b-mx),0)/n);
+  const sy=Math.sqrt(c2.reduce((a,b)=>a+(b-my)*(b-my),0)/n);
+  const Z=data.map(d=>[1,(d.f[fx]-mx)/sx,(d.f[fy]-my)/sy]);
+  const Y=data.map(d=>d.s);
+
+  let B=[[0,0,0],[0,0,0]];
+  let iters=0, converged=false;
+  for(let it=0; it<60; it++){
+    iters=it+1;
+    const g=new Array(6).fill(0);
+    const H=Array.from({length:6},()=>new Array(6).fill(0));
+    for(let i=0;i<n;i++){
+      const z=Z[i], P=softmax(B,z[1],z[2]);
+      for(let k=0;k<2;k++){
+        const ind=(Y[i]===k+1)?1:0;
+        for(let a=0;a<3;a++) g[k*3+a]+=(ind-P[k+1])*z[a];
+      }
+      for(let k=0;k<2;k++)for(let m=0;m<2;m++){
+        const w=P[k+1]*((k===m?1:0)-P[m+1]);
+        for(let a=0;a<3;a++)for(let b=0;b<3;b++)
+          H[k*3+a][m*3+b]+=w*z[a]*z[b];
+      }
+    }
+    // ridge brake on the four slope coefficients (not the intercepts)
+    for(let k=0;k<2;k++)for(const a of [1,2]){
+      g[k*3+a]-=lambda*B[k][a];
+      H[k*3+a][k*3+a]+=lambda;
+    }
+    const step=solveLinear(H,g,6);
+    if(!step){ converged=false; break; }
+    for(let k=0;k<2;k++)for(let a=0;a<3;a++) B[k][a]+=step[k*3+a];
+    let mstep=0; for(const v of step) mstep=Math.max(mstep,Math.abs(v));
+    if(mstep<1e-9){ converged=true; break; }
+    let mb=0; for(const r of B)for(const v of r) mb=Math.max(mb,Math.abs(v));
+    if(mb>250){ converged=false; break; }
+  }
+
+  // log-likelihood, accuracy, confusion matrix
+  let ll=0, correct=0;
+  const conf=[[0,0,0],[0,0,0],[0,0,0]];
+  for(let i=0;i<n;i++){
+    const z=Z[i], P=softmax(B,z[1],z[2]);
+    ll+=Math.log(P[Y[i]]+1e-12);
+    let pred=0; for(let k=1;k<3;k++) if(P[k]>P[pred]) pred=k;
+    conf[Y[i]][pred]++;
+    if(pred===Y[i]) correct++;
+  }
+  let slopeSq=0;
+  for(let k=0;k<2;k++)for(const a of [1,2]) slopeSq+=B[k][a]*B[k][a];
+  return {B,mx,my,sx,sy,ll,penObj:ll-0.5*lambda*slopeSq,
+          acc:correct/n,conf,iters,converged,n};
+}
+
+// predicted probabilities at a point given in ORIGINAL feature units
+function predictAt(ox,oy){
+  const z1=(ox-model.mx)/model.sx, z2=(oy-model.my)/model.sy;
+  return softmax(model.B,z1,z2);
+}
+
+/* ===================================================================
+   DRAWING
+   =================================================================== */
+const FT='"Crimson Pro",Georgia,serif';
+function niceStep(range,divs){
+  const raw=range/divs;
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  return [0.1,0.2,0.25,0.5,1,2,2.5,5,10,20,25,50,100,200,250,500]
+         .map(f=>f*mag).find(s=>s>=raw*0.7)||mag;
+}
+function featRange(fi){
+  let lo=Infinity,hi=-Infinity;
+  for(const d of data){ const v=d.f[fi]; if(v<lo)lo=v; if(v>hi)hi=v; }
+  const pad=(hi-lo)*0.08;
+  return [lo-pad,hi+pad];
+}
+function frame(ctx,pad,W,H,xmin,xmax,ymin,ymax,xlab,ylab){
+  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  const sx=x=>pad.l+(x-xmin)/(xmax-xmin)*gW;
+  const sy=y=>pad.t+(ymax-y)/(ymax-ymin)*gH;
+  const xStep=niceStep(xmax-xmin,7), yStep=niceStep(ymax-ymin,5);
+  const xDec=Math.max(0,-Math.floor(Math.log10(xStep)));
+  const yDec=Math.max(0,-Math.floor(Math.log10(yStep)));
+  ctx.strokeStyle='rgba(24,40,74,0.5)';ctx.lineWidth=1.2;
+  ctx.strokeRect(pad.l,pad.t,gW,gH);
+  ctx.fillStyle='rgba(24,40,74,0.62)';ctx.font='10px '+FT;ctx.textAlign='center';
+  for(let x=Math.ceil(xmin/xStep)*xStep;x<=xmax+1e-9;x+=xStep)
+    ctx.fillText(x.toFixed(xDec),sx(x),pad.t+gH+12);
+  ctx.textAlign='right';
+  for(let y=Math.ceil(ymin/yStep)*yStep;y<=ymax+1e-9;y+=yStep)
+    ctx.fillText(y.toFixed(yDec),pad.l-4,sy(y)+3);
+  ctx.fillStyle='#18284a';ctx.font='italic 10.5px '+FT;ctx.textAlign='center';
+  ctx.fillText(xlab,pad.l+gW/2,pad.t+gH+25);
+  ctx.save();ctx.translate(12,pad.t+gH/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText(ylab,0,0);ctx.restore();
+  return {sx,sy,gW,gH};
+}
+
+const cMain=document.getElementById('main'), ctxM=cMain.getContext('2d');
+const cB=document.getElementById('panelB'), ctxB=cB.getContext('2d');
+const cC=document.getElementById('panelC'), ctxC=cC.getContext('2d');
+
+/* ---------- MAIN : decision regions + penguins + query point ---------- */
+function drawMain(){
+  ctxM.clearRect(0,0,cMain.width,cMain.height);
+  const pad={l:50,r:16,t:14,b:36};
+  const [xlo,xhi]=featRange(fx), [ylo,yhi]=featRange(fy);
+  const xl=FEATURES[fx].name+' ('+FEATURES[fx].unit+')';
+  const yl=FEATURES[fy].name+' ('+FEATURES[fy].unit+')';
+  const S=frame(ctxM,pad,cMain.width,cMain.height,xlo,xhi,ylo,yhi,xl,yl);
+
+  // decision regions — argmax fill on a fine cell grid
+  const cell=3;
+  const argGrid=[];
+  for(let py=pad.t; py<pad.t+S.gH; py+=cell){
+    const row=[];
+    for(let px=pad.l; px<pad.l+S.gW; px+=cell){
+      const ox=xlo+(px+cell/2-pad.l)/S.gW*(xhi-xlo);
+      const oy=yhi-(py+cell/2-pad.t)/S.gH*(yhi-ylo);
+      const P=predictAt(ox,oy);
+      let k=0; for(let j=1;j<3;j++) if(P[j]>P[k]) k=j;
+      row.push(k);
+      if(tgRegions){
+        const conf=P[k];
+        const a=0.10+0.20*Math.min(1,(conf-0.34)/0.66);
+        ctxM.fillStyle='rgba('+SP_RGB[k][0]+','+SP_RGB[k][1]+','+SP_RGB[k][2]+','+a+')';
+        ctxM.fillRect(px,py,cell+1,cell+1);
+      }
+    }
+    argGrid.push(row);
+  }
+  // boundary lines where neighbouring cells disagree
+  ctxM.strokeStyle='rgba(24,40,74,0.55)';ctxM.lineWidth=1.1;
+  for(let r=0;r<argGrid.length;r++){
+    for(let c=0;c<argGrid[r].length;c++){
+      const px=pad.l+c*cell, py=pad.t+r*cell;
+      if(c+1<argGrid[r].length && argGrid[r][c]!==argGrid[r][c+1]){
+        ctxM.beginPath();ctxM.moveTo(px+cell,py);ctxM.lineTo(px+cell,py+cell);ctxM.stroke();
+      }
+      if(r+1<argGrid.length && argGrid[r][c]!==argGrid[r+1][c]){
+        ctxM.beginPath();ctxM.moveTo(px,py+cell);ctxM.lineTo(px+cell,py+cell);ctxM.stroke();
+      }
+    }
+  }
+
+  // penguin data points
+  if(tgPoints){
+    ctxM.save();
+    ctxM.beginPath();ctxM.rect(pad.l,pad.t,S.gW,S.gH);ctxM.clip();
+    for(const d of data){
+      const px=S.sx(d.f[fx]), py=S.sy(d.f[fy]);
+      ctxM.beginPath();ctxM.arc(px,py,3.7,0,2*Math.PI);
+      ctxM.fillStyle=SP_COL[d.s];
+      ctxM.globalAlpha=0.82;ctxM.fill();ctxM.globalAlpha=1;
+      ctxM.strokeStyle='#fff';ctxM.lineWidth=1;ctxM.stroke();
+    }
+    ctxM.restore();
+  }
+
+  // query point
+  const qpx=S.sx(qx), qpy=S.sy(qy);
+  if(qpx>=pad.l&&qpx<=pad.l+S.gW&&qpy>=pad.t&&qpy<=pad.t+S.gH){
+    const P=predictAt(qx,qy);
+    let k=0; for(let j=1;j<3;j++) if(P[j]>P[k]) k=j;
+    ctxM.beginPath();ctxM.arc(qpx,qpy,9,0,2*Math.PI);
+    ctxM.strokeStyle='#fff';ctxM.lineWidth=3.4;ctxM.stroke();
+    ctxM.strokeStyle=SP_COL[k];ctxM.lineWidth=2.2;ctxM.stroke();
+    ctxM.beginPath();ctxM.moveTo(qpx-13,qpy);ctxM.lineTo(qpx+13,qpy);
+    ctxM.moveTo(qpx,qpy-13);ctxM.lineTo(qpx,qpy+13);
+    ctxM.strokeStyle=SP_COL[k];ctxM.lineWidth=1.4;ctxM.stroke();
+    ctxM.fillStyle='#18284a';ctxM.font='bold 10px '+FT;ctxM.textAlign='left';
+    const tx=Math.min(qpx+14,cMain.width-92);
+    ctxM.fillText('test penguin',tx,qpy-9);
+  }
+
+  // legend
+  ctxM.font='9.5px '+FT;ctxM.textAlign='left';
+  for(let k=0;k<3;k++){
+    const ly=pad.t+11+k*13;
+    ctxM.beginPath();ctxM.arc(pad.l+10,ly-3,4,0,2*Math.PI);
+    ctxM.fillStyle=SP_COL[k];ctxM.fill();
+    ctxM.strokeStyle='#fff';ctxM.lineWidth=1;ctxM.stroke();
+    ctxM.fillStyle=SP_COL[k];ctxM.fillText(SPECIES[k],pad.l+18,ly);
+  }
+}
+
+/* ---------- PANEL B : three per-species probability surfaces ---------- */
+function drawPanelB(){
+  ctxB.clearRect(0,0,cB.width,cB.height);
+  const [xlo,xhi]=featRange(fx), [ylo,yhi]=featRange(fy);
+  const gap=10, mW=(cB.width-2*gap-2*8)/3, mTop=20, mH=cB.height-mTop-22;
+  for(let k=0;k<3;k++){
+    const x0=8+k*(mW+gap), y0=mTop;
+    // heatmap of p_k
+    const cell=4;
+    for(let py=0;py<mH;py+=cell){
+      for(let px=0;px<mW;px+=cell){
+        const ox=xlo+(px+cell/2)/mW*(xhi-xlo);
+        const oy=yhi-(py+cell/2)/mH*(yhi-ylo);
+        const p=predictAt(ox,oy)[k];
+        const t=Math.pow(p,0.85);
+        ctxB.fillStyle='rgb('+
+          Math.round(250+(SP_RGB[k][0]-250)*t)+','+
+          Math.round(247+(SP_RGB[k][1]-247)*t)+','+
+          Math.round(242+(SP_RGB[k][2]-242)*t)+')';
+        ctxB.fillRect(x0+px,y0+py,cell+1,cell+1);
+      }
+    }
+    // that species' own birds, faint
+    for(const d of data){ if(d.s!==k) continue;
+      const px=x0+(d.f[fx]-xlo)/(xhi-xlo)*mW;
+      const py=y0+(yhi-d.f[fy])/(yhi-ylo)*mH;
+      if(px<x0||px>x0+mW||py<y0||py>y0+mH) continue;
+      ctxB.beginPath();ctxB.arc(px,py,2,0,2*Math.PI);
+      ctxB.fillStyle='rgba(255,255,255,0.85)';ctxB.fill();
+    }
+    ctxB.strokeStyle='rgba(24,40,74,0.45)';ctxB.lineWidth=1;
+    ctxB.strokeRect(x0,y0,mW,mH);
+    ctxB.fillStyle=SP_COL[k];ctxB.font='bold 11px '+FT;ctxB.textAlign='center';
+    ctxB.fillText('p( '+SPECIES[k]+' )',x0+mW/2,y0-7);
+    ctxB.fillStyle='rgba(24,40,74,0.5)';ctxB.font='italic 8.5px '+FT;
+    ctxB.fillText('light 0  →  '+SPECIES[k].toLowerCase()+'-tint 1',x0+mW/2,y0+mH+13);
+  }
+}
+
+/* ---------- PANEL C : confusion matrix ---------- */
+function drawPanelC(){
+  ctxC.clearRect(0,0,cC.width,cC.height);
+  const conf=model.conf;
+  const rowTot=conf.map(r=>r[0]+r[1]+r[2]);
+  const grid=148, x0=150, y0=24, cw=grid/3;
+  // title labels
+  ctxC.fillStyle='#18284a';ctxC.font='italic 10.5px '+FT;ctxC.textAlign='center';
+  ctxC.fillText('predicted species',x0+grid/2,y0-9);
+  ctxC.save();ctxC.translate(x0-58,y0+grid/2);ctxC.rotate(-Math.PI/2);
+  ctxC.fillText('true species',0,0);ctxC.restore();
+  for(let p=0;p<3;p++){
+    ctxC.fillStyle=SP_COL[p];ctxC.font='600 9.5px '+FT;ctxC.textAlign='center';
+    ctxC.fillText(SPECIES[p],x0+p*cw+cw/2,y0+grid+13);
+  }
+  for(let t=0;t<3;t++){
+    ctxC.fillStyle=SP_COL[t];ctxC.font='600 9.5px '+FT;ctxC.textAlign='right';
+    ctxC.fillText(SPECIES[t],x0-6,y0+t*cw+cw/2+3);
+  }
+  let maxc=1; for(const r of conf)for(const v of r) maxc=Math.max(maxc,v);
+  for(let t=0;t<3;t++){
+    for(let p=0;p<3;p++){
+      const v=conf[t][p], cx=x0+p*cw, cy=y0+t*cw;
+      const diag=(t===p);
+      const intensity=v/maxc;
+      const rgb=diag?[26,106,64]:[57,39,91];
+      ctxC.fillStyle='rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+(0.08+0.62*intensity)+')';
+      ctxC.fillRect(cx,cy,cw,cw);
+      ctxC.strokeStyle='rgba(24,40,74,0.3)';ctxC.lineWidth=1;
+      ctxC.strokeRect(cx,cy,cw,cw);
+      ctxC.fillStyle=intensity>0.5?'#fff':'#18284a';
+      ctxC.font='bold 15px '+FT;ctxC.textAlign='center';
+      ctxC.fillText(v,cx+cw/2,cy+cw/2+2);
+      if(rowTot[t]>0){
+        ctxC.fillStyle=intensity>0.5?'rgba(255,255,255,0.85)':'rgba(122,122,138,0.9)';
+        ctxC.font='8.5px '+FT;
+        ctxC.fillText((100*v/rowTot[t]).toFixed(0)+'%',cx+cw/2,cy+cw-6);
+      }
+    }
+  }
+  // summary at right
+  const sx0=x0+grid+26;
+  ctxC.textAlign='left';
+  ctxC.fillStyle='#39275B';ctxC.font='bold 12px '+FT;
+  ctxC.fillText('overall accuracy',sx0,y0+14);
+  ctxC.font='bold 22px "Playfair Display",Georgia,serif';
+  ctxC.fillText((100*model.acc).toFixed(1)+'%',sx0,y0+40);
+  ctxC.font='9.5px '+FT;ctxC.fillStyle='rgba(24,40,74,0.7)';
+  ctxC.fillText((data.length*model.acc|0)+' of '+data.length+' birds',sx0,y0+56);
+  ctxC.fillStyle='rgba(24,40,74,0.6)';ctxC.font='italic 9px '+FT;
+  ctxC.fillText('diagonal = correct calls',sx0,y0+78);
+  ctxC.fillText('row % = recall per species',sx0,y0+92);
+  for(let t=0;t<3;t++){
+    const rec=rowTot[t]>0?100*conf[t][t]/rowTot[t]:0;
+    ctxC.fillStyle=SP_COL[t];ctxC.font='600 9.5px '+FT;
+    ctxC.fillText(SPECIES[t]+': '+rec.toFixed(0)+'% recall',sx0,y0+112+t*13);
+  }
+}
+
+/* ===================================================================
+   STATS PANEL
+   =================================================================== */
+function updateStats(){
+  const panel=document.getElementById('statsPanel');
+  const B=model.B;
+  const fxn=FEATURES[fx].abbr, fyn=FEATURES[fy].abbr;
+  let h='<h3>Data</h3>';
+  const cnt=[0,0,0]; for(const d of data) cnt[d.s]++;
+  h+='<div class="stat-row"><span class="stat-key">penguins</span><span class="stat-val">'+data.length+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">Adélie / Chinstrap / Gentoo</span><span class="stat-val">'+
+     cnt[0]+' / '+cnt[1]+' / '+cnt[2]+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">predictors</span><span class="stat-val">'+
+     FEATURES[fx].name+', '+FEATURES[fy].name+'</span></div>';
+
+  h+='<h3>Coefficients &mdash; standardized scale</h3>';
+  h+='<table class="tbl"><tr><th>score</th><th>intercept</th><th>'+fxn+'</th><th>'+fyn+'</th></tr>';
+  h+='<tr><td>Chinstrap vs Adélie</td><td class="v">'+B[0][0].toFixed(2)+'</td><td class="v">'+
+     B[0][1].toFixed(2)+'</td><td class="v">'+B[0][2].toFixed(2)+'</td></tr>';
+  h+='<tr><td>Gentoo vs Adélie</td><td class="v">'+B[1][0].toFixed(2)+'</td><td class="v">'+
+     B[1][1].toFixed(2)+'</td><td class="v">'+B[1][2].toFixed(2)+'</td></tr>';
+  h+='</table>';
+  h+='<div class="note"> Adélie is the reference species (its score is fixed at 0). A positive slope '+
+     'means a larger '+'measurement raises the odds of that species relative to Adélie.</div>';
+
+  h+='<h3>Fit</h3>';
+  h+='<div class="stat-row"><span class="stat-key">log-likelihood</span><span class="stat-val">'+model.ll.toFixed(3)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">penalized objective</span><span class="stat-val">'+model.penObj.toFixed(3)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">ridge λ</span><span class="stat-val">'+lambda.toFixed(2)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">training accuracy</span><span class="stat-val">'+(100*model.acc).toFixed(1)+'%</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">Newton steps</span><span class="stat-val">'+model.iters+
+     (model.converged?'':' (stopped)')+'</span></div>';
+
+  if(!model.converged){
+    h+='<div class="warnbox"><b>The fit did not settle.</b> With λ this small, '+
+       'these two measurements separate the species so cleanly that the coefficients run away toward '+
+       'infinity in pursuit of a flawless fit. Raise the ridge λ to apply a firmer brake and the '+
+       'estimates will converge to finite values.</div>';
+  } else if(lambda<0.01){
+    h+='<div class="note">λ = 0: a pure (unpenalized) fit. If the species are well separated the '+
+       'coefficients can grow very large here.</div>';
+  }
+  panel.innerHTML=h;
+}
+
+/* ===================================================================
+   QUERY PANEL
+   =================================================================== */
+function updateQuery(){
+  const P=predictAt(qx,qy);
+  let pred=0; for(let k=1;k<3;k++) if(P[k]>P[pred]) pred=k;
+  document.getElementById('qxVal').textContent=qx.toFixed(1)+' '+FEATURES[fx].unit;
+  document.getElementById('qyVal').textContent=qy.toFixed(1)+' '+FEATURES[fy].unit;
+  let bh='';
+  for(let k=0;k<3;k++){
+    bh+='<div class="barrow"><span class="barlbl" style="color:'+SP_COL[k]+
+        (k===pred?';font-weight:700':'')+'">'+SPECIES[k]+'</span>'+
+        '<div class="bartrack"><div class="barfill" style="width:'+(P[k]*100).toFixed(1)+
+        '%;background:'+SP_COL[k]+'"></div></div>'+
+        '<span class="barpct">'+(P[k]*100).toFixed(1)+'%</span></div>';
+  }
+  document.getElementById('barWrap').innerHTML=bh;
+  document.getElementById('predPeng').innerHTML=penguinSVG(pred,58);
+  const pn=document.getElementById('predName');
+  pn.textContent=SPECIES[pred]; pn.style.color=SP_COL[pred];
+  document.getElementById('predConf').textContent=
+    'softmax probability '+(P[pred]*100).toFixed(1)+'%';
+}
+
+/* ===================================================================
+   ORCHESTRATION
+   =================================================================== */
+function refit(){ model=fitModel(); }
+function redraw(){ drawMain(); drawPanelB(); drawPanelC(); updateStats(); updateQuery(); }
+
+function syncQuerySliders(){
+  const [xlo,xhi]=featRange(fx), [ylo,yhi]=featRange(fy);
+  const qsx=document.getElementById('qxSlider'), qsy=document.getElementById('qySlider');
+  qsx.min=xlo.toFixed(2); qsx.max=xhi.toFixed(2); qsx.step=((xhi-xlo)/200).toFixed(3);
+  qsy.min=ylo.toFixed(2); qsy.max=yhi.toFixed(2); qsy.step=((yhi-ylo)/200).toFixed(3);
+  qsx.value=qx; qsy.value=qy;
+  document.getElementById('qxName').textContent=FEATURES[fx].name;
+  document.getElementById('qyName').textContent=FEATURES[fy].name;
+}
+
+/* ---------- build selectors & penguin strip ---------- */
+(function init(){
+  const selX=document.getElementById('selX'), selY=document.getElementById('selY');
+  FEATURES.forEach((f,i)=>{
+    selX.insertAdjacentHTML('beforeend','<option value="'+i+'">'+f.name+' ('+f.unit+')</option>');
+    selY.insertAdjacentHTML('beforeend','<option value="'+i+'">'+f.name+' ('+f.unit+')</option>');
+  });
+  selX.value=fx; selY.value=fy;
+
+  // penguin legend strip
+  const strip=document.getElementById('pengStrip');
+  const cnt=[0,0,0]; for(const d of data) cnt[d.s]++;
+  for(let k=0;k<3;k++){
+    strip.insertAdjacentHTML('beforeend',
+      '<div class="peng">'+penguinSVG(k,66)+
+      '<div class="pname" style="color:'+SP_COL[k]+'">'+SPECIES[k]+'</div>'+
+      '<div class="pmeta">'+cnt[k]+' birds</div></div>');
+  }
+  document.getElementById('footPeng').innerHTML=penguinSVG(0,26);
+
+  // initial query point = overall mean of the two features
+  qx=data.reduce((a,d)=>a+d.f[fx],0)/data.length;
+  qy=data.reduce((a,d)=>a+d.f[fy],0)/data.length;
+
+  refit(); syncQuerySliders(); redraw();
+})();
+
+/* ---------- events ---------- */
+function onFeatureChange(){
+  const nx=+document.getElementById('selX').value;
+  const ny=+document.getElementById('selY').value;
+  if(nx===ny){ // avoid identical axes
+    document.getElementById('selY').value=fy;
+    return;
+  }
+  fx=nx; fy=ny;
+  qx=data.reduce((a,d)=>a+d.f[fx],0)/data.length;
+  qy=data.reduce((a,d)=>a+d.f[fy],0)/data.length;
+  refit(); syncQuerySliders(); redraw();
+}
+document.getElementById('selX').addEventListener('change',onFeatureChange);
+document.getElementById('selY').addEventListener('change',onFeatureChange);
+
+document.getElementById('lamSlider').addEventListener('input',function(){
+  lambda=+this.value;
+  document.getElementById('lamVal').textContent=lambda.toFixed(2);
+  refit(); redraw();
+});
+document.getElementById('tgRegions').addEventListener('change',function(){
+  tgRegions=this.checked; drawMain();
+});
+document.getElementById('tgPoints').addEventListener('change',function(){
+  tgPoints=this.checked; drawMain();
+});
+
+cMain.addEventListener('click',function(e){
+  const r=cMain.getBoundingClientRect();
+  const px=(e.clientX-r.left)*cMain.width/r.width;
+  const py=(e.clientY-r.top)*cMain.height/r.height;
+  const pad={l:50,r:16,t:14,b:36};
+  const gW=cMain.width-pad.l-pad.r, gH=cMain.height-pad.t-pad.b;
+  if(px<pad.l||px>pad.l+gW||py<pad.t||py>pad.t+gH) return;
+  const [xlo,xhi]=featRange(fx), [ylo,yhi]=featRange(fy);
+  qx=xlo+(px-pad.l)/gW*(xhi-xlo);
+  qy=yhi-(py-pad.t)/gH*(yhi-ylo);
+  document.getElementById('qxSlider').value=qx;
+  document.getElementById('qySlider').value=qy;
+  drawMain(); updateQuery();
+});
+document.getElementById('qxSlider').addEventListener('input',function(){
+  qx=+this.value; drawMain(); updateQuery();
+});
+document.getElementById('qySlider').addEventListener('input',function(){
+  qy=+this.value; drawMain(); updateQuery();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>p-Laplacian Stochastic Process in the Unit Ball</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f7f7fb; color: #1a1a1a; font-family: system-ui, sans-serif; padding: 1rem; }
+  @media (prefers-color-scheme: dark) { body { background: #0c0c18; color: #e0e0f0; } }
+  h1 { font-size: 16px; font-weight: 500; margin-bottom: 1rem; color: inherit; }
+  .layout { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  canvas#sc { flex: 1; min-width: 240px; max-width: 480px; border-radius: 12px; border: 0.5px solid rgba(70,60,170,0.25); display: block; }
+  .sidebar { width: 185px; flex-shrink: 0; }
+  .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .label { font-size: 13px; color: #666; }
+  .val { font-size: 13px; font-weight: 500; font-family: monospace; }
+  @media (prefers-color-scheme: dark) { .label { color: #aaa; } }
+  input[type=range] { width: 100%; accent-color: #6058c8; }
+  .ctrl { margin-bottom: 12px; }
+  .hint { font-size: 11px; color: #999; margin-top: 2px; }
+  .btn-row { display: flex; gap: 6px; margin-bottom: 7px; }
+  button { cursor: pointer; background: transparent; border: 0.5px solid rgba(0,0,0,0.25); border-radius: 8px; padding: 5px 8px; font-size: 12px; color: inherit; width: 100%; margin-bottom: 6px; }
+  button:hover { background: rgba(0,0,0,0.06); }
+  @media (prefers-color-scheme: dark) { button { border-color: rgba(255,255,255,0.2); } button:hover { background: rgba(255,255,255,0.07); } }
+  .btn-row button { flex: 1; margin-bottom: 0; }
+  canvas#hc { width: 100%; border-radius: 8px; border: 0.5px solid rgba(70,60,170,0.2); display: block; margin-bottom: 12px; }
+  .info-box { padding: 10px; background: rgba(0,0,0,0.04); border-radius: 8px; margin-bottom: 10px; }
+  @media (prefers-color-scheme: dark) { .info-box { background: rgba(255,255,255,0.05); } }
+  .info-box .title { font-size: 11px; font-weight: 500; margin-bottom: 5px; }
+  .info-row { font-size: 11px; color: #666; display: flex; justify-content: space-between; margin-bottom: 2px; }
+  @media (prefers-color-scheme: dark) { .info-row { color: #aaa; } }
+  .info-val { color: #1a1a1a; font-family: monospace; font-weight: 500; }
+  @media (prefers-color-scheme: dark) { .info-val { color: #e0e0f0; } }
+  .divider { height: 0.5px; background: rgba(0,0,0,0.1); margin: 6px 0; }
+  @media (prefers-color-scheme: dark) { .divider { background: rgba(255,255,255,0.1); } }
+  .note { font-size: 11px; color: #999; line-height: 1.5; }
+  p.hist-label { font-size: 12px; color: #666; margin-bottom: 3px; }
+  @media (prefers-color-scheme: dark) { p.hist-label { color: #aaa; } }
+</style>
+</head>
+<body>
+<h1>2D stochastic process — normalized p-Laplacian generator, unit ball with reflection</h1>
+<div class="layout">
+  <canvas id="sc" width="480" height="480"></canvas>
+  <div class="sidebar">
+
+    <div class="ctrl">
+      <div class="row">
+        <span class="label">p</span>
+        <span class="val" id="pLbl">2.0</span>
+      </div>
+      <input type="range" id="pSl" min="1.05" max="10" step="0.05" value="2">
+      <div class="hint" id="pInfo">isotropic diffusion (p = 2)</div>
+    </div>
+
+    <div class="ctrl">
+      <div class="row">
+        <span class="label">speed</span>
+        <span class="val" id="spLbl">20</span>
+      </div>
+      <input type="range" id="spSl" min="1" max="80" step="1" value="20">
+    </div>
+
+    <div class="ctrl">
+      <div class="row">
+        <span class="label">particles</span>
+        <span class="val" id="nLbl">40</span>
+      </div>
+      <input type="range" id="nSl" min="1" max="120" step="1" value="40">
+    </div>
+
+    <div class="btn-row">
+      <button id="btnTr">trails</button>
+      <button id="btnHm">heatmap</button>
+    </div>
+    <button id="btnPause">pause</button>
+    <button id="btnReset" style="margin-bottom:14px;">reset</button>
+
+    <p class="hist-label">radial density p(r)</p>
+    <canvas id="hc" width="185" height="90"></canvas>
+
+    <div class="info-box">
+      <div class="title">diffusion tensor</div>
+      <div class="info-row"><span>radial 2(p−1)/p</span><span class="info-val" id="sigR">1.000</span></div>
+      <div class="info-row"><span>angular 2/p</span><span class="info-val" id="sigT">1.000</span></div>
+      <div class="divider"></div>
+      <div class="info-row"><span>anisotropy r/t</span><span class="info-val" id="aniso">1.00</span></div>
+    </div>
+
+    <div class="note">Ellipses show local diffusion shape. Gray bars = uniform reference density.</div>
+  </div>
+</div>
+
+<script>
+const sc = document.getElementById('sc');
+const ctx = sc.getContext('2d');
+const hc = document.getElementById('hc');
+const hctx = hc.getContext('2d');
+const W=480,H=480,CX=240,CY=240,R=208;
+const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+const BG      = isDark?'#0c0c18':'#f7f7fb';
+const DISKBG  = isDark?'#0f0f1e':'#eeeefc';
+const RIM     = isDark?'rgba(160,155,230,0.4)':'rgba(70,60,170,0.3)';
+const GRIDCOL = isDark?'rgba(160,155,230,0.07)':'rgba(70,60,170,0.06)';
+
+let pVal=2,spf=20,nParts=40,running=true,mode='trails';
+let particles=[];
+const GN=120;
+let heat=new Float32Array(GN*GN),maxHeat=1;
+let fn=0;
+const tmpC=document.createElement('canvas');
+tmpC.width=GN;tmpC.height=GN;
+const tmpCtx=tmpC.getContext('2d');
+
+function randn(){let u;do{u=Math.random();}while(!u);return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*Math.random());}
+
+const makeP=id=>{
+  const r=Math.sqrt(Math.random())*0.88,a=Math.random()*6.2832;
+  return{x:r*Math.cos(a),y:r*Math.sin(a),trail:[],hue:(id*137.508)%360};
+};
+
+function step(q){
+  const r=Math.hypot(q.x,q.y);
+  const sr=Math.sqrt(2*(pVal-1)/pVal*1e-3);
+  const st=Math.sqrt(2/pVal*1e-3);
+  let nx,ny;
+  if(r<1e-8){
+    const a=Math.random()*6.2832;
+    nx=q.x+sr*Math.cos(a); ny=q.y+sr*Math.sin(a);
+  } else {
+    const rx=q.x/r,ry=q.y/r,Z1=randn(),Z2=randn();
+    nx=q.x+sr*Z1*rx+st*Z2*(-ry);
+    ny=q.y+sr*Z1*ry+st*Z2*rx;
+  }
+  const nr=Math.hypot(nx,ny);
+  if(nr>1){const f=(2-nr)/nr;nx*=f;ny*=f;}
+  q.trail.push([q.x,q.y]);
+  if(q.trail.length>110)q.trail.shift();
+  q.x=nx;q.y=ny;
+}
+
+const tc=(x,y)=>[CX+x*R, CY-y*R];
+
+function drawBase(){
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
+  ctx.beginPath(); ctx.arc(CX,CY,R,0,6.2832);
+  ctx.fillStyle=DISKBG; ctx.fill();
+  ctx.strokeStyle=GRIDCOL; ctx.lineWidth=0.8;
+  [0.25,0.5,0.75].forEach(f=>{
+    ctx.beginPath();ctx.arc(CX,CY,f*R,0,6.2832);ctx.stroke();
+  });
+  [0,45,90,135].forEach(a=>{
+    const t=a*Math.PI/180,c=Math.cos(t),s=Math.sin(t);
+    ctx.beginPath();ctx.moveTo(CX-R*c,CY-R*s);ctx.lineTo(CX+R*c,CY+R*s);ctx.stroke();
+  });
+  ctx.beginPath();ctx.arc(CX,CY,R,0,6.2832);
+  ctx.strokeStyle=RIM;ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(CX,CY,2.5,0,6.2832);
+  ctx.fillStyle=isDark?'rgba(180,175,230,0.3)':'rgba(80,70,180,0.25)';ctx.fill();
+}
+
+function drawTrails(){
+  const ES=0.058*R;
+  const ar=Math.sqrt((pVal-1)/pVal)*ES;
+  const at=Math.sqrt(1/pVal)*ES;
+  for(const q of particles){
+    const n=q.trail.length;
+    const Hue=q.hue;
+    if(n>1){
+      const segs=[[0,Math.floor(n/3),0.12],[Math.floor(n/3),Math.floor(2*n/3),0.32],[Math.floor(2*n/3),n,0.65]];
+      ctx.lineWidth=1.1;
+      for(const[s,e,al] of segs){
+        ctx.beginPath();ctx.strokeStyle=`hsla(${Hue},72%,66%,${al})`;
+        for(let i=s;i<e;i++){
+          const[xi,yi]=tc(q.trail[i][0],q.trail[i][1]);
+          i===s?ctx.moveTo(xi,yi):ctx.lineTo(xi,yi);
+        }
+        ctx.stroke();
+      }
+    }
+    const[cx,cy]=tc(q.x,q.y);
+    ctx.save();ctx.translate(cx,cy);
+    ctx.rotate(-Math.atan2(q.y,q.x));
+    ctx.beginPath();ctx.ellipse(0,0,ar,at,0,0,6.2832);
+    ctx.strokeStyle=`hsla(${Hue},60%,65%,0.28)`;ctx.lineWidth=0.9;ctx.stroke();
+    ctx.restore();
+    ctx.beginPath();ctx.arc(cx,cy,3,0,6.2832);
+    ctx.fillStyle=`hsl(${Hue},90%,72%)`;ctx.fill();
+  }
+}
+
+function addHeat(){
+  for(const q of particles){
+    const gx=Math.floor((q.x+1)/2*GN);
+    const gy=Math.floor((q.y+1)/2*GN);
+    if(gx>=0&&gx<GN&&gy>=0&&gy<GN){
+      const idx=gy*GN+gx;
+      heat[idx]++;
+      if(heat[idx]>maxHeat)maxHeat=heat[idx];
+    }
+  }
+}
+
+function drawHeatmap(){
+  ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);
+  const img=tmpCtx.createImageData(GN,GN);
+  for(let j=0;j<GN;j++){
+    for(let i=0;i<GN;i++){
+      const x=(i/GN)*2-1, y=(j/GN)*2-1;
+      const inD=x*x+y*y<=1;
+      const pi4=(j*GN+i)*4;
+      if(!inD){
+        const[rv,g,b]=isDark?[12,12,24]:[247,247,251];
+        img.data[pi4]=rv;img.data[pi4+1]=g;img.data[pi4+2]=b;img.data[pi4+3]=255;
+      } else {
+        const v=Math.pow(heat[j*GN+i]/maxHeat,0.5);
+        if(isDark){
+          img.data[pi4]=Math.round(15+v*112);
+          img.data[pi4+1]=Math.round(15+v*75);
+          img.data[pi4+2]=Math.round(30+v*175);
+        } else {
+          img.data[pi4]=Math.round(238-v*120);
+          img.data[pi4+1]=Math.round(238-v*125);
+          img.data[pi4+2]=Math.round(252-v*60);
+        }
+        img.data[pi4+3]=255;
+      }
+    }
+  }
+  tmpCtx.putImageData(img,0,0);
+  ctx.drawImage(tmpC,CX-R,CY-R,R*2,R*2);
+  ctx.beginPath();ctx.arc(CX,CY,R,0,6.2832);
+  ctx.strokeStyle=RIM;ctx.lineWidth=1.5;ctx.stroke();
+  for(const q of particles){
+    const[dx,dy]=tc(q.x,q.y);
+    ctx.beginPath();ctx.arc(dx,dy,2.5,0,6.2832);
+    ctx.fillStyle=isDark?'rgba(255,255,255,0.55)':'rgba(0,0,0,0.4)';ctx.fill();
+  }
+}
+
+function drawHist(){
+  const HW=185,HH=90;
+  hctx.fillStyle=BG;hctx.fillRect(0,0,HW,HH);
+  const bins=20,counts=new Array(bins).fill(0);
+  for(const q of particles){
+    const r=Math.hypot(q.x,q.y);
+    const b=Math.min(Math.floor(r*bins),bins-1);
+    counts[b]++;
+  }
+  const mx=Math.max(...counts,1);
+  const bw=HW/bins;
+  hctx.fillStyle=isDark?'rgba(160,155,230,0.12)':'rgba(70,60,170,0.1)';
+  for(let i=0;i<bins;i++){
+    const theor=2*(i+0.5)/bins;
+    const bh=(theor/2)*(HH-10);
+    hctx.fillRect(i*bw,HH-bh,bw-1,bh);
+  }
+  hctx.fillStyle=isDark?'rgba(150,130,230,0.85)':'rgba(90,70,200,0.75)';
+  for(let i=0;i<bins;i++){
+    const bh=(counts[i]/mx)*(HH-10);
+    if(bh>0)hctx.fillRect(i*bw,HH-bh,bw-1,bh);
+  }
+  hctx.fillStyle=isDark?'rgba(180,175,230,0.5)':'rgba(70,60,170,0.45)';
+  hctx.font='9px monospace';
+  hctx.fillText('0',2,HH-2);hctx.fillText('1',HW-10,HH-2);
+}
+
+function updateInfo(){
+  const sr2=2*(pVal-1)/pVal, st2=2/pVal;
+  document.getElementById('sigR').textContent=sr2.toFixed(3);
+  document.getElementById('sigT').textContent=st2.toFixed(3);
+  document.getElementById('aniso').textContent=(sr2/st2).toFixed(2);
+  let info;
+  if(Math.abs(pVal-2)<0.1)info='isotropic diffusion (p = 2)';
+  else if(pVal<2&&pVal>1.5)info='mild angular dominance';
+  else if(pVal<=1.5)info='strong angular dominance';
+  else if(pVal<4)info='mild radial dominance';
+  else if(pVal<7)info='strong radial bias';
+  else info='quasi-1D radial diffusion';
+  document.getElementById('pInfo').textContent=info;
+}
+
+function init(){
+  particles=Array.from({length:nParts},(_,i)=>makeP(i));
+}
+
+function animate(){
+  for(let s=0;s<spf;s++){
+    for(const q of particles)step(q);
+    if(mode==='heatmap')addHeat();
+  }
+  if(mode==='trails'){drawBase();drawTrails();}
+  else drawHeatmap();
+  if(fn%4===0)drawHist();
+  fn++;
+  if(running)requestAnimationFrame(animate);
+}
+
+document.getElementById('pSl').addEventListener('input',e=>{
+  pVal=parseFloat(e.target.value);
+  document.getElementById('pLbl').textContent=pVal.toFixed(1);
+  updateInfo();
+});
+document.getElementById('spSl').addEventListener('input',e=>{
+  spf=parseInt(e.target.value);
+  document.getElementById('spLbl').textContent=spf;
+});
+document.getElementById('nSl').addEventListener('input',e=>{
+  const n=parseInt(e.target.value);
+  document.getElementById('nLbl').textContent=n;
+  while(particles.length<n)particles.push(makeP(particles.length));
+  while(particles.length>n)particles.pop();
+  nParts=n;
+});
+document.getElementById('btnTr').addEventListener('click',()=>{
+  mode='trails';
+  document.getElementById('btnTr').style.fontWeight='500';
+  document.getElementById('btnHm').style.fontWeight='400';
+});
+document.getElementById('btnHm').addEventListener('click',()=>{
+  mode='heatmap';
+  document.getElementById('btnHm').style.fontWeight='500';
+  document.getElementById('btnTr').style.fontWeight='400';
+});
+document.getElementById('btnPause').addEventListener('click',()=>{
+  running=!running;
+  document.getElementById('btnPause').textContent=running?'pause':'resume';
+  if(running)requestAnimationFrame(animate);
+});
+document.getElementById('btnReset').addEventListener('click',()=>{
+  heat=new Float32Array(GN*GN);maxHeat=1;init();
+});
+
+init();updateInfo();animate();
+</script>
+</body>
+</html>

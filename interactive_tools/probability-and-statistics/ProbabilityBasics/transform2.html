@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bivariate Transformation - Strict Geometric Mapping</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500;600&display=swap');
+
+  :root {
+    --bg: #0f1318;
+    --surface: #181d24;
+    --text: #c8cdd5;
+    --text-dim: #6b7280;
+    --accent: #4a9eff;
+    --highlight: #ff9e4a;
+    --y-color: #a0afc3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container { width: 100%; max-width: 1200px; }
+
+  .header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-weight: 300;
+    font-size: 1.5rem;
+    letter-spacing: 0.02em;
+  }
+
+  .stats-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card { display: flex; flex-direction: column; gap: 0.3rem; }
+  
+  .stat-card label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .stat-card span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--highlight);
+  }
+
+  .stat-card.theoretical span { color: var(--accent); }
+
+  .canvas-container {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .canvas-wrap {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .canvas-wrap h2 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-dim);
+  }
+
+  canvas {
+    background: #11151a;
+    border: 1px solid #2a2f3a;
+    border-radius: 4px;
+    /* Force exactly square aspect ratio visually */
+    width: 500px;
+    height: 500px;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .control-group label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 150px;
+    height: 4px;
+    background: var(--axis);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--highlight);
+    cursor: pointer;
+  }
+
+  .value-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 4ch;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Bivariate Jacobian Area Transformation</h1>
+  </div>
+
+  <div class="stats-board">
+    <div class="stat-card">
+      <label>Area of U-Square</label>
+      <span id="valAreaU">0.000</span>
+    </div>
+    <div class="stat-card">
+      <label>Area of Y-Preimage</label>
+      <span id="valAreaY">0.000</span>
+    </div>
+    <div class="stat-card">
+      <label>Geometric Ratio</label>
+      <span id="valRatio">0.000</span>
+    </div>
+    <div class="stat-card theoretical">
+      <label>Theoretical |J| (at center)</label>
+      <span id="valDeriv">0.000</span>
+    </div>
+  </div>
+
+  <div class="canvas-container">
+    <div class="canvas-wrap">
+      <h2>Original (Y₁, Y₂) Plane</h2>
+      <canvas id="canvasY" width="1000" height="1000"></canvas>
+    </div>
+    <div class="canvas-wrap">
+      <h2>Transformed (U₁, U₂) Plane</h2>
+      <canvas id="canvasU" width="1000" height="1000"></canvas>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>u₁ (Start)</label>
+      <input type="range" id="u1Slider" min="0.02" max="0.95" step="0.01" value="0.2">
+      <span class="value-display" id="u1Val">0.20</span>
+    </div>
+    <div class="control-group">
+      <label>u₂ (Start)</label>
+      <input type="range" id="u2Slider" min="0.1" max="4.5" step="0.1" value="2.0">
+      <span class="value-display" id="u2Val">2.0</span>
+    </div>
+    <div class="control-group">
+      <label>Delta (Width)</label>
+      <input type="range" id="deltaSlider" min="0.1" max="1.5" step="0.05" value="0.5">
+      <span class="value-display" id="deltaVal">0.50</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvasY = document.getElementById('canvasY');
+const ctxY = canvasY.getContext('2d');
+const canvasU = document.getElementById('canvasU');
+const ctxU = canvasU.getContext('2d');
+
+// --- Math State & Constants ---
+const N = 4000;
+let particles = [];
+let startU1 = 0.2;
+let startU2 = 2.0;
+let delta = 0.5;
+const MEAN = 2.0;
+
+// Both axes locked to 0-6 to enforce a 1:1 aspect ratio visually and mathematically
+const AXIS_MAX = 6.0; 
+const PAD = 60;
+const PLOT_W = canvasY.width - PAD * 2;
+const PLOT_H = canvasY.height - PAD * 2;
+
+// --- Helper Functions ---
+function mapX(val) { return PAD + (val / AXIS_MAX) * PLOT_W; }
+function mapY(val) { return PAD + PLOT_H - (val / AXIS_MAX) * PLOT_H; }
+
+// Surveyor's / Shoelace Formula for polygon area
+function polygonArea(pts) {
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) {
+    let j = (i + 1) % pts.length;
+    area += pts[i].x * pts[j].y;
+    area -= pts[i].y * pts[j].x;
+  }
+  return Math.abs(area) / 2;
+}
+
+// Generate the sample space
+function generateParticles() {
+  particles = [];
+  for (let i = 0; i < N; i++) {
+    // Y1, Y2 ~ Exp(mean = 2)
+    let y1 = -MEAN * Math.log(Math.random());
+    let y2 = -MEAN * Math.log(Math.random());
+    
+    // Transform
+    let u1 = y1 / (y1 + y2);
+    let u2 = y1 + y2;
+    
+    particles.push({ y1, y2, u1, u2 });
+  }
+}
+
+// Draw standard Cartesian grid/axes
+function drawGridAndAxes(ctx, labelX, labelY) {
+  ctx.clearRect(0, 0, canvasY.width, canvasY.height);
+  
+  ctx.strokeStyle = '#2a2f3a';
+  ctx.lineWidth = 1;
+  ctx.font = '400 24px "IBM Plex Mono", monospace';
+  ctx.fillStyle = '#6b7280';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  for (let i = 0; i <= AXIS_MAX; i++) {
+    // Vertical grid lines
+    ctx.beginPath();
+    ctx.moveTo(mapX(i), mapY(0));
+    ctx.lineTo(mapX(i), mapY(AXIS_MAX));
+    ctx.stroke();
+    ctx.fillText(i, mapX(i), mapY(0) + 15);
+
+    // Horizontal grid lines
+    ctx.beginPath();
+    ctx.moveTo(mapX(0), mapY(i));
+    ctx.lineTo(mapX(AXIS_MAX), mapY(i));
+    ctx.stroke();
+    if(i > 0) {
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(i, mapX(0) - 15, mapY(i));
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+  }
+
+  // Axes labels
+  ctx.fillStyle = '#c8cdd5';
+  ctx.font = '600 32px "IBM Plex Mono", monospace';
+  ctx.fillText(labelX, mapX(AXIS_MAX) + 30, mapY(0) - 10);
+  ctx.fillText(labelY, mapX(0), mapY(AXIS_MAX) - 40);
+}
+
+// --- Main Drawing Logic ---
+function draw() {
+  drawGridAndAxes(ctxY, 'Y₁', 'Y₂');
+  drawGridAndAxes(ctxU, 'U₁', 'U₂');
+
+  // 1. Define the 4 Vertices of the U-Square
+  const vU = [
+    { x: startU1, y: startU2 },
+    { x: startU1 + delta, y: startU2 },
+    { x: startU1 + delta, y: startU2 + delta },
+    { x: startU1, y: startU2 + delta }
+  ];
+
+  // 2. Map the 4 Vertices back to the Y-Plane via Inverse Transform
+  // Inverse: Y1 = U1 * U2, Y2 = U2 * (1 - U1)
+  const vY = vU.map(u => {
+    return {
+      x: u.x * u.y,
+      y: u.y * (1 - u.x)
+    };
+  });
+
+  // Calculate Areas
+  const areaU = delta * delta;
+  const areaY = polygonArea(vY);
+
+  // 3. Draw Polygon onto U Canvas
+  ctxU.fillStyle = 'rgba(255, 158, 74, 0.2)';
+  ctxU.strokeStyle = 'rgba(255, 158, 74, 0.9)';
+  ctxU.lineWidth = 4;
+  ctxU.beginPath();
+  ctxU.moveTo(mapX(vU[0].x), mapY(vU[0].y));
+  for(let i=1; i<4; i++) ctxU.lineTo(mapX(vU[i].x), mapY(vU[i].y));
+  ctxU.closePath();
+  ctxU.fill();
+  ctxU.stroke();
+
+  // 4. Draw Warped Polygon onto Y Canvas
+  ctxY.fillStyle = 'rgba(255, 158, 74, 0.2)';
+  ctxY.strokeStyle = 'rgba(255, 158, 74, 0.9)';
+  ctxY.lineWidth = 4;
+  ctxY.beginPath();
+  ctxY.moveTo(mapX(vY[0].x), mapY(vY[0].y));
+  for(let i=1; i<4; i++) ctxY.lineTo(mapX(vY[i].x), mapY(vY[i].y));
+  ctxY.closePath();
+  ctxY.fill();
+  ctxY.stroke();
+
+  // 5. Draw Particles
+  ctxY.globalCompositeOperation = 'lighter';
+  ctxU.globalCompositeOperation = 'lighter';
+
+  for (let p of particles) {
+    // Only render particles that fit within the visual 0-6 grid
+    if (p.y1 > AXIS_MAX || p.y2 > AXIS_MAX) continue;
+
+    // Check if particle is inside the U boundary
+    const isInside = (p.u1 >= startU1 && p.u1 <= startU1 + delta && 
+                      p.u2 >= startU2 && p.u2 <= startU2 + delta);
+    
+    const fillStyle = isInside ? 'rgba(255, 158, 74, 0.8)' : 'rgba(160, 175, 195, 0.15)';
+    const r = isInside ? 6 : 4;
+
+    // Plot on Y
+    ctxY.beginPath();
+    ctxY.arc(mapX(p.y1), mapY(p.y2), r, 0, Math.PI * 2);
+    ctxY.fillStyle = fillStyle;
+    ctxY.fill();
+
+    // Plot on U (only render if it fits visually)
+    if (p.u1 <= AXIS_MAX && p.u2 <= AXIS_MAX) {
+      ctxU.beginPath();
+      ctxU.arc(mapX(p.u1), mapY(p.u2), r, 0, Math.PI * 2);
+      ctxU.fillStyle = fillStyle;
+      ctxU.fill();
+    }
+  }
+
+  ctxY.globalCompositeOperation = 'source-over';
+  ctxU.globalCompositeOperation = 'source-over';
+
+  // 6. Update HTML Readouts
+  document.getElementById('valAreaU').textContent = areaU.toFixed(3);
+  document.getElementById('valAreaY').textContent = areaY.toFixed(3);
+  document.getElementById('valRatio').textContent = (areaY / areaU).toFixed(3);
+  
+  // Theoretical |J| evaluated at the center of the square (u2 + delta/2)
+  const theoreticalJ = startU2 + (delta / 2);
+  document.getElementById('valDeriv').textContent = theoreticalJ.toFixed(3);
+}
+
+// --- Interaction Events ---
+const u1Slider = document.getElementById('u1Slider');
+const u2Slider = document.getElementById('u2Slider');
+const deltaSlider = document.getElementById('deltaSlider');
+
+const u1Val = document.getElementById('u1Val');
+const u2Val = document.getElementById('u2Val');
+const deltaVal = document.getElementById('deltaVal');
+
+function handleUpdate() {
+  startU1 = parseFloat(u1Slider.value);
+  startU2 = parseFloat(u2Slider.value);
+  delta = parseFloat(deltaSlider.value);
+  
+  u1Val.textContent = startU1.toFixed(2);
+  u2Val.textContent = startU2.toFixed(1);
+  deltaVal.textContent = delta.toFixed(2);
+  
+  draw();
+}
+
+u1Slider.addEventListener('input', handleUpdate);
+u2Slider.addEventListener('input', handleUpdate);
+deltaSlider.addEventListener('input', handleUpdate);
+
+// Init
+generateParticles();
+handleUpdate(); // Triggers the first draw
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kullback–Leibler Information — An Interactive Companion</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,600;9..144,800;9..144,900&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+
+<style>
+  :root {
+    --crimson:        #9E1B32;
+    --crimson-deep:   #6e1224;
+    --crimson-soft:   #c45a6e;
+    --crimson-tint:   #f3d6dc;
+    --ink:            #1a1614;
+    --ink-soft:       #4a4540;
+    --ink-mute:       #756e66;
+    --paper:          #fbf8f1;
+    --paper-warm:     #f5ecd9;
+    --paper-tint:     #f0e7d0;
+    --rule:           #d4c9b0;
+    --rule-strong:    #a89b80;
+    --navy:           #1f3b5b;
+    --gold:           #b88a35;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 700px at 90% -240px, rgba(158,27,50,0.10), transparent 55%),
+      radial-gradient(900px 500px at -120px 900px, rgba(184,138,53,0.06), transparent 60%),
+      var(--paper);
+    background-attachment: fixed;
+  }
+
+  /* ================== HOUNDSTOOTH BAND (Bama signature) ================== */
+  .houndstooth {
+    height: 14px;
+    width: 100%;
+    background-color: var(--paper);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' preserveAspectRatio='none'><g fill='%239E1B32'><polygon points='0,0 12,0 12,6 6,6 6,12 0,12'/><polygon points='12,12 24,12 24,18 18,18 18,24 12,24'/><polygon points='12,0 18,0 18,6 12,6'/><polygon points='6,18 12,18 12,24 6,24'/></g></svg>");
+    background-size: 14px 14px;
+    background-repeat: repeat-x;
+  }
+
+  /* ================== Layout ================== */
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px 96px;
+  }
+
+  /* ================== Masthead ================== */
+  header.mast {
+    position: relative;
+    margin: 56px 0 64px;
+  }
+  header.mast .top-rule {
+    height: 5px;
+    background: var(--crimson);
+  }
+  header.mast .second-rule {
+    height: 1px;
+    background: var(--crimson);
+    margin-top: 4px;
+    margin-bottom: 28px;
+  }
+
+  .colophon {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 18px 0 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--crimson);
+  }
+  .colophon .lockup {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .lockup .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px; height: 38px;
+    background: var(--crimson);
+    color: var(--paper);
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: 0;
+    box-shadow: 0 2px 0 var(--crimson-deep);
+  }
+  .colophon .right {
+    color: var(--ink-soft);
+    letter-spacing: 0.18em;
+  }
+
+  header.mast h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 900;
+    font-size: clamp(48px, 7vw, 84px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    margin: 0 0 18px;
+    color: var(--ink);
+  }
+  header.mast h1 em {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--crimson);
+    font-variation-settings: "SOFT" 100;
+  }
+  header.mast .lede {
+    font-size: 22px;
+    color: var(--ink-soft);
+    max-width: 720px;
+    font-weight: 400;
+    line-height: 1.45;
+  }
+  header.mast .lede em {
+    font-style: italic;
+    color: var(--crimson-deep);
+  }
+  header.mast .byline {
+    margin-top: 28px;
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-mute);
+    letter-spacing: 0.02em;
+  }
+  header.mast .byline::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: var(--crimson);
+    vertical-align: middle;
+    margin-right: 12px;
+  }
+
+  /* ================== Section headings ================== */
+  section { margin: 96px 0; scroll-margin-top: 24px; }
+  section > .section-head {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    align-items: baseline;
+    margin-bottom: 12px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+  section > .section-head .roman {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 56px;
+    color: var(--crimson);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  section > .section-head h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 38px;
+    letter-spacing: -0.018em;
+    margin: 0 0 6px;
+    color: var(--ink);
+    line-height: 1.05;
+  }
+  section > .section-head .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 6px;
+  }
+  section > p.subtitle {
+    color: var(--ink-soft);
+    margin-top: 22px;
+    margin-bottom: 28px;
+    max-width: 740px;
+    font-size: 19px;
+    line-height: 1.55;
+  }
+
+  /* ================== Display equation block ================== */
+  .display-eq {
+    background: linear-gradient(180deg, var(--paper-warm), var(--paper));
+    border-top: 3px solid var(--crimson);
+    border-bottom: 1px solid var(--rule);
+    padding: 26px 32px 22px;
+    margin: 28px 0;
+    position: relative;
+  }
+  .display-eq .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .display-eq p {
+    margin: 12px 0 0;
+    font-size: 18px;
+    color: var(--ink-soft);
+  }
+
+  /* ================== Pull quote ================== */
+  .pullquote {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 1.4;
+    color: var(--crimson-deep);
+    border-left: 3px solid var(--crimson);
+    padding: 6px 0 6px 28px;
+    margin: 36px 0;
+    max-width: 720px;
+  }
+  .pullquote .ornament {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    color: var(--crimson);
+    line-height: 0;
+    margin-right: 4px;
+    vertical-align: -8px;
+  }
+
+  /* ================== Explorer layout ================== */
+  .explorer-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    align-items: stretch;
+  }
+  @media (max-width: 760px) {
+    .explorer-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ================== Controls ================== */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .control-group {
+    background: white;
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--crimson);
+    padding: 18px 20px;
+  }
+  .control-group.t2 {
+    border-top-color: var(--navy);
+  }
+  .control-group h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .control-group h3 .swatch {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block;
+  }
+  .control-group h3 .swatch.t1 { background: var(--crimson); }
+  .control-group h3 .swatch.t2 { background: var(--navy); }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: 56px 1fr 60px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .slider-row label {
+    color: var(--ink-soft);
+  }
+  .slider-row .val {
+    text-align: right;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--rule);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--crimson);
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--crimson);
+    border: 2px solid white;
+    cursor: pointer;
+  }
+  .control-group.t2 input[type="range"]::-webkit-slider-thumb { background: var(--navy); }
+  .control-group.t2 input[type="range"]::-moz-range-thumb     { background: var(--navy); }
+
+  button.action {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    background: var(--crimson);
+    color: var(--paper);
+    border: none;
+    padding: 11px 22px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    box-shadow: 0 2px 0 var(--crimson-deep);
+  }
+  button.action:hover { background: var(--crimson-deep); }
+  button.action:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--crimson-deep); }
+  button.action.ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    box-shadow: none;
+  }
+  button.action.ghost:hover {
+    border-color: var(--crimson);
+    color: var(--crimson);
+    background: transparent;
+  }
+  button.action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* ================== Plot cards ================== */
+  .plot-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .plot-card {
+    background: white;
+    border: 1px solid var(--rule);
+    padding: 22px 26px 18px;
+    position: relative;
+  }
+  .plot-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--crimson) 0%, var(--crimson) 60%, transparent 100%);
+  }
+  .plot-card .plot-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .plot-card .plot-head h4 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 12px;
+    margin: 0;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .plot-card .plot-head .legend {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    display: flex;
+    gap: 18px;
+  }
+  .plot-card .plot-head .legend span::before {
+    content: '';
+    display: inline-block;
+    width: 18px; height: 2px;
+    margin-right: 7px;
+    vertical-align: middle;
+  }
+  .plot-card .plot-head .legend .l1::before { background: var(--crimson); }
+  .plot-card .plot-head .legend .l2::before { background: var(--navy); }
+  canvas { display: block; width: 100%; height: auto; }
+
+  /* ================== Readouts ================== */
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 14px;
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+  }
+  .readout .cell {
+    padding: 0 18px;
+    border-right: 1px solid var(--rule);
+  }
+  .readout .cell:last-child { border-right: none; }
+  .readout .cell:first-child { padding-left: 0; }
+  .readout .cell .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 6px;
+  }
+  .readout .cell .value {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .readout .cell.total .value { color: var(--crimson); }
+  .readout .cell .unit {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-mute);
+    margin-top: 5px;
+  }
+
+  /* ================== Decomposition bar ================== */
+  .decomp {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .decomp-bar {
+    display: flex;
+    height: 36px;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    background: var(--paper-tint);
+    transition: all 0.25s ease;
+  }
+  .decomp-bar .seg {
+    height: 100%;
+    transition: width 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .decomp-bar .scale { background: var(--navy); }
+  .decomp-bar .mean  { background: var(--crimson); }
+
+  .decomp-legend {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .decomp-legend span::before {
+    content: '';
+    display: inline-block;
+    width: 10px; height: 10px;
+    margin-right: 7px;
+    vertical-align: middle;
+  }
+  .decomp-legend .lscale::before { background: var(--navy); }
+  .decomp-legend .lmean::before  { background: var(--crimson); }
+
+  /* ================== Derivation panel ================== */
+  details.derivation {
+    background: white;
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--crimson);
+    padding: 8px 28px;
+    margin-top: 32px;
+    position: relative;
+  }
+  details.derivation > summary {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 17px;
+    cursor: pointer;
+    padding: 14px 0;
+    color: var(--ink);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  details.derivation > summary::before {
+    content: '▸';
+    color: var(--crimson);
+    font-size: 13px;
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+  details.derivation[open] > summary::before { transform: rotate(90deg); }
+  details.derivation .body {
+    padding: 12px 0 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 18px;
+  }
+  .step {
+    margin: 18px 0;
+    padding-left: 22px;
+    border-left: 2px solid var(--paper-tint);
+    transition: border-color 0.2s ease;
+  }
+  .step:hover { border-left-color: var(--crimson-tint); }
+  .step .step-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  /* ================== MC card ================== */
+  .mc-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--crimson);
+    padding: 26px 30px;
+    position: relative;
+  }
+  .mc-bar {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .mc-bar .info {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .mc-bar .info b {
+    color: var(--crimson);
+    font-weight: 600;
+  }
+
+  /* ================== Section ornaments ================== */
+  .section-ornament {
+    text-align: center;
+    margin: 64px auto 0;
+    color: var(--crimson);
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    letter-spacing: 1.2em;
+    line-height: 1;
+  }
+
+  /* ================== Footer ================== */
+  footer {
+    margin-top: 96px;
+    padding-top: 28px;
+    border-top: 3px solid var(--crimson);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  footer .right {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--crimson);
+  }
+
+  /* ================== Inline math + code ================== */
+  .katex { font-size: 1.0em !important; }
+  p code, li code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    color: var(--crimson-deep);
+  }
+
+  ul.tight li { margin-bottom: 6px; }
+  ul.markered { list-style: none; padding-left: 0; }
+  ul.markered li {
+    padding-left: 22px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  ul.markered li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--crimson);
+    font-size: 10px;
+    top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Houndstooth band at the very top: distinctively Alabama -->
+<div class="houndstooth"></div>
+
+<div class="wrap">
+
+<!-- ============================== MASTHEAD ============================== -->
+<header class="mast">
+  <div class="top-rule"></div>
+  <div class="second-rule"></div>
+
+  <div class="colophon">
+    <div class="lockup">
+      <span class="mark">A</span>
+      <span>The Capstone Notebooks</span>
+    </div>
+    <div class="right">An Interactive Companion</div>
+  </div>
+
+  <h1>Kullback–Leibler<br/><em>Information.</em></h1>
+  <p class="lede">
+    How quickly can data tell two probability models apart? After Neyman–Pearson,
+    the natural follow-up is a single number that measures the <em>rate</em> at
+    which log-likelihood-ratio evidence accumulates. Slide the parameters below
+    and watch it move.
+  </p>
+  <div class="byline">Probability &amp; Statistics with R · The University of Alabama</div>
+</header>
+
+<!-- ============================== I. DEFINITION ============================== -->
+<section>
+  <div class="section-head">
+    <div class="roman">I</div>
+    <div>
+      <div class="kicker">First Principles</div>
+      <h2>The Definition.</h2>
+    </div>
+  </div>
+
+  <p class="subtitle">
+    Given two densities in the same family — say $f(y;\theta_1)$ and $f(y;\theta_2)$ — the
+    Kullback–Leibler information for discriminating between them is the
+    <em>per-observation expected log-likelihood ratio</em>, taken under the
+    truth $\theta_1$:
+  </p>
+
+  <div class="display-eq">
+    <div class="label">Definition</div>
+    $$ I(\theta_1\,;\,\theta_2) \;=\; n^{-1}\,\mathrm{E}_{1}\!\left[\,\log \frac{f(y;\theta_1)}{f(y;\theta_2)}\,\right]. $$
+    <p>
+      Here $\mathrm{E}_1$ denotes expectation under the density determined by
+      $\theta_1$. After observing $n$ samples, the <em>expected</em> total
+      log-LR evidence in favor of $\theta_1$ over $\theta_2$ is exactly
+      $n\cdot I(\theta_1;\theta_2)$.
+    </p>
+  </div>
+
+  <p>Three properties to internalize before sliding anything:</p>
+  <ul class="markered">
+    <li>$I(\theta_1;\theta_2) \geq 0$, with equality iff the densities agree almost everywhere.</li>
+    <li>It is <em>not</em> symmetric: in general $I(\theta_1;\theta_2) \neq I(\theta_2;\theta_1)$, which is why we say <em>divergence</em>, not distance.</li>
+    <li>For iid samples, the law of large numbers makes $\frac{1}{n}\sum_i \log\frac{f(y_i;\theta_1)}{f(y_i;\theta_2)} \to I(\theta_1;\theta_2)$ under $\theta_1$.</li>
+  </ul>
+</section>
+
+<div class="section-ornament">◆ ◆ ◆</div>
+
+<!-- ============================== II. EXPLORER ============================== -->
+<section>
+  <div class="section-head">
+    <div class="roman">II</div>
+    <div>
+      <div class="kicker">The Two-Normal Explorer</div>
+      <h2>Two Normals, One Slider at a Time.</h2>
+    </div>
+  </div>
+
+  <p class="subtitle">
+    Drag $\mu_1, \sigma_1, \mu_2, \sigma_2$ and watch the densities, the
+    log-likelihood ratio, and $I(\theta_1;\theta_2)$ update together. The
+    closed-form value below is what you would also get by averaging
+    $\log f_1(y) - \log f_2(y)$ over an enormous Monte Carlo sample drawn
+    from $\theta_1$.
+  </p>
+
+  <div class="explorer-grid">
+    <div class="controls">
+      <div class="control-group t1">
+        <h3><span class="swatch t1"></span>Truth: $\theta_1 = (\mu_1, \sigma_1)$</h3>
+        <div class="slider-row">
+          <label>μ₁</label>
+          <input type="range" id="mu1" min="-3" max="3" step="0.05" value="0" />
+          <span class="val" id="mu1v">0.00</span>
+        </div>
+        <div class="slider-row">
+          <label>σ₁</label>
+          <input type="range" id="s1"  min="0.3" max="3" step="0.05" value="1" />
+          <span class="val" id="s1v">1.00</span>
+        </div>
+      </div>
+
+      <div class="control-group t2">
+        <h3><span class="swatch t2"></span>Alternative: $\theta_2 = (\mu_2, \sigma_2)$</h3>
+        <div class="slider-row">
+          <label>μ₂</label>
+          <input type="range" id="mu2" min="-3" max="3" step="0.05" value="1" />
+          <span class="val" id="mu2v">1.00</span>
+        </div>
+        <div class="slider-row">
+          <label>σ₂</label>
+          <input type="range" id="s2"  min="0.3" max="3" step="0.05" value="1.5" />
+          <span class="val" id="s2v">1.50</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="action ghost" id="swap">Swap θ₁ ↔ θ₂</button>
+        <button class="action ghost" id="reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="plot-stack">
+      <div class="plot-card">
+        <div class="plot-head">
+          <h4>Densities</h4>
+          <div class="legend">
+            <span class="l1">f(y; θ₁)</span>
+            <span class="l2">f(y; θ₂)</span>
+          </div>
+        </div>
+        <canvas id="densityPlot" width="640" height="240"></canvas>
+
+        <div class="readout">
+          <div class="cell total">
+            <div class="label">I(θ₁ ; θ₂)</div>
+            <div class="value" id="klTotal">0.000</div>
+            <div class="unit">nats per observation</div>
+          </div>
+          <div class="cell">
+            <div class="label">scale piece</div>
+            <div class="value" id="klScale">0.000</div>
+            <div class="unit">½(r − log r − 1)</div>
+          </div>
+          <div class="cell">
+            <div class="label">mean piece</div>
+            <div class="value" id="klMean">0.000</div>
+            <div class="unit">(μ₁−μ₂)² ⁄ 2σ₂²</div>
+          </div>
+        </div>
+
+        <div class="decomp" style="margin-top:18px">
+          <div class="decomp-legend">
+            <span class="lscale">scale piece (variance mismatch)</span>
+            <span class="lmean">mean piece (location shift)</span>
+          </div>
+          <div class="decomp-bar" id="decompBar">
+            <div class="seg scale" id="segScale" style="width:50%"></div>
+            <div class="seg mean"  id="segMean"  style="width:50%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="plot-card">
+        <div class="plot-head">
+          <h4>Log-likelihood ratio  log[f(y;θ₁) / f(y;θ₂)]</h4>
+          <div class="legend">
+            <span class="l1">log-ratio</span>
+          </div>
+        </div>
+        <canvas id="lrPlot" width="640" height="160"></canvas>
+        <p style="font-size:14px; color:var(--ink-soft); margin:10px 0 0; font-style:italic">
+          The KL value above is exactly the expected height of this curve, weighted by $f(y;\theta_1)$.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <p class="pullquote">
+    <span class="ornament">“</span>Try setting μ₁ = μ₂ and dragging only σ₁ vs σ₂. The KL is non-zero — the
+    distributions still differ. Then swap θ₁ ↔ θ₂ and watch the value change.
+    That asymmetry is the whole personality of a divergence.
+  </p>
+</section>
+
+<div class="section-ornament">◆ ◆ ◆</div>
+
+<!-- ============================== III. REGRESSION ============================== -->
+<section>
+  <div class="section-head">
+    <div class="roman">III</div>
+    <div>
+      <div class="kicker">Generalizing</div>
+      <h2>Gaussian Regression, One Design at a Time.</h2>
+    </div>
+  </div>
+
+  <p class="subtitle">
+    Now the model is $y = Z\beta + \varepsilon$ with $\varepsilon \sim N(0,\sigma^2 I_n)$,
+    and the parameters are $\theta = (\beta',\sigma^2)'$. After taking
+    $\mathrm{E}_1$ in the log-LR you get a clean two-piece formula:
+  </p>
+
+  <div class="display-eq">
+    <div class="label">For Gaussian Regression</div>
+    $$ I(\theta_1\,;\,\theta_2) \;=\; \tfrac{1}{2}\!\left(\frac{\sigma_1^2}{\sigma_2^2} - \log\frac{\sigma_1^2}{\sigma_2^2} - 1\right) \;+\; \tfrac{1}{2}\,\frac{(\beta_1-\beta_2)' Z'Z\,(\beta_1-\beta_2)}{n\,\sigma_2^2}. $$
+    <p>
+      Two pieces, two intuitions. The first is a function of the variance
+      ratio alone — call it $\psi(r)$ with $r = \sigma_1^2/\sigma_2^2$. It is
+      zero at $r=1$, positive otherwise, and (importantly) <em>not</em>
+      symmetric in the roles of $\sigma_1, \sigma_2$. The second is a
+      Mahalanobis-style quadratic in $\beta_1 - \beta_2$, weighted by the
+      design moment $Z'Z/n$.
+    </p>
+  </div>
+
+  <div class="explorer-grid">
+    <div class="controls">
+      <div class="control-group">
+        <h3>Variance ratio</h3>
+        <div class="slider-row">
+          <label>r</label>
+          <input type="range" id="rratio" min="0.1" max="5" step="0.02" value="1.5" />
+          <span class="val" id="rratiov">1.50</span>
+        </div>
+        <p style="font-size:14px; color:var(--ink-soft); margin:6px 0 0; font-style:italic">
+          $r = \sigma_1^2/\sigma_2^2$.  When $r = 1$, the scale piece vanishes.
+        </p>
+      </div>
+
+      <div class="control-group">
+        <h3>Design-weighted offset</h3>
+        <div class="slider-row">
+          <label>Δ</label>
+          <input type="range" id="delta" min="0" max="3" step="0.02" value="0.6" />
+          <span class="val" id="deltav">0.60</span>
+        </div>
+        <p style="font-size:14px; color:var(--ink-soft); margin:6px 0 0; font-style:italic">
+          $\Delta^2 = (\beta_1-\beta_2)' \frac{Z'Z}{n} (\beta_1-\beta_2)\,/\,\sigma_2^2.$
+          A larger, better-conditioned design <em>increases</em> $\Delta$.
+        </p>
+      </div>
+
+      <div class="control-group">
+        <h3>Sample size</h3>
+        <div class="slider-row">
+          <label>n</label>
+          <input type="range" id="nObs" min="10" max="500" step="5" value="100" />
+          <span class="val" id="nObsv">100</span>
+        </div>
+        <p style="font-size:14px; color:var(--ink-soft); margin:6px 0 0; font-style:italic">
+          KL is per-observation, so increasing $n$ multiplies the <em>total</em>
+          accumulated evidence $n \cdot I$.
+        </p>
+      </div>
+    </div>
+
+    <div class="plot-stack">
+      <div class="plot-card">
+        <div class="plot-head">
+          <h4>The scale piece  ψ(r) = ½(r − log r − 1)</h4>
+          <div class="legend"><span class="l1">current r</span></div>
+        </div>
+        <canvas id="psiPlot" width="640" height="220"></canvas>
+        <p style="font-size:14px; color:var(--ink-soft); margin:10px 0 0; font-style:italic">
+          Notice $\psi(r) \neq \psi(1/r)$ — that is exactly the asymmetry of KL
+          showing up in the variance piece.
+        </p>
+      </div>
+
+      <div class="plot-card">
+        <div class="plot-head">
+          <h4>Decomposition</h4>
+          <div class="legend">
+            <span style="font-size:11px">total = scale + mean</span>
+          </div>
+        </div>
+
+        <div class="readout" style="border-top: none; padding-top: 0">
+          <div class="cell total">
+            <div class="label">I(θ₁ ; θ₂)</div>
+            <div class="value" id="regTotal">0.000</div>
+            <div class="unit">per observation</div>
+          </div>
+          <div class="cell">
+            <div class="label">scale piece</div>
+            <div class="value" id="regScale">0.000</div>
+            <div class="unit">½(r − log r − 1)</div>
+          </div>
+          <div class="cell">
+            <div class="label">mean piece</div>
+            <div class="value" id="regMean">0.000</div>
+            <div class="unit">½ Δ²</div>
+          </div>
+        </div>
+
+        <div class="decomp" style="margin-top:18px">
+          <div class="decomp-legend">
+            <span class="lscale">scale piece</span>
+            <span class="lmean">mean piece</span>
+          </div>
+          <div class="decomp-bar">
+            <div class="seg scale" id="regSegScale" style="width:50%"></div>
+            <div class="seg mean"  id="regSegMean"  style="width:50%"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-soft); margin-top:6px">
+            <span>0</span>
+            <span>total: <b id="regBarTotal" style="color:var(--ink); font-weight:600">0.000</b></span>
+          </div>
+        </div>
+
+        <div style="margin-top:22px; padding-top:18px; border-top:1px solid var(--rule)">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:6px">After n observations</div>
+          <div style="display:flex; align-items:baseline; gap:14px">
+            <span style="font-family:'Fraunces', serif; font-size:30px; font-weight:600; color:var(--crimson)" id="regNI">0.0</span>
+            <span style="color:var(--ink-mute); font-size:14px; font-style:italic">expected nats of log-LR evidence</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-ornament">◆ ◆ ◆</div>
+
+<!-- ============================== IV. MC ============================== -->
+<section>
+  <div class="section-head">
+    <div class="roman">IV</div>
+    <div>
+      <div class="kicker">Sanity Check</div>
+      <h2>Watch Evidence Accumulate.</h2>
+    </div>
+  </div>
+
+  <p class="subtitle">
+    The cleanest sanity check: simulate $y_i \sim f(\cdot;\theta_1)$ for
+    $i = 1, \ldots, n$, plot the running average of
+    $\log f_1(y_i) - \log f_2(y_i)$, and confirm it converges to
+    the closed-form $I(\theta_1;\theta_2)$. The current parameters from
+    the two-normal explorer are used.
+  </p>
+
+  <div class="mc-card">
+    <div class="mc-bar">
+      <button class="action" id="mcRun">Run simulation (n = 1000)</button>
+      <button class="action ghost" id="mcReset">Reset</button>
+      <div class="info">
+        target  <b id="mcTarget">0.000</b>  ·  current running mean  <b id="mcCurrent">—</b>
+      </div>
+    </div>
+    <canvas id="mcPlot" width="960" height="280"></canvas>
+    <p style="font-size:14px; color:var(--ink-soft); margin:14px 0 0; font-style:italic">
+      Each draw shifts the running mean. The dashed line is the closed-form
+      $I(\theta_1;\theta_2)$ — the LLN says the running mean must climb (or fall)
+      onto it.
+    </p>
+  </div>
+</section>
+
+<div class="section-ornament">◆ ◆ ◆</div>
+
+<!-- ============================== V. DERIVATION ============================== -->
+<section>
+  <div class="section-head">
+    <div class="roman">V</div>
+    <div>
+      <div class="kicker">Where the Formula Comes From</div>
+      <h2>The Derivation, in Five Steps.</h2>
+    </div>
+  </div>
+
+  <p class="subtitle">
+    Why does the Gaussian regression KL split so cleanly into a scale piece
+    and a mean piece? The arithmetic is short. Click to expand.
+  </p>
+
+  <details class="derivation" open>
+    <summary>Show the full derivation of $I(\theta_1;\theta_2)$ for Gaussian regression</summary>
+    <div class="body">
+
+      <div class="step">
+        <div class="step-label">Step 1 — write the densities</div>
+        <p>The likelihood for $y = Z\beta + \varepsilon$ with $\varepsilon \sim N(0,\sigma^2 I_n)$ is</p>
+        $$ f(y;\beta,\sigma^2) = (2\pi\sigma^2)^{-n/2}\,\exp\!\left(-\frac{(y-Z\beta)'(y-Z\beta)}{2\sigma^2}\right). $$
+      </div>
+
+      <div class="step">
+        <div class="step-label">Step 2 — take the log-ratio</div>
+        $$ \log\frac{f(y;\theta_1)}{f(y;\theta_2)} = -\frac{n}{2}\log\frac{\sigma_1^2}{\sigma_2^2} - \frac{(y-Z\beta_1)'(y-Z\beta_1)}{2\sigma_1^2} + \frac{(y-Z\beta_2)'(y-Z\beta_2)}{2\sigma_2^2}. $$
+      </div>
+
+      <div class="step">
+        <div class="step-label">Step 3 — take $\mathrm{E}_1$, term by term</div>
+        <p>Under $\theta_1$, write $y = Z\beta_1 + \varepsilon$ with $\varepsilon \sim N(0, \sigma_1^2 I_n)$. Then</p>
+        $$ \mathrm{E}_1\!\left[(y-Z\beta_1)'(y-Z\beta_1)\right] = \mathrm{E}\!\left[\varepsilon'\varepsilon\right] = n\sigma_1^2. $$
+        <p>For the alternative,</p>
+        $$ \mathrm{E}_1\!\left[(y-Z\beta_2)'(y-Z\beta_2)\right] = \mathrm{E}\!\left[(\varepsilon + Z(\beta_1-\beta_2))'(\varepsilon + Z(\beta_1-\beta_2))\right] = n\sigma_1^2 + (\beta_1-\beta_2)'Z'Z(\beta_1-\beta_2). $$
+        <p>The cross term vanishes because $\mathrm{E}[\varepsilon] = 0$.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-label">Step 4 — assemble</div>
+        $$ \mathrm{E}_1 \log\frac{f_1}{f_2} = -\frac{n}{2}\log\frac{\sigma_1^2}{\sigma_2^2} - \frac{n}{2} + \frac{n\sigma_1^2}{2\sigma_2^2} + \frac{(\beta_1-\beta_2)'Z'Z(\beta_1-\beta_2)}{2\sigma_2^2}. $$
+      </div>
+
+      <div class="step">
+        <div class="step-label">Step 5 — divide by $n$</div>
+        $$ I(\theta_1;\theta_2) = \tfrac{1}{2}\!\left(\frac{\sigma_1^2}{\sigma_2^2} - \log\frac{\sigma_1^2}{\sigma_2^2} - 1\right) + \tfrac{1}{2}\,\frac{(\beta_1-\beta_2)'Z'Z(\beta_1-\beta_2)}{n\sigma_2^2}. \quad\square $$
+      </div>
+
+      <p style="margin-top:22px">
+        The result has a satisfying interpretation: <em>variance mismatch</em>
+        and <em>design-weighted mean shift</em> are independent contributions
+        to discriminability, and they trade off cleanly. Notice the role of
+        $Z'Z/n$ — a more spread-out design separates the models faster, which
+        is the same instinct that drives optimal experimental design.
+      </p>
+    </div>
+  </details>
+</section>
+
+<div class="section-ornament">◆ ◆ ◆</div>
+
+<!-- ============================== VI. WHY IT MATTERS ============================== -->
+<section>
+  <div class="section-head">
+    <div class="roman">VI</div>
+    <div>
+      <div class="kicker">The Bigger Picture</div>
+      <h2>Why It Matters.</h2>
+    </div>
+  </div>
+
+  <p>
+    Neyman–Pearson tells you the LR test is most powerful for the simple-vs-simple
+    problem. KL tells you <em>how powerful</em>: the LR test's Type II error rate
+    decays exponentially in $n \cdot I(\theta_1;\theta_2)$ (Stein's lemma). So $I$
+    is literally the <em>discrimination rate</em>.
+  </p>
+  <p>
+    For Gaussian regression, the decomposition above sharpens this into a usable
+    design principle: variance heterogeneity and design-weighted mean shifts
+    contribute additively, and the design's information content $Z'Z/n$
+    multiplies the mean-shift term — the same quantity that determines the
+    asymptotic variance of the OLS estimator.
+  </p>
+  <p>
+    KL also underlies <strong>maximum likelihood</strong> (the MLE
+    asymptotically minimizes KL to the true distribution),
+    <strong>AIC</strong> (an estimate of expected KL between the truth and
+    a candidate model), and the <strong>likelihood-ratio test's asymptotic
+    chi-squared distribution</strong>.
+  </p>
+</section>
+
+<footer>
+  <span>Probability &amp; Statistics with R</span>
+  <span class="right">Roll Tide.</span>
+  <span>The University of Alabama</span>
+</footer>
+
+</div><!-- /.wrap -->
+
+<div class="houndstooth"></div>
+
+<!-- ====================================================================== -->
+<!-- ============================== JAVASCRIPT ============================ -->
+<!-- ====================================================================== -->
+<script>
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+
+function dnorm(y, mu, s) {
+  const z = (y - mu) / s;
+  return Math.exp(-0.5 * z * z) / (s * Math.sqrt(2 * Math.PI));
+}
+function rnorm(mu, s) {
+  const u1 = Math.random(), u2 = Math.random();
+  return mu + s * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+function fmt(x, d = 3) {
+  if (!isFinite(x)) return '∞';
+  return x.toFixed(d);
+}
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = Math.round(rect.width  * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+function klNormalParts(mu1, s1, mu2, s2) {
+  const r = (s1 * s1) / (s2 * s2);
+  const scale = 0.5 * (r - Math.log(r) - 1);
+  const mean  = (mu1 - mu2) * (mu1 - mu2) / (2 * s2 * s2);
+  return { scale, mean, total: scale + mean, r };
+}
+
+/* ---- Section II: two-normal explorer ---- */
+const explorer = (() => {
+  const ids = ['mu1', 's1', 'mu2', 's2'];
+  const get = () => ({
+    mu1: parseFloat($('mu1').value), s1: parseFloat($('s1').value),
+    mu2: parseFloat($('mu2').value), s2: parseFloat($('s2').value),
+  });
+
+  function drawDensity(p) {
+    const { ctx, w, h } = setupCanvas($('densityPlot'));
+    ctx.clearRect(0, 0, w, h);
+    const padL = 36, padR = 12, padT = 12, padB = 28;
+    const xLo = Math.min(p.mu1 - 4*p.s1, p.mu2 - 4*p.s2);
+    const xHi = Math.max(p.mu1 + 4*p.s1, p.mu2 + 4*p.s2);
+    const yMax = Math.max(dnorm(p.mu1, p.mu1, p.s1), dnorm(p.mu2, p.mu2, p.s2)) * 1.1;
+    const xToPx = (x) => padL + (x - xLo) / (xHi - xLo) * (w - padL - padR);
+    const yToPx = (y) => h - padB - y / yMax * (h - padT - padB);
+    ctx.strokeStyle = '#d4c9b0'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB);
+    ctx.stroke();
+    ctx.fillStyle = '#4a4540';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const tickStep = Math.ceil((xHi - xLo) / 6);
+    for (let t = Math.ceil(xLo); t <= Math.floor(xHi); t += tickStep) {
+      const px = xToPx(t);
+      ctx.beginPath();
+      ctx.moveTo(px, h - padB); ctx.lineTo(px, h - padB + 4);
+      ctx.strokeStyle = '#d4c9b0'; ctx.stroke();
+      ctx.fillText(String(t), px, h - padB + 6);
+    }
+    function curve(mu, s, stroke, fill) {
+      const N = 200;
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) {
+        const x = xLo + (xHi - xLo) * (i / N);
+        const y = dnorm(x, mu, s);
+        const px = xToPx(x), py = yToPx(y);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      if (fill) {
+        ctx.lineTo(xToPx(xHi), yToPx(0));
+        ctx.lineTo(xToPx(xLo), yToPx(0));
+        ctx.closePath();
+        ctx.fillStyle = fill; ctx.fill();
+      }
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) {
+        const x = xLo + (xHi - xLo) * (i / N);
+        const y = dnorm(x, mu, s);
+        const px = xToPx(x), py = yToPx(y);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke();
+    }
+    curve(p.mu2, p.s2, '#1f3b5b', 'rgba(31,59,91,0.10)');
+    curve(p.mu1, p.s1, '#9E1B32', 'rgba(158,27,50,0.14)');
+    [{m: p.mu1, c: '#9E1B32'}, {m: p.mu2, c: '#1f3b5b'}].forEach(({m, c}) => {
+      ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(xToPx(m), yToPx(0));
+      ctx.lineTo(xToPx(m), yToPx(yMax * 0.9));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+
+  function drawLR(p) {
+    const { ctx, w, h } = setupCanvas($('lrPlot'));
+    ctx.clearRect(0, 0, w, h);
+    const padL = 36, padR = 12, padT = 12, padB = 26;
+    const xLo = Math.min(p.mu1 - 4*p.s1, p.mu2 - 4*p.s2);
+    const xHi = Math.max(p.mu1 + 4*p.s1, p.mu2 + 4*p.s2);
+    const N = 300;
+    const xs = [], ys = [];
+    let yLo = Infinity, yHi = -Infinity;
+    for (let i = 0; i <= N; i++) {
+      const x = xLo + (xHi - xLo) * (i / N);
+      let lr = Math.log(dnorm(x, p.mu1, p.s1) + 1e-300) - Math.log(dnorm(x, p.mu2, p.s2) + 1e-300);
+      lr = Math.max(-8, Math.min(8, lr));
+      xs.push(x); ys.push(lr);
+      if (lr < yLo) yLo = lr;
+      if (lr > yHi) yHi = lr;
+    }
+    const pad = (yHi - yLo) * 0.12 || 1;
+    yLo -= pad; yHi += pad;
+    if (yLo > -0.5) yLo = -0.5;
+    if (yHi <  0.5) yHi =  0.5;
+    const xToPx = (x) => padL + (x - xLo) / (xHi - xLo) * (w - padL - padR);
+    const yToPx = (y) => h - padB - (y - yLo) / (yHi - yLo) * (h - padT - padB);
+    ctx.strokeStyle = '#d4c9b0'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, yToPx(0)); ctx.lineTo(w - padR, yToPx(0));
+    ctx.stroke();
+    ctx.fillStyle = '#4a4540';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('0', padL - 4, yToPx(0));
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const px = xToPx(xs[i]), py = yToPx(ys[i]);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#9E1B32'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  function update() {
+    const p = get();
+    ['mu1', 's1', 'mu2', 's2'].forEach(k => {
+      $(k + 'v').textContent = parseFloat($(k).value).toFixed(2);
+    });
+    const kl = klNormalParts(p.mu1, p.s1, p.mu2, p.s2);
+    $('klTotal').textContent = fmt(kl.total);
+    $('klScale').textContent = fmt(kl.scale);
+    $('klMean').textContent  = fmt(kl.mean);
+    const total = kl.total > 1e-9 ? kl.total : 1;
+    const sPct = (kl.scale / total) * 100;
+    const mPct = (kl.mean  / total) * 100;
+    $('segScale').style.width = sPct + '%';
+    $('segMean').style.width  = mPct + '%';
+    $('segScale').textContent = sPct > 12 ? fmt(kl.scale, 3) : '';
+    $('segMean').textContent  = mPct > 12 ? fmt(kl.mean,  3) : '';
+    drawDensity(p);
+    drawLR(p);
+    $('mcTarget').textContent = fmt(kl.total, 4);
+  }
+
+  ids.forEach(k => $(k).addEventListener('input', update));
+  $('swap').addEventListener('click', () => {
+    const a = $('mu1').value, b = $('s1').value;
+    $('mu1').value = $('mu2').value; $('s1').value = $('s2').value;
+    $('mu2').value = a;              $('s2').value = b;
+    update(); mc.reset();
+  });
+  $('reset').addEventListener('click', () => {
+    $('mu1').value = 0; $('s1').value = 1;
+    $('mu2').value = 1; $('s2').value = 1.5;
+    update(); mc.reset();
+  });
+  return { update, get };
+})();
+
+/* ---- Section III: regression decomposition ---- */
+const regression = (() => {
+  function update() {
+    const r = parseFloat($('rratio').value);
+    const D = parseFloat($('delta').value);
+    const n = parseInt($('nObs').value, 10);
+    $('rratiov').textContent = r.toFixed(2);
+    $('deltav').textContent  = D.toFixed(2);
+    $('nObsv').textContent   = n;
+    const scale = 0.5 * (r - Math.log(r) - 1);
+    const mean  = 0.5 * D * D;
+    const total = scale + mean;
+    $('regScale').textContent = fmt(scale);
+    $('regMean').textContent  = fmt(mean);
+    $('regTotal').textContent = fmt(total);
+    $('regBarTotal').textContent = fmt(total);
+    $('regNI').textContent = fmt(n * total, 1);
+    const t = total > 1e-9 ? total : 1;
+    $('regSegScale').style.width = (scale / t) * 100 + '%';
+    $('regSegMean').style.width  = (mean  / t) * 100 + '%';
+    drawPsi(r);
+  }
+
+  function drawPsi(rCurrent) {
+    const { ctx, w, h } = setupCanvas($('psiPlot'));
+    ctx.clearRect(0, 0, w, h);
+    const padL = 44, padR = 16, padT = 12, padB = 28;
+    const rLo = 0.1, rHi = 5;
+    const yMax = 0.5 * (rHi - Math.log(rHi) - 1) * 1.05;
+    const xToPx = (x) => padL + (x - rLo) / (rHi - rLo) * (w - padL - padR);
+    const yToPx = (y) => h - padB - y / yMax * (h - padT - padB);
+    ctx.strokeStyle = '#d4c9b0'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB);
+    ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB);
+    ctx.stroke();
+    ctx.fillStyle = '#4a4540';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    [0.5, 1, 2, 3, 4, 5].forEach(t => {
+      const px = xToPx(t);
+      ctx.beginPath();
+      ctx.moveTo(px, h - padB); ctx.lineTo(px, h - padB + 4);
+      ctx.strokeStyle = '#d4c9b0'; ctx.stroke();
+      ctx.fillText(String(t), px, h - padB + 6);
+    });
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    [0, 0.5, 1, 1.5].forEach(t => {
+      if (t > yMax) return;
+      const py = yToPx(t);
+      ctx.beginPath();
+      ctx.moveTo(padL - 4, py); ctx.lineTo(padL, py);
+      ctx.strokeStyle = '#d4c9b0'; ctx.stroke();
+      ctx.fillText(t.toFixed(1), padL - 6, py);
+    });
+    ctx.beginPath();
+    const N = 200;
+    for (let i = 0; i <= N; i++) {
+      const r = rLo + (rHi - rLo) * (i / N);
+      const y = 0.5 * (r - Math.log(r) - 1);
+      const px = xToPx(r), py = yToPx(y);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#9E1B32'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = '#a89b80'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(xToPx(1), padT); ctx.lineTo(xToPx(1), h - padB);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const yCur = 0.5 * (rCurrent - Math.log(rCurrent) - 1);
+    ctx.beginPath();
+    ctx.arc(xToPx(rCurrent), yToPx(yCur), 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#9E1B32'; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#4a4540';
+    ctx.font = '12px "Crimson Pro", serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('r = σ₁² / σ₂²', (w + padL) / 2, h - 14);
+    ctx.save();
+    ctx.translate(14, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('ψ(r)', 0, 0);
+    ctx.restore();
+  }
+
+  ['rratio', 'delta', 'nObs'].forEach(k => $(k).addEventListener('input', update));
+  return { update };
+})();
+
+/* ---- Section IV: Monte Carlo demo ---- */
+const mc = (() => {
+  let running = false;
+  const state = { nDrawn: 0, sumLR: 0, points: [], nMax: 1000 };
+
+  function draw() {
+    const { ctx, w, h } = setupCanvas($('mcPlot'));
+    ctx.clearRect(0, 0, w, h);
+    const padL = 50, padR = 20, padT = 18, padB = 32;
+    const target = parseFloat($('mcTarget').textContent) || 0;
+    let yLo = Math.min(0, target - 0.5);
+    let yHi = Math.max(target * 2, target + 0.5);
+    if (state.points.length) {
+      const mn = Math.min(...state.points.map(p => p[1]));
+      const mx = Math.max(...state.points.map(p => p[1]));
+      yLo = Math.min(yLo, mn - 0.1);
+      yHi = Math.max(yHi, mx + 0.1);
+    }
+    if (Math.abs(yHi - yLo) < 0.4) { yHi += 0.2; yLo -= 0.2; }
+    const xToPx = (x) => padL + (x / state.nMax) * (w - padL - padR);
+    const yToPx = (y) => h - padB - (y - yLo) / (yHi - yLo) * (h - padT - padB);
+    ctx.strokeStyle = '#d4c9b0'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB);
+    ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB);
+    ctx.stroke();
+    ctx.fillStyle = '#4a4540';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    [0, 250, 500, 750, 1000].forEach(t => {
+      const px = xToPx(t);
+      ctx.fillText(String(t), px, h - padB + 6);
+    });
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    const yticks = [];
+    const step = (yHi - yLo) / 4;
+    for (let k = 0; k <= 4; k++) yticks.push(yLo + k * step);
+    yticks.forEach(t => {
+      const py = yToPx(t);
+      ctx.beginPath();
+      ctx.moveTo(padL - 4, py); ctx.lineTo(padL, py);
+      ctx.strokeStyle = '#d4c9b0'; ctx.stroke();
+      ctx.fillText(t.toFixed(2), padL - 6, py);
+    });
+    ctx.strokeStyle = '#1f3b5b'; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(padL, yToPx(target)); ctx.lineTo(w - padR, yToPx(target));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#1f3b5b';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('I(θ₁;θ₂) = ' + target.toFixed(4), padL + 6, yToPx(target) - 4);
+    ctx.fillStyle = '#4a4540';
+    ctx.font = '12px "Crimson Pro", serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('n  (samples drawn under θ₁)', (w + padL) / 2, h - 16);
+    ctx.save();
+    ctx.translate(16, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('running mean of log[f₁/f₂]', 0, 0);
+    ctx.restore();
+    if (state.points.length > 1) {
+      ctx.beginPath();
+      state.points.forEach((p, i) => {
+        const px = xToPx(p[0]), py = yToPx(p[1]);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.strokeStyle = '#9E1B32'; ctx.lineWidth = 1.8; ctx.stroke();
+      const last = state.points[state.points.length - 1];
+      ctx.beginPath();
+      ctx.arc(xToPx(last[0]), yToPx(last[1]), 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#9E1B32'; ctx.fill();
+    }
+  }
+
+  function step() {
+    if (!running) return;
+    const p = explorer.get();
+    const batch = 5;
+    for (let i = 0; i < batch && state.nDrawn < state.nMax; i++) {
+      const y = rnorm(p.mu1, p.s1);
+      const lr = Math.log(dnorm(y, p.mu1, p.s1)) - Math.log(dnorm(y, p.mu2, p.s2));
+      state.sumLR += lr;
+      state.nDrawn += 1;
+      const runMean = state.sumLR / state.nDrawn;
+      if (state.nDrawn === 1 || state.nDrawn % 2 === 0 || state.nDrawn === state.nMax) {
+        state.points.push([state.nDrawn, runMean]);
+      }
+      $('mcCurrent').textContent = fmt(runMean, 4);
+    }
+    draw();
+    if (state.nDrawn < state.nMax) {
+      requestAnimationFrame(step);
+    } else {
+      running = false;
+      $('mcRun').textContent = 'Run again';
+      $('mcRun').disabled = false;
+    }
+  }
+  function run() {
+    state.nDrawn = 0; state.sumLR = 0; state.points = [];
+    running = true;
+    $('mcRun').disabled = true;
+    $('mcRun').textContent = 'Running…';
+    requestAnimationFrame(step);
+  }
+  function reset() {
+    running = false;
+    state.nDrawn = 0; state.sumLR = 0; state.points = [];
+    $('mcCurrent').textContent = '—';
+    $('mcRun').textContent = 'Run simulation (n = 1000)';
+    $('mcRun').disabled = false;
+    draw();
+  }
+  $('mcRun').addEventListener('click', run);
+  $('mcReset').addEventListener('click', reset);
+  return { run, reset, draw };
+})();
+
+window.addEventListener('load', () => {
+  explorer.update();
+  regression.update();
+  mc.draw();
+});
+window.addEventListener('resize', () => {
+  explorer.update();
+  regression.update();
+  mc.draw();
+});
+</script>
+
+</body>
+</html>

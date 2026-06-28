@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wasserstein Distance — Optimal Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --r-col:#2c7a3a;  --r-bg:#e8f5ec;     /* r vector — green */
+  --s-col:#2c4a96;  --s-bg:#edf1fb;     /* s vector — indigo */
+  --w-col:#8a5a00;  --w-bg:#fff8ea;     /* W entries — amber */
+  --opt-col:#6a1a80;--opt-bg:#f5e8fb;   /* optimal — purple */
+  --ok:#1a6a58;   --ok-bg:#e8f5f2;
+  --bad:#b33a2f;  --bad-bg:#fef0ee;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.6rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.18rem;font-weight:600;color:var(--navy);margin-bottom:.9rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.32rem .9rem;font-size:.92rem;transition:background .14s;}
+.btn-ghost{background:var(--s-bg);color:var(--s-col);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-go{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:.9rem;}
+.btn-go:hover{background:#952e24;}
+.btn-sm{padding:.25rem .7rem;font-size:.86rem;}
+
+/* Input grid */
+.ctrl-row{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;margin-bottom:.7rem;}
+.ctrl-row label{font-size:.9rem;color:var(--navy2);display:flex;align-items:center;gap:.35rem;}
+.ctrl-row input[type=number]{width:52px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.ctrl-row select{padding:.27rem .5rem;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.vec-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.35rem 0;}
+.vec-row .vlbl{font-size:.88rem;color:var(--navy2);min-width:24px;text-align:right;}
+.vec-inp{width:72px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.vec-inp.r-inp{border-color:var(--r-col);background:var(--r-bg);}
+.vec-inp.s-inp{border-color:var(--s-col);background:var(--s-bg);}
+.vec-inp:focus{outline:none;}
+.sum-badge{font-size:.82rem;font-weight:600;padding:.15rem .55rem;border-radius:3px;margin-left:.4rem;}
+.sum-ok{background:var(--ok-bg);color:var(--ok);}
+.sum-bad{background:var(--bad-bg);color:var(--bad);}
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 .9rem;}
+
+/* Transport matrix table */
+.tmt-wrap{overflow-x:auto;margin:.5rem 0;}
+table.tmt{border-collapse:collapse;font-size:.9rem;}
+table.tmt td,table.tmt th{padding:.32rem .6rem;border:1px solid #e0dbd3;text-align:center;vertical-align:middle;min-width:58px;}
+table.tmt thead th{background:var(--navy);color:#fff;font-weight:400;font-size:.78rem;font-style:italic;}
+table.tmt td.r-lbl{background:var(--r-bg);color:var(--r-col);font-weight:700;border-right:2px solid var(--r-col);}
+table.tmt td.s-lbl{background:var(--s-bg);color:var(--s-col);font-weight:700;border-top:2px solid var(--s-col);}
+table.tmt td.corner{background:#f4f4f0;font-size:.78rem;color:var(--gray);}
+table.tmt td.w-cell input{width:52px;padding:.22rem .3rem;text-align:center;border:1px solid #ccc;border-radius:3px;font-family:inherit;font-size:.9rem;background:var(--w-bg);}
+table.tmt td.w-cell input:focus{outline:none;border-color:var(--w-col);}
+table.tmt td.row-sum{font-weight:600;border-left:2px solid var(--r-col);}
+table.tmt td.col-sum{font-weight:600;border-top:2px solid var(--s-col);}
+table.tmt td.row-sum.sum-ok,table.tmt td.col-sum.sum-ok{background:var(--ok-bg);color:var(--ok);}
+table.tmt td.row-sum.sum-bad,table.tmt td.col-sum.sum-bad{background:var(--bad-bg);color:var(--bad);}
+table.tmt td.cost-cell{background:var(--navy);color:var(--gold);font-weight:700;font-size:1.05rem;}
+table.tmt td.opt-cell{background:var(--opt-bg);color:var(--opt-col);font-weight:600;}
+
+/* Cost display */
+.cost-display{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin:.5rem 0;padding:.7rem 1rem;background:var(--w-bg);border:1px solid #d8c080;border-radius:6px;}
+.cost-val{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--w-col);}
+.cost-sub{font-size:.85rem;color:var(--gray);}
+.cost-ok{color:var(--ok);}
+
+/* Flow visualization */
+.vis-wrap{margin:.5rem 0;}
+svg.flow-svg{display:block;width:100%;max-width:700px;}
+
+/* Sections */
+.sec{border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.07);margin-bottom:1.5rem;}
+.sec-hd{padding:.55rem 1.2rem;display:flex;align-items:center;gap:.7rem;}
+.sec-hd h3{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:400;color:#fff;}
+.sec-body{background:var(--paper);padding:1.2rem 1.5rem;border:1px solid var(--border);border-top:none;overflow-x:auto;}
+.sec-W  .sec-hd{background:var(--w-col);}
+.sec-opt .sec-hd{background:var(--opt-col);}
+.sec-vis .sec-hd{background:#1a3a70;}
+.sec-exp .sec-hd{background:var(--r-col);}
+
+.kb{border-radius:6px;padding:.8rem 1rem;font-size:.88rem;line-height:1.65;margin:.6rem 0;}
+.kb strong{color:var(--navy);}
+.kb-W  {background:var(--w-bg);  border:1px solid #d8c080;color:#4a3000;}
+.kb-opt{background:var(--opt-bg);border:1px solid #c890d8;color:#3a0a50;}
+.kb-r  {background:var(--r-bg);  border:1px solid #90c8a0;color:#0a3a18;}
+
+.formula-row{overflow-x:auto;margin:.5rem 0;text-align:center;}
+.iterations{font-size:.84rem;color:var(--navy2);margin-top:.5rem;}
+.iter-step{padding:.2rem .5rem;margin:.15rem;border-radius:3px;background:#f4f2ee;display:inline-block;}
+.iter-step.opt{background:var(--opt-bg);color:var(--opt-col);}
+
+.err{color:var(--bad);font-style:italic;font-size:.9rem;}
+.info{color:var(--navy2);font-size:.9rem;}
+/* Custom distance grid */
+.dist-grid{display:inline-grid;gap:5px;align-items:center;margin:.3rem 0;}
+.dist-grid .dinp{width:60px;padding:.25rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.9rem;background:var(--w-bg);}
+.dist-grid .dinp.diag{background:#f4f2ee;color:#aaa;}
+.dist-grid .dinp:focus{outline:none;border-color:var(--w-col);}
+.dist-grid .dist-lbl{font-size:.78rem;color:var(--gray);text-align:center;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Wasserstein Distance — Optimal Transport</h1>
+  <p>Explore transfer matrices, marginal constraints, and the earth mover's distance W_p(r,s)</p>
+</header>
+<main>
+
+<!-- ══ INPUT CARD ══════════════════════════════════════════ -->
+<div class="card">
+  <h2>Setup — Probability Vectors and Distance</h2>
+  <div class="ctrl-row">
+    <label>n (support size): <input type="number" id="nSz" min="2" max="5" value="3"></label>
+    <button class="btn-ghost btn-sm" onclick="rebuildInputs()">Resize</button>
+    <label>p: <select id="pVal"><option value="1">p = 1  (W₁, earth mover)</option><option value="2">p = 2  (W₂)</option></select></label>
+    <label>Distance: <select id="costType" onchange="toggleCustomDist()">
+      <option value="abs">|i − j|^p  (standard)</option>
+      <option value="sq">|i − j|²  (squared)</option>
+      <option value="custom">Custom (enter below)</option>
+    </select></label>
+  </div>
+  <div id="customDistDiv" style="display:none;margin:.5rem 0 .8rem;">
+    <div style="font-size:.88rem;color:var(--navy2);margin-bottom:.5rem;">
+      Enter the <strong>upper triangle</strong> of the distance matrix d<sub>ij</sub>.
+      The lower triangle mirrors by symmetry (shown in gray). The diagonal is always 0.
+      Cells highlighted in red violate the triangle inequality d(i,k) ≤ d(i,j) + d(j,k).
+    </div>
+    <div id="customDistGrid"></div>
+    <div id="triWarning" style="font-size:.84rem;color:var(--bad);margin-top:.4rem;display:none;padding:.3rem .6rem;background:var(--bad-bg);border-radius:4px;border:1px solid #e8b0a8;"></div>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start;">
+    <div>
+      <div style="font-size:.88rem;color:var(--r-col);font-weight:600;margin-bottom:.3rem;">Vector r (rows) — must sum to 1</div>
+      <div class="vec-row" id="rInputs"></div>
+    </div>
+    <div>
+      <div style="font-size:.88rem;color:var(--s-col);font-weight:600;margin-bottom:.3rem;">Vector s (columns) — must sum to 1</div>
+      <div class="vec-row" id="sInputs"></div>
+    </div>
+  </div>
+  <button class="btn-go" onclick="buildAll()">Build Transport Problem →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+var EPS = 1e-9;
+
+function parseVal(s) {
+  s = (s||'').trim();
+  if (s.indexOf('/') >= 0) {
+    var parts = s.split('/');
+    return parseFloat(parts[0]) / parseFloat(parts[1]);
+  }
+  return parseFloat(s) || 0;
+}
+
+function fmt(x, dp) {
+  dp = dp === undefined ? 4 : dp;
+  if (Math.abs(x) < EPS) return '0';
+  return parseFloat(x.toFixed(dp)).toString();
+}
+
+function fmt2(x) { return fmt(x, 4); }
+
+function rk(t, opts) {
+  try { return katex.renderToString(t, Object.assign({throwOnError:false}, opts||{})); }
+  catch(e) { return t; }
+}
+
+function vecSum(v) { return v.reduce(function(a,b){return a+b;}, 0); }
+
+/* ═══════════════════════════════════════════
+   COST MATRIX
+═══════════════════════════════════════════ */
+function buildCostMatrix(n, p, costType) {
+  var C = [];
+  for (var i = 0; i < n; i++) {
+    var row = [];
+    for (var j = 0; j < n; j++) {
+      var d = Math.abs(i - j);
+      if (costType === 'sq') row.push(d * d);
+      else row.push(Math.pow(d, p));
+    }
+    C.push(row);
+  }
+  return C;
+}
+
+/* ═══════════════════════════════════════════
+   TRANSPORT COST
+═══════════════════════════════════════════ */
+function transportCost(W, C, n) {
+  var cost = 0;
+  for (var i = 0; i < n; i++)
+    for (var j = 0; j < n; j++)
+      cost += C[i][j] * W[i][j];
+  return cost;
+}
+
+function marginals(W, n) {
+  var rowSum = new Array(n).fill(0);
+  var colSum = new Array(n).fill(0);
+  for (var i = 0; i < n; i++)
+    for (var j = 0; j < n; j++) {
+      rowSum[i] += W[i][j];
+      colSum[j] += W[i][j];
+    }
+  return { rowSum: rowSum, colSum: colSum };
+}
+
+function feasible(W, r, s, n) {
+  var m = marginals(W, n);
+  for (var i = 0; i < n; i++) {
+    if (Math.abs(m.rowSum[i] - r[i]) > 1e-5) return false;
+    if (Math.abs(m.colSum[i] - s[i]) > 1e-5) return false;
+    for (var j = 0; j < n; j++) if (W[i][j] < -1e-9) return false;
+  }
+  return true;
+}
+
+/* ═══════════════════════════════════════════
+   NORTHWEST CORNER  → initial BFS
+═══════════════════════════════════════════ */
+function northwestCorner(r, s, n) {
+  var W = [];
+  for (var i = 0; i < n; i++) W.push(new Array(n).fill(0));
+  var sup = r.slice(), dem = s.slice();
+  var basic = [];
+  var i = 0, j = 0;
+  while (i < n && j < n) {
+    var amt = Math.min(sup[i], dem[j]);
+    W[i][j] += amt;
+    sup[i] -= amt; dem[j] -= amt;
+    basic.push([i, j]);
+    if (sup[i] < EPS && dem[j] < EPS) {
+      sup[i] = 0; dem[j] = 0;
+      if (i < n-1 && j < n-1) { i++; }
+      else if (i < n-1) { i++; }
+      else { j++; }
+    } else if (sup[i] < EPS) {
+      sup[i] = 0; i++;
+    } else {
+      dem[j] = 0; j++;
+    }
+  }
+  // Ensure 2n-1 basic cells (handle degeneracy)
+  var needed = 2*n - 1;
+  for (var ii = 0; ii < n && basic.length < needed; ii++) {
+    for (var jj = 0; jj < n && basic.length < needed; jj++) {
+      var found = false;
+      for (var k = 0; k < basic.length; k++)
+        if (basic[k][0]===ii && basic[k][1]===jj) { found=true; break; }
+      if (!found) basic.push([ii,jj]);
+    }
+  }
+  return { W: W, basic: basic };
+}
+
+/* ═══════════════════════════════════════════
+   FIND LOOP  (stepping stone / MODI)
+═══════════════════════════════════════════ */
+function findLoop(basic, si, sj) {
+  function isBasic(i, j) {
+    for (var k = 0; k < basic.length; k++)
+      if (basic[k][0]===i && basic[k][1]===j) return true;
+    return false;
+  }
+  function inPath(path, i, j) {
+    for (var k = 0; k < path.length; k++)
+      if (path[k][0]===i && path[k][1]===j) return true;
+    return false;
+  }
+  /* searchH: path ends at (r,c), look for basic cell in same row */
+  function searchH(path) {
+    var cur = path[path.length-1];
+    var row = cur[0];
+    for (var k = 0; k < basic.length; k++) {
+      var bi=basic[k][0], bj=basic[k][1];
+      if (bi !== row) continue;
+      if (inPath(path, bi, bj)) continue;
+      var newPath = path.concat([[bi,bj]]);
+      /* closing move: is bj === sj? Then next V move can close to (si,sj) */
+      if (bj === sj && path.length >= 3) return newPath;
+      var res = searchV(newPath);
+      if (res) return res;
+    }
+    return null;
+  }
+  /* searchV: path ends at (r,c), look for basic cell in same column */
+  function searchV(path) {
+    var cur = path[path.length-1];
+    var col = cur[1];
+    for (var k = 0; k < basic.length; k++) {
+      var bi=basic[k][0], bj=basic[k][1];
+      if (bj !== col) continue;
+      if (inPath(path, bi, bj)) continue;
+      var newPath = path.concat([[bi,bj]]);
+      /* closing move: if bi === si we're back to start row, H search might close */
+      var res = searchH(newPath);
+      if (res) return res;
+    }
+    return null;
+  }
+  return searchH([[si, sj]]);
+}
+
+/* ═══════════════════════════════════════════
+   MODI  (u-v method)  →  optimal transport
+═══════════════════════════════════════════ */
+function modiSolve(r, s, C, n) {
+  var nw = northwestCorner(r, s, n);
+  var W = nw.W;
+  var basic = nw.basic.slice();
+  var steps = [];
+  var initCost = transportCost(W, C, n);
+  steps.push({ desc: 'Northwest Corner initial solution', W: cloneW(W,n), cost: initCost });
+
+  for (var iter = 0; iter < 200; iter++) {
+    /* Compute potentials u, v */
+    var u = new Array(n).fill(null);
+    var v = new Array(n).fill(null);
+    u[0] = 0;
+    var prog = true;
+    while (prog) {
+      prog = false;
+      for (var k = 0; k < basic.length; k++) {
+        var bi=basic[k][0], bj=basic[k][1];
+        if (u[bi] !== null && v[bj] === null) { v[bj] = C[bi][bj] - u[bi]; prog=true; }
+        else if (v[bj] !== null && u[bi] === null) { u[bi] = C[bi][bj] - v[bj]; prog=true; }
+      }
+    }
+    /* Find most negative reduced cost */
+    var enterI=-1, enterJ=-1, minRC=-EPS;
+    for (var i=0; i<n; i++) for (var j=0; j<n; j++) {
+      var isB=false;
+      for (var k=0; k<basic.length; k++) if(basic[k][0]===i&&basic[k][1]===j){isB=true;break;}
+      if (!isB && u[i]!==null && v[j]!==null) {
+        var rc = C[i][j] - u[i] - v[j];
+        if (rc < minRC) { minRC=rc; enterI=i; enterJ=j; }
+      }
+    }
+    if (enterI < 0) break; /* Optimal */
+
+    /* Find loop */
+    var loop = findLoop(basic, enterI, enterJ);
+    if (!loop) break;
+
+    /* Minimum on '-' cells (odd indices in loop) */
+    var theta = Infinity;
+    for (var k=1; k<loop.length; k+=2) {
+      if (W[loop[k][0]][loop[k][1]] < theta)
+        theta = W[loop[k][0]][loop[k][1]];
+    }
+
+    /* Update W */
+    for (var k=0; k<loop.length; k++) {
+      if (k%2===0) W[loop[k][0]][loop[k][1]] += theta;
+      else         W[loop[k][0]][loop[k][1]] -= theta;
+    }
+
+    /* Update basis: remove one leaving variable */
+    var leaveIdx = -1, leaveK = -1;
+    for (var k=1; k<loop.length; k+=2) {
+      if (W[loop[k][0]][loop[k][1]] < EPS) {
+        W[loop[k][0]][loop[k][1]] = 0;
+        if (leaveIdx < 0) { leaveIdx = loop[k]; leaveK = k; }
+      }
+    }
+    if (leaveIdx >= 0) {
+      for (var k=0; k<basic.length; k++) {
+        if (basic[k][0]===leaveIdx[0] && basic[k][1]===leaveIdx[1]) {
+          basic.splice(k,1); break;
+        }
+      }
+    }
+    basic.push([enterI, enterJ]);
+
+    var curCost = transportCost(W, C, n);
+    steps.push({
+      desc: 'Enter (' + (enterI+1) + ',' + (enterJ+1) + '), rc=' + fmt2(minRC) + ', θ=' + fmt2(theta),
+      W: cloneW(W,n), cost: curCost
+    });
+  }
+
+  var finalCost = transportCost(W, C, n);
+  return { W: W, cost: finalCost, steps: steps };
+}
+
+function cloneW(W, n) {
+  return W.map(function(r){return r.slice();});
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOM DISTANCE MATRIX
+═══════════════════════════════════════════ */
+function toggleCustomDist() {
+  var val = document.getElementById('costType').value;
+  var div = document.getElementById('customDistDiv');
+  if (div) div.style.display = (val==='custom') ? 'block' : 'none';
+}
+
+function buildCustomDistGrid(n) {
+  var grid = document.getElementById('customDistGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  // Use a plain table for clarity
+  var tbl = document.createElement('table');
+  tbl.style.cssText = 'border-collapse:collapse;font-size:.9rem;';
+
+  // Header row: j = 1 .. n
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  var th0 = document.createElement('th');
+  th0.style.cssText = 'width:52px;';
+  hr.appendChild(th0);
+  for (var j=0; j<n; j++) {
+    var th = document.createElement('th');
+    th.style.cssText = 'width:64px;text-align:center;padding:.2rem .4rem;font-weight:400;font-style:italic;color:var(--s-col);font-size:.82rem;';
+    th.innerHTML = rk('j='+(j+1));
+    hr.appendChild(th);
+  }
+  thead.appendChild(hr);
+  tbl.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var i=0; i<n; i++) {
+    var tr = document.createElement('tr');
+
+    // Row label: i = 1 .. n
+    var tdL = document.createElement('td');
+    tdL.style.cssText = 'text-align:right;padding:.3rem .5rem .3rem 0;font-style:italic;color:var(--r-col);font-size:.82rem;white-space:nowrap;';
+    tdL.innerHTML = rk('i='+(i+1));
+    tr.appendChild(tdL);
+
+    for (var j=0; j<n; j++) {
+      var td = document.createElement('td');
+      td.style.cssText = 'padding:3px 4px;text-align:center;';
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.autocomplete = 'off';
+      inp.style.cssText = 'width:58px;padding:.27rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.9rem;';
+
+      if (i === j) {
+        // Diagonal: always 0, read-only
+        inp.value = '0';
+        inp.readOnly = true;
+        inp.style.background = '#f4f2ee';
+        inp.style.color = '#bbb';
+        inp.style.cursor = 'default';
+      } else if (j > i) {
+        // Upper triangle: editable
+        inp.id = 'd'+i+'_'+j;
+        inp.placeholder = String(Math.abs(i-j));
+        inp.style.background = 'var(--w-bg)';
+        inp.style.borderColor = 'var(--w-col)';
+        (function(nn){ inp.oninput = function(){ syncDistMatrix(nn); }; })(n);
+      } else {
+        // Lower triangle: mirror of upper, read-only
+        inp.id = 'd'+i+'_'+j;
+        inp.readOnly = true;
+        inp.placeholder = '—';
+        inp.style.background = '#f8f6f2';
+        inp.style.color = '#888';
+        inp.style.cursor = 'default';
+        inp.style.borderColor = '#e0dbd3';
+      }
+      td.appendChild(inp);
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  grid.appendChild(tbl);
+}
+
+function syncDistMatrix(n) {
+  /* Mirror upper triangle → lower triangle cells */
+  for (var i=0; i<n; i++) for (var j=i+1; j<n; j++) {
+    var upper = document.getElementById('d'+i+'_'+j);
+    var lower = document.getElementById('d'+j+'_'+i);
+    if (upper && lower) {
+      var v = upper.value.trim();
+      lower.value = v || '';
+      lower.placeholder = upper.placeholder;
+    }
+  }
+
+  /* Check triangle inequality and highlight violating cells */
+  var D = readCustomDist(n);
+  var warn = document.getElementById('triWarning');
+
+  /* Reset cell borders */
+  for (var i=0; i<n; i++) for (var j=i+1; j<n; j++) {
+    var el = document.getElementById('d'+i+'_'+j);
+    if (el) { el.style.borderColor='var(--w-col)'; el.style.background='var(--w-bg)'; }
+  }
+
+  if (!D) {
+    if (warn) warn.style.display = 'none';
+    return;
+  }
+
+  var violated = false;
+  var badPairs = {};
+  for (var i=0; i<n; i++) for (var j=0; j<n; j++) for (var k=0; k<n; k++) {
+    if (D[i][k] > D[i][j] + D[j][k] + 1e-9) {
+      violated = true;
+      /* Mark the offending edges */
+      var key1 = Math.min(i,k)+'_'+Math.max(i,k);
+      var key2 = Math.min(i,j)+'_'+Math.max(i,j);
+      var key3 = Math.min(j,k)+'_'+Math.max(j,k);
+      badPairs[key1] = true; badPairs[key2] = true; badPairs[key3] = true;
+    }
+  }
+  for (var key in badPairs) {
+    var parts = key.split('_');
+    var el = document.getElementById('d'+parts[0]+'_'+parts[1]);
+    if (el) { el.style.borderColor='var(--bad)'; el.style.background='var(--bad-bg)'; }
+  }
+
+  if (warn) {
+    if (violated) {
+      warn.style.display = 'block';
+      warn.textContent = '⚠ Triangle inequality violated: some highlighted entries fail d(i,k) ≤ d(i,j) + d(j,k).';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+}
+
+function readCustomDist(n) {
+  var D = [];
+  for (var i=0; i<n; i++) {
+    var row=[];
+    for (var j=0; j<n; j++) {
+      if (i===j) { row.push(0); continue; }
+      var id = i<j ? 'd'+i+'_'+j : 'd'+j+'_'+i;
+      var el = document.getElementById(id);
+      var v = el ? parseVal(el.value) : Math.abs(i-j);
+      if (isNaN(v) || v<0) return null;
+      row.push(v);
+    }
+    D.push(row);
+  }
+  return D;
+}
+
+function costMatrixFromDist(D, n, p) {
+  return D.map(function(row) { return row.map(function(d){ return Math.pow(d,p); }); });
+}
+
+/* ═══════════════════════════════════════════
+   BUILD ALL OUTPUT
+═══════════════════════════════════════════ */
+var cN = 3;
+var cR = [], cS = [], cC = [], cP = 1;
+
+function buildAll() {
+  var out = document.getElementById('out');
+  out.innerHTML = '';
+
+  var n = cN;
+  var r = [], s = [];
+  for (var i=0; i<n; i++) {
+    var ri = document.getElementById('r'+i);
+    r.push(parseVal(ri ? ri.value : '0'));
+  }
+  for (var j=0; j<n; j++) {
+    var sj = document.getElementById('s'+j);
+    s.push(parseVal(sj ? sj.value : '0'));
+  }
+  var p = parseInt(document.getElementById('pVal').value) || 1;
+  var costType = document.getElementById('costType').value;
+
+  var C;
+  if (costType === 'custom') {
+    var D = readCustomDist(n);
+    if (!D) {
+      out.innerHTML = '<p class="err" style="padding:1rem">Invalid custom distance matrix. All entries must be non-negative numbers.</p>';
+      return;
+    }
+    C = costMatrixFromDist(D, n, p);
+  } else {
+    C = buildCostMatrix(n, p, costType);
+  }
+
+  cR = r; cS = s; cC = C; cP = p; cN = n;
+
+  /* Validate marginals */
+  var rSum = vecSum(r), sSum = vecSum(s);
+  if (Math.abs(rSum-1) > 0.01 || Math.abs(sSum-1) > 0.01) {
+    out.innerHTML = '<p class="err" style="padding:1rem">Both r and s must sum to 1. Currently: sum(r)='+fmt2(rSum)+', sum(s)='+fmt2(sSum)+'.</p>';
+    return;
+  }
+
+  /* Solve optimal */
+  var sol = modiSolve(r, s, C, n);
+
+  /* Build sections */
+  out.appendChild(secConstraintTable(r, s, C, n, p, costType));
+  out.appendChild(secInteractive(r, s, C, n, p, sol));
+  out.appendChild(secExamples(r, s, C, n, p, sol));
+  out.appendChild(secOptimal(r, s, C, n, p, sol));
+  out.appendChild(secVisualize(r, s, n, sol.W));
+}
+
+/* ── Section 1: The constraint table ──────────────── */
+function secConstraintTable(r, s, C, n, p, costType) {
+  var sec = document.createElement('div'); sec.className = 'sec sec-exp';
+  sec.innerHTML = '<div class="sec-hd"><h3>The Transport Problem — Marginal Constraints</h3></div>';
+  var body = document.createElement('div'); body.className = 'sec-body';
+
+  /* The defining formula */
+  var fDiv = document.createElement('div'); fDiv.className = 'formula-row';
+  fDiv.innerHTML = rk(
+    '\\Pi(\\mathbf{r},\\mathbf{s}) = \\left\\{\\mathbf{w} \\in \\mathbb{R}_{\\geq 0}^{'+n+'\\times'+n+'} \\;\\middle|\\;' +
+    '\\mathbf{w}\\mathbf{1} = \\mathbf{r},\\; \\mathbf{w}^{\\prime}\\mathbf{1} = \\mathbf{s}\\right\\}',
+    {displayMode:true});
+  body.appendChild(fDiv);
+
+  /* Constraint table (symbolic) */
+  var tmt = buildTransportTable(null, r, s, C, n, false, false);
+  body.appendChild(tmt);
+
+  /* Cost formula */
+  var costDiv = document.createElement('div'); costDiv.className = 'formula-row';
+  var costTeX = 'W_'+p+'(\\mathbf{r},\\mathbf{s}) = \\left\\{ \\min_{\\mathbf{w}\\in\\Pi(\\mathbf{r},\\mathbf{s})} \\sum_{i,j} d^'+p+'(i,j)\\, w_{ij} \\right\\}^{1/'+p+'}';
+  costDiv.innerHTML = rk(costTeX, {displayMode:true});
+  body.appendChild(costDiv);
+
+  /* Cost matrix display */
+  var cmDiv = document.createElement('div'); cmDiv.style.cssText = 'margin:.5rem 0;overflow-x:auto;';
+  var distLabel = costType==='custom' ? 'c_{ij} = d(i,j)^{'+p+'}\\text{ (custom)}' : 'c_{ij} = |i-j|' + (p>1?'^{'+p+'}':'');
+  var costTeX2 = distLabel + ' = \\begin{pmatrix}';
+  for (var i=0; i<n; i++) {
+    var row = [];
+    for (var j=0; j<n; j++) row.push(fmt2(C[i][j]));
+    costTeX2 += row.join(' & ');
+    if (i < n-1) costTeX2 += ' \\\\ ';
+  }
+  costTeX2 += '\\end{pmatrix}';
+  cmDiv.innerHTML = rk(costTeX2, {displayMode:true});
+  body.appendChild(cmDiv);
+
+  body.appendChild(mkKB('kb-r',
+    '<strong>Reading the table:</strong> Each entry w<sub>ij</sub> represents the fraction of mass moved from location i (in distribution r) to location j (in distribution s). ' +
+    'The row sums must equal r (shown in green on the right) and the column sums must equal s (shown in blue on the bottom). ' +
+    'The total must be 1.<br><br>' +
+    '<strong>Intuition (earth mover\'s distance):</strong> Think of r as a pile of dirt spread across n locations, and s as where you want the dirt to go. ' +
+    'w<sub>ij</sub> is how much dirt moves from i to j. The cost of moving a unit from i to j is |i−j|' + (p>1?'^'+p:'') + '. ' +
+    'W<sub>'+p+'</sub> is the minimum total cost.'));
+
+  sec.appendChild(body); return sec;
+}
+
+/* ── Section 2: Sudoku-style student matrix ────────── */
+function secInteractive(r, s, C, n, p, sol) {
+  var sec = document.createElement('div'); sec.className = 'sec sec-W';
+  sec.innerHTML = '<div class="sec-hd"><h3>Build Your Own Transport Matrix — Sudoku Style</h3></div>';
+  var body = document.createElement('div'); body.className = 'sec-body';
+
+  var m = n - 1; // size of free block
+
+  body.innerHTML =
+    '<p style="margin-bottom:.6rem;font-size:.92rem;color:var(--navy2)">' +
+    'Fill in the <b style="color:var(--w-col)">' + m + '×' + m + ' upper-left block</b> freely (all entries ≥ 0). ' +
+    'The last row and column are <em>forced</em> by the marginal constraints — ' +
+    'the program fills them in automatically, just like Sudoku. ' +
+    'A red warning appears if any partial sum would exceed the budget.</p>';
+
+  /* Build the Sudoku table */
+  body.appendChild(buildSudokuTable(r, s, C, n, p));
+
+  /* Completed full matrix display */
+  var fullDiv = document.createElement('div'); fullDiv.id = 'sudokuFull';
+  fullDiv.style.marginTop = '.8rem';
+  body.appendChild(fullDiv);
+
+  /* Cost / status */
+  var costDiv = document.createElement('div'); costDiv.className = 'cost-display'; costDiv.id = 'sudokuCostDiv';
+  costDiv.innerHTML = '<span class="cost-sub">Fill in the grid above →</span>';
+  body.appendChild(costDiv);
+
+  /* Preset buttons */
+  var btnRow = document.createElement('div'); btnRow.style.cssText = 'display:flex;gap:.6rem;flex-wrap:wrap;margin:.6rem 0;';
+
+  function makePresetBtn(label, W) {
+    var b = document.createElement('button'); b.className = 'btn-ghost btn-sm'; b.textContent = label;
+    b.onclick = function() { loadSudokuPreset(W, r, s, C, n, p); };
+    btnRow.appendChild(b);
+  }
+  makePresetBtn('Load: Northwest Corner', sol.steps[0].W);
+  makePresetBtn('Load: Optimal W*', sol.W);
+  var Wd = diagTransport(r, s, n);
+  if (Wd) makePresetBtn('Load: Stay-in-place (r=s)', Wd);
+  var btn0 = document.createElement('button'); btn0.className = 'btn-ghost btn-sm'; btn0.textContent = 'Clear';
+  btn0.onclick = function() { clearSudoku(n); updateSudoku(r, s, C, n, p); };
+  btnRow.appendChild(btn0);
+  body.appendChild(btnRow);
+
+  body.appendChild(mkKB('kb-W',
+    '<strong>Why only ' + m + '×' + m + ' free entries?</strong> ' +
+    'Once you fix the upper-left (' + m + '×' + m + ') block, every other entry is <em>determined</em>: ' +
+    'w<sub>i,n</sub> = r<sub>i</sub> − Σ<sub>j&lt;n</sub> w<sub>ij</sub> and ' +
+    'w<sub>n,j</sub> = s<sub>j</sub> − Σ<sub>i&lt;n</sub> w<sub>ij</sub>. ' +
+    'The bottom-right corner w<sub>nn</sub> is then forced by both, and the two formulas agree (both equal 1 − (everything else)). ' +
+    'So the feasible set Π(r,s) has exactly <b>' + (m*m) + ' free parameters</b> (subject to non-negativity).<br><br>' +
+    '<strong>The warning:</strong> If a partial row sum exceeds r<sub>i</sub>, the forced entry w<sub>i,n</sub> would go negative — impossible. So we warn you immediately.'));
+
+  sec.appendChild(body); return sec;
+}
+
+/* Build the Sudoku input table */
+function buildSudokuTable(r, s, C, n, p) {
+  var m = n - 1;
+  var wrap = document.createElement('div'); wrap.style.cssText = 'overflow-x:auto;margin:.3rem 0;';
+  var tbl = document.createElement('table'); tbl.className = 'tmt'; tbl.id = 'sudokuTbl';
+
+  /* Header */
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  var th0 = document.createElement('th'); hr.appendChild(th0);
+  for (var j=0; j<n; j++) {
+    var th = document.createElement('th');
+    if (j < m) th.innerHTML = rk('j='+(j+1));
+    else { th.innerHTML = rk('j='+n+' \\;(\\text{forced})'); th.style.color='#888'; th.style.fontStyle='italic'; }
+    hr.appendChild(th);
+  }
+  var thR = document.createElement('th'); thR.innerHTML = rk('\\mathbf{r}_i\\;\\text{budget}'); hr.appendChild(thR);
+  thead.appendChild(hr); tbl.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var i=0; i<n; i++) {
+    var tr = document.createElement('tr');
+    var tdL = document.createElement('td'); tdL.className = 'r-lbl';
+    if (i < m) tdL.innerHTML = rk('i='+(i+1));
+    else { tdL.innerHTML = rk('i='+n+'\\;(\\text{forced})'); tdL.style.fontStyle='italic'; tdL.style.color='#888'; }
+    tr.appendChild(tdL);
+
+    for (var j=0; j<n; j++) {
+      var td = document.createElement('td');
+      var isFree = (i < m && j < m);
+      var isForced = (!isFree);
+      if (isFree) {
+        td.className = 'w-cell';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.id = 'sw'+i+'_'+j;
+        inp.placeholder = '0'; inp.autocomplete = 'off';
+        inp.style.borderColor = '#c8a430';
+        (function(rr,ss,CC,nn,pp){ inp.oninput = function(){ updateSudoku(rr,ss,CC,nn,pp); }; })(r,s,C,n,p);
+        td.appendChild(inp);
+      } else {
+        td.id = 'sf'+i+'_'+j;
+        td.style.cssText = 'background:#f4f2ee;color:#888;font-style:italic;font-size:.85rem;';
+        td.textContent = '—';
+      }
+      tr.appendChild(td);
+    }
+
+    /* Row budget cell */
+    var tdB = document.createElement('td'); tdB.id = 'sb_r'+i;
+    tdB.className = 'row-sum'; tdB.style.minWidth='90px';
+    if (i < m) {
+      tdB.innerHTML = rk('r_{'+(i+1)+'}='+fmt2(r[i]));
+    } else {
+      tdB.innerHTML = rk('r_{'+n+'}='+fmt2(r[n-1])); tdB.style.fontStyle='italic';
+    }
+    tr.appendChild(tdB);
+    tbody.appendChild(tr);
+  }
+
+  /* Column budget row */
+  var trB = document.createElement('tr');
+  var tdBL = document.createElement('td'); tdBL.className = 's-lbl';
+  tdBL.innerHTML = rk('\\mathbf{s}_j\\;\\text{budget}'); trB.appendChild(tdBL);
+  for (var j=0; j<n; j++) {
+    var tdBJ = document.createElement('td'); tdBJ.id = 'sb_c'+j;
+    tdBJ.className = 'col-sum'; tdBJ.style.minWidth='58px';
+    if (j < m) tdBJ.innerHTML = rk('s_{'+(j+1)+'}='+fmt2(s[j]));
+    else { tdBJ.innerHTML = rk('s_{'+n+'}='+fmt2(s[n-1])); tdBJ.style.fontStyle='italic'; }
+    trB.appendChild(tdBJ);
+  }
+  var tdCorner = document.createElement('td'); tdCorner.className = 'cost-cell'; tdCorner.textContent = '1';
+  trB.appendChild(tdCorner);
+  tbody.appendChild(trB);
+
+  tbl.appendChild(tbody);
+  wrap.appendChild(tbl);
+  return wrap;
+}
+
+/* Read the free (n-1)×(n-1) block, fill forced entries, update display */
+function updateSudoku(r, s, C, n, p) {
+  var m = n - 1;
+  /* Read free block */
+  var W = [];
+  for (var i=0; i<n; i++) W.push(new Array(n).fill(0));
+
+  for (var i=0; i<m; i++) for (var j=0; j<m; j++) {
+    var inp = document.getElementById('sw'+i+'_'+j);
+    W[i][j] = inp ? Math.max(0, parseVal(inp.value)) : 0;
+  }
+
+  /* Compute row/col partial sums for the free block */
+  var rowUsed = new Array(n).fill(0);
+  var colUsed = new Array(n).fill(0);
+  for (var i=0; i<m; i++) for (var j=0; j<m; j++) {
+    rowUsed[i] += W[i][j]; colUsed[j] += W[i][j];
+  }
+
+  /* Check for row budget violations */
+  var rowErr = new Array(n).fill(false);
+  var colErr = new Array(n).fill(false);
+  for (var i=0; i<m; i++) if (rowUsed[i] > r[i] + 1e-9) rowErr[i] = true;
+  for (var j=0; j<m; j++) if (colUsed[j] > s[j] + 1e-9) colErr[j] = true;
+
+  /* Forced last column: w[i][n-1] = r[i] - rowUsed[i] */
+  for (var i=0; i<m; i++) {
+    W[i][m] = Math.max(0, r[i] - rowUsed[i]);
+  }
+  /* Forced last row: w[n-1][j] = s[j] - colUsed[j] */
+  for (var j=0; j<m; j++) {
+    W[m][j] = Math.max(0, s[j] - colUsed[j]);
+  }
+  /* Corner w[n-1][n-1] = r[n-1] - sum of last forced row */
+  var lastRowSum = 0;
+  for (var j=0; j<m; j++) lastRowSum += W[m][j];
+  W[m][m] = Math.max(0, r[m] - lastRowSum);
+
+  /* Update forced cell displays */
+  for (var i=0; i<m; i++) {
+    var td = document.getElementById('sf'+i+'_'+m);
+    if (td) {
+      td.textContent = fmt2(W[i][m]);
+      td.style.color = rowErr[i] ? 'var(--bad)' : '#555';
+      td.style.background = rowErr[i] ? 'var(--bad-bg)' : '#f4f2ee';
+    }
+  }
+  for (var j=0; j<m; j++) {
+    var td = document.getElementById('sf'+m+'_'+j);
+    if (td) {
+      td.textContent = fmt2(W[m][j]);
+      td.style.color = colErr[j] ? 'var(--bad)' : '#555';
+      td.style.background = colErr[j] ? 'var(--bad-bg)' : '#f4f2ee';
+    }
+  }
+  var tdCorner = document.getElementById('sf'+m+'_'+m);
+  if (tdCorner) {
+    tdCorner.textContent = fmt2(W[m][m]);
+    tdCorner.style.color = W[m][m] < -1e-9 ? 'var(--bad)' : '#555';
+    tdCorner.style.background = W[m][m] < -1e-9 ? 'var(--bad-bg)' : '#f4f2ee';
+  }
+
+  /* Update row/col budget cells */
+  for (var i=0; i<m; i++) {
+    var td = document.getElementById('sb_r'+i);
+    if (!td) continue;
+    var used = rowUsed[i];
+    var rem = r[i] - used;
+    var pct = r[i] > 1e-9 ? (used/r[i]*100).toFixed(0) : '0';
+    td.className = 'row-sum ' + (rowErr[i] ? 'sum-bad' : (Math.abs(rem)<1e-5?'sum-ok':''));
+    td.innerHTML = rk('r_{'+(i+1)+'}='+fmt2(r[i])) +
+      '<br><small>used: ' + fmt2(used) + (rowErr[i] ? ' ⚠ over budget!' : ' ('+pct+'%)') + '</small>';
+  }
+  /* Last row budget */
+  var tdLR = document.getElementById('sb_r'+m);
+  if (tdLR) {
+    tdLR.className = 'row-sum';
+    tdLR.innerHTML = rk('r_{'+n+'}='+fmt2(r[m]));
+  }
+
+  for (var j=0; j<m; j++) {
+    var td = document.getElementById('sb_c'+j);
+    if (!td) continue;
+    var used = colUsed[j];
+    var rem = s[j] - used;
+    var pct = s[j] > 1e-9 ? (used/s[j]*100).toFixed(0) : '0';
+    td.className = 'col-sum ' + (colErr[j] ? 'sum-bad' : (Math.abs(rem)<1e-5?'sum-ok':''));
+    td.innerHTML = rk('s_{'+(j+1)+'}='+fmt2(s[j])) +
+      '<br><small>used: ' + fmt2(used) + (colErr[j] ? ' ⚠ over!' : ' ('+pct+'%)') + '</small>';
+  }
+  var tdLC = document.getElementById('sb_c'+m);
+  if (tdLC) {
+    tdLC.className = 'col-sum';
+    tdLC.innerHTML = rk('s_{'+n+'}='+fmt2(s[m]));
+  }
+
+  /* Compute cost and feasibility */
+  var anyErr = rowErr.some(Boolean) || colErr.some(Boolean) || W[m][m] < -1e-9;
+  var cost = transportCost(W, C, n);
+  var valid = feasible(W, r, s, n) && !anyErr;
+
+  /* Show completed W */
+  var fullDiv = document.getElementById('sudokuFull');
+  if (fullDiv) {
+    fullDiv.innerHTML = '';
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:.82rem;font-weight:600;color:var(--navy2);margin:.5rem 0 .2rem;';
+    lbl.textContent = 'Complete matrix W (forced entries filled automatically):';
+    fullDiv.appendChild(lbl);
+    fullDiv.appendChild(buildTransportTable(W, r, s, C, n, false, false));
+  }
+
+  /* Cost display */
+  var cd = document.getElementById('sudokuCostDiv');
+  if (cd) {
+    if (anyErr) {
+      cd.innerHTML = '<span class="cost-sub" style="color:var(--bad)">⚠ Over-budget in some cells — reduce values above.</span>';
+    } else {
+      cd.innerHTML =
+        '<span class="cost-val">' + rk('\\sum c_{ij}w_{ij} = ' + fmt(cost,5)) + '</span>' +
+        '<span class="cost-sub ' + (valid?'cost-ok':'') + '">' +
+          (valid ? '✓ Feasible' : '⚠ Check constraints') + '</span>' +
+        '<span class="cost-sub">W<sub>'+p+'</sub> ≤ cost<sup>1/'+p+'</sup> = ' + fmt(Math.pow(Math.max(0,cost),1/p),5) + '</span>';
+    }
+  }
+}
+
+/* Load a full W into the (n-1)×(n-1) free cells */
+function loadSudokuPreset(W, r, s, C, n, p) {
+  var m = n - 1;
+  for (var i=0; i<m; i++) for (var j=0; j<m; j++) {
+    var inp = document.getElementById('sw'+i+'_'+j);
+    if (inp) inp.value = fmt2(W[i][j]);
+  }
+  updateSudoku(r, s, C, n, p);
+}
+
+function clearSudoku(n) {
+  var m = n - 1;
+  for (var i=0; i<m; i++) for (var j=0; j<m; j++) {
+    var inp = document.getElementById('sw'+i+'_'+j);
+    if (inp) inp.value = '';
+  }
+}
+
+function diagTransport(r, s, n) {
+  for (var i=0; i<n; i++) if (Math.abs(r[i]-s[i]) > 1e-5) return null;
+  var W = [];
+  for (var i=0; i<n; i++) { var row=new Array(n).fill(0); row[i]=r[i]; W.push(row); }
+  return W;
+}
+
+/* (kept for compatibility — not used in new interactive section) */
+function loadPreset(W, r, s, C, n, p) { loadSudokuPreset(W, r, s, C, n, p); }
+function updateEditCost(r, s, C, n, p) { updateSudoku(r, s, C, n, p); }
+
+
+
+/* ── Section 3: Example matrices ─────────────────── */
+function secExamples(r, s, C, n, p, sol) {
+  var sec = document.createElement('div'); sec.className = 'sec sec-exp';
+  sec.innerHTML = '<div class="sec-hd"><h3>Three Transport Plans — Comparing Costs</h3></div>';
+  var body = document.createElement('div'); body.className = 'sec-body';
+
+  /* Plan 1: Northwest corner */
+  var Wnw = sol.steps[0].W;
+  var costNW = transportCost(Wnw, C, n);
+
+  /* Plan 2: "Greedy" — send each r[i] to s[i] as much as possible */
+  var Wgr = greedyTransport(r, s, n);
+  var costGR = transportCost(Wgr, C, n);
+
+  /* Plan 3: Optimal */
+  var costOpt = sol.cost;
+
+  var plans = [
+    { label: 'Northwest Corner plan', W: Wnw, cost: costNW },
+    { label: 'Greedy (diagonal-first) plan', W: Wgr, cost: costGR },
+    { label: 'Optimal plan', W: sol.W, cost: costOpt, isOpt: true },
+  ];
+
+  body.innerHTML = '<p style="margin-bottom:.7rem;font-size:.9rem;color:var(--navy2)">Here are three different transport plans for the same marginals. Notice how different plans have different costs — the Wasserstein distance is the <em>minimum</em> over all valid plans.</p>';
+
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;';
+
+  plans.forEach(function(plan) {
+    var col = document.createElement('div'); col.style.cssText = 'flex:1;min-width:200px;';
+    col.innerHTML = '<div style="font-size:.82rem;font-weight:600;color:var(--navy2);margin-bottom:.3rem;">' + plan.label + '</div>';
+    col.appendChild(buildTransportTable(plan.W, r, s, C, n, false, plan.isOpt));
+    var costLine = document.createElement('div');
+    costLine.style.cssText = 'margin-top:.4rem;font-size:.9rem;' + (plan.isOpt ? 'color:var(--opt-col);font-weight:700;' : 'color:var(--w-col);');
+    costLine.innerHTML = rk('\\text{cost} = ' + fmt(plan.cost,5) + (plan.isOpt ? ' \\leftarrow \\text{minimum}' : ''));
+    col.appendChild(costLine);
+    grid.appendChild(col);
+  });
+  body.appendChild(grid);
+
+  sec.appendChild(body); return sec;
+}
+
+function greedyTransport(r, s, n) {
+  var W = [];
+  for (var i=0; i<n; i++) W.push(new Array(n).fill(0));
+  var sup = r.slice(), dem = s.slice();
+  /* Fill diagonal first, then off-diagonal */
+  for (var d=0; d<n; d++) {
+    var amt = Math.min(sup[d], dem[d]);
+    W[d][d] = amt; sup[d] -= amt; dem[d] -= amt;
+  }
+  for (var i=0; i<n; i++) for (var j=0; j<n; j++) {
+    if (i===j) continue;
+    var amt = Math.min(sup[i], dem[j]);
+    if (amt > EPS) { W[i][j] += amt; sup[i] -= amt; dem[j] -= amt; }
+  }
+  return W;
+}
+
+/* ── Section 4: Optimal solution ─────────────────── */
+function secOptimal(r, s, C, n, p, sol) {
+  var sec = document.createElement('div'); sec.className = 'sec sec-opt';
+  sec.innerHTML = '<div class="sec-hd"><h3>Optimal Transport W* — The Wasserstein Distance</h3></div>';
+  var body = document.createElement('div'); body.className = 'sec-body';
+
+  /* Main result */
+  var distP = Math.pow(Math.max(0, sol.cost), 1/p);
+  var fmla = document.createElement('div'); fmla.className = 'formula-row';
+  fmla.innerHTML = rk(
+    'W_'+p+'(\\mathbf{r},\\mathbf{s}) = \\left(\\min_{\\mathbf{w}\\in\\Pi(\\mathbf{r},\\mathbf{s})} \\text{cost}(\\mathbf{w})\\right)^{1/'+p+'} = \\left(' + fmt(sol.cost,6) + '\\right)^{1/'+p+'} = ' + fmt(distP,6),
+    {displayMode:true});
+  body.appendChild(fmla);
+
+  /* Optimal W */
+  body.innerHTML += '<div style="font-size:.82rem;font-weight:600;color:var(--opt-col);margin:.5rem 0 .2rem;">Optimal transport matrix W*:</div>';
+  body.appendChild(buildTransportTable(sol.W, r, s, C, n, false, true));
+
+  /* MODI iterations */
+  if (sol.steps.length > 1) {
+    var iterDiv = document.createElement('div'); iterDiv.className = 'iterations';
+    iterDiv.innerHTML = '<div style="margin:.6rem 0 .2rem;font-size:.82rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em">MODI iterations (transportation simplex):</div>';
+    sol.steps.forEach(function(st, idx) {
+      var sp = document.createElement('span'); sp.className = 'iter-step' + (idx===sol.steps.length-1?' opt':'');
+      sp.textContent = 'Step ' + idx + ': ' + st.desc + ' → cost=' + fmt(st.cost,5);
+      iterDiv.appendChild(sp);
+    });
+    body.appendChild(iterDiv);
+  } else {
+    body.innerHTML += '<div class="iterations"><span class="iter-step opt">Northwest Corner solution was already optimal!</span></div>';
+  }
+
+  body.appendChild(mkKB('kb-opt',
+    '<strong>Algorithm:</strong> We use the Transportation Simplex method (MODI / u-v method). ' +
+    'Step 1: Northwest Corner gives an initial feasible transport plan. ' +
+    'Step 2: Compute dual variables u<sub>i</sub>, v<sub>j</sub> with u<sub>i</sub>+v<sub>j</sub>=c<sub>ij</sub> for basic cells. ' +
+    'Step 3: Check reduced costs d<sub>ij</sub>=c<sub>ij</sub>−u<sub>i</sub>−v<sub>j</sub> for non-basic cells. If all ≥ 0, we are optimal. ' +
+    'Otherwise, pivot on the most negative reduced cost (loop / stepping-stone method).<br><br>' +
+    '<strong>1D shortcut:</strong> For the W₁ distance on {1,…,n} with cost |i−j|, there is a beautiful formula: ' +
+    rk('W_1(\\mathbf{r},\\mathbf{s}) = \\sum_{k=1}^{n-1} |F_r(k) - F_s(k)|') +
+    ' where F<sub>r</sub>, F<sub>s</sub> are the CDFs. The LP gives the same answer.'));
+
+  /* CDF formula for W1 */
+  if (p === 1) {
+    var Fr = [], Fs = [], cdfW1 = 0;
+    var cumR = 0, cumS = 0;
+    var cdfTerms = [];
+    for (var k=0; k<n-1; k++) {
+      cumR += r[k]; cumS += s[k];
+      Fr.push(cumR); Fs.push(cumS);
+      cdfW1 += Math.abs(cumR - cumS);
+      cdfTerms.push('|' + fmt(cumR,3) + '-' + fmt(cumS,3) + '|=' + fmt(Math.abs(cumR-cumS),3));
+    }
+    var cdfDiv = document.createElement('div'); cdfDiv.className = 'formula-row';
+    cdfDiv.innerHTML = rk(
+      'W_1 = \\sum_{k=1}^{n-1}|F_r(k)-F_s(k)| = ' + cdfTerms.join('+') + ' = ' + fmt(cdfW1,5),
+      {displayMode:false});
+    body.appendChild(cdfDiv);
+  }
+
+  sec.appendChild(body); return sec;
+}
+
+/* ── Section 5: Visualization ─────────────────────── */
+function secVisualize(r, s, n, Wopt) {
+  var sec = document.createElement('div'); sec.className = 'sec sec-vis';
+  sec.innerHTML = '<div class="sec-hd"><h3>Flow Diagram — Earth Mover Visualization</h3></div>';
+  var body = document.createElement('div'); body.className = 'sec-body';
+
+  body.innerHTML = '<p style="font-size:.88rem;color:var(--navy2);margin-bottom:.6rem;">Arrow thickness is proportional to the amount of mass transported. The cost of each flow is shown.</p>';
+
+  var svgDiv = document.createElement('div'); svgDiv.className = 'vis-wrap';
+  svgDiv.innerHTML = buildFlowSVG(r, s, n, Wopt, cC, cP);
+  body.appendChild(svgDiv);
+
+  sec.appendChild(body); return sec;
+}
+
+/* ═══════════════════════════════════════════
+   BUILD TRANSPORT TABLE  (read-only or editable)
+═══════════════════════════════════════════ */
+function buildTransportTable(W, r, s, C, n, editable, isOpt) {
+  var tbl = document.createElement('table'); tbl.className = 'tmt';
+
+  /* Header row */
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  var th0 = document.createElement('th'); th0.style.background='#f4f4f0'; hr.appendChild(th0);
+  for (var j=0; j<n; j++) {
+    var th = document.createElement('th');
+    th.innerHTML = rk('j='+(j+1));
+    hr.appendChild(th);
+  }
+  var thR = document.createElement('th'); thR.innerHTML = rk('\\mathbf{r}_i'); hr.appendChild(thR);
+  thead.appendChild(hr); tbl.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var i=0; i<n; i++) {
+    var tr = document.createElement('tr');
+    /* Row label */
+    var tdL = document.createElement('td'); tdL.className = 'r-lbl';
+    tdL.innerHTML = rk('i='+(i+1)); tr.appendChild(tdL);
+    /* W cells */
+    for (var j=0; j<n; j++) {
+      var td = document.createElement('td');
+      var val = W ? W[i][j] : 0;
+      if (editable) {
+        td.className = 'w-cell';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.id = 'w'+i+'_'+j; inp.value = W ? fmt2(val) : '';
+        inp.placeholder = 'w'+(i+1)+(j+1);
+        inp.autocomplete = 'off';
+        /* Capture current r,s,C,n,p for closure */
+        (function(rr,ss,CC,nn,pp) {
+          inp.oninput = function() { updateEditCost(rr,ss,CC,nn,pp); };
+        })(r, s, C, n, cP);
+        td.appendChild(inp);
+      } else {
+        td.className = isOpt ? 'opt-cell' : '';
+        td.textContent = W ? fmt2(val) : 'w'+(i+1)+(j+1);
+        if (!W) {
+          /* Show cost coefficient */
+          var sup = document.createElement('sup');
+          sup.style.cssText = 'font-size:.65rem;color:var(--gray);margin-left:2px;';
+          sup.textContent = 'c='+fmt2(C[i][j]);
+          td.appendChild(sup);
+        }
+      }
+      tr.appendChild(td);
+    }
+    /* Row sum */
+    var tdRS = document.createElement('td');
+    if (editable) {
+      tdRS.id = 'rs'+i;
+      tdRS.className = 'row-sum';
+      tdRS.textContent = fmt2(r[i]) + ' (r)';
+    } else {
+      tdRS.className = 'r-lbl';
+      tdRS.innerHTML = rk(fmt2(r[i]));
+    }
+    tr.appendChild(tdRS);
+    tbody.appendChild(tr);
+  }
+
+  /* Column sum row */
+  var trCS = document.createElement('tr');
+  var tdCSL = document.createElement('td'); tdCSL.className = 's-lbl'; tdCSL.innerHTML = rk('\\mathbf{s}_j'); trCS.appendChild(tdCSL);
+  for (var j=0; j<n; j++) {
+    var tdCS = document.createElement('td');
+    if (editable) {
+      tdCS.id = 'cs'+j;
+      tdCS.className = 'col-sum';
+      tdCS.textContent = fmt2(s[j]) + ' (s)';
+    } else {
+      tdCS.className = 's-lbl';
+      tdCS.innerHTML = rk(fmt2(s[j]));
+    }
+    trCS.appendChild(tdCS);
+  }
+  /* Cost cell */
+  var tdCost = document.createElement('td'); tdCost.className = 'cost-cell';
+  if (W) {
+    var c = transportCost(W, C, n);
+    tdCost.innerHTML = rk('\\text{cost}='+fmt(c,5));
+  } else {
+    tdCost.textContent = '1';
+  }
+  trCS.appendChild(tdCost);
+  tbody.appendChild(trCS);
+  tbl.appendChild(tbody);
+
+  var wrap = document.createElement('div'); wrap.className = 'tmt-wrap';
+  wrap.appendChild(tbl); return wrap;
+}
+
+/* ═══════════════════════════════════════════
+   FLOW DIAGRAM SVG
+═══════════════════════════════════════════ */
+function buildFlowSVG(r, s, n, W, C, p) {
+  var W2 = 700, H2 = 80 + n * 60 + 80;
+  var lx = 80, rx = 560;
+  var barW = 30, maxBar = 140;
+
+  /* Node y-positions */
+  function ypos(i) { return 80 + i * Math.round((H2-160)/(n-1||1)); }
+
+  /* Colors */
+  var COLS = ['#c8a430','#2c7a3a','#2c4a96','#8a1a10','#6a1a80'];
+
+  var svg = '<svg class="flow-svg" viewBox="0 0 '+W2+' '+H2+'" xmlns="http://www.w3.org/2000/svg" style="max-height:'+H2+'px">';
+
+  /* Labels */
+  svg += '<text x="'+(lx-40)+'" y="30" font-family="Playfair Display,serif" font-size="15" fill="#18284a" text-anchor="middle">r (source)</text>';
+  svg += '<text x="'+(rx+50)+'" y="30" font-family="Playfair Display,serif" font-size="15" fill="#18284a" text-anchor="middle">s (target)</text>';
+
+  /* Flow arrows */
+  for (var i=0; i<n; i++) {
+    for (var j=0; j<n; j++) {
+      if (W[i][j] < 0.0005) continue;
+      var y1 = ypos(i), y2 = ypos(j);
+      var thick = Math.max(1, W[i][j] * 60);
+      var col = COLS[i % COLS.length];
+      var alpha = 0.5 + W[i][j] * 0.5;
+      /* Curved arrow */
+      var mx = (lx + rx) / 2;
+      var dy = y2 - y1;
+      var ctrl = mx + (Math.abs(dy) > 30 ? 0 : (i===j?0:60)) ;
+      svg += '<path d="M '+(lx+barW)+' '+y1+' Q '+ctrl+' '+((y1+y2)/2)+' '+(rx-barW)+' '+y2+'"'+
+             ' stroke="'+col+'" stroke-width="'+thick+'" fill="none" stroke-opacity="'+alpha+'"/>'; 
+      /* Label */
+      var lmx = (lx+barW + rx-barW)/2;
+      var lmy = (y1+y2)/2;
+      if (Math.abs(dy) > 20) lmx = ctrl;
+      svg += '<text x="'+lmx+'" y="'+(lmy-3)+'" font-size="10" fill="'+col+'" text-anchor="middle" font-family="Crimson Pro,serif">'+
+             fmt2(W[i][j])+' (c='+fmt2(C[i][j])+')</text>';
+    }
+  }
+
+  /* r bars and labels */
+  for (var i=0; i<n; i++) {
+    var y = ypos(i);
+    var bh = r[i] * maxBar;
+    var col = COLS[i % COLS.length];
+    svg += '<rect x="'+(lx-barW)+'" y="'+(y-bh/2)+'" width="'+barW+'" height="'+bh+'" fill="'+col+'" fill-opacity="0.7" rx="2"/>';
+    svg += '<text x="'+(lx-barW-8)+'" y="'+(y+5)+'" font-size="13" fill="'+col+'" text-anchor="end" font-family="Crimson Pro,serif">'+
+           'r'+(i+1)+'='+fmt2(r[i])+'</text>';
+    /* Circle node */
+    svg += '<circle cx="'+(lx)+'" cy="'+y+'" r="8" fill="'+col+'" fill-opacity="0.3" stroke="'+col+'" stroke-width="1.5"/>';
+  }
+
+  /* s bars and labels */
+  for (var j=0; j<n; j++) {
+    var y = ypos(j);
+    var bh = s[j] * maxBar;
+    var col = '#555';
+    svg += '<rect x="'+rx+'" y="'+(y-bh/2)+'" width="'+barW+'" height="'+bh+'" fill="#2c4a96" fill-opacity="0.5" rx="2"/>';
+    svg += '<text x="'+(rx+barW+8)+'" y="'+(y+5)+'" font-size="13" fill="#2c4a96" text-anchor="start" font-family="Crimson Pro,serif">'+
+           's'+(j+1)+'='+fmt2(s[j])+'</text>';
+    svg += '<circle cx="'+rx+'" cy="'+y+'" r="8" fill="#2c4a96" fill-opacity="0.3" stroke="#2c4a96" stroke-width="1.5"/>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+/* ═══════════════════════════════════════════
+   HELPER
+═══════════════════════════════════════════ */
+function mkKB(cls, html) {
+  var d = document.createElement('div'); d.className = 'kb ' + cls; d.innerHTML = html; return d;
+}
+
+/* ═══════════════════════════════════════════
+   UI  —  BUILD INPUTS
+═══════════════════════════════════════════ */
+var EXAMPLES = [
+  { label: 'Uniform vs shifted', n:3, r:[1/3,1/3,1/3], s:[0,1/3,2/3] },
+  { label: 'Concentrated vs spread', n:4, r:[0,0,1,0], s:[1/4,1/4,1/4,1/4] },
+  { label: 'Nearly same', n:3, r:[0.5,0.3,0.2], s:[0.2,0.4,0.4] },
+  { label: 'Bimodal vs unimodal', n:5, r:[0.4,0.1,0,0.1,0.4], s:[0,0.2,0.6,0.2,0] },
+  { label: 'r = s (zero distance)', n:3, r:[0.3,0.4,0.3], s:[0.3,0.4,0.3] },
+];
+
+function buildExamples() {
+  var row = document.getElementById('exRow'); row.innerHTML = '';
+  EXAMPLES.forEach(function(ex) {
+    var btn = document.createElement('button'); btn.className = 'btn-ghost btn-sm';
+    btn.textContent = ex.label;
+    btn.addEventListener('click', function() { loadExample(ex); });
+    row.appendChild(btn);
+  });
+}
+
+function loadExample(ex) {
+  cN = ex.n;
+  document.getElementById('nSz').value = cN;
+  rebuildInputs();
+  for (var i=0; i<ex.n; i++) {
+    var ri = document.getElementById('r'+i);
+    if (ri) ri.value = parseFloat(ex.r[i].toFixed(4));
+  }
+  for (var j=0; j<ex.n; j++) {
+    var sj = document.getElementById('s'+j);
+    if (sj) sj.value = parseFloat(ex.s[j].toFixed(4));
+  }
+  updateSums();
+}
+
+function rebuildInputs() {
+  cN = Math.min(Math.max(parseInt(document.getElementById('nSz').value)||2, 2), 5);
+  document.getElementById('nSz').value = cN;
+  buildInputs(cN);
+  buildCustomDistGrid(cN);
+}
+
+function buildInputs(n) {
+  var rDiv = document.getElementById('rInputs'); rDiv.innerHTML = '';
+  var sDiv = document.getElementById('sInputs'); sDiv.innerHTML = '';
+
+  for (var i=0; i<n; i++) {
+    var lbl = document.createElement('span'); lbl.className='vlbl';
+    lbl.innerHTML = rk('r_{'+(i+1)+'}');
+    var inp = document.createElement('input'); inp.type='text'; inp.className='vec-inp r-inp';
+    inp.id='r'+i; inp.placeholder='0'; inp.autocomplete='off';
+    inp.oninput = updateSums;
+    rDiv.appendChild(lbl); rDiv.appendChild(inp);
+  }
+  var rBadge = document.createElement('span'); rBadge.id='rSum'; rBadge.className='sum-badge sum-bad'; rBadge.textContent='sum=?';
+  rDiv.appendChild(rBadge);
+
+  for (var j=0; j<n; j++) {
+    var lbl = document.createElement('span'); lbl.className='vlbl';
+    lbl.innerHTML = rk('s_{'+(j+1)+'}');
+    var inp = document.createElement('input'); inp.type='text'; inp.className='vec-inp s-inp';
+    inp.id='s'+j; inp.placeholder='0'; inp.autocomplete='off';
+    inp.oninput = updateSums;
+    sDiv.appendChild(lbl); sDiv.appendChild(inp);
+  }
+  var sBadge = document.createElement('span'); sBadge.id='sSum'; sBadge.className='sum-badge sum-bad'; sBadge.textContent='sum=?';
+  sDiv.appendChild(sBadge);
+}
+
+function updateSums() {
+  var n = cN;
+  var rSum=0, sSum=0;
+  for (var i=0; i<n; i++) { var el=document.getElementById('r'+i); rSum+=parseVal(el?el.value:'0'); }
+  for (var j=0; j<n; j++) { var el=document.getElementById('s'+j); sSum+=parseVal(el?el.value:'0'); }
+  var rb = document.getElementById('rSum');
+  if (rb) { rb.textContent='sum='+fmt(rSum,3); rb.className='sum-badge '+(Math.abs(rSum-1)<0.005?'sum-ok':'sum-bad'); }
+  var sb = document.getElementById('sSum');
+  if (sb) { sb.textContent='sum='+fmt(sSum,3); sb.className='sum-badge '+(Math.abs(sSum-1)<0.005?'sum-ok':'sum-bad'); }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildExamples();
+  buildInputs(3);
+  buildCustomDistGrid(3);
+  loadExample(EXAMPLES[2]);
+});
+</script>
+</body>
+</html>

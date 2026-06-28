@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Handling Sparsity via the Horseshoe — A Walkthrough</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    chtml: { scale: 1.0 }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+  :root {
+    --husky-purple: #4B2E83;
+    --husky-purple-deep: #32145A;
+    --husky-gold: #B7A57A;
+    --metallic-gold: #85754D;
+    --cream: #F5F0E1;
+    --cream-warm: #EFE7D2;
+    --ink: #1A1523;
+    --ink-soft: #3D3447;
+    --rule: rgba(133, 117, 77, 0.35);
+    --margin-text: #6E5A3F;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(75, 46, 131, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(183, 165, 122, 0.06) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  ::selection { background: var(--husky-purple); color: var(--cream); }
+
+  /* ============ MASTHEAD ============ */
+  .masthead {
+    border-bottom: 3px double var(--husky-purple);
+    padding: 32px 0 18px;
+    margin-bottom: 48px;
+    background: linear-gradient(180deg, rgba(75,46,131,0.04), transparent);
+  }
+  .masthead-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .mast-brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 0.32em;
+    color: var(--husky-purple);
+    text-transform: uppercase;
+  }
+  .mast-brand .w {
+    display: inline-block;
+    background: var(--husky-purple);
+    color: var(--husky-gold);
+    padding: 4px 9px;
+    margin-right: 12px;
+    font-style: italic;
+    letter-spacing: 0;
+    font-size: 18px;
+  }
+  .mast-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--metallic-gold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* ============ LAYOUT ============ */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 48px 120px;
+  }
+
+  /* ============ TITLE BLOCK ============ */
+  .title-block {
+    text-align: center;
+    margin-bottom: 80px;
+    padding-bottom: 56px;
+    position: relative;
+  }
+  .title-block::after {
+    content: "✦";
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--metallic-gold);
+    font-size: 16px;
+  }
+  .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--metallic-gold);
+    margin-bottom: 28px;
+  }
+  h1.paper-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(48px, 7vw, 92px);
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    color: var(--husky-purple);
+    margin-bottom: 24px;
+    font-variation-settings: "SOFT" 0, "WONK" 1;
+  }
+  h1.paper-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--metallic-gold);
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+  }
+  .deck {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink-soft);
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.45;
+  }
+  .byline {
+    margin-top: 36px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--margin-text);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .byline span { color: var(--husky-purple); }
+
+  /* ============ SECTIONS ============ */
+  section { margin-bottom: 88px; position: relative; }
+
+  .section-label {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 36px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--husky-gold);
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 1.05;
+    color: var(--husky-purple);
+    letter-spacing: -0.015em;
+  }
+
+  /* ============ PROSE ============ */
+  .prose {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .prose p {
+    margin-bottom: 22px;
+    text-align: justify;
+    hyphens: auto;
+  }
+  .prose p + p { text-indent: 1.6em; }
+  .prose p.lead {
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    text-align: left;
+    text-indent: 0;
+  }
+  .prose p.lead + p { text-indent: 0; }
+
+  /* drop cap */
+  .drop-cap::first-letter {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    float: left;
+    font-size: 80px;
+    line-height: 0.85;
+    padding: 6px 12px 0 0;
+    color: var(--husky-purple);
+    font-variation-settings: "SOFT" 0, "WONK" 1;
+  }
+
+  /* ============ HIGHLIGHTS ============ */
+  strong { font-weight: 600; color: var(--husky-purple-deep); }
+  em.term {
+    font-style: italic;
+    color: var(--metallic-gold);
+    font-weight: 500;
+  }
+
+  /* ============ SUBHEAD ============ */
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 24px;
+    color: var(--husky-purple-deep);
+    margin: 40px 0 16px;
+    letter-spacing: -0.01em;
+  }
+  h3 .ornament {
+    color: var(--husky-gold);
+    font-weight: 400;
+    margin-right: 10px;
+  }
+
+  /* ============ PULL QUOTE ============ */
+  .pullquote {
+    max-width: 820px;
+    margin: 56px auto;
+    padding: 28px 48px;
+    border-left: 4px solid var(--husky-gold);
+    border-right: 4px solid var(--husky-gold);
+    text-align: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.35;
+    color: var(--husky-purple);
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+  }
+  .pullquote::before, .pullquote::after {
+    content: "❦";
+    display: block;
+    color: var(--metallic-gold);
+    font-size: 14px;
+    font-style: normal;
+    margin: 8px 0;
+  }
+
+  /* ============ EQUATION BOX ============ */
+  .equation {
+    margin: 24px 0;
+    padding: 18px 24px;
+    background: rgba(255, 255, 255, 0.5);
+    border-left: 3px solid var(--husky-purple);
+    overflow-x: auto;
+    border-radius: 2px;
+  }
+
+  /* ============ STEP CARDS (MCMC algorithm) ============ */
+  .algorithm {
+    max-width: 820px;
+    margin: 32px auto;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--rule);
+    padding: 32px 40px;
+    position: relative;
+  }
+  .algorithm::before {
+    content: "ALGORITHM 1 — GIBBS SAMPLER FOR THE HORSESHOE";
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--cream);
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--metallic-gold);
+  }
+
+  .step {
+    margin: 24px 0;
+    padding-left: 56px;
+    position: relative;
+  }
+  .step-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    background: var(--husky-purple);
+    color: var(--husky-gold);
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .step h4 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--husky-purple-deep);
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .step p {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  /* ============ INLINE CODE ============ */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.86em;
+    background: rgba(75, 46, 131, 0.08);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--husky-purple-deep);
+  }
+
+  /* ============ EXPERIMENT TABLE ============ */
+  .experiment-block {
+    max-width: 920px;
+    margin: 48px auto;
+  }
+
+  .case-header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+  .case-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--husky-purple);
+    color: var(--husky-gold);
+    padding: 4px 10px;
+    letter-spacing: 0.15em;
+  }
+  .case-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--husky-purple);
+  }
+
+  table.results {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-family: 'Newsreader', serif;
+    font-size: 16px;
+    background: rgba(255,255,255,0.4);
+  }
+  table.results th, table.results td {
+    padding: 12px 18px;
+    text-align: right;
+  }
+  table.results th:first-child, table.results td:first-child {
+    text-align: left;
+    font-style: italic;
+    color: var(--margin-text);
+  }
+  table.results thead th {
+    border-top: 2px solid var(--husky-purple);
+    border-bottom: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--husky-purple);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  table.results tbody tr.dim td {
+    border-bottom: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--margin-text);
+    font-size: 14px;
+  }
+  table.results tbody tr.method-row td {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+  }
+  table.results tbody tr.method-row.lasso td:first-child { color: var(--metallic-gold); font-weight: 600; }
+  table.results tbody tr.method-row.hs td:first-child { color: var(--husky-purple); font-weight: 600; }
+  table.results tbody tr.hs { border-bottom: 2px solid var(--husky-purple); }
+  table.results td.best { color: var(--husky-purple); font-weight: 700; }
+
+  /* ============ CHART ============ */
+  .chart-card {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--rule);
+    padding: 32px;
+    margin: 32px 0;
+    position: relative;
+  }
+  .chart-card::before {
+    content: "FIGURE 1 — MEAN SQUARED ERROR vs DIMENSION";
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--cream);
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--metallic-gold);
+  }
+  .chart-wrap { height: 360px; position: relative; }
+  .chart-caption {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--margin-text);
+    margin-top: 16px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* ============ COMMENTARY ============ */
+  .commentary {
+    max-width: 720px;
+    margin: 32px auto;
+    padding: 24px 32px;
+    background: linear-gradient(180deg, rgba(75,46,131,0.03), rgba(183,165,122,0.04));
+    border-top: 1px solid var(--husky-purple);
+    border-bottom: 1px solid var(--husky-purple);
+  }
+  .commentary-header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--husky-purple);
+    margin-bottom: 14px;
+  }
+  .commentary p {
+    font-size: 17px;
+    margin-bottom: 14px;
+    text-align: left;
+    text-indent: 0;
+  }
+  .commentary p:last-child { margin-bottom: 0; }
+
+  /* ============ FOOTER ============ */
+  .colophon {
+    max-width: 720px;
+    margin: 96px auto 0;
+    padding-top: 32px;
+    border-top: 3px double var(--husky-purple);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--margin-text);
+    letter-spacing: 0.18em;
+    line-height: 2;
+  }
+  .colophon .husky {
+    display: inline-block;
+    margin: 12px 0;
+    color: var(--husky-purple);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  /* mobile */
+  @media (max-width: 700px) {
+    main { padding: 0 24px 80px; }
+    .masthead-inner { padding: 0 24px; }
+    .section-num { font-size: 44px; }
+    .section-title { font-size: 26px; }
+    .pullquote { font-size: 20px; padding: 20px 24px; }
+    .algorithm { padding: 24px 20px; }
+    .step { padding-left: 0; padding-top: 52px; }
+    .step-label { left: 0; top: 0; }
+    .chart-wrap { height: 280px; }
+    table.results { font-size: 13px; }
+    table.results th, table.results td { padding: 8px 10px; }
+    .sampler-panel { padding: 24px 18px; }
+    .sampler-controls { flex-direction: column; align-items: stretch; gap: 14px; }
+    .snap-label { width: 70px; font-size: 10px; }
+  }
+
+  /* ============ INTERACTIVE SAMPLER ============ */
+  .sampler-panel {
+    max-width: 940px;
+    margin: 32px auto;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--rule);
+    padding: 36px 40px 32px;
+    position: relative;
+  }
+  .sampler-panel::before {
+    content: "INTERACTIVE — GIBBS CHAIN, p = 20, n = 24, σ = 1";
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--cream);
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--metallic-gold);
+  }
+
+  .sampler-controls {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .run-button {
+    background: var(--husky-purple);
+    color: var(--husky-gold);
+    border: none;
+    padding: 13px 26px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s ease, transform 0.15s ease;
+    flex-shrink: 0;
+  }
+  .run-button::before {
+    content: "↺ ";
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.4s ease;
+  }
+  .run-button:hover {
+    background: var(--husky-purple-deep);
+  }
+  .run-button:hover::before {
+    transform: rotate(180deg);
+  }
+  .run-button:active { transform: translateY(1px); }
+  .run-button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  .progress-wrap { flex: 1; min-width: 0; }
+  .progress-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--margin-text);
+    margin-bottom: 6px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .progress-label .iter-counter {
+    color: var(--husky-purple);
+    font-weight: 600;
+  }
+  .progress-bar {
+    height: 3px;
+    background: rgba(133, 117, 77, 0.18);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--husky-purple), var(--husky-gold));
+    width: 0%;
+    transition: width 0.08s linear;
+  }
+
+  .snapshots {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .snapshot-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 56px;
+  }
+  .snapshot-row.divider-top {
+    border-top: 1px dashed rgba(133, 117, 77, 0.4);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+  .snap-label {
+    flex-shrink: 0;
+    width: 110px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--margin-text);
+    text-align: right;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+  }
+  .snap-label .iter-num {
+    color: var(--husky-purple);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .snap-label.truth {
+    color: var(--metallic-gold);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .snap-label.estimate {
+    color: var(--husky-purple);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .snapshot-svg {
+    flex: 1;
+    min-width: 0;
+    height: 54px;
+    overflow: visible;
+  }
+
+  .mse-tag {
+    flex-shrink: 0;
+    width: 90px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--margin-text);
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+  .mse-tag .mse-val { color: var(--husky-purple); font-weight: 600; }
+
+  .snapshot-legend {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--margin-text);
+    letter-spacing: 0.06em;
+    flex-wrap: wrap;
+  }
+  .legend-mark {
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .legend-mark.dashed {
+    border: 1px dashed var(--metallic-gold);
+    background: rgba(183, 165, 122, 0.1);
+  }
+  .legend-mark.solid {
+    background: var(--husky-purple);
+    opacity: 0.9;
+  }
+
+  /* ============ FIGURE PANELS (paper plots) ============ */
+  .figure-panel {
+    max-width: 760px;
+    margin: 36px auto;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--rule);
+    padding: 32px 36px 24px;
+    position: relative;
+  }
+  .figure-panel::before {
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--cream);
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--metallic-gold);
+  }
+  .figure-panel.fig1::before { content: "FIGURE 1 — DENSITIES OF SCALE-MIXTURE PRIORS"; }
+  .figure-panel.fig2::before { content: "FIGURE 2 — SHRINKAGE WEIGHT κ ∈ [0, 1]"; }
+  .fig-canvas-wrap { height: 320px; position: relative; }
+  .fig-caption {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--margin-text);
+    margin-top: 14px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* 2x2 kappa grid */
+  .kappa-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .kappa-cell {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--rule);
+    padding: 14px 12px 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  .kappa-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--husky-purple);
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: -0.005em;
+  }
+  .kappa-svg {
+    width: 100%;
+    height: 130px;
+    overflow: visible;
+  }
+  .kappa-axis {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--margin-text);
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+  @media (max-width: 600px) {
+    .kappa-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ============ PRIOR SAMPLER ============ */
+  .prior-sampler {
+    max-width: 880px;
+    margin: 32px auto;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--rule);
+    padding: 36px 40px 32px;
+    position: relative;
+  }
+  .prior-sampler::before {
+    content: "INTERACTIVE — ONE DRAW FROM THE HORSESHOE PRIOR";
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--cream);
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--metallic-gold);
+  }
+
+  .ps-controls {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .ps-controls .stat {
+    flex: 1;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--margin-text);
+    letter-spacing: 0.05em;
+  }
+  .ps-controls .stat .val {
+    color: var(--husky-purple);
+    font-weight: 700;
+    font-size: 14px;
+    margin-left: 6px;
+  }
+
+  .ps-step {
+    margin: 22px 0;
+  }
+  .ps-step-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .ps-step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--husky-purple);
+    color: var(--husky-gold);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ps-step-label {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--husky-purple-deep);
+    flex: 1;
+  }
+  .ps-step-eq {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--margin-text);
+  }
+  .ps-svg {
+    width: 100%;
+    height: 84px;
+    overflow: visible;
+    margin-left: 44px;
+    max-width: calc(100% - 44px);
+  }
+  .ps-tau-display {
+    margin-left: 44px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--husky-purple);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ps-tau-display .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 500;
+    color: var(--ink);
+    margin-left: 6px;
+    font-size: 22px;
+  }
+  .ps-tau-display .note {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--margin-text);
+    margin-left: 12px;
+    font-weight: 400;
+  }
+  @media (max-width: 600px) {
+    .ps-svg, .ps-tau-display { margin-left: 0; max-width: 100%; }
+    .ps-controls { flex-direction: column; align-items: stretch; }
+    .ps-controls .stat { text-align: left; }
+  }
+
+  /* ============ X HEATMAP (inside Gibbs sampler panel) ============ */
+  .x-heatmap {
+    margin: 22px 0 26px;
+    padding: 22px 0 26px;
+    border-top: 1px dashed rgba(133, 117, 77, 0.4);
+    border-bottom: 1px dashed rgba(133, 117, 77, 0.4);
+  }
+  .x-heatmap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .x-heatmap-header .title {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--husky-purple);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .x-heatmap-header .subtitle {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--margin-text);
+    text-transform: uppercase;
+  }
+  .x-heatmap-svg {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .x-heatmap-note {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--margin-text);
+    text-align: center;
+    margin-top: 10px;
+    line-height: 1.45;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="mast-brand"><span class="w">W</span>University of Washington · Department of Statistics</div>
+    <div class="mast-meta">Vol. I &nbsp;·&nbsp; Issue 01 &nbsp;·&nbsp; Sparse Bayesian Methods</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ TITLE BLOCK ============ -->
+  <div class="title-block">
+    <div class="kicker">A walkthrough for undergraduates</div>
+    <h1 class="paper-title">Handling Sparsity<br><em>via the</em> Horseshoe</h1>
+    <p class="deck">On the prior that mimics Bayesian model averaging — and the Markov chain that brings it to life.</p>
+    <div class="byline">After <span>Carvalho · Polson · Scott</span> &nbsp;·&nbsp; AISTATS 2009</div>
+  </div>
+
+  <!-- ============ SECTION I ============ -->
+  <section>
+    <div class="section-label">
+      <span class="section-num">I</span>
+      <h2 class="section-title">The sparsity problem, restated</h2>
+    </div>
+
+    <div class="prose">
+      <p class="lead">Imagine a regression with hundreds of candidate predictors and a quiet suspicion that most of the true coefficients are exactly zero. You want an estimator that does two contradictory things at once: <em class="term">erase the noise</em> and <em class="term">leave the real signals alone</em>.</p>
+
+      <p class="drop-cap">These goals fight each other. Classical regularizers — ridge, the LASSO — have a single shrinkage knob. Turn it up and you successfully kill noise but also crush genuine signals. Turn it down and signals survive, but noise leaks through. Every one-knob method must compromise.</p>
+
+      <p>The model under discussion is the standard linear-Gaussian setup,</p>
+
+      <div class="equation">$$ y \sim N(X\beta,\, \sigma^2 I), \qquad X \in \mathbb{R}^{n \times p}, \quad \beta \in \mathbb{R}^{p} $$</div>
+
+      <p>with the twist that $p$ may be large and $\beta$ is believed to be sparse. From a Bayesian view there are two ways to encode that belief. The first — the <em class="term">discrete mixture</em>, or spike-and-slab — assigns each $\beta_i$ exact probability of being zero. Philosophically clean, computationally vicious: with $p$ predictors there are $2^p$ sparsity patterns to consider. The second — the <em class="term">shrinkage prior</em> — uses a continuous prior centered at zero that pulls estimates inward but never sets them exactly to zero. Easy to fit, but never truly sparse.</p>
+
+      <p>The horseshoe lives in the second camp and tries, remarkably successfully, to behave like the first.</p>
+    </div>
+  </section>
+
+  <!-- ============ SECTION II ============ -->
+  <section>
+    <div class="section-label">
+      <span class="section-num">II</span>
+      <h2 class="section-title">The horseshoe prior</h2>
+    </div>
+
+    <div class="prose">
+      <p>The construction is a two-level scale mixture of normals,</p>
+
+      <div class="equation">$$
+        \begin{aligned}
+          \beta_i \mid \lambda_i, \tau &\sim N\!\big(0,\; \lambda_i^2 \tau^2\big) \\
+          \lambda_i &\sim C^+(0,1) \\
+          \tau &\sim C^+(0,1)
+        \end{aligned}
+      $$</div>
+
+      <p>Each coefficient is normal with its own variance, and each variance has a half-Cauchy distribution. Two scales do all the work: $\tau$ is the <em class="term">global</em> shrinkage parameter, calibrating overall sparsity, and $\lambda_i$ is the <em class="term">local</em> shrinkage parameter, letting individual coefficients escape the global pull. The half-Cauchy is the secret ingredient — its heavy tail means a genuine signal can grab a large $\lambda_i$ and avoid being crushed even when $\tau$ is small.</p>
+
+      <p>The resulting marginal density on $\beta_i$ has two features that no single-knob shrinkage prior can match: an <strong>infinitely tall spike at the origin</strong>, which squashes noise components to zero, and <strong>Cauchy-like flat tails</strong>, which let strong signals survive un-shrunk.</p>
+    </div>
+
+    <div class="figure-panel fig1">
+      <div class="fig-canvas-wrap"><canvas id="fig1Chart"></canvas></div>
+      <p class="fig-caption">The horseshoe prior (purple) compared with the Laplacian (gold, used by the LASSO) and the Student-t with one degree of freedom (slate). All three are symmetric about zero with heavy tails, but only the horseshoe has an unbounded spike at the origin — its solid curve transitions into dashes as it climbs past the chart bounds, signalling the blow-up to infinity as $\beta \to 0$.</p>
+    </div>
+
+    <div class="prose">
+      <h3><span class="ornament">§</span>The horseshoe shape</h3>
+
+      <p>Fix $\sigma = \tau = 1$ and define the shrinkage coefficient</p>
+
+      <div class="equation">$$ \kappa_i = \frac{1}{1 + \lambda_i^2} \in [0,1], \qquad E(\beta_i \mid y_i, \lambda_i) = (1 - \kappa_i)\, y_i. $$</div>
+
+      <p>Then $\kappa_i = 0$ means "no shrinkage, trust the data," and $\kappa_i = 1$ means "total shrinkage to zero." Under $\lambda_i \sim C^+(0,1)$, the induced prior on $\kappa_i$ turns out to be $\mathrm{Beta}(\tfrac{1}{2}, \tfrac{1}{2})$ — a <strong>U-shaped</strong> density that piles probability at <em>both</em> endpoints. That shape resembles a horseshoe, and that is where the prior gets its name.</p>
+
+      <p>Compare this to the Laplacian prior behind the LASSO, whose induced density on $\kappa$ flattens out and never commits enthusiastically to either extreme. It cannot say "this is signal, leave it alone." It cannot say "this is noise, zero it out." It can only compromise.</p>
+    </div>
+
+    <div class="figure-panel fig2">
+      <div class="kappa-grid">
+        <div class="kappa-cell">
+          <div class="kappa-title">Laplacian</div>
+          <svg class="kappa-svg" id="kappaLaplacian" viewBox="0 0 200 130" preserveAspectRatio="none"></svg>
+          <div class="kappa-axis">0 &nbsp;·&nbsp; κ &nbsp;·&nbsp; 1</div>
+        </div>
+        <div class="kappa-cell">
+          <div class="kappa-title">Student-t</div>
+          <svg class="kappa-svg" id="kappaStudent" viewBox="0 0 200 130" preserveAspectRatio="none"></svg>
+          <div class="kappa-axis">0 &nbsp;·&nbsp; κ &nbsp;·&nbsp; 1</div>
+        </div>
+        <div class="kappa-cell">
+          <div class="kappa-title">Strawderman–Berger</div>
+          <svg class="kappa-svg" id="kappaSB" viewBox="0 0 200 130" preserveAspectRatio="none"></svg>
+          <div class="kappa-axis">0 &nbsp;·&nbsp; κ &nbsp;·&nbsp; 1</div>
+        </div>
+        <div class="kappa-cell">
+          <div class="kappa-title">Horseshoe</div>
+          <svg class="kappa-svg" id="kappaHorseshoe" viewBox="0 0 200 130" preserveAspectRatio="none"></svg>
+          <div class="kappa-axis">0 &nbsp;·&nbsp; κ &nbsp;·&nbsp; 1</div>
+        </div>
+      </div>
+      <p class="fig-caption">Induced priors on the shrinkage weight $\kappa \in [0,1]$ for four scale-mixture priors. Only the horseshoe is unbounded at both endpoints — the signature U-shape that lets the model commit decisively to "signal" ($\kappa \approx 0$) or "noise" ($\kappa \approx 1$).</p>
+    </div>
+
+    <div class="prose">
+
+      <div class="pullquote">
+        The horseshoe shrinks <em>globally</em> through $\tau$, yet acts <em>locally</em> through $\lambda_i$.
+      </div>
+
+      <h3><span class="ornament">§</span>Robustness, formally</h3>
+
+      <p>There is a clean identity for the posterior mean: $E(\beta \mid y^\ast) = y^\ast + \frac{d}{dy^\ast} \ln m(y^\ast)$, where $m$ is the marginal of the data. A well-behaved sparse-friendly prior should make that derivative vanish for large $|y^\ast|$ — meaning the estimator stops shrinking when the data shout. The horseshoe satisfies this. The LASSO does <em>not</em>: it shrinks every coefficient by a constant amount regardless of magnitude, and that constant grows precisely when $\tau$ is small. In sparse problems, the LASSO over-shrinks the very signals it most needs to recover.</p>
+    </div>
+  </section>
+
+  <!-- ============ SECTION III — PRIOR SAMPLING ============ -->
+  <section>
+    <div class="section-label">
+      <span class="section-num">III</span>
+      <h2 class="section-title">Sampling from the prior</h2>
+    </div>
+
+    <div class="prose">
+      <p>The horseshoe is a <em class="term">generative</em> model: it gives a recipe for producing a $p$-vector $\beta$ by walking down its hierarchy. Each draw of $\beta$ takes three steps.</p>
+
+      <p>The interactive panel below executes this recipe for $p = 50$. Watch the heavy tails compound: even though each individual draw is innocent, the multiplication $z_i \cdot \lambda_i \cdot \tau$ pulls most coefficients toward zero while occasionally producing one or two large outliers. That is the horseshoe density of Figure 1, materializing one sample at a time.</p>
+    </div>
+
+    <div class="prior-sampler">
+
+      <div class="ps-controls">
+        <button id="priorSampleBtn" class="run-button">Sample β from prior</button>
+        <div class="stat">
+          # large |β<sub>i</sub>| &gt; 2 <span class="val" id="psLargeCount">—</span>
+        </div>
+        <div class="stat">
+          max |β<sub>i</sub>| <span class="val" id="psMaxAbs">—</span>
+        </div>
+      </div>
+
+      <!-- STEP 1: tau -->
+      <div class="ps-step">
+        <div class="ps-step-header">
+          <span class="ps-step-num">1</span>
+          <span class="ps-step-label">Draw the global shrinkage scale</span>
+          <span class="ps-step-eq">$\tau \sim C^+(0,\, 1)$</span>
+        </div>
+        <div class="ps-tau-display">
+          τ &nbsp;<span class="num" id="psTauVal">—</span>
+          <span class="note" id="psTauNote"></span>
+        </div>
+      </div>
+
+      <!-- STEP 2: lambda -->
+      <div class="ps-step">
+        <div class="ps-step-header">
+          <span class="ps-step-num">2</span>
+          <span class="ps-step-label">Draw the local scales</span>
+          <span class="ps-step-eq">$\lambda_i \sim C^+(0,\, 1),\; i = 1, \ldots, 50$</span>
+        </div>
+        <svg class="ps-svg" id="psLambdaSvg" viewBox="0 0 1100 84" preserveAspectRatio="none"></svg>
+      </div>
+
+      <!-- STEP 3: beta -->
+      <div class="ps-step">
+        <div class="ps-step-header">
+          <span class="ps-step-num">3</span>
+          <span class="ps-step-label">Form each coefficient</span>
+          <span class="ps-step-eq">$\beta_i = z_i \cdot \lambda_i \cdot \tau,\quad z_i \sim N(0, 1)$</span>
+        </div>
+        <svg class="ps-svg" id="psBetaSvg" viewBox="0 0 1100 84" preserveAspectRatio="none"></svg>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ SECTION IV ============ -->
+  <section>
+    <div class="section-label">
+      <span class="section-num">IV</span>
+      <h2 class="section-title">Markov chain Monte Carlo</h2>
+    </div>
+
+    <div class="prose">
+      <p>The posterior</p>
+
+      <div class="equation">$$ \pi(\beta, \lambda, \tau, \sigma^2 \mid y) \;\propto\; p(y \mid \beta, \sigma^2)\, \pi(\beta \mid \lambda, \tau)\, \pi(\lambda)\, \pi(\tau)\, \pi(\sigma^2) $$</div>
+
+      <p>has no closed form. We cannot evaluate its normalizing constant, we cannot integrate it analytically, and the parameter space has dimension $2p + 2$. What we <em>can</em> do is evaluate it pointwise up to proportionality. That is exactly the situation <em class="term">Markov chain Monte Carlo</em> was invented for: a family of algorithms that turn "I can evaluate the density up to a constant" into "I can draw samples from it."</p>
+
+      <p>The specific algorithm that suits the horseshoe is the <em class="term">Gibbs sampler</em>. Rather than update the whole vector at once, update one block at a time, each draw coming from that block's <em>full conditional</em> distribution. A theorem of Geman & Geman guarantees that the resulting Markov chain has the target posterior as its stationary distribution; the practical art is choosing blocks whose full conditionals are easy to sample from. The scale-mixture-of-normals representation makes that easy here — conditional on the scales, everything is Gaussian.</p>
+    </div>
+
+    <div class="algorithm">
+
+      <div class="step">
+        <div class="step-label">a</div>
+        <h4>Update $\beta$ given $\lambda, \tau, \sigma^2$</h4>
+        <p>Let $\Lambda = \tau^2\,\mathrm{diag}(\lambda_1^2, \ldots, \lambda_p^2)$. The full conditional is a standard ridge-regression posterior with a per-coefficient penalty:</p>
+        <div class="equation">$$ \beta \mid \cdot \sim N(\mu_\beta, \Sigma_\beta), \quad \Sigma_\beta = \!\left(\frac{X^\top X}{\sigma^2} + \Lambda^{-1}\right)^{\!-1}\!, \quad \mu_\beta = \frac{1}{\sigma^2}\, \Sigma_\beta X^\top y. $$</div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">b</div>
+        <h4>Update $\sigma^2$ given $\beta$</h4>
+        <p>With Jeffreys' prior $\pi(\sigma) \propto 1/\sigma$, the residual sum of squares gives a clean inverse-gamma update:</p>
+        <div class="equation">$$ \sigma^2 \mid \cdot \sim \mathrm{InvGamma}\!\left(\tfrac{n}{2},\; \tfrac{1}{2}\,\|y - X\beta\|^2\right). $$</div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">c</div>
+        <h4>Update each $\lambda_i^2$ via auxiliary variables</h4>
+        <p>The half-Cauchy is not conjugate, so use the identity $\lambda_i^2 \mid \nu_i \sim \mathrm{InvGamma}(\tfrac{1}{2}, 1/\nu_i)$ with $\nu_i \sim \mathrm{InvGamma}(\tfrac{1}{2}, 1)$. Both updates are then conjugate:</p>
+        <div class="equation">$$ \nu_i \mid \cdot \sim \mathrm{InvGamma}\!\left(1,\; 1 + \tfrac{1}{\lambda_i^2}\right), \quad \lambda_i^2 \mid \cdot \sim \mathrm{InvGamma}\!\left(1,\; \tfrac{1}{\nu_i} + \tfrac{\beta_i^2}{2\tau^2}\right). $$</div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">d</div>
+        <h4>Update $\tau^2$ via the same trick</h4>
+        <p>With auxiliary $\xi \sim \mathrm{InvGamma}(\tfrac{1}{2}, 1)$ and $\tau^2 \mid \xi \sim \mathrm{InvGamma}(\tfrac{1}{2}, 1/\xi)$,</p>
+        <div class="equation">$$ \xi \mid \cdot \sim \mathrm{InvGamma}\!\left(1,\; 1 + \tfrac{1}{\tau^2}\right), \quad \tau^2 \mid \cdot \sim \mathrm{InvGamma}\!\left(\tfrac{p+1}{2},\; \tfrac{1}{\xi} + \sum_{i=1}^p \tfrac{\beta_i^2}{2\lambda_i^2}\right). $$</div>
+      </div>
+
+    </div>
+
+    <div class="prose">
+      <p>Iterate steps <code>a</code>–<code>d</code> for $M$ rounds (typically $M \approx 10^4$). Discard the first $B$ samples as burn-in. The remaining $\beta^{(B+1)}, \ldots, \beta^{(M)}$ are correlated draws from the posterior, and the Bayes estimator is their average:</p>
+
+      <div class="equation">$$ \hat\beta_i = \frac{1}{M - B} \sum_{m = B+1}^{M} \beta_i^{(m)}, \qquad \hat\sigma^2 = \frac{1}{M - B} \sum_{m = B+1}^{M} (\sigma^2)^{(m)}. $$</div>
+
+      <p>Beyond point estimates, the chain gives you the full posterior almost for free — credible intervals come from sample quantiles, and the posterior of $\kappa_i$ tells you whether the model thinks coefficient $i$ is signal or noise.</p>
+    </div>
+  </section>
+
+  <!-- ============ SECTION V — EXPERIMENT ============ -->
+  <section>
+    <div class="section-label">
+      <span class="section-num">V</span>
+      <h2 class="section-title">A benchmark: Experiment 2, Case 1</h2>
+    </div>
+
+    <div class="prose">
+      <p>The clearest illustration of the horseshoe's advantage comes from the regression experiment in Carvalho, Polson & Scott (2009). A ten-dimensional vector of true coefficients is fixed, then <strong>padded with $(p - 10)$ zeros</strong> to test how well each method recovers the signal as the ambient dimension grows. Random design matrices are simulated with mildly correlated columns; $y = X\beta + \varepsilon$ with standard-normal noise. Sample size $n$ grows linearly with $p$.</p>
+    </div>
+
+    <div class="experiment-block">
+
+      <div class="case-header">
+        <span class="case-tag">CASE 1</span>
+        <span class="case-title">$\beta_{1:10} = (2, 2, 2, 2, 2, 2, 2, 2, 5, 20)$</span>
+      </div>
+
+      <table class="results">
+        <thead>
+          <tr>
+            <th>&nbsp;</th>
+            <th>p = 20</th>
+            <th>p = 50</th>
+            <th>p = 100</th>
+            <th>p = 200</th>
+            <th>p = 400</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="dim">
+            <td>sample size $n$</td>
+            <td>24</td><td>60</td><td>120</td><td>240</td><td>480</td>
+          </tr>
+          <tr class="method-row lasso">
+            <td>Lasso</td>
+            <td>1.86</td><td>0.78</td><td>0.34</td><td>0.13</td><td>0.12</td>
+          </tr>
+          <tr class="method-row hs">
+            <td>Horseshoe</td>
+            <td class="best">1.28</td>
+            <td class="best">0.33</td>
+            <td class="best">0.11</td>
+            <td class="best">0.06</td>
+            <td class="best">0.07</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="chart-card">
+        <div class="chart-wrap"><canvas id="mseChart"></canvas></div>
+        <p class="chart-caption">Mean squared error in estimating $\beta$ for the two methods, across five values of the ambient dimension $p$. The horseshoe (purple) dominates the LASSO (gold) at every $p$, with the largest margin at moderate dimensions.</p>
+      </div>
+    </div>
+
+    <div class="commentary">
+      <div class="commentary-header">— ANNOTATION —</div>
+      <p>Two structural features of Case 1 explain the gap. First, the vector is genuinely sparse: ten nonzero entries out of $p$, with the sparsity proportion growing from 50% at $p=20$ to 2.5% at $p=400$. The LASSO's single shrinkage parameter has no way to be aggressive enough on the zeros without bleeding into the small signals.</p>
+      <p>Second, and more decisively, one coefficient equals $20$ — an extreme outlier among the signals. The LASSO's bounded-influence bound does not decay to zero, so it shrinks this $20$ as forcefully as it shrinks a $2$. The horseshoe's heavy-tailed local scale $\lambda_i$ lets that one coefficient grow its own private variance and escape the global pull. The Bayes estimator approaches $y_i$ rather than dragging it toward the mean.</p>
+      <p>At $p = 100$ the horseshoe's MSE is roughly one-third of the LASSO's. At $p = 200$ it is less than half. The horseshoe is not winning by a small constant factor — it is winning because it is doing something the LASSO structurally cannot.</p>
+    </div>
+
+  </section>
+
+  <!-- ============ SECTION VI — INTERACTIVE SAMPLER ============ -->
+  <section>
+    <div class="section-label">
+      <span class="section-num">VI</span>
+      <h2 class="section-title">Watch the chain run</h2>
+    </div>
+
+    <div class="prose">
+      <p>The algorithm above is one thing on paper; it is another to see a chain actually move. The panel below simulates Case 1 with $p = 20$, $n = 24$, $\sigma = 1$, generates a fresh design matrix $X$ and response $y$, and then runs the Gibbs sampler from Section IV for $M = 10{,}000$ iterations.</p>
+
+      <p>Five snapshots are displayed in log-spaced order. Iteration $m = 1$ is the very first draw — essentially nonsense, sampled from a near-flat conditional starting at $\beta^{(0)} = 0$. Iterations $m = 10$ and $m = 100$ are burn-in; the chain is finding its way toward the posterior's high-probability region. By $m = 1000$ the chain has converged, and $m = 10{,}000$ is the final draw. The posterior mean $\hat\beta$, averaged over the post-burn-in samples, sits at the bottom and should reliably recover the true $\beta_{1:10} = (2,2,2,2,2,2,2,2,5,20)$ with the remaining ten entries near zero.</p>
+
+      <p>Run the chain again to see a new realization. The same true $\beta$ is used, but a fresh $X$, fresh noise, and fresh random seeds produce a different trajectory each time.</p>
+    </div>
+
+    <div class="sampler-panel">
+
+      <div class="sampler-controls">
+        <button id="runChainBtn" class="run-button">Run new chain</button>
+        <div class="progress-wrap">
+          <div class="progress-label">iteration <span class="iter-counter" id="iterCounter">0</span> / 10,000</div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+
+      <div class="x-heatmap">
+        <div class="x-heatmap-header">
+          <span class="title">design matrix X</span>
+          <span class="subtitle">n = 24 observations  ·  p = 20 predictors  ·  X<sub>ij</sub> ~ N(0, 1)</span>
+        </div>
+        <svg id="xMatrixSvg" class="x-heatmap-svg"></svg>
+        <p class="x-heatmap-note">Each row is one observation's predictor vector; each column is one predictor across all observations. Purple cells are positive entries, gold cells negative, cream near zero. A fresh X is drawn every run.</p>
+      </div>
+
+      <div class="snapshots" id="snapshots">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="snapshot-legend">
+        <span><span class="legend-mark dashed"></span>true coefficient $\beta_i$</span>
+        <span><span class="legend-mark solid"></span>current draw $\beta_i^{(m)}$</span>
+        <span>SSE = $\sum_i (\beta_i^{(m)} - \beta_i)^2$</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ COLOPHON ============ -->
+  <div class="colophon">
+    Set in Fraunces & Newsreader<br>
+    Typography by Google Fonts &nbsp;·&nbsp; Mathematics by MathJax<br>
+    <span class="husky">Go Huskies</span><br>
+    &mdash;
+  </div>
+
+</main>
+
+<script>
+  // ============ CHART ============
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('mseChart');
+    if (!ctx) return;
+
+    const purple = '#4B2E83';
+    const gold = '#85754D';
+    const lightGold = '#B7A57A';
+    const rule = 'rgba(133, 117, 77, 0.25)';
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['20', '50', '100', '200', '400'],
+        datasets: [
+          {
+            label: 'LASSO',
+            data: [1.86, 0.78, 0.34, 0.13, 0.12],
+            borderColor: gold,
+            backgroundColor: 'rgba(133, 117, 77, 0.08)',
+            borderWidth: 2.5,
+            pointBackgroundColor: gold,
+            pointBorderColor: '#F5F0E1',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            tension: 0.25,
+            fill: false
+          },
+          {
+            label: 'Horseshoe',
+            data: [1.28, 0.33, 0.11, 0.06, 0.07],
+            borderColor: purple,
+            backgroundColor: 'rgba(75, 46, 131, 0.08)',
+            borderWidth: 2.5,
+            pointBackgroundColor: purple,
+            pointBorderColor: '#F5F0E1',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            tension: 0.25,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'end',
+            labels: {
+              font: { family: "'JetBrains Mono', monospace", size: 11, weight: '500' },
+              color: '#3D3447',
+              boxWidth: 14,
+              boxHeight: 14,
+              padding: 18,
+              usePointStyle: true,
+              pointStyle: 'rectRounded'
+            }
+          },
+          tooltip: {
+            backgroundColor: '#1A1523',
+            titleFont: { family: "'Fraunces', serif", size: 13, weight: '600' },
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
+            padding: 12,
+            displayColors: true,
+            boxPadding: 6,
+            callbacks: {
+              title: (items) => 'p = ' + items[0].label,
+              label: (ctx) => '  ' + ctx.dataset.label + ' MSE: ' + ctx.parsed.y.toFixed(2)
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'AMBIENT DIMENSION  p',
+              font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+              color: '#85754D',
+              padding: { top: 12 }
+            },
+            grid: { color: rule, drawTicks: false },
+            ticks: {
+              font: { family: "'JetBrains Mono', monospace", size: 12 },
+              color: '#6E5A3F',
+              padding: 8
+            },
+            border: { color: '#4B2E83', width: 1.5 }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'MEAN SQUARED ERROR',
+              font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+              color: '#85754D',
+              padding: { bottom: 12 }
+            },
+            grid: { color: rule, drawTicks: false },
+            ticks: {
+              font: { family: "'JetBrains Mono', monospace", size: 12 },
+              color: '#6E5A3F',
+              padding: 8,
+              callback: (v) => v.toFixed(2)
+            },
+            border: { color: '#4B2E83', width: 1.5 },
+            beginAtZero: true
+          }
+        },
+        interaction: { mode: 'nearest', intersect: false }
+      }
+    });
+  });
+
+  // =====================================================================
+  // ============   INTERACTIVE GIBBS SAMPLER (Section V)   ==============
+  // =====================================================================
+
+  // ---------- Random number generators ----------
+
+  // Standard normal via Box–Muller (with one cached spare)
+  let _normSpare = null;
+  function rnorm() {
+    if (_normSpare !== null) {
+      const x = _normSpare; _normSpare = null; return x;
+    }
+    let u, v, s;
+    do {
+      u = 2 * Math.random() - 1;
+      v = 2 * Math.random() - 1;
+      s = u*u + v*v;
+    } while (s >= 1 || s === 0);
+    s = Math.sqrt(-2 * Math.log(s) / s);
+    _normSpare = v * s;
+    return u * s;
+  }
+
+  // Gamma(shape, rate) via Marsaglia–Tsang (with boost trick for shape < 1)
+  function rgamma(shape, rate) {
+    if (rate === undefined) rate = 1;
+    if (shape < 1) {
+      const u = Math.random();
+      return rgamma(shape + 1, rate) * Math.pow(u, 1 / shape);
+    }
+    const d = shape - 1/3;
+    const c = 1 / Math.sqrt(9 * d);
+    while (true) {
+      let x, v;
+      do { x = rnorm(); v = 1 + c * x; } while (v <= 0);
+      v = v * v * v;
+      const u = Math.random();
+      if (u < 1 - 0.0331 * x * x * x * x) return d * v / rate;
+      if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v / rate;
+    }
+  }
+
+  // Inverse-Gamma(shape, scale): if X ~ Gamma(shape, rate=scale), then 1/X ~ InvGamma(shape, scale)
+  function rinvgamma(shape, scale) {
+    return 1 / rgamma(shape, scale);
+  }
+
+  // ---------- Linear algebra (row-major flat arrays) ----------
+
+  // Cholesky factorization: A = L L^T (A is p×p SPD; returns lower-triangular L)
+  function cholesky(A, p) {
+    const L = new Float64Array(p * p);
+    for (let i = 0; i < p; i++) {
+      for (let j = 0; j <= i; j++) {
+        let s = A[i * p + j];
+        for (let k = 0; k < j; k++) s -= L[i * p + k] * L[j * p + k];
+        if (i === j) L[i * p + i] = Math.sqrt(Math.max(s, 1e-12));
+        else         L[i * p + j] = s / L[j * p + j];
+      }
+    }
+    return L;
+  }
+
+  // Forward solve L y = b  (L lower triangular)
+  function forwardSolve(L, b, p) {
+    const y = new Float64Array(p);
+    for (let i = 0; i < p; i++) {
+      let s = b[i];
+      for (let k = 0; k < i; k++) s -= L[i * p + k] * y[k];
+      y[i] = s / L[i * p + i];
+    }
+    return y;
+  }
+
+  // Back solve L^T x = y
+  function backSolve(L, y, p) {
+    const x = new Float64Array(p);
+    for (let i = p - 1; i >= 0; i--) {
+      let s = y[i];
+      for (let k = i + 1; k < p; k++) s -= L[k * p + i] * x[k];
+      x[i] = s / L[i * p + i];
+    }
+    return x;
+  }
+
+  // ---------- Data simulation ----------
+
+  function simulateData(p, n, betaTrue, sigma) {
+    const X = new Float64Array(n * p);
+    for (let i = 0; i < n * p; i++) X[i] = rnorm();
+
+    const y = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      let mu = 0;
+      for (let j = 0; j < p; j++) mu += X[i * p + j] * betaTrue[j];
+      y[i] = mu + sigma * rnorm();
+    }
+
+    // Pre-compute X^T X and X^T y
+    const XtX = new Float64Array(p * p);
+    for (let i = 0; i < p; i++) {
+      for (let j = 0; j < p; j++) {
+        let s = 0;
+        for (let k = 0; k < n; k++) s += X[k * p + i] * X[k * p + j];
+        XtX[i * p + j] = s;
+      }
+    }
+    const Xty = new Float64Array(p);
+    for (let i = 0; i < p; i++) {
+      let s = 0;
+      for (let k = 0; k < n; k++) s += X[k * p + i] * y[k];
+      Xty[i] = s;
+    }
+
+    return { X, y, XtX, Xty, n, p };
+  }
+
+  // ---------- One Gibbs sweep ----------
+
+  function gibbsStep(state, data) {
+    const { X, y, XtX, Xty, n, p } = data;
+
+    // (a) β | rest  ~  N(μ_β, Σ_β)  with  A = X'X/σ² + Λ⁻¹,  Σ_β = A⁻¹
+    const A = new Float64Array(p * p);
+    const invS2 = 1 / state.sigma2;
+    for (let i = 0; i < p; i++) {
+      for (let j = 0; j < p; j++) A[i * p + j] = XtX[i * p + j] * invS2;
+      A[i * p + i] += 1 / (state.tau2 * state.lambda2[i]);
+    }
+    const L = cholesky(A, p);
+    const rhs = new Float64Array(p);
+    for (let i = 0; i < p; i++) rhs[i] = Xty[i] * invS2;
+    const z   = forwardSolve(L, rhs, p);
+    const mu  = backSolve(L, z, p);
+    const u   = new Float64Array(p);
+    for (let i = 0; i < p; i++) u[i] = rnorm();
+    const dev = backSolve(L, u, p);
+    for (let i = 0; i < p; i++) state.beta[i] = mu[i] + dev[i];
+
+    // (b) σ² | β  ~  InvGamma(n/2, RSS/2)
+    let rss = 0;
+    for (let i = 0; i < n; i++) {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += X[i * p + j] * state.beta[j];
+      const r = y[i] - pred;
+      rss += r * r;
+    }
+    state.sigma2 = rinvgamma(n / 2, rss / 2);
+
+    // (c) ν_i and λ_i² via auxiliary variable trick
+    for (let i = 0; i < p; i++) {
+      state.nu[i]      = rinvgamma(1, 1 + 1 / state.lambda2[i]);
+      state.lambda2[i] = rinvgamma(1, 1 / state.nu[i] + (state.beta[i] * state.beta[i]) / (2 * state.tau2));
+    }
+
+    // (d) ξ and τ²
+    state.xi = rinvgamma(1, 1 + 1 / state.tau2);
+    let sumBL = 0;
+    for (let i = 0; i < p; i++) sumBL += (state.beta[i] * state.beta[i]) / (2 * state.lambda2[i]);
+    state.tau2 = rinvgamma((p + 1) / 2, 1 / state.xi + sumBL);
+  }
+
+  // ---------- Run a full chain (chunked to keep UI responsive) ----------
+
+  function runChain(callbacks) {
+    const p = 20, n = 24, sigma = 1.0;
+    const betaTrue = new Float64Array(p);
+    for (let i = 0; i < 8; i++) betaTrue[i] = 2;
+    betaTrue[8] = 5;
+    betaTrue[9] = 20;
+    // remaining entries are 0
+
+    const data = simulateData(p, n, betaTrue, sigma);
+
+    // Emit the design matrix immediately, before the chunked iterations start,
+    // so the heatmap renders without waiting for the chain to finish.
+    if (callbacks.onSetup) {
+      callbacks.onSetup({ X: data.X, y: data.y, n, p });
+    }
+
+    const state = {
+      beta:    new Float64Array(p),
+      lambda2: new Float64Array(p).fill(1.0),
+      tau2:    1.0,
+      sigma2:  1.0,
+      nu:      new Float64Array(p).fill(1.0),
+      xi:      1.0
+    };
+
+    const M = 10000;
+    const burnIn = 2000;
+    const snapshotIters = new Set([1, 10, 100, 1000, 10000]);
+    const snapshots = {};
+    const betaSum = new Float64Array(p);
+
+    let m = 0;
+    const chunkSize = 250;
+
+    function processChunk() {
+      const end = Math.min(m + chunkSize, M);
+      for (; m < end; m++) {
+        const iter = m + 1;
+        gibbsStep(state, data);
+        if (snapshotIters.has(iter)) {
+          snapshots[iter] = Array.from(state.beta);
+        }
+        if (iter > burnIn) {
+          for (let i = 0; i < p; i++) betaSum[i] += state.beta[i];
+        }
+      }
+      callbacks.onProgress(m, M);
+      if (m < M) {
+        setTimeout(processChunk, 0);
+      } else {
+        const postMean = Array.from(betaSum).map(s => s / (M - burnIn));
+        callbacks.onComplete({
+          betaTrue: Array.from(betaTrue),
+          snapshots,
+          posteriorMean: postMean
+        });
+      }
+    }
+
+    processChunk();
+  }
+
+  // ---------- Rendering ----------
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function sse(beta, betaTrue) {
+    let s = 0;
+    for (let i = 0; i < beta.length; i++) {
+      const d = beta[i] - betaTrue[i];
+      s += d * d;
+    }
+    return s;
+  }
+
+  function renderRow(container, opts) {
+    const { label, beta, betaTrue, classes, drawTruth = true, drawEstimate = true, showSSE = false } = opts;
+    const p = betaTrue.length;
+
+    const row = document.createElement('div');
+    row.className = 'snapshot-row' + (classes ? ' ' + classes : '');
+
+    // label
+    const lblEl = document.createElement('div');
+    lblEl.className = 'snap-label' + (opts.labelClass ? ' ' + opts.labelClass : '');
+    lblEl.innerHTML = label;
+    row.appendChild(lblEl);
+
+    // svg
+    const barW = 22;
+    const gap = 2;
+    const W = p * (barW + gap);
+    const H = 54;
+    const center = H / 2 + 6; // bias a bit toward bottom so positive bars dominate
+    const maxAbs = 24;
+    const scale = (H - 10) / maxAbs;
+
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.classList.add('snapshot-svg');
+
+    // baseline
+    const baseline = document.createElementNS(SVG_NS, 'line');
+    baseline.setAttribute('x1', 0); baseline.setAttribute('x2', W);
+    baseline.setAttribute('y1', center); baseline.setAttribute('y2', center);
+    baseline.setAttribute('stroke', 'rgba(133,117,77,0.35)');
+    baseline.setAttribute('stroke-width', 0.5);
+    svg.appendChild(baseline);
+
+    for (let i = 0; i < p; i++) {
+      const x = i * (barW + gap) + 1;
+      // truth outline
+      if (drawTruth && Math.abs(betaTrue[i]) > 0.01) {
+        const h = Math.min(Math.abs(betaTrue[i]), maxAbs) * scale;
+        const yTop = betaTrue[i] >= 0 ? center - h : center;
+        const r = document.createElementNS(SVG_NS, 'rect');
+        r.setAttribute('x', x); r.setAttribute('y', yTop);
+        r.setAttribute('width', barW); r.setAttribute('height', h);
+        r.setAttribute('fill', 'rgba(183, 165, 122, 0.12)');
+        r.setAttribute('stroke', 'rgba(133, 117, 77, 0.75)');
+        r.setAttribute('stroke-width', 0.9);
+        r.setAttribute('stroke-dasharray', '2.5,2');
+        svg.appendChild(r);
+      }
+      // current draw
+      if (drawEstimate && beta) {
+        const v = beta[i];
+        const h = Math.min(Math.abs(v), maxAbs) * scale;
+        const yTop = v >= 0 ? center - h : center;
+        const r = document.createElementNS(SVG_NS, 'rect');
+        r.setAttribute('x', x); r.setAttribute('y', yTop);
+        r.setAttribute('width', barW); r.setAttribute('height', h);
+        r.setAttribute('fill', opts.estimateColor || 'var(--husky-purple)');
+        r.setAttribute('opacity', opts.estimateOpacity || 0.88);
+        svg.appendChild(r);
+      }
+    }
+
+    row.appendChild(svg);
+
+    if (showSSE && beta) {
+      const tag = document.createElement('div');
+      tag.className = 'mse-tag';
+      const s = sse(beta, betaTrue);
+      tag.innerHTML = `SSE <span class="mse-val">${s.toFixed(2)}</span>`;
+      row.appendChild(tag);
+    } else {
+      const spacer = document.createElement('div');
+      spacer.className = 'mse-tag';
+      row.appendChild(spacer);
+    }
+
+    container.appendChild(row);
+  }
+
+  function renderResults(result) {
+    const container = document.getElementById('snapshots');
+    container.innerHTML = '';
+
+    // truth reference row
+    renderRow(container, {
+      label: 'true &beta;',
+      beta: null,
+      betaTrue: result.betaTrue,
+      drawEstimate: false,
+      labelClass: 'truth'
+    });
+
+    // snapshots
+    const iters = [1, 10, 100, 1000, 10000];
+    iters.forEach((it, idx) => {
+      renderRow(container, {
+        label: `m = <span class="iter-num">${it.toLocaleString()}</span>`,
+        beta: result.snapshots[it],
+        betaTrue: result.betaTrue,
+        classes: idx === 0 ? 'divider-top' : '',
+        showSSE: true
+      });
+    });
+
+    // posterior mean
+    renderRow(container, {
+      label: 'post. mean &beta;&#770;',
+      beta: result.posteriorMean,
+      betaTrue: result.betaTrue,
+      classes: 'divider-top',
+      labelClass: 'estimate',
+      estimateOpacity: 1.0,
+      showSSE: true
+    });
+  }
+
+  // ---------- Diverging color scale for the design matrix ----------
+  // Gold (#85754D) at -3 → cream (#F5F0E1) at 0 → husky purple (#4B2E83) at +3.
+  function xValueToColor(v) {
+    const c = Math.max(-3, Math.min(3, v));
+    const t = (c + 3) / 6;     // [0, 1]
+    const stops = [
+      [0.0, [133, 117,  77]],   // metallic gold
+      [0.5, [245, 240, 225]],   // cream
+      [1.0, [ 75,  46, 131]]    // husky purple
+    ];
+    let lo = stops[0], hi = stops[stops.length - 1];
+    for (let k = 1; k < stops.length; k++) {
+      if (t <= stops[k][0]) { hi = stops[k]; lo = stops[k - 1]; break; }
+    }
+    const u = (t - lo[0]) / (hi[0] - lo[0]);
+    const r = Math.round(lo[1][0] + (hi[1][0] - lo[1][0]) * u);
+    const g = Math.round(lo[1][1] + (hi[1][1] - lo[1][1]) * u);
+    const b = Math.round(lo[1][2] + (hi[1][2] - lo[1][2]) * u);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  // ---------- Render X as a heatmap ----------
+  function renderXMatrix(X, n, p) {
+    const svg = document.getElementById('xMatrixSvg');
+    if (!svg) return;
+    svg.innerHTML = '';
+
+    const cellW = 24, cellH = 14;
+    const padTop = 30, padLeft = 38, padRight = 84, padBottom = 14;
+    const innerW = p * cellW;
+    const innerH = n * cellH;
+    const W = padLeft + innerW + padRight;
+    const H = padTop + innerH + padBottom;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    // === Heatmap cells ===
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < p; j++) {
+        const v = X[i * p + j];
+        const rect = document.createElementNS(SVG_NS, 'rect');
+        rect.setAttribute('x', padLeft + j * cellW);
+        rect.setAttribute('y', padTop + i * cellH);
+        rect.setAttribute('width', cellW);
+        rect.setAttribute('height', cellH);
+        rect.setAttribute('fill', xValueToColor(v));
+        svg.appendChild(rect);
+      }
+    }
+
+    // === Matrix border ===
+    const border = document.createElementNS(SVG_NS, 'rect');
+    border.setAttribute('x', padLeft);
+    border.setAttribute('y', padTop);
+    border.setAttribute('width', innerW);
+    border.setAttribute('height', innerH);
+    border.setAttribute('fill', 'none');
+    border.setAttribute('stroke', '#4B2E83');
+    border.setAttribute('stroke-width', 1);
+    svg.appendChild(border);
+
+    // === Top axis: predictor index (columns) ===
+    const colLabels = [1, 5, 10, 15, 20];
+    colLabels.forEach(j => {
+      const t = document.createElementNS(SVG_NS, 'text');
+      t.setAttribute('x', padLeft + (j - 0.5) * cellW);
+      t.setAttribute('y', padTop - 8);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', "'JetBrains Mono', monospace");
+      t.setAttribute('font-size', 9);
+      t.setAttribute('fill', '#85754D');
+      t.textContent = j;
+      svg.appendChild(t);
+      const tick = document.createElementNS(SVG_NS, 'line');
+      const tx = padLeft + (j - 0.5) * cellW;
+      tick.setAttribute('x1', tx); tick.setAttribute('x2', tx);
+      tick.setAttribute('y1', padTop - 4); tick.setAttribute('y2', padTop - 1);
+      tick.setAttribute('stroke', '#85754D');
+      tick.setAttribute('stroke-width', 0.6);
+      svg.appendChild(tick);
+    });
+    const topCap = document.createElementNS(SVG_NS, 'text');
+    topCap.setAttribute('x', padLeft - 6);
+    topCap.setAttribute('y', padTop - 8);
+    topCap.setAttribute('text-anchor', 'end');
+    topCap.setAttribute('font-family', "'Fraunces', serif");
+    topCap.setAttribute('font-style', 'italic');
+    topCap.setAttribute('font-size', 12);
+    topCap.setAttribute('fill', '#85754D');
+    topCap.textContent = 'j';
+    svg.appendChild(topCap);
+
+    // === Left axis: observation index (rows) ===
+    const rowLabels = [1, 6, 12, 18, 24];
+    rowLabels.forEach(i => {
+      const t = document.createElementNS(SVG_NS, 'text');
+      t.setAttribute('x', padLeft - 8);
+      t.setAttribute('y', padTop + (i - 0.5) * cellH + 3.2);
+      t.setAttribute('text-anchor', 'end');
+      t.setAttribute('font-family', "'JetBrains Mono', monospace");
+      t.setAttribute('font-size', 9);
+      t.setAttribute('fill', '#85754D');
+      t.textContent = i;
+      svg.appendChild(t);
+      const tick = document.createElementNS(SVG_NS, 'line');
+      const ty = padTop + (i - 0.5) * cellH;
+      tick.setAttribute('x1', padLeft - 4); tick.setAttribute('x2', padLeft - 1);
+      tick.setAttribute('y1', ty); tick.setAttribute('y2', ty);
+      tick.setAttribute('stroke', '#85754D');
+      tick.setAttribute('stroke-width', 0.6);
+      svg.appendChild(tick);
+    });
+    const leftCap = document.createElementNS(SVG_NS, 'text');
+    leftCap.setAttribute('x', padLeft - 26);
+    leftCap.setAttribute('y', padTop + innerH / 2 + 4);
+    leftCap.setAttribute('text-anchor', 'middle');
+    leftCap.setAttribute('font-family', "'Fraunces', serif");
+    leftCap.setAttribute('font-style', 'italic');
+    leftCap.setAttribute('font-size', 12);
+    leftCap.setAttribute('fill', '#85754D');
+    leftCap.textContent = 'i';
+    svg.appendChild(leftCap);
+
+    // === Color scale legend ===
+    const legendX = padLeft + innerW + 26;
+    const legendY = padTop;
+    const legendW = 12;
+    const legendH = innerH;
+    const nGrad = 80;
+    for (let k = 0; k < nGrad; k++) {
+      const tt = 1 - k / (nGrad - 1);     // top → +3, bottom → -3
+      const v = -3 + 6 * tt;
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', legendX);
+      rect.setAttribute('y', legendY + (k / nGrad) * legendH);
+      rect.setAttribute('width', legendW);
+      rect.setAttribute('height', legendH / nGrad + 0.5);
+      rect.setAttribute('fill', xValueToColor(v));
+      svg.appendChild(rect);
+    }
+    const legBorder = document.createElementNS(SVG_NS, 'rect');
+    legBorder.setAttribute('x', legendX);
+    legBorder.setAttribute('y', legendY);
+    legBorder.setAttribute('width', legendW);
+    legBorder.setAttribute('height', legendH);
+    legBorder.setAttribute('fill', 'none');
+    legBorder.setAttribute('stroke', '#85754D');
+    legBorder.setAttribute('stroke-width', 0.5);
+    svg.appendChild(legBorder);
+
+    [3, 2, 1, 0, -1, -2, -3].forEach(v => {
+      const yPos = legendY + ((3 - v) / 6) * legendH;
+      const tick = document.createElementNS(SVG_NS, 'line');
+      tick.setAttribute('x1', legendX + legendW);
+      tick.setAttribute('x2', legendX + legendW + 3);
+      tick.setAttribute('y1', yPos); tick.setAttribute('y2', yPos);
+      tick.setAttribute('stroke', '#85754D');
+      tick.setAttribute('stroke-width', 0.5);
+      svg.appendChild(tick);
+
+      const lbl = document.createElementNS(SVG_NS, 'text');
+      lbl.setAttribute('x', legendX + legendW + 6);
+      lbl.setAttribute('y', yPos + 3);
+      lbl.setAttribute('font-family', "'JetBrains Mono', monospace");
+      lbl.setAttribute('font-size', 9);
+      lbl.setAttribute('fill', '#85754D');
+      lbl.textContent = (v > 0 ? '+' : '') + v;
+      svg.appendChild(lbl);
+    });
+
+    const legCap = document.createElementNS(SVG_NS, 'text');
+    legCap.setAttribute('x', legendX + legendW / 2);
+    legCap.setAttribute('y', legendY - 10);
+    legCap.setAttribute('text-anchor', 'middle');
+    legCap.setAttribute('font-family', "'Fraunces', serif");
+    legCap.setAttribute('font-style', 'italic');
+    legCap.setAttribute('font-size', 11);
+    legCap.setAttribute('fill', '#85754D');
+    legCap.textContent = 'X[i,j]';
+    svg.appendChild(legCap);
+  }
+
+  // ---------- Wire up the button ----------
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('runChainBtn');
+    const counter = document.getElementById('iterCounter');
+    const fill = document.getElementById('progressFill');
+    if (!btn) return;
+
+    function go() {
+      btn.disabled = true;
+      btn.textContent = 'sampling…';
+      counter.textContent = '0';
+      fill.style.width = '0%';
+
+      runChain({
+        onSetup({ X, n, p }) {
+          renderXMatrix(X, n, p);
+        },
+        onProgress(m, M) {
+          counter.textContent = m.toLocaleString();
+          fill.style.width = (100 * m / M).toFixed(1) + '%';
+        },
+        onComplete(result) {
+          renderResults(result);
+          btn.disabled = false;
+          btn.textContent = 'Run new chain';
+          counter.textContent = M_TOTAL.toLocaleString();
+          fill.style.width = '100%';
+        }
+      });
+    }
+
+    const M_TOTAL = 10000;
+    // auto-run once on load
+    go();
+    btn.addEventListener('click', go);
+  });
+
+  // =====================================================================
+  // ===========   FIGURES 1 & 2:   PRIOR + κ DENSITY PLOTS   ============
+  // =====================================================================
+
+  // ---- Density functions ----
+
+  function dnorm(x, sd) {
+    return Math.exp(-x*x / (2*sd*sd)) / (sd * Math.sqrt(2*Math.PI));
+  }
+
+  // Horseshoe density at β (exact, via numerical integration of the scale mixture).
+  // π_HS(β) = ∫₀^∞ φ(β; 0, λ²) · 2 / (π (1 + λ²)) dλ
+  // Use substitution λ = tan(u), u ∈ (0, π/2), to get a bounded integral.
+  function dHorseshoe(beta) {
+    let s = 0;
+    const N = 300;
+    const du = (Math.PI / 2) / N;
+    for (let k = 0; k < N; k++) {
+      const u = (k + 0.5) * du;
+      const lam = Math.tan(u);
+      if (!isFinite(lam) || lam < 1e-10) continue;
+      // φ(β; 0, λ²) · (2/π) du   (1+λ² cancels with the Jacobian)
+      s += dnorm(beta, lam) * (2 / Math.PI) * du;
+    }
+    return s;
+  }
+
+  // Upper-bound approximation valid near 0:  (1/√(2π)) · log(1 + 2/β²)
+  function dHorseshoeApprox(beta) {
+    const b2 = beta*beta;
+    return (1 / Math.sqrt(2*Math.PI)) * Math.log(1 + 2 / (b2 + 1e-12));
+  }
+
+  function dLaplace(beta) {
+    return 0.5 * Math.exp(-Math.abs(beta));
+  }
+
+  // Cauchy = Student-t(df=1)
+  function dCauchy(beta) {
+    return 1 / (Math.PI * (1 + beta*beta));
+  }
+
+  // ---- Figure 1: prior densities on β ----
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('fig1Chart');
+    if (!canvas) return;
+
+    const beta = [];
+    const N = 281;
+    for (let i = 0; i < N; i++) beta.push(-3.5 + 7 * i / (N - 1));
+
+    // Evaluate the horseshoe density once on the whole grid,
+    // then split *the same curve* into a solid segment (the bulk)
+    // and a dashed segment (the spike near 0).
+    const hsVals = beta.map(b => dHorseshoe(b));
+    const split = 0.55;        // y-value where solid hands off to dashed
+    const overlap = 0.04;      // small overlap so the two segments visually meet
+    const hsSolid  = hsVals.map(v => v <= split + overlap ? v : null);
+    const hsDashed = hsVals.map(v => v >= split - overlap ? v : null);
+
+    const lapVals = beta.map(b => dLaplace(b));
+    const tVals   = beta.map(b => dCauchy(b));
+
+    const purple = '#4B2E83';
+    const gold = '#85754D';
+    const slate = '#4E5A78';
+    const rule = 'rgba(133,117,77,0.22)';
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: beta.map(b => b.toFixed(3)),
+        datasets: [
+          {
+            label: 'Horseshoe',
+            data: hsSolid,
+            borderColor: purple,
+            borderWidth: 2.2,
+            pointRadius: 0,
+            tension: 0,
+            spanGaps: false
+          },
+          {
+            // Same curve, dashed extension into the spike — hidden from legend.
+            label: '_hsSpike',
+            data: hsDashed,
+            borderColor: purple,
+            borderWidth: 2.2,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            tension: 0,
+            spanGaps: false
+          },
+          {
+            label: 'Laplacian',
+            data: lapVals,
+            borderColor: gold,
+            borderWidth: 2,
+            borderDash: [7, 4],
+            pointRadius: 0,
+            tension: 0.25
+          },
+          {
+            label: 'Student-t  (df = 1)',
+            data: tVals,
+            borderColor: slate,
+            borderWidth: 2,
+            borderDash: [3, 3, 7, 3],
+            pointRadius: 0,
+            tension: 0.25
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        clip: { left: 0, top: 0, right: 0, bottom: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'end',
+            labels: {
+              font: { family: "'JetBrains Mono', monospace", size: 11, weight: '500' },
+              color: '#3D3447',
+              boxWidth: 22,
+              boxHeight: 2,
+              padding: 14,
+              usePointStyle: false,
+              filter: (item) => !item.text.startsWith('_')
+            }
+          },
+          tooltip: { enabled: false }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'β',
+              font: { family: "'Fraunces', serif", size: 16, weight: '500', style: 'italic' },
+              color: '#85754D',
+              padding: { top: 8 }
+            },
+            grid: { color: rule, drawTicks: false },
+            ticks: {
+              font: { family: "'JetBrains Mono', monospace", size: 11 },
+              color: '#6E5A3F',
+              padding: 6,
+              callback: function(_, idx) {
+                const v = parseFloat(this.getLabelForValue(idx));
+                if (Math.abs(v - Math.round(v)) < 0.04) return v.toFixed(0);
+                return '';
+              },
+              maxRotation: 0,
+              autoSkip: false
+            },
+            border: { color: purple, width: 1.4 }
+          },
+          y: {
+            min: 0,
+            max: 0.72,
+            title: {
+              display: true,
+              text: 'density',
+              font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+              color: '#85754D'
+            },
+            grid: { color: rule, drawTicks: false },
+            ticks: {
+              font: { family: "'JetBrains Mono', monospace", size: 11 },
+              color: '#6E5A3F',
+              padding: 6,
+              stepSize: 0.1,
+              callback: (v) => v.toFixed(1)
+            },
+            border: { color: purple, width: 1.4 }
+          }
+        }
+      }
+    });
+  });
+
+  // ---- Figure 2: κ-density panels (raw SVG paths) ----
+
+  function buildPath(xs, ys, W, H, padX, padTop, padBot, maxY) {
+    const xMin = 0, xMax = 1;
+    const innerW = W - 2 * padX;
+    const innerH = H - padTop - padBot;
+    let d = '';
+    let started = false;
+    for (let i = 0; i < xs.length; i++) {
+      const yv = ys[i];
+      if (!isFinite(yv) || yv < 0) { started = false; continue; }
+      const yClip = Math.min(yv, maxY);
+      const px = padX + ((xs[i] - xMin) / (xMax - xMin)) * innerW;
+      const py = padTop + innerH - (yClip / maxY) * innerH;
+      d += (started ? ' L ' : 'M ') + px.toFixed(2) + ' ' + py.toFixed(2);
+      started = true;
+    }
+    return d;
+  }
+
+  function drawKappaPanel(svgId, xs, ys, maxY) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    const W = 200, H = 130;
+    const padX = 10, padTop = 8, padBot = 14;
+
+    svg.innerHTML = '';
+
+    // axis (bottom)
+    const NS = 'http://www.w3.org/2000/svg';
+    const axis = document.createElementNS(NS, 'line');
+    axis.setAttribute('x1', padX);
+    axis.setAttribute('x2', W - padX);
+    axis.setAttribute('y1', H - padBot);
+    axis.setAttribute('y2', H - padBot);
+    axis.setAttribute('stroke', '#4B2E83');
+    axis.setAttribute('stroke-width', '1');
+    svg.appendChild(axis);
+
+    // tick at 0.5
+    const tick = document.createElementNS(NS, 'line');
+    const tx = padX + (W - 2*padX) * 0.5;
+    tick.setAttribute('x1', tx); tick.setAttribute('x2', tx);
+    tick.setAttribute('y1', H - padBot); tick.setAttribute('y2', H - padBot + 4);
+    tick.setAttribute('stroke', '#85754D'); tick.setAttribute('stroke-width', '0.8');
+    svg.appendChild(tick);
+
+    // density curve
+    const d = buildPath(xs, ys, W, H, padX, padTop, padBot, maxY);
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#4B2E83');
+    path.setAttribute('stroke-width', '1.8');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+
+    // soft fill under the curve
+    const fillPath = document.createElementNS(NS, 'path');
+    const baselineY = H - padBot;
+    const firstX = padX, lastX = W - padX;
+    fillPath.setAttribute('d', d + ` L ${lastX} ${baselineY} L ${firstX} ${baselineY} Z`);
+    fillPath.setAttribute('fill', 'rgba(75, 46, 131, 0.07)');
+    fillPath.setAttribute('stroke', 'none');
+    svg.insertBefore(fillPath, path);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // κ grid: κ ∈ (0, 1) with denser sampling near endpoints
+    const N = 200;
+    const kappas = [];
+    for (let i = 0; i < N; i++) {
+      // dense near 0 and 1 using a symmetric power-mapping
+      const u = (i + 0.5) / N;
+      // map u via 0.5 - 0.5*cos(πu) doesn't densify endpoints; use beta-like spacing
+      kappas.push(u);
+    }
+
+    // 1) Horseshoe: κ ~ Beta(1/2, 1/2), density = 1/(π · √(κ(1-κ)))
+    const hsKappa = kappas.map(k => {
+      if (k <= 0.005 || k >= 0.995) return 4.2;  // visual cap
+      return 1 / (Math.PI * Math.sqrt(k * (1 - k)));
+    });
+
+    // 2) Strawderman–Berger: κ ~ Beta(1/2, 1), density = (1/2) κ^{-1/2}
+    const sbKappa = kappas.map(k => {
+      if (k <= 0.003) return 6.0;
+      return 0.5 / Math.sqrt(k);
+    });
+
+    // 3) Laplacian: λ² ~ Exp(rate = 1/2), so the κ-density is
+    //    f(κ) = (1/2) exp(-(1-κ)/(2κ)) / κ²    — has a peak at κ = 1/4.
+    const lapKappa = kappas.map(k => {
+      if (k <= 0.01) return 0;
+      const val = 0.5 * Math.exp(-(1 - k) / (2 * k)) / (k * k);
+      return Math.min(val, 6);
+    });
+
+    // 4) Student-t (df = 1):   λ² ~ IG(1/2, 1/2)
+    //    f(κ) ∝ κ^{-1/2} (1-κ)^{-3/2} exp(-κ / (2(1-κ)))
+    const tKappa = kappas.map(k => {
+      if (k <= 0.003) return 6.0;
+      if (k >= 0.995) return 0;
+      const v = (1 / Math.sqrt(2*Math.PI))
+              * Math.pow(k, -0.5)
+              * Math.pow(1 - k, -1.5)
+              * Math.exp(-k / (2 * (1 - k)));
+      return Math.min(v, 6);
+    });
+
+    drawKappaPanel('kappaLaplacian', kappas, lapKappa, 2.4);
+    drawKappaPanel('kappaStudent', kappas, tKappa, 4.5);
+    drawKappaPanel('kappaSB', kappas, sbKappa, 4.5);
+    drawKappaPanel('kappaHorseshoe', kappas, hsKappa, 4.5);
+  });
+
+
+  // =====================================================================
+  // =============   INTERACTIVE PRIOR SAMPLER (Section III)  ============
+  // =====================================================================
+
+  // Half-Cauchy(0,1): X = |tan(π U / 2)|, U ~ Uniform(0, 1).
+  // Clipped at a finite cap so visualisation doesn't blow up.
+  function rHalfCauchy(cap) {
+    const u = Math.random();
+    let v = Math.abs(Math.tan(Math.PI * (u - 0.5)));
+    if (cap !== undefined && v > cap) v = cap;
+    return v;
+  }
+
+  // Standard normal — small standalone version (the Gibbs file's rnorm is in a different scope).
+  let _ps_spare = null;
+  function _psRnorm() {
+    if (_ps_spare !== null) {
+      const x = _ps_spare; _ps_spare = null; return x;
+    }
+    let u, v, s;
+    do {
+      u = 2*Math.random() - 1;
+      v = 2*Math.random() - 1;
+      s = u*u + v*v;
+    } while (s >= 1 || s === 0);
+    s = Math.sqrt(-2 * Math.log(s) / s);
+    _ps_spare = v * s;
+    return u * s;
+  }
+
+  function samplePrior(p) {
+    const tau = rHalfCauchy(50);            // global
+    const lambdas = new Array(p);
+    const betas = new Array(p);
+    for (let i = 0; i < p; i++) {
+      lambdas[i] = rHalfCauchy(50);         // local
+      const z = _psRnorm();
+      betas[i] = z * lambdas[i] * tau;
+    }
+    return { tau, lambdas, betas };
+  }
+
+  // ---- SVG renderers ----
+
+  const PS_NS = 'http://www.w3.org/2000/svg';
+
+  function renderLambdas(svgId, lambdas) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    svg.innerHTML = '';
+    const p = lambdas.length;
+    const W = 1100, H = 84;
+    const padX = 8, padTop = 8, padBot = 22;
+
+    // Log-scale axis from 0.05 to 50
+    const yMin = -1.5, yMax = 1.8;  // log10 scale
+    const toY = (v) => {
+      const lv = Math.log10(Math.max(v, 0.01));
+      const clipped = Math.max(yMin, Math.min(yMax, lv));
+      return padTop + (H - padTop - padBot) * (1 - (clipped - yMin) / (yMax - yMin));
+    };
+
+    // baseline at log10 = 0  (λ = 1)
+    const yOne = toY(1);
+    const ref = document.createElementNS(PS_NS, 'line');
+    ref.setAttribute('x1', padX); ref.setAttribute('x2', W - padX);
+    ref.setAttribute('y1', yOne); ref.setAttribute('y2', yOne);
+    ref.setAttribute('stroke', 'rgba(133,117,77,0.5)');
+    ref.setAttribute('stroke-width', '0.6');
+    ref.setAttribute('stroke-dasharray', '3,3');
+    svg.appendChild(ref);
+
+    // ref label "λ = 1"
+    const refLbl = document.createElementNS(PS_NS, 'text');
+    refLbl.setAttribute('x', W - padX - 4);
+    refLbl.setAttribute('y', yOne - 3);
+    refLbl.setAttribute('text-anchor', 'end');
+    refLbl.setAttribute('font-family', "'JetBrains Mono', monospace");
+    refLbl.setAttribute('font-size', '9');
+    refLbl.setAttribute('fill', 'rgba(133,117,77,0.7)');
+    refLbl.textContent = 'λ = 1';
+    svg.appendChild(refLbl);
+
+    // dots + stems
+    const colW = (W - 2*padX) / p;
+    for (let i = 0; i < p; i++) {
+      const cx = padX + (i + 0.5) * colW;
+      const cy = toY(lambdas[i]);
+
+      // stem from baseline to dot
+      const stem = document.createElementNS(PS_NS, 'line');
+      stem.setAttribute('x1', cx); stem.setAttribute('x2', cx);
+      stem.setAttribute('y1', yOne); stem.setAttribute('y2', cy);
+      stem.setAttribute('stroke', 'rgba(75, 46, 131, 0.35)');
+      stem.setAttribute('stroke-width', '0.8');
+      svg.appendChild(stem);
+
+      // dot - radius reflects log magnitude
+      const r = 3 + Math.min(4, Math.max(0, Math.log10(Math.max(lambdas[i], 0.1))) * 1.4);
+      const dot = document.createElementNS(PS_NS, 'circle');
+      dot.setAttribute('cx', cx);
+      dot.setAttribute('cy', cy);
+      dot.setAttribute('r', r);
+      dot.setAttribute('fill', 'var(--husky-purple)');
+      dot.setAttribute('opacity', 0.85);
+      svg.appendChild(dot);
+    }
+
+    // bottom y-axis hints
+    const labels = [
+      { v: 0.1, t: '0.1' },
+      { v: 1,   t: '1' },
+      { v: 10,  t: '10' }
+    ];
+    labels.forEach(({v, t}) => {
+      const y = toY(v);
+      const tk = document.createElementNS(PS_NS, 'text');
+      tk.setAttribute('x', 2);
+      tk.setAttribute('y', y + 3);
+      tk.setAttribute('font-family', "'JetBrains Mono', monospace");
+      tk.setAttribute('font-size', '8');
+      tk.setAttribute('fill', '#85754D');
+      tk.textContent = t;
+      svg.appendChild(tk);
+    });
+  }
+
+  function renderBetas(svgId, betas) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    svg.innerHTML = '';
+    const p = betas.length;
+    const W = 1100, H = 84;
+    const padX = 8, padTop = 6, padBot = 16;
+
+    const center = padTop + (H - padTop - padBot) / 2;
+    const halfH = (H - padTop - padBot) / 2;
+
+    // Auto scale based on data, clipped sensibly
+    let maxAbs = 1;
+    betas.forEach(b => { if (Math.abs(b) > maxAbs) maxAbs = Math.abs(b); });
+    maxAbs = Math.min(Math.max(maxAbs, 1.5), 40);  // soft clamp
+
+    // baseline
+    const base = document.createElementNS(PS_NS, 'line');
+    base.setAttribute('x1', padX); base.setAttribute('x2', W - padX);
+    base.setAttribute('y1', center); base.setAttribute('y2', center);
+    base.setAttribute('stroke', 'rgba(133,117,77,0.5)');
+    base.setAttribute('stroke-width', '0.6');
+    svg.appendChild(base);
+
+    const colW = (W - 2*padX) / p;
+    for (let i = 0; i < p; i++) {
+      const cx = padX + i * colW + colW * 0.15;
+      const bw = colW * 0.7;
+      const v = betas[i];
+      const clipped = Math.max(-maxAbs, Math.min(maxAbs, v));
+      const barH = Math.abs(clipped) / maxAbs * halfH;
+      const yTop = v >= 0 ? center - barH : center;
+
+      const rect = document.createElementNS(PS_NS, 'rect');
+      rect.setAttribute('x', cx);
+      rect.setAttribute('y', yTop);
+      rect.setAttribute('width', bw);
+      rect.setAttribute('height', barH);
+      rect.setAttribute('fill', v >= 0 ? 'var(--husky-purple)' : '#85754D');
+      rect.setAttribute('opacity', 0.85);
+      svg.appendChild(rect);
+
+      // mark if clipped
+      if (Math.abs(v) > maxAbs) {
+        const mark = document.createElementNS(PS_NS, 'circle');
+        mark.setAttribute('cx', cx + bw/2);
+        mark.setAttribute('cy', v >= 0 ? padTop + 3 : H - padBot - 3);
+        mark.setAttribute('r', 2);
+        mark.setAttribute('fill', 'var(--metallic-gold)');
+        svg.appendChild(mark);
+      }
+    }
+
+    // scale label
+    const sl = document.createElementNS(PS_NS, 'text');
+    sl.setAttribute('x', W - padX - 2);
+    sl.setAttribute('y', H - 4);
+    sl.setAttribute('text-anchor', 'end');
+    sl.setAttribute('font-family', "'JetBrains Mono', monospace");
+    sl.setAttribute('font-size', '8');
+    sl.setAttribute('fill', '#85754D');
+    sl.textContent = `± ${maxAbs.toFixed(1)}`;
+    svg.appendChild(sl);
+  }
+
+  function tauDescription(tau) {
+    if (tau < 0.3)  return '(small — strong global shrinkage)';
+    if (tau < 1.5)  return '(typical — moderate global scale)';
+    if (tau < 5)    return '(large — weak global shrinkage)';
+    return '(extreme — heavy-tail draw)';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('priorSampleBtn');
+    if (!btn) return;
+
+    function go() {
+      const result = samplePrior(50);
+      // Step 1
+      document.getElementById('psTauVal').textContent = '= ' + result.tau.toFixed(3);
+      document.getElementById('psTauNote').textContent = tauDescription(result.tau);
+      // Step 2
+      renderLambdas('psLambdaSvg', result.lambdas);
+      // Step 3
+      renderBetas('psBetaSvg', result.betas);
+      // stats
+      const large = result.betas.filter(b => Math.abs(b) > 2).length;
+      const maxAbs = result.betas.reduce((m, b) => Math.max(m, Math.abs(b)), 0);
+      document.getElementById('psLargeCount').textContent = large;
+      document.getElementById('psMaxAbs').textContent = maxAbs.toFixed(2);
+    }
+
+    go();   // initial sample
+    btn.addEventListener('click', go);
+  });
+</script>
+
+</body>
+</html>

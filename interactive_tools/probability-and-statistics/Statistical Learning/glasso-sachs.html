@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graphical Lasso — Sachs Cell-Signaling Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --purple:#4B2E83;--purple2:#32205C;
+  --cream:#f7f5f0;--paper:#fff;
+  --navy:#1a1a3a;--navy2:#2c2c52;
+  --gold:#B7A57A;--gold2:#85754D;
+  --gray:#7a7a8a;--border:#d8d4cc;
+  --acc-bg:#f4f0fa;--acc-blue:#edf0f7;
+  --green:#1a6a40;--green-bg:#e8f5ec;
+  --red-edge:#c33;--blue-edge:#2860a8;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.65;}
+
+header{background:var(--purple);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--purple2);padding:.4rem 2rem;font-size:.8rem;color:#d8c8e8;letter-spacing:.06em;text-transform:uppercase;}
+.hdr-main{padding:1.3rem 2rem;}
+header h1{font-family:var(--font-head);font-size:1.9rem;font-weight:700;letter-spacing:.01em;}
+header .subtitle{color:#d8c8e8;font-style:italic;margin-top:.25rem;font-size:.98rem;}
+header .byline{color:var(--gold);font-family:var(--font-head);font-style:italic;font-size:.95rem;margin-top:.45rem;letter-spacing:.04em;}
+header .byline::before{content:"by ";color:#d8c8e8;font-style:normal;font-family:var(--font-body);}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+
+main{max-width:1240px;margin:0 auto;padding:1.5rem 1.4rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1rem 1.3rem;margin-bottom:1.1rem;box-shadow:0 2px 14px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.15rem;font-weight:600;color:var(--purple);margin-bottom:.55rem;padding-bottom:.3rem;border-bottom:2px solid #e2d4f0;}
+.card h3{font-family:var(--font-head);font-size:.98rem;font-weight:600;color:var(--navy2);margin:.55rem 0 .25rem;}
+.card p{margin-bottom:.5rem;line-height:1.65;}
+
+.def-box{background:var(--acc-bg);border-left:3px solid var(--purple);border-radius:0 5px 5px 0;padding:.5rem .85rem;margin:.5rem 0;font-size:.94rem;line-height:1.65;}
+.thm-box{background:#f0f4ff;border-left:3px solid var(--navy2);border-radius:0 5px 5px 0;padding:.5rem .85rem;margin:.5rem 0;font-size:.94rem;line-height:1.65;}
+.key-box{background:#fbf8f0;border:1px solid #b09c5e;border-radius:5px;padding:.5rem .85rem;margin:.5rem 0;font-size:.9rem;line-height:1.62;color:#4a3800;}
+.math-block{overflow-x:auto;margin:.6rem 0;text-align:center;}
+
+/* Data table preview */
+.dat-wrap{overflow-x:auto;max-width:100%;border:1px solid var(--border);border-radius:6px;background:#fafafa;}
+table.dat-tbl{border-collapse:collapse;font-family:'Courier New',monospace;font-size:.78rem;width:100%;min-width:680px;}
+table.dat-tbl th{background:var(--navy);color:#fff;padding:.3rem .5rem;font-weight:400;font-size:.74rem;text-align:center;letter-spacing:.04em;font-family:var(--font-body);position:sticky;top:0;}
+table.dat-tbl th.row-h{background:var(--purple);font-style:italic;min-width:60px;}
+table.dat-tbl td{padding:.18rem .45rem;border:1px solid #e8e4de;text-align:right;font-variant-numeric:tabular-nums;color:#3a3a4a;}
+table.dat-tbl td.row-l{background:#faf6ed;border-left:3px solid var(--gold);text-align:left;color:var(--navy2);font-weight:600;font-family:var(--font-body);font-style:italic;}
+table.dat-tbl tr.dotted td{color:var(--gray);background:#f3eee5;text-align:center;font-style:italic;padding:.1rem;}
+
+/* Covariance matrix heatmap */
+.cov-wrap{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;}
+.cov-tbl{flex:1;min-width:380px;}
+.cov-tbl table{border-collapse:collapse;font-family:'Courier New',monospace;font-size:.7rem;width:100%;}
+.cov-tbl th{background:var(--navy);color:#fff;padding:.18rem .25rem;font-size:.68rem;font-weight:400;text-align:center;}
+.cov-tbl th.cor{background:var(--purple);}
+.cov-tbl td{padding:.2rem .25rem;text-align:center;border:1px solid #fff;font-variant-numeric:tabular-nums;color:#222;}
+.cov-legend{flex:0 0 220px;font-size:.82rem;}
+.legend-bar{display:flex;align-items:center;gap:.4rem;margin:.3rem 0;}
+.legend-sw{width:18px;height:18px;border:1px solid #aaa;border-radius:2px;}
+
+/* Controls */
+.ctrl-layout{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;}
+.ctrl-panel{flex:1;min-width:280px;}
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:6px;padding:.55rem .85rem;margin-bottom:.5rem;}
+.ctrl-group label{display:block;font-size:.85rem;font-weight:600;color:var(--navy2);margin-bottom:.2rem;}
+.ctrl-group p{font-size:.8rem;color:var(--gray);margin-top:.15rem;line-height:1.4;}
+.val-badge{display:inline-block;background:var(--purple);color:#fff;border-radius:4px;padding:.02rem .45rem;font-size:.86rem;font-weight:700;min-width:50px;text-align:center;margin-left:.2rem;font-variant-numeric:tabular-nums;}
+.val-badge.gold{background:var(--gold);color:var(--navy);}
+.val-badge.navy{background:var(--navy);}
+input[type=range]{width:100%;accent-color:var(--purple);cursor:pointer;margin:.1rem 0;}
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.35rem 1rem;font-size:.92rem;transition:all .13s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--purple);color:#fff;}
+.btn-primary:hover{background:var(--purple2);}
+.btn-secondary{background:var(--acc-blue);color:var(--navy2);border:1px solid #b0c4e8;}
+.btn-secondary:hover{background:#c8daff;}
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:600;}
+.btn-gold:hover{background:var(--gold2);color:#fff;}
+.btn-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.3rem;}
+.preset-row{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.3rem;}
+.preset-row button{padding:.22rem .6rem;font-size:.82rem;background:#e8e4de;color:var(--navy);}
+.preset-row button:hover{background:#d8d4ce;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.4rem;margin:.4rem 0;}
+.stat-box{background:#f8f5f0;border:1px solid var(--border);border-radius:5px;padding:.35rem .55rem;text-align:center;}
+.stat-box .lbl{font-size:.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;}
+.stat-box .val{font-family:'Courier New',monospace;font-size:1.1rem;font-weight:700;color:var(--purple);}
+
+/* Graph display */
+.graph-wrap{flex:1;min-width:380px;}
+.graph-svg{background:#fff;border:1px solid var(--border);border-radius:6px;width:100%;max-width:560px;display:block;}
+.graph-svg .node-circ{fill:var(--paper);stroke:var(--navy);stroke-width:2;cursor:pointer;}
+.graph-svg .node-circ.hub{fill:#fbf8f0;stroke:var(--gold2);stroke-width:2.5;}
+.graph-svg .node-lbl{font-family:var(--font-head);font-size:13px;font-weight:600;fill:var(--navy);text-anchor:middle;pointer-events:none;}
+.graph-svg .edge{fill:none;stroke-linecap:round;}
+.graph-svg .edge.pos{stroke:var(--blue-edge);}
+.graph-svg .edge.neg{stroke:var(--red-edge);stroke-dasharray:4,2;}
+.graph-svg .edge-lbl{font-family:'Crimson Pro',Georgia,serif;font-size:9.5px;fill:#1a1a3a;text-anchor:middle;font-weight:500;paint-order:stroke;stroke:#ffffff;stroke-width:3px;stroke-linejoin:round;pointer-events:none;}
+.legend-strip{display:flex;gap:1rem;justify-content:center;font-size:.78rem;color:var(--gray);margin-top:.3rem;flex-wrap:wrap;}
+.legend-strip span{display:inline-flex;align-items:center;gap:.3rem;}
+.legend-strip .lk{width:22px;height:0;border-top:2px solid;}
+
+/* Theta matrix */
+.theta-wrap{overflow-x:auto;}
+.theta-wrap table{border-collapse:collapse;font-family:'Courier New',monospace;font-size:.7rem;margin:0 auto;}
+.theta-wrap th{background:var(--navy);color:#fff;padding:.18rem .25rem;font-size:.68rem;font-weight:400;}
+.theta-wrap th.col-h{background:var(--purple);}
+.theta-wrap td{padding:.2rem .3rem;text-align:center;border:1px solid #fff;font-variant-numeric:tabular-nums;}
+.theta-wrap td.zero{background:#f3eee5;color:#bbb;}
+
+/* Coefficient path plot (Figure 4) */
+.path-wrap{background:#fff;border:1px solid var(--border);border-radius:6px;padding:.5rem;max-width:100%;}
+.path-svg{width:100%;height:auto;display:block;font-family:'Crimson Pro',Georgia,serif;}
+.path-svg .axis-line{stroke:#444;stroke-width:1;}
+.path-svg .axis-tick{stroke:#444;stroke-width:1;}
+.path-svg .axis-lbl{font-size:11px;fill:#333;font-variant-numeric:tabular-nums;}
+.path-svg .axis-title{font-size:13px;fill:#222;font-style:italic;font-weight:600;}
+.path-svg .grid-line{stroke:#e8e4de;stroke-width:0.5;}
+.path-svg .zero-line{stroke:#888;stroke-width:0.7;stroke-dasharray:3,3;}
+.path-svg .curve{fill:none;}
+.path-svg .curve.pos{stroke:var(--blue-edge);}
+.path-svg .curve.neg{stroke:var(--red-edge);}
+.path-svg .curve-lbl{font-size:10px;font-style:italic;fill:#222;}
+.path-svg .rho-indicator{stroke:var(--gold2);stroke-width:1.5;stroke-dasharray:4,3;}
+.path-svg .rho-indicator-lbl{font-size:10.5px;fill:var(--gold2);font-weight:700;text-anchor:middle;}
+.path-wrap-loading{padding:1.5rem;text-align:center;color:var(--gray);font-style:italic;}
+
+/* Upload */
+.upl-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+.upl-info{font-size:.78rem;color:var(--gray);font-style:italic;}
+
+/* Algorithm description */
+/* Algorithm description — clean numbered list with circle markers (no flex, so text flows naturally) */
+.alg-steps{counter-reset:step;margin:.4rem 0;font-size:.92rem;list-style:none;padding-left:0;}
+.alg-steps h3{margin-bottom:.4rem;}
+.alg-step{position:relative;padding-left:2.2rem;margin:.45rem 0;line-height:1.55;}
+.alg-step::before{counter-increment:step;content:counter(step);background:var(--gold);color:var(--navy);width:22px;height:22px;border-radius:50%;font-size:.78rem;font-weight:700;flex-shrink:0;position:absolute;left:0;top:.15rem;display:flex;align-items:center;justify-content:center;}
+.alg-step .math-inl{display:inline-block;vertical-align:middle;}
+
+footer{text-align:center;padding:1.2rem;font-size:.85rem;color:var(--gray);border-top:1px solid var(--border);margin-top:1rem;}
+footer a{color:var(--purple);}
+
+@media(max-width:650px){.hdr-main{padding:1rem 1rem;}main{padding:1rem .7rem;}.card{padding:.8rem .9rem;}header h1{font-size:1.45rem;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr-top">🐺 &nbsp;University of Washington — Tyler McCormick Group</div>
+  <div class="hdr-main">
+    <h1>Graphical Lasso — Cell Signaling Network Recovery</h1>
+    <div class="subtitle">Reproducing Friedman, Hastie & Tibshirani (2008) on the original Sachs <i>et&nbsp;al.</i> flow cytometry data</div>
+    <div class="byline">Georgia Smits</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+<main>
+
+<!-- §1 The Problem -->
+<div class="card">
+  <h2>§1 — Sparse Inverse Covariance Estimation</h2>
+  <p>Given <i>N</i> multivariate normal observations of dimension <i>p</i>, with empirical covariance <i>S</i>, the <b>graphical lasso</b> finds a sparse precision matrix <span id="th_theta"></span> by maximizing the penalized log-likelihood:</p>
+  <div class="math-block" id="th_obj"></div>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+    <div style="flex:1;min-width:240px;">
+      <div class="def-box">
+        Zero entries in <span id="th_t2"></span> encode <strong>conditional independence</strong> between proteins — these become missing edges in the inferred signaling graph.
+        The penalty <span id="th_lam"></span> controls sparsity.
+      </div>
+    </div>
+    <div style="flex:1;min-width:240px;">
+      <div class="thm-box">
+        <strong>Coordinate descent (Friedman et al.):</strong> Initialize <span id="th_w0"></span>. For each column <i>j</i>, partition and solve an inner lasso for <span id="th_beta"></span> with soft-threshold updates. The estimated precision <span id="th_t3"></span> is recovered after sweeping all columns.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- §2 Data Matrix -->
+<div class="card">
+  <h2>§2 — Sachs <i>et al.</i> Flow Cytometry Data</h2>
+  <p><i>N</i> = <strong>7466</strong> single immune cells, <i>p</i> = <strong>11</strong> phosphoproteins on the log scale. Each row is one cell; each column an activated-protein concentration measurement.</p>
+  <div class="dat-wrap"><table class="dat-tbl" id="datTable"></table></div>
+  <div class="upl-row" style="margin-top:.6rem;">
+    <input type="file" id="csvUpload" accept=".csv,.txt" style="display:none;">
+    <button class="btn-secondary" onclick="document.getElementById('csvUpload').click()">📤 Upload real CSV (7466 × 11)</button>
+    <button class="btn-secondary" onclick="resetData()">↺ Reset to synthetic</button>
+    <span class="upl-info" id="dataStatus">Using original Sachs et al. (2005) data: 7466 cells × 11 phosphoproteins (log-scale, then standardized to unit variance per the paper's convention).</span>
+  </div>
+</div>
+
+<!-- §3 Empirical Covariance S -->
+<div class="card">
+  <h2>§3 — Empirical Correlation Matrix <i>S</i> (standardized)</h2>
+  <p>Each protein column was scaled to unit variance, so <i>S</i> is the <strong>correlation matrix</strong> (diagonal = 1). Computed from <span id="curN">7466</span> cells. This matches the convention used in the Friedman et al. paper, giving directly comparable L₁ norms.</p>
+  <div class="cov-wrap">
+    <div class="cov-tbl"><table id="sTable"></table></div>
+    <div class="cov-legend">
+      <h3 style="margin-top:0;">Color scale</h3>
+      <div class="legend-bar"><div class="legend-sw" style="background:#2860a8;"></div> strong negative</div>
+      <div class="legend-bar"><div class="legend-sw" style="background:#edf0f7;"></div> ~0 (no covariance)</div>
+      <div class="legend-bar"><div class="legend-sw" style="background:#f4f0fa;"></div> ~0</div>
+      <div class="legend-bar"><div class="legend-sw" style="background:#4B2E83;color:#fff;"></div> strong positive</div>
+      <p style="margin-top:.5rem;font-style:italic;color:var(--gray);">Diagonal = variance of each protein. Off-diagonal = co-variation (can be positive or negative).</p>
+    </div>
+  </div>
+</div>
+
+<!-- §4 Controls + Algorithm -->
+<div class="card">
+  <h2>§4 — Algorithm Controls</h2>
+  <p>Adjust <span id="th_lam2"></span> to control sparsity. Graphical lasso runs <strong>live</strong> in your browser via coordinate descent.</p>
+  <div class="ctrl-layout">
+    <div class="ctrl-panel">
+      <div class="ctrl-group">
+        <label>Penalty ρ (log scale) <span class="val-badge" id="rhoBadge">0.100</span></label>
+        <input type="range" id="rhoSlider" min="-3" max="-0.1" step="0.025" value="-0.5">
+        <p>Slide right → more sparsity. Range: 10⁻³ to 10⁻⁰·¹ (~0.001 to 0.8).</p>
+      </div>
+      <div class="preset-row">
+        <button onclick="setRho(0.05)">ρ=0.05</button>
+        <button onclick="setRho(0.10)">ρ=0.10</button>
+        <button onclick="setRho(0.20)">ρ=0.20</button>
+        <button onclick="setRho(0.40)">ρ=0.40</button>
+        <button onclick="setRho(0.60)">ρ=0.60</button>
+        <button onclick="setRho(0.75)">ρ=0.75</button>
+      </div>
+      <div class="ctrl-group" style="margin-top:.5rem;">
+        <label>Max outer iterations <span class="val-badge navy" id="iterBadge">30</span></label>
+        <input type="range" id="iterSlider" min="5" max="100" step="5" value="30">
+      </div>
+      <div class="ctrl-group" style="margin-top:.5rem;display:flex;align-items:center;gap:.5rem;">
+        <label style="margin:0;flex:1;">Show edge labels</label>
+        <input type="checkbox" id="lblToggle" checked style="width:18px;height:18px;cursor:pointer;accent-color:var(--purple);">
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="lbl">‖Θ‖₁ (paper conv.)</div><div class="val" id="statL1">—</div></div>
+        <div class="stat-box"><div class="lbl">Edges</div><div class="val" id="statEdges">—</div></div>
+        <div class="stat-box"><div class="lbl">Outer iters</div><div class="val" id="statIters">—</div></div>
+        <div class="stat-box"><div class="lbl">log det Θ</div><div class="val" id="statLogDet">—</div></div>
+      </div>
+      <div class="alg-steps">
+        <h3>Algorithm summary (Friedman, Hastie &amp; Tibshirani 2008)</h3>
+        <div class="alg-step">Initialize <span class="math-inl" id="alg_m1"></span>. The diagonal of <span class="math-inl" id="alg_m2"></span> stays fixed throughout.</div>
+        <div class="alg-step">For each column <span class="math-inl" id="alg_m3"></span>, solve the inner lasso for <span class="math-inl" id="alg_m4"></span> via soft-thresholding coordinate descent using <span class="math-inl" id="alg_m5"></span> and <span class="math-inl" id="alg_m6"></span>.</div>
+        <div class="alg-step">Update <span class="math-inl" id="alg_m7"></span>; place it back into row and column <span class="math-inl" id="alg_m8"></span> of <span class="math-inl" id="alg_m9"></span>. Cycle through columns until convergence.</div>
+        <div class="alg-step">Recover the precision matrix: <span class="math-inl" id="alg_m10"></span>, <span class="math-inl" id="alg_m11"></span>.</div>
+      </div>
+    </div>
+    <div class="graph-wrap">
+      <h3 style="text-align:center;">Recovered conditional-independence graph</h3>
+      <svg id="graphSVG" class="graph-svg" viewBox="0 0 480 480"></svg>
+      <div class="legend-strip">
+        <span><span class="lk" style="border-color:var(--blue-edge);"></span> positive partial corr. (co-activation)</span>
+        <span><span class="lk" style="border-color:var(--red-edge);border-style:dashed;"></span> negative partial corr. (inhibition)</span>
+        <span>edge width ∝ |θᵢⱼ|</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- §5 Theta Matrix -->
+<div class="card">
+  <h2>§5 — Estimated Precision Matrix <span id="th_thetahat"></span></h2>
+  <p>Sparse inverse covariance: zero entries (faded) mean conditional independence between those two proteins given all others.</p>
+  <div class="theta-wrap"><table id="thetaTable"></table></div>
+</div>
+
+<!-- §6 Coefficient Path Plot (Figure 4 reproduction) -->
+<div class="card">
+  <h2>§6 — Coefficient Profile — Reproducing Figure 4</h2>
+  <p>The full regularization path: each curve traces one off-diagonal entry <span id="th_thij"></span> as ρ varies. Strong edges (Raf–Mek, Erk–Akt) leave zero earliest and reach the largest magnitudes; weak edges only emerge at small ρ. <strong>This is what a graphical lasso fit really looks like</strong> — strictly more informative than any single binary graph.</p>
+  <div class="path-wrap">
+    <div id="pathLoading" class="path-wrap-loading">Computing regularization path …</div>
+    <svg id="pathSVG" class="path-svg" viewBox="0 0 820 440" style="display:none;"></svg>
+  </div>
+  <p style="font-size:.85rem;color:var(--gray);margin-top:.4rem;"><strong>Reading the plot:</strong> x-axis is ‖Θ‖₁ = Σ<sub>i≠j</sub> |Θ<sub>ij</sub>| (paper's convention — counts each entry twice). y-axis is signed Θ<sub>ij</sub>. The x-range matches Figure 4 of the paper, stopping at L1 ≈ 2.3 (= the densest panel of Figure 3). Blue curves are entries with Θ<sub>ij</sub> &lt; 0 (positive partial correlation, co-activation); red curves are Θ<sub>ij</sub> &gt; 0 (inhibition). The vertical gold line shows your current ρ on the path; it clamps to the right edge if you slide ρ smaller than the path's minimum (0.40).</p>
+</div>
+
+</main>
+<footer>
+  Friedman, Hastie & Tibshirani (2008). <i>Sparse inverse covariance estimation with the graphical lasso.</i> <b>Biostatistics</b>, 9(3), 432–441.
+  &nbsp;•&nbsp; Data structure from Sachs <i>et al.</i> (2005), <i>Science</i> 308:523.
+</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   SACHS DATA (synthetic, matches DAG structure)
+══════════════════════════════════════════ */
+let SACHS = {"proteins":["Raf","Mek","Plcg","PIP2","PIP3","Erk","Akt","PKA","PKC","P38","Jnk"],"N":7466,"p":11,"sample_idx":[0,1,2,3,4,5,6,7,1000,2500,3733,4500,6000,7458,7459,7460,7461,7462,7463,7464,7465],"sample":[[1.422,1.121,0.945,1.262,1.769,0.82,1.23,2.617,1.23,1.652,1.602],[1.555,1.217,1.09,1.225,0.91,1.27,1.512,2.547,0.528,1.217,1.789],[1.774,1.644,1.164,1.009,1.114,1.173,1.512,2.605,1.057,1.504,1.29],[1.863,1.918,1.364,1.13,0.111,0.766,1.072,2.723,1.137,1.456,1.364],[1.528,1.297,0.715,0.988,1.394,1.324,1.664,2.484,0.668,1.41,1.91],[1.274,0.574,1.246,1.344,1.037,1.076,1.41,2.785,1.137,1.691,1.762],[1.652,1.562,1.017,2.121,1.212,0.938,1.253,2.922,1.176,1.555,1.258],[1.676,1.176,1.164,1.484,1.243,1.305,1.656,2.668,0.809,1.387,1.301],[1.738,1.691,1.32,2.207,1.09,1.34,1.579,3.063,1.13,1.508,1.55],[1.766,1.274,0.933,1.185,1.781,1.496,2.143,3.094,1.124,1.422,1.117],[1.727,1.332,0.836,0.465,1.593,1.281,1.746,2.832,1.812,2.057,1.679],[2.149,2.344,1.13,1.812,1.504,0.461,1.906,2.286,0.161,1.398,1.033],[1.316,1.076,1.89,2.468,1.903,0.82,1.29,2.679,0.992,1.391,2.037],[1.59,0.124,1.004,1.312,0.898,1.844,1.91,3.125,0.0,0.0,0.407],[1.656,0.0,1.382,1.562,1.199,0.672,1.367,2.539,0.758,2.398,0.204],[1.504,0.433,1.137,2.29,1.305,1.207,1.225,2.508,0.0,1.072,0.427],[1.691,1.093,1.516,1.446,1.356,1.068,1.582,3.058,0.0,0.407,0.0],[1.367,0.664,1.25,1.344,1.173,1.688,1.828,2.965,0.0,0.992,0.0],[1.449,0.652,1.274,1.305,1.009,0.489,1.34,2.863,0.0,0.243,0.301],[1.539,0.851,0.758,1.316,1.179,1.508,1.617,2.91,1.648,3.141,0.387],[1.484,0.004,0.863,2.238,1.36,0.82,1.137,2.949,0.0,0.0,0.217]],"S":[[1.0,0.78485,0.31083,0.20332,-0.04488,-0.08636,0.35711,-0.45302,0.14342,0.345,0.21695],[0.78485,1.0,0.33212,0.20435,-0.10563,-0.07145,0.46047,-0.47942,0.33575,0.46962,0.4528],[0.31083,0.33212,1.0,0.60211,0.03134,0.23381,0.43329,-0.55654,0.32393,0.45105,0.40222],[0.20332,0.20435,0.60211,1.0,0.33896,0.11631,0.23434,-0.3443,0.19836,0.25347,0.19866],[-0.04488,-0.10563,0.03134,0.33896,1.0,-0.10267,-0.13466,0.11619,-0.11993,-0.13613,-0.19251],[-0.08636,-0.07145,0.23381,0.11631,-0.10267,1.0,0.64469,0.0185,0.33569,0.23341,0.28331],[0.35711,0.46047,0.43329,0.23434,-0.13466,0.64469,1.0,-0.31461,0.36353,0.46715,0.42717],[-0.45302,-0.47942,-0.55654,-0.3443,0.11619,0.0185,-0.31461,1.0,-0.36149,-0.52728,-0.41077],[0.14342,0.33575,0.32393,0.19836,-0.11993,0.33569,0.36353,-0.36149,1.0,0.71969,0.64109],[0.345,0.46962,0.45105,0.25347,-0.13613,0.23341,0.46715,-0.52728,0.71969,1.0,0.63386],[0.21695,0.4528,0.40222,0.19866,-0.19251,0.28331,0.42717,-0.41077,0.64109,0.63386,1.0]],"mu":[1.774,1.533,1.252,1.693,1.226,1.195,1.647,2.533,1.03,1.533,1.302],"sd":[0.48,0.705,0.546,0.723,0.433,0.47,0.427,0.626,0.588,0.596,0.663],"is_correlation":true};
+const SACHS_DEFAULT = JSON.parse(JSON.stringify(SACHS));
+
+/* ══════════════════════════════════════════
+   GRAPHICAL LASSO (Friedman et al. 2008)
+══════════════════════════════════════════ */
+function softThresh(x, t){
+  if(x > t) return x - t;
+  if(x < -t) return x + t;
+  return 0;
+}
+
+/** Inner lasso: minimize (1/2) β'Wβ - β's + ρ|β|_1
+ *  via coordinate descent with soft-thresholding.
+ *  W is (p-1)×(p-1), s is (p-1).
+ */
+function lassoInner(W, s, rho, beta_init, maxIter, tol){
+  const m = s.length;
+  const beta = beta_init.slice();
+  for(let it=0; it<maxIter; it++){
+    let maxDiff = 0;
+    for(let k=0; k<m; k++){
+      // residual = s_k - Σ_{l≠k} W_kl β_l
+      let r = s[k];
+      for(let l=0; l<m; l++){
+        if(l !== k) r -= W[k][l] * beta[l];
+      }
+      const newBeta = softThresh(r, rho) / W[k][k];
+      const diff = Math.abs(newBeta - beta[k]);
+      if(diff > maxDiff) maxDiff = diff;
+      beta[k] = newBeta;
+    }
+    if(maxDiff < tol) break;
+  }
+  return beta;
+}
+
+/** Main graphical lasso: input S (pxp), output {W, Theta}.
+ *  Follows Friedman, Hastie & Tibshirani (2008) exactly:
+ *    Step 1: W = S + ρI; the diagonal stays at S_ii + ρ throughout.
+ *    Step 2: For each column j, solve inner lasso for β; update w_12 = W_11·β.
+ *    Step 3: Continue until convergence.
+ */
+function graphicalLasso(S, rho, maxOuter, tolOuter, maxInner, tolInner){
+  const p = S.length;
+  // Step 1: W = S + ρI  (the diagonal IS penalized per the paper)
+  const W = S.map(r => r.slice());
+  for(let i=0; i<p; i++) W[i][i] = S[i][i] + rho;
+  // β coefficients for each column (each is length p-1) — reused across outer iterations as warm starts
+  const Betas = Array.from({length: p}, () => new Array(p-1).fill(0));
+  let outer_it = 0;
+  for(outer_it=0; outer_it<maxOuter; outer_it++){
+    let maxChange = 0;
+    for(let j=0; j<p; j++){
+      // Partition: indices excluding j
+      const idx = []; for(let k=0;k<p;k++) if(k!==j) idx.push(k);
+      // W11 (p-1 x p-1)
+      const W11 = idx.map(a => idx.map(b => W[a][b]));
+      // s12 = column j of S excluding j-th entry
+      const s12 = idx.map(a => S[a][j]);
+      // Solve inner lasso
+      const beta = lassoInner(W11, s12, rho, Betas[j], maxInner, tolInner);
+      Betas[j] = beta;
+      // Compute w12 = W11 β
+      const w12 = idx.map((_, a) => {
+        let v = 0;
+        for(let b=0; b<idx.length; b++) v += W11[a][b] * beta[b];
+        return v;
+      });
+      // Track change & update column j (and row j) of W
+      for(let a=0; a<idx.length; a++){
+        const diff = Math.abs(w12[a] - W[idx[a]][j]);
+        if(diff > maxChange) maxChange = diff;
+        W[idx[a]][j] = w12[a];
+        W[j][idx[a]] = w12[a];
+      }
+    }
+    if(maxChange < tolOuter) break;
+  }
+  // Recover Θ from W and Betas
+  const Theta = Array.from({length:p}, () => new Array(p).fill(0));
+  for(let j=0; j<p; j++){
+    const idx = []; for(let k=0;k<p;k++) if(k!==j) idx.push(k);
+    const beta = Betas[j];
+    // w22 - w12'β
+    let denom = W[j][j];
+    for(let a=0; a<idx.length; a++) denom -= W[idx[a]][j] * beta[a];
+    const theta_jj = 1.0 / denom;
+    Theta[j][j] = theta_jj;
+    for(let a=0; a<idx.length; a++) Theta[idx[a]][j] = -beta[a] * theta_jj;
+  }
+  // Symmetrize Θ (numerically should be symmetric, average to enforce)
+  for(let i=0;i<p;i++) for(let j=i+1;j<p;j++){
+    const v = 0.5*(Theta[i][j] + Theta[j][i]);
+    Theta[i][j] = v; Theta[j][i] = v;
+  }
+  return {W, Theta, outerIter: outer_it+1};
+}
+
+/* ══════════════════════════════════════════
+   RENDERERS
+══════════════════════════════════════════ */
+function buildDataTable(){
+  const tbl = document.getElementById('datTable');
+  const prot = SACHS.proteins;
+  const sample = SACHS.sample;
+  const idx = SACHS.sample_idx;
+  let html = '<thead><tr><th class="row-h">Cell #</th>';
+  prot.forEach(p => html += `<th>${p}</th>`);
+  html += '</tr></thead><tbody>';
+  for(let i=0; i<sample.length; i++){
+    // Insert "..." separator rows
+    if(i===8 || i===13){
+      html += `<tr class="dotted"><td colspan="${prot.length+1}">⋮  ⋮  ⋮  (more cells)  ⋮  ⋮  ⋮</td></tr>`;
+    }
+    html += `<tr><td class="row-l">cell ${idx[i]+1}</td>`;
+    sample[i].forEach(v => html += `<td>${v.toFixed(2)}</td>`);
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+function covColor(v, maxV){
+  // Diverging scale: blue for negative, purple for positive, cream at zero
+  const t = Math.min(1, Math.abs(v)/maxV);
+  if(v >= 0){
+    // 0 -> #f4f0fa (light), maxV -> #4B2E83 (Husky purple)
+    const r0=244,g0=240,b0=250, r1=75,g1=46,b1=131;
+    const r = Math.round(r0 + t*(r1-r0));
+    const g = Math.round(g0 + t*(g1-g0));
+    const b = Math.round(b0 + t*(b1-b0));
+    const fg = t > 0.45 ? '#fff' : '#222';
+    return `background:rgb(${r},${g},${b});color:${fg};`;
+  } else {
+    // 0 -> #edf1fb (light), -maxV -> #2860a8 (blue)
+    const r0=237,g0=241,b0=251, r1=40,g1=96,b1=168;
+    const r = Math.round(r0 + t*(r1-r0));
+    const g = Math.round(g0 + t*(g1-g0));
+    const b = Math.round(b0 + t*(b1-b0));
+    const fg = t > 0.55 ? '#fff' : '#222';
+    return `background:rgb(${r},${g},${b});color:${fg};`;
+  }
+}
+
+function buildCovTable(){
+  const S = SACHS.S, prot = SACHS.proteins, n = prot.length;
+  const tbl = document.getElementById('sTable');
+  // Max for color scale
+  let maxV = 0;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) if(Math.abs(S[i][j])>maxV) maxV=Math.abs(S[i][j]);
+  let html = '<thead><tr><th></th>';
+  prot.forEach(p => html += `<th>${p}</th>`);
+  html += '</tr></thead><tbody>';
+  for(let i=0; i<n; i++){
+    html += `<tr><th class="cor">${prot[i]}</th>`;
+    for(let j=0; j<n; j++){
+      html += `<td style="${covColor(S[i][j], maxV)}">${S[i][j].toFixed(2)}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+function buildThetaTable(Theta){
+  const prot = SACHS.proteins, n = prot.length;
+  const tbl = document.getElementById('thetaTable');
+  let maxV = 0;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) if(i!==j && Math.abs(Theta[i][j])>maxV) maxV = Math.abs(Theta[i][j]);
+  if(maxV < 1e-9) maxV = 1;
+  let html = '<thead><tr><th></th>';
+  prot.forEach(p => html += `<th>${p}</th>`);
+  html += '</tr></thead><tbody>';
+  for(let i=0; i<n; i++){
+    html += `<tr><th class="col-h">${prot[i]}</th>`;
+    for(let j=0; j<n; j++){
+      const v = Theta[i][j];
+      if(i===j){
+        html += `<td style="background:#fbf8f0;font-weight:600;color:var(--navy);">${v.toFixed(2)}</td>`;
+      } else if(Math.abs(v) < 1e-6){
+        html += `<td class="zero">0</td>`;
+      } else {
+        const t = Math.min(1, Math.abs(v)/maxV);
+        const col = v > 0 ? `rgba(40,96,168,${0.15+0.5*t})` : `rgba(195,51,51,${0.15+0.5*t})`;
+        html += `<td style="background:${col};">${v.toFixed(2)}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+function drawGraph(Theta){
+  const svg = document.getElementById('graphSVG');
+  const prot = SACHS.proteins, n = prot.length;
+  const cx = 240, cy = 240, R = 175;
+  // Position nodes on a circle
+  const pts = prot.map((p, i) => {
+    const a = -Math.PI/2 - (2*Math.PI*i)/n;  // reflected: counter-clockwise to match paper layout
+    return {x: cx + R*Math.cos(a), y: cy + R*Math.sin(a), name: p};
+  });
+  // Compute max |Θ| for edge width scaling
+  let maxV = 0, edgeCount = 0;
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) if(Math.abs(Theta[i][j])>maxV) maxV = Math.abs(Theta[i][j]);
+  if(maxV < 1e-9) maxV = 1;
+  let edgesHtml = '';
+  let labelsHtml = '';
+  const showLabels = document.getElementById('lblToggle') ? document.getElementById('lblToggle').checked : true;
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+    const v = Theta[i][j];
+    if(Math.abs(v) > 1e-6){
+      edgeCount++;
+      const t = Math.min(1, Math.abs(v)/maxV);
+      const sw = 0.8 + 4.5*t;
+      const op = 0.4 + 0.55*t;
+      // Partial correlation has OPPOSITE sign from Θ_ij (partial corr = -Θ_ij/√(Θ_ii·Θ_jj))
+      // So Θ_ij < 0 → positive partial correlation (activation/co-movement)
+      // And Θ_ij > 0 → negative partial correlation (inhibition/anti-movement)
+      const cls = v < 0 ? 'edge pos' : 'edge neg';
+      edgesHtml += `<line class="${cls}" x1="${pts[i].x}" y1="${pts[i].y}" x2="${pts[j].x}" y2="${pts[j].y}" stroke-width="${sw}" stroke-opacity="${op}"/>`;
+      if(showLabels){
+        // Midpoint with small perpendicular offset so label sits beside the line
+        const mx = (pts[i].x + pts[j].x) / 2;
+        const my = (pts[i].y + pts[j].y) / 2;
+        const dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y;
+        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        // perpendicular unit vector
+        const px = -dy/len, py = dx/len;
+        const off = 5;  // pixels to offset perpendicular to edge
+        const lx = mx + off*px, ly = my + off*py;
+        labelsHtml += `<text class="edge-lbl" x="${lx}" y="${ly+3}">${prot[i]}–${prot[j]}</text>`;
+      }
+    }
+  }
+  // Count degree per node for hub detection
+  const deg = new Array(n).fill(0);
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) if(i!==j && Math.abs(Theta[i][j])>1e-6) deg[i]++;
+  const maxDeg = Math.max(1, ...deg);
+  let nodesHtml = '';
+  for(let i=0; i<n; i++){
+    const isHub = deg[i] >= Math.max(3, Math.ceil(0.6*maxDeg));
+    const cls = isHub ? 'node-circ hub' : 'node-circ';
+    nodesHtml += `<circle class="${cls}" cx="${pts[i].x}" cy="${pts[i].y}" r="22"/>`;
+    nodesHtml += `<text class="node-lbl" x="${pts[i].x}" y="${pts[i].y+4}">${prot[i]}</text>`;
+  }
+  svg.innerHTML = edgesHtml + nodesHtml + labelsHtml;
+  return edgeCount;
+}
+
+/* ══════════════════════════════════════════
+   COEFFICIENT PATH PLOT (Figure 4)
+══════════════════════════════════════════ */
+let PATH_DATA = null;  // cache: {rhos, l1s, thetas}
+
+function computePath(){
+  // Compute glasso solutions along a path of ρ values, log-spaced.
+  // Range chosen to match the paper's Figure 4 stopping point (L1 ≈ 2.27 = densest panel of Fig 3).
+  // ρ ∈ [10^-0.4, 10^-0.1] ≈ [0.40, 0.79] gives L1 ∈ [0, ~2.3] using the paper's convention.
+  const S = SACHS.S, p = SACHS.p;
+  const N_RHO = 36;
+  const LOG_MIN = -0.4, LOG_MAX = -0.1;
+  const rhos = [], l1s = [], thetas = [];
+  for(let k=0; k<N_RHO; k++){
+    // Sweep from large ρ (sparse) to small ρ (dense)
+    const rho = Math.pow(10, LOG_MAX - (LOG_MAX-LOG_MIN) * k/(N_RHO-1));
+    rhos.push(rho);
+    const {Theta} = graphicalLasso(S, rho, 50, 1e-4, 80, 1e-5);
+    thetas.push(Theta);
+    let l1_unique = 0;
+    for(let i=0;i<p;i++) for(let j=i+1;j<p;j++) l1_unique += Math.abs(Theta[i][j]);
+    l1s.push(2 * l1_unique);  // paper's L1 convention (factor of 2)
+  }
+  return {rhos, l1s, thetas};
+}
+
+function drawPathPlot(){
+  if(!PATH_DATA) return;
+  const svg = document.getElementById('pathSVG');
+  const proteins = SACHS.proteins, p = SACHS.p;
+  // SVG layout
+  const W = 820, H = 440;
+  const ML = 60, MR = 145, MT = 22, MB = 50;
+  const plotW = W - ML - MR;
+  const plotH = H - MT - MB;
+  // Find data ranges
+  let xMax = 0, yMin = 0, yMax = 0;
+  for(let k=0;k<PATH_DATA.l1s.length;k++){
+    if(PATH_DATA.l1s[k] > xMax) xMax = PATH_DATA.l1s[k];
+    for(let i=0;i<p;i++) for(let j=i+1;j<p;j++){
+      const v = PATH_DATA.thetas[k][i][j];
+      if(v < yMin) yMin = v;
+      if(v > yMax) yMax = v;
+    }
+  }
+  // Add 5% padding
+  xMax *= 1.02;
+  const yRange = (yMax - yMin) || 1;
+  const yPad = 0.04 * yRange;
+  const yLo = yMin - yPad, yHi = yMax + yPad;
+  // Coord transforms
+  const xS = (x) => ML + (x / xMax) * plotW;
+  const yS = (y) => MT + ((yHi - y) / (yHi - yLo)) * plotH;
+  // Build curves with metadata for sorting/labeling
+  const curves = [];
+  for(let i=0;i<p;i++) for(let j=i+1;j<p;j++){
+    let maxAbs = 0, finalVal = 0;
+    const pts = [];
+    for(let k=0;k<PATH_DATA.l1s.length;k++){
+      const v = PATH_DATA.thetas[k][i][j];
+      pts.push([xS(PATH_DATA.l1s[k]), yS(v)]);
+      if(Math.abs(v) > maxAbs) maxAbs = Math.abs(v);
+      finalVal = v;
+    }
+    curves.push({i, j, name: `${proteins[i]}–${proteins[j]}`, points: pts, maxAbs, finalVal, finalY: yS(finalVal)});
+  }
+  // Sort: largest |Θ|_max first (these get labeled prominently)
+  curves.sort((a,b) => b.maxAbs - a.maxAbs);
+  const TOP_LABELED = 12;
+  // SVG content
+  let g = '';
+  // Plot area background
+  g += `<rect x="${ML}" y="${MT}" width="${plotW}" height="${plotH}" fill="#fcfaf6" stroke="#ccc" stroke-width="0.7"/>`;
+  // X-axis ticks (5 of them, evenly spaced on linear scale)
+  const xTicks = [0, xMax/4, xMax/2, 3*xMax/4, xMax];
+  for(const xt of xTicks){
+    const px = xS(xt);
+    g += `<line class="grid-line" x1="${px}" y1="${MT}" x2="${px}" y2="${MT+plotH}"/>`;
+    g += `<line class="axis-tick" x1="${px}" y1="${MT+plotH}" x2="${px}" y2="${MT+plotH+4}"/>`;
+    g += `<text class="axis-lbl" x="${px}" y="${MT+plotH+18}" text-anchor="middle">${xt.toFixed(2)}</text>`;
+  }
+  // Y-axis ticks (sensible based on yRange)
+  const yTickStep = chooseTickStep(yLo, yHi, 6);
+  const yStart = Math.ceil(yLo/yTickStep) * yTickStep;
+  for(let yt = yStart; yt <= yHi; yt += yTickStep){
+    if(Math.abs(yt) < 1e-10) yt = 0;  // clean up -0
+    const py = yS(yt);
+    g += `<line class="grid-line" x1="${ML}" y1="${py}" x2="${ML+plotW}" y2="${py}"/>`;
+    g += `<line class="axis-tick" x1="${ML-4}" y1="${py}" x2="${ML}" y2="${py}"/>`;
+    g += `<text class="axis-lbl" x="${ML-7}" y="${py+3.5}" text-anchor="end">${yt.toFixed(2)}</text>`;
+  }
+  // Zero line emphasized
+  if(yLo < 0 && yHi > 0){
+    const py0 = yS(0);
+    g += `<line class="zero-line" x1="${ML}" y1="${py0}" x2="${ML+plotW}" y2="${py0}"/>`;
+  }
+  // Axis boundary
+  g += `<line class="axis-line" x1="${ML}" y1="${MT+plotH}" x2="${ML+plotW}" y2="${MT+plotH}"/>`;
+  g += `<line class="axis-line" x1="${ML}" y1="${MT}" x2="${ML}" y2="${MT+plotH}"/>`;
+  // Axis titles
+  g += `<text class="axis-title" x="${ML+plotW/2}" y="${H-12}" text-anchor="middle">‖Θ‖₁ off-diagonal  (grows as ρ decreases →)</text>`;
+  g += `<text class="axis-title" x="14" y="${MT+plotH/2}" text-anchor="middle" transform="rotate(-90 14 ${MT+plotH/2})">Coefficient θᵢⱼ</text>`;
+  // Curves: faint background curves first, labeled curves on top
+  for(let k=curves.length-1; k>=TOP_LABELED; k--){
+    const c = curves[k];
+    const cls = c.finalVal < 0 ? 'curve pos' : 'curve neg';
+    const pts = c.points.map(p => p.join(',')).join(' ');
+    g += `<polyline class="${cls}" points="${pts}" stroke-width="0.7" opacity="0.30"/>`;
+  }
+  for(let k=Math.min(TOP_LABELED-1, curves.length-1); k>=0; k--){
+    const c = curves[k];
+    const cls = c.finalVal < 0 ? 'curve pos' : 'curve neg';
+    const pts = c.points.map(p => p.join(',')).join(' ');
+    g += `<polyline class="${cls}" points="${pts}" stroke-width="1.6" opacity="0.92"/>`;
+  }
+  // Curve labels at right edge — sort by y position and stagger to avoid overlap
+  const labeled = curves.slice(0, TOP_LABELED).slice().sort((a,b) => a.finalY - b.finalY);
+  let lastY = -1e9;
+  const minSep = 13;
+  for(const c of labeled){
+    let ly = c.finalY;
+    if(ly < lastY + minSep) ly = lastY + minSep;
+    lastY = ly;
+    // Connector line from curve endpoint to label
+    const endX = c.points[c.points.length-1][0];
+    const endY = c.points[c.points.length-1][1];
+    const labelX = ML + plotW + 6;
+    g += `<line x1="${endX}" y1="${endY}" x2="${labelX-2}" y2="${ly}" stroke="#999" stroke-width="0.4" opacity="0.6"/>`;
+    g += `<text class="curve-lbl" x="${labelX}" y="${ly+3}">${c.name}</text>`;
+  }
+  // Current ρ indicator (gold vertical line) — will be moved by updatePathIndicator
+  g += `<g id="rhoGroup">`;
+  g += `<line id="rhoLine" class="rho-indicator" x1="${ML}" y1="${MT}" x2="${ML}" y2="${MT+plotH}"/>`;
+  g += `<text id="rhoLineLbl" class="rho-indicator-lbl" x="${ML}" y="${MT-6}">ρ = —</text>`;
+  g += `</g>`;
+  svg.innerHTML = g;
+  // Show plot, hide loading message
+  document.getElementById('pathLoading').style.display = 'none';
+  svg.style.display = 'block';
+}
+
+function chooseTickStep(lo, hi, target){
+  const span = hi - lo;
+  const rough = span / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  const norm = rough / mag;
+  let step;
+  if(norm < 1.5) step = 1*mag;
+  else if(norm < 3) step = 2*mag;
+  else if(norm < 7) step = 5*mag;
+  else step = 10*mag;
+  return step;
+}
+
+function updatePathIndicator(currentL1){
+  if(!PATH_DATA) return;
+  const svg = document.getElementById('pathSVG');
+  const line = document.getElementById('rhoLine');
+  const lbl = document.getElementById('rhoLineLbl');
+  if(!line || !lbl) return;
+  // Recompute xS for current path
+  const W = 820;
+  const ML = 60, MR = 145;
+  const plotW = W - ML - MR;
+  let xMax = 0;
+  for(let k=0;k<PATH_DATA.l1s.length;k++) if(PATH_DATA.l1s[k] > xMax) xMax = PATH_DATA.l1s[k];
+  xMax *= 1.02;
+  // Clamp L1 to [0, xMax] for indicator position
+  const clampedL1 = Math.min(Math.max(currentL1, 0), xMax);
+  const px = ML + (clampedL1 / xMax) * plotW;
+  line.setAttribute('x1', px);
+  line.setAttribute('x2', px);
+  lbl.setAttribute('x', px);
+  const rho = parseFloat(document.getElementById('rhoSlider').dataset.linVal || 0.1);
+  lbl.textContent = `ρ = ${rho.toFixed(rho<0.01?4:(rho<0.1?3:2))}`;
+}
+
+/* ══════════════════════════════════════════
+   ORCHESTRATION
+══════════════════════════════════════════ */
+let DEBOUNCE_TIMER = null;
+function runSolver(){
+  const rho = parseFloat(document.getElementById('rhoSlider').dataset.linVal || 0.1);
+  const maxIter = parseInt(document.getElementById('iterSlider').value);
+  const t0 = performance.now();
+  const result = graphicalLasso(SACHS.S, rho, maxIter, 1e-4, 80, 1e-5);
+  const dt = performance.now() - t0;
+  // Stats — L1 norm uses the paper's convention: sum over i≠j (counts each entry twice),
+  // i.e. 2 × Σ_{i<j} |Θ_ij|. This matches the panel labels in Figure 3 of the paper exactly.
+  const n = SACHS.p;
+  let l1_unique = 0, edges = 0;
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+    if(Math.abs(result.Theta[i][j]) > 1e-6){
+      l1_unique += Math.abs(result.Theta[i][j]);
+      edges++;
+    }
+  }
+  const l1 = 2 * l1_unique;  // paper's convention
+  document.getElementById('statL1').textContent = l1.toFixed(4);
+  document.getElementById('statEdges').textContent = edges;
+  document.getElementById('statIters').textContent = result.outerIter;
+  const logDet = logDeterminant(result.Theta);
+  document.getElementById('statLogDet').textContent = isFinite(logDet) ? logDet.toFixed(2) : '—';
+  drawGraph(result.Theta);
+  buildThetaTable(result.Theta);
+  updatePathIndicator(l1);
+}
+
+function logDeterminant(M){
+  // Cholesky-based: log det = 2 * sum log diag(L)
+  const n = M.length;
+  const L = Array.from({length:n}, () => new Array(n).fill(0));
+  for(let i=0;i<n;i++){
+    for(let j=0;j<=i;j++){
+      let sum = M[i][j];
+      for(let k=0;k<j;k++) sum -= L[i][k]*L[j][k];
+      if(i===j){
+        if(sum <= 0) return -Infinity;
+        L[i][i] = Math.sqrt(sum);
+      } else {
+        L[i][j] = sum / L[j][j];
+      }
+    }
+  }
+  let s = 0;
+  for(let i=0;i<n;i++) s += 2*Math.log(L[i][i]);
+  return s;
+}
+
+function updateRhoBadge(){
+  const slider = document.getElementById('rhoSlider');
+  const lv = Math.pow(10, parseFloat(slider.value));
+  slider.dataset.linVal = lv;
+  document.getElementById('rhoBadge').textContent = lv.toFixed(lv < 0.01 ? 4 : (lv < 0.1 ? 3 : 2));
+}
+function setRho(rho){
+  const slider = document.getElementById('rhoSlider');
+  slider.value = Math.log10(rho);
+  updateRhoBadge();
+  runSolver();
+}
+
+function recomputeS(X){
+  // X: array of arrays (N rows x p cols). Compute mean and S.
+  const N = X.length, p = X[0].length;
+  const mu = new Array(p).fill(0);
+  for(let i=0;i<N;i++) for(let j=0;j<p;j++) mu[j] += X[i][j];
+  for(let j=0;j<p;j++) mu[j] /= N;
+  const S = Array.from({length:p}, () => new Array(p).fill(0));
+  for(let i=0;i<N;i++){
+    for(let j=0;j<p;j++){
+      const dj = X[i][j] - mu[j];
+      for(let k=j;k<p;k++){
+        S[j][k] += dj * (X[i][k] - mu[k]);
+      }
+    }
+  }
+  for(let j=0;j<p;j++) for(let k=j;k<p;k++){
+    S[j][k] /= N;
+    S[k][j] = S[j][k];
+  }
+  return {mu, S};
+}
+
+function handleCSVUpload(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    // Parse: detect header row (first line has non-numeric)
+    const lines = text.trim().split(/\r?\n/);
+    const rows = [];
+    let headers = null;
+    for(let li=0; li<lines.length; li++){
+      const cells = lines[li].split(/[,\s\t]+/).filter(s=>s.length>0);
+      const nums = cells.map(c => parseFloat(c));
+      if(nums.some(isNaN)){
+        if(li===0){ headers = cells; continue; }
+        else continue; // skip malformed line
+      }
+      rows.push(nums);
+    }
+    if(rows.length < 100){ alert('Need at least 100 data rows. Found ' + rows.length); return; }
+    const p = rows[0].length;
+    if(p !== 11){ alert('Expected 11 columns (proteins). Got '+p); return; }
+    // Recompute S
+    const {mu, S} = recomputeS(rows);
+    SACHS.N = rows.length;
+    SACHS.S = S;
+    SACHS.mu = mu;
+    // Take a fresh sample
+    const N = rows.length;
+    const idxList = [0,1,2,3,4,5,6,7, Math.floor(N*0.13), Math.floor(N*0.33), Math.floor(N*0.5), Math.floor(N*0.6), Math.floor(N*0.8), N-8,N-7,N-6,N-5,N-4,N-3,N-2,N-1];
+    SACHS.sample_idx = idxList;
+    SACHS.sample = idxList.map(i => rows[i]);
+    if(headers && headers.length === 11) SACHS.proteins = headers;
+    document.getElementById('dataStatus').textContent = `Using uploaded data: ${rows.length} cells × ${p} proteins.`;
+    document.getElementById('curN').textContent = rows.length;
+    buildDataTable();
+    buildCovTable();
+    runSolver();
+    // Recompute path for the new data
+    document.getElementById('pathLoading').style.display = 'block';
+    document.getElementById('pathSVG').style.display = 'none';
+    setTimeout(() => {
+      PATH_DATA = computePath();
+      drawPathPlot();
+      const l1 = parseFloat(document.getElementById('statL1').textContent) || 0;
+      updatePathIndicator(l1);
+    }, 60);
+  };
+  reader.readAsText(file);
+}
+
+function resetData(){
+  SACHS = JSON.parse(JSON.stringify(SACHS_DEFAULT));
+  document.getElementById('dataStatus').textContent = `Using original Sachs et al. (2005) data: 7466 cells × 11 phosphoproteins (log-scale, then standardized to unit variance per the paper's convention).`;
+  document.getElementById('curN').textContent = SACHS.N;
+  buildDataTable();
+  buildCovTable();
+  runSolver();
+  document.getElementById('pathLoading').style.display = 'block';
+  document.getElementById('pathSVG').style.display = 'none';
+  setTimeout(() => {
+    PATH_DATA = computePath();
+    drawPathPlot();
+    const l1 = parseFloat(document.getElementById('statL1').textContent) || 0;
+    updatePathIndicator(l1);
+  }, 60);
+}
+
+/* ══════════════════════════════════════════
+   KaTeX rendering of inline math symbols
+══════════════════════════════════════════ */
+function renderMath(){
+  const macros = {};
+  const render = (id, tex, displayMode=false) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    katex.render(tex, el, {throwOnError:false, displayMode, macros});
+  };
+  render('th_theta','\\Theta = \\Sigma^{-1}');
+  render('th_obj', '\\log\\det\\Theta \\;-\\; \\operatorname{tr}(S\\Theta) \\;-\\; \\rho\\,\\lVert\\Theta\\rVert_1', true);
+  render('th_t2','\\Theta');
+  render('th_lam','\\rho \\geq 0');
+  render('th_w0','W = S');
+  render('th_beta','\\beta = -\\theta_{12}/\\theta_{22}');
+  render('th_t3','\\hat\\Theta');
+  render('th_S','S = \\tfrac{1}{N}\\sum_k (x_k-\\bar x)(x_k-\\bar x)^\\top');
+  render('th_lam2','\\rho');
+  render('th_thetahat','\\hat{\\Theta}');
+  render('th_thij','\\theta_{ij}');
+  // Algorithm steps math
+  render('alg_m1', 'W \\leftarrow S + \\rho I');
+  render('alg_m2', 'W');
+  render('alg_m3', 'j = 1, 2, \\ldots, p, 1, 2, \\ldots');
+  render('alg_m4', '\\hat\\beta');
+  render('alg_m5', 'W_{11}');
+  render('alg_m6', 's_{12}');
+  render('alg_m7', 'w_{12} \\leftarrow W_{11}\\,\\hat\\beta');
+  render('alg_m8', 'j');
+  render('alg_m9', 'W');
+  render('alg_m10', '\\hat\\theta_{22} = 1/(w_{22} - w_{12}^{\\top}\\hat\\beta)');
+  render('alg_m11', '\\hat\\theta_{12} = -\\hat\\beta\\,\\hat\\theta_{22}');
+}
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  buildDataTable();
+  buildCovTable();
+  renderMath();
+  // Wire up controls
+  const rhoSlider = document.getElementById('rhoSlider');
+  rhoSlider.addEventListener('input', () => {
+    updateRhoBadge();
+    clearTimeout(DEBOUNCE_TIMER);
+    DEBOUNCE_TIMER = setTimeout(runSolver, 80);
+  });
+  document.getElementById('iterSlider').addEventListener('input', (e) => {
+    document.getElementById('iterBadge').textContent = e.target.value;
+    clearTimeout(DEBOUNCE_TIMER);
+    DEBOUNCE_TIMER = setTimeout(runSolver, 80);
+  });
+  document.getElementById('csvUpload').addEventListener('change', handleCSVUpload);
+  document.getElementById('lblToggle').addEventListener('change', runSolver);
+  updateRhoBadge();
+  runSolver();
+  // Compute the regularization path slightly deferred so the page renders quickly first
+  setTimeout(() => {
+    PATH_DATA = computePath();
+    drawPathPlot();
+    // Re-trigger the indicator now that the plot exists
+    const rho = parseFloat(document.getElementById('rhoSlider').dataset.linVal || 0.1);
+    const l1 = parseFloat(document.getElementById('statL1').textContent) || 0;
+    updatePathIndicator(l1);
+  }, 60);
+});
+</script>
+</body>
+</html>

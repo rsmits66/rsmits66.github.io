@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bivariate Jacobian Area Transformation</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500;600&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f7f7;
+    --text: #2c2a26;
+    --text-dim: #6b6560;
+    --accent: #9E1B32;
+    --accent-glow: rgba(158, 27, 50, 0.15);
+    --highlight: #cc3344;
+    --pachy: #5F6A72;
+    --axis: #a09888;
+    --particle-dim: rgba(95, 106, 114, 0.12);
+    --particle-in: rgba(158, 27, 50, 0.75);
+    --region-fill: rgba(158, 27, 50, 0.12);
+    --region-stroke: rgba(158, 27, 50, 0.8);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 0.8rem 1.5rem;
+  }
+
+  .container { width: 100%; max-width: 980px; }
+
+  .header { margin-bottom: 0.5rem; text-align: center; }
+
+  .header h1 {
+    font-weight: 300;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+  }
+
+  .formula-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.6rem;
+    padding: 0.4rem 0.8rem;
+    background: rgba(158, 27, 50, 0.05);
+    border: 1px solid rgba(158, 27, 50, 0.12);
+    border-radius: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .formula-bar .katex { font-size: 0.78rem; color: var(--text); }
+
+  .stats-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+  }
+
+  .stat-card { display: flex; flex-direction: column; gap: 0.15rem; }
+
+  .stat-card label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .stat-card span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--accent);
+  }
+
+  .stat-card.theoretical span { color: var(--pachy); }
+
+  .canvas-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .canvas-wrap {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.6rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .canvas-wrap h2 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  canvas {
+    background: #fafafa;
+    border: 1px solid #e0ddd8;
+    border-radius: 4px;
+    width: 370px;
+    height: 370px;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    background: var(--surface);
+    padding: 0.7rem 1rem;
+    border-radius: 6px;
+    flex-wrap: wrap;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .control-group label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 4px;
+    background: var(--axis);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .value-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 3.5ch;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Bivariate Jacobian Area Transformation</h1>
+  </div>
+
+  <div class="formula-bar" style="flex-direction:column; gap:0.4rem; align-items:stretch;">
+    <div style="display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; align-items:center;">
+      <span id="fTransform"></span>
+      <span id="fInverse"></span>
+    </div>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; align-items:center;">
+      <span id="fJacobian"></span>
+    </div>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; align-items:center; border-top:1px solid rgba(158,27,50,0.10); padding-top:0.35rem;">
+      <span id="fDensity"></span>
+    </div>
+  </div>
+
+  <div class="stats-board" style="grid-template-columns: repeat(4, 1fr) auto repeat(2, 1fr);">
+    <div class="stat-card">
+      <label>Area U-square</label>
+      <span id="valAreaU">0.000</span>
+    </div>
+    <div class="stat-card">
+      <label>Area Y-preimage</label>
+      <span id="valAreaY">0.000</span>
+    </div>
+    <div class="stat-card">
+      <label>Ratio (Area_Y / Area_U)</label>
+      <span id="valRatio">0.000</span>
+    </div>
+    <div class="stat-card theoretical">
+      <label>|J| at corner (u₁,u₂)</label>
+      <span id="valDeriv">0.000</span>
+    </div>
+    <div style="width:1px; background:rgba(0,0,0,0.08); margin:0 0.2rem;"></div>
+    <div class="stat-card theoretical">
+      <label>f_Y(h⁻¹(u)) at corner</label>
+      <span id="valFy">0.000</span>
+    </div>
+    <div class="stat-card">
+      <label>f_U(u₁,u₂) = f_Y · |J|</label>
+      <span id="valFu">0.000</span>
+    </div>
+  </div>
+
+  <div class="canvas-container">
+    <div class="canvas-wrap">
+      <h2>Original (Y₁, Y₂) Plane</h2>
+      <canvas id="canvasY" width="1000" height="1000"></canvas>
+    </div>
+    <div class="canvas-wrap">
+      <h2>Transformed (U₁, U₂) Plane</h2>
+      <canvas id="canvasU" width="1000" height="1000"></canvas>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>u₁ (Start)</label>
+      <input type="range" id="u1Slider" min="0.02" max="0.95" step="0.01" value="0.2">
+      <span class="value-display" id="u1Val">0.20</span>
+    </div>
+    <div class="control-group">
+      <label>u₂ (Start)</label>
+      <input type="range" id="u2Slider" min="0.1" max="4.5" step="0.1" value="2.0">
+      <span class="value-display" id="u2Val">2.0</span>
+    </div>
+    <div class="control-group">
+      <label>Delta (Width)</label>
+      <input type="range" id="deltaSlider" min="0.1" max="1.5" step="0.05" value="0.5">
+      <span class="value-display" id="deltaVal">0.50</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvasYel = document.getElementById('canvasY');
+const ctxY = canvasYel.getContext('2d');
+const canvasUel = document.getElementById('canvasU');
+const ctxU = canvasUel.getContext('2d');
+
+const N = 4000;
+let particles = [];
+let startU1 = 0.2, startU2 = 2.0, delta = 0.5;
+const MEAN = 2.0;
+
+const AXIS_MAX = 6.0;
+const PAD = 60;
+const PLOT_W = canvasYel.width - PAD * 2;
+const PLOT_H = canvasYel.height - PAD * 2;
+
+function mapX(val) { return PAD + (val / AXIS_MAX) * PLOT_W; }
+function mapYv(val) { return PAD + PLOT_H - (val / AXIS_MAX) * PLOT_H; }
+
+function polygonArea(pts) {
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) {
+    let j = (i + 1) % pts.length;
+    area += pts[i].x * pts[j].y - pts[i].y * pts[j].x;
+  }
+  return Math.abs(area) / 2;
+}
+
+function generateParticles() {
+  particles = [];
+  for (let i = 0; i < N; i++) {
+    let y1 = -MEAN * Math.log(Math.random());
+    let y2 = -MEAN * Math.log(Math.random());
+    let u1 = y1 / (y1 + y2);
+    let u2 = y1 + y2;
+    particles.push({ y1, y2, u1, u2 });
+  }
+}
+
+function drawGridAndAxes(ctx, canv, labelX, labelY) {
+  ctx.clearRect(0, 0, canv.width, canv.height);
+
+  // Grid lines
+  ctx.strokeStyle = '#e8e4de';
+  ctx.lineWidth = 1;
+  ctx.font = '400 20px "IBM Plex Mono", monospace';
+  ctx.fillStyle = '#8a8078';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  for (let i = 0; i <= AXIS_MAX; i++) {
+    // Vertical
+    ctx.beginPath();
+    ctx.moveTo(mapX(i), mapYv(0));
+    ctx.lineTo(mapX(i), mapYv(AXIS_MAX));
+    ctx.stroke();
+    ctx.fillText(i, mapX(i), mapYv(0) + 12);
+
+    // Horizontal
+    ctx.beginPath();
+    ctx.moveTo(mapX(0), mapYv(i));
+    ctx.lineTo(mapX(AXIS_MAX), mapYv(i));
+    ctx.stroke();
+    if (i > 0) {
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(i, mapX(0) - 12, mapYv(i));
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+  }
+
+  // Axis border
+  ctx.strokeStyle = '#a09888';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(mapX(0), mapYv(0));
+  ctx.lineTo(mapX(0), mapYv(AXIS_MAX));
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mapX(0), mapYv(0));
+  ctx.lineTo(mapX(AXIS_MAX), mapYv(0));
+  ctx.stroke();
+
+  // Axes labels
+  ctx.fillStyle = '#2c2a26';
+  ctx.font = '600 26px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(labelX, mapX(AXIS_MAX) + 15, mapYv(0) - 5);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(labelY, mapX(0), mapYv(AXIS_MAX) - 15);
+}
+
+function draw() {
+  drawGridAndAxes(ctxY, canvasYel, 'Y₁', 'Y₂');
+  drawGridAndAxes(ctxU, canvasUel, 'U₁', 'U₂');
+
+  // 1. U-Square vertices
+  const vU = [
+    { x: startU1, y: startU2 },
+    { x: startU1 + delta, y: startU2 },
+    { x: startU1 + delta, y: startU2 + delta },
+    { x: startU1, y: startU2 + delta }
+  ];
+
+  // 2. Inverse transform: Y1 = U1*U2, Y2 = U2*(1-U1)
+  const vY = vU.map(u => ({ x: u.x * u.y, y: u.y * (1 - u.x) }));
+
+  const areaU = delta * delta;
+  const areaY = polygonArea(vY);
+
+  // 3. Draw U-Square (crimson)
+  ctxU.fillStyle = 'rgba(158, 27, 50, 0.12)';
+  ctxU.strokeStyle = 'rgba(158, 27, 50, 0.8)';
+  ctxU.lineWidth = 3;
+  ctxU.beginPath();
+  ctxU.moveTo(mapX(vU[0].x), mapYv(vU[0].y));
+  for (let i = 1; i < 4; i++) ctxU.lineTo(mapX(vU[i].x), mapYv(vU[i].y));
+  ctxU.closePath();
+  ctxU.fill();
+  ctxU.stroke();
+
+  // 4. Draw warped Y-polygon (crimson)
+  ctxY.fillStyle = 'rgba(158, 27, 50, 0.12)';
+  ctxY.strokeStyle = 'rgba(158, 27, 50, 0.8)';
+  ctxY.lineWidth = 3;
+  ctxY.beginPath();
+  ctxY.moveTo(mapX(vY[0].x), mapYv(vY[0].y));
+  for (let i = 1; i < 4; i++) ctxY.lineTo(mapX(vY[i].x), mapYv(vY[i].y));
+  ctxY.closePath();
+  ctxY.fill();
+  ctxY.stroke();
+
+  // 5. Particles
+  for (const p of particles) {
+    if (p.y1 > AXIS_MAX || p.y2 > AXIS_MAX) continue;
+
+    const isInside = (p.u1 >= startU1 && p.u1 <= startU1 + delta &&
+                      p.u2 >= startU2 && p.u2 <= startU2 + delta);
+
+    const fillDim = 'rgba(95, 106, 114, 0.10)';
+    const fillIn = 'rgba(158, 27, 50, 0.7)';
+    const fill = isInside ? fillIn : fillDim;
+    const r = isInside ? 5 : 3;
+
+    // Y plane
+    ctxY.beginPath();
+    ctxY.arc(mapX(p.y1), mapYv(p.y2), r, 0, Math.PI * 2);
+    ctxY.fillStyle = fill;
+    ctxY.fill();
+
+    // U plane
+    if (p.u1 <= AXIS_MAX && p.u2 <= AXIS_MAX) {
+      ctxU.beginPath();
+      ctxU.arc(mapX(p.u1), mapYv(p.u2), r, 0, Math.PI * 2);
+      ctxU.fillStyle = fill;
+      ctxU.fill();
+    }
+  }
+
+  // 6. Vertex labels on Y-polygon
+  ctxY.fillStyle = 'rgba(158, 27, 50, 0.9)';
+  ctxY.font = '600 18px "IBM Plex Mono", monospace';
+  ctxY.textAlign = 'left'; ctxY.textBaseline = 'bottom';
+  for (let i = 0; i < 4; i++) {
+    const px = mapX(vY[i].x), py = mapYv(vY[i].y);
+    ctxY.beginPath(); ctxY.arc(px, py, 5, 0, Math.PI * 2);
+    ctxY.fillStyle = 'rgba(158, 27, 50, 0.9)'; ctxY.fill();
+  }
+
+  // 7. Update readouts
+  document.getElementById('valAreaU').textContent = areaU.toFixed(3);
+  document.getElementById('valAreaY').textContent = areaY.toFixed(3);
+  document.getElementById('valRatio').textContent = (areaY / areaU).toFixed(3);
+
+  const theoreticalJ = startU2;
+  document.getElementById('valDeriv').textContent = theoreticalJ.toFixed(3);
+
+  // f_{Y1,Y2}(h^{-1}(u1,u2)) at corner
+  // Y1,Y2 ~ iid Exp(mean=2), rate=1/2
+  // f(y1,y2) = (1/4) e^{-(y1+y2)/2}
+  // At inverse: y1=u1*u2, y2=u2*(1-u1), so y1+y2=u2
+  const fY = 0.25 * Math.exp(-startU2 / 2);
+  document.getElementById('valFy').textContent = fY.toFixed(5);
+
+  // f_{U1,U2}(u1,u2) = f_Y(h^{-1}(u)) * |J| = (1/4)e^{-u2/2} * u2
+  const fU = fY * theoreticalJ;
+  document.getElementById('valFu').textContent = fU.toFixed(5);
+}
+
+// Controls
+const u1Slider = document.getElementById('u1Slider');
+const u2Slider = document.getElementById('u2Slider');
+const deltaSlider = document.getElementById('deltaSlider');
+
+function handleUpdate() {
+  startU1 = parseFloat(u1Slider.value);
+  startU2 = parseFloat(u2Slider.value);
+  delta = parseFloat(deltaSlider.value);
+  document.getElementById('u1Val').textContent = startU1.toFixed(2);
+  document.getElementById('u2Val').textContent = startU2.toFixed(1);
+  document.getElementById('deltaVal').textContent = delta.toFixed(2);
+  draw();
+}
+
+u1Slider.addEventListener('input', handleUpdate);
+u2Slider.addEventListener('input', handleUpdate);
+deltaSlider.addEventListener('input', handleUpdate);
+
+// Formulas
+katex.render(
+  String.raw`U_1 = \frac{Y_1}{Y_1+Y_2},\;\; U_2 = Y_1+Y_2`,
+  document.getElementById('fTransform'), { throwOnError: false }
+);
+katex.render(
+  String.raw`Y_1 = U_1 U_2,\;\; Y_2 = U_2(1-U_1)`,
+  document.getElementById('fInverse'), { throwOnError: false }
+);
+katex.render(
+  String.raw`J = \det\begin{pmatrix} \frac{\partial y_1}{\partial u_1} & \frac{\partial y_1}{\partial u_2} \\[4pt] \frac{\partial y_2}{\partial u_1} & \frac{\partial y_2}{\partial u_2} \end{pmatrix} = \det\begin{pmatrix} u_2 & u_1 \\ -u_2 & 1-u_1 \end{pmatrix} = u_2(1-u_1) + u_1 u_2 = u_2`,
+  document.getElementById('fJacobian'), { throwOnError: false }
+);
+katex.render(
+  String.raw`f_{U_1,U_2}(u_1,u_2) = f_{Y_1,Y_2}\!\bigl(h_1^{-1}(u_1,u_2),\; h_2^{-1}(u_1,u_2)\bigr)\;|J| \qquad \Longleftarrow\quad \frac{\text{Area}_Y}{\text{Area}_U} \;\xrightarrow{\;\Delta\to 0\;}\; |J|`,
+  document.getElementById('fDensity'), { throwOnError: false }
+);
+
+generateParticles();
+handleUpdate();
+</script>
+</body>
+</html>

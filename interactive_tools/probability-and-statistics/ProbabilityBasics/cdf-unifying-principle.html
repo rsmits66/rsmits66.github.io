@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cumulative Distribution Function — A Unifying Principle</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Crimson+Pro:ital,wght@0,300..700;1,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });"></script>
+
+<style>
+  :root {
+    --paper:        #f3ede1;
+    --paper-deep:   #ebe3d2;
+    --ink:          #1a1612;
+    --ink-soft:     #463c33;
+    --ink-faint:    #847460;
+    --rule:         #cfc4ad;
+    --accent:       #b62a1f;       /* the scanning line red */
+    --accent-soft:  #d97a72;
+    --plot-blue:    #1f3a66;
+    --plot-blue-soft: #6b85ad;
+    --shade:        rgba(31, 58, 102, 0.06);
+    --highlight:    #f4d03f;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.65;
+    font-feature-settings: "liga", "kern", "onum";
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(182, 42, 31, 0.025) 0%, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(31, 58, 102, 0.03) 0%, transparent 50%);
+  }
+
+  /* subtle paper grain */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  main { position: relative; z-index: 2; }
+
+  /* ─── Layout ─────────────────────────────────────────── */
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+  .narrow {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* ─── Hero ───────────────────────────────────────────── */
+  header.hero {
+    padding: 96px 0 72px;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  h1.title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+    font-weight: 350;
+    font-size: clamp(48px, 7vw, 92px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    margin: 0 0 28px;
+    color: var(--ink);
+  }
+  h1.title em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--accent);
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+  }
+
+  .subtitle {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 24px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    max-width: 720px;
+    margin: 0 0 48px;
+  }
+
+  .meta {
+    display: flex;
+    gap: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+  }
+  .meta span strong {
+    color: var(--ink);
+    font-weight: 500;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* ─── Section structure ──────────────────────────────── */
+  section {
+    padding: 88px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 96;
+    font-weight: 400;
+    font-size: clamp(36px, 4.5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin: 0 0 20px;
+  }
+  h2 em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink-soft);
+  }
+
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 36;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 12px;
+    letter-spacing: -0.005em;
+  }
+
+  .lede {
+    font-size: 22px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    font-weight: 400;
+    margin: 0 0 36px;
+    max-width: 720px;
+  }
+
+  p { margin: 0 0 1.1em; }
+  p + p { text-indent: 0; }
+
+  /* drop cap on first paragraph of a section */
+  .drop > p:first-of-type::first-letter {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144;
+    font-weight: 400;
+    font-size: 5em;
+    line-height: 0.85;
+    float: left;
+    padding: 0.05em 0.1em 0 0;
+    color: var(--accent);
+  }
+
+  /* ─── Visualization frame ────────────────────────────── */
+  .viz {
+    margin: 48px 0;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.4) inset,
+      0 24px 48px -32px rgba(26, 22, 18, 0.18);
+    overflow: hidden;
+  }
+  .viz-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 18px 28px 14px;
+    border-bottom: 1px solid var(--rule);
+    background: rgba(255,255,255,0.25);
+  }
+  .viz-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 17px;
+    letter-spacing: -0.005em;
+  }
+  .viz-title em { font-style: italic; color: var(--ink-soft); font-weight: 400; }
+
+  .viz-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .viz-body {
+    padding: 24px 28px 28px;
+  }
+  canvas.plot {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: transparent;
+  }
+
+  .viz-readout {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 14px 28px 18px;
+    border-top: 1px solid var(--rule);
+    background: rgba(255,255,255,0.15);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .viz-readout span strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ─── Side notes / pull quotes ───────────────────────── */
+  .pullquote {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 96;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 30px;
+    line-height: 1.3;
+    color: var(--ink);
+    border-left: 2px solid var(--accent);
+    padding: 8px 0 8px 28px;
+    margin: 56px 0;
+    max-width: 760px;
+  }
+  .pullquote cite {
+    display: block;
+    margin-top: 16px;
+    font-style: normal;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ─── Three-up grid for unifying section ─────────────── */
+  .triptych {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin: 40px 0 24px;
+  }
+  .triptych .panel {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: 18px 18px 14px;
+    border-radius: 3px;
+  }
+  .triptych .panel h4 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 15px;
+    margin: 0 0 4px;
+    letter-spacing: -0.005em;
+  }
+  .triptych .panel .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+  .triptych canvas {
+    width: 100%;
+    height: auto;
+  }
+
+  @media (max-width: 800px) {
+    .triptych { grid-template-columns: 1fr; }
+    .container { padding: 0 24px; }
+    body { font-size: 17px; }
+  }
+
+  /* ─── Tabular data: Lebesgue decomposition ───────────── */
+  .decomp-table {
+    margin: 44px 0;
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+  }
+  .decomp-row {
+    display: grid;
+    grid-template-columns: 180px 1fr 1fr 1fr;
+    gap: 24px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: start;
+  }
+  .decomp-row:last-child { border-bottom: none; }
+  .decomp-row.head {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .decomp-row strong.kind {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.005em;
+  }
+  .decomp-row strong.kind em {
+    display: block;
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 14px;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+  .decomp-row .cell { font-size: 17px; line-height: 1.45; }
+
+  @media (max-width: 800px) {
+    .decomp-row { grid-template-columns: 1fr; gap: 8px; }
+    .decomp-row.head { display: none; }
+    .decomp-row .cell::before {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 4px;
+    }
+    .decomp-row .cell.support::before { content: "support"; }
+    .decomp-row .cell.measure::before { content: "what carries the mass"; }
+    .decomp-row .cell.cdf::before     { content: "what F looks like"; }
+  }
+
+  /* ─── Math display ──────────────────────────────────── */
+  .display-eq {
+    margin: 36px auto;
+    text-align: center;
+    font-size: 22px;
+  }
+  .display-eq.boxed {
+    padding: 28px 24px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: rgba(255,255,255,0.25);
+  }
+  .eq-label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 16px;
+  }
+
+  /* ─── Marginalia ─────────────────────────────────────── */
+  aside.note {
+    font-size: 16px;
+    color: var(--ink-soft);
+    border-left: 1px solid var(--rule);
+    padding: 4px 0 4px 18px;
+    margin: 28px 0;
+    max-width: 640px;
+    font-style: italic;
+  }
+  aside.note strong { font-style: normal; color: var(--ink); font-weight: 500; }
+
+  /* ─── Footer ─────────────────────────────────────────── */
+  footer {
+    padding: 64px 0 80px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  footer .ornament {
+    font-size: 20px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    letter-spacing: 0.5em;
+  }
+
+  /* ─── Inline emphasis ────────────────────────────────── */
+  .smallcaps {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+  .red { color: var(--accent); }
+  .blue { color: var(--plot-blue); }
+
+  .katex { font-size: 1.05em; }
+  .display-eq .katex-display { margin: 0; }
+</style>
+</head>
+<body>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<header class="hero">
+  <div class="container">
+    <div class="eyebrow">A monograph in three movements &nbsp;·&nbsp; on probability</div>
+    <h1 class="title">One function<br>to <em>describe</em> them all.</h1>
+    <p class="subtitle">
+      The cumulative distribution function speaks fluently about masses on points,
+      densities on intervals, and probability draped over a fractal dust —
+      without ever changing the question it answers.
+    </p>
+    <div class="meta">
+      <span>Subject<strong>F(x) = P(X ≤ x)</strong></span>
+      <span>Cast<strong>Discrete · Absolutely Continuous · Singular</strong></span>
+      <span>Method<strong>Riemann–Stieltjes</strong></span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PRELUDE
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section>
+  <div class="container narrow drop">
+    <div class="section-num">§ 0 &nbsp;Prelude</div>
+    <h2>Three kinds of <em>weight</em>.</h2>
+    <p class="lede">
+      Probability is the art of placing a unit of weight on the real line.
+      The strange thing is how many qualitatively different ways the weight
+      can sit there.
+    </p>
+
+    <p>
+      A coin pressed flat against a table puts all of its mass at one point.
+      A pool of water spread across the kitchen floor puts none of its mass at
+      any individual point — yet every region of finite size carries some.
+      Between these two regimes lives a stranger object: a distribution that puts
+      no mass at any point, no mass on any interval that misses a particular
+      fractal dust, and yet still adds up to one.
+    </p>
+
+    <p>
+      The probability density function describes only the second case. The
+      probability mass function describes only the first. The third — the
+      <span class="smallcaps">Cantor</span> distribution and its kin — has neither,
+      and is invisible to both.
+    </p>
+
+    <p>
+      The cumulative distribution function $F(x) = P(X \le x)$ describes all
+      three with a single definition. It is the only honest answer to the
+      question <em>how much weight lies to the left of</em> $x$ — and that
+      question, it turns out, is the only question we ever needed to ask.
+    </p>
+
+    <div class="pullquote">
+      Discrete distributions place finite mass on points of dimension zero.
+      Continuous distributions place vanishing mass on a continuum of dimension one.
+      Singular distributions place positive mass on a set of dimension somewhere
+      strictly between.
+      <cite>The thesis of this monograph</cite>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     I. DISCRETE
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="discrete">
+  <div class="container narrow drop">
+    <div class="section-num">§ I &nbsp;The Discrete Case</div>
+    <h2>Atoms on a <em>dust</em> of points.</h2>
+    <p class="lede">
+      The simplest distributions live on a set of isolated points and
+      assign each point a finite share of the total mass.
+    </p>
+
+    <p>
+      Toss a fair coin four times and count heads. The result is one of five
+      integers, with chances $\tfrac{1}{16},\ \tfrac{4}{16},\ \tfrac{6}{16},\
+      \tfrac{4}{16},\ \tfrac{1}{16}$ — the binomial$(4, \tfrac12)$ distribution.
+      Five lonely points carry the entire unit of probability between them.
+      Everywhere else, there is nothing.
+    </p>
+
+    <p>
+      The <span class="smallcaps">Lebesgue measure</span> of the support is zero —
+      five isolated points form a set of total length zero — yet the
+      <em>probability</em> measure is one. This is what we mean by
+      <em>finite mass on a zero-dimensional set</em>: pointlike supports
+      that nevertheless carry weight.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="viz" id="viz-discrete">
+      <div class="viz-head">
+        <div class="viz-title">Binomial<em>(4, ½)</em> &nbsp;—&nbsp; mass and accumulation</div>
+        <div class="viz-tag">PMF · CDF</div>
+      </div>
+      <div class="viz-body">
+        <canvas class="plot" data-which="discrete" width="1200" height="640"></canvas>
+      </div>
+      <div class="viz-readout">
+        <span>scan&nbsp;<strong data-readout="x">x = 0.00</strong></span>
+        <span>F(x)&nbsp;<strong data-readout="F">0.0000</strong></span>
+        <span>support&nbsp;<strong>{0, 1, 2, 3, 4}</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      Watch the cumulative function. It is flat — utterly flat — between atoms,
+      because no probability is being collected. At each integer it leaps upward
+      by exactly the amount of mass parked there. The function is right-continuous
+      by convention, the limit from the right matching the value at the jump.
+    </p>
+    <p>
+      A staircase. <em>Pure jumps, no slope.</em>
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     II. CONTINUOUS — EXPONENTIAL
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="continuous-exp">
+  <div class="container narrow drop">
+    <div class="section-num">§ II &nbsp;The Absolutely Continuous Case, First Encounter</div>
+    <h2>A density <em>poured</em> on the line.</h2>
+    <p class="lede">
+      Here, no individual point carries weight. The mass is infinitesimally
+      thin — a density — yet integrates to one over its support.
+    </p>
+
+    <p>
+      The exponential$(1)$ distribution has density $f(x) = e^{-x}$ on
+      $[0, \infty)$. The probability of exactly hitting any specific value is
+      <em>zero</em>: $P(X = 3) = 0$, and so on for every other point. The
+      individual atoms are gone.
+    </p>
+
+    <p>
+      What survives is the integral. Probability accumulates over intervals,
+      not at points. The CDF is the running area under the density —
+      smooth, monotone, climbing without jumps.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="viz">
+      <div class="viz-head">
+        <div class="viz-title">Exponential<em>(λ = 1)</em> &nbsp;—&nbsp; density and integral</div>
+        <div class="viz-tag">PDF · CDF</div>
+      </div>
+      <div class="viz-body">
+        <canvas class="plot" data-which="exponential" width="1200" height="640"></canvas>
+      </div>
+      <div class="viz-readout">
+        <span>scan&nbsp;<strong data-readout="x">x = 0.00</strong></span>
+        <span>F(x)&nbsp;<strong data-readout="F">0.0000</strong></span>
+        <span>support&nbsp;<strong>[0, ∞)</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      Notice the <em>structural</em> contrast with the binomial. The discrete
+      CDF was a step. The exponential CDF is a slope. Each value of the density
+      $f(x)$ is the rate at which the CDF rises through $x$. We have traded
+      jumps for derivatives.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     III. CONTINUOUS — NORMAL
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="continuous-normal">
+  <div class="container narrow drop">
+    <div class="section-num">§ III &nbsp;The Absolutely Continuous Case, Continued</div>
+    <h2>The bell, and its <em>integral</em>.</h2>
+    <p class="lede">
+      The standard normal is the same kind of object as the exponential —
+      mass spread thinly across a one-dimensional set — but it has earned
+      a printed table.
+    </p>
+
+    <p>
+      The CDF of the standard normal has no closed form in elementary
+      functions. For a century, it lived as a printed lookup table at the
+      back of statistics textbooks, columns of $\Phi(z)$ to four decimals.
+      What that table tabulated is precisely $F(x) = \int_{-\infty}^{x}
+      \tfrac{1}{\sqrt{2\pi}} e^{-t^2/2}\, dt$ — area under the bell curve.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="viz">
+      <div class="viz-head">
+        <div class="viz-title">Standard Normal $\mathcal{N}(0,1)$ &nbsp;—&nbsp; the area function</div>
+        <div class="viz-tag">PDF · CDF · Φ-table</div>
+      </div>
+      <div class="viz-body">
+        <canvas class="plot" data-which="normal" width="1200" height="640"></canvas>
+      </div>
+      <div class="viz-readout">
+        <span>scan&nbsp;<strong data-readout="x">x = -4.00</strong></span>
+        <span>Φ(x)&nbsp;<strong data-readout="F">0.0000</strong></span>
+        <span>support&nbsp;<strong>(-∞, ∞)</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      Two distributions, different shapes — one skewed and bounded below,
+      the other symmetric and unbounded — but the same <em>kind</em> of object.
+      Both have densities. Both CDFs are smooth and strictly increasing on
+      their supports. Both belong to the absolutely continuous family.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     IV. CANTOR — THE STRANGE ONE
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="cantor">
+  <div class="container narrow drop">
+    <div class="section-num">§ IV &nbsp;The Singular Case</div>
+    <h2>Mass on a <em>fractal</em>.</h2>
+    <p class="lede">
+      Now for an object that is neither discrete nor continuous —
+      and which most undergraduate curricula politely never mention.
+    </p>
+
+    <p>
+      Start with $[0, 1]$. Remove the open middle third. From each remaining
+      piece, remove its open middle third. Iterate forever. What is left is the
+      <span class="smallcaps">Cantor set</span> — uncountably many points,
+      Lebesgue measure zero, Hausdorff dimension $\log 2 / \log 3 \approx 0.6309$.
+      A dust between dimensions.
+    </p>
+
+    <p>
+      Place a probability distribution on this dust by assigning each of the
+      two pieces at every level half of the remaining mass. The resulting CDF
+      is the <span class="smallcaps">Cantor function</span>, sometimes called
+      the <em>devil's staircase</em>: continuous everywhere, with derivative
+      zero almost everywhere — yet rising from $0$ to $1$. It increases without
+      ever being seen to do so.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="viz">
+      <div class="viz-head">
+        <div class="viz-title">Cantor distribution &nbsp;—&nbsp; singular continuous</div>
+        <div class="viz-tag">support · CDF</div>
+      </div>
+      <div class="viz-body">
+        <canvas class="plot" data-which="cantor" width="1200" height="640"></canvas>
+      </div>
+      <div class="viz-readout">
+        <span>scan&nbsp;<strong data-readout="x">x = 0.000</strong></span>
+        <span>F(x)&nbsp;<strong data-readout="F">0.0000</strong></span>
+        <span>dim<sub>H</sub>&nbsp;<strong>≈ 0.6309</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      The top panel shows a depth-five approximation: thirty-two heavy bars
+      planted at the segments that survive the construction, each of width
+      $\tfrac{1}{243}$ and density $\tfrac{243}{32} \approx 7.59$. The bars are
+      drawn dark and dense on purpose — at every successive level the support
+      narrows and the density of mass on the surviving segments grows in
+      lockstep, climbing toward infinity as the segments shrink to a fractal
+      dust. This is what concentrated mass on a thin support actually looks like.
+    </p>
+    <p>
+      The bottom panel is the Cantor CDF that the bars integrate to —
+      climbing through values it never lingers at.
+    </p>
+
+    <p>
+      In the limit, neither a PMF nor a PDF survives. There is no PMF:
+      no individual point carries positive probability, because each point
+      belongs to nested intervals whose mass halves at every level. There is
+      no PDF either: away from the dust the density would have to be zero,
+      but the dust itself has length zero, so an integral against any density
+      would yield zero — not one. The density bars above are an
+      <em>approximation</em>; the limiting object has neither.
+    </p>
+
+    <aside class="note">
+      <strong>The reckoning.</strong> Sets that are too small to register
+      with the Lebesgue measure can still carry an entire distribution.
+      The PDF concept fails here not because of a calculation difficulty,
+      but because no Radon–Nikodym derivative against Lebesgue measure exists.
+    </aside>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     V. THE UNIFICATION
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="unification">
+  <div class="container narrow drop">
+    <div class="section-num">§ V &nbsp;The Unification</div>
+    <h2>Three CDFs, <em>one</em> definition.</h2>
+    <p class="lede">
+      The PMF and PDF are species. The CDF is the genus.
+    </p>
+
+    <p>
+      Every distribution we have considered — the binomial staircase, the
+      smooth exponential and normal slopes, the devil's staircase of the
+      Cantor set — yields, without modification, the same object: a function
+      $F : \mathbb{R} \to [0,1]$ that is non-decreasing, right-continuous,
+      and limits to $0$ and $1$ at the two ends of the line. Any function
+      with these three properties is the CDF of some random variable, and
+      every random variable has one.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="triptych">
+      <div class="panel">
+        <h4>Pure jumps</h4>
+        <div class="sub">discrete · binomial</div>
+        <canvas class="cdf-mini" data-which="discrete" width="500" height="320"></canvas>
+      </div>
+      <div class="panel">
+        <h4>Pure slope</h4>
+        <div class="sub">absolutely continuous · normal</div>
+        <canvas class="cdf-mini" data-which="normal" width="500" height="320"></canvas>
+      </div>
+      <div class="panel">
+        <h4>Neither</h4>
+        <div class="sub">singular · Cantor</div>
+        <canvas class="cdf-mini" data-which="cantor" width="500" height="320"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      The discrete CDF rises only by jumps. The normal CDF rises only by
+      slope. The Cantor CDF rises by neither — it has no jumps and its
+      derivative is zero almost everywhere — and yet it rises, all the way
+      from zero to one.
+    </p>
+
+    <h3 style="margin-top: 56px;">The decomposition theorem</h3>
+    <p>
+      <span class="smallcaps">Lebesgue's decomposition theorem</span> says
+      that every CDF can be written, uniquely, as a sum of these three
+      pure types:
+    </p>
+    <div class="display-eq boxed">
+      $$F(x) \;=\; \alpha_d\, F_d(x) \;+\; \alpha_{ac}\, F_{ac}(x) \;+\; \alpha_s\, F_s(x), \qquad \alpha_d + \alpha_{ac} + \alpha_s = 1$$
+      <span class="eq-label">discrete · absolutely continuous · singular</span>
+    </div>
+    <p>
+      Three components, three flavors of weight. The discrete part lives on a
+      countable set. The absolutely continuous part lives on a set of positive
+      Lebesgue measure and admits a density. The singular continuous part
+      lives, as Cantor's example warns, on a fractal between the two.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="decomp-table">
+      <div class="decomp-row head">
+        <div>Component</div>
+        <div>Support has...</div>
+        <div>Mass concentrated as...</div>
+        <div>CDF rises by...</div>
+      </div>
+      <div class="decomp-row">
+        <strong class="kind">Discrete<em>F<sub>d</sub></em></strong>
+        <div class="cell support">isolated points<br><em style="font-style:italic;color:var(--ink-faint);">Lebesgue measure 0, dim 0</em></div>
+        <div class="cell measure">finite atoms $p_i$ at points $x_i$</div>
+        <div class="cell cdf">jumps only</div>
+      </div>
+      <div class="decomp-row">
+        <strong class="kind">Absolutely continuous<em>F<sub>ac</sub></em></strong>
+        <div class="cell support">intervals or unions of intervals<br><em style="font-style:italic;color:var(--ink-faint);">Lebesgue measure positive, dim 1</em></div>
+        <div class="cell measure">a density $f(x) = F'(x)$</div>
+        <div class="cell cdf">slope only</div>
+      </div>
+      <div class="decomp-row">
+        <strong class="kind">Singular continuous<em>F<sub>s</sub></em></strong>
+        <div class="cell support">a set with measure 0 but uncountable<br><em style="font-style:italic;color:var(--ink-faint);">Hausdorff dimension fractional</em></div>
+        <div class="cell measure">no atoms, no density</div>
+        <div class="cell cdf">neither, yet still rises</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      The user's intuition turns out to be exactly right. The discrete case is
+      finite mass on a zero-dimensional support; the absolutely continuous case
+      is mass with zero pointwise weight on a one-dimensional support; the
+      singular case is mass on a support of fractional dimension, neither
+      atomic nor smeared. The CDF does not care which kind it is encoding.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     VI. EXPECTATION VIA STIELTJES
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="expectation">
+  <div class="container narrow drop">
+    <div class="section-num">§ VI &nbsp;Expectation</div>
+    <h2>One integral for <em>all</em> three.</h2>
+    <p class="lede">
+      The pedagogical price of treating the discrete and continuous cases
+      separately is that we end up writing the same theorem twice.
+      The Stieltjes integral lets us write it once.
+    </p>
+
+    <p>
+      Asked for the expected value of $g(X)$, the standard textbook answer
+      forks. If $X$ is discrete, it is a sum:
+    </p>
+
+    <div class="display-eq">
+      $$E[g(X)] \;=\; \sum_i g(x_i)\, p_i.$$
+    </div>
+
+    <p>
+      If $X$ has a density, it is an integral:
+    </p>
+
+    <div class="display-eq">
+      $$E[g(X)] \;=\; \int_{-\infty}^{\infty} g(x)\, f(x)\, dx.$$
+    </div>
+
+    <p>
+      And if $X$ is Cantor — the textbook usually shrugs.
+    </p>
+
+    <p>
+      But all three formulas are special cases of a single object: the
+      <span class="smallcaps">Riemann–Stieltjes integral</span> of $g$ against
+      the cumulative distribution function itself.
+    </p>
+
+    <div class="display-eq boxed">
+      $$E[g(X)] \;=\; \int_{-\infty}^{\infty} g(x)\, dF(x).$$
+      <span class="eq-label">the Stieltjes form — one definition for every distribution</span>
+    </div>
+
+    <p>
+      The trick is the differential $dF(x)$. Where $F$ jumps, $dF$ is an atom of
+      size equal to the jump, and the integral collapses to a sum. Where $F$ is
+      differentiable, $dF = f(x)\, dx$, and the integral is the familiar one.
+      Where $F$ is the Cantor function, $dF$ is the singular Cantor measure,
+      and the integral remains perfectly well-defined — even though no
+      sum and no Riemann integral would suffice.
+    </p>
+
+    <p>
+      The CDF is not just a presentation of the distribution. It <em>is</em>
+      the distribution, in the precise sense that integration against $dF$
+      computes every probability and every expectation we will ever need.
+      It is the universal reference frame in which discrete, continuous, and
+      singular all become the same kind of statement.
+    </p>
+
+    <div class="pullquote">
+      The PMF and PDF are descriptions of distributions in their dialects.
+      The CDF is the distribution speaking in its own voice.
+      <cite>The unification, restated</cite>
+    </div>
+
+    <h3 style="margin-top: 56px;">An even purer form &nbsp;—&nbsp; expectation as area</h3>
+    <p>
+      The Stieltjes integral is honest, but it still asks the reader to know
+      what $dF$ means. There is a more elementary version, available whenever
+      $X \geq 0$, that uses nothing but the CDF as an ordinary function:
+    </p>
+    <div class="display-eq boxed">
+      $$E[X] \;=\; \int_0^\infty P(X > t)\, dt \;=\; \int_0^\infty \bigl(1 - F(t)\bigr)\, dt.$$
+      <span class="eq-label">the tail integral — survives any kind of $F$</span>
+    </div>
+    <p>
+      A short Fubini argument explains it: $\int_0^\infty \mathbf{1}_{\{X > t\}}\, dt
+      = X$, so taking expectations and swapping order yields the formula. But
+      more striking than the proof is the picture. The integrand $1 - F(t)$ is
+      precisely the height of the gap between the CDF curve and the line
+      $y = 1$. The integral is therefore the <em>area of that gap</em>.
+      Expectation, drawn directly on the CDF plot.
+    </p>
+
+    <p>
+      For real-valued $X$ that may also be negative, the formula generalizes
+      symmetrically:
+    </p>
+    <div class="display-eq">
+      $$E[X] \;=\; \int_0^\infty \bigl(1 - F(t)\bigr)\, dt \;-\; \int_{-\infty}^0 F(t)\, dt.$$
+    </div>
+    <p>
+      The expectation is a <em>signed</em> area in the CDF plot: the region
+      above $F$ on the positive side, minus the region below $F$ on the
+      negative side. For the standard normal these two regions are mirror
+      images of one another, and the difference is zero — a fact one can read
+      off the picture without computing a single Gaussian integral.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="triptych">
+      <div class="panel">
+        <h4>Sum of rectangles</h4>
+        <div class="sub">binomial · E[X] = 2</div>
+        <canvas class="expect-cdf" data-which="discrete" width="500" height="320"></canvas>
+      </div>
+      <div class="panel">
+        <h4>Smooth area</h4>
+        <div class="sub">exponential · E[X] = 1</div>
+        <canvas class="expect-cdf" data-which="exponential" width="500" height="320"></canvas>
+      </div>
+      <div class="panel">
+        <h4>Fractal area</h4>
+        <div class="sub">Cantor · E[X] = ½</div>
+        <canvas class="expect-cdf" data-which="cantor" width="500" height="320"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="container narrow">
+    <p>
+      The shaded regions above are the integrals
+      $\int_0^\infty (1 - F(t))\, dt$ for the binomial, exponential, and
+      Cantor distributions — and their areas are, exactly,
+      $2$, $1$, and $\tfrac{1}{2}$.
+      The Cantor expectation in particular requires no density argument and
+      no symmetry trick: the area between the devil's staircase and $y = 1$,
+      on $[0, 1]$, simply <em>is</em> $\tfrac{1}{2}$.
+    </p>
+
+    <h3 style="margin-top: 56px;">The four expectations, computed uniformly</h3>
+    <p>
+      With the tail integral in hand, every expectation in this monograph
+      becomes the same calculation: integrate $1 - F$.
+    </p>
+    <ul style="list-style: none; padding-left: 0; margin: 28px 0;">
+      <li style="padding: 12px 0; border-bottom: 1px dotted var(--rule);">
+        <strong style="font-family: 'Fraunces', serif; font-weight: 500;">Binomial$(4, \tfrac12)$:</strong>
+        $\quad E[X] = \sum_{k=0}^{3} P(X > k) = \tfrac{15}{16} + \tfrac{11}{16} + \tfrac{5}{16} + \tfrac{1}{16} = 2.$
+      </li>
+      <li style="padding: 12px 0; border-bottom: 1px dotted var(--rule);">
+        <strong style="font-family: 'Fraunces', serif; font-weight: 500;">Exponential$(1)$:</strong>
+        $\quad E[X] = \int_0^\infty e^{-t}\, dt = 1.$
+      </li>
+      <li style="padding: 12px 0; border-bottom: 1px dotted var(--rule);">
+        <strong style="font-family: 'Fraunces', serif; font-weight: 500;">Standard normal:</strong>
+        $\quad E[X] = \int_0^\infty \bigl(1 - \Phi(t)\bigr)\, dt - \int_{-\infty}^0 \Phi(t)\, dt = 0$
+        — &nbsp;the two areas cancel by symmetry.
+      </li>
+      <li style="padding: 12px 0;">
+        <strong style="font-family: 'Fraunces', serif; font-weight: 500;">Cantor:</strong>
+        $\quad E[X] = \int_0^1 \bigl(1 - F(t)\bigr)\, dt = \tfrac{1}{2}$
+        — &nbsp;the area above the devil's staircase, no density required.
+      </li>
+    </ul>
+    <p>
+      One formula, four answers. The tail integral does the work that would
+      otherwise have required a sum, a Riemann integral, a symmetric Gaussian
+      argument, and a measure-theoretic appeal to symmetry on a fractal —
+      and it does it by reading the area off a single curve.
+    </p>
+    <p>
+      This is what the CDF really is: the distribution itself, regarded as a
+      function of one variable, geometric enough that even its first moment
+      can be measured with a ruler.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CODA
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<section id="coda">
+  <div class="container narrow drop">
+    <div class="section-num">§ VII &nbsp;Coda</div>
+    <h2>What the CDF <em>is</em>.</h2>
+    <p>
+      The cumulative distribution function is the only description of a real-
+      valued random variable that survives every refinement of the underlying
+      measure theory. It exists when no PMF exists, when no PDF exists, and
+      when both fail simultaneously. It makes the probability of every event
+      $\{X \le x\}$ explicit and the probability of every other event
+      derivable. It carries within itself, by Lebesgue's theorem, the precise
+      mixture of three pure ingredients that defines its character.
+    </p>
+    <p>
+      To learn probability through PMFs and PDFs is to learn it through two
+      special cases. To learn it through the CDF — and through expectation
+      defined as a Stieltjes integral against $dF$ — is to learn the thing
+      itself, with the special cases falling out as theorems rather than
+      definitions.
+    </p>
+    <p>
+      The red scanning line in each animation above traces the same gesture:
+      sweep $x$ from left to right, and at every position read off
+      $F(x) = P(X \le x)$. Discrete, continuous, fractal — the gesture does
+      not change. Only what we find under the line.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="ornament">§ &nbsp; · &nbsp; §</div>
+    <div>fin &nbsp;·&nbsp; F(x) = P(X ≤ x)</div>
+  </div>
+</footer>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────
+//  CDF as Unifying Principle — interactive visualizations
+//  Faithfully reproduces the four MATLAB scripts in the browser:
+//    • Binomial(4, 1/2)        (scancdf.m)
+//    • Exponential(1)          (scan3cdf.m)
+//    • Standard Normal         (animateNormalPDFCDFWithTable.m)
+//    • Cantor distribution     (scancant4.m)
+// ─────────────────────────────────────────────────────────────────────────
+
+(() => {
+
+  // ─── Color palette (mirrors the CSS variables) ─────────────────────────
+  const C = {
+    paper:    '#f3ede1',
+    ink:      '#1a1612',
+    inkSoft:  '#5a4f44',
+    inkFaint: '#9c8c78',
+    rule:     '#cfc4ad',
+    accent:   '#b62a1f',
+    blue:     '#1f3a66',
+    blueSoft: 'rgba(31, 58, 102, 0.45)',
+    fill:     'rgba(31, 58, 102, 0.018)',
+    fillStrong: 'rgba(31, 58, 102, 0.05)'
+  };
+
+  // ─── Hi-DPI canvas setup ───────────────────────────────────────────────
+  function setupCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    // logical size from attributes if not yet laid out
+    const cssW = rect.width  || canvas.width;
+    const cssH = rect.height || canvas.height;
+    const w = canvas.getAttribute('width');
+    const h = canvas.getAttribute('height');
+    const lw = parseInt(w, 10);
+    const lh = parseInt(h, 10);
+    canvas.style.width = '100%';
+    canvas.style.aspectRatio = `${lw} / ${lh}`;
+    canvas.width  = lw * dpr;
+    canvas.height = lh * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx, w: lw, h: lh };
+  }
+
+  // ─── Plot helper: a coordinate frame inside a region ───────────────────
+  class Frame {
+    constructor(ctx, x0, y0, w, h, xMin, xMax, yMin, yMax) {
+      this.ctx = ctx;
+      this.x0 = x0; this.y0 = y0;
+      this.w  = w;  this.h  = h;
+      this.xMin = xMin; this.xMax = xMax;
+      this.yMin = yMin; this.yMax = yMax;
+    }
+    px(x) { return this.x0 + (x - this.xMin) / (this.xMax - this.xMin) * this.w; }
+    py(y) { return this.y0 + this.h - (y - this.yMin) / (this.yMax - this.yMin) * this.h; }
+    clip(fn) {
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(this.x0, this.y0, this.w, this.h);
+      ctx.clip();
+      fn();
+      ctx.restore();
+    }
+
+    // Light grid + axes + ticks, suitable for editorial plots
+    drawAxes(opts = {}) {
+      const ctx = this.ctx;
+      const { xTicks = [], yTicks = [], xLabel, yLabel, title } = opts;
+
+      // background
+      ctx.fillStyle = 'rgba(255,255,255,0.30)';
+      ctx.fillRect(this.x0, this.y0, this.w, this.h);
+
+      // gridlines
+      ctx.strokeStyle = 'rgba(132, 116, 96, 0.16)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      for (const xt of xTicks) {
+        const x = this.px(xt);
+        ctx.moveTo(x, this.y0);
+        ctx.lineTo(x, this.y0 + this.h);
+      }
+      for (const yt of yTicks) {
+        const y = this.py(yt);
+        ctx.moveTo(this.x0, y);
+        ctx.lineTo(this.x0 + this.w, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // border (axis box)
+      ctx.strokeStyle = C.ink;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(this.x0 + 0.5, this.y0 + 0.5, this.w, this.h);
+
+      // tick labels
+      ctx.fillStyle = C.inkSoft;
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (const xt of xTicks) {
+        const x = this.px(xt);
+        ctx.fillText(this._fmt(xt), x, this.y0 + this.h + 6);
+      }
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (const yt of yTicks) {
+        const y = this.py(yt);
+        ctx.fillText(this._fmt(yt), this.x0 - 8, y);
+      }
+
+      // axis labels
+      if (xLabel) {
+        ctx.fillStyle = C.ink;
+        ctx.font = 'italic 13px "Crimson Pro", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(xLabel, this.x0 + this.w / 2, this.y0 + this.h + 26);
+      }
+      if (yLabel) {
+        ctx.save();
+        ctx.translate(this.x0 - 42, this.y0 + this.h / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = C.ink;
+        ctx.font = 'italic 13px "Crimson Pro", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+      }
+      if (title) {
+        ctx.fillStyle = C.ink;
+        ctx.font = '500 13px "Fraunces", serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(title, this.x0, this.y0 - 10);
+      }
+    }
+    _fmt(v) {
+      if (Math.abs(v) < 1e-12) return '0';
+      if (Number.isInteger(v)) return String(v);
+      return (Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(v % 1 === 0 ? 0 : 2)).replace(/\.?0+$/, '');
+    }
+  }
+
+  // ─── The scanning line and red dot ─────────────────────────────────────
+  function drawScanLine(ctx, frame, x, opts = {}) {
+    const px = frame.px(x);
+    if (px < frame.x0 - 1 || px > frame.x0 + frame.w + 1) return;
+    ctx.save();
+    ctx.strokeStyle = C.accent;
+    ctx.lineWidth = opts.thin ? 1.5 : 2;
+    ctx.beginPath();
+    ctx.moveTo(px, frame.y0);
+    ctx.lineTo(px, frame.y0 + frame.h);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawDot(ctx, frame, x, y) {
+    const px = frame.px(x), py = frame.py(y);
+    if (px < frame.x0 - 4 || px > frame.x0 + frame.w + 4) return;
+    ctx.save();
+    // outer halo
+    ctx.fillStyle = 'rgba(182, 42, 31, 0.18)';
+    ctx.beginPath();
+    ctx.arc(px, py, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // dot
+    ctx.fillStyle = C.accent;
+    ctx.strokeStyle = C.paper;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  DISTRIBUTION 1 — DISCRETE (Binomial(4, 1/2))
+  // ═══════════════════════════════════════════════════════════════════════
+
+  const Discrete = {
+    X: [0, 1, 2, 3, 4],
+    P: [1/16, 4/16, 6/16, 4/16, 1/16],
+    cdfAt(x) {
+      let s = 0;
+      for (let i = 0; i < this.X.length; i++) {
+        if (this.X[i] <= x) s += this.P[i];
+      }
+      return s;
+    },
+    drawTop(ctx, frame, scanX) {
+      frame.drawAxes({
+        xTicks: [0, 1, 2, 3, 4],
+        yTicks: [0, 0.1, 0.2, 0.3, 0.4],
+        xLabel: 'x',
+        yLabel: 'P(X = x)',
+        title: 'Probability mass function'
+      });
+      // stems
+      frame.clip(() => {
+        for (let i = 0; i < this.X.length; i++) {
+          const x = this.X[i], p = this.P[i];
+          // stem
+          ctx.strokeStyle = C.blue;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(frame.px(x), frame.py(0));
+          ctx.lineTo(frame.px(x), frame.py(p));
+          ctx.stroke();
+          // head
+          ctx.fillStyle = C.blue;
+          ctx.beginPath();
+          ctx.arc(frame.px(x), frame.py(p), 4.5, 0, Math.PI * 2);
+          ctx.fill();
+          // label above
+          ctx.fillStyle = C.inkSoft;
+          ctx.font = '10.5px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          const frac = ['1/16','4/16','6/16','4/16','1/16'][i];
+          ctx.fillText(frac, frame.px(x), frame.py(p) - 8);
+        }
+      });
+      // scan line
+      drawScanLine(ctx, frame, scanX);
+    },
+    drawCDF(ctx, frame, scanX, opts = {}) {
+      frame.drawAxes({
+        xTicks: opts.compact ? [0, 2, 4] : [-1, 0, 1, 2, 3, 4, 5],
+        yTicks: opts.compact ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1],
+        xLabel: opts.compact ? null : 'x',
+        yLabel: opts.compact ? null : 'F(x)',
+        title: opts.compact ? null : 'Cumulative distribution — staircase'
+      });
+      frame.clip(() => {
+        // staircase
+        ctx.strokeStyle = C.blue;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(frame.px(frame.xMin), frame.py(0));
+        ctx.lineTo(frame.px(0), frame.py(0));
+        let cum = 0;
+        for (let i = 0; i < this.X.length; i++) {
+          const xi = this.X[i];
+          // jump up
+          ctx.lineTo(frame.px(xi), frame.py(cum));
+          cum += this.P[i];
+          ctx.lineTo(frame.px(xi), frame.py(cum));
+          // flat to next
+          const nextX = (i < this.X.length - 1) ? this.X[i+1] : frame.xMax;
+          ctx.lineTo(frame.px(nextX), frame.py(cum));
+        }
+        ctx.stroke();
+
+        // open/closed circles at each jump (left open, right closed)
+        for (let i = 0; i < this.X.length; i++) {
+          const xi = this.X[i];
+          const before = this.X.slice(0,i).reduce((a,b,j)=>a+this.P[j],0);
+          const after  = before + this.P[i];
+          // open circle at (xi, before)  — limit from left
+          ctx.fillStyle = C.paper;
+          ctx.strokeStyle = C.blue;
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(frame.px(xi), frame.py(before), 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // filled circle at (xi, after) — value at xi
+          ctx.fillStyle = C.blue;
+          ctx.beginPath();
+          ctx.arc(frame.px(xi), frame.py(after), 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+      // scan dot
+      const fv = this.cdfAt(scanX);
+      drawScanLine(ctx, frame, scanX);
+      drawDot(ctx, frame, scanX, fv);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  DISTRIBUTION 2 — EXPONENTIAL(1)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  const Exponential = {
+    lambda: 1,
+    pdf(x)  { return x < 0 ? 0 : this.lambda * Math.exp(-this.lambda * x); },
+    cdf(x)  { return x < 0 ? 0 : 1 - Math.exp(-this.lambda * x); },
+    drawTop(ctx, frame, scanX) {
+      frame.drawAxes({
+        xTicks: [-1, 0, 1, 2, 3, 4, 5],
+        yTicks: [0, 0.25, 0.5, 0.75, 1],
+        xLabel: 'x',
+        yLabel: 'f(x)',
+        title: 'Probability density — exponential'
+      });
+      frame.clip(() => {
+        // shaded area to the left of the scan line
+        const N = 200;
+        const xL = Math.max(0, frame.xMin);
+        const xR = Math.min(scanX, frame.xMax);
+        if (xR > xL) {
+          ctx.fillStyle = C.fillStrong;
+          ctx.beginPath();
+          ctx.moveTo(frame.px(xL), frame.py(0));
+          for (let i = 0; i <= N; i++) {
+            const x = xL + (xR - xL) * i / N;
+            ctx.lineTo(frame.px(x), frame.py(this.pdf(x)));
+          }
+          ctx.lineTo(frame.px(xR), frame.py(0));
+          ctx.closePath();
+          ctx.fill();
+        }
+        // background light fill of full curve
+        ctx.fillStyle = C.fill;
+        ctx.beginPath();
+        ctx.moveTo(frame.px(0), frame.py(0));
+        for (let i = 0; i <= N; i++) {
+          const x = i / N * frame.xMax;
+          ctx.lineTo(frame.px(x), frame.py(this.pdf(x)));
+        }
+        ctx.lineTo(frame.px(frame.xMax), frame.py(0));
+        ctx.closePath();
+        ctx.fill();
+        // pdf curve — drawn very lightly: vanishing mass on a continuum
+        ctx.strokeStyle = 'rgba(31, 58, 102, 0.55)';
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(frame.px(frame.xMin), frame.py(0));
+        ctx.lineTo(frame.px(0), frame.py(0));
+        ctx.lineTo(frame.px(0), frame.py(1));
+        for (let i = 0; i <= N; i++) {
+          const x = i / N * frame.xMax;
+          ctx.lineTo(frame.px(x), frame.py(this.pdf(x)));
+        }
+        ctx.stroke();
+      });
+      drawScanLine(ctx, frame, scanX);
+    },
+    drawCDF(ctx, frame, scanX, opts = {}) {
+      frame.drawAxes({
+        xTicks: opts.compact ? [0, 2, 4] : [-1, 0, 1, 2, 3, 4, 5],
+        yTicks: opts.compact ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1],
+        xLabel: opts.compact ? null : 'x',
+        yLabel: opts.compact ? null : 'F(x)',
+        title: opts.compact ? null : 'Cumulative distribution — slope'
+      });
+      frame.clip(() => {
+        // CDF curve
+        ctx.strokeStyle = C.blue;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(frame.px(frame.xMin), frame.py(0));
+        ctx.lineTo(frame.px(0), frame.py(0));
+        const N = 400;
+        for (let i = 0; i <= N; i++) {
+          const x = i / N * frame.xMax;
+          ctx.lineTo(frame.px(x), frame.py(this.cdf(x)));
+        }
+        ctx.stroke();
+      });
+      const fv = this.cdf(scanX);
+      drawScanLine(ctx, frame, scanX);
+      drawDot(ctx, frame, scanX, fv);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  DISTRIBUTION 3 — STANDARD NORMAL
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // erf via Abramowitz–Stegun 7.1.26 (max error ~1.5e-7)
+  function erf(x) {
+    const sign = Math.sign(x);
+    x = Math.abs(x);
+    const a1=0.254829592, a2=-0.284496736, a3=1.421413741,
+          a4=-1.453152027, a5=1.061405429, p = 0.3275911;
+    const t = 1 / (1 + p*x);
+    const y = 1 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-x*x);
+    return sign * y;
+  }
+
+  const Normal = {
+    pdf(x) { return Math.exp(-x*x/2) / Math.sqrt(2*Math.PI); },
+    cdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); },
+    drawTop(ctx, frame, scanX) {
+      frame.drawAxes({
+        xTicks: [-4, -3, -2, -1, 0, 1, 2, 3, 4],
+        yTicks: [0, 0.1, 0.2, 0.3, 0.4],
+        xLabel: 'x',
+        yLabel: 'φ(x)',
+        title: 'Standard normal density'
+      });
+      frame.clip(() => {
+        const N = 400;
+        // shaded area to left of scan line
+        const xL = frame.xMin, xR = Math.min(scanX, frame.xMax);
+        if (xR > xL) {
+          ctx.fillStyle = C.fillStrong;
+          ctx.beginPath();
+          ctx.moveTo(frame.px(xL), frame.py(0));
+          for (let i = 0; i <= N; i++) {
+            const x = xL + (xR - xL) * i / N;
+            ctx.lineTo(frame.px(x), frame.py(this.pdf(x)));
+          }
+          ctx.lineTo(frame.px(xR), frame.py(0));
+          ctx.closePath();
+          ctx.fill();
+        }
+        // full curve background
+        ctx.fillStyle = C.fill;
+        ctx.beginPath();
+        ctx.moveTo(frame.px(frame.xMin), frame.py(0));
+        for (let i = 0; i <= N; i++) {
+          const x = frame.xMin + (frame.xMax - frame.xMin) * i / N;
+          ctx.lineTo(frame.px(x), frame.py(this.pdf(x)));
+        }
+        ctx.lineTo(frame.px(frame.xMax), frame.py(0));
+        ctx.closePath();
+        ctx.fill();
+        // pdf curve — drawn very lightly: vanishing mass on a continuum
+        ctx.strokeStyle = 'rgba(31, 58, 102, 0.55)';
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        for (let i = 0; i <= N; i++) {
+          const x = frame.xMin + (frame.xMax - frame.xMin) * i / N;
+          const y = this.pdf(x);
+          if (i === 0) ctx.moveTo(frame.px(x), frame.py(y));
+          else ctx.lineTo(frame.px(x), frame.py(y));
+        }
+        ctx.stroke();
+      });
+      drawScanLine(ctx, frame, scanX);
+    },
+    drawCDF(ctx, frame, scanX, opts = {}) {
+      frame.drawAxes({
+        xTicks: opts.compact ? [-3, 0, 3] : [-4, -3, -2, -1, 0, 1, 2, 3, 4],
+        yTicks: opts.compact ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1],
+        xLabel: opts.compact ? null : 'x',
+        yLabel: opts.compact ? null : 'Φ(x)',
+        title: opts.compact ? null : 'Standard normal CDF'
+      });
+      frame.clip(() => {
+        ctx.strokeStyle = C.blue;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        const N = 400;
+        for (let i = 0; i <= N; i++) {
+          const x = frame.xMin + (frame.xMax - frame.xMin) * i / N;
+          const y = this.cdf(x);
+          if (i === 0) ctx.moveTo(frame.px(x), frame.py(y));
+          else ctx.lineTo(frame.px(x), frame.py(y));
+        }
+        ctx.stroke();
+      });
+      const fv = this.cdf(scanX);
+      drawScanLine(ctx, frame, scanX);
+      drawDot(ctx, frame, scanX, fv);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  DISTRIBUTION 4 — CANTOR
+  // ═══════════════════════════════════════════════════════════════════════
+
+  function cantorSegments(depth) {
+    let segs = [[0, 1]];
+    for (let d = 0; d < depth; d++) {
+      const next = [];
+      for (const [a, b] of segs) {
+        const t = (b - a) / 3;
+        next.push([a, a + t]);
+        next.push([b - t, b]);
+      }
+      segs = next;
+    }
+    return segs;
+  }
+
+  const Cantor = {
+    depth: 5,
+    segments: null,
+    init() {
+      if (!this.segments) {
+        this.segments = cantorSegments(this.depth);
+        // pre-compute right-endpoint cumulative values: each segment carries 1/2^depth mass
+        const N = this.segments.length;
+        this.massPer = 1 / N;
+      }
+    },
+    cdfAt(x) {
+      this.init();
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      // find how many segments lie strictly to the left of x, plus partial within current segment
+      // Each segment carries massPer. Since segments are sorted, binary-search-friendly.
+      let cum = 0;
+      for (const [a, b] of this.segments) {
+        if (x >= b) {
+          cum += this.massPer;
+        } else if (x > a) {
+          // linearly inside this segment (depth-n approximation)
+          cum += this.massPer * (x - a) / (b - a);
+          return cum;
+        } else {
+          return cum;
+        }
+      }
+      return cum;
+    },
+    drawTop(ctx, frame, scanX) {
+      this.init();
+      const N = this.segments.length;
+      // density on each segment = (mass per segment) / (segment width)
+      //                        = (1/N) / (1/3^depth) = 3^depth / N = 243/32 at depth 5
+      const density = Math.pow(3, this.depth) / N;
+      frame.drawAxes({
+        xTicks: [0, 1/3, 2/3, 1],
+        yTicks: [0, 2, 4, 6, density],
+        xLabel: 'x',
+        yLabel: 'density',
+        title: `Singular density on the fractal Cantor set`
+      });
+
+      frame.clip(() => {
+        // Heavy concentrated bars on the depth-n Cantor segments.
+        // Visual point: the mass is concentrated, not gossamer. Make it look heavy.
+        const yBase = frame.py(0);
+        const yTop  = frame.py(density);
+
+        for (const [a, b] of this.segments) {
+          let x1 = frame.px(a), x2 = frame.px(b);
+          // ensure each spike is visible even when segment width is < 1 px
+          const minW = 2.2;
+          let w = x2 - x1;
+          if (w < minW) { const c = (x1 + x2) / 2; x1 = c - minW/2; x2 = c + minW/2; w = minW; }
+
+          // body — vertical gradient from saturated blue at the top fading slightly to base
+          const grad = ctx.createLinearGradient(0, yTop, 0, yBase);
+          grad.addColorStop(0, 'rgba(31, 58, 102, 1.00)');
+          grad.addColorStop(1, 'rgba(31, 58, 102, 0.78)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x1, yTop, w, yBase - yTop);
+
+          // cap — solid ink line on top to add visual weight
+          ctx.fillStyle = C.ink;
+          ctx.fillRect(x1, yTop - 0.5, w, 1.5);
+
+          // soft drop-shadow to the right for density feel
+          ctx.fillStyle = 'rgba(31, 58, 102, 0.12)';
+          ctx.fillRect(x2, yTop + 1, 1, yBase - yTop);
+        }
+
+        // Annotation: density value indicator
+        ctx.fillStyle = C.ink;
+        ctx.font = 'italic 11px "Crimson Pro", serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`f(x) = 243⁄32 ≈ ${density.toFixed(2)} on each segment`,
+                     frame.px(0.05), frame.py(density) - 14);
+      });
+
+      drawScanLine(ctx, frame, scanX);
+    },
+    drawCDF(ctx, frame, scanX, opts = {}) {
+      this.init();
+      frame.drawAxes({
+        xTicks: opts.compact ? [0, 0.5, 1] : [0, 1/3, 2/3, 1],
+        yTicks: opts.compact ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1],
+        xLabel: opts.compact ? null : 'x',
+        yLabel: opts.compact ? null : 'F(x)',
+        title: opts.compact ? null : "Cantor function — the devil's staircase"
+      });
+      frame.clip(() => {
+        // Build the staircase: between segments F is constant, on segments F is linear (depth-n approximation)
+        ctx.strokeStyle = C.blue;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(frame.px(0), frame.py(0));
+        let cum = 0;
+        let lastX = 0;
+        for (const [a, b] of this.segments) {
+          // flat from lastX to a
+          ctx.lineTo(frame.px(a), frame.py(cum));
+          // linear up across [a, b]
+          cum += this.massPer;
+          ctx.lineTo(frame.px(b), frame.py(cum));
+          lastX = b;
+        }
+        ctx.lineTo(frame.px(1), frame.py(1));
+        ctx.stroke();
+      });
+
+      const fv = this.cdfAt(scanX);
+      drawScanLine(ctx, frame, scanX);
+      drawDot(ctx, frame, scanX, fv);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  Main visualization controllers
+  // ═══════════════════════════════════════════════════════════════════════
+
+  const VIZ_CONFIG = {
+    discrete: {
+      dist: Discrete,
+      xRange: [-1, 5],
+      pdfYRange: [0, 0.42],
+      cdfYRange: [0, 1.05],
+      scanRange: [-1, 5],
+      duration: 9000,
+      formatX: v => `x = ${v.toFixed(2)}`,
+      formatF: v => v.toFixed(4)
+    },
+    exponential: {
+      dist: Exponential,
+      xRange: [-1, 5],
+      pdfYRange: [0, 1.1],
+      cdfYRange: [0, 1.05],
+      scanRange: [-1, 5],
+      duration: 9000,
+      formatX: v => `x = ${v.toFixed(2)}`,
+      formatF: v => v.toFixed(4)
+    },
+    normal: {
+      dist: Normal,
+      xRange: [-4, 4],
+      pdfYRange: [0, 0.45],
+      cdfYRange: [0, 1.05],
+      scanRange: [-4, 4],
+      duration: 11000,
+      formatX: v => `x = ${v.toFixed(2)}`,
+      formatF: v => v.toFixed(4)
+    },
+    cantor: {
+      dist: Cantor,
+      xRange: [-0.05, 1.05],
+      pdfYRange: [0, 9],
+      cdfYRange: [0, 1.05],
+      scanRange: [0, 1],
+      duration: 13000,
+      formatX: v => `x = ${v.toFixed(3)}`,
+      formatF: v => v.toFixed(4)
+    }
+  };
+
+  function makeMainViz(canvas) {
+    const which = canvas.dataset.which;
+    const cfg = VIZ_CONFIG[which];
+    const { ctx, w, h } = setupCanvas(canvas);
+
+    // layout: left margin for y-axis labels, two stacked plots
+    const left = 76, right = 28, top = 30, bot = 56, gap = 70;
+    const plotH = (h - top - bot - gap) / 2;
+    const plotW = w - left - right;
+
+    const topFrame = new Frame(ctx, left, top, plotW, plotH,
+      cfg.xRange[0], cfg.xRange[1], cfg.pdfYRange[0], cfg.pdfYRange[1]);
+    const cdfFrame = new Frame(ctx, left, top + plotH + gap, plotW, plotH,
+      cfg.xRange[0], cfg.xRange[1], cfg.cdfYRange[0], cfg.cdfYRange[1]);
+
+    // readouts
+    const wrapper = canvas.closest('.viz');
+    const readoutX = wrapper ? wrapper.querySelector('[data-readout="x"]') : null;
+    const readoutF = wrapper ? wrapper.querySelector('[data-readout="F"]') : null;
+
+    const startTime = performance.now() + Math.random() * 2000;
+    let rafId = null;
+
+    function frame(t) {
+      const elapsed = (t - startTime) % cfg.duration;
+      // sweep with a slight ease (sine) and a brief pause at the right end
+      const phase = elapsed / cfg.duration;
+      // piecewise: 0..0.85 sweep, 0.85..1 hold at right
+      const swept = phase < 0.85 ? phase / 0.85 : 1;
+      const eased = swept; // linear, like the MATLAB
+      const scanX = cfg.scanRange[0] + (cfg.scanRange[1] - cfg.scanRange[0]) * eased;
+
+      // clear
+      ctx.clearRect(0, 0, w, h);
+
+      // draw
+      cfg.dist.drawTop(ctx, topFrame, scanX);
+      cfg.dist.drawCDF(ctx, cdfFrame, scanX);
+
+      // readouts
+      if (readoutX) readoutX.textContent = cfg.formatX(scanX);
+      if (readoutF) readoutF.textContent = cfg.formatF(cfg.dist.cdfAt ? cfg.dist.cdfAt(scanX) : cfg.dist.cdf(scanX));
+
+      rafId = requestAnimationFrame(frame);
+    }
+
+    // Pause when off-screen
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          if (!rafId) rafId = requestAnimationFrame(frame);
+        } else {
+          if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        }
+      }
+    }, { threshold: 0 });
+    io.observe(canvas);
+  }
+
+  function makeMiniCDF(canvas) {
+    const which = canvas.dataset.which;
+    const cfg = VIZ_CONFIG[which];
+    const { ctx, w, h } = setupCanvas(canvas);
+
+    const left = 28, right = 18, top = 18, bot = 28;
+    const frame = new Frame(ctx, left, top, w - left - right, h - top - bot,
+      cfg.xRange[0], cfg.xRange[1], cfg.cdfYRange[0], cfg.cdfYRange[1]);
+
+    const startTime = performance.now() + Math.random() * 2000;
+    let rafId = null;
+
+    function tick(t) {
+      const elapsed = (t - startTime) % cfg.duration;
+      const phase = elapsed / cfg.duration;
+      const swept = phase < 0.85 ? phase / 0.85 : 1;
+      const scanX = cfg.scanRange[0] + (cfg.scanRange[1] - cfg.scanRange[0]) * swept;
+      ctx.clearRect(0, 0, w, h);
+      cfg.dist.drawCDF(ctx, frame, scanX, { compact: true });
+      rafId = requestAnimationFrame(tick);
+    }
+
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          if (!rafId) rafId = requestAnimationFrame(tick);
+        } else {
+          if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        }
+      }
+    }, { threshold: 0 });
+    io.observe(canvas);
+  }
+
+  // ─── Expectation-as-area visualization ────────────────────────────────
+  // Draws the CDF and shades the region {x ≥ 0, F(x) ≤ y ≤ 1}. The shaded
+  // area is exactly E[X] for non-negative random variables, by the tail
+  // formula E[X] = ∫₀^∞ (1 − F(t)) dt.
+  function makeExpectationViz(canvas) {
+    const which = canvas.dataset.which;
+    const cfg = VIZ_CONFIG[which];
+    const dist = cfg.dist;
+    const { ctx, w, h } = setupCanvas(canvas);
+
+    const left = 28, right = 18, top = 18, bot = 28;
+    const xR = (which === 'cantor') ? [-0.02, 1.02] : [0, cfg.xRange[1]];
+    const frame = new Frame(ctx, left, top, w - left - right, h - top - bot,
+      xR[0], xR[1], 0, 1.05);
+
+    // 1. axes
+    const xt = which === 'cantor' ? [0, 0.5, 1] : [0, 2, 4];
+    frame.drawAxes({ xTicks: xt, yTicks: [0, 0.5, 1] });
+
+    // 2. shaded region: top from (0,1) to (xMax,1), then trace F backwards.
+    frame.clip(() => {
+      ctx.fillStyle = 'rgba(182, 42, 31, 0.22)';
+      ctx.beginPath();
+      ctx.moveTo(frame.px(0), frame.py(1));
+      ctx.lineTo(frame.px(xR[1]), frame.py(1));
+
+      if (which === 'discrete') {
+        const X = dist.X, P = dist.P;
+        let cum = 1;
+        for (let i = X.length - 1; i >= 0; i--) {
+          ctx.lineTo(frame.px(X[i]), frame.py(cum));
+          cum -= P[i];
+          ctx.lineTo(frame.px(X[i]), frame.py(cum));
+        }
+      } else if (which === 'exponential') {
+        const N = 200;
+        for (let i = N; i >= 0; i--) {
+          const x = xR[1] * i / N;
+          ctx.lineTo(frame.px(x), frame.py(dist.cdf(x)));
+        }
+      } else if (which === 'cantor') {
+        dist.init();
+        const segs = dist.segments, massPer = dist.massPer;
+        let cum = 1;
+        for (let i = segs.length - 1; i >= 0; i--) {
+          const [a, b] = segs[i];
+          ctx.lineTo(frame.px(b), frame.py(cum));
+          cum -= massPer;
+          ctx.lineTo(frame.px(a), frame.py(cum));
+        }
+        ctx.lineTo(frame.px(0), frame.py(0));
+      }
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // 3. CDF curve cleanly on top
+    frame.clip(() => {
+      ctx.strokeStyle = C.blue;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+
+      if (which === 'discrete') {
+        const X = dist.X, P = dist.P;
+        ctx.moveTo(frame.px(frame.xMin), frame.py(0));
+        ctx.lineTo(frame.px(0), frame.py(0));
+        let cum = 0;
+        for (let i = 0; i < X.length; i++) {
+          ctx.lineTo(frame.px(X[i]), frame.py(cum));
+          cum += P[i];
+          ctx.lineTo(frame.px(X[i]), frame.py(cum));
+          const nextX = (i < X.length - 1) ? X[i+1] : frame.xMax;
+          ctx.lineTo(frame.px(nextX), frame.py(cum));
+        }
+      } else if (which === 'exponential') {
+        ctx.moveTo(frame.px(frame.xMin), frame.py(0));
+        ctx.lineTo(frame.px(0), frame.py(0));
+        const N = 400;
+        for (let i = 0; i <= N; i++) {
+          const x = i / N * frame.xMax;
+          ctx.lineTo(frame.px(x), frame.py(dist.cdf(x)));
+        }
+      } else if (which === 'cantor') {
+        ctx.moveTo(frame.px(0), frame.py(0));
+        let cum = 0;
+        for (const [a, b] of dist.segments) {
+          ctx.lineTo(frame.px(a), frame.py(cum));
+          cum += dist.massPer;
+          ctx.lineTo(frame.px(b), frame.py(cum));
+        }
+        ctx.lineTo(frame.px(1), frame.py(1));
+      }
+      ctx.stroke();
+    });
+
+    // 4. label
+    const label = which === 'discrete' ? 'E[X] = 2'
+                : which === 'exponential' ? 'E[X] = 1'
+                : 'E[X] = ½';
+    const labelPos = which === 'discrete' ? { x: 1.7, y: 0.45 }
+                   : which === 'exponential' ? { x: 1.5, y: 0.50 }
+                   : { x: 0.32, y: 0.70 };
+    ctx.save();
+    ctx.fillStyle = C.accent;
+    ctx.font = '500 14px "Fraunces", serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, frame.px(labelPos.x), frame.py(labelPos.y));
+    ctx.restore();
+  }
+
+  // ─── Boot ──────────────────────────────────────────────────────────────
+  function boot() {
+    document.querySelectorAll('canvas.plot').forEach(makeMainViz);
+    document.querySelectorAll('canvas.cdf-mini').forEach(makeMiniCDF);
+    document.querySelectorAll('canvas.expect-cdf').forEach(makeExpectationViz);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+})();
+
+</script>
+</body>
+</html>

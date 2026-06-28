@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fagan Nomogram — Interactive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f4f1ec;
+    --surface: #ffffff;
+    --label: #5c6b7a;
+    --accent: #1a6dd4;
+    --title: #1e2d3d;
+    --text: #2a3a4a;
+    --muted: #98a7b6;
+    --gold: #b8860b;
+    --border: rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Sans 3', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    text-align: center;
+    padding: 1.2rem 1rem 0.2rem;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--title);
+  }
+  header p {
+    font-size: 0.85rem;
+    color: var(--label);
+    margin-top: 0.15rem;
+    font-weight: 300;
+  }
+
+  .hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  .container {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1.2rem;
+    padding: 0.5rem 1rem 1.5rem;
+  }
+
+  canvas {
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    cursor: crosshair;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+
+  .panel {
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.2rem;
+    width: 230px;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .panel h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    color: var(--title);
+    margin-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--label);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.3rem;
+  }
+  .field input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .field .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.15rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .result-box {
+    background: rgba(26,109,212,0.05);
+    border: 1px solid rgba(26,109,212,0.15);
+    border-radius: 7px;
+    padding: 0.7rem 0.8rem;
+    margin-top: 0.5rem;
+  }
+  .result-box .rlabel {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--label);
+  }
+  .result-box .rval {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--gold);
+    margin-top: 0.1rem;
+  }
+
+  .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 1rem;
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 0.7rem;
+  }
+  .formula .sym { color: var(--accent); }
+
+  @media (max-width: 700px) {
+    .container { flex-wrap: wrap; }
+    canvas { width: 100% !important; height: auto !important; }
+    .panel { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Likelihood Ratio Nomogram</h1>
+  <p>Bayes' Theorem as Hadamard Product of Odds</p>
+</header>
+<p class="hint">Click or drag on the pretest or LR axis</p>
+
+<div class="container">
+  <canvas id="nomo" width="440" height="520"></canvas>
+
+  <div class="panel">
+    <h2>Parameters</h2>
+
+    <div class="field">
+      <label>Pretest Probability</label>
+      <div class="val" id="preVal">20%</div>
+      <input type="range" id="preSlider" min="0.1" max="99.9" step="0.1" value="20">
+    </div>
+
+    <div class="field">
+      <label>Likelihood Ratio</label>
+      <div class="val" id="lrVal">20:1</div>
+      <input type="range" id="lrSlider" min="-3" max="3" step="0.01" value="1.301">
+    </div>
+
+    <div class="result-box">
+      <div class="rlabel">Posttest Probability</div>
+      <div class="rval" id="postVal">83.33%</div>
+    </div>
+    <div class="result-box" style="margin-top:0.4rem;background:rgba(26,109,212,0.03);border-color:rgba(26,109,212,0.10);">
+      <div class="rlabel">Posttest Odds</div>
+      <div class="rval" id="postOdds" style="font-size:1.05rem;color:var(--accent);">5:1</div>
+    </div>
+
+    <div class="formula">
+      <span class="sym">pre odds</span> × <span class="sym">LR</span> = <span class="sym">post odds</span><br>
+      <span id="formulaLine" style="color:var(--label);">(1:4) ⊙ (20:1) → (5:1)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('nomo');
+const ctx = canvas.getContext('2d');
+const DPR = window.devicePixelRatio || 1;
+const CW = 440, CH = 520;
+
+canvas.width = CW * DPR;
+canvas.height = CH * DPR;
+canvas.style.width = CW + 'px';
+canvas.style.height = CH + 'px';
+ctx.scale(DPR, DPR);
+
+const axisTop = 42, axisBot = CH - 48;
+const axisH = axisBot - axisTop;
+const xL = 112, xC = 220, xR = 328;
+const yMin = -6, yMax = 6;
+
+function dataToY(v) { return axisTop + (yMax - v) / (yMax - yMin) * axisH; }
+function yToData(py) { return yMax - (py - axisTop) / axisH * (yMax - yMin); }
+
+const logit10 = p => Math.log10(p / (1 - p));
+const clip = p => Math.min(Math.max(p, 0.001), 0.999);
+
+const pVals = [0.001,0.002,0.005,0.01,0.02,0.05,0.10,0.20,0.30,0.40,0.50,
+               0.60,0.70,0.80,0.90,0.95,0.99];
+const pLabs = ['.1','.2','.5','1','2','5','10','20','30','40','50',
+               '60','70','80','90','95','99'];
+
+const lrTicks = [
+  {val:1000,label:'1000:1'},{val:500,label:'500:1'},{val:200,label:'200:1'},
+  {val:100,label:'100:1'},{val:50,label:'50:1'},{val:20,label:'20:1'},
+  {val:10,label:'10:1'},{val:5,label:'5:1'},{val:2,label:'2:1'},{val:1,label:'1:1'},
+  {val:0.5,label:'1:2'},{val:0.2,label:'1:5'},{val:0.1,label:'1:10'},
+  {val:0.05,label:'1:20'},{val:0.02,label:'1:50'},{val:0.01,label:'1:100'},
+  {val:0.005,label:'1:200'},{val:0.002,label:'1:500'},{val:0.001,label:'1:1000'},
+];
+
+function gcd(a,b){return b===0?a:gcd(b,a%b);}
+
+function oddsStr(p){
+  const base=1000;let n=Math.round(base*p),d=base-n;
+  if(n<1)n=1;if(d<1)d=1;const g=gcd(n,d);return`${n/g}:${d/g}`;
+}
+function oddsStrFine(p){
+  if(p>=0.999)return'999:1';if(p<=0.001)return'1:999';
+  const base=10000;let n=Math.round(base*p),d=base-n;
+  if(n<1)n=1;if(d<1)d=1;const g=gcd(n,d);return`${n/g}:${d/g}`;
+}
+function lrOddsStr(v){
+  if(v>=1){if(v>=100)return Math.round(v)+':1';if(v>=10)return v.toFixed(1)+':1';return v.toFixed(2)+':1';}
+  else{const i=1/v;if(i>=100)return'1:'+Math.round(i);if(i>=10)return'1:'+i.toFixed(1);return'1:'+i.toFixed(2);}
+}
+
+let preP=0.20,lr=20;
+const preSlider=document.getElementById('preSlider');
+const lrSlider=document.getElementById('lrSlider');
+
+function updateFromSliders(){
+  preP=parseFloat(preSlider.value)/100;
+  lr=Math.pow(10,parseFloat(lrSlider.value));
+  updateLabels();draw();
+}
+
+function updateLabels(){
+  document.getElementById('preVal').textContent=(preP*100).toFixed(1)+'%';
+  document.getElementById('lrVal').textContent=lrOddsStr(lr);
+  const preOdds=preP/(1-preP),postOdds=preOdds*lr,postP=postOdds/(1+postOdds);
+  document.getElementById('postVal').textContent=(postP*100).toFixed(2)+'%';
+  document.getElementById('postOdds').textContent=postOdds>=1?postOdds.toFixed(2)+':1':'1:'+(1/postOdds).toFixed(2);
+  document.getElementById('formulaLine').textContent=
+    `(${oddsStrFine(preP)}) ⊙ (${lrOddsStr(lr)}) → (${oddsStrFine(postP)})`;
+}
+
+function draw(){
+  ctx.clearRect(0,0,CW,CH);
+
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,0.035)';ctx.lineWidth=1;
+  for(let v=-6;v<=6;v++){const y=dataToY(v);ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(CW-12,y);ctx.stroke();}
+
+  // Axes
+  ctx.strokeStyle='#8a98a8';ctx.lineWidth=1.6;
+  [xL,xC,xR].forEach(x=>{ctx.beginPath();ctx.moveTo(x,axisTop-5);ctx.lineTo(x,axisBot+5);ctx.stroke();});
+
+  // Headers
+  ctx.font='600 9.5px "Source Sans 3"';ctx.fillStyle='#5c6b7a';ctx.textAlign='center';
+  ctx.fillText('PRETEST',xL,axisTop-14);
+  ctx.fillText('LIKELIHOOD RATIO',xC,axisTop-14);
+  ctx.fillText('POSTTEST',xR,axisTop-14);
+
+  // Footer labels
+  ctx.font='400 8px "JetBrains Mono"';ctx.fillStyle='#98a7b6';
+  ctx.textAlign='right';ctx.fillText('%',xL-8,axisBot+16);
+  ctx.textAlign='left';ctx.fillText('odds',xL+8,axisBot+16);
+  ctx.textAlign='center';ctx.fillText('odds',xC,axisBot+16);
+  ctx.textAlign='right';ctx.fillText('odds',xR-8,axisBot+16);
+  ctx.textAlign='left';ctx.fillText('%',xR+8,axisBot+16);
+
+  const tk=6;
+
+  // LEFT: % outside, odds inside
+  pVals.forEach((p,i)=>{
+    const y=dataToY(-2*logit10(p));
+    if(y<axisTop-2||y>axisBot+2)return;
+    ctx.strokeStyle='#c0cad4';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(xL-tk,y);ctx.lineTo(xL+tk,y);ctx.stroke();
+    ctx.font='500 8.5px "JetBrains Mono"';ctx.fillStyle='#3a4a5a';ctx.textAlign='right';
+    ctx.fillText(pLabs[i]+'%',xL-tk-4,y+3);
+    ctx.font='400 7.5px "JetBrains Mono"';ctx.fillStyle='#8896a4';ctx.textAlign='left';
+    ctx.fillText(oddsStr(p),xL+tk+3,y+3);
+  });
+
+  // CENTER: odds
+  lrTicks.forEach(t=>{
+    const y=dataToY(Math.log10(t.val));
+    if(y<axisTop-2||y>axisBot+2)return;
+    ctx.strokeStyle='#c0cad4';ctx.lineWidth=1;
+    if(t.val>=1){
+      ctx.beginPath();ctx.moveTo(xC-tk,y);ctx.lineTo(xC,y);ctx.stroke();
+      ctx.font='500 8.5px "JetBrains Mono"';ctx.fillStyle='#3a4a5a';ctx.textAlign='right';
+      ctx.fillText(t.label,xC-tk-4,y+3);
+    }else{
+      ctx.beginPath();ctx.moveTo(xC,y);ctx.lineTo(xC+tk,y);ctx.stroke();
+      ctx.font='500 8.5px "JetBrains Mono"';ctx.fillStyle='#3a4a5a';ctx.textAlign='left';
+      ctx.fillText(t.label,xC+tk+4,y+3);
+    }
+  });
+
+  // RIGHT: odds inside, % outside
+  pVals.forEach((p,i)=>{
+    const y=dataToY(2*logit10(p));
+    if(y<axisTop-2||y>axisBot+2)return;
+    ctx.strokeStyle='#c0cad4';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(xR-tk,y);ctx.lineTo(xR+tk,y);ctx.stroke();
+    ctx.font='400 7.5px "JetBrains Mono"';ctx.fillStyle='#8896a4';ctx.textAlign='right';
+    ctx.fillText(oddsStr(p),xR-tk-3,y+3);
+    ctx.font='500 8.5px "JetBrains Mono"';ctx.fillStyle='#3a4a5a';ctx.textAlign='left';
+    ctx.fillText(pLabs[i]+'%',xR+tk+4,y+3);
+  });
+
+  // CONNECTOR
+  const pp=clip(preP),preOdds=pp/(1-pp),postOdds=preOdds*lr,postP=clip(postOdds/(1+postOdds));
+  const y1=dataToY(-2*logit10(pp)),y2=dataToY(Math.log10(lr)),y3=dataToY(2*logit10(postP));
+
+  ctx.save();ctx.strokeStyle='#1a6dd4';ctx.globalAlpha=0.10;ctx.lineWidth=9;
+  ctx.beginPath();ctx.moveTo(xL,y1);ctx.lineTo(xC,y2);ctx.lineTo(xR,y3);ctx.stroke();ctx.restore();
+
+  ctx.strokeStyle='#1a6dd4';ctx.lineWidth=2.2;
+  ctx.beginPath();ctx.moveTo(xL,y1);ctx.lineTo(xC,y2);ctx.lineTo(xR,y3);ctx.stroke();
+
+  [{x:xL,y:y1},{x:xC,y:y2},{x:xR,y:y3}].forEach(pt=>{
+    ctx.beginPath();ctx.arc(pt.x,pt.y,4.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.beginPath();ctx.arc(pt.x,pt.y,3.5,0,Math.PI*2);ctx.fillStyle='#1a6dd4';ctx.fill();
+  });
+}
+
+[preSlider,lrSlider].forEach(s=>s.addEventListener('input',updateFromSliders));
+
+let dragging=null;
+function handlePtr(e){
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*(CW/r.width),my=(e.clientY-r.top)*(CH/r.height);
+  if(Math.abs(mx-xL)<55||dragging==='pre'){
+    const d=yToData(my),o=Math.pow(10,-d/2),p=o/(1+o);
+    preSlider.value=Math.min(Math.max(p*100,0.1),99.9);dragging='pre';
+  }else if(Math.abs(mx-xC)<55||dragging==='lr'){
+    lrSlider.value=Math.min(Math.max(yToData(my),-3),3);dragging='lr';
+  }
+  updateFromSliders();
+}
+canvas.addEventListener('pointerdown',e=>{dragging=null;handlePtr(e);canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(dragging)handlePtr(e);});
+canvas.addEventListener('pointerup',()=>{dragging=null;});
+
+updateFromSliders();
+</script>
+</body>
+</html>

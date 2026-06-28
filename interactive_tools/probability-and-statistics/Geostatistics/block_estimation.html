@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hog Mountain Grade Estimation — East Alabama Gold Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f1e6;             /* warm off-white */
+    --paper: #ffffff;          /* pure white panels */
+    --ink: #1a1a1a;            /* near-black */
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;           /* UA Crimson · Pantone 201 */
+    --crimson-deep: #7a1024;   /* darker crimson for emphasis */
+    --ochre: #b8923d;          /* muted gold accent */
+    --copper: #b54235;         /* warm crimson */
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--serif);
+    font-feature-settings: "ss01", "ss02";
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+    line-height: 1.5;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    z-index: 0;
+  }
+
+  .container { max-width: 1240px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: end;
+  }
+
+  .doc-id {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border-left: 1px solid var(--line);
+    padding: 8px 0 8px 8px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 14px;
+    text-transform: uppercase;
+  }
+
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.7;
+  }
+  .meta strong { color: var(--ink); font-weight: 500; }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 36px;
+    margin-bottom: 40px;
+    align-items: start;
+  }
+  @media (max-width: 980px) {
+    .main-layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--paper);
+    padding: 28px 24px 24px;
+    border: 1px solid var(--line);
+    box-shadow: 5px 5px 0 var(--line);
+    position: relative;
+  }
+
+  .panel-tag {
+    position: absolute;
+    top: -10px;
+    left: 18px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .panel h2 {
+    font-family: var(--serif);
+    font-variation-settings: "wght" 500, "opsz" 36;
+    font-size: 1.35rem;
+    margin-bottom: 4px;
+    line-height: 1.15;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .panel h2 .num {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--rust);
+    font-weight: 400;
+  }
+  .panel h2 .title-text { flex: 1; }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid;
+    line-height: 1;
+  }
+  .tag-cell { color: var(--rust); border-color: var(--rust); }
+  .tag-block { color: var(--copper); border-color: var(--copper); }
+
+  .panel-caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+
+  /* 8×8 nested-block grid */
+  .block-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 3px;
+    background: var(--ink);
+    padding: 3px;
+    aspect-ratio: 1;
+    margin: 14px 0 0;
+  }
+  .block-2x2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line-strong);
+  }
+  .cell {
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    position: relative;
+    transition: background 0.35s ease;
+    overflow: hidden;
+    line-height: 1;
+  }
+  .cell.sample { font-weight: 700; }
+  .cell.sample::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    opacity: 0.6;
+  }
+  .cell.estimate { font-style: italic; font-weight: 400; }
+  .cell.empty {
+    background: rgba(120, 100, 80, 0.08);
+    color: var(--muted);
+    font-size: 0.7rem;
+    opacity: 0.5;
+  }
+
+  /* Block determinations grid (4×4) */
+  .subsection-divider {
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line);
+  }
+  .subsection-title {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .subsection-caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .block-avg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--ink);
+    padding: 2px;
+    aspect-ratio: 1;
+    width: 70%;
+    margin: 8px auto 0;
+  }
+  .block-avg-cell {
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .mini-block-avg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--ink);
+    padding: 2px;
+    aspect-ratio: 1;
+    margin-top: 8px;
+  }
+  .mini-block-avg-cell {
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+  .mini-block-avg-label {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* Mini variant */
+  .mini-block-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--ink);
+    padding: 2px;
+    aspect-ratio: 1;
+  }
+  .mini-block-2x2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line-strong);
+  }
+  .mini-cell {
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.5rem;
+    line-height: 1;
+    position: relative;
+  }
+  .mini-cell.sample { font-weight: 700; }
+  .mini-cell.sample::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 3px;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.65;
+  }
+  .mini-cell.estimate { font-style: italic; font-weight: 400; }
+
+  .methods {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .method-btn {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .method-btn:hover { background: var(--line); }
+  .method-btn.active {
+    background: var(--rust);
+    color: #ffffff;
+    border-color: var(--rust);
+  }
+  .method-btn .num {
+    color: var(--rust);
+    margin-right: 6px;
+    font-weight: 700;
+  }
+  .method-btn.active .num { color: var(--ochre); }
+
+  .params { margin-top: 16px; }
+  .param-row {
+    display: grid;
+    grid-template-columns: 70px 1fr 50px;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .param-row label {
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+  .param-row .value {
+    font-family: var(--mono);
+    text-align: right;
+    color: var(--rust);
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2px;
+    background: var(--line-strong);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+
+  .description {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--rust);
+    background: rgba(158, 27, 50, 0.05);
+    font-family: var(--serif);
+    font-size: 0.94rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .description strong { color: var(--ink); font-weight: 600; }
+
+  .stats { margin-top: 18px; }
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+  }
+  .stats-table th {
+    text-transform: uppercase;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-align: right;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--line-strong);
+    font-weight: 400;
+  }
+  .stats-table th:first-child { text-align: left; }
+  .stats-table td {
+    padding: 7px 4px;
+    border-bottom: 1px dotted var(--line);
+    text-align: right;
+  }
+  .stats-table td:first-child {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-align: left;
+  }
+  .delta-pos { color: var(--rust); }
+  .delta-neg { color: #4a6b3f; }
+  .delta-zero { color: var(--muted); }
+
+  .legend-cells {
+    margin-top: 14px;
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .legend-cells span { display: flex; align-items: center; gap: 6px; }
+  .swatch-sample, .swatch-est {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    position: relative;
+  }
+  .swatch-sample::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 4px;
+    height: 4px;
+    background: var(--ink);
+    opacity: 0.6;
+  }
+  .swatch-est::after {
+    content: 'i';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-style: italic;
+    font-size: 10px;
+    color: var(--ink);
+  }
+
+  .comparison-section {
+    margin-top: 60px;
+    padding-top: 30px;
+    border-top: 2px solid var(--ink);
+  }
+  .comparison-header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 8px;
+  }
+  .comparison-header h2 {
+    font-family: var(--serif);
+    font-variation-settings: "wght" 500, "opsz" 60, "SOFT" 30;
+    font-size: 2rem;
+    letter-spacing: -0.015em;
+  }
+  .comparison-header .num {
+    font-family: var(--mono);
+    color: var(--rust);
+    font-size: 0.95rem;
+  }
+  .comparison-caption {
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-bottom: 26px;
+    max-width: 760px;
+    font-size: 0.98rem;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+  }
+  .mini-card {
+    background: var(--paper);
+    padding: 16px;
+    border: 1px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+  .mini-card-title {
+    font-family: var(--serif);
+    font-variation-settings: "wght" 500;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .mini-tag {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+  .mini-card-meta {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .scale-bar {
+    margin-top: 32px;
+    padding: 18px 20px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .scale-bar-gradient {
+    height: 14px;
+    margin: 10px 0;
+    background: linear-gradient(to right,
+      rgb(250, 246, 232),
+      rgb(228, 188, 110),
+      rgb(180,  72,  60),
+      rgb(158,  27,  50));
+    border: 1px solid var(--line-strong);
+  }
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+  footer em {
+    font-family: var(--serif);
+    font-style: italic;
+    letter-spacing: 0;
+    color: var(--ink-soft);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .panel { animation: fadeIn 0.5s ease-out backwards; }
+  .panel:nth-child(2) { animation-delay: 0.1s; }
+  .mini-card { animation: fadeIn 0.4s ease-out backwards; }
+  .mini-card:nth-child(2) { animation-delay: 0.05s; }
+  .mini-card:nth-child(3) { animation-delay: 0.1s; }
+  .mini-card:nth-child(4) { animation-delay: 0.15s; }
+  .mini-card:nth-child(5) { animation-delay: 0.2s; }
+  .mini-card:nth-child(6) { animation-delay: 0.25s; }
+  .mini-card:nth-child(7) { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="doc-id">Survey 04-26 · Tallapoosa Co., AL</div>
+    <div>
+      <h1>Hog Mountain <em>Grade</em></h1>
+      <div class="subtitle">East Alabama Gold Belt · Synthetic survey · 16 samples · 64 cells</div>
+    </div>
+    <div class="meta">
+      <strong>n_samples</strong> = 16<br>
+      <strong>units</strong> = g/t Au<br>
+      <strong>area</strong> = 8 × 8 ac
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <div class="panel">
+      <div class="panel-tag">Input</div>
+      <h2><span class="num">§1</span><span class="title-text">Known samples</span></h2>
+      <div class="panel-caption">
+        Sixteen 1×1 grades, each at the top-left of its 2×2 block. The remaining 48 cells are unknown.
+      </div>
+      <div id="sample-grid" class="block-grid"></div>
+      <div class="legend-cells">
+        <span><span class="swatch-sample"></span> sample (known)</span>
+        <span><span class="swatch-est"></span> estimate (filled in)</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-tag">Output</div>
+      <h2>
+        <span class="num">§2</span>
+        <span id="method-title" class="title-text">Polygonal estimate</span>
+        <span id="method-tag" class="tag tag-block">block-uniform</span>
+      </h2>
+      <div class="panel-caption" id="method-caption">
+        Sample values are kept; each unknown cell receives an estimate.
+      </div>
+      <div id="estimate-grid" class="block-grid"></div>
+
+      <div class="subsection-divider">
+        <div class="subsection-title">§2b · Block determinations</div>
+        <div class="subsection-caption">
+          Average grade per 2×2 block — the actionable mining estimate, computed as the mean of the four cells above.
+        </div>
+        <div id="block-avg-grid" class="block-avg-grid"></div>
+      </div>
+
+      <div class="methods" id="method-buttons"></div>
+
+      <div class="params" id="params"></div>
+
+      <div class="description" id="description"></div>
+
+      <div class="stats">
+        <table class="stats-table">
+          <thead>
+            <tr><th>Statistic</th><th>All 64 cells</th><th>16 samples</th><th>Δ</th></tr>
+          </thead>
+          <tbody id="stats-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="comparison-section">
+    <div class="comparison-header">
+      <span class="num">§3</span>
+      <h2>All methods, side by side</h2>
+    </div>
+    <p class="comparison-caption">
+      Each grid uses sensible default parameters. <em>Cell-level</em> methods (IDW, k-NN) produce different estimates for the four cells within a block; <em>block-uniform</em> methods paint each 2×2 block with a single value.
+    </p>
+    <div class="compare-grid" id="compare-grid"></div>
+
+    <div class="scale-bar">
+      Grade scale · g/t Au · low → high
+      <div class="scale-bar-gradient"></div>
+      <div class="scale-labels">
+        <span id="scale-min">20</span>
+        <span id="scale-max">735</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span style="font-size: 1.1em; color: var(--rust);">⚒</span> &nbsp;Synthetic grade survey · East Alabama Gold Belt · <em>Hog Mountain district, Tallapoosa County</em>&nbsp; <span style="font-size: 1.1em; color: var(--rust);">⚒</span>
+  </footer>
+</div>
+
+<script>
+  // ============ DATA ============
+  // Synthetic grade data — fictional grades (g/t Au) from a 4×4 sample grid
+  // over a notional 8×8 acre block in the East Alabama Gold Belt
+  // (Hog Mountain district, Tallapoosa Co.). Spatially structured with
+  // a high-grade pocket in the NW and barren ground in the SE.
+  // samples[blockRow][blockCol]; blockRow 0 = top, blockCol 0 = left.
+  const samples = [
+    [580,  95, 185, 245],
+    [350, 260, 125, 170],
+    [120, 295, 220, 345],
+    [ 65,  30,  55,  40]
+  ];
+  const N_BLOCKS = 4;
+  const N_CELLS = 8;
+
+  // Each sample sits at cell (2I, 2J) → center (2I+0.5, 2J+0.5) in 8×8 grid coords.
+  const allSamples = [];
+  for (let J = 0; J < N_BLOCKS; J++) {
+    for (let I = 0; I < N_BLOCKS; I++) {
+      allSamples.push({
+        blockCol: I, blockRow: J,
+        val: samples[J][I],
+        x: 2*I + 0.5,
+        y: 2*J + 0.5
+      });
+    }
+  }
+
+  // i, j are CELL indices in the 8×8 grid (0..7).
+  const isSampleCell = (i, j) => (i % 2 === 0) && (j % 2 === 0);
+  const sampleValueAt = (i, j) => samples[j/2][i/2];
+  const blockOfCell = (i, j) => ({ I: Math.floor(i / 2), J: Math.floor(j / 2) });
+  const cellCenter = (i, j) => ({ x: i + 0.5, y: j + 0.5 });
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  // ============ METHODS (cell-level) ============
+  function polygonalAt(i, j) {
+    const { I, J } = blockOfCell(i, j);
+    return samples[J][I];
+  }
+
+  function idwAt(i, j, p, k) {
+    const c = cellCenter(i, j);
+    const sorted = allSamples
+      .map(s => ({ ...s, d: dist(s, c) }))
+      .sort((a, b) => a.d - b.d);
+    const used = (k > 0 && k < sorted.length) ? sorted.slice(0, k) : sorted;
+    let num = 0, den = 0;
+    for (const s of used) {
+      if (s.d < 1e-9) return s.val;
+      const w = 1 / Math.pow(s.d, p);
+      num += w * s.val;
+      den += w;
+    }
+    return num / den;
+  }
+
+  function knnAvgAt(i, j, k) {
+    const c = cellCenter(i, j);
+    const sorted = allSamples
+      .map(s => ({ ...s, d: dist(s, c) }))
+      .sort((a, b) => a.d - b.d);
+    const used = sorted.slice(0, k);
+    return used.reduce((s, x) => s + x.val, 0) / used.length;
+  }
+
+  function neighborAvgAt(i, j) {
+    const { I, J } = blockOfCell(i, j);
+    let sum = 0, n = 0;
+    for (let dJ = -1; dJ <= 1; dJ++) {
+      for (let dI = -1; dI <= 1; dI++) {
+        const nI = I + dI, nJ = J + dJ;
+        if (nI >= 0 && nI < N_BLOCKS && nJ >= 0 && nJ < N_BLOCKS) {
+          sum += samples[nJ][nI];
+          n++;
+        }
+      }
+    }
+    return sum / n;
+  }
+
+  function blendAt(i, j) {
+    const { I, J } = blockOfCell(i, j);
+    let nSum = 0, nN = 0;
+    for (const [dI, dJ] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const nI = I + dI, nJ = J + dJ;
+      if (nI >= 0 && nI < N_BLOCKS && nJ >= 0 && nJ < N_BLOCKS) {
+        nSum += samples[nJ][nI]; nN++;
+      }
+    }
+    const nMean = nN ? nSum / nN : samples[J][I];
+    return 0.5 * samples[J][I] + 0.5 * nMean;
+  }
+
+  const _globalMean = allSamples.reduce((s, x) => s + x.val, 0) / allSamples.length;
+  function globalMeanAt() { return _globalMean; }
+
+  // ============ METHOD REGISTRY ============
+  const methods = {
+    polygonal: {
+      name: 'Polygonal',
+      variation: 'block',
+      caption: "Each cell takes its containing block's sample.",
+      description: "<strong>The classical baseline.</strong> Every 2×2 block is uniformly filled with its top-left sample value — the 'polygons of influence' method, used in mining since the late 19th century. A single estimate per block, repeated across all four cells.",
+      params: [],
+      computeCell: (i, j) => polygonalAt(i, j)
+    },
+    idw: {
+      name: 'IDW (all 16)',
+      variation: 'cell',
+      caption: "Point estimate at each cell center, all 16 samples weighted by 1/d^p.",
+      description: '<strong>Classic IDW.</strong> Each cell\'s value is a weighted average of all 16 samples, weight 1/d<sup>p</sup>. Within each block the four cells get different estimates because they sit at different distances from the surrounding samples. Higher p concentrates weight on the nearest sample.',
+      params: [{ id: 'p', label: 'p', min: 0.5, max: 5, step: 0.1, default: 2 }],
+      computeCell: (i, j, P) => idwAt(i, j, P.p, 0)
+    },
+    idwk: {
+      name: 'Weighted k-NN',
+      variation: 'cell',
+      caption: "IDW restricted to the k nearest samples per cell.",
+      description: "<strong>Weighted k-NN.</strong> Each cell only borrows from its k nearest samples, weighted by 1/d<sup>p</sup>. Try k=4, p=2 — the workhorse local IDW configuration.",
+      params: [
+        { id: 'k', label: 'k', min: 1, max: 16, step: 1, default: 4 },
+        { id: 'p', label: 'p', min: 0.5, max: 5, step: 0.1, default: 2 }
+      ],
+      computeCell: (i, j, P) => idwAt(i, j, P.p, P.k)
+    },
+    knn: {
+      name: 'k-NN simple avg',
+      variation: 'cell',
+      caption: "Unweighted average of the k nearest samples per cell.",
+      description: "<strong>Simple k-NN.</strong> Distance-blind among the chosen k. Within-block variation appears wherever a cell sits closer to a different set of k samples — most visible at block edges and corners.",
+      params: [{ id: 'k', label: 'k', min: 1, max: 16, step: 1, default: 4 }],
+      computeCell: (i, j, P) => knnAvgAt(i, j, P.k)
+    },
+    neighbor: {
+      name: 'Local 3×3 mean',
+      variation: 'block',
+      caption: "Block-level moving average over a 3×3 block neighborhood.",
+      description: "<strong>Moving-average smoother.</strong> Every cell takes the mean of samples in the 3×3 block neighborhood (Queen's case, up to 9 samples) of its containing block. Edge blocks have fewer neighbors. Uniform within blocks.",
+      params: [],
+      computeCell: (i, j) => neighborAvgAt(i, j)
+    },
+    blend: {
+      name: 'Self + neighbors',
+      variation: 'block',
+      caption: "50% own sample, 50% rook-neighbor mean.",
+      description: "<strong>50/50 blend.</strong> Each block mixes its own sample with the mean of its 4 rook-direction neighbors (N/S/E/W). Tames extremes while preserving local pattern. Uniform within blocks.",
+      params: [],
+      computeCell: (i, j) => blendAt(i, j)
+    },
+    mean: {
+      name: 'Global mean',
+      variation: 'block',
+      caption: "Every unknown cell gets the overall sample mean.",
+      description: "<strong>Constant.</strong> The 'do nothing' baseline. Every unknown cell gets the mean of all 16 samples. Worst possible spatial fidelity, provably unbiased on average.",
+      params: [],
+      computeCell: () => globalMeanAt()
+    }
+  };
+
+  // ============ COLOR SCALE ============
+  const allVals = allSamples.map(s => s.val);
+  const minVal = Math.min(...allVals);
+  const maxVal = Math.max(...allVals);
+  document.getElementById('scale-min').textContent = minVal;
+  document.getElementById('scale-max').textContent = maxVal;
+
+  function colorFor(val) {
+    const t = Math.max(0, Math.min(1, (val - minVal) / (maxVal - minVal)));
+    const stops = [
+      [250, 246, 232],
+      [228, 188, 110],
+      [180,  72,  60],
+      [158,  27,  50]
+    ];
+    const seg = t * (stops.length - 1);
+    const i = Math.min(Math.floor(seg), stops.length - 2);
+    const f = seg - i;
+    const a = stops[i], b = stops[i + 1];
+    const r = Math.round(a[0] + f * (b[0] - a[0]));
+    const g = Math.round(a[1] + f * (b[1] - a[1]));
+    const bl = Math.round(a[2] + f * (b[2] - a[2]));
+    return `rgb(${r},${g},${bl})`;
+  }
+  function textColorFor(val) {
+    const t = (val - minVal) / (maxVal - minVal);
+    return t > 0.5 ? '#ffffff' : '#1a1a1a';
+  }
+
+  // ============ STATE ============
+  let currentMethod = 'polygonal';
+  let params = {};
+  function resetParams(m) {
+    params = {};
+    for (const p of methods[m].params) params[p.id] = p.default;
+  }
+  resetParams(currentMethod);
+
+  // ============ RENDER ============
+  const fmt = v => v.toFixed(0);
+
+  // Render the nested 4×4 of 2×2 (i.e., the 8×8 cell grid) into `container`.
+  // mode = 'samples-only' | 'full'
+  function renderBlockGrid(container, mode, getEstimate, opts = {}) {
+    const mini = !!opts.mini;
+    container.innerHTML = '';
+    for (let J = 0; J < N_BLOCKS; J++) {
+      for (let I = 0; I < N_BLOCKS; I++) {
+        const block = document.createElement('div');
+        block.className = mini ? 'mini-block-2x2' : 'block-2x2';
+        for (let cellRow = 0; cellRow < 2; cellRow++) {
+          for (let cellCol = 0; cellCol < 2; cellCol++) {
+            const i = 2*I + cellCol;
+            const j = 2*J + cellRow;
+            const isSamp = isSampleCell(i, j);
+            const cell = document.createElement('div');
+            cell.className = mini ? 'mini-cell' : 'cell';
+
+            if (isSamp) {
+              cell.classList.add('sample');
+              const v = sampleValueAt(i, j);
+              cell.style.background = colorFor(v);
+              cell.style.color = textColorFor(v);
+              cell.textContent = fmt(v);
+            } else if (mode === 'samples-only') {
+              cell.classList.add('empty');
+              cell.textContent = mini ? '' : '·';
+            } else {
+              cell.classList.add('estimate');
+              const v = getEstimate(i, j);
+              cell.style.background = colorFor(v);
+              cell.style.color = textColorFor(v);
+              cell.textContent = fmt(v);
+            }
+            block.appendChild(cell);
+          }
+        }
+        container.appendChild(block);
+      }
+    }
+  }
+
+  function renderSamples() {
+    renderBlockGrid(document.getElementById('sample-grid'), 'samples-only');
+  }
+
+  // Block average = mean of the 4 cells in each 2×2 block
+  // (1 sample value + 3 method estimates).
+  function blockAverages(getEstimate) {
+    const out = [];
+    for (let J = 0; J < N_BLOCKS; J++) {
+      const row = [];
+      for (let I = 0; I < N_BLOCKS; I++) {
+        let s = 0;
+        for (let cr = 0; cr < 2; cr++) {
+          for (let cc = 0; cc < 2; cc++) {
+            const i = 2*I + cc, j = 2*J + cr;
+            s += isSampleCell(i, j) ? sampleValueAt(i, j) : getEstimate(i, j);
+          }
+        }
+        row.push(s / 4);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function renderBlockAvgGrid(container, getEstimate, opts = {}) {
+    const mini = !!opts.mini;
+    const blocks = blockAverages(getEstimate);
+    container.innerHTML = '';
+    for (let J = 0; J < N_BLOCKS; J++) {
+      for (let I = 0; I < N_BLOCKS; I++) {
+        const v = blocks[J][I];
+        const cell = document.createElement('div');
+        cell.className = mini ? 'mini-block-avg-cell' : 'block-avg-cell';
+        cell.style.background = colorFor(v);
+        cell.style.color = textColorFor(v);
+        cell.textContent = fmt(v);
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  function statsOfEstimates(getEstimate) {
+    const vs = [];
+    for (let j = 0; j < N_CELLS; j++) {
+      for (let i = 0; i < N_CELLS; i++) {
+        vs.push(isSampleCell(i, j) ? sampleValueAt(i, j) : getEstimate(i, j));
+      }
+    }
+    const mean = vs.reduce((s, v) => s + v, 0) / vs.length;
+    const min = Math.min(...vs);
+    const max = Math.max(...vs);
+    const variance = vs.reduce((s, v) => s + (v - mean) ** 2, 0) / vs.length;
+    return { mean, min, max, sd: Math.sqrt(variance) };
+  }
+
+  const sampleStats = (() => {
+    const vs = allSamples.map(s => s.val);
+    const mean = vs.reduce((s, v) => s + v, 0) / vs.length;
+    const min = Math.min(...vs);
+    const max = Math.max(...vs);
+    const variance = vs.reduce((s, v) => s + (v - mean) ** 2, 0) / vs.length;
+    return { mean, min, max, sd: Math.sqrt(variance) };
+  })();
+
+  function deltaCell(est, samp) {
+    const d = est - samp;
+    const cls = Math.abs(d) < 0.05 ? 'delta-zero' : (d > 0 ? 'delta-pos' : 'delta-neg');
+    const sign = d > 0.05 ? '+' : (d < -0.05 ? '' : '±');
+    return `<span class="${cls}">${sign}${d.toFixed(1)}</span>`;
+  }
+
+  function renderEstimate() {
+    const m = methods[currentMethod];
+    document.getElementById('method-title').textContent = m.name;
+    document.getElementById('method-caption').textContent = m.caption;
+    document.getElementById('description').innerHTML = m.description;
+
+    const tag = document.getElementById('method-tag');
+    if (m.variation === 'cell') {
+      tag.textContent = 'cell-level';
+      tag.className = 'tag tag-cell';
+    } else {
+      tag.textContent = 'block-uniform';
+      tag.className = 'tag tag-block';
+    }
+
+    const getEstimate = (i, j) => m.computeCell(i, j, params);
+    renderBlockGrid(document.getElementById('estimate-grid'), 'full', getEstimate);
+    renderBlockAvgGrid(document.getElementById('block-avg-grid'), getEstimate);
+
+    const s = statsOfEstimates(getEstimate);
+    document.getElementById('stats-body').innerHTML = `
+      <tr><td>Mean</td><td>${s.mean.toFixed(1)}</td><td>${sampleStats.mean.toFixed(1)}</td><td>${deltaCell(s.mean, sampleStats.mean)}</td></tr>
+      <tr><td>Min</td><td>${s.min.toFixed(1)}</td><td>${sampleStats.min.toFixed(1)}</td><td>${deltaCell(s.min, sampleStats.min)}</td></tr>
+      <tr><td>Max</td><td>${s.max.toFixed(1)}</td><td>${sampleStats.max.toFixed(1)}</td><td>${deltaCell(s.max, sampleStats.max)}</td></tr>
+      <tr><td>Std dev</td><td>${s.sd.toFixed(1)}</td><td>${sampleStats.sd.toFixed(1)}</td><td>${deltaCell(s.sd, sampleStats.sd)}</td></tr>
+    `;
+
+    // Sliders
+    const paramsDiv = document.getElementById('params');
+    paramsDiv.innerHTML = '';
+    for (const p of m.params) {
+      const row = document.createElement('div');
+      row.className = 'param-row';
+      const value = params[p.id];
+      row.innerHTML = `
+        <label>${p.label}</label>
+        <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${value}">
+        <div class="value">${value}</div>
+      `;
+      const slider = row.querySelector('input');
+      const valDiv = row.querySelector('.value');
+      slider.addEventListener('input', () => {
+        params[p.id] = parseFloat(slider.value);
+        valDiv.textContent = params[p.id];
+        renderEstimate();
+      });
+      paramsDiv.appendChild(row);
+    }
+  }
+
+  function renderButtons() {
+    const container = document.getElementById('method-buttons');
+    container.innerHTML = '';
+    let i = 1;
+    for (const [key, m] of Object.entries(methods)) {
+      const btn = document.createElement('button');
+      btn.className = 'method-btn' + (key === currentMethod ? ' active' : '');
+      btn.innerHTML = `<span class="num">M${String(i).padStart(2,'0')}</span>${m.name}`;
+      btn.addEventListener('click', () => {
+        currentMethod = key;
+        resetParams(key);
+        renderButtons();
+        renderEstimate();
+      });
+      container.appendChild(btn);
+      i++;
+    }
+  }
+
+  function renderCompare() {
+    const container = document.getElementById('compare-grid');
+    container.innerHTML = '';
+    const defaults = {
+      polygonal: {},
+      idw: { p: 2 },
+      idwk: { k: 4, p: 2 },
+      knn: { k: 4 },
+      neighbor: {},
+      blend: {},
+      mean: {}
+    };
+    let i = 1;
+    for (const [key, m] of Object.entries(methods)) {
+      const card = document.createElement('div');
+      card.className = 'mini-card';
+      let suffix = '';
+      if (key === 'idw') suffix = ' · p=2';
+      else if (key === 'idwk') suffix = ' · k=4, p=2';
+      else if (key === 'knn') suffix = ' · k=4';
+
+      const tagClass = m.variation === 'cell' ? 'tag-cell' : 'tag-block';
+      const tagText = m.variation === 'cell' ? 'cell' : 'block';
+
+      card.innerHTML = `
+        <div class="mini-card-title">
+          <span>${m.name}</span>
+          <span class="mini-tag ${tagClass}">${tagText}</span>
+        </div>
+        <div class="mini-card-meta">M${String(i).padStart(2,'0')}${suffix}</div>
+        <div class="mini-block-grid" id="mini-${key}"></div>
+        <div class="mini-block-avg-label">block determinations</div>
+        <div class="mini-block-avg-grid" id="mini-avg-${key}"></div>
+      `;
+      container.appendChild(card);
+      const getEstimate = (ii, jj) => m.computeCell(ii, jj, defaults[key]);
+      renderBlockGrid(document.getElementById(`mini-${key}`), 'full', getEstimate, { mini: true });
+      renderBlockAvgGrid(document.getElementById(`mini-avg-${key}`), getEstimate, { mini: true });
+      i++;
+    }
+  }
+
+  // ============ INIT ============
+  renderSamples();
+  renderButtons();
+  renderEstimate();
+  renderCompare();
+</script>
+</body>
+</html>

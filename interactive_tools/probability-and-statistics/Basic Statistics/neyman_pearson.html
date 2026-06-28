@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neyman–Pearson Lemma — Visual Hypothesis Testing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --crimson:#9E1B32;--crimson-dark:#7a1426;--ink:#1a1a1a;--muted:#666;
+    --bg:#fafafa;--panel:#ffffff;--accent:#1f4e79;--green:#2e7d32;
+    --gold:#e08e00;--cream:#f4ecd8;--reject:rgba(158,27,50,0.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.45}
+  .houndstooth{
+    height:8px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><rect width='24' height='24' fill='%23ffffff'/><path d='M0 0 L12 0 L12 6 L18 6 L18 12 L24 12 L24 24 L12 24 L12 18 L6 18 L6 12 L0 12 Z' fill='%231a1a1a'/></svg>");
+    background-size:12px 12px;
+  }
+  header{
+    background:linear-gradient(135deg,var(--crimson) 0%,var(--crimson-dark) 100%);
+    color:#fff;padding:8px 20px;display:flex;align-items:center;gap:12px;
+    border-bottom:2px solid var(--crimson-dark);
+  }
+  .ua-mark{
+    flex:0 0 auto;width:34px;height:34px;background:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);font-size:22px;line-height:1;
+  }
+  .ua-text{flex:1}
+  header h1{margin:0;font-size:1.05rem;font-weight:700;line-height:1.2}
+  header .sub{margin:1px 0 0;opacity:.9;font-size:.78rem}
+  header .inst{font-size:.62rem;text-transform:uppercase;letter-spacing:.14em;opacity:.8;font-weight:600}
+  main{max-width:1320px;margin:0 auto;padding:18px}
+  .panel{background:var(--panel);border:1px solid #e2e2e2;border-radius:10px;
+         padding:16px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.03);
+         border-top:3px solid var(--crimson)}
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  button{font:inherit;padding:7px 14px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer}
+  button.primary{background:var(--crimson);color:#fff;border-color:var(--crimson);font-weight:600}
+  button.primary:hover{background:var(--crimson-dark)}
+  button.reveal-btn{background:var(--gold);color:#fff;border-color:var(--gold)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  select{font:inherit;padding:5px 10px;border:1px solid #ccc;border-radius:6px}
+  .note{font-size:.88rem;color:var(--muted);margin:6px 0}
+  .formula{background:#f5f5f7;border-left:3px solid var(--crimson);
+           padding:8px 12px;border-radius:4px;font-family:"Cambria Math",Georgia,serif;
+           font-size:.93rem;margin:6px 0;overflow-x:auto}
+  canvas{display:block;width:100%;background:#fff}
+  .plots{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.plots{grid-template-columns:1fr}}
+  .cell{background:#fff;border:2px solid #e2e2e2;border-radius:8px;padding:10px}
+  .cell h3{margin:0 0 4px;font-size:.92rem}
+  .cell h3 .h0{color:var(--accent)}
+  .cell h3 .h1{color:var(--crimson)}
+  .cell canvas{height:240px}
+  .sampling-panel{margin-top:14px}
+  .sampling-panel canvas{height:200px}
+  .sampling-panel h3{margin:0 0 6px;font-size:.92rem;color:var(--ink)}
+  .result-box{
+    padding:12px 16px;border-radius:8px;font-size:.95rem;margin-top:12px;display:none;
+  }
+  .result-box.show{display:block}
+  .result-box.reject{background:#fdecea;border:1px solid #f5c6c0;color:var(--crimson)}
+  .result-box.accept{background:#e8f5e9;border:1px solid #c8e6c9;color:var(--green)}
+  .result-box.info{background:#eef2f7;border:1px solid #cfd8e3;color:var(--accent)}
+  .stat-strip{
+    display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;
+  }
+  .sstat{background:#f5f5f7;border-left:3px solid var(--crimson);border-radius:4px;
+         padding:6px 10px;font-variant-numeric:tabular-nums}
+  .sstat .lab{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .sstat .val{font-size:1rem;font-weight:600}
+  .data-strip{
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;
+    background:var(--cream);border-radius:6px;padding:6px 10px;margin-top:6px;
+    overflow-x:auto;white-space:nowrap;border-left:3px solid var(--crimson);
+  }
+  footer{text-align:center;padding:14px;color:var(--muted);font-size:.85rem;
+         border-top:1px solid #e2e2e2;margin-top:16px;background:#fff}
+  footer .roll{font-weight:700;color:var(--crimson);letter-spacing:.05em;font-size:1rem}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ua-mark">🐘</div>
+  <div class="ua-text">
+    <div class="inst">The University of Alabama · Math Stats I</div>
+    <h1>Neyman–Pearson Lemma: Visual Hypothesis Testing</h1>
+    <div class="sub">H₀: μ = 0 &nbsp;vs.&nbsp; H₁: μ = 1, &nbsp; σ² = 1 known, &nbsp; n = 16, &nbsp; α = 0.05</div>
+  </div>
+</header>
+<div class="houndstooth"></div>
+
+<main>
+
+<section class="panel">
+  <p class="note" style="margin-top:0">
+    The <strong>Neyman–Pearson Lemma</strong> says the <em>most powerful</em> size-α test of
+    a simple null H₀ against a simple alternative H₁ rejects when the likelihood ratio
+    L(θ₀)/L(θ₁) is small — equivalently, when the data look much more plausible under H₁
+    than under H₀.
+  </p>
+  <p class="note">
+    For our Normal setup with known σ² = 1 and n = 16, this reduces to
+    rejecting H₀ when the sample mean ȳ exceeds a critical value <em>L</em>:
+  </p>
+  <div class="formula">
+    Reject H₀ when &nbsp; ȳ &gt; L = μ₀ + z<sub>α</sub> · σ/√n
+    = 0 + 1.645 · (1/4) = <strong>0.4112</strong>
+  </div>
+  <p class="note">
+    The rejection region <strong>RR = (0.4112, ∞)</strong> has size α = 0.05 under H₀,
+    and power = P(ȳ ∈ RR | μ = 1) ≈ 0.991 under H₁.
+    Press <strong>Generate</strong> to draw a random sample from one of the two populations
+    and see the test in action.
+  </p>
+</section>
+
+<section class="panel">
+  <div class="controls">
+    <button id="gen" class="primary">▶ Generate sample (n = 16)</button>
+    <label class="note">Truth:
+      <select id="truthSel">
+        <option value="random">Random (don't tell me)</option>
+        <option value="0">Sample from H₀ (μ = 0)</option>
+        <option value="1">Sample from H₁ (μ = 1)</option>
+      </select>
+    </label>
+    <button id="revealBtn" class="reveal-btn" disabled>Reveal truth</button>
+  </div>
+  <div class="data-strip" id="dataStrip">data: (press Generate to begin)</div>
+  <div class="stat-strip" id="statStrip"></div>
+  <div class="result-box info show" id="resultBox">
+    Press <strong>Generate</strong> to draw 16 observations from either N(0,1) or N(1,1).
+    Watch how the likelihoods differ under the two hypotheses.
+  </div>
+</section>
+
+<section class="panel">
+  <div class="plots">
+    <div class="cell">
+      <h3><span class="h0">Under H₀: N(0, 1)</span></h3>
+      <canvas id="cvs0"></canvas>
+    </div>
+    <div class="cell">
+      <h3><span class="h1">Under H₁: N(1, 1)</span></h3>
+      <canvas id="cvs1"></canvas>
+    </div>
+  </div>
+</section>
+
+<section class="panel sampling-panel">
+  <h3>Sampling distribution of ȳ &nbsp;(n = 16, σ = 1)</h3>
+  <canvas id="cvsYbar"></canvas>
+  <p class="note" style="margin-top:6px">
+    Under H₀, ȳ ~ N(0, 1/16); under H₁, ȳ ~ N(1, 1/16).
+    The red shaded region is <strong>RR = (0.4112, ∞)</strong>.
+    The area of RR under the H₀ curve is α = 0.05.
+    The area under the H₁ curve is the power ≈ 0.991.
+    The green diamond marks the observed ȳ.
+  </p>
+</section>
+
+</main>
+
+<div class="houndstooth"></div>
+<footer>
+  <span class="roll">Roll Tide</span> · Math Stats I · The University of Alabama
+</footer>
+
+<script>
+// ========== constants ==========
+const N = 16;
+const MU0 = 0, MU1 = 1, SIGMA = 1;
+const ALPHA = 0.05;
+const Z_ALPHA = 1.6449;  // z_0.05
+const L = MU0 + Z_ALPHA * SIGMA / Math.sqrt(N);  // critical value ≈ 0.4112
+const SE = SIGMA / Math.sqrt(N);                  // 0.25
+
+const SQRT_2PI = Math.sqrt(2 * Math.PI);
+function normPdf(x, mu, sig) {
+  const z = (x - mu) / sig;
+  return Math.exp(-0.5 * z * z) / (sig * SQRT_2PI);
+}
+function normCdf(x) {
+  // Abramowitz & Stegun approx
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429;
+  const p=0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const t = 1 / (1 + p * Math.abs(x));
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t * Math.exp(-x*x/2);
+  return 0.5 * (1 + sign * y);
+}
+
+let data = [];
+let truthMu = -1;
+let revealed = false;
+
+// ========== canvas helpers ==========
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  const w = rect.width || 500, h = rect.height || 240;
+  c.width = Math.max(1, Math.floor(w * dpr));
+  c.height = Math.max(1, Math.floor(h * dpr));
+  c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w, h };
+}
+const xToPx = (x, w, pad, xmin, xmax) => pad.l + (w-pad.l-pad.r)*(x-xmin)/(xmax-xmin);
+const yToPx = (y, h, pad, ymin, ymax) => h-pad.b - (h-pad.t-pad.b)*(y-ymin)/(ymax-ymin);
+
+function axes(ctx, w, h, pad, xmin, xmax, ymin, ymax, xlabel) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#ececec'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= 8; i++) {
+    const gx = pad.l + (w-pad.l-pad.r)*i/8;
+    ctx.moveTo(gx, pad.t); ctx.lineTo(gx, h-pad.b);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const gy = pad.t + (h-pad.t-pad.b)*i/4;
+    ctx.moveTo(pad.l, gy); ctx.lineTo(w-pad.r, gy);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, h-pad.b); ctx.lineTo(w-pad.r, h-pad.b);
+  ctx.stroke();
+  ctx.fillStyle = '#666'; ctx.font = '10px -apple-system,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const nt = 5;
+  for (let i = 0; i <= nt; i++) {
+    const v = xmin + (xmax-xmin)*i/nt;
+    ctx.fillText(v.toFixed(1), xToPx(v,w,pad,xmin,xmax), h-pad.b+3);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const v = ymin + (ymax-ymin)*(1 - i/4);
+    ctx.fillText(v.toFixed(2), pad.l-4, pad.t + (h-pad.t-pad.b)*i/4);
+  }
+  if (xlabel) {
+    ctx.fillStyle = '#333'; ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(xlabel, (pad.l + w-pad.r)/2, h-2);
+  }
+}
+
+// ========== draw individual PDF panel ==========
+function drawPdfPanel(canvasId, mu, color) {
+  const cvs = document.getElementById(canvasId);
+  const ctx = cvs.getContext('2d');
+  const dim = fitCanvas(cvs);
+  const w = dim.w, h = dim.h;
+  const pad = { l: 50, r: 14, t: 14, b: 30 };
+  const xmin = -3.5, xmax = 4.5, ymin = 0, ymax = 0.45;
+
+  axes(ctx, w, h, pad, xmin, xmax, ymin, ymax, 'y');
+
+  // shade rejection region for ȳ? No — this panel shows individual obs pdf.
+  // But we CAN lightly shade x > L to hint at the direction.
+
+  // PDF curve
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 400; i++) {
+    const x = xmin + (xmax-xmin)*i/400;
+    const y = normPdf(x, mu, SIGMA);
+    const px = xToPx(x, w, pad, xmin, xmax);
+    const py = yToPx(y, h, pad, ymin, ymax);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // label at peak
+  ctx.fillStyle = color; ctx.font = 'bold 11px -apple-system,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('μ = ' + mu, xToPx(mu, w, pad, xmin, xmax), yToPx(normPdf(mu, mu, SIGMA), h, pad, ymin, ymax) - 6);
+
+  if (data.length === 0) return;
+
+  // stems from data
+  const yBase = yToPx(0, h, pad, ymin, ymax);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(pad.l, pad.t, w-pad.l-pad.r, h-pad.t-pad.b);
+  ctx.clip();
+
+  ctx.strokeStyle = '#666'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1;
+  for (const x of data) {
+    if (x < xmin || x > xmax) continue;
+    const px = xToPx(x, w, pad, xmin, xmax);
+    const f = normPdf(x, mu, SIGMA);
+    const py = yToPx(f, h, pad, ymin, ymax);
+    ctx.beginPath(); ctx.moveTo(px, yBase); ctx.lineTo(px, py); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // data dots on x-axis
+  ctx.fillStyle = '#9E1B32';
+  for (const x of data) {
+    if (x < xmin || x > xmax) continue;
+    const px = xToPx(x, w, pad, xmin, xmax);
+    ctx.beginPath(); ctx.arc(px, yBase, 4, 0, Math.PI * 2); ctx.fill();
+  }
+  // blue dots at pdf
+  ctx.fillStyle = color;
+  for (const x of data) {
+    if (x < xmin || x > xmax) continue;
+    const px = xToPx(x, w, pad, xmin, xmax);
+    const py = yToPx(normPdf(x, mu, SIGMA), h, pad, ymin, ymax);
+    ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // ln L readout
+  if (data.length) {
+    let ll = 0;
+    for (const x of data) ll += Math.log(normPdf(x, mu, SIGMA));
+    ctx.fillStyle = '#333'; ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText('ln L = ' + ll.toFixed(2), w - pad.r - 4, pad.t + 2);
+  }
+}
+
+// ========== draw sampling distribution panel ==========
+function drawYbarPanel() {
+  const cvs = document.getElementById('cvsYbar');
+  const ctx = cvs.getContext('2d');
+  const dim = fitCanvas(cvs);
+  const w = dim.w, h = dim.h;
+  const pad = { l: 55, r: 14, t: 14, b: 30 };
+  const xmin = -1.0, xmax = 2.0;
+  // pdf of ȳ has std dev = SE = 0.25
+  const ymax = normPdf(0, 0, SE) * 1.15;
+  const ymin = 0;
+
+  axes(ctx, w, h, pad, xmin, xmax, ymin, ymax, 'ȳ');
+
+  // shade rejection region (x > L) under H₀ curve
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(pad.l, pad.t, w-pad.l-pad.r, h-pad.t-pad.b);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(158,27,50,0.15)';
+  ctx.beginPath();
+  const yBase = yToPx(0, h, pad, ymin, ymax);
+  const Lpx = xToPx(L, w, pad, xmin, xmax);
+  ctx.moveTo(Lpx, yBase);
+  for (let i = 0; i <= 200; i++) {
+    const x = L + (xmax - L) * i / 200;
+    const y = normPdf(x, MU0, SE);
+    ctx.lineTo(xToPx(x, w, pad, xmin, xmax), yToPx(y, h, pad, ymin, ymax));
+  }
+  ctx.lineTo(xToPx(xmax, w, pad, xmin, xmax), yBase);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // critical line
+  ctx.strokeStyle = '#9E1B32'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
+  ctx.beginPath();
+  ctx.moveTo(Lpx, pad.t); ctx.lineTo(Lpx, h - pad.b);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#9E1B32'; ctx.font = 'bold 10px -apple-system,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('L = ' + L.toFixed(4), Lpx, pad.t - 1);
+
+  // "α = 0.05" label in the shaded region
+  ctx.fillStyle = 'rgba(158,27,50,0.7)'; ctx.font = '10px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('α = 0.05', Lpx + 4, yToPx(normPdf(L, MU0, SE) * 0.5, h, pad, ymin, ymax));
+
+  // H₀ curve: N(0, SE²)
+  ctx.strokeStyle = '#1f4e79'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 400; i++) {
+    const x = xmin + (xmax-xmin)*i/400;
+    const y = normPdf(x, MU0, SE);
+    const px = xToPx(x, w, pad, xmin, xmax);
+    const py = yToPx(y, h, pad, ymin, ymax);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#1f4e79'; ctx.font = '11px -apple-system,sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('ȳ | H₀', xToPx(MU0 - 0.05, w, pad, xmin, xmax),
+               yToPx(normPdf(MU0, MU0, SE), h, pad, ymin, ymax) - 6);
+
+  // H₁ curve: N(1, SE²)
+  ctx.strokeStyle = '#9E1B32'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 400; i++) {
+    const x = xmin + (xmax-xmin)*i/400;
+    const y = normPdf(x, MU1, SE);
+    const px = xToPx(x, w, pad, xmin, xmax);
+    const py = yToPx(y, h, pad, ymin, ymax);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#9E1B32'; ctx.font = '11px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('ȳ | H₁', xToPx(MU1 + 0.05, w, pad, xmin, xmax),
+               yToPx(normPdf(MU1, MU1, SE), h, pad, ymin, ymax) - 6);
+
+  // "RR" label
+  ctx.fillStyle = 'rgba(158,27,50,0.5)'; ctx.font = 'bold 13px -apple-system,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('RR', xToPx((L + xmax) / 2, w, pad, xmin, xmax), h - pad.b - 6);
+
+  // observed ȳ marker
+  if (data.length) {
+    const ybar = data.reduce((a, b) => a + b, 0) / data.length;
+    const px = xToPx(ybar, w, pad, xmin, xmax);
+    // diamond marker
+    ctx.fillStyle = '#2e7d32';
+    ctx.beginPath();
+    ctx.moveTo(px, yBase - 12);
+    ctx.lineTo(px + 6, yBase - 4);
+    ctx.lineTo(px, yBase + 4);
+    ctx.lineTo(px - 6, yBase - 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#2e7d32'; ctx.font = 'bold 10px -apple-system,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('ȳ = ' + ybar.toFixed(4), px, yBase - 14);
+  }
+}
+
+// ========== draw everything ==========
+function drawAll() {
+  drawPdfPanel('cvs0', MU0, '#1f4e79');
+  drawPdfPanel('cvs1', MU1, '#9E1B32');
+  drawYbarPanel();
+}
+
+// ========== generate ==========
+function boxMuller() {
+  let u, v, s;
+  do { u = 2*Math.random()-1; v = 2*Math.random()-1; s = u*u+v*v; } while (s >= 1 || s === 0);
+  return u * Math.sqrt(-2 * Math.log(s) / s);
+}
+
+function generate() {
+  const sel = document.getElementById('truthSel').value;
+  if (sel === 'random') {
+    truthMu = Math.random() < 0.5 ? 0 : 1;
+  } else {
+    truthMu = parseInt(sel);
+  }
+  revealed = (sel !== 'random');
+  data = Array.from({ length: N }, () => truthMu + SIGMA * boxMuller());
+  data.sort((a, b) => a - b);
+
+  document.getElementById('revealBtn').disabled = (sel !== 'random');
+  updateUI();
+  drawAll();
+}
+
+function revealTruth() {
+  revealed = true;
+  document.getElementById('revealBtn').disabled = true;
+  updateUI();
+}
+
+function updateUI() {
+  // data strip
+  const strip = document.getElementById('dataStrip');
+  if (data.length === 0) { strip.textContent = 'data: (press Generate to begin)'; return; }
+  strip.textContent = 'sorted: ' + data.map(v => v.toFixed(3)).join(',  ');
+
+  const n = data.length;
+  const ybar = data.reduce((a, b) => a + b, 0) / n;
+  const inRR = ybar > L;
+  let ll0 = 0, ll1 = 0;
+  for (const x of data) { ll0 += Math.log(normPdf(x, MU0, SIGMA)); ll1 += Math.log(normPdf(x, MU1, SIGMA)); }
+  const lratio = ll0 - ll1;  // log(L0/L1)
+
+  // stats
+  const ss = document.getElementById('statStrip');
+  const s = (lab, val) => `<div class="sstat"><div class="lab">${lab}</div><div class="val">${val}</div></div>`;
+  ss.innerHTML =
+    s('ȳ', ybar.toFixed(4)) +
+    s('L (critical)', L.toFixed(4)) +
+    s('ȳ in RR?', inRR ? '<span style="color:#9E1B32">Yes</span>' : '<span style="color:#2e7d32">No</span>') +
+    s('ln L₀', ll0.toFixed(2)) +
+    s('ln L₁', ll1.toFixed(2)) +
+    s('ln(L₀/L₁)', lratio.toFixed(2));
+
+  // result
+  const box = document.getElementById('resultBox');
+  let html;
+  if (inRR) {
+    html = `<strong>ȳ = ${ybar.toFixed(4)} &gt; L = ${L.toFixed(4)}</strong> — we <strong>reject H₀</strong>. ` +
+           `The likelihood ratio ln(L₀/L₁) = ${lratio.toFixed(2)}, which is strongly negative ` +
+           `(the data are far more plausible under H₁).`;
+    box.className = 'result-box reject show';
+  } else {
+    html = `<strong>ȳ = ${ybar.toFixed(4)} ≤ L = ${L.toFixed(4)}</strong> — we <strong>fail to reject H₀</strong>. ` +
+           `The likelihood ratio ln(L₀/L₁) = ${lratio.toFixed(2)}.`;
+    box.className = 'result-box accept show';
+  }
+
+  if (revealed) {
+    const truth = truthMu === 0 ? 'H₀ (μ = 0)' : 'H₁ (μ = 1)';
+    const correct = (inRR && truthMu === 1) || (!inRR && truthMu === 0);
+    if (truthMu === 0 && inRR) {
+      html += `<br><br>The truth was <strong>${truth}</strong>. This is a <strong style="color:#9E1B32">Type I error</strong> — ` +
+              `we rejected a true null. Under Neyman–Pearson this happens with probability α = 0.05.`;
+    } else if (truthMu === 1 && !inRR) {
+      html += `<br><br>The truth was <strong>${truth}</strong>. This is a <strong style="color:#9E1B32">Type II error</strong> — ` +
+              `we failed to detect a true alternative. The power of this test is ≈ 0.991, ` +
+              `so this is rare (probability β ≈ 0.009). Try generating more samples.`;
+    } else if (truthMu === 1 && inRR) {
+      html += `<br><br>The truth was <strong>${truth}</strong>. <strong style="color:#2e7d32">Correct decision</strong> — ` +
+              `the test detected the true alternative. Compare the stem heights in the two panels: ` +
+              `the stems are consistently taller under H₁ because the data were indeed drawn from N(1, 1).`;
+    } else {
+      html += `<br><br>The truth was <strong>${truth}</strong>. <strong style="color:#2e7d32">Correct decision</strong> — ` +
+              `the test correctly retained the true null.`;
+    }
+  } else {
+    html += `<br><br>Press <strong>Reveal</strong> to see whether this was a correct decision, ` +
+            `a Type I error, or a Type II error.`;
+    box.className = 'result-box info show';
+  }
+  box.innerHTML = html;
+}
+
+// ========== wiring ==========
+document.getElementById('gen').addEventListener('click', generate);
+document.getElementById('revealBtn').addEventListener('click', revealTruth);
+window.addEventListener('resize', drawAll);
+window.addEventListener('load', drawAll);
+drawAll();
+</script>
+</body>
+</html>

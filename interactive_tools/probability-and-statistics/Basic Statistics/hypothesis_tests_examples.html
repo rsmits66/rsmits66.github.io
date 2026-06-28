@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hypothesis testing — classical and simulation</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f4ef;
+    --surface-2: #ebeae4;
+    --text: #1a1915;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.15);
+    --border-strong: rgba(0,0,0,0.3);
+    --accent: #9E1B32;
+    --accent-dark: #6B0F23;
+    --accent-soft: #f2dde2;
+    --accent-shade: #d5a3af;
+    --bar: #828A8F;
+    --bar-hit: #9E1B32;
+    --btn-hover: #ededea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #ffffff;
+      --surface: #f5f4ef;
+      --surface-2: #ebeae4;
+      --text: #1a1915;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #888780;
+      --border: rgba(0,0,0,0.15);
+      --border-strong: rgba(0,0,0,0.3);
+      --accent: #9E1B32;
+      --accent-dark: #6B0F23;
+      --accent-soft: #f2dde2;
+      --accent-shade: #d5a3af;
+      --bar: #828A8F;
+      --bar-hit: #9E1B32;
+      --btn-hover: #ededea;
+    }
+    html, body { color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 960px; margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    border-top: 3px solid var(--accent);
+  }
+  h1 { font-size: 26px; font-weight: 500; margin: 0 0 0.25rem; color: var(--accent); letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 1.5rem; }
+  .toc { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 2rem; }
+  .toc a {
+    padding: 6px 12px;
+    background: var(--surface); color: var(--text);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .toc a:hover { background: var(--surface-2); }
+  .example { margin-bottom: 3rem; padding-top: 1rem; border-top: 0.5px solid var(--border); }
+  .example:first-of-type { border-top: none; padding-top: 0; }
+  h2 { font-size: 20px; font-weight: 500; margin: 0 0 0.5rem; color: var(--accent); }
+  h3 { font-size: 15px; font-weight: 500; margin: 0 0 0.5rem; color: var(--text); }
+  h3 .tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    color: white;
+    vertical-align: middle;
+  }
+  h3 .tag.classical { background: var(--text-secondary); }
+  h3 .tag.simulation { background: var(--accent); }
+  .scenario { margin: 0 0 1rem; color: var(--text-secondary); }
+  .inputs-panel {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+  .inputs-panel-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+  }
+  .input-group { display: flex; flex-direction: column; gap: 3px; }
+  .input-group label { font-size: 12px; color: var(--text-secondary); }
+  .input-group input {
+    padding: 5px 8px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 5px;
+    background: white;
+    font-family: inherit; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .input-group input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hyp-box {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    display: flex; flex-wrap: wrap; gap: 14px;
+  }
+  .hyp-box .h-item { color: var(--accent-dark); }
+  .hyp-box .h-item strong { font-weight: 500; }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 0.75rem;
+  }
+  @media (max-width: 780px) { .grid-2 { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column;
+  }
+  .method-type { font-size: 12px; color: var(--text-tertiary); margin: 0 0 8px; }
+  .calc {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    line-height: 1.7;
+  }
+  pre.code {
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin: 0 0 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+  }
+  pre.code .key { color: var(--accent-dark); }
+  .plot-wrap {
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 4px;
+    margin-bottom: 8px;
+  }
+  .plot-wrap svg { width: 100%; height: auto; display: block; }
+  .plot-empty {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    text-align: center;
+    padding: 50px 10px;
+    font-style: italic;
+  }
+  .p-box {
+    margin-top: auto;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .p-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .p-value {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .p-value.pending { color: var(--text-tertiary); }
+  .p-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  button.run {
+    background: var(--accent); color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background 0.12s, transform 0.08s;
+    align-self: flex-start;
+  }
+  button.run:hover:not(:disabled) { background: var(--accent-dark); }
+  button.run:active:not(:disabled) { transform: scale(0.98); }
+  button.run:disabled { opacity: 0.45; cursor: not-allowed; }
+  .verdict {
+    margin-top: 0.5rem;
+    padding: 9px 14px;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+  }
+  .verdict strong { color: var(--accent); font-weight: 500; }
+  .verdict.notreject { border-left-color: var(--text-secondary); }
+  .verdict.notreject strong { color: var(--text); }
+  .note {
+    margin-top: 0.5rem;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  var { font-style: italic; font-family: "Times New Roman", serif; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Hypothesis testing — classical and simulation</h1>
+  <p class="subtitle">
+    Four worked examples. Edit any input to recompute the classical test live and see the theoretical
+    null distribution with the observed statistic marked. Click "Run simulation" to sample 100,000
+    null-world trials and display the empirical histogram below.
+  </p>
+
+  <nav class="toc">
+    <a href="#medication">1. Medication vs. placebo</a>
+    <a href="#defectives">2. Machine defectives</a>
+    <a href="#sales">3. Sales contacts</a>
+    <a href="#reaction">4. Reaction times</a>
+  </nav>
+
+  <section class="example" id="medication">
+    <h2>1. Medication vs. placebo  —  two-sample proportion, one-sided</h2>
+    <p class="scenario">
+      A clinical trial compares a medication to a placebo. H<sub>0</sub> is that the two groups
+      share the same underlying success rate.
+    </p>
+
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n₁ (med)</label><input type="number" id="med-n1" value="60" min="1" /></div>
+        <div class="input-group"><label>x₁ (med success)</label><input type="number" id="med-x1" value="40" min="0" /></div>
+        <div class="input-group"><label>n₂ (placebo)</label><input type="number" id="med-n2" value="60" min="1" /></div>
+        <div class="input-group"><label>x₂ (placebo success)</label><input type="number" id="med-x2" value="30" min="0" /></div>
+      </div>
+    </div>
+
+    <div class="hyp-box">
+      <span class="h-item"><strong>H<sub>0</sub>:</strong> p<sub>med</sub> = p<sub>placebo</sub></span>
+      <span class="h-item"><strong>H<sub>a</sub>:</strong> p<sub>med</sub> &gt; p<sub>placebo</sub></span>
+      <span class="h-item"><strong>α:</strong> 0.05 (one-sided)</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">two-proportion <var>z</var>-test, pooled standard error</p>
+        <div class="calc" id="med-calc"></div>
+        <div class="plot-wrap"><svg id="med-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="med-theory-p">—</div>
+          <div class="p-sub">P(Z ≥ z<sub>obs</sub>)</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">pool under H<sub>0</sub>, sample both groups from pooled rate</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+p_null   &lt;- (x1 + x2) / (n1 + n2)
+diff_obs &lt;- x1/n1 - x2/n2
+diff_sim &lt;- <span class="key">replicate</span>(100000, {
+  <span class="key">rbinom</span>(1, n1, p_null)/n1 -
+  <span class="key">rbinom</span>(1, n2, p_null)/n2
+})
+<span class="key">mean</span>(diff_sim &gt;= diff_obs)</pre>
+        <button class="run" data-ex="medication">Run simulation</button>
+        <div class="plot-wrap"><svg id="med-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="med-sim-p">—</div>
+          <div class="p-sub">fraction with Δp̂ ≥ observed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict" id="med-verdict"></div>
+  </section>
+
+  <section class="example" id="defectives">
+    <h2>2. Machine defectives  —  one-sample proportion, one-sided</h2>
+    <p class="scenario">
+      A machine must be repaired if it produces more than a target rate of defectives.
+      Test whether the observed rate exceeds the null rate.
+    </p>
+
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n (items tested)</label><input type="number" id="def-n" value="100" min="1" /></div>
+        <div class="input-group"><label>Y (defectives)</label><input type="number" id="def-Y" value="15" min="0" /></div>
+        <div class="input-group"><label>p₀ (null rate)</label><input type="number" id="def-p0" value="0.10" min="0" max="1" step="0.01" /></div>
+      </div>
+    </div>
+
+    <div class="hyp-box">
+      <span class="h-item"><strong>H<sub>0</sub>:</strong> p = p₀</span>
+      <span class="h-item"><strong>H<sub>a</sub>:</strong> p &gt; p₀</span>
+      <span class="h-item"><strong>α:</strong> 0.01 (one-sided)</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">one-sample <var>z</var>-test, normal approximation to binomial</p>
+        <div class="calc" id="def-calc"></div>
+        <div class="plot-wrap"><svg id="def-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="def-theory-p">—</div>
+          <div class="p-sub">P(Z ≥ z<sub>obs</sub>), normal approx</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">draw defective counts from Binomial(n, p₀)</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+Y_sim &lt;- <span class="key">rbinom</span>(100000,
+                size = n, prob = p0)
+<span class="key">mean</span>(Y_sim &gt;= Y_obs)</pre>
+        <button class="run" data-ex="defectives">Run simulation</button>
+        <div class="plot-wrap"><svg id="def-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="def-sim-p">—</div>
+          <div class="p-sub">fraction of null batches with Y ≥ observed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict" id="def-verdict"></div>
+    <p class="note">
+      When np₀ is small the normal approximation becomes shaky — watch the simulated histogram
+      (exact binomial shape) diverge from the symmetric normal bell. The simulated p-value is
+      the one to trust in that regime.
+    </p>
+  </section>
+
+  <section class="example" id="sales">
+    <h2>3. Sales contacts  —  one-sample mean, one-sided</h2>
+    <p class="scenario">
+      Test whether a sample mean gives evidence that the population mean exceeds a claimed value.
+    </p>
+
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n (sample size)</label><input type="number" id="sal-n" value="36" min="2" /></div>
+        <div class="input-group"><label>ȳ (sample mean)</label><input type="number" id="sal-ybar" value="17" step="0.1" /></div>
+        <div class="input-group"><label>s (sample SD)</label><input type="number" id="sal-s" value="3" min="0.001" step="0.1" /></div>
+        <div class="input-group"><label>μ₀ (null mean)</label><input type="number" id="sal-mu0" value="15" step="0.1" /></div>
+      </div>
+    </div>
+
+    <div class="hyp-box">
+      <span class="h-item"><strong>H<sub>0</sub>:</strong> μ = μ₀</span>
+      <span class="h-item"><strong>H<sub>a</sub>:</strong> μ &gt; μ₀</span>
+      <span class="h-item"><strong>α:</strong> 0.05 (one-sided)</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">one-sample <var>z</var>-test, large-sample approximation</p>
+        <div class="calc" id="sal-calc"></div>
+        <div class="plot-wrap"><svg id="sal-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="sal-theory-p">—</div>
+          <div class="p-sub">P(Z ≥ z<sub>obs</sub>)</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">sample from Normal(μ₀, s²), compute means</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+ybar_sim &lt;- <span class="key">replicate</span>(100000,
+  <span class="key">mean</span>(<span class="key">rnorm</span>(n, mean = mu0, sd = s))
+)
+<span class="key">mean</span>(ybar_sim &gt;= ybar_obs)</pre>
+        <button class="run" data-ex="sales">Run simulation</button>
+        <div class="plot-wrap"><svg id="sal-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="sal-sim-p">—</div>
+          <div class="p-sub">fraction of null means ≥ ȳ</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict" id="sal-verdict"></div>
+    <p class="note">
+      When the observed ȳ sits many SEs above μ₀, the simulation may return 0 — a correct
+      reading of "extraordinarily unlikely under H<sub>0</sub>."
+    </p>
+  </section>
+
+  <section class="example" id="reaction">
+    <h2>4. Reaction times  —  two-sample mean, two-sided</h2>
+    <p class="scenario">
+      Compare two independent-group means with a two-sided test. Evidence against H<sub>0</sub>
+      can come from either direction.
+    </p>
+
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n₁</label><input type="number" id="rxn-n1" value="50" min="2" /></div>
+        <div class="input-group"><label>ȳ₁</label><input type="number" id="rxn-y1" value="3.6" step="0.01" /></div>
+        <div class="input-group"><label>s₁²</label><input type="number" id="rxn-v1" value="0.18" min="0.0001" step="0.01" /></div>
+        <div class="input-group"><label>n₂</label><input type="number" id="rxn-n2" value="50" min="2" /></div>
+        <div class="input-group"><label>ȳ₂</label><input type="number" id="rxn-y2" value="3.8" step="0.01" /></div>
+        <div class="input-group"><label>s₂²</label><input type="number" id="rxn-v2" value="0.14" min="0.0001" step="0.01" /></div>
+      </div>
+    </div>
+
+    <div class="hyp-box">
+      <span class="h-item"><strong>H<sub>0</sub>:</strong> μ₁ = μ₂</span>
+      <span class="h-item"><strong>H<sub>a</sub>:</strong> μ₁ ≠ μ₂</span>
+      <span class="h-item"><strong>α:</strong> 0.05 (two-sided)</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">two-sample pooled <var>z</var>-test</p>
+        <div class="calc" id="rxn-calc"></div>
+        <div class="plot-wrap"><svg id="rxn-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="rxn-theory-p">—</div>
+          <div class="p-sub">2 · P(Z ≥ |z<sub>obs</sub>|)</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">pool under H<sub>0</sub>, use abs() for two-sided</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+mu0      &lt;- (n1*y1 + n2*y2)/(n1+n2)
+sp       &lt;- <span class="key">sqrt</span>(((n1-1)*v1 + (n2-1)*v2)
+              /(n1+n2-2))
+diff_obs &lt;- y1 - y2
+diff_sim &lt;- <span class="key">replicate</span>(100000,
+  <span class="key">mean</span>(<span class="key">rnorm</span>(n1, mu0, sp)) -
+  <span class="key">mean</span>(<span class="key">rnorm</span>(n2, mu0, sp))
+)
+<span class="key">mean</span>(<span class="key">abs</span>(diff_sim) &gt;= <span class="key">abs</span>(diff_obs))</pre>
+        <button class="run" data-ex="reaction">Run simulation</button>
+        <div class="plot-wrap"><svg id="rxn-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="rxn-sim-p">—</div>
+          <div class="p-sub">fraction with |Δȳ| ≥ |observed|</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict" id="rxn-verdict"></div>
+  </section>
+</div>
+
+<script>
+(function() {
+  const NSIM = 100000;
+
+  function randn() {
+    const u1 = Math.random(), u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function normalCDF(x) {
+    const a1=0.254829592, a2=-0.284496736, a3=1.421413741;
+    const a4=-1.453152027, a5=1.061405429, p=0.3275911;
+    const sign = x < 0 ? -1 : 1;
+    const absX = Math.abs(x) / Math.sqrt(2);
+    const t = 1 / (1 + p * absX);
+    const y = 1 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1) * t * Math.exp(-absX * absX);
+    return 0.5 * (1 + sign * y);
+  }
+
+  function normalPDF(x, mu, sd) {
+    const z = (x - mu) / sd;
+    return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+  }
+
+  function fmtP(p) {
+    if (p === 0) return '< 1e-5';
+    if (p < 0.0001) return p.toExponential(2);
+    return p.toFixed(4);
+  }
+
+  function fmt(x, d) { return Number(x).toFixed(d); }
+
+  function niceTicks(xMin, xMax, target) {
+    target = target || 5;
+    const range = xMax - xMin;
+    const step0 = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const norm = step0 / mag;
+    let step;
+    if (norm < 1.5) step = 1 * mag;
+    else if (norm < 3) step = 2 * mag;
+    else if (norm < 7) step = 5 * mag;
+    else step = 10 * mag;
+    const first = Math.ceil(xMin / step) * step;
+    const ticks = [];
+    for (let t = first; t <= xMax + step * 1e-9; t += step) {
+      ticks.push(+t.toFixed(12));
+    }
+    return ticks;
+  }
+
+  function buildDensityPlot(svg, opts) {
+    const W = 340, H = 180;
+    const mL = 34, mR = 8, mT = 14, mB = 30;
+    const pW = W - mL - mR, pH = H - mT - mB;
+
+    const nPts = 240;
+    const xs = [], ys = [];
+    let yMax = 0;
+    for (let i = 0; i <= nPts; i++) {
+      const x = opts.xMin + i * (opts.xMax - opts.xMin) / nPts;
+      const y = opts.density(x);
+      xs.push(x); ys.push(y);
+      if (y > yMax) yMax = y;
+    }
+    yMax = Math.max(yMax * 1.15, 1e-6);
+
+    const sx = x => mL + (x - opts.xMin) / (opts.xMax - opts.xMin) * pW;
+    const sy = y => mT + pH - y / yMax * pH;
+
+    const parts = [];
+
+    if (opts.tail) {
+      const shade = 'var(--accent-shade)';
+      const inTail = (x) => {
+        if (opts.tail === 'upper') return x >= opts.observed;
+        if (opts.tail === 'lower') return x <= opts.observed;
+        if (opts.tail === 'both') return Math.abs(x - opts.mean) >= Math.abs(opts.observed - opts.mean);
+        return false;
+      };
+      let seg = [];
+      for (let i = 0; i <= nPts; i++) {
+        if (inTail(xs[i])) seg.push([sx(xs[i]), sy(ys[i])]);
+        else if (seg.length > 0) { flushShade(parts, seg, sy(0), shade); seg = []; }
+      }
+      if (seg.length > 0) flushShade(parts, seg, sy(0), shade);
+    }
+
+    const curveD = xs.map((x, i) => (i === 0 ? 'M' : 'L') + sx(x).toFixed(1) + ',' + sy(ys[i]).toFixed(1)).join(' ');
+    parts.push('<path d="' + curveD + '" fill="none" stroke="var(--accent)" stroke-width="2"/>');
+
+    parts.push('<line x1="' + mL + '" y1="' + (mT + pH) + '" x2="' + (mL + pW) + '" y2="' + (mT + pH) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+
+    const ticks = niceTicks(opts.xMin, opts.xMax, 5);
+    for (const tv of ticks) {
+      const x = sx(tv);
+      if (x < mL - 1 || x > mL + pW + 1) continue;
+      parts.push('<line x1="' + x.toFixed(1) + '" y1="' + (mT + pH) + '" x2="' + x.toFixed(1) + '" y2="' + (mT + pH + 3) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+      parts.push('<text x="' + x.toFixed(1) + '" y="' + (mT + pH + 14) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + formatTick(tv) + '</text>');
+    }
+
+    if (opts.xLabel) {
+      parts.push('<text x="' + (mL + pW / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="11" fill="var(--text-tertiary)">' + opts.xLabel + '</text>');
+    }
+
+    const obsSx = sx(opts.observed);
+    if (obsSx >= mL - 30 && obsSx <= mL + pW + 30) {
+      const obsXClamped = Math.max(mL, Math.min(mL + pW, obsSx));
+      parts.push('<line x1="' + obsXClamped + '" y1="' + mT + '" x2="' + obsXClamped + '" y2="' + (mT + pH) + '" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="4 3"/>');
+      parts.push('<text x="' + obsXClamped + '" y="' + (mT - 3) + '" text-anchor="middle" font-size="10" fill="var(--text)" font-weight="500">obs = ' + formatTick(opts.observed) + '</text>');
+    }
+
+    if (opts.tail === 'both' && opts.observed !== opts.mean) {
+      const mirror = 2 * opts.mean - opts.observed;
+      const mSx = sx(mirror);
+      if (mSx >= mL - 5 && mSx <= mL + pW + 5) {
+        parts.push('<line x1="' + mSx + '" y1="' + mT + '" x2="' + mSx + '" y2="' + (mT + pH) + '" stroke="var(--text)" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>');
+      }
+    }
+
+    svg.innerHTML = parts.join('');
+  }
+
+  function flushShade(parts, seg, baselineY, color) {
+    if (seg.length === 0) return;
+    let d = 'M' + seg[0][0].toFixed(1) + ',' + baselineY.toFixed(1);
+    for (const pt of seg) d += ' L' + pt[0].toFixed(1) + ',' + pt[1].toFixed(1);
+    d += ' L' + seg[seg.length - 1][0].toFixed(1) + ',' + baselineY.toFixed(1) + ' Z';
+    parts.push('<path d="' + d + '" fill="' + color + '" opacity="0.7"/>');
+  }
+
+  function formatTick(v) {
+    const a = Math.abs(v);
+    if (a === 0) return '0';
+    if (a < 0.01) return v.toExponential(0);
+    if (a < 1) return v.toFixed(2);
+    if (a < 10) return v.toFixed(a < 3 ? 2 : 1);
+    if (a < 100) return v.toFixed(0);
+    return v.toFixed(0);
+  }
+
+  function buildHistogram(svg, samples, observed, opts) {
+    const W = 340, H = 180;
+    const mL = 34, mR = 8, mT = 14, mB = 30;
+    const pW = W - mL - mR, pH = H - mT - mB;
+
+    let xMin = opts.xMin, xMax = opts.xMax;
+    if (xMin === undefined || xMax === undefined) {
+      xMin = Infinity; xMax = -Infinity;
+      for (const s of samples) { if (s < xMin) xMin = s; if (s > xMax) xMax = s; }
+      xMin = Math.min(xMin, observed);
+      xMax = Math.max(xMax, observed);
+      const pad = (xMax - xMin) * 0.05 || 0.01;
+      xMin -= pad; xMax += pad;
+    }
+
+    let numBins = opts.numBins || 40;
+    let binWidth = (xMax - xMin) / numBins;
+    if (opts.discrete) {
+      binWidth = 1;
+      xMin = Math.floor(xMin);
+      xMax = Math.ceil(xMax);
+      numBins = Math.max(1, Math.round(xMax - xMin));
+    }
+
+    const counts = new Array(numBins).fill(0);
+    for (const s of samples) {
+      let b = Math.floor((s - xMin) / binWidth);
+      if (b < 0) b = 0;
+      if (b >= numBins) b = numBins - 1;
+      counts[b]++;
+    }
+    const densities = counts.map(c => c / (samples.length * binWidth));
+    const yMax = Math.max.apply(null, densities) * 1.15 || 1;
+
+    const sx = x => mL + (x - xMin) / (xMax - xMin) * pW;
+    const sy = y => mT + pH - y / yMax * pH;
+
+    const parts = [];
+
+    for (let i = 0; i < numBins; i++) {
+      if (counts[i] === 0) continue;
+      const binL = xMin + i * binWidth;
+      const binR = binL + binWidth;
+      const x1 = sx(binL), x2 = sx(binR);
+      const y1 = sy(densities[i]);
+      const h = sy(0) - y1;
+      const w = Math.max(x2 - x1 - 0.5, 0.8);
+      let inTail = false;
+      const center = binL + binWidth / 2;
+      if (opts.tail === 'upper') inTail = binL >= observed - 1e-9;
+      else if (opts.tail === 'lower') inTail = binR <= observed + 1e-9;
+      else if (opts.tail === 'both') inTail = Math.abs(center - opts.mean) >= Math.abs(observed - opts.mean) - 1e-9;
+      const color = inTail ? 'var(--bar-hit)' : 'var(--bar)';
+      parts.push('<rect x="' + x1.toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + color + '" opacity="' + (inTail ? '0.85' : '0.75') + '"/>');
+    }
+
+    parts.push('<line x1="' + mL + '" y1="' + (mT + pH) + '" x2="' + (mL + pW) + '" y2="' + (mT + pH) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+
+    const ticks = niceTicks(xMin, xMax, 5);
+    for (const tv of ticks) {
+      const x = sx(tv);
+      if (x < mL - 1 || x > mL + pW + 1) continue;
+      parts.push('<line x1="' + x.toFixed(1) + '" y1="' + (mT + pH) + '" x2="' + x.toFixed(1) + '" y2="' + (mT + pH + 3) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+      parts.push('<text x="' + x.toFixed(1) + '" y="' + (mT + pH + 14) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + formatTick(tv) + '</text>');
+    }
+
+    if (opts.xLabel) {
+      parts.push('<text x="' + (mL + pW / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="11" fill="var(--text-tertiary)">' + opts.xLabel + '</text>');
+    }
+
+    const obsSx = sx(observed);
+    if (obsSx >= mL - 5 && obsSx <= mL + pW + 5) {
+      const obsXClamped = Math.max(mL, Math.min(mL + pW, obsSx));
+      parts.push('<line x1="' + obsXClamped + '" y1="' + mT + '" x2="' + obsXClamped + '" y2="' + (mT + pH) + '" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="4 3"/>');
+      parts.push('<text x="' + obsXClamped + '" y="' + (mT - 3) + '" text-anchor="middle" font-size="10" fill="var(--text)" font-weight="500">obs = ' + formatTick(observed) + '</text>');
+    }
+
+    if (opts.tail === 'both' && opts.mean !== undefined && observed !== opts.mean) {
+      const mirror = 2 * opts.mean - observed;
+      const mSx = sx(mirror);
+      if (mSx >= mL - 5 && mSx <= mL + pW + 5) {
+        parts.push('<line x1="' + mSx + '" y1="' + mT + '" x2="' + mSx + '" y2="' + (mT + pH) + '" stroke="var(--text)" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>');
+      }
+    }
+
+    svg.innerHTML = parts.join('');
+  }
+
+  function setVerdict(el, pVal, alpha, rejectText, notRejectText) {
+    if (pVal < alpha) {
+      el.className = 'verdict';
+      el.innerHTML = '<strong>Decision:</strong> p-value = ' + fmtP(pVal) + ' &lt; ' + alpha + '  →  <strong>reject H<sub>0</sub></strong>. ' + rejectText;
+    } else {
+      el.className = 'verdict notreject';
+      el.innerHTML = '<strong>Decision:</strong> p-value = ' + fmtP(pVal) + ' ≥ ' + alpha + '  →  <strong>fail to reject H<sub>0</sub></strong>. ' + notRejectText;
+    }
+  }
+
+  const medication = {
+    inputs: ['med-n1', 'med-x1', 'med-n2', 'med-x2'],
+    get: () => ({
+      n1: Math.max(1, parseInt(document.getElementById('med-n1').value) || 0),
+      x1: Math.max(0, parseInt(document.getElementById('med-x1').value) || 0),
+      n2: Math.max(1, parseInt(document.getElementById('med-n2').value) || 0),
+      x2: Math.max(0, parseInt(document.getElementById('med-x2').value) || 0)
+    }),
+    compute: (i) => {
+      const x1 = Math.min(i.x1, i.n1), x2 = Math.min(i.x2, i.n2);
+      const p1 = x1 / i.n1, p2 = x2 / i.n2;
+      const pPool = (x1 + x2) / (i.n1 + i.n2);
+      const SE = Math.sqrt(pPool * (1 - pPool) * (1/i.n1 + 1/i.n2));
+      const diffObs = p1 - p2;
+      const z = SE > 0 ? diffObs / SE : 0;
+      const pVal = 1 - normalCDF(z);
+      return { x1, x2, p1, p2, pPool, SE, diffObs, z, pVal };
+    },
+    render: function(i, c) {
+      document.getElementById('med-calc').innerHTML =
+        'p̂₁ = ' + c.x1 + '/' + i.n1 + ' = ' + fmt(c.p1, 3) + ',  p̂₂ = ' + c.x2 + '/' + i.n2 + ' = ' + fmt(c.p2, 3) + '<br>' +
+        'p̂<sub>pool</sub> = ' + fmt(c.pPool, 3) + ',  SE = ' + fmt(c.SE, 4) + '<br>' +
+        'z = (' + fmt(c.p1, 3) + ' − ' + fmt(c.p2, 3) + ') / ' + fmt(c.SE, 4) + ' = ' + fmt(c.z, 3);
+      document.getElementById('med-theory-p').textContent = fmtP(c.pVal);
+
+      const halfSpan = Math.max(3.5 * c.SE, Math.abs(c.diffObs) * 1.2 + c.SE);
+      buildDensityPlot(document.getElementById('med-classical-svg'), {
+        xMin: -halfSpan, xMax: halfSpan,
+        density: x => normalPDF(x, 0, c.SE),
+        observed: c.diffObs, mean: 0, tail: 'upper',
+        xLabel: 'Δp̂ = p̂₁ − p̂₂'
+      });
+
+      setVerdict(document.getElementById('med-verdict'), c.pVal, 0.05,
+        'Evidence that p<sub>med</sub> &gt; p<sub>placebo</sub>.',
+        'Insufficient evidence that p<sub>med</sub> &gt; p<sub>placebo</sub>.');
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      const pNull = c.pPool;
+      const diffObs = c.diffObs;
+      for (let s = 0; s < NSIM; s++) {
+        let a = 0, b = 0;
+        for (let j = 0; j < i.n1; j++) if (Math.random() < pNull) a++;
+        for (let j = 0; j < i.n2; j++) if (Math.random() < pNull) b++;
+        const d = a / i.n1 - b / i.n2;
+        samples[s] = d;
+        if (d >= diffObs - 1e-12) hits++;
+      }
+      document.getElementById('med-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('med-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('med-sim-svg'), samples, diffObs, {
+        tail: 'upper', mean: 0, xLabel: 'simulated Δp̂'
+      });
+    }
+  };
+
+  const defectives = {
+    inputs: ['def-n', 'def-Y', 'def-p0'],
+    get: () => ({
+      n: Math.max(1, parseInt(document.getElementById('def-n').value) || 0),
+      Y: Math.max(0, parseInt(document.getElementById('def-Y').value) || 0),
+      p0: Math.max(0.001, Math.min(0.999, parseFloat(document.getElementById('def-p0').value) || 0))
+    }),
+    compute: (i) => {
+      const Y = Math.min(i.Y, i.n);
+      const phat = Y / i.n;
+      const SE = Math.sqrt(i.p0 * (1 - i.p0) / i.n);
+      const z = (phat - i.p0) / SE;
+      const pVal = 1 - normalCDF(z);
+      return { Y, phat, SE, z, pVal, muY: i.n * i.p0, sdY: Math.sqrt(i.n * i.p0 * (1 - i.p0)) };
+    },
+    render: function(i, c) {
+      document.getElementById('def-calc').innerHTML =
+        'p̂ = ' + c.Y + '/' + i.n + ' = ' + fmt(c.phat, 3) + '<br>' +
+        'SE₀ = √[' + fmt(i.p0, 3) + '·' + fmt(1 - i.p0, 3) + '/' + i.n + '] = ' + fmt(c.SE, 4) + '<br>' +
+        'z = (' + fmt(c.phat, 3) + ' − ' + fmt(i.p0, 3) + ')/' + fmt(c.SE, 4) + ' = ' + fmt(c.z, 3);
+      document.getElementById('def-theory-p').textContent = fmtP(c.pVal);
+
+      const halfSpan = Math.max(3.5 * c.sdY, Math.abs(c.Y - c.muY) * 1.2 + c.sdY);
+      const xMin = Math.max(0, c.muY - halfSpan);
+      const xMax = Math.min(i.n, c.muY + halfSpan);
+      buildDensityPlot(document.getElementById('def-classical-svg'), {
+        xMin, xMax,
+        density: x => normalPDF(x, c.muY, c.sdY),
+        observed: c.Y, mean: c.muY, tail: 'upper',
+        xLabel: 'Y (number of defectives)'
+      });
+
+      setVerdict(document.getElementById('def-verdict'), c.pVal, 0.01,
+        'Evidence that p &gt; p₀.',
+        'Insufficient evidence that p &gt; p₀.');
+    },
+    runSim: function(i, c) {
+      const samples = new Int32Array(NSIM);
+      let hits = 0;
+      for (let s = 0; s < NSIM; s++) {
+        let y = 0;
+        for (let j = 0; j < i.n; j++) if (Math.random() < i.p0) y++;
+        samples[s] = y;
+        if (y >= c.Y) hits++;
+      }
+      document.getElementById('def-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('def-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('def-sim-svg'), samples, c.Y, {
+        tail: 'upper', mean: c.muY, discrete: true, xLabel: 'simulated Y'
+      });
+    }
+  };
+
+  const sales = {
+    inputs: ['sal-n', 'sal-ybar', 'sal-s', 'sal-mu0'],
+    get: () => ({
+      n: Math.max(2, parseInt(document.getElementById('sal-n').value) || 0),
+      ybar: parseFloat(document.getElementById('sal-ybar').value) || 0,
+      s: Math.max(0.001, parseFloat(document.getElementById('sal-s').value) || 0),
+      mu0: parseFloat(document.getElementById('sal-mu0').value) || 0
+    }),
+    compute: (i) => {
+      const SE = i.s / Math.sqrt(i.n);
+      const z = (i.ybar - i.mu0) / SE;
+      const pVal = 1 - normalCDF(z);
+      return { SE, z, pVal };
+    },
+    render: function(i, c) {
+      document.getElementById('sal-calc').innerHTML =
+        'SE = s/√n = ' + fmt(i.s, 2) + '/√' + i.n + ' = ' + fmt(c.SE, 3) + '<br>' +
+        'z = (' + fmt(i.ybar, 2) + ' − ' + fmt(i.mu0, 2) + ')/' + fmt(c.SE, 3) + ' = ' + fmt(c.z, 3);
+      document.getElementById('sal-theory-p').textContent = fmtP(c.pVal);
+
+      const halfSpan = Math.max(3.5 * c.SE, Math.abs(i.ybar - i.mu0) * 1.2 + c.SE);
+      buildDensityPlot(document.getElementById('sal-classical-svg'), {
+        xMin: i.mu0 - halfSpan, xMax: i.mu0 + halfSpan,
+        density: x => normalPDF(x, i.mu0, c.SE),
+        observed: i.ybar, mean: i.mu0, tail: 'upper',
+        xLabel: 'ȳ (sample mean)'
+      });
+
+      setVerdict(document.getElementById('sal-verdict'), c.pVal, 0.05,
+        'Evidence that μ &gt; μ₀.',
+        'Insufficient evidence that μ &gt; μ₀.');
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      for (let s = 0; s < NSIM; s++) {
+        let sum = 0;
+        for (let j = 0; j < i.n; j++) sum += i.mu0 + i.s * randn();
+        const ybar = sum / i.n;
+        samples[s] = ybar;
+        if (ybar >= i.ybar) hits++;
+      }
+      document.getElementById('sal-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('sal-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('sal-sim-svg'), samples, i.ybar, {
+        tail: 'upper', mean: i.mu0, xLabel: 'simulated ȳ'
+      });
+    }
+  };
+
+  const reaction = {
+    inputs: ['rxn-n1', 'rxn-y1', 'rxn-v1', 'rxn-n2', 'rxn-y2', 'rxn-v2'],
+    get: () => ({
+      n1: Math.max(2, parseInt(document.getElementById('rxn-n1').value) || 0),
+      y1: parseFloat(document.getElementById('rxn-y1').value) || 0,
+      v1: Math.max(0.0001, parseFloat(document.getElementById('rxn-v1').value) || 0),
+      n2: Math.max(2, parseInt(document.getElementById('rxn-n2').value) || 0),
+      y2: parseFloat(document.getElementById('rxn-y2').value) || 0,
+      v2: Math.max(0.0001, parseFloat(document.getElementById('rxn-v2').value) || 0)
+    }),
+    compute: (i) => {
+      const sp2 = ((i.n1 - 1) * i.v1 + (i.n2 - 1) * i.v2) / (i.n1 + i.n2 - 2);
+      const sp = Math.sqrt(sp2);
+      const SE = sp * Math.sqrt(1 / i.n1 + 1 / i.n2);
+      const diffObs = i.y1 - i.y2;
+      const z = diffObs / SE;
+      const pVal = 2 * (1 - normalCDF(Math.abs(z)));
+      const mu0 = (i.n1 * i.y1 + i.n2 * i.y2) / (i.n1 + i.n2);
+      return { sp2, sp, SE, diffObs, z, pVal, mu0 };
+    },
+    render: function(i, c) {
+      document.getElementById('rxn-calc').innerHTML =
+        's<sub>p</sub>² = ' + fmt(c.sp2, 4) + ',  SE = ' + fmt(c.SE, 4) + '<br>' +
+        'z = (' + fmt(i.y1, 2) + ' − ' + fmt(i.y2, 2) + ')/' + fmt(c.SE, 4) + ' = ' + fmt(c.z, 3);
+      document.getElementById('rxn-theory-p').textContent = fmtP(c.pVal);
+
+      const halfSpan = Math.max(3.5 * c.SE, Math.abs(c.diffObs) * 1.2 + c.SE);
+      buildDensityPlot(document.getElementById('rxn-classical-svg'), {
+        xMin: -halfSpan, xMax: halfSpan,
+        density: x => normalPDF(x, 0, c.SE),
+        observed: c.diffObs, mean: 0, tail: 'both',
+        xLabel: 'Δȳ = ȳ₁ − ȳ₂'
+      });
+
+      setVerdict(document.getElementById('rxn-verdict'), c.pVal, 0.05,
+        'Evidence that μ₁ ≠ μ₂.',
+        'Insufficient evidence that μ₁ ≠ μ₂.');
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      const diffAbs = Math.abs(c.diffObs);
+      for (let s = 0; s < NSIM; s++) {
+        let s1 = 0, s2 = 0;
+        for (let j = 0; j < i.n1; j++) s1 += c.mu0 + c.sp * randn();
+        for (let j = 0; j < i.n2; j++) s2 += c.mu0 + c.sp * randn();
+        const d = s1 / i.n1 - s2 / i.n2;
+        samples[s] = d;
+        if (Math.abs(d) >= diffAbs - 1e-12) hits++;
+      }
+      document.getElementById('rxn-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('rxn-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('rxn-sim-svg'), samples, c.diffObs, {
+        tail: 'both', mean: 0, xLabel: 'simulated Δȳ'
+      });
+    }
+  };
+
+  const examples = { medication, defectives, sales, reaction };
+  const simSvgMap = {
+    medication: 'med-sim-svg', defectives: 'def-sim-svg',
+    sales: 'sal-sim-svg', reaction: 'rxn-sim-svg'
+  };
+  const simPMap = {
+    medication: 'med-sim-p', defectives: 'def-sim-p',
+    sales: 'sal-sim-p', reaction: 'rxn-sim-p'
+  };
+
+  function refreshExample(key) {
+    const ex = examples[key];
+    const inp = ex.get();
+    const comp = ex.compute(inp);
+    ex.render(inp, comp);
+    const svg = document.getElementById(simSvgMap[key]);
+    svg.innerHTML = '<text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Inputs changed — click Run to update</text>';
+    const pEl = document.getElementById(simPMap[key]);
+    pEl.textContent = '—';
+    pEl.classList.add('pending');
+  }
+
+  Object.entries(examples).forEach(([key, ex]) => {
+    ex.inputs.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => refreshExample(key));
+      el.addEventListener('change', () => refreshExample(key));
+    });
+  });
+
+  document.querySelectorAll('button.run').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.ex;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Running…';
+      setTimeout(() => {
+        const ex = examples[key];
+        const inp = ex.get();
+        const comp = ex.compute(inp);
+        ex.runSim(inp, comp);
+        btn.disabled = false;
+        btn.textContent = orig;
+      }, 30);
+    });
+  });
+
+  Object.keys(examples).forEach(refreshExample);
+})();
+</script>
+</body>
+</html>

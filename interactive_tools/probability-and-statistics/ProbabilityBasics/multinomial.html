@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Multinomial — Alabama Blood Phenotypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300;9..144,400;9..144,600;9..144,700;9..144,800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --paper:        #f1e9d2;
+    --paper-soft:   #ece2c5;
+    --ink:          #1a1410;
+    --ink-soft:     #4a3f33;
+    --rule:         #8a7b5e;
+    --rule-soft:    #c9bd9e;
+    --A:            #9a1a1a;   /* deep crimson */
+    --B:            #c08a2c;   /* warm ochre */
+    --AB:           #5a2456;   /* plum */
+    --O:            #2d6363;   /* deep teal */
+    --code-bg:      #1f1a14;
+    --code-fg:      #e8dfc9;
+    --code-comment: #9a8c70;
+    --code-key:     #d4a857;
+    --code-str:     #b58a6a;
+    --code-num:     #c98a8a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.55;
+    font-feature-settings: "liga" 1, "kern" 1, "onum" 1;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,0,0,0.03), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(0,0,0,0.025), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 70px 56px 120px;
+    position: relative;
+  }
+
+  /* ------ Masthead ------ */
+  .masthead {
+    border-top: 3px double var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 14px 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 50, "WONK" 0;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .masthead .vol { font-style: italic; letter-spacing: 0.1em; text-transform: none; }
+
+  h1.title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+    font-weight: 800;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: 0.95;
+    margin: 36px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  h1.title .ital {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--A);
+  }
+
+  .deck {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    max-width: 640px;
+    margin: 0 0 8px;
+  }
+
+  .byline {
+    font-family: 'Fraunces', serif;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--rule-soft);
+    padding-top: 14px;
+    margin-top: 36px;
+  }
+
+  /* ------ Section heads ------ */
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 30, "opsz" 60;
+    font-weight: 600;
+    font-size: 34px;
+    line-height: 1.1;
+    margin: 64px 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h2 .num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--A);
+    font-size: 0.7em;
+    margin-right: 0.4em;
+    vertical-align: 0.05em;
+  }
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 36px 0 6px;
+    letter-spacing: -0.005em;
+  }
+
+  p { margin: 0 0 16px; }
+  p + p { text-indent: 1.6em; margin-top: -10px; }
+
+  .lead::first-letter {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 4.6em;
+    float: left;
+    line-height: 0.85;
+    padding: 6px 10px 0 0;
+    color: var(--A);
+  }
+
+  /* ------ Phenotype callout ------ */
+  .phenotypes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 28px 0 8px;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .pheno {
+    padding: 18px 12px;
+    text-align: center;
+    border-right: 1px solid var(--rule-soft);
+    position: relative;
+  }
+  .pheno:last-child { border-right: none; }
+  .pheno .lab {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .pheno .pr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+  .pheno[data-t="A"]  .lab { color: var(--A); }
+  .pheno[data-t="B"]  .lab { color: var(--B); }
+  .pheno[data-t="AB"] .lab { color: var(--AB); }
+  .pheno[data-t="O"]  .lab { color: var(--O); }
+
+  .source-line {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-align: right;
+    margin: 6px 0 0;
+  }
+
+  /* ------ Conditional widget ------ */
+  .cond-widget {
+    border: 1px solid var(--rule);
+    background: var(--paper-soft);
+    padding: 22px 24px 18px;
+    margin: 24px 0 12px;
+  }
+  .cond-controls {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+  .slider-label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .slider-label .ya-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--A);
+    background: var(--paper);
+    padding: 2px 10px;
+    border: 1px solid var(--rule-soft);
+    margin-left: 2px;
+    display: inline-block;
+    min-width: 38px;
+    text-align: center;
+  }
+  .slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    background: var(--rule);
+    outline: none;
+    cursor: pointer;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--A);
+    cursor: pointer;
+    border: 2px solid var(--paper);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--A);
+    cursor: pointer;
+    border: 2px solid var(--paper);
+  }
+  .cond-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 6px 0 14px;
+    padding: 8px 12px;
+    background: var(--paper);
+    border-left: 3px solid var(--O);
+    line-height: 1.7;
+  }
+  .cond-readout .hl { color: var(--A); font-weight: 500; }
+  .cond-plot svg { display: block; width: 100%; height: auto; }
+
+  /* ------ MVN widget ------ */
+  .mvn-widget {
+    background: var(--paper-soft);
+    border: 1px solid var(--rule);
+    padding: 16px;
+    margin: 24px 0 12px;
+  }
+  .mvn-widget svg { display: block; width: 100%; height: auto; }
+
+  /* ------ Chi-square widget ------ */
+  .chisq-widget {
+    background: var(--paper-soft);
+    border: 1px solid var(--rule);
+    padding: 16px;
+    margin: 24px 0 12px;
+  }
+  .chisq-widget svg { display: block; width: 100%; height: auto; }
+
+  /* ------ Sim grid ------ */
+  .sim-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 24px 0 20px;
+    padding: 12px 0;
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .sim-controls .label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-soft);
+  }
+  button.resample {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button.resample:hover { background: var(--A); }
+  button.resample:active { transform: translateY(1px); }
+
+  .sim-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px 8px;
+    margin: 0 0 12px;
+  }
+  .panel {
+    background: var(--paper-soft);
+    border: 1px solid var(--rule-soft);
+    padding: 4px 4px 2px;
+    position: relative;
+  }
+  .panel .pid {
+    position: absolute;
+    top: 3px;
+    right: 5px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 10.5px;
+    color: var(--A);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  .panel svg { display: block; width: 100%; height: auto; }
+
+  /* ------ R code block ------ */
+  pre.code {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 22px 26px;
+    margin: 24px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.65;
+    border-left: 4px solid var(--A);
+    position: relative;
+  }
+  pre.code::before {
+    content: "R";
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--code-comment);
+    letter-spacing: 0.1em;
+  }
+  pre.code .c  { color: var(--code-comment); font-style: italic; }
+  pre.code .k  { color: var(--code-key); }
+  pre.code .s  { color: var(--code-str); }
+  pre.code .n  { color: var(--code-num); }
+  pre.code .f  { color: #e8dfc9; }
+
+  /* ------ Math display ------ */
+  .display-math {
+    margin: 24px 0;
+    padding: 18px 0;
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    text-align: center;
+    font-size: 1.05em;
+  }
+
+  .answer-box {
+    margin: 28px 0;
+    padding: 22px 26px;
+    background: var(--paper-soft);
+    border-left: 4px solid var(--A);
+    position: relative;
+  }
+  .answer-box .label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--A);
+    margin-bottom: 4px;
+  }
+  .answer-box .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+
+  /* ------ Tables ------ */
+  table.matrix {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 18px 0 8px;
+    font-family: 'EB Garamond', serif;
+    font-size: 17px;
+  }
+  table.matrix caption {
+    caption-side: top;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-soft);
+    text-align: left;
+    padding-bottom: 8px;
+  }
+  table.matrix th, table.matrix td {
+    padding: 9px 14px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  table.matrix th {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    background: var(--paper-soft);
+    border-bottom: 1px solid var(--ink);
+  }
+  table.matrix th:first-child, table.matrix td:first-child {
+    text-align: left;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+  table.matrix .diag {
+    background: rgba(154,26,26,0.08);
+    color: var(--A);
+    font-weight: 600;
+  }
+  table.matrix td.neg { color: var(--ink); }
+
+  /* ------ Aside ------ */
+  .aside {
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    margin: 24px 0;
+    padding: 16px 0;
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+
+  hr.flourish {
+    border: none;
+    text-align: center;
+    margin: 60px 0 20px;
+    color: var(--rule);
+  }
+  hr.flourish::before {
+    content: "❦";
+    font-size: 22px;
+  }
+
+  /* ------ Footer ------ */
+  footer {
+    margin-top: 80px;
+    padding-top: 18px;
+    border-top: 3px double var(--ink);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  @media (max-width: 920px) {
+    .sim-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .page { padding: 40px 22px 80px; }
+    .sim-grid { grid-template-columns: repeat(3, 1fr); }
+    h1.title { font-size: 52px; }
+    .phenotypes { grid-template-columns: repeat(2, 1fr); }
+    .phenotypes .pheno:nth-child(2) { border-right: none; }
+    .phenotypes .pheno:nth-child(1), .phenotypes .pheno:nth-child(2) { border-bottom: 1px solid var(--rule-soft); }
+  }
+</style>
+</head>
+<body>
+
+<article class="page">
+
+  <header class="masthead">
+    <span>Notes on Probability</span>
+    <span class="vol">No. 1 — The Multinomial Distribution</span>
+    <span>2026</span>
+  </header>
+
+  <h1 class="title">Four <span class="ital">phenotypes</span>, one hundred draws.</h1>
+
+  <p class="deck">A small case study in the multinomial distribution, using the blood-type proportions of Alabama as a working example — with simulations, a probability calculation, and the variance-covariance structure that ties the four counts together.</p>
+
+  <div class="byline">A worked example · Sample size n = 100 · Categories k = 4</div>
+
+  <!-- ============ SETUP ============ -->
+  <h2><span class="num">I.</span>The setting</h2>
+  <p class="lead">The proportion of people in Alabama with blood phenotypes A, B, AB, and O are reported as $0.36$, $0.14$, $0.03$, and $0.47$, respectively. We will treat these as the population probabilities and ask what happens when we sample $n=100$ Alabamians at random and tally how many fall into each category.</p>
+  <p>Let $Y_A, Y_B, Y_{AB}, Y_O$ be those four counts. Together they form a single random vector $\mathbf{Y} = (Y_A, Y_B, Y_{AB}, Y_O)$ following a multinomial distribution with parameters $n = 100$ and $\mathbf{p} = (0.36, 0.14, 0.03, 0.47)$.</p>
+
+  <div class="phenotypes">
+    <div class="pheno" data-t="A"><div class="lab">A</div><div class="pr">p = 0.36</div></div>
+    <div class="pheno" data-t="B"><div class="lab">B</div><div class="pr">p = 0.14</div></div>
+    <div class="pheno" data-t="AB"><div class="lab">AB</div><div class="pr">p = 0.03</div></div>
+    <div class="pheno" data-t="O"><div class="lab">O</div><div class="pr">p = 0.47</div></div>
+  </div>
+  <p class="source-line">Population proportions, by phenotype.</p>
+
+  <!-- ============ SIMULATION ============ -->
+  <h2><span class="num">II.</span>Twenty-four samples, one per student</h2>
+  <p>Below are twenty-four independent samples of size $100$, each drawn from the multinomial above and labeled with a student's initials. Notice how the bar heights drift from one panel to the next — that drift <em>is</em> the multinomial. The expected counts are $(36, 14, 3, 47)$; the realized counts will scatter around them with the variance and covariance structure we work out in the last section.</p>
+
+  <div class="sim-controls">
+    <span class="label">Press the button to draw twenty-four new samples — one for each student.</span>
+    <button class="resample" id="resampleBtn">↻ Resample</button>
+  </div>
+
+  <div class="sim-grid" id="simGrid"></div>
+  <p class="source-line">Each panel: one sample of $n=100$, attributed to one student in the class. Vertical scale capped at $60$.</p>
+
+  <h3>The R code that produced them</h3>
+  <p>The function <code>rmultinom(m, n, p)</code> draws $m$ independent samples, each of size $n$, from a multinomial with probability vector $p$. Each column of its output is one sample.</p>
+
+<pre class="code"><span class="c"># Population proportions for blood phenotypes in Alabama</span>
+p     <span class="k">&lt;-</span> <span class="f">c</span>(<span class="n">0.36</span>, <span class="n">0.14</span>, <span class="n">0.03</span>, <span class="n">0.47</span>)
+types <span class="k">&lt;-</span> <span class="f">c</span>(<span class="s">"A"</span>, <span class="s">"B"</span>, <span class="s">"AB"</span>, <span class="s">"O"</span>)
+<span class="f">names</span>(p) <span class="k">&lt;-</span> types
+
+<span class="c"># One sample per student in the class</span>
+initials <span class="k">&lt;-</span> <span class="f">c</span>(<span class="s">"AA"</span>,<span class="s">"EB"</span>,<span class="s">"JB"</span>,<span class="s">"HC"</span>,<span class="s">"EC"</span>,<span class="s">"JCi"</span>,<span class="s">"SC"</span>,<span class="s">"CC"</span>,
+               <span class="s">"JCr"</span>,<span class="s">"JE"</span>,<span class="s">"RF"</span>,<span class="s">"AG"</span>,<span class="s">"EH"</span>,<span class="s">"BH"</span>,<span class="s">"AH"</span>,<span class="s">"SH"</span>,
+               <span class="s">"HL"</span>,<span class="s">"AL"</span>,<span class="s">"SO"</span>,<span class="s">"DO"</span>,<span class="s">"RP"</span>,<span class="s">"RW"</span>,<span class="s">"KW"</span>,<span class="s">"JG"</span>)
+
+<span class="c"># Draw 24 independent samples of size 100; columns are samples</span>
+<span class="f">set.seed</span>(<span class="n">17</span>)
+samples <span class="k">&lt;-</span> <span class="f">rmultinom</span>(n = <span class="f">length</span>(initials), size = <span class="n">100</span>, prob = p)
+<span class="f">colnames</span>(samples) <span class="k">&lt;-</span> initials
+
+<span class="c"># Plot a 4 x 6 grid of bar charts, one per student</span>
+<span class="f">par</span>(mfrow = <span class="f">c</span>(<span class="n">4</span>, <span class="n">6</span>), mar = <span class="f">c</span>(<span class="n">2.5</span>, <span class="n">2.5</span>, <span class="n">2</span>, <span class="n">1</span>))
+cols <span class="k">&lt;-</span> <span class="f">c</span>(<span class="s">"#9a1a1a"</span>, <span class="s">"#c08a2c"</span>, <span class="s">"#5a2456"</span>, <span class="s">"#2d6363"</span>)
+<span class="k">for</span> (i <span class="k">in</span> <span class="f">seq_along</span>(initials)) {
+  <span class="f">barplot</span>(samples[, i],
+          names.arg = types,
+          col       = cols,
+          border    = NA,
+          ylim      = <span class="f">c</span>(<span class="n">0</span>, <span class="n">60</span>),
+          main      = initials[i])
+}
+
+<span class="c"># A larger study: 10,000 samples, look at the marginal of Y_A</span>
+big <span class="k">&lt;-</span> <span class="f">rmultinom</span>(n = <span class="n">10000</span>, size = <span class="n">100</span>, prob = p)
+<span class="f">hist</span>(big[<span class="s">"A"</span>, ], breaks = <span class="n">30</span>, col = <span class="s">"#9a1a1a"</span>, border = <span class="s">"white"</span>,
+     main = <span class="s">"Distribution of Y_A across 10,000 samples"</span>,
+     xlab = <span class="s">"count of type A"</span>)
+<span class="f">abline</span>(v = <span class="n">36</span>, lwd = <span class="n">2</span>, lty = <span class="n">2</span>)   <span class="c"># expected value</span>
+</pre>
+
+  <hr class="flourish">
+
+  <!-- ============ EXACT PROBABILITY ============ -->
+  <h2><span class="num">III.</span>An exact probability</h2>
+  <p>Suppose we take a random sample of size $100$. What is the chance that <em>exactly</em> $44$ are of type A, $9$ of type B, $6$ of type AB, and $41$ of type O? The multinomial probability mass function answers this directly.</p>
+
+  <div class="display-math">
+    $$P(Y_A=y_A,\, Y_B=y_B,\, Y_{AB}=y_{AB},\, Y_O=y_O) \;=\; \frac{n!}{y_A!\, y_B!\, y_{AB}!\, y_O!}\; p_A^{y_A}\, p_B^{y_B}\, p_{AB}^{y_{AB}}\, p_O^{y_O}$$
+  </div>
+
+  <p>Plugging in $n=100$ and the proposed counts $(44, 9, 6, 41)$:</p>
+
+  <div class="display-math">
+    $$P \;=\; \frac{100!}{44!\,9!\,6!\,41!}\;(0.36)^{44}(0.14)^{9}(0.03)^{6}(0.47)^{41}$$
+  </div>
+
+  <p>This is most easily evaluated in software. In R the call is a single line:</p>
+
+<pre class="code"><span class="f">dmultinom</span>(x = <span class="f">c</span>(<span class="n">44</span>, <span class="n">9</span>, <span class="n">6</span>, <span class="n">41</span>),
+          prob = <span class="f">c</span>(<span class="n">0.36</span>, <span class="n">0.14</span>, <span class="n">0.03</span>, <span class="n">0.47</span>))
+<span class="c">#&gt; [1] 6.532538e-05</span>
+</pre>
+
+  <div class="answer-box">
+    <div class="label">Answer</div>
+    <div class="val">P ≈ 6.5325 × 10⁻⁵   ≈ 0.0000653</div>
+  </div>
+
+  <p class="aside">A useful sanity check: $44$ is eight above the mean of $36$, while $41$ is six below the mean of $47$ — both perfectly plausible single-sample outcomes — yet the joint event is rare because we are insisting on all four counts simultaneously. Most of the mass of the multinomial sits on a tight neighborhood of the mean vector $(36, 14, 3, 47)$, and any single integer 4-tuple within that neighborhood already has a small probability.</p>
+
+  <hr class="flourish">
+
+  <!-- ============ VARIANCE-COVARIANCE ============ -->
+  <h2><span class="num">IV.</span>Variances and covariances</h2>
+
+  <p>Each individual count $Y_i$ has a familiar marginal distribution. If we lump every observation that <em>isn't</em> type $i$ into a single "other" bin, the count $Y_i$ becomes a binomial $\mathrm{Bin}(n, p_i)$. Therefore</p>
+
+  <div class="display-math">
+    $$\mathbb{E}[Y_i] = n p_i, \qquad \mathrm{Var}(Y_i) = n p_i (1 - p_i).$$
+  </div>
+
+  <p>The covariances are where the multinomial parts company with a collection of independent binomials. The four counts must add to $n$, which forces them to <em>compete</em> for observations: a higher count in one category mechanically pulls another down. The result is a strictly negative covariance for every pair,</p>
+
+  <div class="display-math">
+    $$\mathrm{Cov}(Y_i, Y_j) \;=\; -\,n\, p_i\, p_j \qquad (i \neq j).$$
+  </div>
+
+  <p>For $n = 100$ and the Alabama proportions, here are the numbers. The diagonal carries the variances $n p_i (1-p_i)$; the off-diagonal entries are the covariances $-n p_i p_j$.</p>
+
+  <table class="matrix">
+    <caption>Variance–covariance matrix of $(Y_A, Y_B, Y_{AB}, Y_O)$ under $n = 100$</caption>
+    <thead>
+      <tr><th></th><th>$Y_A$</th><th>$Y_B$</th><th>$Y_{AB}$</th><th>$Y_O$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>$Y_A$</td>    <td class="diag">23.04</td><td>−5.04</td><td>−1.08</td><td>−16.92</td></tr>
+      <tr><td>$Y_B$</td>    <td>−5.04</td><td class="diag">12.04</td><td>−0.42</td><td>−6.58</td></tr>
+      <tr><td>$Y_{AB}$</td> <td>−1.08</td><td>−0.42</td><td class="diag">2.91</td><td>−1.41</td></tr>
+      <tr><td>$Y_O$</td>    <td>−16.92</td><td>−6.58</td><td>−1.41</td><td class="diag">24.91</td></tr>
+    </tbody>
+  </table>
+
+  <p>Translated into correlations $\rho_{ij} = \mathrm{Cov}(Y_i,Y_j) / \sqrt{\mathrm{Var}(Y_i)\,\mathrm{Var}(Y_j)}$, the strongest dependence is between $Y_A$ and $Y_O$ — the two largest categories — at $\rho \approx -0.71$. The weakest is between $Y_B$ and $Y_{AB}$, two small categories that scarcely constrain each other, at $\rho \approx -0.07$.</p>
+
+  <table class="matrix">
+    <caption>Correlation matrix</caption>
+    <thead>
+      <tr><th></th><th>$Y_A$</th><th>$Y_B$</th><th>$Y_{AB}$</th><th>$Y_O$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>$Y_A$</td>    <td class="diag">1.000</td><td>−0.303</td><td>−0.132</td><td>−0.706</td></tr>
+      <tr><td>$Y_B$</td>    <td>−0.303</td><td class="diag">1.000</td><td>−0.071</td><td>−0.380</td></tr>
+      <tr><td>$Y_{AB}$</td> <td>−0.132</td><td>−0.071</td><td class="diag">1.000</td><td>−0.166</td></tr>
+      <tr><td>$Y_O$</td>    <td>−0.706</td><td>−0.380</td><td>−0.166</td><td class="diag">1.000</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Where the formula comes from</h3>
+  <p>One quick derivation. Consider the indicator variable $X_{k,i}$ which equals $1$ if the $k$-th person sampled is of type $i$ and $0$ otherwise. Then $Y_i = \sum_{k=1}^n X_{k,i}$, and across people the indicators are independent. For a single person and a pair $i \neq j$, the indicators $X_{k,i}$ and $X_{k,j}$ cannot both equal $1$, so $\mathbb{E}[X_{k,i} X_{k,j}] = 0$ and</p>
+
+  <div class="display-math">
+    $$\mathrm{Cov}(X_{k,i}, X_{k,j}) \;=\; 0 - p_i p_j \;=\; -p_i p_j.$$
+  </div>
+
+  <p>Summing over the $n$ independent people gives $\mathrm{Cov}(Y_i, Y_j) = -n p_i p_j$, exactly the formula above.</p>
+
+  <h3>Verifying it from a simulation</h3>
+  <p>The matrix can be checked empirically by drawing many samples and computing the sample covariance of the count vectors:</p>
+
+<pre class="code"><span class="c"># 100,000 multinomial samples; rows = phenotypes, cols = samples</span>
+sim <span class="k">&lt;-</span> <span class="f">rmultinom</span>(n = <span class="n">100000</span>, size = <span class="n">100</span>, prob = p)
+
+<span class="c"># Empirical variance-covariance matrix; transpose so rows are samples</span>
+<span class="f">round</span>(<span class="f">cov</span>(<span class="f">t</span>(sim)), <span class="n">2</span>)
+<span class="c">#         A      B     AB      O
+#  A   23.05  -5.06  -1.07 -16.92
+#  B   -5.06  12.06  -0.42  -6.58
+#  AB  -1.07  -0.42   2.91  -1.42
+#  O  -16.92  -6.58  -1.42  24.92</span>
+</pre>
+
+  <p>The simulated values agree with the closed-form matrix to two decimal places, as they should.</p>
+
+  <hr class="flourish">
+
+  <!-- ============ V. CONDITIONALS ============ -->
+  <h2><span class="num">V.</span>Conditional distributions</h2>
+
+  <p>Once we know one of the counts, the others rearrange themselves. If we are told that $Y_A = y_A$, then the remaining $n - y_A$ people partition themselves into types B, AB, and O with renormalized probabilities $p_i / (1 - p_A)$ for $i \in \{B, AB, O\}$. The conditional distribution is itself a multinomial, on one fewer category and with a smaller sample size:</p>
+
+  <div class="display-math">
+    $$\bigl(Y_B,\, Y_{AB},\, Y_O\bigr) \,\bigm|\, Y_A = y_A \;\sim\; \mathrm{Mult}\!\left(n - y_A,\;\; \frac{(p_B,\, p_{AB},\, p_O)}{1 - p_A}\right).$$
+  </div>
+
+  <p>Marginalizing further, any single conditional count is just a binomial: pull one category out, lump the others together, and you have a sequence of independent Bernoulli trials with the new conditional probability. For our pair $(Y_A, Y_O)$,</p>
+
+  <div class="display-math">
+    $$Y_O \,\bigm|\, Y_A = y_A \;\sim\; \mathrm{Bin}\!\left(n - y_A,\;\; \frac{p_O}{1 - p_A}\right).$$
+  </div>
+
+  <p>With $p_A = 0.36$ and $p_O = 0.47$, the conditional success probability is $0.47 / 0.64 \approx 0.734$. The conditional mean is therefore $(100 - y_A) \times 0.734$, which slides downward as $y_A$ climbs — the visible signature of the negative dependence.</p>
+
+  <h3>An interactive conditional</h3>
+  <p>Drag the slider to set $y_A$. The plot below redraws the conditional PMF of $Y_O$ given $Y_A = y_A$, with a marker at the conditional mean and a faint band at $\pm\,2$ conditional standard deviations.</p>
+
+  <div class="cond-widget">
+    <div class="cond-controls">
+      <label class="slider-label">Condition on <span class="ya-eq">$Y_A = $</span> <span class="ya-val" id="yaVal">36</span></label>
+      <input type="range" min="10" max="70" value="36" id="yaSlider" class="slider">
+    </div>
+    <div class="cond-readout" id="condReadout"></div>
+    <div class="cond-plot" id="condPlot"></div>
+  </div>
+  <p class="source-line">Conditional PMF $P(Y_O = y \mid Y_A = y_A)$, evaluated exactly from the binomial formula.</p>
+
+<pre class="code"><span class="c"># Conditional distribution of Y_O given Y_A = y_A</span>
+y_A <span class="k">&lt;-</span> <span class="n">36</span>
+n   <span class="k">&lt;-</span> <span class="n">100</span>
+p_A <span class="k">&lt;-</span> <span class="n">0.36</span>; p_O <span class="k">&lt;-</span> <span class="n">0.47</span>
+
+<span class="c"># Y_O | Y_A = y_A  ~  Binomial(n - y_A, p_O / (1 - p_A))</span>
+n_cond <span class="k">&lt;-</span> n - y_A
+p_cond <span class="k">&lt;-</span> p_O / (<span class="n">1</span> - p_A)
+
+y <span class="k">&lt;-</span> <span class="n">0</span>:n_cond
+pmf <span class="k">&lt;-</span> <span class="f">dbinom</span>(y, size = n_cond, prob = p_cond)
+<span class="f">plot</span>(y, pmf, type = <span class="s">"h"</span>, lwd = <span class="n">3</span>, col = <span class="s">"#2d6363"</span>,
+     main = <span class="f">paste</span>(<span class="s">"Y_O | Y_A ="</span>, y_A),
+     xlab = <span class="s">"y"</span>, ylab = <span class="s">"P(Y_O = y | Y_A)"</span>)
+<span class="f">abline</span>(v = n_cond * p_cond, lty = <span class="n">2</span>)   <span class="c"># conditional mean</span>
+</pre>
+
+  <p class="aside">Notice what happens at the extremes. With $y_A = 25$ — fewer A's than expected — the remaining 75 people lean toward O, pushing $\mathbb{E}[Y_O \mid Y_A = 25] \approx 55$. With $y_A = 50$ — many more A's than expected — the conditional mean falls to $\approx 36.7$. The unconditional mean of $47$ sits, as it must, in between.</p>
+
+  <hr class="flourish">
+
+  <!-- ============ VI. MULTIVARIATE NORMAL ============ -->
+  <h2><span class="num">VI.</span>The multivariate normal approximation</h2>
+
+  <p>The multinomial is a sum of $n$ independent identically distributed indicator vectors, so the multivariate central limit theorem applies. As $n \to \infty$,</p>
+
+  <div class="display-math">
+    $$\sqrt{n}\left(\frac{\mathbf{Y}}{n} - \mathbf{p}\right) \;\xrightarrow{\;d\;}\; \mathcal{N}_k\!\left(\mathbf{0},\, \Sigma\right), \qquad \Sigma_{ii} = p_i(1-p_i), \quad \Sigma_{ij} = -p_i p_j.$$
+  </div>
+
+  <p>Equivalently, for the count vector itself, $\mathbf{Y} \,\dot{\sim}\, \mathcal{N}_k(n\mathbf{p},\, n\Sigma)$, where $\dot{\sim}$ stands for "approximately distributed as." With $n = 100$ and our $\mathbf{p}$, the approximation is already very serviceable.</p>
+
+  <h3>A singular covariance</h3>
+  <p>One subtlety: the covariance matrix $n\Sigma$ is <em>singular</em>. Because the four counts always sum to $n$, the random vector lives on a three-dimensional hyperplane inside $\mathbb{R}^4$, and no four-dimensional density exists. The clean fix is to drop one component — say $Y_O$, recoverable as $n - Y_A - Y_B - Y_{AB}$ — and work with the remaining three, whose covariance matrix is non-singular and given by the same formulas with the dropped row and column removed.</p>
+
+  <div class="display-math">
+    $$\begin{pmatrix} Y_A \\ Y_B \\ Y_{AB} \end{pmatrix} \;\dot{\sim}\; \mathcal{N}_3\!\left( \begin{pmatrix} 36 \\ 14 \\ 3 \end{pmatrix}, \;\; \begin{pmatrix} 23.04 & -5.04 & -1.08 \\ -5.04 & 12.04 & -0.42 \\ -1.08 & -0.42 & 2.91 \end{pmatrix} \right)$$
+  </div>
+
+  <h3>Seeing it in two dimensions</h3>
+  <p>The clearest visualization is a scatter of $(Y_A, Y_O)$ from many simulated samples, with the $95\%$ ellipse from the bivariate normal approximation drawn on top. The cigar shape is the negative correlation $\rho \approx -0.71$ made geometric.</p>
+
+  <div class="mvn-widget" id="mvnWidget"></div>
+  <p class="source-line">$1500$ multinomial samples (dots) and the theoretical $95\%$ probability ellipse (curve). Marginal histograms with overlaid normal approximations along each axis.</p>
+
+<pre class="code"><span class="c"># Simulate and inspect the (Y_A, Y_O) joint distribution</span>
+<span class="f">set.seed</span>(<span class="n">1</span>)
+sim <span class="k">&lt;-</span> <span class="f">rmultinom</span>(<span class="n">1500</span>, size = <span class="n">100</span>, prob = p)
+df  <span class="k">&lt;-</span> <span class="f">data.frame</span>(YA = sim[<span class="s">"A"</span>, ], YO = sim[<span class="s">"O"</span>, ])
+
+<span class="f">plot</span>(df$YA, df$YO, pch = <span class="n">16</span>, cex = <span class="n">0.5</span>, col = <span class="f">rgb</span>(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.25</span>),
+     xlab = <span class="s">"Y_A"</span>, ylab = <span class="s">"Y_O"</span>,
+     main = <span class="s">"Joint distribution of (Y_A, Y_O), n = 100"</span>)
+
+<span class="c"># Overlay the 95% ellipse from the bivariate-normal approximation</span>
+<span class="f">library</span>(ellipse)
+mu    <span class="k">&lt;-</span> <span class="f">c</span>(<span class="n">36</span>, <span class="n">47</span>)
+Sigma <span class="k">&lt;-</span> <span class="f">matrix</span>(<span class="f">c</span>(<span class="n">23.04</span>, -<span class="n">16.92</span>, -<span class="n">16.92</span>, <span class="n">24.91</span>), <span class="n">2</span>, <span class="n">2</span>)
+<span class="f">lines</span>(<span class="f">ellipse</span>(Sigma, centre = mu, level = <span class="n">0.95</span>), lwd = <span class="n">2</span>, col = <span class="s">"#9a1a1a"</span>)
+</pre>
+
+  <hr class="flourish">
+
+  <!-- ============ VII. CHI-SQUARE GOODNESS-OF-FIT ============ -->
+  <h2><span class="num">VII.</span>Pearson's chi-square goodness-of-fit</h2>
+
+  <p>The natural test statistic for the multinomial is Karl Pearson's $X^2$, a weighted sum of squared deviations from the expected counts:</p>
+
+  <div class="display-math">
+    $$X^2 \;=\; \sum_{i=1}^{k} \frac{(Y_i - n p_i)^2}{n p_i}.$$
+  </div>
+
+  <p>Under the null hypothesis that the data really came from $\mathrm{Mult}(n, \mathbf{p})$, and as $n$ grows large,</p>
+
+  <div class="display-math">
+    $$X^2 \;\xrightarrow{\;d\;}\; \chi^2_{\,k-1}.$$
+  </div>
+
+  <p>The degrees of freedom are $k - 1$, not $k$, because the $k$ counts are constrained to sum to $n$ — exactly the singular dimension we set aside in the previous section. In fact, $X^2$ <em>is</em> the squared length of the standardized residual vector after that constraint is imposed: it is the quadratic form $(\mathbf{Y} - n\mathbf{p})^\top D^{-1} (\mathbf{Y} - n\mathbf{p})$ with $D = \mathrm{diag}(np_1, \dots, np_k)$, and a short calculation shows it equals $(\widetilde{\mathbf{Y}} - n\widetilde{\mathbf{p}})^\top (n\widetilde{\Sigma})^{-1} (\widetilde{\mathbf{Y}} - n\widetilde{\mathbf{p}})$ on the dropped-component vector — a Mahalanobis distance, which under multivariate normality is exactly $\chi^2_{k-1}$.</p>
+
+  <h3>Two worked examples</h3>
+  <p>Consider two hypothetical samples of size $100$, both to be tested against the Alabama proportions $\mathbf{p} = (0.36, 0.14, 0.03, 0.47)$. The expected vector is $n\mathbf{p} = (36, 14, 3, 47)$.</p>
+
+  <table class="matrix">
+    <caption>Two samples, two verdicts</caption>
+    <thead>
+      <tr><th></th><th>$Y_A$</th><th>$Y_B$</th><th>$Y_{AB}$</th><th>$Y_O$</th><th>$X^2$</th><th>$p$-value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Sample 1</td><td>40</td><td>12</td><td>5</td><td>43</td><td>2.40</td><td>0.493</td></tr>
+      <tr><td>Sample 2</td><td>25</td><td>22</td><td>8</td><td>45</td><td class="diag">16.35</td><td class="diag">0.001</td></tr>
+      <tr><td><em>Expected</em></td><td>36</td><td>14</td><td>3</td><td>47</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <p>The critical value at $\alpha = 0.05$ for $\chi^2_3$ is $7.815$. Sample 1 lies comfortably below it — no evidence against the Alabama proportions. Sample 2 sits well above it, with a $p$-value of about one in a thousand: we reject the hypothesis that this sample came from the same distribution.</p>
+
+<pre class="code"><span class="c"># Worked example in R</span>
+observed <span class="k">&lt;-</span> <span class="f">c</span>(<span class="n">25</span>, <span class="n">22</span>, <span class="n">8</span>, <span class="n">45</span>)
+p        <span class="k">&lt;-</span> <span class="f">c</span>(<span class="n">0.36</span>, <span class="n">0.14</span>, <span class="n">0.03</span>, <span class="n">0.47</span>)
+
+<span class="f">chisq.test</span>(x = observed, p = p)
+<span class="c">#&gt; 	Chi-squared test for given probabilities
+#&gt; 
+#&gt; data:  observed
+#&gt; X-squared = 16.351, df = 3, p-value = 0.0009592</span>
+</pre>
+
+  <h3>The null distribution, simulated</h3>
+  <p>To check the asymptotic claim, we draw $5000$ samples directly from the Alabama multinomial, compute $X^2$ for each, and overlay the $\chi^2_3$ density. They line up.</p>
+
+  <div class="sim-controls">
+    <span class="label">Press the button to draw $5000$ new samples and recompute the histogram.</span>
+    <button class="resample" id="chisqResampleBtn">↻ Resample</button>
+  </div>
+
+  <div class="chisq-widget" id="chisqWidget"></div>
+  <p class="source-line">Empirical distribution of $X^2$ from $5000$ simulated multinomial samples (bars), with the theoretical $\chi^2_3$ density (curve) and the $\alpha = 0.05$ critical value at $7.815$ (dashed line).</p>
+
+<pre class="code"><span class="c"># Simulate the null distribution of X^2 and compare to chi-square 3 df</span>
+sim_X2 <span class="k">&lt;-</span> <span class="f">replicate</span>(<span class="n">5000</span>, {
+  y <span class="k">&lt;-</span> <span class="f">rmultinom</span>(<span class="n">1</span>, size = <span class="n">100</span>, prob = p)
+  <span class="f">sum</span>((y - <span class="n">100</span>*p)^<span class="n">2</span> / (<span class="n">100</span>*p))
+})
+
+<span class="f">hist</span>(sim_X2, breaks = <span class="n">50</span>, freq = <span class="k">FALSE</span>, col = <span class="s">"#ece2c5"</span>, border = <span class="s">"#8a7b5e"</span>,
+     main = <span class="s">"Empirical X^2 vs. chi-square_3"</span>, xlab = <span class="s">"X^2"</span>)
+<span class="f">curve</span>(<span class="f">dchisq</span>(x, df = <span class="n">3</span>), add = <span class="k">TRUE</span>, lwd = <span class="n">2</span>, col = <span class="s">"#9a1a1a"</span>)
+<span class="f">abline</span>(v = <span class="f">qchisq</span>(<span class="n">0.95</span>, <span class="n">3</span>), lty = <span class="n">2</span>)
+</pre>
+
+  <p class="aside">A practical caveat. The $\chi^2_3$ approximation rests on the multivariate central limit theorem, which in turn requires that every expected count $n p_i$ be large enough — a common rule of thumb asks for $n p_i \geq 5$ for each cell. Here $n p_{AB} = 3$ skirts that line, which is why simulation-based $p$-values (or an exact multinomial test) are sometimes preferred when one of the categories is rare.</p>
+
+  <hr class="flourish">
+
+  <h2><span class="num">VIII.</span>What we have</h2>
+  <p>From the four phenotype proportions of Alabama we drew a complete picture. The exact multinomial PMF gives any joint count probability we ask for, including the $6.5 \times 10^{-5}$ chance of seeing $(44, 9, 6, 41)$. The marginals are binomial, the pairwise covariances are uniformly negative because the counts compete for $n$ trials, and the correlation between the two big categories A and O is the strongest at $-0.71$. Conditioning on one count tightens the others into a smaller multinomial, which is itself a multinomial. As $n$ grows the whole vector spreads out as a (singular) multivariate normal, and the squared standardized residual collapses to a $\chi^2_{k-1}$ distribution that is the workhorse of categorical hypothesis testing. The same four numbers, viewed through these four lenses, give the multinomial in full.</p>
+
+  <footer>
+    Notes on Probability · No. 1 · The Multinomial Distribution
+  </footer>
+
+</article>
+
+<script>
+  // ----- Multinomial sampling -----
+  const probs = [0.36, 0.14, 0.03, 0.47];
+  const labels = ['A', 'B', 'AB', 'O'];
+  const colors = ['var(--A)', 'var(--B)', 'var(--AB)', 'var(--O)'];
+
+  function rmultinom(n, p) {
+    const cum = [];
+    let s = 0;
+    for (const pi of p) { s += pi; cum.push(s); }
+    const counts = new Array(p.length).fill(0);
+    for (let i = 0; i < n; i++) {
+      const u = Math.random();
+      for (let j = 0; j < cum.length; j++) {
+        if (u < cum[j]) { counts[j]++; break; }
+      }
+    }
+    return counts;
+  }
+
+  const STUDENT_INITIALS = [
+    "AA","EB","JB","HC","EC","JCi","SC","CC",
+    "JCr","JE","RF","AG","EH","BH","AH","SH",
+    "HL","AL","SO","DO","RP","RW","KW","JG"
+  ];
+
+  function panel(counts, label) {
+    // viewBox chosen so SVG units land close to display pixels at ~100px panel widths,
+    // keeping text inside the SVG legible.
+    const W = 100, H = 66;
+    const padL = 3, padR = 3, padT = 9, padB = 12;
+    const innerW = W - padL - padR;
+    const innerH = H - padT - padB;
+    const ymax = 60;
+    const slot = innerW / counts.length;
+    const barW = slot * 0.62;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+    // Faint reference dashes at 30 and 60 (no labels)
+    [30, 60].forEach(t => {
+      const y = padT + innerH - (t / ymax) * innerH;
+      svg += `<line x1="${padL}" y1="${y.toFixed(2)}" x2="${W - padR}" y2="${y.toFixed(2)}" stroke="#c9bd9e" stroke-width="0.35" stroke-dasharray="1.2 1.6"/>`;
+    });
+
+    // Baseline
+    const y0 = padT + innerH;
+    svg += `<line x1="${padL}" y1="${y0}" x2="${W - padR}" y2="${y0}" stroke="#1a1410" stroke-width="0.5"/>`;
+
+    // Bars + labels
+    counts.forEach((c, i) => {
+      const xCenter = padL + slot * (i + 0.5);
+      const x = xCenter - barW/2;
+      const h = (c / ymax) * innerH;
+      const y = padT + innerH - h;
+      svg += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" fill="${colors[i]}"/>`;
+      // Count above bar
+      svg += `<text x="${xCenter.toFixed(2)}" y="${(y - 1).toFixed(2)}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#4a3f33">${c}</text>`;
+      // Type letter below baseline
+      svg += `<text x="${xCenter.toFixed(2)}" y="${H - 3}" text-anchor="middle" font-family="Fraunces, serif" font-weight="600" font-size="7.5" fill="#1a1410">${labels[i]}</text>`;
+    });
+
+    svg += `</svg>`;
+    return `<div class="panel"><span class="pid">${label}</span>${svg}</div>`;
+  }
+
+  function renderSims() {
+    const grid = document.getElementById('simGrid');
+    let html = '';
+    for (let i = 0; i < STUDENT_INITIALS.length; i++) {
+      const counts = rmultinom(100, probs);
+      html += panel(counts, STUDENT_INITIALS[i]);
+    }
+    grid.innerHTML = html;
+  }
+
+  document.getElementById('resampleBtn').addEventListener('click', renderSims);
+  renderSims();
+
+  // ============================================================
+  //  V. Conditional distribution widget
+  // ============================================================
+  // Numeric helpers
+  function lgamma(x) {
+    // Lanczos approximation
+    const g = 7;
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+               771.32342877765313, -176.61502916214059, 12.507343278686905,
+               -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+    x -= 1;
+    let a = c[0];
+    const t = x + g + 0.5;
+    for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+  function lchoose(n, k) { return lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1); }
+  function dbinom(k, n, p) {
+    if (k < 0 || k > n) return 0;
+    if (p === 0) return k === 0 ? 1 : 0;
+    if (p === 1) return k === n ? 1 : 0;
+    return Math.exp(lchoose(n, k) + k*Math.log(p) + (n-k)*Math.log(1-p));
+  }
+
+  function renderConditional(yA) {
+    const n = 100;
+    const pA = 0.36, pO = 0.47;
+    const nC = n - yA;
+    const qC = pO / (1 - pA);
+    const meanC = nC * qC;
+    const sdC = Math.sqrt(nC * qC * (1 - qC));
+
+    // Readout
+    const readout = document.getElementById('condReadout');
+    readout.innerHTML =
+      `Y_O | Y_A = ${yA}  ~  Bin(<span class="hl">${nC}</span>, <span class="hl">${qC.toFixed(4)}</span>) ` +
+      `&nbsp;·&nbsp; mean = <span class="hl">${meanC.toFixed(2)}</span> ` +
+      `&nbsp;·&nbsp; sd = <span class="hl">${sdC.toFixed(2)}</span>`;
+
+    // Plot
+    const W = 760, H = 280;
+    const padL = 56, padR = 24, padT = 22, padB = 42;
+    const innerW = W - padL - padR;
+    const innerH = H - padT - padB;
+
+    // Use a fixed x-range for stability across slider moves
+    const xMin = 0, xMax = 90;
+    const xs = [];
+    let pmf = [];
+    let maxP = 0;
+    for (let y = xMin; y <= Math.min(xMax, nC); y++) {
+      const pp = dbinom(y, nC, qC);
+      xs.push(y);
+      pmf.push(pp);
+      if (pp > maxP) maxP = pp;
+    }
+    const yMax = Math.max(0.16, Math.ceil(maxP * 12) / 10);  // generous so bars aren't always full
+
+    const xScale = v => padL + ((v - xMin) / (xMax - xMin)) * innerW;
+    const yScale = v => padT + innerH - (v / yMax) * innerH;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+    // ±2sd band
+    const bL = xScale(meanC - 2*sdC);
+    const bR = xScale(meanC + 2*sdC);
+    svg += `<rect x="${bL}" y="${padT}" width="${bR - bL}" height="${innerH}" fill="#2d6363" fill-opacity="0.07"/>`;
+
+    // Mean line
+    const mx = xScale(meanC);
+    svg += `<line x1="${mx}" y1="${padT}" x2="${mx}" y2="${padT + innerH}" stroke="#9a1a1a" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    svg += `<text x="${mx}" y="${padT - 6}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" fill="#9a1a1a">mean ${meanC.toFixed(1)}</text>`;
+
+    // x-axis ticks
+    svg += `<g font-family="JetBrains Mono, monospace" font-size="10" fill="#4a3f33">`;
+    for (let t = 0; t <= 90; t += 10) {
+      const x = xScale(t);
+      svg += `<line x1="${x}" y1="${padT + innerH}" x2="${x}" y2="${padT + innerH + 4}" stroke="#8a7b5e" stroke-width="0.6"/>`;
+      svg += `<text x="${x}" y="${padT + innerH + 16}" text-anchor="middle">${t}</text>`;
+    }
+    svg += `<text x="${padL + innerW/2}" y="${H - 8}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#1a1410">y  (value of Y_O)</text>`;
+
+    // y-axis ticks
+    const yTicks = 4;
+    for (let i = 0; i <= yTicks; i++) {
+      const v = (yMax * i) / yTicks;
+      const y = yScale(v);
+      svg += `<line x1="${padL - 4}" y1="${y}" x2="${padL + innerW}" y2="${y}" stroke="#c9bd9e" stroke-width="0.5" stroke-dasharray="${i===0?'0':'2 3'}"/>`;
+      svg += `<text x="${padL - 8}" y="${y + 3}" text-anchor="end">${v.toFixed(2)}</text>`;
+    }
+    svg += `<text x="14" y="${padT + innerH/2}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#1a1410" transform="rotate(-90 14 ${padT + innerH/2})">P(Y_O = y | Y_A)</text>`;
+    svg += `</g>`;
+
+    // Bars
+    const barW = innerW / (xMax - xMin) * 0.85;
+    for (let i = 0; i < xs.length; i++) {
+      const v = xs[i], p = pmf[i];
+      if (p < 1e-6) continue;
+      const x = xScale(v) - barW/2;
+      const yy = yScale(p);
+      const h = yScale(0) - yy;
+      svg += `<rect x="${x}" y="${yy}" width="${barW}" height="${h}" fill="#2d6363" fill-opacity="0.85"/>`;
+    }
+
+    // Frame
+    svg += `<rect x="${padL}" y="${padT}" width="${innerW}" height="${innerH}" fill="none" stroke="#1a1410" stroke-width="1"/>`;
+    svg += `</svg>`;
+
+    document.getElementById('condPlot').innerHTML = svg;
+  }
+
+  const yaSlider = document.getElementById('yaSlider');
+  const yaVal    = document.getElementById('yaVal');
+  yaSlider.addEventListener('input', e => {
+    const v = parseInt(e.target.value);
+    yaVal.textContent = v;
+    renderConditional(v);
+  });
+  renderConditional(36);
+
+  // ============================================================
+  //  VI. Multivariate normal scatter + 95% ellipse
+  // ============================================================
+  function renderMVN() {
+    const n = 100;
+    // Means and covariance for (Y_A, Y_O)
+    const muA = 36, muO = 47;
+    const sAA = 23.04, sOO = 24.91, sAO = -16.92;
+
+    // Generate ~1500 multinomial samples client-side
+    const N = 1500;
+    const pts = [];
+    for (let s = 0; s < N; s++) {
+      const c = rmultinom(n, probs);
+      pts.push([c[0], c[3]]);   // Y_A, Y_O
+    }
+
+    // Ellipse points: x = μ + L * (sqrt(c) cos θ, sqrt(c) sin θ)
+    // where Σ = R diag(λ) R^T -> "Cholesky-like" via eigendecomposition
+    function eig2(a, b, c) {
+      // matrix [[a,b],[b,c]]
+      const tr = a + c, det = a*c - b*b;
+      const disc = Math.sqrt(Math.max(0, tr*tr/4 - det));
+      const l1 = tr/2 + disc, l2 = tr/2 - disc;
+      // eigenvector for l1
+      let v1;
+      if (Math.abs(b) > 1e-9) v1 = [l1 - c, b];
+      else v1 = (a >= c) ? [1, 0] : [0, 1];
+      const n1 = Math.hypot(v1[0], v1[1]);
+      v1 = [v1[0]/n1, v1[1]/n1];
+      const v2 = [-v1[1], v1[0]];
+      return { l1, l2, v1, v2 };
+    }
+    const { l1, l2, v1, v2 } = eig2(sAA, sAO, sOO);
+    const cChi = 5.991;  // chi-square 2 df, 95%
+    const a1 = Math.sqrt(l1 * cChi);
+    const a2 = Math.sqrt(l2 * cChi);
+
+    const elliPts = [];
+    const M = 120;
+    for (let i = 0; i <= M; i++) {
+      const th = 2 * Math.PI * i / M;
+      const ex = a1 * Math.cos(th);
+      const ey = a2 * Math.sin(th);
+      const xx = muA + v1[0]*ex + v2[0]*ey;
+      const yy = muO + v1[1]*ex + v2[1]*ey;
+      elliPts.push([xx, yy]);
+    }
+
+    // Layout: main scatter + top hist + right hist
+    const W = 760, H = 520;
+    const histH = 70, histW = 70, gap = 10;
+    const padL = 56, padR = 24, padT = 18, padB = 44;
+    const scatX = padL,
+          scatY = padT + histH + gap,
+          scatW = W - padL - padR - histW - gap,
+          scatH = H - padT - padB - histH - gap;
+
+    // Determine plotting range
+    const xMin = 18, xMax = 56;
+    const yMin = 28, yMax = 66;
+
+    const xS = v => scatX + ((v - xMin)/(xMax - xMin)) * scatW;
+    const yS = v => scatY + scatH - ((v - yMin)/(yMax - yMin)) * scatH;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+    // Background
+    svg += `<rect x="${scatX}" y="${scatY}" width="${scatW}" height="${scatH}" fill="#f1e9d2"/>`;
+
+    // Grid + ticks
+    svg += `<g font-family="JetBrains Mono, monospace" font-size="10" fill="#4a3f33">`;
+    for (let t = 20; t <= 55; t += 5) {
+      const x = xS(t);
+      svg += `<line x1="${x}" y1="${scatY}" x2="${x}" y2="${scatY + scatH}" stroke="#c9bd9e" stroke-width="0.4"/>`;
+      svg += `<text x="${x}" y="${scatY + scatH + 14}" text-anchor="middle">${t}</text>`;
+    }
+    for (let t = 30; t <= 65; t += 5) {
+      const y = yS(t);
+      svg += `<line x1="${scatX}" y1="${y}" x2="${scatX + scatW}" y2="${y}" stroke="#c9bd9e" stroke-width="0.4"/>`;
+      svg += `<text x="${scatX - 6}" y="${y + 3}" text-anchor="end">${t}</text>`;
+    }
+    svg += `</g>`;
+
+    // Mean lines
+    svg += `<line x1="${xS(muA)}" y1="${scatY}" x2="${xS(muA)}" y2="${scatY + scatH}" stroke="#8a7b5e" stroke-width="0.6" stroke-dasharray="3 3"/>`;
+    svg += `<line x1="${scatX}" y1="${yS(muO)}" x2="${scatX + scatW}" y2="${yS(muO)}" stroke="#8a7b5e" stroke-width="0.6" stroke-dasharray="3 3"/>`;
+
+    // Scatter points
+    for (const [a, o] of pts) {
+      svg += `<circle cx="${xS(a).toFixed(1)}" cy="${yS(o).toFixed(1)}" r="1.6" fill="#1a1410" fill-opacity="0.32"/>`;
+    }
+
+    // Ellipse
+    let pathD = '';
+    elliPts.forEach((p, i) => {
+      pathD += (i === 0 ? 'M' : 'L') + xS(p[0]).toFixed(2) + ',' + yS(p[1]).toFixed(2) + ' ';
+    });
+    svg += `<path d="${pathD}Z" fill="none" stroke="#9a1a1a" stroke-width="2"/>`;
+
+    // Center marker
+    svg += `<circle cx="${xS(muA)}" cy="${yS(muO)}" r="4" fill="#9a1a1a"/>`;
+    svg += `<text x="${xS(muA) + 8}" y="${yS(muO) - 8}" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#9a1a1a">(36, 47)</text>`;
+
+    // Frame
+    svg += `<rect x="${scatX}" y="${scatY}" width="${scatW}" height="${scatH}" fill="none" stroke="#1a1410" stroke-width="1"/>`;
+
+    // Axis labels
+    svg += `<text x="${scatX + scatW/2}" y="${H - 12}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1a1410">Y_A  (count of type A)</text>`;
+    svg += `<text x="18" y="${scatY + scatH/2}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1a1410" transform="rotate(-90 18 ${scatY + scatH/2})">Y_O  (count of type O)</text>`;
+
+    // ---- Top histogram for Y_A ----
+    const histTopX = scatX, histTopY = padT, histTopW = scatW, histTopH = histH;
+    const binsA = {};
+    for (const [a] of pts) binsA[a] = (binsA[a] || 0) + 1;
+    const maxCntA = Math.max(...Object.values(binsA));
+    const barWA = scatW / (xMax - xMin);
+    for (const k in binsA) {
+      const v = +k;
+      if (v < xMin || v > xMax) continue;
+      const x = xS(v) - barWA/2;
+      const h = (binsA[k] / maxCntA) * histTopH;
+      svg += `<rect x="${x}" y="${histTopY + histTopH - h}" width="${barWA*0.95}" height="${h}" fill="#9a1a1a" fill-opacity="0.6"/>`;
+    }
+    // Normal density overlay (Y_A ~ N(36, 23.04))
+    let dpath = '';
+    for (let i = 0; i <= 200; i++) {
+      const v = xMin + (xMax - xMin) * i / 200;
+      const phi = Math.exp(-((v - muA)**2) / (2 * sAA)) / Math.sqrt(2 * Math.PI * sAA);
+      // Scale: pdf * N matches expected count per unit; max is ~ 1/sqrt(2π σ²) -> at the mean
+      const phiMax = 1 / Math.sqrt(2 * Math.PI * sAA);
+      const yy = histTopY + histTopH - (phi / phiMax) * histTopH * 0.95;
+      dpath += (i === 0 ? 'M' : 'L') + xS(v).toFixed(2) + ',' + yy.toFixed(2) + ' ';
+    }
+    svg += `<path d="${dpath}" fill="none" stroke="#1a1410" stroke-width="1.5"/>`;
+
+    // ---- Right histogram for Y_O ----
+    const histRightX = scatX + scatW + gap, histRightY = scatY, histRightW = histW, histRightH = scatH;
+    const binsO = {};
+    for (const [, o] of pts) binsO[o] = (binsO[o] || 0) + 1;
+    const maxCntO = Math.max(...Object.values(binsO));
+    const barWO = scatH / (yMax - yMin);
+    for (const k in binsO) {
+      const v = +k;
+      if (v < yMin || v > yMax) continue;
+      const y = yS(v) - barWO/2;
+      const w = (binsO[k] / maxCntO) * histRightW;
+      svg += `<rect x="${histRightX}" y="${y}" width="${w}" height="${barWO*0.95}" fill="#2d6363" fill-opacity="0.6"/>`;
+    }
+    // Normal density on the right
+    let dpath2 = '';
+    for (let i = 0; i <= 200; i++) {
+      const v = yMin + (yMax - yMin) * i / 200;
+      const phi = Math.exp(-((v - muO)**2) / (2 * sOO)) / Math.sqrt(2 * Math.PI * sOO);
+      const phiMax = 1 / Math.sqrt(2 * Math.PI * sOO);
+      const xx = histRightX + (phi / phiMax) * histRightW * 0.95;
+      dpath2 += (i === 0 ? 'M' : 'L') + xx.toFixed(2) + ',' + yS(v).toFixed(2) + ' ';
+    }
+    svg += `<path d="${dpath2}" fill="none" stroke="#1a1410" stroke-width="1.5"/>`;
+
+    svg += `</svg>`;
+    document.getElementById('mvnWidget').innerHTML = svg;
+  }
+  renderMVN();
+
+  // ============================================================
+  //  VII. Chi-square goodness-of-fit histogram
+  // ============================================================
+  function renderChiSq() {
+    const n = 100;
+    const np = probs.map(p => n * p);
+
+    const N = 5000;
+    const xs = [];
+    for (let s = 0; s < N; s++) {
+      const c = rmultinom(n, probs);
+      let x2 = 0;
+      for (let i = 0; i < c.length; i++) {
+        x2 += (c[i] - np[i])**2 / np[i];
+      }
+      xs.push(x2);
+    }
+
+    const W = 760, H = 320;
+    const padL = 56, padR = 24, padT = 22, padB = 46;
+    const innerW = W - padL - padR;
+    const innerH = H - padT - padB;
+
+    const xMin = 0, xMax = 18;
+    const nBins = 50;
+    const binW = (xMax - xMin) / nBins;
+    const counts = new Array(nBins).fill(0);
+    for (const v of xs) {
+      if (v < xMin || v >= xMax) continue;
+      const idx = Math.floor((v - xMin) / binW);
+      counts[idx]++;
+    }
+    // Convert to density
+    const dens = counts.map(c => c / (N * binW));
+    const maxD = Math.max(...dens, 0.25);
+    const yMax = Math.ceil(maxD * 12) / 10;
+
+    const xS = v => padL + ((v - xMin)/(xMax - xMin)) * innerW;
+    const yS = v => padT + innerH - (v / yMax) * innerH;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+    // Histogram bars
+    for (let i = 0; i < nBins; i++) {
+      const x0 = xS(xMin + i*binW);
+      const x1 = xS(xMin + (i+1)*binW);
+      const y0 = yS(dens[i]);
+      const y1 = yS(0);
+      svg += `<rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" fill="#ece2c5" stroke="#8a7b5e" stroke-width="0.5"/>`;
+    }
+
+    // Chi-square_3 density: f(x) = sqrt(x) * exp(-x/2) / sqrt(2*pi)
+    let dpath = '';
+    for (let i = 0; i <= 400; i++) {
+      const v = xMin + (xMax - xMin) * i / 400;
+      const f = (v <= 0) ? 0 : Math.sqrt(v) * Math.exp(-v/2) / Math.sqrt(2 * Math.PI);
+      dpath += (i === 0 ? 'M' : 'L') + xS(v).toFixed(2) + ',' + yS(f).toFixed(2) + ' ';
+    }
+    svg += `<path d="${dpath}" fill="none" stroke="#9a1a1a" stroke-width="2.2"/>`;
+
+    // Critical value line at 7.815
+    const xc = xS(7.815);
+    svg += `<line x1="${xc}" y1="${padT}" x2="${xc}" y2="${padT + innerH}" stroke="#1a1410" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+    svg += `<text x="${xc + 6}" y="${padT + 14}" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#1a1410">χ²₃(0.95) = 7.815</text>`;
+
+    // Axis ticks
+    svg += `<g font-family="JetBrains Mono, monospace" font-size="10" fill="#4a3f33">`;
+    for (let t = 0; t <= 18; t += 2) {
+      const x = xS(t);
+      svg += `<line x1="${x}" y1="${padT + innerH}" x2="${x}" y2="${padT + innerH + 4}" stroke="#8a7b5e" stroke-width="0.6"/>`;
+      svg += `<text x="${x}" y="${padT + innerH + 16}" text-anchor="middle">${t}</text>`;
+    }
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++) {
+      const v = (yMax * i) / yTicks;
+      const y = yS(v);
+      svg += `<line x1="${padL - 4}" y1="${y}" x2="${padL + innerW}" y2="${y}" stroke="#c9bd9e" stroke-width="0.4" stroke-dasharray="${i===0?'0':'2 3'}"/>`;
+      svg += `<text x="${padL - 8}" y="${y + 3}" text-anchor="end">${v.toFixed(2)}</text>`;
+    }
+    svg += `</g>`;
+
+    // Axis labels
+    svg += `<text x="${padL + innerW/2}" y="${H - 10}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1a1410">X²</text>`;
+    svg += `<text x="14" y="${padT + innerH/2}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#1a1410" transform="rotate(-90 14 ${padT + innerH/2})">density</text>`;
+
+    // Frame
+    svg += `<rect x="${padL}" y="${padT}" width="${innerW}" height="${innerH}" fill="none" stroke="#1a1410" stroke-width="1"/>`;
+
+    // Legend
+    svg += `<g font-family="EB Garamond, serif" font-size="13" fill="#1a1410">`;
+    svg += `<rect x="${padL + innerW - 200}" y="${padT + 12}" width="14" height="10" fill="#ece2c5" stroke="#8a7b5e" stroke-width="0.5"/>`;
+    svg += `<text x="${padL + innerW - 182}" y="${padT + 21}">simulated X² (n = 5000)</text>`;
+    svg += `<line x1="${padL + innerW - 200}" y1="${padT + 38}" x2="${padL + innerW - 186}" y2="${padT + 38}" stroke="#9a1a1a" stroke-width="2.2"/>`;
+    svg += `<text x="${padL + innerW - 182}" y="${padT + 42}" font-style="italic">χ²₃ density</text>`;
+    svg += `</g>`;
+
+    svg += `</svg>`;
+    document.getElementById('chisqWidget').innerHTML = svg;
+  }
+  renderChiSq();
+  document.getElementById('chisqResampleBtn').addEventListener('click', renderChiSq);
+</script>
+
+</body>
+</html>

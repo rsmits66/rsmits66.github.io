@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sampling Distribution of the Sample Mean</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f4efe4;
+    --paper-darker: #ebe4d3;
+    --ink: #1c1a17;
+    --ink-soft: #4a443c;
+    --rule: #c9bfa9;
+    --accent-red: #8b2a1f;
+    --accent-blue: #1f4a6b;
+    --accent-green: #3a6b3a;
+    --accent-gold: #b78a2d;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'EB Garamond', Garamond, 'Times New Roman', serif;
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  body {
+    /* subtle paper grain */
+    background-image:
+      radial-gradient(rgba(120, 100, 60, 0.04) 1px, transparent 1px),
+      radial-gradient(rgba(120, 100, 60, 0.03) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 1px;
+  }
+
+  .frame {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 28px 60px;
+  }
+
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-weight: 500;
+    font-size: 36px;
+    margin: 6px 0 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .formula {
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  .formula .mono { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 0.92em; }
+
+  .plots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+
+  .panel {
+    background: #fbf8f0;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 16px 14px 10px;
+    box-shadow: 2px 3px 0 rgba(60, 50, 30, 0.06);
+    position: relative;
+  }
+
+  .panel::before {
+    content: "";
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px solid rgba(180, 160, 120, 0.18);
+    pointer-events: none;
+  }
+
+  .panel-title {
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 2px 0 4px;
+    text-align: center;
+  }
+
+  .panel-sub {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  canvas {
+    width: 100%;
+    height: 380px;
+    display: block;
+  }
+
+  .console {
+    margin-top: 22px;
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'EB Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 9px 22px;
+    border-radius: 1px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.05s;
+  }
+  button:hover:not(:disabled) { background: var(--accent-red); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  button.ghost:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .readouts {
+    margin-left: auto;
+    display: flex;
+    gap: 22px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  .readout-label { font-style: italic; }
+  .readout-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    margin-left: 6px;
+  }
+
+  .stage-banner {
+    margin-top: 10px;
+    text-align: center;
+    font-style: italic;
+    color: var(--accent-red);
+    font-size: 15px;
+    min-height: 22px;
+    transition: opacity 0.3s;
+  }
+
+  footer {
+    margin-top: 28px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+    text-align: center;
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+
+  @media (max-width: 820px) {
+    .plots { grid-template-columns: 1fr; }
+    h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header>
+    <div class="eyebrow">Part I · sampling distribution of Ȳ</div>
+    <h1>The Sampling Distribution of <em>Ȳ</em></h1>
+    <div class="formula">
+      If &nbsp;<em>Y</em><sub>1</sub>, <em>Y</em><sub>2</sub>, …, <em>Y</em><sub>n</sub> &nbsp;is a random sample from &nbsp;Normal(<em>μ</em>, <em>σ</em><sup>2</sup>),
+      &nbsp; then &nbsp; <em>Ȳ</em> = (1/<em>n</em>)·∑ <em>Y</em><sub>i</sub> &nbsp; is &nbsp; Normal(<em>μ</em>, <em>σ</em><sup>2</sup>/<em>n</em>).
+    </div>
+  </header>
+
+  <div class="plots">
+    <div class="panel">
+      <div class="panel-title">The population &nbsp;<em>Y</em> ~ Normal(5, 4) &nbsp;&nbsp;<span style="color:var(--ink-soft); font-size:13px;">(μ = 5, σ = 2)</span></div>
+      <div class="panel-sub">center at <em>μ</em> = 5, &nbsp; concavity changes at <em>μ</em> ± <em>σ</em> &nbsp;(at 3 and 7)</div>
+      <canvas id="leftCanvas"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-title">The sample mean &nbsp;<em>Ȳ</em> &nbsp;(<em>n</em> = 25)</div>
+      <div class="panel-sub">target: &nbsp;Normal(<em>μ</em>, <em>σ</em><sup>2</sup>/25) = Normal(5, 0.16), &nbsp;SE = <em>σ</em>/√<em>n</em> = 0.40</div>
+      <canvas id="rightCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="stage-banner" id="stageBanner"></div>
+
+  <div class="console">
+    <button id="startBtn">Begin</button>
+    <button id="resetBtn" class="ghost">Reset</button>
+    <div class="readouts">
+      <div><span class="readout-label">samples drawn:</span><span class="readout-value" id="sampleCount">0</span></div>
+      <div><span class="readout-label">mean of Ȳ:</span><span class="readout-value" id="meanOfMeans">—</span></div>
+      <div><span class="readout-label">SD of Ȳ:</span><span class="readout-value" id="sdOfMeans">—</span></div>
+    </div>
+  </div>
+
+  <div style="height: 64px;"></div>
+
+  <header>
+    <div class="eyebrow">Part II · derived distribution</div>
+    <h1>Building the Chi-Square &nbsp;<em>χ</em><sup>2</sup>(4)</h1>
+    <div class="formula">
+      If &nbsp;<em>Z</em><sub>1</sub>, <em>Z</em><sub>2</sub>, <em>Z</em><sub>3</sub>, <em>Z</em><sub>4</sub> &nbsp;is an iid sample from &nbsp;Normal(0, 1),
+      &nbsp; then &nbsp; <em>W</em> = <em>Z</em><sub>1</sub><sup>2</sup> + <em>Z</em><sub>2</sub><sup>2</sup> + <em>Z</em><sub>3</sub><sup>2</sup> + <em>Z</em><sub>4</sub><sup>2</sup> &nbsp; follows &nbsp;<em>χ</em><sup>2</sup>(4).
+    </div>
+  </header>
+
+  <div class="plots">
+    <div class="panel">
+      <div class="panel-title">Sampling 4 points from &nbsp;<em>Z</em> ~ Normal(0, 1)</div>
+      <div class="panel-sub">square each, then sum &mdash; this produces one realization of <em>W</em></div>
+      <canvas id="leftChiCanvas"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Distribution of &nbsp;<em>W</em> = ∑ <em>Z</em><sub>i</sub><sup>2</sup></div>
+      <div class="panel-sub">target: &nbsp;<em>χ</em><sup>2</sup>(4), &nbsp;mean = 4, &nbsp;mode = 2, &nbsp;variance = 8</div>
+      <canvas id="rightChiCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="stage-banner" id="stageBannerChi"></div>
+
+  <div class="console">
+    <button id="startChiBtn">Begin</button>
+    <button id="resetChiBtn" class="ghost">Reset</button>
+    <div class="readouts">
+      <div><span class="readout-label">draws of W:</span><span class="readout-value" id="chiCount">0</span></div>
+      <div><span class="readout-label">mean of W:</span><span class="readout-value" id="chiMean">—</span></div>
+      <div><span class="readout-label">variance of W:</span><span class="readout-value" id="chiVar">—</span></div>
+    </div>
+  </div>
+
+  <div style="height: 64px;"></div>
+
+  <header>
+    <div class="eyebrow">Part III · standardizing with S, not σ</div>
+    <h1>Building Student's &nbsp;<em>t</em><sub>n−1</sub></h1>
+    <div class="formula">
+      If &nbsp;<em>Y</em><sub>1</sub>, …, <em>Y</em><sub>n</sub> &nbsp;is a random sample from &nbsp;Normal(<em>μ</em>, <em>σ</em><sup>2</sup>),
+      &nbsp; then &nbsp; <em>T</em> = √<em>n</em>·(<em>Ȳ</em> − <em>μ</em>) / <em>S</em> &nbsp; follows &nbsp;<em>t</em><sub><em>n</em>−1</sub>.
+      &nbsp;&nbsp;<span style="color:var(--ink-soft); font-style:normal; font-size:14px;">Here: <em>n</em> = 5, &nbsp; <em>μ</em> = 3, &nbsp; <em>σ</em><sup>2</sup> = 16 &nbsp;⇒ <em>T</em> ~ <em>t</em><sub>4</sub></span>
+    </div>
+  </header>
+
+  <div class="plots">
+    <div class="panel">
+      <div class="panel-title">Sampling 5 points from &nbsp;<em>Y</em> ~ Normal(3, 16)</div>
+      <div class="panel-sub">compute <em>Ȳ</em> and <em>S</em> from the sample, then form &nbsp;<em>T</em> = √5(<em>Ȳ</em>−3)/<em>S</em></div>
+      <canvas id="leftTCanvas"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Distribution of &nbsp;<em>T</em></div>
+      <div class="panel-sub">target: &nbsp;<em>t</em><sub>4</sub> &nbsp;(red), with &nbsp;<em>N</em>(0, 1) &nbsp;in grey for comparison</div>
+      <canvas id="rightTCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="stage-banner" id="stageBannerT"></div>
+
+  <div class="console">
+    <button id="startTBtn">Begin</button>
+    <button id="resetTBtn" class="ghost">Reset</button>
+    <div class="readouts">
+      <div><span class="readout-label">draws of T:</span><span class="readout-value" id="tCount">0</span></div>
+      <div><span class="readout-label">mean of T:</span><span class="readout-value" id="tMean">—</span></div>
+      <div><span class="readout-label">SD of T:</span><span class="readout-value" id="tSD">—</span></div>
+      <div><span class="readout-label">|T| &gt; 3:</span><span class="readout-value" id="tTailFrac">—</span></div>
+    </div>
+  </div>
+
+  <div style="height: 64px;"></div>
+
+  <header>
+    <div class="eyebrow">Part IV · ratio of sample variances</div>
+    <h1>Building the F-distribution &nbsp;<em>F</em><sub>(5, 9)</sub></h1>
+    <div class="formula">
+      If &nbsp;<em>X</em><sub>1</sub>,…,<em>X</em><sub><em>n</em><sub>1</sub></sub> ~ N(<em>μ</em><sub>1</sub>, <em>σ</em><sub>1</sub><sup>2</sup>) &nbsp;and&nbsp; <em>Y</em><sub>1</sub>,…,<em>Y</em><sub><em>n</em><sub>2</sub></sub> ~ N(<em>μ</em><sub>2</sub>, <em>σ</em><sub>2</sub><sup>2</sup>) &nbsp;are independent,
+      &nbsp; then &nbsp; <em>F</em> = (<em>S</em><sub>1</sub><sup>2</sup>/<em>σ</em><sub>1</sub><sup>2</sup>) / (<em>S</em><sub>2</sub><sup>2</sup>/<em>σ</em><sub>2</sub><sup>2</sup>) &nbsp; follows &nbsp; <em>F</em><sub>(<em>n</em><sub>1</sub>−1, <em>n</em><sub>2</sub>−1)</sub>.
+      <br>
+      <span style="color:var(--ink-soft); font-style:normal; font-size:14px;">
+        Here: &nbsp;<em>X</em> ~ N(2, 1) &nbsp;with&nbsp; <em>n</em><sub>1</sub> = 6, &nbsp;&nbsp; <em>Y</em> ~ N(5, 16) &nbsp;with&nbsp; <em>n</em><sub>2</sub> = 10 &nbsp;&nbsp;⇒&nbsp; <em>F</em> ~ <em>F</em><sub>(5, 9)</sub>
+      </span>
+    </div>
+  </header>
+
+  <div class="plots" style="grid-template-columns: 0.9fr 0.9fr 1.4fr;">
+    <div class="panel">
+      <div class="panel-title">Sample 1: &nbsp;<em>X</em> ~ N(2, 1)</div>
+      <div class="panel-sub"><em>n</em><sub>1</sub> = 6 &nbsp;→&nbsp; compute <em>S</em><sub>1</sub><sup>2</sup></div>
+      <canvas id="leftFCanvas1"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Sample 2: &nbsp;<em>Y</em> ~ N(5, 16)</div>
+      <div class="panel-sub"><em>n</em><sub>2</sub> = 10 &nbsp;→&nbsp; compute <em>S</em><sub>2</sub><sup>2</sup></div>
+      <canvas id="leftFCanvas2"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Distribution of &nbsp;<em>F</em> = (<em>S</em><sub>1</sub><sup>2</sup>/1) / (<em>S</em><sub>2</sub><sup>2</sup>/16)</div>
+      <div class="panel-sub">target: &nbsp;<em>F</em><sub>(5, 9)</sub> &nbsp;(red), &nbsp;mode ≈ 0.49, &nbsp;mean = 9/7 ≈ 1.29</div>
+      <canvas id="rightFCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="stage-banner" id="stageBannerF"></div>
+
+  <div class="console">
+    <button id="startFBtn">Begin</button>
+    <button id="resetFBtn" class="ghost">Reset</button>
+    <div class="readouts">
+      <div><span class="readout-label">draws of F:</span><span class="readout-value" id="fCount">0</span></div>
+      <div><span class="readout-label">mean of F:</span><span class="readout-value" id="fMean">—</span></div>
+      <div><span class="readout-label">SD of F:</span><span class="readout-value" id="fSD">—</span></div>
+      <div><span class="readout-label">last F:</span><span class="readout-value" id="fLast">—</span></div>
+    </div>
+  </div>
+
+  <footer>
+    Box–Muller sampling · density-normalized histograms · red curves are the theoretical limit distributions
+  </footer>
+</div>
+
+<script>
+// ===== Parameters =====
+const MU = 5;
+const SIGMA = 2;
+const N = 25;            // sample size
+const SE = SIGMA / Math.sqrt(N);     // = 0.4
+
+const X_MIN = -3, X_MAX = 13;        // population x-range (μ ± 4σ)
+const M_MIN = 3,  M_MAX = 7;         // sample-mean x-range (μ ± 5·SE)
+const BIN_W = 0.10;
+
+// ===== State =====
+const sampleMeans = [];
+const bins = {};   // binIdx -> count
+let maxBinCount = 0;
+let lastSample = [];
+let running = false;
+
+// ===== Math helpers =====
+function pdf(x, m, s) {
+  return Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
+}
+function sampleNormal(m, s) {
+  let u1 = 0; while (u1 === 0) u1 = Math.random();
+  const u2 = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return m + s * z;
+}
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// ===== Canvas setup with DPI =====
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { canvas, ctx, w: rect.width, h: rect.height };
+}
+
+const leftEl = document.getElementById('leftCanvas');
+const rightEl = document.getElementById('rightCanvas');
+let L = setupCanvas(leftEl);
+let R = setupCanvas(rightEl);
+
+// ===== Plot geometry =====
+const PAD = { left: 36, right: 18, top: 30, bottom: 56 };
+
+function xPix(x, xMin, xMax, w) {
+  return PAD.left + ((x - xMin) / (xMax - xMin)) * (w - PAD.left - PAD.right);
+}
+function yPix(y, yMax, h) {
+  return h - PAD.bottom - (y / yMax) * (h - PAD.top - PAD.bottom);
+}
+
+// ===== Left panel: population density =====
+function drawLeft(currentSample = [], highlightLast = false, meanIndicator = null) {
+  const { ctx, w, h } = L;
+  ctx.clearRect(0, 0, w, h);
+
+  const yMax = 0.25;
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // ticks
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = -2; x <= 12; x += 2) {
+    const px = xPix(x, X_MIN, X_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // shaded area under curve
+  ctx.beginPath();
+  const steps = 240;
+  for (let i = 0; i <= steps; i++) {
+    const x = X_MIN + (X_MAX - X_MIN) * i / steps;
+    const y = pdf(x, MU, SIGMA);
+    const px = xPix(x, X_MIN, X_MAX, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(xPix(X_MAX, X_MIN, X_MAX, w), axisY);
+  ctx.lineTo(xPix(X_MIN, X_MIN, X_MAX, w), axisY);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, axisY);
+  grad.addColorStop(0, 'rgba(31, 74, 107, 0.20)');
+  grad.addColorStop(1, 'rgba(31, 74, 107, 0.04)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // density curve
+  ctx.strokeStyle = '#1f4a6b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = X_MIN + (X_MAX - X_MIN) * i / steps;
+    const y = pdf(x, MU, SIGMA);
+    const px = xPix(x, X_MIN, X_MAX, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // μ marker (dashed line + label)
+  const muPx = xPix(MU, X_MIN, X_MAX, w);
+  const muTop = yPix(pdf(MU, MU, SIGMA), yMax, h);
+  ctx.strokeStyle = '#8b2a1f';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(muPx, axisY);
+  ctx.lineTo(muPx, muTop);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8b2a1f';
+  ctx.font = "italic 16px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('μ', muPx, axisY + 38);
+
+  // Inflection points: μ ± σ
+  for (const s of [-1, 1]) {
+    const x = MU + s * SIGMA;
+    const px = xPix(x, X_MIN, X_MAX, w);
+    const py = yPix(pdf(x, MU, SIGMA), yMax, h);
+    ctx.strokeStyle = '#b78a2d';
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#b78a2d';
+    ctx.beginPath();
+    ctx.arc(px, py, 4.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#8a6a25';
+    ctx.font = "italic 13px 'EB Garamond', serif";
+    ctx.textAlign = 'center';
+    ctx.fillText(s > 0 ? 'μ+σ' : 'μ−σ', px, axisY + 38);
+  }
+
+  // Annotation for inflection
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'left';
+  ctx.fillText('inflection points', PAD.left + 4, PAD.top - 8);
+
+  // Sample points
+  for (let i = 0; i < currentSample.length; i++) {
+    const x = currentSample[i];
+    if (x < X_MIN || x > X_MAX) continue;
+    const px = xPix(x, X_MIN, X_MAX, w);
+    const isLast = (i === currentSample.length - 1) && highlightLast;
+    // drop-line up to density
+    const yDens = pdf(x, MU, SIGMA);
+    const pyDens = yPix(yDens, yMax, h);
+    if (isLast) {
+      ctx.strokeStyle = 'rgba(139, 42, 31, 0.35)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(px, axisY);
+      ctx.lineTo(px, pyDens);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.fillStyle = isLast ? '#8b2a1f' : 'rgba(31, 74, 107, 0.55)';
+    ctx.beginPath();
+    ctx.arc(px, axisY, isLast ? 5 : 3.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = isLast ? '#5e1c14' : '#1f4a6b';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Mean indicator (green triangle pointing up at axis from below)
+  if (meanIndicator !== null) {
+    const px = xPix(meanIndicator, X_MIN, X_MAX, w);
+    ctx.fillStyle = '#3a6b3a';
+    ctx.beginPath();
+    ctx.moveTo(px, axisY + 22);
+    ctx.lineTo(px - 7, axisY + 34);
+    ctx.lineTo(px + 7, axisY + 34);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#26461f';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#26461f';
+    ctx.font = "italic 12px 'EB Garamond', serif";
+    ctx.textAlign = 'center';
+    ctx.fillText('Ȳ = ' + meanIndicator.toFixed(3), px, axisY + 50);
+  }
+}
+
+// ===== Right panel: histogram + theoretical curve =====
+function binAdd(value) {
+  if (value < M_MIN || value > M_MAX) return;
+  const idx = Math.floor((value - M_MIN) / BIN_W);
+  bins[idx] = (bins[idx] || 0) + 1;
+  if (bins[idx] > maxBinCount) maxBinCount = bins[idx];
+}
+
+function drawRight({ flashMean = null, showCurve = true } = {}) {
+  const { ctx, w, h } = R;
+  ctx.clearRect(0, 0, w, h);
+
+  // y-axis scale: enough to fit theoretical peak and histogram
+  const theoryPeak = 1 / (SE * Math.sqrt(2 * Math.PI));   // ≈ 1.995
+  let yMax = theoryPeak * 1.25;
+  if (sampleMeans.length > 0) {
+    const histPeak = maxBinCount / (sampleMeans.length * BIN_W);
+    yMax = Math.max(yMax, histPeak * 1.08);
+  }
+
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // x ticks (every 0.5)
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = 3.5; x <= 6.5 + 1e-9; x += 0.5) {
+    const px = xPix(x, M_MIN, M_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toFixed(1), px, axisY + 18);
+  }
+
+  // histogram bars (as a density)
+  const N_samples = sampleMeans.length;
+  if (N_samples > 0) {
+    for (const k in bins) {
+      const idx = parseInt(k);
+      const count = bins[idx];
+      const x1 = M_MIN + idx * BIN_W;
+      const x2 = x1 + BIN_W;
+      const dens = count / (N_samples * BIN_W);
+      const px1 = xPix(x1, M_MIN, M_MAX, w);
+      const px2 = xPix(x2, M_MIN, M_MAX, w);
+      const py = yPix(dens, yMax, h);
+      ctx.fillStyle = 'rgba(58, 107, 58, 0.55)';
+      ctx.fillRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+      ctx.strokeStyle = '#26461f';
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+    }
+  }
+
+  // theoretical Normal(μ, σ²/n)
+  if (showCurve) {
+    ctx.strokeStyle = '#8b2a1f';
+    ctx.lineWidth = 2;
+    ctx.setLineDash(N_samples < 30 ? [5, 4] : []);
+    ctx.beginPath();
+    const steps = 240;
+    for (let i = 0; i <= steps; i++) {
+      const x = M_MIN + (M_MAX - M_MIN) * i / steps;
+      const y = pdf(x, MU, SE);
+      const px = xPix(x, M_MIN, M_MAX, w);
+      const py = yPix(y, yMax, h);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // μ marker line
+  const muPx = xPix(MU, M_MIN, M_MAX, w);
+  ctx.strokeStyle = 'rgba(139, 42, 31, 0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(muPx, axisY);
+  ctx.lineTo(muPx, PAD.top);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8b2a1f';
+  ctx.font = "italic 16px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('μ', muPx, axisY + 38);
+
+  // Flash mean dot
+  if (flashMean !== null) {
+    const px = xPix(flashMean, M_MIN, M_MAX, w);
+    ctx.fillStyle = '#3a6b3a';
+    ctx.beginPath();
+    ctx.arc(px, axisY, 7, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // header annotation
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'right';
+  ctx.fillText(`n samples drawn: ${N_samples}`, w - PAD.right, PAD.top - 8);
+}
+
+// ===== Stats readouts =====
+function updateStats() {
+  document.getElementById('sampleCount').textContent = sampleMeans.length;
+  if (sampleMeans.length >= 2) {
+    const m = sampleMeans.reduce((a, b) => a + b, 0) / sampleMeans.length;
+    const v = sampleMeans.reduce((a, b) => a + (b - m) ** 2, 0) / (sampleMeans.length - 1);
+    document.getElementById('meanOfMeans').textContent = m.toFixed(4);
+    document.getElementById('sdOfMeans').textContent = Math.sqrt(v).toFixed(4);
+  } else {
+    document.getElementById('meanOfMeans').textContent = '—';
+    document.getElementById('sdOfMeans').textContent = '—';
+  }
+}
+
+function setStage(text) {
+  document.getElementById('stageBanner').textContent = text;
+}
+
+// ===== Animation phases =====
+async function drawOneSampleSlow(pointDelayMs, holdMs) {
+  const sample = [];
+  drawLeft(sample);
+  for (let i = 0; i < N; i++) {
+    sample.push(sampleNormal(MU, SIGMA));
+    drawLeft(sample, true);
+    await sleep(pointDelayMs);
+  }
+  const mean = sample.reduce((a, b) => a + b, 0) / N;
+  lastSample = sample;
+
+  // show mean indicator on the left
+  drawLeft(sample, false, mean);
+  await sleep(holdMs);
+
+  // record and flash on the right
+  sampleMeans.push(mean);
+  binAdd(mean);
+  drawRight({ flashMean: mean, showCurve: true });
+  updateStats();
+  await sleep(holdMs);
+  drawRight({ showCurve: true });
+}
+
+async function drawOneSampleQuick(showOnLeft = true) {
+  const sample = [];
+  for (let i = 0; i < N; i++) sample.push(sampleNormal(MU, SIGMA));
+  const mean = sample.reduce((a, b) => a + b, 0) / N;
+  if (showOnLeft) drawLeft(sample, false, mean);
+  sampleMeans.push(mean);
+  binAdd(mean);
+  drawRight({ flashMean: mean, showCurve: true });
+  updateStats();
+}
+
+async function drawBatch(batch) {
+  for (let i = 0; i < batch; i++) {
+    const sample = [];
+    for (let j = 0; j < N; j++) sample.push(sampleNormal(MU, SIGMA));
+    const mean = sample.reduce((a, b) => a + b, 0) / N;
+    sampleMeans.push(mean);
+    binAdd(mean);
+  }
+  drawRight({ showCurve: true });
+  updateStats();
+}
+
+// ===== Main orchestration =====
+async function run() {
+  if (running) return;
+  running = true;
+  document.getElementById('startBtn').disabled = true;
+
+  // First 10 samples: each one slow, with a pause + full clear-out between draws.
+  // Speed accelerates gradually so it doesn't feel monotonous.
+  const slowSchedule = [
+    { pointMs: 150, holdMs: 1100, clearPauseMs: 950, label: 'Sample 1 — drawing 25 points slowly, then averaging' },
+    { pointMs: 110, holdMs: 900,  clearPauseMs: 800, label: 'Sample 2 — new draw' },
+    { pointMs: 80,  holdMs: 750,  clearPauseMs: 700, label: 'Sample 3 — new draw' },
+    { pointMs: 60,  holdMs: 600,  clearPauseMs: 600, label: 'Sample 4 — new draw' },
+    { pointMs: 50,  holdMs: 500,  clearPauseMs: 500, label: 'Sample 5 — new draw' },
+    { pointMs: 40,  holdMs: 450,  clearPauseMs: 450, label: 'Sample 6 — new draw' },
+    { pointMs: 35,  holdMs: 400,  clearPauseMs: 400, label: 'Sample 7 — new draw' },
+    { pointMs: 30,  holdMs: 380,  clearPauseMs: 380, label: 'Sample 8 — new draw' },
+    { pointMs: 26,  holdMs: 350,  clearPauseMs: 350, label: 'Sample 9 — new draw' },
+    { pointMs: 22,  holdMs: 320,  clearPauseMs: 320, label: 'Sample 10 — new draw' },
+  ];
+
+  for (let k = 0; k < slowSchedule.length; k++) {
+    const s = slowSchedule[k];
+    setStage(s.label);
+    await drawOneSampleSlow(s.pointMs, s.holdMs);
+    // Clear the x-axis so the next sample starts fresh on a blank density
+    drawLeft([]);
+    drawRight({ showCurve: true });   // remove the flash dot on the right
+    await sleep(s.clearPauseMs);
+  }
+
+  // From here on, samples come quickly and the histogram fills in.
+  setStage('Now sampling rapidly — building the histogram of Ȳ');
+  for (let i = 0; i < 25; i++) {
+    await drawOneSampleQuick(true);
+    await sleep(110);
+  }
+
+  setStage('Accelerating · convergence to Normal(μ, σ²/25)');
+  for (let i = 0; i < 100; i++) {
+    await drawOneSampleQuick(false);
+    await sleep(20);
+  }
+
+  while (sampleMeans.length < 3000) {
+    await drawBatch(40);
+    await sleep(16);
+  }
+
+  setStage('The empirical distribution of Ȳ matches Normal(μ, σ²/25)');
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('startBtn').textContent = 'Run again';
+  running = false;
+}
+
+function reset() {
+  sampleMeans.length = 0;
+  for (const k in bins) delete bins[k];
+  maxBinCount = 0;
+  lastSample = [];
+  drawLeft([]);
+  drawRight({ showCurve: false });
+  updateStats();
+  setStage('');
+  const b = document.getElementById('startBtn');
+  b.disabled = false;
+  b.textContent = 'Begin';
+}
+
+// ===== Wire up =====
+document.getElementById('startBtn').addEventListener('click', run);
+document.getElementById('resetBtn').addEventListener('click', reset);
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    L = setupCanvas(leftEl);
+    R = setupCanvas(rightEl);
+    drawLeft(lastSample);
+    drawRight({ showCurve: sampleMeans.length > 0 });
+    // Part II canvases are resized by a separate handler at the end of the script
+  }, 100);
+});
+
+// Wait for fonts to load before first draw so the math labels look right
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    drawLeft([]);
+    drawRight({ showCurve: false });
+  });
+} else {
+  drawLeft([]);
+  drawRight({ showCurve: false });
+}
+// ===================================================================
+// ===== PART II · Chi-Square distribution as sum of squared normals =
+// ===================================================================
+
+const DF = 4;
+const Z_MIN = -4, Z_MAX = 4;          // standard normal range (left panel)
+const CHI_X_MIN = 0, CHI_X_MAX = 20;  // chi-square range (right panel)
+const CHI_BIN_W = 0.5;
+
+const chiSamples = [];
+const chiBins = {};
+let chiMaxBin = 0;
+let runningChi = false;
+let lastZs = [];
+
+// Unicode subscripts so canvas text renders cleanly
+const SUB = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
+
+// Chi-square PDF for k = 4: f(x) = x · e^(−x/2) / 4
+function chiSqPdf4(x) {
+  if (x <= 0) return 0;
+  return x * Math.exp(-x / 2) / 4;
+}
+
+const leftChiEl = document.getElementById('leftChiCanvas');
+const rightChiEl = document.getElementById('rightChiCanvas');
+let LC = setupCanvas(leftChiEl);
+let RC = setupCanvas(rightChiEl);
+
+// One color per sequential point so the calculation box ties back visually
+const PT_COLORS = ['#8b2a1f', '#1f4a6b', '#b78a2d', '#3a6b3a'];
+
+function drawLeftChi(zValues = [], highlightLast = false, showSum = false) {
+  const { ctx, w, h } = LC;
+  ctx.clearRect(0, 0, w, h);
+
+  const yMax = 0.46;
+  const axisY = yPix(0, yMax, h);
+
+  // axis line
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // axis ticks (-3..3)
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = -3; x <= 3; x++) {
+    const px = xPix(x, Z_MIN, Z_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // shaded density area
+  const steps = 240;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = Z_MIN + (Z_MAX - Z_MIN) * i / steps;
+    const y = pdf(x, 0, 1);
+    const px = xPix(x, Z_MIN, Z_MAX, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(xPix(Z_MAX, Z_MIN, Z_MAX, w), axisY);
+  ctx.lineTo(xPix(Z_MIN, Z_MIN, Z_MAX, w), axisY);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, axisY);
+  grad.addColorStop(0, 'rgba(31, 74, 107, 0.20)');
+  grad.addColorStop(1, 'rgba(31, 74, 107, 0.04)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // density curve
+  ctx.strokeStyle = '#1f4a6b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = Z_MIN + (Z_MAX - Z_MIN) * i / steps;
+    const y = pdf(x, 0, 1);
+    const px = xPix(x, Z_MIN, Z_MAX, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // dashed line at μ = 0
+  const muPx = xPix(0, Z_MIN, Z_MAX, w);
+  ctx.strokeStyle = 'rgba(139, 42, 31, 0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(muPx, axisY);
+  ctx.lineTo(muPx, yPix(pdf(0, 0, 1), yMax, h));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Plot the z points
+  for (let i = 0; i < zValues.length; i++) {
+    const z = zValues[i];
+    if (z < Z_MIN || z > Z_MAX) continue;
+    const px = xPix(z, Z_MIN, Z_MAX, w);
+    const isLast = (i === zValues.length - 1) && highlightLast;
+    const c = PT_COLORS[i];
+
+    // drop line from density to axis for the just-drawn point
+    if (isLast) {
+      const yDens = pdf(z, 0, 1);
+      const pyDens = yPix(yDens, yMax, h);
+      ctx.strokeStyle = c + 'AA';
+      ctx.setLineDash([2, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, axisY);
+      ctx.lineTo(px, pyDens);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(px, axisY, isLast ? 6 : 4.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // label "z₁" .. "z₄" below
+    ctx.fillStyle = c;
+    ctx.font = "italic 12px 'EB Garamond', serif";
+    ctx.textAlign = 'center';
+    ctx.fillText('z' + SUB[i + 1], px, axisY + 38);
+  }
+
+  // Calculation box (top-right): list of z² values and running sum
+  if (zValues.length > 0) {
+    const lineH = 18;
+    const headerH = 22;
+    const sumExtra = showSum ? 28 : 0;
+    const boxW = 188;
+    const boxH = headerH + zValues.length * lineH + sumExtra + 8;
+    const boxX = w - boxW - PAD.right - 4;
+    const boxY = PAD.top + 4;
+
+    ctx.fillStyle = 'rgba(251, 248, 240, 0.96)';
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = '#c9bfa9';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+    ctx.fillStyle = '#4a443c';
+    ctx.font = "italic 12px 'EB Garamond', serif";
+    ctx.textAlign = 'left';
+    ctx.fillText('squaring and summing', boxX + 10, boxY + 15);
+
+    let sum = 0;
+    for (let i = 0; i < zValues.length; i++) {
+      const z = zValues[i];
+      const z2 = z * z;
+      sum += z2;
+      const lineY = boxY + headerH + 12 + i * lineH;
+      ctx.fillStyle = PT_COLORS[i];
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      const zStr = (z >= 0 ? ' ' : '') + z.toFixed(3);
+      const z2Str = z2.toFixed(3);
+      ctx.fillText(`z${SUB[i + 1]} = ${zStr}`, boxX + 10, lineY);
+      ctx.fillText(`→ ${z2Str}`, boxX + 118, lineY);
+    }
+
+    if (showSum) {
+      const sepY = boxY + headerH + 12 + zValues.length * lineH - 4;
+      ctx.strokeStyle = '#4a443c';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(boxX + 10, sepY);
+      ctx.lineTo(boxX + boxW - 10, sepY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#1c1a17';
+      ctx.font = "600 13px 'JetBrains Mono', monospace";
+      ctx.fillText(`W = ${sum.toFixed(3)}`, boxX + 10, sepY + 18);
+    }
+  }
+
+  // header annotation
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'left';
+  ctx.fillText('Z ~ N(0, 1)', PAD.left + 4, PAD.top - 8);
+}
+
+function chiBinAdd(value) {
+  if (value < CHI_X_MIN || value >= CHI_X_MAX) return;
+  const idx = Math.floor((value - CHI_X_MIN) / CHI_BIN_W);
+  chiBins[idx] = (chiBins[idx] || 0) + 1;
+  if (chiBins[idx] > chiMaxBin) chiMaxBin = chiBins[idx];
+}
+
+function drawRightChi({ flashValue = null, showCurve = true } = {}) {
+  const { ctx, w, h } = RC;
+  ctx.clearRect(0, 0, w, h);
+
+  // y scale: theoretical peak of chi²(4) is at x=2, value = 1/(2e) ≈ 0.184
+  const theoryPeak = chiSqPdf4(2);
+  let yMax = theoryPeak * 1.4;
+  if (chiSamples.length > 0) {
+    const histPeak = chiMaxBin / (chiSamples.length * CHI_BIN_W);
+    yMax = Math.max(yMax, histPeak * 1.08);
+  }
+
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // x ticks every 4
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = 0; x <= 20; x += 4) {
+    const px = xPix(x, CHI_X_MIN, CHI_X_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // histogram
+  const N_s = chiSamples.length;
+  if (N_s > 0) {
+    for (const k in chiBins) {
+      const idx = parseInt(k);
+      const count = chiBins[idx];
+      const x1 = CHI_X_MIN + idx * CHI_BIN_W;
+      const x2 = x1 + CHI_BIN_W;
+      const dens = count / (N_s * CHI_BIN_W);
+      const px1 = xPix(x1, CHI_X_MIN, CHI_X_MAX, w);
+      const px2 = xPix(x2, CHI_X_MIN, CHI_X_MAX, w);
+      const py = yPix(dens, yMax, h);
+      ctx.fillStyle = 'rgba(58, 107, 58, 0.55)';
+      ctx.fillRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+      ctx.strokeStyle = '#26461f';
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+    }
+  }
+
+  // theoretical χ²(4) curve
+  if (showCurve) {
+    ctx.strokeStyle = '#8b2a1f';
+    ctx.lineWidth = 2;
+    ctx.setLineDash(N_s < 30 ? [5, 4] : []);
+    ctx.beginPath();
+    const steps = 240;
+    for (let i = 0; i <= steps; i++) {
+      const x = CHI_X_MIN + (CHI_X_MAX - CHI_X_MIN) * i / steps;
+      const y = chiSqPdf4(x);
+      const px = xPix(x, CHI_X_MIN, CHI_X_MAX, w);
+      const py = yPix(y, yMax, h);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // mean = 4 marker line
+  const meanPx = xPix(4, CHI_X_MIN, CHI_X_MAX, w);
+  ctx.strokeStyle = 'rgba(139, 42, 31, 0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(meanPx, axisY);
+  ctx.lineTo(meanPx, PAD.top);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8b2a1f';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('mean = 4', meanPx, axisY + 38);
+
+  // mode = 2 marker (lighter)
+  const modePx = xPix(2, CHI_X_MIN, CHI_X_MAX, w);
+  ctx.fillStyle = '#b78a2d';
+  ctx.beginPath();
+  ctx.arc(modePx, yPix(theoryPeak, yMax, h), 4, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.strokeStyle = '#fbf8f0';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // flash dot for incoming W
+  if (flashValue !== null && flashValue < CHI_X_MAX) {
+    const px = xPix(flashValue, CHI_X_MIN, CHI_X_MAX, w);
+    ctx.fillStyle = '#3a6b3a';
+    ctx.beginPath();
+    ctx.arc(px, axisY, 7, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // header annotation
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'right';
+  ctx.fillText(`draws of W: ${N_s}`, w - PAD.right, PAD.top - 8);
+}
+
+function updateChiStats() {
+  const N = chiSamples.length;
+  document.getElementById('chiCount').textContent = N;
+  if (N >= 2) {
+    const m = chiSamples.reduce((a, b) => a + b, 0) / N;
+    const v = chiSamples.reduce((a, b) => a + (b - m) ** 2, 0) / (N - 1);
+    document.getElementById('chiMean').textContent = m.toFixed(3);
+    document.getElementById('chiVar').textContent = v.toFixed(3);
+  } else {
+    document.getElementById('chiMean').textContent = '—';
+    document.getElementById('chiVar').textContent = '—';
+  }
+}
+
+function setChiStage(text) {
+  document.getElementById('stageBannerChi').textContent = text;
+}
+
+async function drawOneChiSlow(pointMs, holdMs) {
+  const zs = [];
+  drawLeftChi([]);
+  for (let i = 0; i < 4; i++) {
+    zs.push(sampleNormal(0, 1));
+    drawLeftChi(zs, true, false);
+    await sleep(pointMs);
+  }
+  // Show the W = sum
+  drawLeftChi(zs, false, true);
+  const W = zs.reduce((a, z) => a + z * z, 0);
+  lastZs = zs;
+  await sleep(holdMs);
+
+  chiSamples.push(W);
+  chiBinAdd(W);
+  drawRightChi({ flashValue: W, showCurve: true });
+  updateChiStats();
+  await sleep(holdMs);
+  drawRightChi({ showCurve: true });
+}
+
+async function drawOneChiQuick(showOnLeft = true) {
+  const zs = [];
+  for (let i = 0; i < 4; i++) zs.push(sampleNormal(0, 1));
+  const W = zs.reduce((a, z) => a + z * z, 0);
+  if (showOnLeft) {
+    drawLeftChi(zs, false, true);
+    lastZs = zs;
+  }
+  chiSamples.push(W);
+  chiBinAdd(W);
+  drawRightChi({ flashValue: W, showCurve: true });
+  updateChiStats();
+}
+
+async function drawChiBatch(batch) {
+  for (let i = 0; i < batch; i++) {
+    let W = 0;
+    for (let j = 0; j < 4; j++) {
+      const z = sampleNormal(0, 1);
+      W += z * z;
+    }
+    chiSamples.push(W);
+    chiBinAdd(W);
+  }
+  drawRightChi({ showCurve: true });
+  updateChiStats();
+}
+
+async function runChi() {
+  if (runningChi) return;
+  runningChi = true;
+  document.getElementById('startChiBtn').disabled = true;
+
+  // Slow draws first, each with a pause & clear-out
+  const schedule = [
+    { pointMs: 600, holdMs: 1200, postMs: 950, label: 'Draw 1: pick 4 standard-normal points, square, sum → W' },
+    { pointMs: 450, holdMs: 950,  postMs: 800, label: 'Draw 2 — new sample of 4' },
+    { pointMs: 320, holdMs: 800,  postMs: 700, label: 'Draw 3 — new sample of 4' },
+    { pointMs: 230, holdMs: 650,  postMs: 600, label: 'Draw 4 — new sample of 4' },
+    { pointMs: 170, holdMs: 550,  postMs: 500, label: 'Draw 5 — new sample of 4' },
+    { pointMs: 130, holdMs: 450,  postMs: 420, label: 'Draw 6 — new sample of 4' },
+    { pointMs: 100, holdMs: 380,  postMs: 360, label: 'Draw 7 — new sample of 4' },
+    { pointMs: 80,  holdMs: 320,  postMs: 320, label: 'Draw 8 — new sample of 4' },
+  ];
+
+  for (const s of schedule) {
+    setChiStage(s.label);
+    await drawOneChiSlow(s.pointMs, s.holdMs);
+    drawLeftChi([]);
+    drawRightChi({ showCurve: true });
+    lastZs = [];
+    await sleep(s.postMs);
+  }
+
+  setChiStage('Now sampling rapidly — the histogram of W begins to fill in');
+  for (let i = 0; i < 25; i++) {
+    await drawOneChiQuick(true);
+    await sleep(110);
+  }
+
+  setChiStage('Accelerating · convergence to χ²(4)');
+  for (let i = 0; i < 100; i++) {
+    await drawOneChiQuick(false);
+    await sleep(20);
+  }
+
+  while (chiSamples.length < 3000) {
+    await drawChiBatch(40);
+    await sleep(16);
+  }
+
+  setChiStage('Empirical distribution of W matches χ²(4): mean ≈ 4, variance ≈ 8');
+  document.getElementById('startChiBtn').disabled = false;
+  document.getElementById('startChiBtn').textContent = 'Run again';
+  runningChi = false;
+}
+
+function resetChi() {
+  chiSamples.length = 0;
+  for (const k in chiBins) delete chiBins[k];
+  chiMaxBin = 0;
+  lastZs = [];
+  drawLeftChi([]);
+  drawRightChi({ showCurve: false });
+  updateChiStats();
+  setChiStage('');
+  const b = document.getElementById('startChiBtn');
+  b.disabled = false;
+  b.textContent = 'Begin';
+}
+
+document.getElementById('startChiBtn').addEventListener('click', runChi);
+document.getElementById('resetChiBtn').addEventListener('click', resetChi);
+
+// Resize handler for Part II — registered AFTER all Part II declarations
+// so its closure captures fully-initialized variables.
+let resizeTimerChi = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimerChi);
+  resizeTimerChi = setTimeout(() => {
+    LC = setupCanvas(leftChiEl);
+    RC = setupCanvas(rightChiEl);
+    drawLeftChi(lastZs, false, lastZs.length === 4);
+    drawRightChi({ showCurve: chiSamples.length > 0 });
+  }, 100);
+});
+
+// Initial draw for Part II (after fonts load)
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    drawLeftChi([]);
+    drawRightChi({ showCurve: false });
+  });
+} else {
+  drawLeftChi([]);
+  drawRightChi({ showCurve: false });
+}
+
+// ===================================================================
+// ===== PART III · Student's t-distribution =========================
+// ===================================================================
+
+const T_MU = 3;
+const T_SIGMA = 4;          // σ² = 16
+const T_N = 5;
+const T_DF = T_N - 1;       // = 4
+
+const Y_MIN = -9, Y_MAX = 15;        // population panel x-range
+const TT_MIN = -6, TT_MAX = 6;       // t-distribution x-range
+const TT_BIN_W = 0.25;
+
+const tSamples = [];
+const tBins = {};
+let tMaxBin = 0;
+let tTailCount = 0;          // count of |T| > 3 for the readout
+let runningT = false;
+let lastTYs = [];
+let lastTCalc = null;        // { ybar, s, T } for resize redraw
+
+// Student's t PDF with df = 4:
+// f(x) = Γ(5/2) / (√(4π) Γ(2)) · (1 + x²/4)^(−5/2) = (3/8)·(1 + x²/4)^(−5/2)
+function tPdf4(x) {
+  return (3 / 8) * Math.pow(1 + x * x / 4, -2.5);
+}
+
+const leftTEl = document.getElementById('leftTCanvas');
+const rightTEl = document.getElementById('rightTCanvas');
+let LT = setupCanvas(leftTEl);
+let RT = setupCanvas(rightTEl);
+
+const T_PT_COLORS = ['#8b2a1f', '#1f4a6b', '#b78a2d', '#3a6b3a', '#6b4a8b'];
+
+function drawLeftT(yValues = [], highlightLast = false, showCalc = false, calc = null) {
+  const { ctx, w, h } = LT;
+  ctx.clearRect(0, 0, w, h);
+
+  const yMax = 0.13;   // peak of N(3,16) ≈ 0.0997
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // ticks
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = -8; x <= 14; x += 2) {
+    const px = xPix(x, Y_MIN, Y_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // shaded density
+  const steps = 240;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = Y_MIN + (Y_MAX - Y_MIN) * i / steps;
+    const y = pdf(x, T_MU, T_SIGMA);
+    const px = xPix(x, Y_MIN, Y_MAX, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(xPix(Y_MAX, Y_MIN, Y_MAX, w), axisY);
+  ctx.lineTo(xPix(Y_MIN, Y_MIN, Y_MAX, w), axisY);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, axisY);
+  grad.addColorStop(0, 'rgba(31, 74, 107, 0.20)');
+  grad.addColorStop(1, 'rgba(31, 74, 107, 0.04)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // density curve
+  ctx.strokeStyle = '#1f4a6b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = Y_MIN + (Y_MAX - Y_MIN) * i / steps;
+    const y = pdf(x, T_MU, T_SIGMA);
+    const px = xPix(x, Y_MIN, Y_MAX, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // μ marker dashed line + label
+  const muPx = xPix(T_MU, Y_MIN, Y_MAX, w);
+  const muTop = yPix(pdf(T_MU, T_MU, T_SIGMA), yMax, h);
+  ctx.strokeStyle = '#8b2a1f';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(muPx, axisY);
+  ctx.lineTo(muPx, muTop);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8b2a1f';
+  ctx.font = "italic 14px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('μ = 3', muPx, axisY + 38);
+
+  // Sample sample-mean indicator (small green triangle) — only when calc is available
+  if (calc !== null) {
+    const ypx = xPix(calc.ybar, Y_MIN, Y_MAX, w);
+    ctx.fillStyle = '#3a6b3a';
+    ctx.beginPath();
+    ctx.moveTo(ypx, axisY - 2);
+    ctx.lineTo(ypx - 5, axisY - 12);
+    ctx.lineTo(ypx + 5, axisY - 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#26461f';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // sample points on x-axis
+  for (let i = 0; i < yValues.length; i++) {
+    const y = yValues[i];
+    if (y < Y_MIN || y > Y_MAX) continue;
+    const px = xPix(y, Y_MIN, Y_MAX, w);
+    const isLast = (i === yValues.length - 1) && highlightLast;
+    const c = T_PT_COLORS[i];
+
+    if (isLast) {
+      const yDens = pdf(y, T_MU, T_SIGMA);
+      const pyDens = yPix(yDens, yMax, h);
+      ctx.strokeStyle = c + 'AA';
+      ctx.setLineDash([2, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, axisY);
+      ctx.lineTo(px, pyDens);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(px, axisY, isLast ? 6 : 4.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = c;
+    ctx.font = "italic 12px 'EB Garamond', serif";
+    ctx.textAlign = 'center';
+    ctx.fillText('y' + SUB[i + 1], px, axisY + 38);
+  }
+
+  // Calculation box in upper-right
+  if (yValues.length > 0) {
+    const lineH = 17;
+    const headerH = 20;
+    const fiveLines = yValues.length * lineH;
+    const calcBlockH = showCalc ? (10 + 18 + 18 + 12 + 22) : 0;  // sep + Ȳ + S + sep + T
+    const boxW = 200;
+    const boxH = headerH + fiveLines + calcBlockH + 14;
+    const boxX = w - boxW - PAD.right - 4;
+    const boxY = PAD.top + 4;
+
+    ctx.fillStyle = 'rgba(251, 248, 240, 0.96)';
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = '#c9bfa9';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+    ctx.fillStyle = '#4a443c';
+    ctx.font = "italic 12px 'EB Garamond', serif";
+    ctx.textAlign = 'left';
+    ctx.fillText('sample of size 5', boxX + 10, boxY + 14);
+
+    // y values
+    for (let i = 0; i < yValues.length; i++) {
+      const y = yValues[i];
+      const lineY = boxY + headerH + 12 + i * lineH;
+      ctx.fillStyle = T_PT_COLORS[i];
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      const yStr = (y >= 0 ? ' ' : '') + y.toFixed(3);
+      ctx.fillText(`y${SUB[i + 1]} = ${yStr}`, boxX + 10, lineY);
+    }
+
+    if (showCalc && calc !== null) {
+      let cursor = boxY + headerH + 12 + yValues.length * lineH;
+      // separator
+      ctx.strokeStyle = '#c9bfa9';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(boxX + 10, cursor);
+      ctx.lineTo(boxX + boxW - 10, cursor);
+      ctx.stroke();
+      cursor += 14;
+
+      ctx.fillStyle = '#1c1a17';
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      const ybStr = (calc.ybar >= 0 ? ' ' : '') + calc.ybar.toFixed(3);
+      ctx.fillText(`Ȳ = ${ybStr}`, boxX + 10, cursor);
+      cursor += 18;
+      ctx.fillText(`S = ${calc.s.toFixed(3)}`, boxX + 10, cursor);
+      cursor += 10;
+
+      // separator
+      ctx.beginPath();
+      ctx.moveTo(boxX + 10, cursor);
+      ctx.lineTo(boxX + boxW - 10, cursor);
+      ctx.stroke();
+      cursor += 16;
+
+      ctx.fillStyle = '#8b2a1f';
+      ctx.font = "600 13px 'JetBrains Mono', monospace";
+      const tStr = (calc.T >= 0 ? ' ' : '') + calc.T.toFixed(3);
+      ctx.fillText(`T = ${tStr}`, boxX + 10, cursor);
+    }
+  }
+
+  // header annotation
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'left';
+  ctx.fillText('Y ~ N(3, 16)  (σ = 4)', PAD.left + 4, PAD.top - 8);
+}
+
+function tBinAdd(value) {
+  if (value < TT_MIN || value >= TT_MAX) {
+    // still count tail occurrences for the readout
+    if (Math.abs(value) > 3) tTailCount++;
+    return;
+  }
+  if (Math.abs(value) > 3) tTailCount++;
+  const idx = Math.floor((value - TT_MIN) / TT_BIN_W);
+  tBins[idx] = (tBins[idx] || 0) + 1;
+  if (tBins[idx] > tMaxBin) tMaxBin = tBins[idx];
+}
+
+function drawRightT({ flashValue = null, showCurves = true } = {}) {
+  const { ctx, w, h } = RT;
+  ctx.clearRect(0, 0, w, h);
+
+  // y scale: max of standard normal at 0 is ~0.399; t₄ peak at 0 is 0.375
+  let yMax = 0.45;
+  if (tSamples.length > 0) {
+    const histPeak = tMaxBin / (tSamples.length * TT_BIN_W);
+    yMax = Math.max(yMax, histPeak * 1.05);
+  }
+
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // ticks every 2
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = -6; x <= 6; x += 2) {
+    const px = xPix(x, TT_MIN, TT_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // histogram
+  const Ns = tSamples.length;
+  if (Ns > 0) {
+    for (const k in tBins) {
+      const idx = parseInt(k);
+      const count = tBins[idx];
+      const x1 = TT_MIN + idx * TT_BIN_W;
+      const x2 = x1 + TT_BIN_W;
+      const dens = count / (Ns * TT_BIN_W);
+      const px1 = xPix(x1, TT_MIN, TT_MAX, w);
+      const px2 = xPix(x2, TT_MIN, TT_MAX, w);
+      const py = yPix(dens, yMax, h);
+      ctx.fillStyle = 'rgba(58, 107, 58, 0.55)';
+      ctx.fillRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+      ctx.strokeStyle = '#26461f';
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+    }
+  }
+
+  // Standard normal overlay (gray, dashed) for comparison
+  if (showCurves) {
+    ctx.strokeStyle = '#6b6357';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    const stps = 240;
+    for (let i = 0; i <= stps; i++) {
+      const x = TT_MIN + (TT_MAX - TT_MIN) * i / stps;
+      const y = pdf(x, 0, 1);
+      const px = xPix(x, TT_MIN, TT_MAX, w);
+      const py = yPix(y, yMax, h);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // t₄ curve (red, solid)
+    ctx.strokeStyle = '#8b2a1f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= stps; i++) {
+      const x = TT_MIN + (TT_MAX - TT_MIN) * i / stps;
+      const y = tPdf4(x);
+      const px = xPix(x, TT_MIN, TT_MAX, w);
+      const py = yPix(y, yMax, h);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // labels for the two curves
+    ctx.font = "italic 13px 'EB Garamond', serif";
+    ctx.textAlign = 'left';
+
+    // t₄ label near the peak
+    const tLabelX = xPix(0.5, TT_MIN, TT_MAX, w);
+    const tLabelY = yPix(tPdf4(0.5) * 0.96, yMax, h) - 6;
+    ctx.fillStyle = '#8b2a1f';
+    ctx.fillText('t₄  (uses S)', tLabelX, tLabelY);
+
+    // N(0,1) label slightly above and to the left
+    const nLabelX = xPix(-2.6, TT_MIN, TT_MAX, w);
+    const nLabelY = yPix(pdf(-2.6, 0, 1), yMax, h) - 18;
+    ctx.fillStyle = '#6b6357';
+    ctx.fillText('N(0, 1)  (would use σ)', nLabelX, nLabelY);
+  }
+
+  // μ marker at 0
+  const muPx = xPix(0, TT_MIN, TT_MAX, w);
+  ctx.strokeStyle = 'rgba(139, 42, 31, 0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(muPx, axisY);
+  ctx.lineTo(muPx, PAD.top);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8b2a1f';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('0', muPx, axisY + 38);
+
+  // flash dot for incoming T
+  if (flashValue !== null && flashValue >= TT_MIN && flashValue <= TT_MAX) {
+    const px = xPix(flashValue, TT_MIN, TT_MAX, w);
+    ctx.fillStyle = '#3a6b3a';
+    ctx.beginPath();
+    ctx.arc(px, axisY, 7, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else if (flashValue !== null) {
+    // tail event: indicate at the edge
+    const edge = flashValue > 0 ? TT_MAX - 0.05 : TT_MIN + 0.05;
+    const px = xPix(edge, TT_MIN, TT_MAX, w);
+    ctx.fillStyle = '#3a6b3a';
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px + (flashValue > 0 ? -10 : 10), axisY - 8);
+    ctx.lineTo(px + (flashValue > 0 ? -10 : 10), axisY + 8);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // header annotation
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'right';
+  ctx.fillText(`draws of T: ${Ns}`, w - PAD.right, PAD.top - 8);
+}
+
+function updateTStats() {
+  const N = tSamples.length;
+  document.getElementById('tCount').textContent = N;
+  if (N >= 2) {
+    const m = tSamples.reduce((a, b) => a + b, 0) / N;
+    const v = tSamples.reduce((a, b) => a + (b - m) ** 2, 0) / (N - 1);
+    document.getElementById('tMean').textContent = m.toFixed(3);
+    document.getElementById('tSD').textContent = Math.sqrt(v).toFixed(3);
+    document.getElementById('tTailFrac').textContent =
+      (tTailCount / N * 100).toFixed(2) + '%';
+  } else {
+    document.getElementById('tMean').textContent = '—';
+    document.getElementById('tSD').textContent = '—';
+    document.getElementById('tTailFrac').textContent = '—';
+  }
+}
+
+function setTStage(text) {
+  document.getElementById('stageBannerT').textContent = text;
+}
+
+function computeT(ys) {
+  const ybar = ys.reduce((a, y) => a + y, 0) / T_N;
+  const s2 = ys.reduce((a, y) => a + (y - ybar) ** 2, 0) / (T_N - 1);
+  const s = Math.sqrt(s2);
+  const T = Math.sqrt(T_N) * (ybar - T_MU) / s;
+  return { ybar, s, T };
+}
+
+async function drawOneTSlow(pointMs, holdMs) {
+  const ys = [];
+  drawLeftT([]);
+  for (let i = 0; i < T_N; i++) {
+    ys.push(sampleNormal(T_MU, T_SIGMA));
+    drawLeftT(ys, true, false);
+    await sleep(pointMs);
+  }
+  const calc = computeT(ys);
+  lastTYs = ys;
+  lastTCalc = calc;
+  drawLeftT(ys, false, true, calc);
+  await sleep(holdMs);
+
+  tSamples.push(calc.T);
+  tBinAdd(calc.T);
+  drawRightT({ flashValue: calc.T, showCurves: true });
+  updateTStats();
+  await sleep(holdMs);
+  drawRightT({ showCurves: true });
+}
+
+async function drawOneTQuick(showOnLeft = true) {
+  const ys = [];
+  for (let i = 0; i < T_N; i++) ys.push(sampleNormal(T_MU, T_SIGMA));
+  const calc = computeT(ys);
+  if (showOnLeft) {
+    drawLeftT(ys, false, true, calc);
+    lastTYs = ys;
+    lastTCalc = calc;
+  }
+  tSamples.push(calc.T);
+  tBinAdd(calc.T);
+  drawRightT({ flashValue: calc.T, showCurves: true });
+  updateTStats();
+}
+
+async function drawTBatch(batch) {
+  for (let i = 0; i < batch; i++) {
+    const ys = [];
+    for (let j = 0; j < T_N; j++) ys.push(sampleNormal(T_MU, T_SIGMA));
+    const calc = computeT(ys);
+    tSamples.push(calc.T);
+    tBinAdd(calc.T);
+  }
+  drawRightT({ showCurves: true });
+  updateTStats();
+}
+
+async function runT() {
+  if (runningT) return;
+  runningT = true;
+  document.getElementById('startTBtn').disabled = true;
+
+  const schedule = [
+    { pointMs: 550, holdMs: 1300, postMs: 1000, label: 'Draw 1: pick 5 points from N(3, 16), compute Ȳ, S, and T' },
+    { pointMs: 420, holdMs: 1000, postMs: 850,  label: 'Draw 2 — new sample of 5' },
+    { pointMs: 300, holdMs: 850,  postMs: 700,  label: 'Draw 3 — new sample of 5' },
+    { pointMs: 220, holdMs: 700,  postMs: 600,  label: 'Draw 4 — new sample of 5' },
+    { pointMs: 160, holdMs: 580,  postMs: 500,  label: 'Draw 5 — new sample of 5' },
+    { pointMs: 120, holdMs: 480,  postMs: 420,  label: 'Draw 6 — new sample of 5' },
+    { pointMs: 90,  holdMs: 380,  postMs: 350,  label: 'Draw 7 — new sample of 5' },
+  ];
+
+  for (const s of schedule) {
+    setTStage(s.label);
+    await drawOneTSlow(s.pointMs, s.holdMs);
+    drawLeftT([]);
+    drawRightT({ showCurves: true });
+    lastTYs = [];
+    lastTCalc = null;
+    await sleep(s.postMs);
+  }
+
+  setTStage('Now sampling rapidly — watch the tails fill in further than N(0,1) would predict');
+  for (let i = 0; i < 25; i++) {
+    await drawOneTQuick(true);
+    await sleep(110);
+  }
+
+  setTStage('Accelerating · convergence to t₄');
+  for (let i = 0; i < 100; i++) {
+    await drawOneTQuick(false);
+    await sleep(20);
+  }
+
+  while (tSamples.length < 4000) {
+    await drawTBatch(40);
+    await sleep(14);
+  }
+
+  setTStage('Histogram matches t₄. Tail mass at |T| > 3 is ≈ 4% (vs ≈ 0.27% for N(0,1)).');
+  document.getElementById('startTBtn').disabled = false;
+  document.getElementById('startTBtn').textContent = 'Run again';
+  runningT = false;
+}
+
+function resetT() {
+  tSamples.length = 0;
+  for (const k in tBins) delete tBins[k];
+  tMaxBin = 0;
+  tTailCount = 0;
+  lastTYs = [];
+  lastTCalc = null;
+  drawLeftT([]);
+  drawRightT({ showCurves: false });
+  updateTStats();
+  setTStage('');
+  const b = document.getElementById('startTBtn');
+  b.disabled = false;
+  b.textContent = 'Begin';
+}
+
+document.getElementById('startTBtn').addEventListener('click', runT);
+document.getElementById('resetTBtn').addEventListener('click', resetT);
+
+// Resize handler for Part III
+let resizeTimerT = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimerT);
+  resizeTimerT = setTimeout(() => {
+    LT = setupCanvas(leftTEl);
+    RT = setupCanvas(rightTEl);
+    drawLeftT(lastTYs, false, lastTCalc !== null, lastTCalc);
+    drawRightT({ showCurves: tSamples.length > 0 });
+  }, 100);
+});
+
+// Initial draw for Part III
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    drawLeftT([]);
+    drawRightT({ showCurves: false });
+  });
+} else {
+  drawLeftT([]);
+  drawRightT({ showCurves: false });
+}
+
+// ===================================================================
+// ===== PART IV · F-distribution from ratio of sample variances =====
+// ===================================================================
+
+const F_MU1 = 2;
+const F_SIGMA1 = 1;      // σ₁² = 1
+const F_N1 = 6;
+const F_MU2 = 5;
+const F_SIGMA2 = 4;      // σ₂² = 16
+const F_N2 = 10;
+const F_DF1 = F_N1 - 1;  // = 5
+const F_DF2 = F_N2 - 1;  // = 9
+
+// Display ranges for each population panel
+const F1_X_MIN = -2, F1_X_MAX = 6;       // N(2, 1): μ ± 4σ
+const F2_X_MIN = -7, F2_X_MAX = 17;      // N(5, 16): μ ± 3σ
+
+// F-distribution panel range
+const FF_X_MIN = 0, FF_X_MAX = 8;
+const FF_BIN_W = 0.15;
+
+const fSamples = [];
+const fBins = {};
+let fMaxBin = 0;
+let runningF = false;
+let lastX1s = [];
+let lastY2s = [];
+let lastFCalc = null;    // { s1sq, s2sq, F }
+
+// F(5, 9) PDF: f(x) = 10.712 · x^(3/2) · (1 + 5x/9)^(-7)
+const F_COEFF = 10.71200534;
+function fPdf59(x) {
+  if (x <= 0) return 0;
+  return F_COEFF * Math.pow(x, 1.5) * Math.pow(1 + 5 * x / 9, -7);
+}
+
+const leftF1El = document.getElementById('leftFCanvas1');
+const leftF2El = document.getElementById('leftFCanvas2');
+const rightFEl = document.getElementById('rightFCanvas');
+let LF1 = setupCanvas(leftF1El);
+let LF2 = setupCanvas(leftF2El);
+let RF = setupCanvas(rightFEl);
+
+// Generic density-panel renderer reused for both populations
+function drawDensityPanel(panel, opts) {
+  const { ctx, w, h } = panel;
+  ctx.clearRect(0, 0, w, h);
+
+  const { xMin, xMax, mu, sigma, yMax, points, pointColor, label,
+          tickStep, ticksFrom, ticksTo, showS2, s2Value, accentMu } = opts;
+
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // ticks
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = ticksFrom; x <= ticksTo + 1e-9; x += tickStep) {
+    const px = xPix(x, xMin, xMax, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // shaded density area
+  const steps = 220;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + (xMax - xMin) * i / steps;
+    const y = pdf(x, mu, sigma);
+    const px = xPix(x, xMin, xMax, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(xPix(xMax, xMin, xMax, w), axisY);
+  ctx.lineTo(xPix(xMin, xMin, xMax, w), axisY);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, axisY);
+  grad.addColorStop(0, pointColor + '33');
+  grad.addColorStop(1, pointColor + '0A');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // curve
+  ctx.strokeStyle = pointColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + (xMax - xMin) * i / steps;
+    const y = pdf(x, mu, sigma);
+    const px = xPix(x, xMin, xMax, w);
+    const py = yPix(y, yMax, h);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // μ marker
+  const muPx = xPix(mu, xMin, xMax, w);
+  const muTop = yPix(pdf(mu, mu, sigma), yMax, h);
+  ctx.strokeStyle = accentMu;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(muPx, axisY);
+  ctx.lineTo(muPx, muTop);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = accentMu;
+  ctx.font = "italic 13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('μ = ' + mu, muPx, axisY + 38);
+
+  // sample points
+  for (let i = 0; i < points.length; i++) {
+    const x = points[i];
+    if (x < xMin || x > xMax) continue;
+    const px = xPix(x, xMin, xMax, w);
+    const isLast = (i === points.length - 1 && opts.highlightLast);
+    if (isLast) {
+      const yDens = pdf(x, mu, sigma);
+      const pyDens = yPix(yDens, yMax, h);
+      ctx.strokeStyle = pointColor + 'AA';
+      ctx.setLineDash([2, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, axisY);
+      ctx.lineTo(px, pyDens);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.fillStyle = pointColor;
+    ctx.beginPath();
+    ctx.arc(px, axisY, isLast ? 5.5 : 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fbf8f0';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  // S² readout box (top-right)
+  if (showS2 && s2Value !== null) {
+    const boxW = 140, boxH = 38;
+    const boxX = w - boxW - PAD.right - 4;
+    const boxY = PAD.top + 4;
+    ctx.fillStyle = 'rgba(251, 248, 240, 0.96)';
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = '#c9bfa9';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+    ctx.fillStyle = '#1c1a17';
+    ctx.font = "600 14px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'left';
+    ctx.fillText(label + ' = ' + s2Value.toFixed(3), boxX + 10, boxY + 24);
+  }
+
+  // header label
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'left';
+  ctx.fillText(opts.headerText, PAD.left + 4, PAD.top - 8);
+}
+
+function drawLeftF1(xs = [], highlightLast = false, s2 = null) {
+  drawDensityPanel(LF1, {
+    xMin: F1_X_MIN, xMax: F1_X_MAX,
+    mu: F_MU1, sigma: F_SIGMA1,
+    yMax: 0.48,
+    points: xs, highlightLast,
+    pointColor: '#1f4a6b',
+    label: 'S₁²',
+    tickStep: 1, ticksFrom: -1, ticksTo: 5,
+    showS2: s2 !== null, s2Value: s2,
+    accentMu: '#8b2a1f',
+    headerText: 'X ~ N(2, 1)'
+  });
+}
+
+function drawLeftF2(ys = [], highlightLast = false, s2 = null) {
+  drawDensityPanel(LF2, {
+    xMin: F2_X_MIN, xMax: F2_X_MAX,
+    mu: F_MU2, sigma: F_SIGMA2,
+    yMax: 0.13,
+    points: ys, highlightLast,
+    pointColor: '#b78a2d',
+    label: 'S₂²',
+    tickStep: 4, ticksFrom: -4, ticksTo: 16,
+    showS2: s2 !== null, s2Value: s2,
+    accentMu: '#8b2a1f',
+    headerText: 'Y ~ N(5, 16)'
+  });
+}
+
+function fBinAdd(value) {
+  if (value < FF_X_MIN || value >= FF_X_MAX) return;
+  const idx = Math.floor((value - FF_X_MIN) / FF_BIN_W);
+  fBins[idx] = (fBins[idx] || 0) + 1;
+  if (fBins[idx] > fMaxBin) fMaxBin = fBins[idx];
+}
+
+function drawRightF({ flashValue = null, showCurve = true } = {}) {
+  const { ctx, w, h } = RF;
+  ctx.clearRect(0, 0, w, h);
+
+  // y scale
+  const theoryPeak = fPdf59(27 / 55);  // mode of F(5,9)
+  let yMax = theoryPeak * 1.25;
+  if (fSamples.length > 0) {
+    const histPeak = fMaxBin / (fSamples.length * FF_BIN_W);
+    yMax = Math.max(yMax, histPeak * 1.05);
+  }
+
+  const axisY = yPix(0, yMax, h);
+
+  // axis
+  ctx.strokeStyle = '#6b6357';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, axisY);
+  ctx.lineTo(w - PAD.right, axisY);
+  ctx.stroke();
+
+  // ticks every 1
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "13px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  for (let x = 0; x <= 8; x++) {
+    const px = xPix(x, FF_X_MIN, FF_X_MAX, w);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY);
+    ctx.lineTo(px, axisY + 4);
+    ctx.stroke();
+    ctx.fillText(x.toString(), px, axisY + 18);
+  }
+
+  // histogram
+  const Ns = fSamples.length;
+  if (Ns > 0) {
+    for (const k in fBins) {
+      const idx = parseInt(k);
+      const count = fBins[idx];
+      const x1 = FF_X_MIN + idx * FF_BIN_W;
+      const x2 = x1 + FF_BIN_W;
+      const dens = count / (Ns * FF_BIN_W);
+      const px1 = xPix(x1, FF_X_MIN, FF_X_MAX, w);
+      const px2 = xPix(x2, FF_X_MIN, FF_X_MAX, w);
+      const py = yPix(dens, yMax, h);
+      ctx.fillStyle = 'rgba(58, 107, 58, 0.55)';
+      ctx.fillRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+      ctx.strokeStyle = '#26461f';
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(px1 + 0.5, py, px2 - px1 - 1, axisY - py);
+    }
+  }
+
+  // theoretical F(5,9) curve
+  if (showCurve) {
+    ctx.strokeStyle = '#8b2a1f';
+    ctx.lineWidth = 2;
+    ctx.setLineDash(Ns < 30 ? [5, 4] : []);
+    ctx.beginPath();
+    const stps = 320;
+    for (let i = 0; i <= stps; i++) {
+      const x = FF_X_MIN + (FF_X_MAX - FF_X_MIN) * i / stps;
+      const y = fPdf59(x);
+      const px = xPix(x, FF_X_MIN, FF_X_MAX, w);
+      const py = yPix(y, yMax, h);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // mode marker (gold dot)
+  const modeX = 27 / 55;
+  const modePx = xPix(modeX, FF_X_MIN, FF_X_MAX, w);
+  ctx.fillStyle = '#b78a2d';
+  ctx.beginPath();
+  ctx.arc(modePx, yPix(theoryPeak, yMax, h), 4, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.strokeStyle = '#fbf8f0';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // mean marker line at 9/7
+  const meanX = 9 / 7;
+  const meanPx = xPix(meanX, FF_X_MIN, FF_X_MAX, w);
+  ctx.strokeStyle = 'rgba(139, 42, 31, 0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(meanPx, axisY);
+  ctx.lineTo(meanPx, PAD.top);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8b2a1f';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('mean ≈ 1.29', meanPx, axisY + 38);
+
+  // flash dot
+  if (flashValue !== null) {
+    if (flashValue < FF_X_MAX) {
+      const px = xPix(flashValue, FF_X_MIN, FF_X_MAX, w);
+      ctx.fillStyle = '#3a6b3a';
+      ctx.beginPath();
+      ctx.arc(px, axisY, 7, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#fbf8f0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      // out-of-range tail event — indicate at right edge
+      const px = xPix(FF_X_MAX - 0.06, FF_X_MIN, FF_X_MAX, w);
+      ctx.fillStyle = '#3a6b3a';
+      ctx.beginPath();
+      ctx.moveTo(px, axisY);
+      ctx.lineTo(px - 10, axisY - 8);
+      ctx.lineTo(px - 10, axisY + 8);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // header annotation
+  ctx.fillStyle = '#4a443c';
+  ctx.font = "italic 12px 'EB Garamond', serif";
+  ctx.textAlign = 'right';
+  ctx.fillText(`draws of F: ${Ns}`, w - PAD.right, PAD.top - 8);
+}
+
+function sampleVariance(arr) {
+  const n = arr.length;
+  const m = arr.reduce((a, b) => a + b, 0) / n;
+  return arr.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1);
+}
+
+function computeF(xs, ys) {
+  const s1sq = sampleVariance(xs);
+  const s2sq = sampleVariance(ys);
+  const F = (s1sq / 1) / (s2sq / 16);  // = (S₁²/σ₁²) / (S₂²/σ₂²)
+  return { s1sq, s2sq, F };
+}
+
+function updateFStats() {
+  const N = fSamples.length;
+  document.getElementById('fCount').textContent = N;
+  if (N >= 2) {
+    const m = fSamples.reduce((a, b) => a + b, 0) / N;
+    const v = fSamples.reduce((a, b) => a + (b - m) ** 2, 0) / (N - 1);
+    document.getElementById('fMean').textContent = m.toFixed(3);
+    document.getElementById('fSD').textContent = Math.sqrt(v).toFixed(3);
+  } else {
+    document.getElementById('fMean').textContent = '—';
+    document.getElementById('fSD').textContent = '—';
+  }
+  if (lastFCalc) {
+    document.getElementById('fLast').textContent = lastFCalc.F.toFixed(3);
+  } else {
+    document.getElementById('fLast').textContent = '—';
+  }
+}
+
+function setFStage(text) {
+  document.getElementById('stageBannerF').textContent = text;
+}
+
+// Animate one draw slowly: fill panel 1 point-by-point, then panel 2 point-by-point,
+// then reveal S₁², S₂², and the resulting F value.
+async function drawOneFSlow(pointMs1, pointMs2, holdMs) {
+  const xs = [];
+  drawLeftF1([]);
+  for (let i = 0; i < F_N1; i++) {
+    xs.push(sampleNormal(F_MU1, F_SIGMA1));
+    drawLeftF1(xs, true, null);
+    await sleep(pointMs1);
+  }
+  const s1sq = sampleVariance(xs);
+  drawLeftF1(xs, false, s1sq);
+  await sleep(Math.min(holdMs, 600));
+
+  const ys = [];
+  drawLeftF2([]);
+  for (let i = 0; i < F_N2; i++) {
+    ys.push(sampleNormal(F_MU2, F_SIGMA2));
+    drawLeftF2(ys, true, null);
+    await sleep(pointMs2);
+  }
+  const s2sq = sampleVariance(ys);
+  drawLeftF2(ys, false, s2sq);
+
+  const F = (s1sq / 1) / (s2sq / 16);
+  lastX1s = xs; lastY2s = ys; lastFCalc = { s1sq, s2sq, F };
+  await sleep(holdMs);
+
+  fSamples.push(F);
+  fBinAdd(F);
+  drawRightF({ flashValue: F, showCurve: true });
+  updateFStats();
+  await sleep(holdMs);
+  drawRightF({ showCurve: true });
+}
+
+async function drawOneFQuick(showOnLeft = true) {
+  const xs = []; for (let i = 0; i < F_N1; i++) xs.push(sampleNormal(F_MU1, F_SIGMA1));
+  const ys = []; for (let i = 0; i < F_N2; i++) ys.push(sampleNormal(F_MU2, F_SIGMA2));
+  const calc = computeF(xs, ys);
+  if (showOnLeft) {
+    drawLeftF1(xs, false, calc.s1sq);
+    drawLeftF2(ys, false, calc.s2sq);
+    lastX1s = xs; lastY2s = ys; lastFCalc = calc;
+  }
+  fSamples.push(calc.F);
+  fBinAdd(calc.F);
+  drawRightF({ flashValue: calc.F, showCurve: true });
+  updateFStats();
+}
+
+async function drawFBatch(batch) {
+  for (let i = 0; i < batch; i++) {
+    const xs = []; for (let j = 0; j < F_N1; j++) xs.push(sampleNormal(F_MU1, F_SIGMA1));
+    const ys = []; for (let j = 0; j < F_N2; j++) ys.push(sampleNormal(F_MU2, F_SIGMA2));
+    const F = (sampleVariance(xs) / 1) / (sampleVariance(ys) / 16);
+    fSamples.push(F);
+    fBinAdd(F);
+  }
+  drawRightF({ showCurve: true });
+  updateFStats();
+}
+
+async function runF() {
+  if (runningF) return;
+  runningF = true;
+  document.getElementById('startFBtn').disabled = true;
+
+  const schedule = [
+    { p1: 380, p2: 260, hold: 1100, post: 950, label: 'Draw 1: 6 points from N(2,1), then 10 from N(5,16) → form F' },
+    { p1: 280, p2: 200, hold: 850,  post: 750, label: 'Draw 2 — new samples' },
+    { p1: 200, p2: 150, hold: 700,  post: 600, label: 'Draw 3 — new samples' },
+    { p1: 140, p2: 100, hold: 550,  post: 500, label: 'Draw 4 — new samples' },
+    { p1: 90,  p2: 70,  hold: 450,  post: 400, label: 'Draw 5 — new samples' },
+    { p1: 60,  p2: 45,  hold: 360,  post: 320, label: 'Draw 6 — new samples' },
+  ];
+
+  for (const s of schedule) {
+    setFStage(s.label);
+    await drawOneFSlow(s.p1, s.p2, s.hold);
+    drawLeftF1([]); drawLeftF2([]);
+    drawRightF({ showCurve: true });
+    lastX1s = []; lastY2s = []; lastFCalc = null;
+    await sleep(s.post);
+  }
+
+  setFStage('Sampling rapidly — F values pile up around the mode (≈ 0.49)');
+  for (let i = 0; i < 25; i++) {
+    await drawOneFQuick(true);
+    await sleep(120);
+  }
+
+  setFStage('Accelerating · convergence to F(5, 9)');
+  for (let i = 0; i < 120; i++) {
+    await drawOneFQuick(false);
+    await sleep(20);
+  }
+
+  while (fSamples.length < 4000) {
+    await drawFBatch(40);
+    await sleep(14);
+  }
+
+  setFStage('The empirical distribution of F matches F(5, 9) — long right tail, mean ≈ 1.29');
+  document.getElementById('startFBtn').disabled = false;
+  document.getElementById('startFBtn').textContent = 'Run again';
+  runningF = false;
+}
+
+function resetF() {
+  fSamples.length = 0;
+  for (const k in fBins) delete fBins[k];
+  fMaxBin = 0;
+  lastX1s = []; lastY2s = []; lastFCalc = null;
+  drawLeftF1([]);
+  drawLeftF2([]);
+  drawRightF({ showCurve: false });
+  updateFStats();
+  setFStage('');
+  const b = document.getElementById('startFBtn');
+  b.disabled = false;
+  b.textContent = 'Begin';
+}
+
+document.getElementById('startFBtn').addEventListener('click', runF);
+document.getElementById('resetFBtn').addEventListener('click', resetF);
+
+// Resize handler for Part IV
+let resizeTimerF = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimerF);
+  resizeTimerF = setTimeout(() => {
+    LF1 = setupCanvas(leftF1El);
+    LF2 = setupCanvas(leftF2El);
+    RF = setupCanvas(rightFEl);
+    drawLeftF1(lastX1s, false, lastFCalc ? lastFCalc.s1sq : null);
+    drawLeftF2(lastY2s, false, lastFCalc ? lastFCalc.s2sq : null);
+    drawRightF({ showCurve: fSamples.length > 0 });
+  }, 100);
+});
+
+// Initial draw for Part IV
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    drawLeftF1([]);
+    drawLeftF2([]);
+    drawRightF({ showCurve: false });
+  });
+} else {
+  drawLeftF1([]);
+  drawLeftF2([]);
+  drawRightF({ showCurve: false });
+}
+</script>
+</body>
+</html>

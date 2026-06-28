@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standard Normal — Crimson Tide Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crimson:#9E1B32;
+    --crimson-dark:#6E0E20;
+    --crimson-deep:#4A0915;
+    --crimson-soft:rgba(158,27,50,.14);
+    --crimson-soft2:rgba(158,27,50,.30);
+    --ivory:#F6F1E7;
+    --paper:#FFFFFF;
+    --ink:#1C1410;
+    --gray:#8A7E72;
+    --gold:#C9A24B;
+    --line:rgba(28,20,16,.14);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  html,body{background:var(--crimson-deep);}
+
+  body{
+    font-family:'Crimson Pro', Georgia, serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:28px 18px 56px;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(201,162,75,.10), transparent 60%),
+      linear-gradient(180deg, var(--crimson-deep), #2c0710 70%, #1a040a);
+    display:flex;
+    justify-content:center;
+  }
+
+  .shell{width:100%;max-width:1280px;}
+
+  /* houndstooth band */
+  .houndstooth{
+    height:18px;
+    background-color:var(--ivory);
+    background-image:
+      linear-gradient(45deg, var(--ink) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--ink) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--ink) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--ink) 75%);
+    background-size:18px 18px;
+    background-position:0 0, 0 9px, 9px -9px, -9px 0;
+    border-radius:4px 4px 0 0;
+  }
+
+  header.scoreboard{
+    background:linear-gradient(180deg, var(--crimson), var(--crimson-dark));
+    color:var(--ivory);
+    padding:26px 34px 30px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);
+  }
+  header.scoreboard::after{
+    content:"";
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 2px, transparent 2px 9px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.42em;
+    font-weight:500;
+    font-size:.74rem;
+    color:var(--gold);
+    margin-bottom:8px;
+  }
+  header h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    line-height:.95;
+    font-size:clamp(2.1rem,5vw,3.5rem);
+    text-shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+  header h1 .light{font-weight:300;color:rgba(246,241,231,.78);}
+  .subtitle{
+    margin-top:12px;
+    font-size:1.08rem;
+    max-width:62ch;
+    color:rgba(246,241,231,.9);
+    font-style:italic;
+  }
+
+  .board{
+    background:var(--ivory);
+    border-radius:0 0 6px 6px;
+    padding:24px 26px 30px;
+    box-shadow:0 30px 70px rgba(0,0,0,.45);
+  }
+
+  /* controls */
+  .controls{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-left:6px solid var(--crimson);
+    padding:14px 18px;border-radius:4px;margin-bottom:22px;
+  }
+  .btn{
+    font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.08em;font-size:.8rem;
+    background:var(--crimson);color:var(--ivory);
+    border:none;padding:9px 18px;border-radius:3px;cursor:pointer;
+    transition:transform .08s ease, background .15s ease;
+  }
+  .btn:hover{background:var(--crimson-dark);}
+  .btn:active{transform:translateY(1px);}
+  .btn.ghost{background:transparent;color:var(--crimson);border:1.5px solid var(--crimson);}
+  .btn.ghost:hover{background:var(--crimson-soft);}
+  .scrub{flex:1 1 220px;display:flex;align-items:center;gap:12px;min-width:200px;}
+  .scrub input[type=range]{flex:1;accent-color:var(--crimson);cursor:pointer;height:6px;}
+  .readout{
+    font-family:'Oswald',sans-serif;font-weight:500;font-size:.85rem;
+    color:var(--ink);white-space:nowrap;letter-spacing:.04em;
+    background:var(--crimson-soft);padding:6px 12px;border-radius:3px;
+  }
+  .readout b{color:var(--crimson-dark);font-weight:700;}
+  .speeds{display:flex;gap:6px;}
+  .chip{
+    font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:600;
+    padding:6px 11px;border-radius:3px;cursor:pointer;border:1.5px solid var(--line);
+    background:var(--paper);color:var(--gray);text-transform:uppercase;letter-spacing:.05em;
+  }
+  .chip.active{background:var(--ink);color:var(--ivory);border-color:var(--ink);}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:420px 540px;gap:22px;justify-content:center;}
+  @media (max-width:1010px){.grid{grid-template-columns:1fr;}}
+
+  .stack{display:flex;flex-direction:column;gap:22px;}
+
+  .panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:5px;
+    overflow:hidden;
+    box-shadow:0 6px 18px rgba(0,0,0,.06);
+  }
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 16px;
+    background:linear-gradient(90deg, var(--crimson), var(--crimson-dark));
+    color:var(--ivory);
+  }
+  .panel-head h2{
+    font-family:'Oswald',sans-serif;font-weight:500;text-transform:uppercase;
+    letter-spacing:.14em;font-size:.86rem;
+  }
+  .panel-head .tag{
+    font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.1em;
+    background:rgba(0,0,0,.22);padding:3px 8px;border-radius:3px;color:var(--gold);
+  }
+  .panel canvas{display:block;width:100%;height:auto;background:var(--paper);}
+
+  /* table */
+  .tablewrap{padding:6px 8px 12px;max-height:560px;overflow:auto;}
+  table.z{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;}
+  table.z th,table.z td{
+    text-align:center;font-size:.72rem;padding:4px 3px;
+    border:1px solid rgba(28,20,16,.07);font-family:'Crimson Pro',serif;
+  }
+  table.z thead th{
+    position:sticky;top:0;z-index:2;
+    background:var(--ink);color:var(--ivory);
+    font-family:'Oswald',sans-serif;font-weight:500;letter-spacing:.03em;
+    font-size:.7rem;padding:6px 3px;
+  }
+  table.z tbody th{
+    background:var(--crimson);color:var(--ivory);
+    font-family:'Oswald',sans-serif;font-weight:600;
+    position:sticky;left:0;z-index:1;
+  }
+  table.z td.hot{
+    background:var(--gold);color:var(--ink);font-weight:700;
+    box-shadow:inset 0 0 0 2px var(--crimson-dark);
+  }
+  table.z tr.hotrow th{background:var(--crimson-dark);}
+  table.z tr.hotrow td{background:rgba(201,162,75,.12);}
+
+  .footer{
+    margin-top:22px;display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:10px;
+    font-style:italic;color:var(--gray);font-size:.95rem;
+  }
+  .footer .roll{
+    font-family:'Oswald',sans-serif;font-style:normal;text-transform:uppercase;
+    letter-spacing:.2em;color:var(--crimson);font-weight:600;font-size:.82rem;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="houndstooth"></div>
+  <header class="scoreboard">
+    <div class="eyebrow">Roll Tide · Probability &amp; Statistics</div>
+    <h1>Standard Normal <span class="light">Distribution</span></h1>
+    <p class="subtitle">Watch the scan line sweep the bell curve — the cumulative area fills the CDF and lights up the z-table cell, one hundredth at a time.</p>
+  </header>
+
+  <div class="board">
+    <div class="controls">
+      <button class="btn" id="playBtn">▶ Play</button>
+      <button class="btn ghost" id="restartBtn">↻ Restart</button>
+      <div class="scrub">
+        <input type="range" id="scrub" min="0" max="999" value="0">
+      </div>
+      <div class="readout">z = <b id="zval">-4.00</b> &nbsp;·&nbsp; Φ(z) = <b id="pval">0.0000</b></div>
+      <div class="speeds">
+        <span class="chip" data-speed="1">1×</span>
+        <span class="chip active" data-speed="2">2×</span>
+        <span class="chip" data-speed="4">4×</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-head"><h2>Density — f(z)</h2><span class="tag">PDF</span></div>
+          <canvas id="pdf" width="520" height="300"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Cumulative — Φ(z)</h2><span class="tag">CDF</span></div>
+          <canvas id="cdf" width="520" height="300"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Standard Normal Table</h2><span class="tag">z 0.00 → 3.09</span></div>
+        <div class="tablewrap">
+          <table class="z" id="ztable"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Built from the original MATLAB <em>animateNormalPDFCDFWithTable</em> — rendered entirely in the browser.</span>
+      <span class="roll">Bama · 18–14</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- math ---------- */
+function erf(x){
+  const s = x>=0?1:-1; x=Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t=1/(1+p*x);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return s*y;
+}
+const SQRT2=Math.SQRT2, SQRT2PI=Math.sqrt(2*Math.PI);
+const normpdf=x=>Math.exp(-x*x/2)/SQRT2PI;
+const normcdf=x=>0.5*(1+erf(x/SQRT2));
+
+/* ---------- domain ---------- */
+const N=1000;
+const X=Array.from({length:N},(_,i)=>-4+8*i/(N-1));
+const PX=X.map(normpdf);
+const CX=X.map(normcdf);
+
+/* ---------- colors ---------- */
+const C={crimson:'#9E1B32',crimsonDark:'#6E0E20',ink:'#1C1410',gray:'#8A7E72',
+         gold:'#C9A24B',paper:'#FFFFFF',fill:'rgba(158,27,50,0.10)',
+         fill2:'rgba(158,27,50,0.32)',grid:'rgba(28,20,16,0.08)'};
+
+/* ---------- HiDPI canvas helper ---------- */
+function setup(canvas){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=canvas.width, h=canvas.height;
+  canvas.style.aspectRatio=w+' / '+h;
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  return {ctx,w,h};
+}
+const pdfC=setup(document.getElementById('pdf'));
+const cdfC=setup(document.getElementById('cdf'));
+
+/* axis transforms */
+const M={l:54,r:18,t:18,b:34};
+function mkMap(c,xmin,xmax,ymin,ymax){
+  const pw=c.w-M.l-M.r, ph=c.h-M.t-M.b;
+  return{
+    x:v=>M.l+(v-xmin)/(xmax-xmin)*pw,
+    y:v=>M.t+ph-(v-ymin)/(ymax-ymin)*ph,
+    pw,ph,xmin,xmax,ymin,ymax
+  };
+}
+const mp=mkMap(pdfC,-4,4,0,0.45);
+const mc=mkMap(cdfC,-4,4,0,1);
+
+function axes(ctx,c,m,yticks,ylabel,xlabel){
+  ctx.clearRect(0,0,c.w,c.h);
+  ctx.strokeStyle=C.grid; ctx.lineWidth=1; ctx.fillStyle=C.gray;
+  ctx.font='11px "Crimson Pro", serif'; ctx.textAlign='center';
+  for(let x=-4;x<=4;x++){
+    ctx.beginPath();ctx.moveTo(m.x(x),M.t);ctx.lineTo(m.x(x),M.t+m.ph);ctx.stroke();
+    ctx.fillText(x, m.x(x), M.t+m.ph+16);
+  }
+  ctx.textAlign='right';
+  yticks.forEach(y=>{
+    ctx.beginPath();ctx.moveTo(M.l,m.y(y));ctx.lineTo(M.l+m.pw,m.y(y));ctx.stroke();
+    ctx.fillText(y.toFixed(y%1?2:1), M.l-8, m.y(y)+4);
+  });
+  // axis frame
+  ctx.strokeStyle='rgba(28,20,16,0.35)';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(M.l,M.t);ctx.lineTo(M.l,M.t+m.ph);ctx.lineTo(M.l+m.pw,M.t+m.ph);ctx.stroke();
+  // labels
+  ctx.save();ctx.fillStyle=C.ink;ctx.font='600 12px "Oswald", sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText(xlabel, M.l+m.pw/2, c.h-4);
+  ctx.translate(14, M.t+m.ph/2);ctx.rotate(-Math.PI/2);ctx.fillText(ylabel,0,0);
+  ctx.restore();
+}
+
+/* ---------- draw ---------- */
+function drawPDF(k){
+  const ctx=pdfC.ctx, c=pdfC, m=mp;
+  axes(ctx,c,m,[0,0.1,0.2,0.3,0.4],'Density','z');
+
+  // full curve fill (faint)
+  ctx.beginPath();
+  ctx.moveTo(m.x(X[0]), m.y(0));
+  for(let i=0;i<N;i++) ctx.lineTo(m.x(X[i]), m.y(PX[i]));
+  ctx.lineTo(m.x(X[N-1]), m.y(0));ctx.closePath();
+  ctx.fillStyle=C.fill;ctx.fill();
+
+  // cumulative shaded area up to k
+  ctx.beginPath();
+  ctx.moveTo(m.x(X[0]), m.y(0));
+  for(let i=0;i<=k;i++) ctx.lineTo(m.x(X[i]), m.y(PX[i]));
+  ctx.lineTo(m.x(X[k]), m.y(0));ctx.closePath();
+  ctx.fillStyle=C.fill2;ctx.fill();
+
+  // curve line
+  ctx.beginPath();ctx.strokeStyle=C.crimsonDark;ctx.lineWidth=2.4;
+  for(let i=0;i<N;i++){const px=m.x(X[i]),py=m.y(PX[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+  ctx.stroke();
+
+  // scan line
+  const sx=m.x(X[k]);
+  ctx.beginPath();ctx.strokeStyle=C.crimson;ctx.lineWidth=2.5;
+  ctx.moveTo(sx,M.t);ctx.lineTo(sx,M.t+m.ph);ctx.stroke();
+  ctx.beginPath();ctx.fillStyle=C.crimson;
+  ctx.arc(sx,m.y(PX[k]),4.5,0,7);ctx.fill();
+
+  // percentage label (matches MATLAB: only once past center)
+  if(X[k]>0){
+    const pct=(CX[k]*100).toFixed(1)+'%';
+    ctx.font='700 26px "Oswald", sans-serif';ctx.textAlign='center';
+    ctx.fillStyle=C.gold;ctx.fillText(pct, M.l+m.pw*0.42, m.y(0.18));
+    ctx.fillStyle=C.ink;ctx.fillText(pct, M.l+m.pw*0.42-1.2, m.y(0.18)-1.2);
+    ctx.font='500 11px "Oswald", sans-serif';ctx.fillStyle=C.gray;
+    ctx.fillText('area swept', M.l+m.pw*0.42, m.y(0.18)+16);
+  }
+}
+
+function drawCDF(k){
+  const ctx=cdfC.ctx, c=cdfC, m=mc;
+  axes(ctx,c,m,[0,0.25,0.5,0.75,1],'Cumulative Probability','z');
+
+  // progressive curve
+  ctx.beginPath();ctx.strokeStyle=C.crimson;ctx.lineWidth=2.8;
+  for(let i=0;i<=k;i++){const px=m.x(X[i]),py=m.y(CX[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+  ctx.stroke();
+
+  // dashed guide
+  if(X[k]>0){
+    ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle='rgba(28,20,16,0.55)';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(M.l,m.y(CX[k]));ctx.lineTo(m.x(X[k]),m.y(CX[k]));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(m.x(X[k]),m.y(0));ctx.lineTo(m.x(X[k]),m.y(CX[k]));ctx.stroke();
+    ctx.restore();
+  }
+
+  // current dot
+  ctx.beginPath();ctx.fillStyle=C.crimson;ctx.strokeStyle=C.gold;ctx.lineWidth=2;
+  ctx.arc(m.x(X[k]),m.y(CX[k]),6,0,7);ctx.fill();ctx.stroke();
+}
+
+/* ---------- table ---------- */
+const cols=Array.from({length:10},(_,i)=>i*0.01);
+const rows=Array.from({length:31},(_,i)=>i*0.1);
+(function buildTable(){
+  const t=document.getElementById('ztable');
+  let html='<thead><tr><th>z</th>';
+  cols.forEach(c=>html+=`<th>.${(c*100).toFixed(0).padStart(2,'0')}</th>`);
+  html+='</tr></thead><tbody>';
+  rows.forEach((r,ri)=>{
+    html+=`<tr data-row="${ri}"><th>${r.toFixed(1)}</th>`;
+    cols.forEach((c,ci)=>{
+      const z=r+c;
+      html+=`<td data-r="${ri}" data-c="${ci}">${normcdf(z).toFixed(4)}</td>`;
+    });
+    html+='</tr>';
+  });
+  t.innerHTML=html+'</tbody>';
+})();
+let lastCell=null,lastRow=null;
+function highlightTable(k){
+  if(lastCell){lastCell.classList.remove('hot');}
+  if(lastRow){lastRow.classList.remove('hotrow');}
+  lastCell=lastRow=null;
+  const z=X[k];
+  if(z<0||z>3.095) return;
+  const idx=Math.round(z*100);          // 0..309
+  const ri=Math.floor(idx/10), ci=idx%10;
+  const cell=document.querySelector(`#ztable td[data-r="${ri}"][data-c="${ci}"]`);
+  const row=document.querySelector(`#ztable tr[data-row="${ri}"]`);
+  if(cell){cell.classList.add('hot');lastCell=cell;
+           cell.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  if(row){row.classList.add('hotrow');lastRow=row;}
+}
+
+/* ---------- animation engine ---------- */
+const zval=document.getElementById('zval'), pval=document.getElementById('pval');
+const scrub=document.getElementById('scrub'), playBtn=document.getElementById('playBtn');
+let k=0, playing=false, speed=2, raf=null;
+
+function render(){
+  drawPDF(k); drawCDF(k); highlightTable(k);
+  scrub.value=k;
+  zval.textContent=X[k].toFixed(2);
+  pval.textContent=CX[k].toFixed(4);
+}
+function tick(){
+  if(!playing) return;
+  k+=speed;
+  if(k>=N){k=N-1;render();stop();return;}
+  render();
+  raf=requestAnimationFrame(tick);
+}
+function play(){
+  if(k>=N-1) k=0;
+  playing=true; playBtn.textContent='❚❚ Pause';
+  raf=requestAnimationFrame(tick);
+}
+function stop(){
+  playing=false; playBtn.textContent='▶ Play';
+  cancelAnimationFrame(raf);
+}
+playBtn.addEventListener('click',()=>playing?stop():play());
+document.getElementById('restartBtn').addEventListener('click',()=>{stop();k=0;render();});
+scrub.addEventListener('input',()=>{stop();k=+scrub.value;render();});
+document.querySelectorAll('.chip').forEach(ch=>{
+  ch.addEventListener('click',()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    ch.classList.add('active'); speed=+ch.dataset.speed;
+  });
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support Vector Machines — A Visual Primer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --crimson:#9E1B32; --crimson-br:#bb2740; --crimson-dk:#7a1426;
+  --crimson-dp:#54101c; --crimson-dpp:#3a0b13;
+  --paper:#f4efe3; --card:#fbf8f1; --panel:#efe8d8; --inset:#e7dfcb;
+  --ink:#251c19; --ink2:#52443d; --muted:#857769; --faint:#a99c8b;
+  --gray:#828A8F; --gray-dk:#5a6166;
+  --slate:#3c5560; --slate-lt:#5f7e8b;
+  --line:#dcd3c0; --line2:#c7bca3; --cream:#ede4d1;
+  --hound-crim:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='20'%3E%3Cpath%20fill='%239E1B32'%20d='M0%200h10v10H0z%20M10%2010h10v10H10z%20M10%200h10v10z%20M0%2010v10h10z'/%3E%3C/svg%3E");
+  --hound-cream:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='20'%3E%3Cpath%20fill='%23efe6d2'%20d='M0%200h10v10H0z%20M10%2010h10v10H10z%20M10%200h10v10z%20M0%2010v10h10z'/%3E%3C/svg%3E");
+  --hound-ink:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='20'%3E%3Cpath%20fill='%23251c19'%20d='M0%200h10v10H0z%20M10%2010h10v10H10z%20M10%200h10v10z%20M0%2010v10h10z'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);}
+body{
+  font-family:'Spectral',Georgia,serif;color:var(--ink);
+  line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(ellipse 130% 70% at 50% -8%, rgba(158,27,50,.10), transparent 62%),
+    radial-gradient(circle at 50% 118%, rgba(60,85,96,.06), transparent 55%);
+  background-attachment:fixed;padding-bottom:36px;
+}
+.sheet{max-width:1180px;margin:0 auto;padding:0 22px;}
+::selection{background:rgba(158,27,50,.22);}
+
+header.mast{
+  margin-top:24px;position:relative;background:var(--crimson-dp);color:#f3ede0;
+  border:1px solid var(--crimson-dpp);
+  box-shadow:0 22px 48px -26px rgba(58,11,19,.78);
+  overflow:hidden;animation:rise .75s ease both;
+}
+.mast::before{content:"";position:absolute;inset:0;
+  background-image:var(--hound-cream);background-size:46px 46px;opacity:.05;pointer-events:none;}
+.hound-strip{height:20px;background-color:var(--cream);
+  background-image:var(--hound-crim);background-size:20px 20px;}
+.mast-inner{position:relative;padding:.2rem 1.4rem 1.2rem;text-align:center;}
+.mast-kick{display:inline-block;margin:1.05rem auto .15rem;
+  font-size:.69rem;letter-spacing:.34em;text-transform:uppercase;
+  color:#e7c9ce;font-weight:600;
+  border-bottom:1px solid rgba(231,201,206,.4);padding-bottom:.45rem;}
+.mast h1{font-family:'DM Serif Display',Georgia,serif;font-weight:400;
+  font-size:clamp(2.5rem,6.6vw,4.6rem);line-height:.97;
+  letter-spacing:.005em;color:#fdfaf2;margin-top:.2rem;}
+.mast h1 em{font-style:italic;color:#e6a9b2;}
+.mast-sub{font-style:italic;font-weight:400;font-size:clamp(1rem,2.1vw,1.26rem);
+  color:#d9cdbe;max-width:33em;margin:.5rem auto 0;line-height:1.5;}
+.mast-formula{margin-top:1rem;padding-top:.85rem;
+  border-top:1px solid rgba(230,169,178,.28);
+  display:flex;flex-wrap:wrap;gap:.4rem 2.1rem;justify-content:center;
+  font-size:.92rem;color:#cdbfb0;align-items:baseline;}
+.mast-formula .mf{font-style:italic;color:#f0e3d4;letter-spacing:.01em;}
+.mast-formula .mlab{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:#bf8c95;}
+.mast-tag{position:absolute;top:0;right:0;font-size:.6rem;letter-spacing:.16em;
+  text-transform:uppercase;color:#c89aa1;padding:.42rem .8rem;
+  border-left:1px solid rgba(230,169,178,.26);
+  border-bottom:1px solid rgba(230,169,178,.26);}
+
+section{margin-top:30px;animation:rise .7s ease both;}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:13px;}
+.sec-num{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  font-family:'DM Serif Display',serif;font-size:1.32rem;color:#fff;
+  background:var(--crimson);border:1px solid var(--crimson-dk);
+  box-shadow:0 6px 16px -8px rgba(84,16,28,.7);}
+.sec-titles .sec-eyebrow{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--crimson);font-weight:600;}
+.sec-titles h2{font-family:'DM Serif Display',serif;font-weight:400;
+  font-size:clamp(1.55rem,3.4vw,2.18rem);line-height:1.06;color:var(--ink);letter-spacing:.005em;}
+
+.essay{background:var(--card);border:1px solid var(--line);
+  box-shadow:0 14px 34px -28px rgba(58,11,19,.5);
+  padding:24px 30px 28px;position:relative;}
+.essay::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--crimson) 0%,var(--crimson) 38%,transparent 78%);}
+.essay-cols{column-count:2;column-gap:42px;}
+@media(max-width:760px){.essay-cols{column-count:1;}.essay{padding:20px 18px 22px;}}
+.essay h3{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.16rem;
+  color:var(--crimson-dk);margin:20px 0 4px;break-after:avoid;
+  display:flex;align-items:baseline;gap:9px;}
+.essay h3:first-child{margin-top:2px;}
+.essay h3 .hx{flex:none;width:13px;height:13px;background-color:var(--cream);
+  background-image:var(--hound-crim);background-size:13px 13px;
+  transform:translateY(1px);box-shadow:0 0 0 1px var(--line2);}
+.essay p{margin:8px 0;font-size:.985rem;line-height:1.66;break-inside:avoid;}
+.essay p .lead{font-variant:small-caps;letter-spacing:.04em;font-weight:600;color:var(--crimson-dk);}
+.essay em{font-style:italic;color:var(--crimson-dk);}
+.essay strong{font-weight:600;color:var(--ink);}
+.m{font-style:italic;font-family:'Spectral',serif;}
+.eqn{background:var(--inset);border-left:3px solid var(--crimson);
+  padding:10px 16px;margin:11px 0;text-align:center;font-size:1.04rem;
+  break-inside:avoid;color:var(--ink);}
+.opt{background:var(--inset);border:1px solid var(--line2);border-left:3px solid var(--crimson);
+  padding:11px 16px 12px;margin:12px 0;break-inside:avoid;}
+.opt .row{display:flex;gap:12px;align-items:baseline;margin:3px 0;}
+.opt .kw{flex:none;width:84px;font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--crimson);font-weight:600;text-align:right;}
+.opt .ex{font-size:1.08rem;}
+.opt .ex .big{font-family:'DM Serif Display',serif;font-style:italic;font-size:1.3rem;color:var(--crimson-dk);}
+.opt .note{font-size:.78rem;color:var(--muted);font-style:italic;padding-left:96px;margin-top:2px;}
+.callout{break-inside:avoid;margin:13px 0;padding:11px 15px 12px;
+  background:linear-gradient(180deg,rgba(158,27,50,.07),rgba(158,27,50,.02));
+  border:1px solid var(--line2);}
+.callout .ct{font-family:'DM Serif Display',serif;font-size:.82rem;color:var(--crimson);
+  letter-spacing:.02em;margin-bottom:1px;}
+.callout p{margin:2px 0;font-size:.9rem;line-height:1.56;}
+.aside-note{break-inside:avoid;margin:11px 0;font-size:.86rem;color:var(--ink2);
+  border-top:1px dotted var(--line2);border-bottom:1px dotted var(--line2);
+  padding:7px 0;font-style:italic;}
+.aside-note b{font-style:normal;font-weight:600;color:var(--crimson-dk);}
+
+.exband{background:var(--crimson-dp);color:#efe2d3;position:relative;overflow:hidden;
+  border:1px solid var(--crimson-dpp);padding:20px 26px;}
+.exband::before{content:"";position:absolute;inset:0;
+  background-image:var(--hound-cream);background-size:40px 40px;opacity:.05;}
+.exband-in{position:relative;display:grid;grid-template-columns:1.35fr 1fr;gap:24px;align-items:center;}
+@media(max-width:760px){.exband-in{grid-template-columns:1fr;gap:16px;}}
+.exband h3{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.4rem;color:#fdf6ea;margin-bottom:4px;}
+.exband h3 em{font-style:italic;color:#e6a9b2;}
+.exband p{font-size:.93rem;color:#d8ccbc;line-height:1.6;}
+.exband p+p{margin-top:7px;}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(230,169,178,.22);
+  border:1px solid rgba(230,169,178,.22);}
+.fact{background:var(--crimson-dp);padding:9px 12px;}
+.fact .fv{font-family:'DM Serif Display',serif;font-size:1.3rem;color:#fdf6ea;line-height:1.1;}
+.fact .fv .u{font-size:.72rem;color:#e6a9b2;font-style:italic;}
+.fact .fl{font-size:.7rem;color:#c6a7ac;text-transform:uppercase;letter-spacing:.08em;margin-top:1px;}
+
+.card{background:var(--card);border:1px solid var(--line);
+  box-shadow:0 14px 34px -28px rgba(58,11,19,.55);position:relative;}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--crimson),var(--crimson-br) 30%,transparent 80%);}
+.chead{padding:13px 20px 11px;border-bottom:1px solid var(--line);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.chead .ct h3{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.24rem;color:var(--ink);
+  display:flex;align-items:center;gap:10px;}
+.chead .ct h3 .hx{flex:none;width:15px;height:15px;background-color:var(--cream);
+  background-image:var(--hound-crim);background-size:15px 15px;box-shadow:0 0 0 1px var(--line2);}
+.chead .ct .cs{font-size:.84rem;font-style:italic;color:var(--muted);margin-top:1px;}
+.chead .badge{font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:#fff;
+  background:var(--crimson);padding:4px 10px;font-weight:600;white-space:nowrap;align-self:center;}
+
+.pb-grid{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);}
+@media(max-width:840px){.pb-grid{grid-template-columns:1fr;}}
+.pb-plot{padding:14px 14px 8px;border-right:1px solid var(--line);}
+@media(max-width:840px){.pb-plot{border-right:none;border-bottom:1px solid var(--line);}}
+.pb-rail{padding:15px 18px 17px;background:var(--panel);}
+canvas{display:block;width:100%;}
+#svmCv{height:430px;}
+.legend{display:flex;flex-wrap:wrap;gap:5px 16px;padding:7px 4px 2px;font-size:.79rem;color:var(--ink2);}
+.lg{display:flex;align-items:center;gap:6px;}
+.lg .dot{width:11px;height:11px;border-radius:50%;}
+.lg .dot.cr{background:var(--crimson);}
+.lg .dot.sl{background:var(--slate);}
+.lg .dot.sv{background:transparent;border:2px solid var(--ink);width:13px;height:13px;}
+.lg .ln{width:20px;height:0;border-top:2px solid var(--ink);}
+.lg .ln.dash{border-top:2px dashed var(--gray-dk);}
+.cap{font-size:.81rem;font-style:italic;color:var(--muted);padding:5px 4px 2px;line-height:1.5;}
+.cap b{font-style:normal;font-weight:600;color:var(--ink2);}
+
+.ctl{margin:2px 0 4px;}
+.ctl .crow{display:flex;justify-content:space-between;align-items:baseline;}
+.ctl label{font-size:.84rem;font-style:italic;color:var(--ink2);}
+.ctl label b{font-style:normal;font-family:'DM Serif Display',serif;color:var(--crimson-dk);
+  font-size:.96rem;letter-spacing:.02em;}
+.ctl .val{font-family:'DM Serif Display',serif;font-size:1.18rem;color:var(--crimson-dk);
+  font-variant-numeric:tabular-nums;}
+.ctl .hint{font-size:.74rem;color:var(--muted);font-style:italic;margin-top:1px;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;margin-top:9px;
+  background:var(--line2);border-radius:3px;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;height:19px;border-radius:50%;
+  background:var(--crimson);border:3px solid var(--card);
+  box-shadow:0 1px 5px rgba(58,11,19,.5),0 0 0 1px var(--line2);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--crimson);
+  border:3px solid var(--card);box-shadow:0 1px 5px rgba(58,11,19,.5);}
+.ctl-sep{margin:15px 0 13px;height:9px;background-color:transparent;
+  background-image:var(--hound-ink);background-size:9px 9px;opacity:.5;}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);
+  border:1px solid var(--line2);margin-top:3px;}
+.ro{background:var(--card);padding:9px 11px;}
+.ro .rk{font-size:.69rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.ro .rv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);
+  font-variant-numeric:tabular-nums;line-height:1.15;}
+.ro .rv small{font-size:.74rem;color:var(--muted);font-style:italic;}
+.ro.acc-tr .rv{color:var(--crimson-dk);}
+.ro.acc-te .rv{color:var(--slate);}
+.barwrap{height:7px;background:var(--inset);margin-top:5px;border:1px solid var(--line2);}
+.barwrap .bar{height:100%;background:var(--crimson);transition:width .35s ease;}
+.barwrap .bar.te{background:var(--slate);}
+.railnote{font-size:.8rem;color:var(--ink2);line-height:1.52;margin-top:12px;
+  border-left:3px solid var(--crimson);padding-left:11px;}
+.railnote b{color:var(--crimson-dk);}
+
+.pa-body{padding:8px 18px 4px;display:flex;justify-content:center;}
+.pa-body svg{max-width:560px;width:100%;height:auto;}
+.pa-cap{padding:2px 22px 16px;}
+
+.pc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:0;}
+@media(max-width:840px){.pc-grid{grid-template-columns:1fr;}}
+.pc-heat{padding:16px 16px 18px;border-right:1px solid var(--line);}
+@media(max-width:840px){.pc-heat{border-right:none;border-bottom:1px solid var(--line);}}
+.pc-side{padding:16px 20px 18px;background:var(--panel);}
+.pc-side h4{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.06rem;
+  color:var(--crimson-dk);margin-bottom:3px;}
+.pc-side p{font-size:.87rem;color:var(--ink2);line-height:1.58;margin:6px 0;}
+.pc-side p b{color:var(--crimson-dk);font-weight:600;}
+.heat-title{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);text-align:center;margin-bottom:7px;}
+.hm{display:grid;gap:3px;margin:0 auto;}
+.hm-corner{font-size:.64rem;color:var(--muted);font-style:italic;
+  display:flex;align-items:center;justify-content:center;text-align:center;}
+.hm-clab,.hm-rlab{font-family:'DM Serif Display',serif;color:var(--ink2);
+  display:flex;align-items:center;justify-content:center;font-size:.92rem;}
+.hm-axis{font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--crimson);font-weight:600;display:flex;align-items:center;justify-content:center;}
+.hm-axis.vert{writing-mode:vertical-rl;transform:rotate(180deg);}
+.cell{position:relative;aspect-ratio:1.55/1;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid rgba(37,28,25,.12);transition:transform .12s,box-shadow .12s;
+  font-variant-numeric:tabular-nums;}
+.cell:hover{transform:scale(1.07);z-index:3;box-shadow:0 6px 16px -6px rgba(58,11,19,.6);}
+.cell .cv{font-family:'DM Serif Display',serif;font-size:1.04rem;line-height:1;}
+.cell .cw{font-size:.58rem;letter-spacing:.04em;opacity:.72;margin-top:2px;text-transform:uppercase;}
+.cell.pending{background:var(--inset);color:var(--faint);}
+.cell.pending .cv{font-size:.8rem;}
+.cell.best{box-shadow:0 0 0 3px var(--crimson),0 7px 18px -6px rgba(58,11,19,.7);z-index:2;}
+.cell.sel{outline:3px solid var(--ink);outline-offset:-3px;z-index:2;}
+.cell .star{position:absolute;top:2px;right:4px;font-size:.7rem;color:#fff;}
+.heat-scale{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:.72rem;color:var(--muted);}
+.heat-scale .grad{flex:1;height:9px;border:1px solid var(--line2);
+  background:linear-gradient(90deg,#e7dfcb,#d98f7e,#9E1B32);}
+
+footer{margin-top:32px;border-top:2px solid var(--crimson);}
+.foot-hound{height:14px;background-color:var(--paper);
+  background-image:var(--hound-crim);background-size:14px 14px;opacity:.34;margin-top:-2px;}
+.foot-txt{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;
+  font-size:.78rem;color:var(--muted);font-style:italic;padding-top:13px;}
+.foot-txt b{font-style:normal;color:var(--ink2);font-weight:600;}
+
+@keyframes rise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+.d1{animation-delay:.06s;}.d2{animation-delay:.13s;}.d3{animation-delay:.2s;}
+.d4{animation-delay:.27s;}.d5{animation-delay:.34s;}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="mast">
+    <div class="hound-strip"></div>
+    <div class="mast-inner">
+      <span class="mast-tag">Statistical Learning</span>
+      <span class="mast-kick">A Visual Primer &nbsp;&middot;&nbsp; Classification</span>
+      <h1>Support&nbsp;Vector <em>Machines</em></h1>
+      <p class="mast-sub">From the widest possible street between two classes to curved
+        boundaries drawn in dimensions you never have to visit.</p>
+      <div class="mast-formula">
+        <span><span class="mlab">decision&nbsp;rule&nbsp;&nbsp;</span><span class="mf">f(x) = &beta;&#8320; + &sum; &alpha;&#7522; y&#7522; K(x, x&#7522;)</span></span>
+        <span><span class="mlab">classify&nbsp;&nbsp;</span><span class="mf">&#375; = sign&#8201;f(x)</span></span>
+      </div>
+    </div>
+    <div class="hound-strip"></div>
+  </header>
+
+  <section class="d1">
+    <div class="sec-head">
+      <div class="sec-num">I</div>
+      <div class="sec-titles">
+        <div class="sec-eyebrow">The Theory</div>
+        <h2>Margins, slack, and the kernel trick</h2>
+      </div>
+    </div>
+    <div class="essay">
+      <div class="essay-cols">
+
+        <h3><span class="hx"></span>The separating hyperplane</h3>
+        <p><span class="lead">A support vector machine</span> is, at heart, a way to draw a
+        boundary between two classes of points. In a <span class="m">p</span>-dimensional
+        feature space that boundary is a <em>hyperplane</em> &mdash; a flat affine subspace of
+        one dimension less than the space itself. In two dimensions it is a line; in three, an
+        ordinary plane.</p>
+        <p>A hyperplane is the set of points <span class="m">x</span> satisfying a single
+        linear equation:</p>
+        <div class="eqn"><span class="m">&beta;&#8320; + &beta;&#8321;x&#8321; + &beta;&#8322;x&#8322; + &#8943; + &beta;&#7510;x&#7510; = 0</span></div>
+        <p>The left-hand side, written <span class="m">f(x)</span>, is positive for points on
+        one side and negative for points on the other. That sign <em>is</em> the prediction:
+        if <span class="m">f(x) &gt; 0</span> we label the point <span class="m">+1</span>,
+        and if <span class="m">f(x) &lt; 0</span> we label it <span class="m">&minus;1</span>.
+        The magnitude <span class="m">|f(x)|</span> tells us how far from the boundary the
+        point lies &mdash; how confident the call is.</p>
+
+        <h3><span class="hx"></span>The maximal margin classifier</h3>
+        <p>If the two classes can be separated by a hyperplane at all, they can usually be
+        separated by infinitely many. Which one should we choose? The natural answer: the one
+        that sits as far as possible from <em>every</em> training point. The distance from the
+        hyperplane to the nearest point is called the <em>margin</em>, and the
+        <em>maximal margin classifier</em> is the hyperplane that makes that margin as wide as
+        it can be &mdash; the fattest possible street with all points off the curb.</p>
+        <p>Formally, it solves the optimization problem:</p>
+        <div class="opt">
+          <div class="row"><span class="kw">maximize</span><span class="ex"><span class="big">M</span></span></div>
+          <div class="note" style="padding-left:96px;margin-top:0">over &beta;&#8320;,&#8201;&beta;&#8321;,&#8201;&#8230;,&#8201;&beta;&#7510; and the margin width M</div>
+          <div class="row" style="margin-top:7px"><span class="kw">subject to</span><span class="ex"><span class="m">&sum;&#7521; &beta;&#11388;&#178; = 1</span></span></div>
+          <div class="row"><span class="kw"></span><span class="ex"><span class="m">y&#7522;&#8201;f(x&#7522;) &ge; M</span> &nbsp;for every point <span class="m">i</span></span></div>
+        </div>
+        <p>The clever part is the constraint <span class="m">y&#7522;&#8201;f(x&#7522;) &ge; M</span>.
+        Because <span class="m">y&#7522;</span> is <span class="m">&plusmn;1</span>, multiplying by it
+        forces <span class="m">f(x&#7522;)</span> to carry the <em>correct</em> sign and to clear the
+        margin <span class="m">M</span> by a comfortable distance. With
+        <span class="m">&sum;&beta;&#11388;&#178;=1</span>, the quantity <span class="m">y&#7522;f(x&#7522;)</span>
+        is exactly the signed perpendicular distance from point to plane.</p>
+        <div class="callout">
+          <div class="ct">Support vectors</div>
+          <p>Only the handful of points that lie <em>exactly on</em> the margin&rsquo;s edge
+          press against the solution. These are the <strong>support vectors</strong>. Move any
+          other point &mdash; even a long way &mdash; and the boundary does not budge. Move a
+          support vector and the whole classifier shifts. The fitted machine depends only on
+          this small, decisive set.</p>
+        </div>
+
+        <h3><span class="hx"></span>When no clean split exists</h3>
+        <p>Real data rarely cooperates. Two classes usually <em>overlap</em>, and then no
+        separating hyperplane exists at all &mdash; the maximal margin problem simply has no
+        solution. Worse, even when a split <em>is</em> possible, the maximal margin classifier
+        is brittle: a single new observation near the boundary can swing it dramatically,
+        a sign of high variance and poor generalization.</p>
+        <p>The fix is to permit a few violations &mdash; to let some points sit inside the
+        margin, or even on the wrong side of it &mdash; in exchange for a boundary that is
+        steadier and more honest about the noise.</p>
+
+        <h3><span class="hx"></span>The support vector classifier</h3>
+        <p>The <em>support vector classifier</em>, or <em>soft-margin</em> classifier, builds
+        that tolerance in directly. Each point gets a <em>slack variable</em>
+        <span class="m">&epsilon;&#7522; &ge; 0</span> measuring how badly it violates the margin,
+        and a <em>budget</em> <span class="m">C</span> caps the total slack allowed:</p>
+        <div class="opt">
+          <div class="row"><span class="kw">maximize</span><span class="ex"><span class="big">M</span></span></div>
+          <div class="row" style="margin-top:7px"><span class="kw">subject to</span><span class="ex"><span class="m">&sum;&#7521; &beta;&#11388;&#178; = 1</span></span></div>
+          <div class="row"><span class="kw"></span><span class="ex"><span class="m">y&#7522;&#8201;f(x&#7522;) &ge; M(1 &minus; &epsilon;&#7522;)</span></span></div>
+          <div class="row"><span class="kw"></span><span class="ex"><span class="m">&epsilon;&#7522; &ge; 0,</span> &nbsp;<span class="m">&sum;&#7522; &epsilon;&#7522; &le; C</span></span></div>
+        </div>
+        <p>Read the slack like a traffic report. If <span class="m">&epsilon;&#7522; = 0</span> the
+        point is safely on the right side of its margin. If
+        <span class="m">0 &lt; &epsilon;&#7522; &lt; 1</span> it has crept <em>inside</em> the margin
+        but is still correctly classified. If <span class="m">&epsilon;&#7522; &gt; 1</span> it has
+        crossed all the way to the wrong side &mdash; a genuine misclassification.</p>
+        <p><span class="lead">The budget C</span> is the model&rsquo;s single most important
+        dial, and it governs the <em>bias&ndash;variance trade-off</em>. A <strong>large</strong>
+        <span class="m">C</span> is permissive: it tolerates many violations, yielding a wide,
+        soft margin supported by many points &mdash; lower variance, higher bias. A
+        <strong>small</strong> <span class="m">C</span> is strict: it allows few violations,
+        producing a narrow margin that hugs the data &mdash; lower bias, higher variance.
+        Now <em>every</em> point on or inside the margin is a support vector, so widening the
+        margin recruits more of them and steadies the fit.</p>
+        <div class="aside-note">
+          <b>A note on terminology.</b> A support vector machine controls its errors with a
+        soft <em>margin</em> &mdash; a slack budget &mdash; not with a <em>softmax</em>.
+        Softmax is the function that turns scores into class probabilities in logistic-style
+        and neural-network classifiers; it is a different mechanism belonging to a different
+        family of models. An SVM&rsquo;s output is the signed distance
+        <span class="m">f(x)</span>, and its &ldquo;softness&rdquo; lives entirely in the
+        slack variables above.
+        </div>
+
+        <h3><span class="hx"></span>Nonlinear boundaries</h3>
+        <p>A straight boundary is often hopeless &mdash; picture one class forming a ring
+        around the other. The remedy is the same trick that linear regression uses for curves:
+        <em>enlarge the feature space</em>. Instead of fitting in the original coordinates
+        <span class="m">x&#8321;,&#8201;&#8230;,&#8201;x&#7510;</span>, add transformed features &mdash;
+        squares <span class="m">x&#11388;&#178;</span>, cross-terms
+        <span class="m">x&#11388;x&#8342;</span>, higher powers &mdash; and fit a support vector
+        classifier in that bigger space.</p>
+        <p>A boundary that is perfectly <em>flat</em> in the enlarged space projects back down
+        as a <em>curved</em> boundary in the original space. The mathematics never leaves the
+        comfortable world of hyperplanes; the curvature is an illusion produced by the
+        coordinate change.</p>
+
+        <h3><span class="hx"></span>Kernels and the kernel trick</h3>
+        <p>Enlarging the feature space by hand is awkward and, for rich enough expansions,
+        impossible &mdash; the new space can have thousands of dimensions, or infinitely many.
+        Here the support vector classifier reveals a remarkable property: its solution depends
+        on the training data <em>only</em> through <em>inner products</em> between pairs of
+        points, <span class="m">&#10216;x&#7522;,&#8201;x&#8344;&#10217;</span>. The individual
+        coordinates never appear on their own.</p>
+        <p>So we never need the coordinates of the enlarged space at all. We simply replace
+        each inner product with a <em>kernel</em> <span class="m">K(x&#7522;,&#8201;x&#8344;)</span>
+        &mdash; a function that returns what the inner product <em>would have been</em> in some
+        expanded space, computed directly from the original points. This shortcut is the
+        celebrated <em>kernel trick</em>, and the fitted machine becomes:</p>
+        <div class="eqn"><span class="m">f(x) = &beta;&#8320; + &sum;<sub>i&#8712;S</sub> &alpha;&#7522;&#8201;K(x,&#8201;x&#7522;)</span></div>
+        <p>where <span class="m">S</span> is the set of support vectors. Different kernels build
+        different geometries:</p>
+        <div class="opt">
+          <div class="row"><span class="kw">linear</span><span class="ex"><span class="m">K(x,x&prime;) = &#10216;x,&#8201;x&prime;&#10217;</span></span></div>
+          <div class="note">recovers the ordinary flat support vector classifier</div>
+          <div class="row" style="margin-top:6px"><span class="kw">polynomial</span><span class="ex"><span class="m">K(x,x&prime;) = (1 + &#10216;x,&#8201;x&prime;&#10217;)</span><sup class="m">d</sup></span></div>
+          <div class="note">boundaries that curve like degree-<span class="m">d</span> polynomials</div>
+          <div class="row" style="margin-top:6px"><span class="kw">radial</span><span class="ex"><span class="m">K(x,x&prime;) = exp(&minus;&gamma;&#8201;&#8214;x &minus; x&prime;&#8214;&#178;)</span></span></div>
+          <div class="note">smooth, local boundaries &mdash; the workhorse used below</div>
+        </div>
+
+        <h3><span class="hx"></span>The radial kernel</h3>
+        <p>The <em>radial</em> kernel &mdash; also called the RBF or Gaussian kernel &mdash;
+        measures similarity by distance: two points score near <span class="m">1</span> when
+        close together and fade toward <span class="m">0</span> as they separate. A test point
+        is therefore influenced almost entirely by training points in its immediate
+        neighborhood; distant support vectors have essentially no vote. This gives the radial
+        SVM its characteristic <em>local</em> behavior.</p>
+        <p>The parameter <span class="m">&gamma; &gt; 0</span> sets the reach. A
+        <strong>small</strong> <span class="m">&gamma;</span> makes the kernel wide and gentle,
+        each point felt far and wide, yielding a smooth, almost-linear boundary. A
+        <strong>large</strong> <span class="m">&gamma;</span> makes it narrow and sharp, each
+        point felt only nearby, yielding a wiggly boundary that can wrap individual
+        observations &mdash; powerful, but prone to overfitting.</p>
+
+        <h3><span class="hx"></span>More than two classes</h3>
+        <p>The story so far is binary. With <span class="m">K</span> classes, two extensions
+        are standard. <em>One-versus-one</em> trains a separate SVM for every pair of classes
+        and lets them vote. <em>One-versus-all</em> trains one SVM per class against the
+        combined rest, and assigns the class whose <span class="m">f(x)</span> is largest.
+        The two&ndash;class machine remains the fundamental building block.</p>
+
+        <div class="callout">
+          <div class="ct">Choosing the dials</div>
+          <p><span class="m">C</span> and <span class="m">&gamma;</span> are not learned from the
+          data the way <span class="m">&alpha;&#7522;</span> are &mdash; they are
+          <em>hyperparameters</em> set from outside. Training accuracy cannot guide the choice,
+          since a large <span class="m">&gamma;</span> can memorize the training set perfectly.
+          The honest tool is <strong>cross-validation</strong>: try a grid of
+          <span class="m">(C,&#8201;&gamma;)</span> pairs, estimate each one&rsquo;s out-of-sample
+          accuracy by repeatedly holding out folds, and keep the pair that generalizes best.
+          We do exactly this in Panel 3.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="d2">
+    <div class="sec-head">
+      <div class="sec-num">II</div>
+      <div class="sec-titles">
+        <div class="sec-eyebrow">The Data</div>
+        <h2>A radial-kernel machine on credit-card defaults</h2>
+      </div>
+    </div>
+    <div class="exband">
+      <div class="exband-in">
+        <div>
+          <h3>30,000 cardholders, and one question: <em>default next month?</em></h3>
+          <p>Our example uses the well-known UCI <strong>default of credit card clients</strong>
+          dataset &mdash; 30,000 Taiwanese credit-card customers, each labelled by whether they
+          defaulted on the following month&rsquo;s payment. To keep the geometry visible we
+          classify on the <strong>two most informative features</strong>: <em>PAY_0</em>, the
+          most recent repayment status, and <em>LIMIT_BAL</em>, the credit limit. Both are
+          standardized to mean&nbsp;0 and unit variance.</p>
+          <p>Defaults are the minority &mdash; about 22% of all clients &mdash; so the training
+          and test samples below are deliberately <em>enriched</em> to roughly 40% defaulters,
+          letting the minority class show up clearly on the plot. The boundary itself is fit
+          with a <strong>radial kernel</strong>, and its hyperparameters are chosen by
+          <strong>5-fold cross-validation</strong>.</p>
+        </div>
+        <div class="facts">
+          <div class="fact"><div class="fv">30,000</div><div class="fl">Clients in source data</div></div>
+          <div class="fact"><div class="fv">22.1<span class="u">&#8201;%</span></div><div class="fl">Overall default rate</div></div>
+          <div class="fact"><div class="fv">300</div><div class="fl">Training points (enriched)</div></div>
+          <div class="fact"><div class="fv">300</div><div class="fl">Held-out test points</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="d3">
+    <div class="sec-head">
+      <div class="sec-num">1</div>
+      <div class="sec-titles">
+        <div class="sec-eyebrow">Panel One</div>
+        <h2>The maximal margin, idealized</h2>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chead">
+        <div class="ct">
+          <h3><span class="hx"></span>The widest street between two classes</h3>
+          <div class="cs">A synthetic, perfectly separable example &mdash; the picture every later idea departs from</div>
+        </div>
+        <div class="badge">Linear &middot; Separable</div>
+      </div>
+      <div class="pa-body"><div id="mmc"></div></div>
+      <div class="pa-cap cap">
+        <b>How to read it.</b> The two classes can be split cleanly, so a maximal margin
+        hyperplane exists. The solid line is the boundary <span class="m">f(x)=0</span>; the
+        shaded band is the <span class="m">margin</span>, of half-width <span class="m">M</span>,
+        bounded by the dashed lines <span class="m">f(x)=&plusmn;1</span>. The ringed points are
+        the <b>support vectors</b> &mdash; they touch the margin and alone determine the
+        boundary. Every other point could move freely without changing a thing.
+      </div>
+    </div>
+  </section>
+
+  <section class="d4">
+    <div class="sec-head">
+      <div class="sec-num">2</div>
+      <div class="sec-titles">
+        <div class="sec-eyebrow">Panel Two</div>
+        <h2>A radial-kernel classifier you can steer</h2>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chead">
+        <div class="ct">
+          <h3><span class="hx"></span>Soft margin &middot; radial kernel &middot; real data</h3>
+          <div class="cs">Drag <span class="m">C</span> and <span class="m">&gamma;</span> and watch the boundary, the support vectors, and the accuracy respond</div>
+        </div>
+        <div class="badge">Live &middot; Fit in browser</div>
+      </div>
+      <div class="pb-grid">
+        <div class="pb-plot">
+          <canvas id="svmCv"></canvas>
+          <div class="legend">
+            <span class="lg"><span class="dot cr"></span>Defaulted</span>
+            <span class="lg"><span class="dot sl"></span>Did not default</span>
+            <span class="lg"><span class="dot sv"></span>Support vector</span>
+            <span class="lg"><span class="ln"></span>Boundary <span class="m">&#8201;f=0</span></span>
+            <span class="lg"><span class="ln dash"></span>Margin <span class="m">&#8201;f=&plusmn;1</span></span>
+          </div>
+          <div class="cap"><b>Note.</b> PAY_0 takes only a few integer values, so the points are
+          jittered horizontally for legibility &mdash; the classifier is trained on the true,
+          un-jittered coordinates.</div>
+        </div>
+        <div class="pb-rail">
+          <div class="ctl">
+            <div class="crow">
+              <label>Budget <b>C</b></label>
+              <span class="val" id="cVal">1.00</span>
+            </div>
+            <input type="range" id="cSlide" min="0" max="1000" value="500">
+            <div class="hint">larger <span class="m">C</span> &rarr; softer, wider margin, more support vectors</div>
+          </div>
+          <div class="ctl" style="margin-top:13px">
+            <div class="crow">
+              <label>Kernel reach <b>&gamma;</b></label>
+              <span class="val" id="gVal">0.50</span>
+            </div>
+            <input type="range" id="gSlide" min="0" max="1000" value="560">
+            <div class="hint">larger <span class="m">&gamma;</span> &rarr; narrower kernel, wigglier boundary</div>
+          </div>
+
+          <div class="ctl-sep"></div>
+
+          <div class="readout">
+            <div class="ro acc-tr">
+              <div class="rk">Training accuracy</div>
+              <div class="rv" id="trAcc">&mdash;</div>
+              <div class="barwrap"><div class="bar" id="trBar" style="width:0%"></div></div>
+            </div>
+            <div class="ro acc-te">
+              <div class="rk">Test accuracy</div>
+              <div class="rv" id="teAcc">&mdash;</div>
+              <div class="barwrap"><div class="bar te" id="teBar" style="width:0%"></div></div>
+            </div>
+            <div class="ro">
+              <div class="rk">Support vectors</div>
+              <div class="rv" id="nSv">&mdash; <small>/ 300</small></div>
+            </div>
+            <div class="ro">
+              <div class="rk">Margin width</div>
+              <div class="rv" id="mWid">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="railnote">
+            <b>What to look for.</b> Push <span class="m">&gamma;</span> high and the boundary
+            curls into islands around individual points &mdash; training accuracy climbs while
+            test accuracy stalls or falls. That gap is <b>overfitting</b>. The honest readout
+            is the slate bar: out-of-sample accuracy on data the machine never saw.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="d5">
+    <div class="sec-head">
+      <div class="sec-num">3</div>
+      <div class="sec-titles">
+        <div class="sec-eyebrow">Panel Three</div>
+        <h2>Choosing <span class="m">C</span> and <span class="m">&gamma;</span> by cross-validation</h2>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chead">
+        <div class="ct">
+          <h3><span class="hx"></span>A 5-fold cross-validation grid</h3>
+          <div class="cs">Each cell is the mean held-out accuracy over five folds &mdash; click one to send it to Panel&nbsp;2</div>
+        </div>
+        <div class="badge" id="cvBadge">Cross-validating&hellip;</div>
+      </div>
+      <div class="pc-grid">
+        <div class="pc-heat">
+          <div class="heat-title">Mean 5-fold accuracy</div>
+          <div id="heatmap"></div>
+          <div class="heat-scale">
+            <span>lower</span><span class="grad"></span><span>higher</span>
+          </div>
+        </div>
+        <div class="pc-side">
+          <h4>Why a grid, and why folds?</h4>
+          <p>Training accuracy is a flatterer: a large <b>&gamma;</b> can memorize these 300
+          points almost perfectly and still fail on new clients. So we judge each
+          <span class="m">(C,&#8201;&gamma;)</span> pair by <b>5-fold cross-validation</b> &mdash;
+          the training set is split into five parts, the machine is fit on four and scored on
+          the fifth, and this rotates until every part has been the test fold once. The five
+          scores are averaged.</p>
+          <p>The grid sweeps <b>C</b> down the rows and <b>&gamma;</b> across the columns. The
+          crimson-ringed cell marked &#9733; is the best-scoring pair &mdash; the responsible
+          choice. Notice that the strongest cells avoid the high-<span class="m">&gamma;</span>
+          corner: on data this overlapping, a smoother boundary generalizes better than a
+          wiggly one.</p>
+          <p style="margin-top:9px"><b>Try this.</b> Click the best cell, then click the
+          bottom-right corner. Panel&nbsp;2 will redraw &mdash; watch a calm, generalizing
+          boundary turn into an overfit tangle of islands.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-hound"></div>
+    <div class="foot-txt">
+      <span>An interactive primer on <b>support vector machines</b> &mdash; maximal margins, soft margins, kernels &amp; cross-validation.</span>
+      <span>Data: UCI <b>Default of Credit Card Clients</b> &middot; classifier fit client-side by sequential minimal optimization.</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ EMBEDDED DATA ============ */
+const TRAIN_RAW="0.0149,0.3277,-1;0.0149,-0.9055,1;0.0149,0.5589,-1;0.0149,0.3277,1;1.7946,-0.9055,1;0.0149,-0.6743,1;1.7946,0.4048,1;0.9047,-0.9055,1;-0.8750,0.2506,1;0.0149,1.3296,-1;1.7946,-0.9826,1;-1.7648,0.0965,-1;-0.8750,0.2506,1;-0.8750,0.2506,-1;0.0149,-0.2889,-1;-0.8750,0.7901,-1;0.0149,-0.6743,-1;1.7946,-0.6743,1;2.6844,-0.5201,1;0.9047,0.3277,1;0.9047,-1.0596,1;1.7946,-1.0596,1;2.6844,-0.9055,1;0.0149,-0.6743,-1;-1.7648,0.3277,1;0.0149,-0.9055,-1;0.0149,-0.8284,1;0.9047,-0.1348,-1;0.0149,3.3336,1;0.0149,-0.8284,-1;1.7946,-1.1367,1;-0.8750,0.0965,-1;-0.8750,1.0214,1;-0.8750,-1.0596,1;0.0149,-0.4431,1;1.7946,-0.0577,1;1.7946,-0.3660,1;0.9047,1.4067,-1;-0.8750,0.7131,-1;0.9047,1.0214,1;0.0149,1.1755,-1;0.9047,-0.6743,1;-0.8750,2.5628,-1;0.9047,0.1735,1;0.9047,2.1775,-1;1.7946,-0.4431,1;0.9047,-1.1367,-1;0.0149,0.2506,1;0.0149,-0.9055,-1;0.0149,-0.2118,-1;0.0149,-0.9055,-1;1.7946,-0.4431,1;1.7946,0.4048,1;0.9047,-0.5201,1;0.0149,0.2506,-1;0.0149,0.4818,-1;0.0149,0.3277,-1;0.0149,-0.7514,-1;0.0149,-0.1348,-1;0.0149,0.0965,-1;-0.8750,2.5628,-1;1.7946,-0.6743,-1;0.0149,0.4818,-1;-0.8750,-0.2889,-1;0.0149,-0.3660,-1;0.0149,-0.5201,1;0.0149,0.2506,1;0.0149,-0.5201,-1;0.0149,-1.2138,1;0.9047,-0.7514,-1;0.9047,-0.0577,-1;0.9047,-0.6743,-1;0.0149,1.7150,-1;0.0149,-0.9055,1;0.0149,1.6379,-1;0.0149,-1.1367,-1;0.0149,-0.9055,1;0.0149,-0.7514,-1;0.0149,-0.6743,-1;-1.7648,2.4087,-1;0.9047,0.3277,1;0.0149,1.4838,-1;1.7946,-1.0596,1;0.0149,-0.2889,-1;0.9047,1.3296,1;0.9047,-1.1367,-1;0.0149,-0.1348,-1;0.0149,1.6379,-1;-0.8750,1.7150,-1;0.0149,-0.3660,1;-0.8750,0.7131,-1;0.0149,-0.6743,1;1.7946,0.9443,1;0.9047,-1.0596,1;0.9047,-0.9055,1;0.0149,-1.1367,-1;1.7946,1.7150,-1;0.9047,-0.6743,-1;0.0149,-0.4431,-1;0.9047,-0.1348,1;1.7946,-0.9055,1;-0.8750,0.2506,-1;0.0149,-0.5201,-1;0.0149,0.2506,-1;-0.8750,-0.9055,1;0.0149,-0.9055,-1;-0.8750,2.5628,-1;0.0149,1.2526,-1;-1.7648,1.1755,-1;1.7946,-0.6743,1;0.0149,1.0214,-1;0.0149,-1.1367,-1;1.7946,-0.9055,1;0.0149,1.6379,-1;-0.8750,-0.2889,-1;0.0149,-1.2138,1;0.0149,-0.9055,-1;1.7946,-0.2118,1;0.0149,-0.3660,-1;-0.8750,0.4048,1;-0.8750,0.5589,-1;-1.7648,1.4067,-1;0.0149,-0.9055,-1;0.9047,1.7921,-1;-0.8750,1.0984,1;-0.8750,2.5628,-1;0.0149,-0.9055,-1;0.0149,-0.1348,-1;1.7946,-0.0577,1;0.9047,-1.2138,1;-1.7648,-1.1367,-1;-1.7648,0.4818,-1;0.0149,0.7131,-1;-1.7648,0.8672,1;0.9047,0.8672,-1;1.7946,-1.0596,1;0.0149,0.1735,-1;0.0149,-0.6743,-1;1.7946,0.4818,1;-1.7648,1.0214,1;-0.8750,-0.4431,-1;1.7946,-0.3660,1;0.0149,-0.5201,1;2.6844,-0.9055,1;0.0149,0.4818,-1;1.7946,-1.1367,1;0.0149,2.3316,-1;0.0149,-0.0577,1;0.9047,-0.9055,-1;-0.8750,0.0965,1;0.0149,2.5628,-1;0.0149,-0.7514,1;-0.8750,-0.9055,1;0.0149,1.4067,-1;1.7946,0.1735,1;0.0149,0.8672,-1;0.0149,-0.5201,-1;-1.7648,-0.4431,-1;1.7946,-1.0596,1;-0.8750,0.2506,-1;0.0149,2.4087,1;-0.8750,-1.2138,-1;-1.7648,1.4838,-1;-0.8750,1.4838,-1;0.9047,-0.1348,1;1.7946,-0.2889,-1;0.0149,0.8672,-1;0.0149,1.6379,-1;0.9047,-0.8284,1;0.9047,0.2506,-1;-0.8750,0.6360,1;1.7946,-1.2138,1;0.0149,-0.9055,1;0.0149,0.4818,-1;-1.7648,-0.6743,-1;0.0149,-1.0596,-1;0.9047,0.9443,1;1.7946,-1.1367,1;-0.8750,-1.1367,1;0.0149,-0.9826,-1;-0.8750,2.4858,-1;1.7946,-0.9055,-1;1.7946,-0.8284,1;0.0149,0.6360,1;-1.7648,0.3277,-1;1.7946,-0.5201,1;0.0149,-0.9055,1;0.0149,-0.1348,-1;-0.8750,1.0214,1;0.0149,-0.1348,-1;1.7946,-1.0596,-1;-0.8750,-1.1367,1;-0.8750,-0.9055,-1;1.7946,-0.7514,1;-0.8750,-0.8284,-1;0.0149,0.0194,-1;0.0149,-0.9055,-1;-0.8750,0.0194,-1;1.7946,-0.5201,1;0.0149,-1.1367,1;0.0149,-0.1348,-1;-0.8750,0.9443,1;0.9047,-0.1348,-1;-0.8750,0.8672,-1;0.0149,-0.3660,-1;0.0149,-0.3660,-1;0.0149,-0.8284,-1;-0.8750,-0.9055,-1;0.0149,-0.5972,-1;0.0149,-0.1348,-1;1.7946,1.3296,-1;2.6844,2.5628,1;0.0149,0.2506,-1;0.0149,0.5589,-1;0.0149,0.4048,-1;0.0149,0.2506,-1;-0.8750,-1.1367,-1;0.0149,-0.8284,1;-0.8750,-0.3660,-1;0.0149,-1.1367,-1;0.0149,-1.1367,-1;4.4641,-0.9055,1;0.9047,1.1755,-1;0.0149,-0.1348,-1;1.7946,-1.1367,1;-0.8750,-0.9055,-1;0.0149,-0.4431,-1;0.0149,-0.6743,-1;-0.8750,-0.3660,-1;-0.8750,0.5589,1;0.0149,-0.9055,-1;0.0149,0.4048,-1;0.0149,-0.3660,-1;-1.7648,1.4067,-1;0.0149,-1.1367,1;-0.8750,1.4838,1;0.0149,0.0965,-1;0.0149,-0.8284,-1;0.0149,-1.1367,-1;0.0149,-1.1367,-1;-1.7648,0.3277,-1;0.0149,-0.9055,1;0.0149,-0.9055,-1;0.9047,-0.9055,1;0.9047,-1.1367,1;0.9047,1.4067,-1;0.0149,2.2545,-1;-0.8750,1.4838,-1;0.0149,-0.9055,-1;0.9047,-0.1348,1;0.9047,0.3277,-1;1.7946,-1.1367,-1;0.0149,0.4818,-1;0.9047,1.1755,1;1.7946,-0.8284,-1;0.9047,-0.6743,-1;0.9047,0.4048,-1;-0.8750,0.4818,-1;0.9047,-1.0596,-1;0.0149,-0.9055,1;0.0149,-0.8284,1;0.0149,-0.9055,1;0.0149,0.8672,1;0.0149,0.5589,-1;-0.8750,0.5589,1;2.6844,-0.7514,1;0.0149,1.3296,-1;-0.8750,1.4838,-1;-0.8750,2.5628,-1;0.0149,-0.9055,-1;-0.8750,0.8672,-1;0.0149,-1.1367,1;0.0149,0.4048,-1;-0.8750,0.6360,1;1.7946,-0.9055,1;0.0149,-0.9055,-1;1.7946,-1.0596,1;0.0149,1.0214,-1;0.9047,-1.0596,1;1.7946,-1.0596,1;0.0149,1.0984,-1;-0.8750,0.0965,-1;0.0149,-1.2138,1;-0.8750,-0.0577,-1;-0.8750,2.5628,-1;-1.7648,4.1814,1;0.9047,-0.1348,-1;0.9047,0.2506,1;0.0149,-0.8284,1;-0.8750,1.0214,-1;0.9047,-1.1367,-1;0.9047,0.0965,1;0.0149,-0.9055,-1;0.0149,-0.4431,-1;0.0149,0.2506,-1;-0.8750,0.5589,-1;-1.7648,1.4838,1;0.9047,-0.4431,-1;0.0149,0.1735,-1;0.0149,-0.9826,1";
+const TEST_RAW="0.0149,-0.9055,-1;0.0149,-0.4431,-1;0.0149,1.7150,-1;-0.8750,-0.3660,1;1.7946,-0.5201,1;0.0149,-0.3660,1;-0.8750,-0.2118,1;0.0149,-0.1348,-1;0.0149,-0.2889,-1;1.7946,0.3277,1;0.0149,-0.1348,1;0.0149,-0.6743,-1;0.0149,-0.9055,-1;1.7946,-0.1348,1;0.0149,1.6379,1;0.0149,-1.0596,-1;1.7946,-0.9055,1;0.0149,-0.3660,-1;0.9047,-0.9055,1;-1.7648,0.0965,-1;0.0149,-1.0596,-1;0.0149,-1.1367,1;0.0149,0.0194,-1;-0.8750,-1.1367,1;0.0149,-1.1367,1;1.7946,-1.1367,1;1.7946,1.1755,1;0.0149,-0.5201,1;1.7946,-1.1367,1;0.0149,-0.9055,-1;0.0149,-0.9055,-1;0.0149,-0.5972,1;-1.7648,0.2506,-1;1.7946,-0.1348,1;1.7946,-0.9055,1;-0.8750,1.4838,1;1.7946,-0.1348,1;-1.7648,2.5628,1;1.7946,1.0214,1;2.6844,-0.9055,1;0.0149,-1.0596,-1;0.0149,-0.4431,-1;0.9047,0.3277,-1;0.0149,0.6360,-1;0.0149,-0.2118,-1;1.7946,0.2506,-1;-0.8750,0.4048,1;0.0149,0.0965,-1;0.9047,1.4838,1;1.7946,0.7131,1;1.7946,-0.5201,1;0.9047,0.5589,-1;0.0149,-0.9826,1;-0.8750,-0.8284,-1;2.6844,-0.9055,1;0.0149,0.0965,-1;1.7946,-0.9055,1;0.9047,-1.0596,1;-0.8750,1.9462,-1;0.0149,-1.0596,-1;-0.8750,1.0984,-1;0.9047,-1.2138,1;-0.8750,0.8672,-1;1.7946,-0.6743,1;-0.8750,-0.4431,-1;0.9047,-0.6743,1;0.0149,-0.9055,-1;-0.8750,1.8692,-1;0.9047,0.5589,1;-0.8750,1.0214,1;-0.8750,0.4818,-1;0.0149,-0.5972,-1;0.9047,0.2506,1;1.7946,-0.9055,1;-0.8750,0.8672,-1;-0.8750,-0.9055,-1;0.0149,-0.9055,-1;0.0149,-1.0596,1;0.0149,0.0965,1;0.0149,0.4048,-1;0.0149,-0.6743,-1;1.7946,-0.9055,-1;0.9047,-0.9055,-1;0.9047,-0.9055,1;0.0149,0.0194,-1;0.0149,-0.9055,-1;0.0149,-0.3660,1;1.7946,-0.1348,1;-0.8750,1.4838,-1;1.7946,0.3277,1;0.9047,-0.5201,-1;-0.8750,-0.3660,-1;0.9047,0.8672,1;0.9047,-1.1367,-1;0.0149,-0.6743,-1;1.7946,-0.2889,1;0.9047,0.0194,1;0.9047,0.4048,1;0.0149,-0.2118,-1;0.0149,-0.5972,1;0.0149,-1.0596,-1;1.7946,1.0214,1;0.9047,-0.7514,1;-0.8750,2.1775,1;-1.7648,-0.0577,-1;0.0149,-1.1367,-1;-1.7648,-0.9055,-1;-1.7648,1.0214,1;0.0149,-0.5201,1;0.0149,0.0194,-1;0.0149,1.4838,-1;0.0149,-0.5201,-1;-1.7648,0.2506,-1;-0.8750,-0.9055,1;-0.8750,0.0965,1;-0.8750,-0.0577,-1;-0.8750,-0.3660,-1;0.0149,-1.0596,-1;-0.8750,1.4067,-1;0.0149,1.6379,1;-1.7648,0.0194,1;3.5743,-1.0596,1;0.0149,0.4048,-1;-0.8750,-0.2118,-1;0.0149,0.5589,-1;-0.8750,-0.1348,-1;0.9047,-0.9055,1;0.0149,-0.9055,1;0.0149,3.0253,1;0.0149,-0.1348,-1;0.0149,-0.9055,-1;0.0149,-0.9055,-1;0.9047,-1.2138,1;-0.8750,-0.2889,1;-0.8750,0.4818,-1;-0.8750,0.5589,1;-1.7648,-1.1367,-1;1.7946,-0.9055,1;0.0149,-1.2138,-1;-1.7648,0.1735,-1;-0.8750,1.4838,1;0.0149,-0.0577,-1;0.0149,-1.1367,-1;0.0149,0.7131,1;0.0149,-0.9055,-1;0.0149,0.8672,-1;-0.8750,-0.9055,1;0.0149,-0.4431,-1;0.0149,0.3277,-1;0.0149,0.9443,-1;0.9047,0.3277,1;0.0149,-1.0596,-1;1.7946,-0.7514,1;0.0149,1.0984,-1;-0.8750,0.4048,-1;0.0149,1.6379,-1;0.0149,0.0965,-1;-0.8750,-0.6743,1;0.9047,-0.5201,-1;0.0149,1.2526,-1;-0.8750,-0.3660,1;0.0149,2.5628,-1;0.0149,-0.2889,-1;-0.8750,-0.9055,-1;0.0149,-0.0577,1;0.0149,-0.9055,-1;0.0149,0.2506,-1;1.7946,-0.1348,1;-0.8750,0.2506,-1;-0.8750,-0.0577,-1;0.0149,-0.6743,-1;0.0149,-0.5201,-1;-0.8750,0.8672,-1;0.0149,-0.3660,1;-0.8750,-1.0596,-1;-1.7648,0.4048,-1;0.9047,-0.7514,1;0.0149,-1.1367,1;-0.8750,1.5609,-1;0.0149,-0.8284,1;0.0149,1.2526,-1;0.9047,0.6360,-1;0.0149,-0.8284,1;0.0149,-0.9055,-1;1.7946,-0.0577,1;0.9047,2.5628,-1;0.9047,-0.5201,-1;-0.8750,-0.7514,-1;-0.8750,-0.9055,-1;-1.7648,1.0984,-1;-0.8750,0.2506,-1;0.0149,-0.9055,-1;0.0149,-0.0577,-1;0.0149,1.0984,-1;0.0149,-0.1348,-1;0.9047,-0.9055,-1;-0.8750,2.1775,1;0.0149,-0.8284,1;-0.8750,-0.2889,-1;0.0149,-0.9055,-1;0.9047,0.4818,1;1.7946,-0.2118,1;0.9047,-0.0577,-1;0.0149,-1.1367,-1;0.9047,-0.2118,1;0.0149,0.2506,-1;0.0149,2.5628,-1;1.7946,0.0194,1;-0.8750,1.0984,-1;-0.8750,-0.5201,-1;-0.8750,-0.9826,-1;0.9047,-0.9055,1;-1.7648,-0.5201,-1;0.0149,-0.7514,-1;0.0149,-1.2138,1;0.0149,-0.9055,1;0.0149,-0.9055,1;0.9047,1.4838,1;-1.7648,-0.1348,-1;0.9047,0.5589,1;0.0149,-0.5201,-1;1.7946,-1.0596,1;0.9047,1.4838,1;0.0149,-0.9055,-1;-0.8750,2.1775,1;0.9047,-0.9055,1;-0.8750,0.0965,-1;0.0149,-0.9055,1;1.7946,-0.9055,1;-0.8750,0.1735,-1;-0.8750,1.4838,-1;0.0149,-0.9055,-1;-0.8750,1.4838,-1;-1.7648,0.5589,-1;0.0149,-0.8284,-1;0.0149,3.0253,-1;1.7946,-0.1348,1;0.0149,-0.8284,-1;0.0149,0.4818,-1;0.9047,-0.9055,-1;0.0149,0.4048,-1;0.0149,-0.1348,-1;-1.7648,2.0233,-1;0.0149,0.2506,1;0.0149,-0.7514,-1;1.7946,-0.9055,1;-0.8750,1.7921,-1;0.0149,0.4048,1;0.0149,-0.9055,-1;-0.8750,1.4838,-1;-0.8750,-0.5201,-1;0.0149,-0.9055,1;0.0149,-1.1367,-1;-0.8750,-0.5972,1;0.0149,0.4818,-1;0.0149,0.0965,-1;1.7946,-0.3660,1;-1.7648,1.7921,-1;0.9047,-0.5972,1;0.0149,-0.9055,-1;0.0149,-0.7514,-1;0.0149,-1.0596,-1;0.0149,-0.6743,1;-0.8750,2.5628,1;0.9047,-0.0577,-1;-0.8750,0.8672,-1;0.0149,0.0194,1;1.7946,-0.7514,1;0.0149,-1.0596,-1;0.9047,-1.0596,1;0.0149,-0.9055,-1;0.0149,-1.0596,-1;0.0149,-0.6743,-1;0.9047,-0.3660,-1;1.7946,-0.9055,-1;0.0149,-0.6743,-1;-1.7648,0.7901,-1;0.0149,-0.9055,-1;0.0149,-1.1367,-1;0.0149,0.4818,-1;0.0149,-0.9055,-1;-1.7648,1.4838,-1;0.0149,-0.2118,1;0.0149,0.0965,1;-0.8750,-1.2138,1;0.9047,-0.9055,-1;-0.8750,0.4818,-1;-1.7648,1.4838,-1;0.9047,0.7131,-1;0.0149,1.4067,-1;0.0149,-0.0577,1;-0.8750,1.4838,-1;1.7946,-0.6743,1;0.0149,-0.9055,-1;0.0149,-1.1367,-1;-0.8750,0.2506,-1;0.0149,-0.8284,-1;-0.8750,1.4067,-1;0.0149,-0.5201,-1;0.9047,-0.9055,1";
+
+/* ============ HELPERS ============ */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+function parse(str){
+  const jr=mulberry32(2024);
+  return str.split(";").map(function(rec){
+    const p=rec.split(",");
+    const x0=+p[0], x1=+p[1], y=+p[2];
+    return {x0:x0, x1:x1, y:y, jx:x0+(jr()-0.5)*0.30};
+  });
+}
+const TRAIN=parse(TRAIN_RAW);
+const TEST =parse(TEST_RAW);
+const NTR=TRAIN.length;
+
+function sqdistMatrix(pts){
+  const n=pts.length, D=new Float64Array(n*n);
+  for(let i=0;i<n;i++){
+    for(let j=i;j<n;j++){
+      const dx=pts[i].x0-pts[j].x0, dy=pts[i].x1-pts[j].x1, v=dx*dx+dy*dy;
+      D[i*n+j]=v; D[j*n+i]=v;
+    }
+  }
+  return D;
+}
+const DTRAIN=sqdistMatrix(TRAIN);
+
+/* ============ SEQUENTIAL MINIMAL OPTIMIZATION (RBF SVM) ============ */
+function smo(pts,D,C,gamma,maxPasses){
+  const n=pts.length;
+  const Y=new Float64Array(n);
+  for(let i=0;i<n;i++) Y[i]=pts[i].y;
+  const K=new Float64Array(n*n);
+  for(let i=0;i<n*n;i++) K[i]=Math.exp(-gamma*D[i]);
+  const alpha=new Float64Array(n);
+  const g=new Float64Array(n);
+  let b=0;
+  const rnd=mulberry32(12345);
+  const tol=1e-3, eps=1e-5;
+  let passes=0, iter=0, maxIter=120*n;
+  while(passes<maxPasses && iter<maxIter){
+    let changed=0;
+    for(let i=0;i<n;i++){
+      const Ei=g[i]+b-Y[i];
+      if((Y[i]*Ei<-tol && alpha[i]<C) || (Y[i]*Ei>tol && alpha[i]>0)){
+        let j=i; while(j===i) j=(rnd()*n)|0;
+        const Ej=g[j]+b-Y[j];
+        const ai=alpha[i], aj=alpha[j];
+        let L,H;
+        if(Y[i]!==Y[j]){ L=Math.max(0,aj-ai); H=Math.min(C,C+aj-ai); }
+        else           { L=Math.max(0,ai+aj-C); H=Math.min(C,ai+aj); }
+        if(L===H){ iter++; continue; }
+        const eta=2*K[i*n+j]-K[i*n+i]-K[j*n+j];
+        if(eta>=0){ iter++; continue; }
+        let ajn=aj-Y[j]*(Ei-Ej)/eta;
+        if(ajn>H) ajn=H; else if(ajn<L) ajn=L;
+        if(Math.abs(ajn-aj)<eps){ iter++; continue; }
+        const ain=ai+Y[i]*Y[j]*(aj-ajn);
+        alpha[i]=ain; alpha[j]=ajn;
+        const dai=Y[i]*(ain-ai), daj=Y[j]*(ajn-aj);
+        const ri=i*n, rj=j*n;
+        for(let k=0;k<n;k++) g[k]+=dai*K[ri+k]+daj*K[rj+k];
+        const b1=b-Ei-Y[i]*(ain-ai)*K[i*n+i]-Y[j]*(ajn-aj)*K[i*n+j];
+        const b2=b-Ej-Y[i]*(ain-ai)*K[i*n+j]-Y[j]*(ajn-aj)*K[j*n+j];
+        if(ain>0&&ain<C) b=b1; else if(ajn>0&&ajn<C) b=b2; else b=(b1+b2)/2;
+        changed++;
+      }
+      iter++;
+    }
+    if(changed===0) passes++; else passes=0;
+  }
+  const sv=[];
+  for(let i=0;i<n;i++){
+    if(alpha[i]>1e-6) sv.push({x0:pts[i].x0,x1:pts[i].x1,ay:alpha[i]*Y[i]});
+  }
+  return {alpha:alpha,b:b,sv:sv};
+}
+function decideXY(model,gamma,q0,q1){
+  const sv=model.sv; let s=model.b;
+  for(let k=0;k<sv.length;k++){
+    const dx=sv[k].x0-q0, dy=sv[k].x1-q1;
+    s+=sv[k].ay*Math.exp(-gamma*(dx*dx+dy*dy));
+  }
+  return s;
+}
+function accuracy(model,gamma,pts){
+  let c=0;
+  for(let i=0;i<pts.length;i++){
+    const f=decideXY(model,gamma,pts[i].x0,pts[i].x1);
+    if((f>=0?1:-1)===pts[i].y) c++;
+  }
+  return c/pts.length;
+}
+
+/* ============ PANEL A : maximal-margin SVG ============ */
+function buildMMC(){
+  const W=560,H=470,ML=70,MT=40,SCALE=38;
+  const mx=function(d){return ML+d*SCALE;};
+  const my=function(d){return MT+(10-d)*SCALE;};
+  const C='var(--crimson)', SL='var(--slate)', INK='var(--ink)';
+  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Spectral,serif">';
+  s+='<rect x="'+ML+'" y="'+MT+'" width="'+(10*SCALE)+'" height="'+(10*SCALE)+'" fill="#fbf8f1" stroke="var(--line2)"/>';
+  s+='<polygon points="'+mx(0)+','+my(0)+' '+mx(0)+','+my(10)+' '+mx(9)+','+my(10)+'" fill="rgba(60,85,96,.10)"/>';
+  s+='<polygon points="'+mx(0)+','+my(0)+' '+mx(9)+','+my(10)+' '+mx(10)+','+my(10)+' '+mx(10)+','+my(0)+'" fill="rgba(158,27,50,.10)"/>';
+  const band=[[1,0],[10,9],[10,10],[7,10],[0,3],[0,0]].map(function(p){return mx(p[0])+','+my(p[1]);}).join(' ');
+  s+='<polygon points="'+band+'" fill="rgba(37,28,25,.07)"/>';
+  s+='<line x1="'+mx(1)+'" y1="'+my(0)+'" x2="'+mx(10)+'" y2="'+my(9)+'" stroke="'+SL+'" stroke-width="1.6" stroke-dasharray="6 4"/>';
+  s+='<line x1="'+mx(0)+'" y1="'+my(3)+'" x2="'+mx(7)+'" y2="'+my(10)+'" stroke="'+SL+'" stroke-width="1.6" stroke-dasharray="6 4"/>';
+  s+='<line x1="'+mx(0)+'" y1="'+my(1)+'" x2="'+mx(9)+'" y2="'+my(10)+'" stroke="'+INK+'" stroke-width="2.6"/>';
+  const Px=mx(4),Py=my(5),Qx=mx(5),Qy=my(4);
+  s+='<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">'
+   +'<path d="M0 0 L8 4 L0 8 Z" fill="'+INK+'"/></marker></defs>';
+  s+='<line x1="'+Px+'" y1="'+Py+'" x2="'+Qx+'" y2="'+Qy+'" stroke="'+INK+'" stroke-width="1.5" marker-start="url(#ah)" marker-end="url(#ah)"/>';
+  s+='<rect x="'+((Px+Qx)/2+4)+'" y="'+((Py+Qy)/2-9)+'" width="20" height="18" fill="#fbf8f1"/>';
+  s+='<text x="'+((Px+Qx)/2+14)+'" y="'+((Py+Qy)/2+5)+'" font-style="italic" font-size="16" fill="'+INK+'" text-anchor="middle">M</text>';
+  const svPts=[[1,4],[3,6],[5,4]];
+  const negPts=[[1,6.5],[2.2,8.4],[0.8,5.6],[3.6,8.0],[2.6,9.2],[3,6.0]];
+  const posPts=[[6.5,2.0],[8.4,3.0],[7.0,1.0],[8.8,4.5],[9.2,1.6],[6.0,1.2],[7.5,6.5]];
+  function dot(p,fill,r){return '<circle cx="'+mx(p[0])+'" cy="'+my(p[1])+'" r="'+r+'" fill="'+fill+'" stroke="#fbf8f1" stroke-width="1.4"/>';}
+  negPts.forEach(function(p){s+=dot(p,SL,6);});
+  posPts.forEach(function(p){s+=dot(p,C,6);});
+  svPts.forEach(function(p){
+    const fill=(p[0]<4)?SL:C;
+    s+='<circle cx="'+mx(p[0])+'" cy="'+my(p[1])+'" r="10.5" fill="none" stroke="'+INK+'" stroke-width="2"/>';
+    s+=dot(p,fill,6);
+  });
+  s+='<text x="'+mx(1.6)+'" y="'+my(8.7)+'" font-size="13" fill="'+SL+'" font-style="italic">class &#8722;1</text>';
+  s+='<text x="'+mx(7.2)+'" y="'+my(0.5)+'" font-size="13" fill="'+C+'" font-style="italic">class +1</text>';
+  s+='<line x1="'+(mx(6.0)-22)+'" y1="'+(my(8.4)-4)+'" x2="'+(mx(6.0)-6)+'" y2="'+(my(8.4)-4)+'" stroke="'+INK+'" stroke-width="2"/>';
+  s+='<text x="'+mx(6.0)+'" y="'+my(8.4)+'" font-size="12.5" fill="'+INK+'" font-style="italic">f(x) = 0</text>';
+  s+='<text x="'+(ML+5*SCALE)+'" y="'+(MT+10*SCALE+26)+'" font-size="11.5" fill="var(--muted)" text-anchor="middle" font-style="italic">feature x&#8321;</text>';
+  s+='<text x="'+(ML-22)+'" y="'+(MT+5*SCALE)+'" font-size="11.5" fill="var(--muted)" text-anchor="middle" font-style="italic" transform="rotate(-90 '+(ML-22)+' '+(MT+5*SCALE)+')">feature x&#8322;</text>';
+  s+='</svg>';
+  document.getElementById('mmc').innerHTML=s;
+}
+
+/* ============ PANEL B : interactive RBF ============ */
+const cSlide=document.getElementById('cSlide'), gSlide=document.getElementById('gSlide');
+const cVal=document.getElementById('cVal'),     gVal=document.getElementById('gVal');
+const cv=document.getElementById('svmCv'),      cx=cv.getContext('2d');
+
+const C_LO=Math.log(0.05),  C_HI=Math.log(20);
+const G_LO=Math.log(0.06),  G_HI=Math.log(4);
+function sliderToC(v){return Math.exp(C_LO+(C_HI-C_LO)*v/1000);}
+function sliderToG(v){return Math.exp(G_LO+(G_HI-G_LO)*v/1000);}
+function cToSlider(c){return Math.round((Math.log(c)-C_LO)/(C_HI-C_LO)*1000);}
+function gToSlider(g){return Math.round((Math.log(g)-G_LO)/(G_HI-G_LO)*1000);}
+
+let DX0=1e9,DX1=-1e9,DY0=1e9,DY1=-1e9;
+TRAIN.concat(TEST).forEach(function(p){
+  if(p.jx<DX0)DX0=p.jx; if(p.jx>DX1)DX1=p.jx;
+  if(p.x1<DY0)DY0=p.x1; if(p.x1>DY1)DY1=p.x1;
+});
+const padX=(DX1-DX0)*0.10, padY=(DY1-DY0)*0.10;
+DX0-=padX; DX1+=padX; DY0-=padY; DY1+=padY;
+
+let stateC=1, stateG=0.5, model=null;
+
+function retrain(){
+  model=smo(TRAIN,DTRAIN,stateC,stateG,10);
+  const trA=accuracy(model,stateG,TRAIN), teA=accuracy(model,stateG,TEST);
+  document.getElementById('trAcc').textContent=(trA*100).toFixed(1)+'%';
+  document.getElementById('teAcc').textContent=(teA*100).toFixed(1)+'%';
+  document.getElementById('trBar').style.width=(trA*100).toFixed(1)+'%';
+  document.getElementById('teBar').style.width=(teA*100).toFixed(1)+'%';
+  document.getElementById('nSv').innerHTML=model.sv.length+' <small>/ '+NTR+'</small>';
+  let w2=0;
+  for(let a=0;a<model.sv.length;a++){
+    for(let bI=0;bI<model.sv.length;bI++){
+      const dx=model.sv[a].x0-model.sv[bI].x0, dy=model.sv[a].x1-model.sv[bI].x1;
+      w2+=model.sv[a].ay*model.sv[bI].ay*Math.exp(-stateG*(dx*dx+dy*dy));
+    }
+  }
+  const mw=w2>1e-9?(2/Math.sqrt(w2)):0;
+  document.getElementById('mWid').textContent=mw.toFixed(2);
+  renderB();
+}
+
+function renderB(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const cssW=cv.clientWidth, cssH=cv.clientHeight;
+  cv.width=cssW*dpr; cv.height=cssH*dpr;
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  cx.clearRect(0,0,cssW,cssH);
+
+  const PL=52,PR=14,PT=14,PB=40;
+  const pw=cssW-PL-PR, ph=cssH-PT-PB;
+  const sx=function(x){return PL+(x-DX0)/(DX1-DX0)*pw;};
+  const sy=function(y){return PT+(DY1-y)/(DY1-DY0)*ph;};
+  const ix=function(px){return DX0+(px-PL)/pw*(DX1-DX0);};
+  const iy=function(py){return DY1-(py-PT)/ph*(DY1-DY0);};
+
+  const step=7;
+  const nx=Math.ceil(pw/step)+1, ny=Math.ceil(ph/step)+1;
+  const V=new Float64Array(nx*ny);
+  for(let r=0;r<ny;r++){
+    const wy=iy(PT+r*step);
+    for(let c=0;c<nx;c++){
+      V[r*nx+c]=decideXY(model,stateG,ix(PL+c*step),wy);
+    }
+  }
+  const off=document.createElement('canvas'); off.width=nx; off.height=ny;
+  const octx=off.getContext('2d'); const img=octx.createImageData(nx,ny);
+  for(let r=0;r<ny;r++){
+    for(let c=0;c<nx;c++){
+      const f=V[r*nx+c]; const k=(r*nx+c)*4;
+      const mag=Math.min(Math.abs(f),2.2)/2.2;
+      let R,G,B;
+      if(f>=0){ R=158;G=27;B=50; } else { R=60;G=85;B=96; }
+      img.data[k]=R; img.data[k+1]=G; img.data[k+2]=B;
+      img.data[k+3]=Math.round((0.10+0.20*mag)*255);
+    }
+  }
+  octx.putImageData(img,0,0);
+  cx.save();
+  cx.beginPath(); cx.rect(PL,PT,pw,ph); cx.clip();
+  cx.imageSmoothingEnabled=true;
+  cx.drawImage(off,0,0,nx,ny,PL,PT,(nx-1)*step,(ny-1)*step);
+  cx.restore();
+
+  function contour(thr){
+    const segs=[];
+    const ip=function(a,b){return (thr-a)/(b-a);};
+    for(let r=0;r<ny-1;r++){
+      for(let c=0;c<nx-1;c++){
+        const tl=V[r*nx+c],tr=V[r*nx+c+1],br=V[(r+1)*nx+c+1],bl=V[(r+1)*nx+c];
+        let id=0;
+        if(tl>thr)id|=8; if(tr>thr)id|=4; if(br>thr)id|=2; if(bl>thr)id|=1;
+        if(id===0||id===15) continue;
+        const top   =function(){return [PL+(c+ip(tl,tr))*step, PT+r*step];};
+        const right =function(){return [PL+(c+1)*step, PT+(r+ip(tr,br))*step];};
+        const bottom=function(){return [PL+(c+ip(bl,br))*step, PT+(r+1)*step];};
+        const left  =function(){return [PL+c*step, PT+(r+ip(tl,bl))*step];};
+        switch(id){
+          case 1: case 14: segs.push([left(),bottom()]); break;
+          case 2: case 13: segs.push([bottom(),right()]); break;
+          case 3: case 12: segs.push([left(),right()]); break;
+          case 4: case 11: segs.push([top(),right()]); break;
+          case 6: case 9:  segs.push([top(),bottom()]); break;
+          case 7: case 8:  segs.push([left(),top()]); break;
+          case 5: segs.push([left(),top()]); segs.push([bottom(),right()]); break;
+          case 10:segs.push([left(),bottom()]); segs.push([top(),right()]); break;
+        }
+      }
+    }
+    return segs;
+  }
+  function strokeContour(thr,color,width,dash){
+    const segs=contour(thr);
+    cx.save();
+    cx.beginPath(); cx.rect(PL,PT,pw,ph); cx.clip();
+    cx.strokeStyle=color; cx.lineWidth=width; cx.setLineDash(dash||[]);
+    cx.beginPath();
+    for(let i=0;i<segs.length;i++){
+      cx.moveTo(segs[i][0][0],segs[i][0][1]);
+      cx.lineTo(segs[i][1][0],segs[i][1][1]);
+    }
+    cx.stroke(); cx.restore();
+  }
+  strokeContour( 1,'#5f7e8b',1.4,[5,4]);
+  strokeContour(-1,'#bb6070',1.4,[5,4]);
+  strokeContour( 0,'#251c19',2.4,[]);
+
+  cx.strokeStyle='#c7bca3'; cx.lineWidth=1; cx.setLineDash([]);
+  cx.strokeRect(PL,PT,pw,ph);
+  cx.fillStyle='#857769'; cx.font='11px Spectral,serif'; cx.textAlign='center';
+  for(let t=-2;t<=4;t++){
+    if(t<DX0||t>DX1) continue;
+    const X=sx(t);
+    cx.strokeStyle='#e7dfcb'; cx.beginPath(); cx.moveTo(X,PT); cx.lineTo(X,PT+ph); cx.stroke();
+    cx.fillStyle='#857769'; cx.fillText((t>0?'+':'')+t, X, PT+ph+15);
+  }
+  cx.textAlign='right';
+  for(let t=-1;t<=3;t++){
+    if(t<DY0||t>DY1) continue;
+    const Y=sy(t);
+    cx.strokeStyle='#e7dfcb'; cx.beginPath(); cx.moveTo(PL,Y); cx.lineTo(PL+pw,Y); cx.stroke();
+    cx.fillStyle='#857769'; cx.fillText((t>0?'+':'')+t, PL-7, Y+3.5);
+  }
+  cx.strokeStyle='#c7bca3'; cx.strokeRect(PL,PT,pw,ph);
+  cx.fillStyle='#52443d'; cx.font='italic 12px Spectral,serif'; cx.textAlign='center';
+  cx.fillText('PAY_0  —  recent repayment status  (standardized)', PL+pw/2, cssH-6);
+  cx.save();
+  cx.translate(13,PT+ph/2); cx.rotate(-Math.PI/2);
+  cx.fillText('LIMIT_BAL  —  credit limit  (standardized)',0,0);
+  cx.restore();
+
+  const svKey={};
+  for(let k=0;k<model.sv.length;k++){
+    svKey[model.sv[k].x0.toFixed(4)+'|'+model.sv[k].x1.toFixed(4)]=1;
+  }
+  for(let i=0;i<TRAIN.length;i++){
+    const p=TRAIN[i];
+    const X=sx(p.jx), Y=sy(p.x1);
+    if(X<PL-4||X>PL+pw+4||Y<PT-4||Y>PT+ph+4) continue;
+    const isSV=svKey[p.x0.toFixed(4)+'|'+p.x1.toFixed(4)];
+    cx.beginPath(); cx.arc(X,Y,3.5,0,6.2832);
+    cx.fillStyle=(p.y>0)?'rgba(158,27,50,.92)':'rgba(60,85,96,.92)';
+    cx.fill();
+    cx.lineWidth=1; cx.strokeStyle='rgba(251,248,241,.9)'; cx.stroke();
+    if(isSV){
+      cx.beginPath(); cx.arc(X,Y,6.6,0,6.2832);
+      cx.lineWidth=1.7; cx.strokeStyle='#251c19'; cx.stroke();
+    }
+  }
+}
+
+/* ============ PANEL C : cross-validation grid ============ */
+const C_GRID=[0.1,0.3,1,3,10];
+const G_GRID=[0.125,0.25,0.5,1,2];
+const heat=document.getElementById('heatmap');
+let cellEls=[];
+
+function buildHeatShell(){
+  heat.classList.add('hm');
+  heat.style.gridTemplateColumns='26px 34px repeat(5,1fr)';
+  let html='';
+  html+='<div></div><div></div><div class="hm-axis" style="grid-column:3/8">&gamma;  —  kernel reach</div>';
+  html+='<div class="hm-axis vert" style="grid-row:2/7">C  —  budget</div>';
+  html+='<div class="hm-corner">C \\ &gamma;</div>';
+  for(let g=0;g<5;g++) html+='<div class="hm-clab">'+G_GRID[g]+'</div>';
+  for(let c=0;c<5;c++){
+    html+='<div class="hm-rlab">'+C_GRID[c]+'</div>';
+    for(let g=0;g<5;g++){
+      html+='<div class="cell pending" data-c="'+c+'" data-g="'+g+'"><span class="cv">&middot;&middot;&middot;</span></div>';
+    }
+  }
+  heat.innerHTML=html;
+  cellEls=[].slice.call(heat.querySelectorAll('.cell'));
+  cellEls.forEach(function(el){
+    el.addEventListener('click',function(){
+      if(el.classList.contains('pending')) return;
+      const ci=+el.dataset.c, gi=+el.dataset.g;
+      cellEls.forEach(function(e){e.classList.remove('sel');});
+      el.classList.add('sel');
+      stateC=C_GRID[ci]; stateG=G_GRID[gi];
+      cSlide.value=cToSlider(stateC); gSlide.value=gToSlider(stateG);
+      cVal.textContent=stateC.toFixed(2); gVal.textContent=stateG.toFixed(2);
+      retrain();
+    });
+  });
+}
+function heatColor(v){
+  const t=Math.max(0,Math.min(1,(v-0.62)/0.10));
+  const r=Math.round(231+(158-231)*t);
+  const g=Math.round(223+(27-223)*t);
+  const b=Math.round(203+(50-203)*t);
+  return 'rgb('+r+','+g+','+b+')';
+}
+function cvScore(C,gamma){
+  const k=5, idx=[];
+  for(let i=0;i<NTR;i++) idx.push(i);
+  const rnd=mulberry32(99);
+  for(let i=NTR-1;i>0;i--){ const j=(rnd()*(i+1))|0; const t=idx[i];idx[i]=idx[j];idx[j]=t; }
+  let tot=0;
+  for(let f=0;f<k;f++){
+    const trI=[],teI=[];
+    for(let i=0;i<NTR;i++){ if(i%k===f) teI.push(idx[i]); else trI.push(idx[i]); }
+    const trp=trI.map(function(i){return TRAIN[i];});
+    const tep=teI.map(function(i){return TRAIN[i];});
+    const Dk=sqdistMatrix(trp);
+    const m=smo(trp,Dk,C,gamma,4);
+    tot+=accuracy(m,gamma,tep);
+  }
+  return tot/k;
+}
+function runCV(){
+  const order=[];
+  for(let c=0;c<5;c++) for(let g=0;g<5;g++) order.push([c,g]);
+  let best={v:-1,c:0,g:0};
+  let n=0;
+  function tick(){
+    if(n>=order.length){
+      const bi=best.c*5+best.g;
+      cellEls[bi].classList.add('best');
+      cellEls[bi].insertAdjacentHTML('beforeend','<span class="star">&#9733;</span>');
+      document.getElementById('cvBadge').textContent=
+        'Best: C='+C_GRID[best.c]+', \u03B3='+G_GRID[best.g]+' \u2192 '+(best.v*100).toFixed(1)+'%';
+      return;
+    }
+    const c=order[n][0], g=order[n][1];
+    const v=cvScore(C_GRID[c],G_GRID[g]);
+    if(v>best.v){ best={v:v,c:c,g:g}; }
+    const el=cellEls[c*5+g];
+    el.classList.remove('pending');
+    el.style.background=heatColor(v);
+    const t=Math.max(0,Math.min(1,(v-0.62)/0.10));
+    el.style.color=(t>0.55)?'#fdf6ea':'#251c19';
+    el.innerHTML='<span class="cv">'+(v*100).toFixed(1)+'</span><span class="cw">percent</span>';
+    n++;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ============ WIRING ============ */
+function onSlide(){
+  stateC=sliderToC(+cSlide.value);
+  stateG=sliderToG(+gSlide.value);
+  cVal.textContent=stateC.toFixed(2);
+  gVal.textContent=stateG.toFixed(2);
+  cellEls.forEach(function(e){e.classList.remove('sel');});
+  scheduleRetrain();
+}
+let pend=false;
+function scheduleRetrain(){
+  if(pend) return; pend=true;
+  requestAnimationFrame(function(){ pend=false; retrain(); });
+}
+cSlide.addEventListener('input',onSlide);
+gSlide.addEventListener('input',onSlide);
+
+let rsz;
+window.addEventListener('resize',function(){
+  clearTimeout(rsz);
+  rsz=setTimeout(function(){ if(model) renderB(); },140);
+});
+
+/* ============ INIT ============ */
+function init(){
+  buildMMC();
+  buildHeatShell();
+  stateC=sliderToC(+cSlide.value);
+  stateG=sliderToG(+gSlide.value);
+  cVal.textContent=stateC.toFixed(2);
+  gVal.textContent=stateG.toFixed(2);
+  retrain();
+  setTimeout(runCV,260);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+else init();
+
+})();
+</script>
+</body>
+</html>

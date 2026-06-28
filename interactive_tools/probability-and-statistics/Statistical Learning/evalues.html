@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From p-values to e-values · McCormick Group · UW Statistics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3eee2;
+    --bg-soft: #ebe4d3;
+    --bg-deep: #e3dac4;
+    --ink: #1a2332;
+    --ink-soft: #4a5060;
+    --muted: #8a8270;
+    --accent: #4b2e83;       /* UW Husky Purple */
+    --gold:   #85754d;       /* UW Metallic Gold (darker tone for line visibility) */
+    --line: rgba(26, 35, 50, 0.18);
+    --line-soft: rgba(26, 35, 50, 0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(75, 46, 131, 0.05) 0%, transparent 45%),
+      radial-gradient(circle at 100% 100%, rgba(26, 35, 50, 0.06) 0%, transparent 45%);
+    color: var(--ink);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    min-height: 100vh;
+    padding: 4rem 1.5rem 6rem;
+  }
+
+  .container { max-width: 720px; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.35rem;
+  }
+  .masthead-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    margin-bottom: 1.6rem;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.7rem;
+  }
+  h1 em { font-style: italic; color: var(--accent); font-weight: 500; }
+
+  .subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.35rem;
+    color: var(--ink-soft);
+    margin-bottom: 1.4rem;
+  }
+
+  .byline {
+    margin-bottom: 3rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .byline-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .byline-author {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .byline-sep {
+    color: var(--muted);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+  }
+  .byline-affil {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--ink-soft);
+  }
+
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: 1.65rem;
+    margin: 1.2rem 0 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  h2::before {
+    content: '';
+    width: 1.4rem;
+    height: 1px;
+    background: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .part-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+    display: block;
+  }
+  .part-tag:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+
+  p { margin-bottom: 1rem; color: var(--ink-soft); }
+
+  .math {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--ink);
+    font-size: 1.05em;
+  }
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.86em;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+
+  /* Stat row */
+  .stat-row {
+    display: flex;
+    gap: 3rem;
+    justify-content: center;
+    margin: 2.25rem auto 1.5rem;
+    flex-wrap: wrap;
+    padding: 1.4rem 1rem;
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    max-width: 480px;
+  }
+  .stat { text-align: center; }
+  .stat .value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    color: var(--ink);
+    line-height: 1;
+    font-weight: 500;
+  }
+  .stat .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.45rem;
+  }
+
+  /* Hypothesis block */
+  .hypotheses {
+    margin: 1.6rem 0 1.8rem;
+    padding: 1.3rem 1.6rem;
+    background: var(--bg-soft);
+    border-left: 3px solid var(--accent);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.18rem;
+    line-height: 1.95;
+  }
+  .hypotheses .row {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .h-name { font-style: italic; color: var(--ink); min-width: 2.4rem; }
+  .h-statement { font-style: italic; color: var(--ink); }
+  .h-aside { color: var(--muted); font-style: italic; font-size: 0.9rem; }
+
+  /* Test buttons */
+  .run-tests {
+    margin: 2rem 0 0.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .test-prefix {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--ink);
+    font-size: 1.12rem;
+  }
+  .test-buttons {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .run-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 0.55rem 1.05rem;
+    cursor: pointer;
+    letter-spacing: 0.005em;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.1s ease;
+  }
+  .run-btn sub, .run-btn sup { font-size: 0.7em; }
+  .run-btn:hover {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .run-btn:active { transform: translateY(1px); }
+  .run-btn.is-active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .run-btn.is-active:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  /* Stage */
+  .stage {
+    margin: 1.5rem 0 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  svg.omega {
+    display: block;
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    overflow: visible;
+  }
+  .boundary {
+    fill: var(--bg-soft);
+    stroke: var(--ink);
+    stroke-width: 0.85;
+  }
+
+  /* Band dividers (gold) */
+  .band-divider {
+    stroke: var(--gold);
+    stroke-width: 1.05;
+    opacity: 0;
+    transition: opacity 0.7s ease,
+                x1 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                y1 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                x2 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                y2 1.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .band-divider.is-shown { opacity: 1; }
+
+  /* Band labels */
+  .band-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    fill: var(--muted);
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transition: opacity 0.7s ease,
+                x 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                y 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                fill 0.25s ease;
+  }
+  .band-label.is-shown { opacity: 1; }
+  .band-label.is-rejected { fill: var(--accent); }
+
+  /* Dots */
+  .dot {
+    fill: var(--ink);
+    transition: r 0.12s ease, fill 0.25s ease;
+    cursor: crosshair;
+  }
+  .dot:hover { fill: var(--accent); }
+  .dot.dot-rejected { fill: var(--accent); }
+  .dot.dot-observed {
+    fill: var(--accent);
+    stroke: var(--ink);
+    stroke-width: 1.4;
+  }
+  #dots-omega.is-partitioning .dot {
+    transition: cx 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                cy 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                fill 0.25s ease,
+                r 0.12s ease;
+  }
+
+  .omega-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 30px;
+    fill: var(--ink);
+  }
+
+  /* Number line */
+  #number-line-skel {
+    opacity: 0;
+    transition: opacity 0.75s ease;
+  }
+  #number-line-skel.show { opacity: 1; }
+  .num-line { stroke: var(--ink); stroke-width: 0.85; }
+  .num-cap { stroke: var(--ink); stroke-width: 0.85; }
+  .num-endpoint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    fill: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .pvalue-tick {
+    stroke: var(--muted);
+    stroke-width: 1.1;
+    opacity: 0;
+    transition: x1 0.3s ease, x2 0.3s ease,
+                y1 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                y2 1.25s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke 0.25s ease, stroke-width 0.25s ease, opacity 0.5s ease;
+  }
+  .pvalue-tick.is-shown { opacity: 0.55; }
+  .pvalue-tick.is-shown.is-active {
+    stroke: var(--accent);
+    stroke-width: 2.6;
+    opacity: 1;
+  }
+
+  /* p-variable display */
+  .pvar-text {
+    font-family: 'Cormorant Garamond', 'STIX Two Math', 'Cambria Math', serif;
+    font-style: italic;
+    font-size: 15px;
+    fill: var(--ink);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+  .pvar-text.show { opacity: 1; }
+  .pvar-value {
+    fill: var(--accent);
+    font-weight: 500;
+    font-size: 19px;
+  }
+
+  /* Arrow */
+  .arrow-path {
+    stroke: var(--accent);
+    stroke-width: 1.3;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.45s ease, d 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .arrow-path.show { opacity: 1; }
+  .arrow-marker { fill: var(--accent); }
+
+  /* Hover info row */
+  .info {
+    margin-top: 1.4rem;
+    width: 100%;
+    max-width: 540px;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    min-height: 2.6rem;
+  }
+  .info .label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+  }
+  .info .seq {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.05rem;
+    color: var(--ink);
+    letter-spacing: 0.1em;
+  }
+  .info .seq.placeholder {
+    color: var(--muted);
+    font-style: italic;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0;
+  }
+  .info .meta {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 1rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Observation line */
+  .observation-line {
+    margin-top: 0.9rem;
+    width: 100%;
+    max-width: 540px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 0.65rem;
+  }
+  .observation-line[hidden] { display: none; }
+  .obs-pvalue {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.08rem;
+    color: var(--ink);
+  }
+  .obs-pvalue .pv-val {
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 1.18em;
+  }
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .reset-btn:hover { background: var(--ink); color: var(--bg); }
+
+  .footnote {
+    margin-top: 2.5rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    border-left: 2px solid var(--line);
+    padding-left: 1rem;
+    font-style: italic;
+  }
+
+  /* Part III: calibrators */
+  .formula-block {
+    margin: 1.4rem 0 1.6rem;
+    padding: 1.1rem 1.4rem;
+    background: var(--bg-soft);
+    border-left: 2px solid var(--gold);
+    font-family: 'Cormorant Garamond', 'STIX Two Math', 'Cambria Math', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--ink);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .calib-stage {
+    margin: 1.5rem 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  svg.calibrator {
+    display: block;
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .grid-line { stroke: var(--line-soft); stroke-width: 0.55; }
+  .axis      { stroke: var(--ink);       stroke-width: 0.85; }
+  .axis-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    fill: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .axis-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 13px;
+    fill: var(--ink-soft);
+  }
+  .ref-line {
+    stroke: var(--gold);
+    stroke-width: 0.95;
+    stroke-dasharray: 4 3;
+  }
+  .ref-line-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 10.5px;
+    fill: var(--gold);
+  }
+  .curve {
+    stroke: var(--accent);
+    stroke-width: 1.6;
+    fill: none;
+  }
+  .curve-soft {
+    stroke: var(--ink-soft);
+    stroke-width: 1.2;
+    fill: none;
+    opacity: 0.65;
+  }
+  .cal-marker circle {
+    fill: var(--ink);
+    stroke: var(--bg);
+    stroke-width: 1.2;
+    transition: cx 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                cy 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                fill 0.25s ease, r 0.18s ease;
+  }
+  .cal-marker .marker-label {
+    font-family: 'Cormorant Garamond', 'STIX Two Math', serif;
+    font-style: italic;
+    font-size: 11px;
+    fill: var(--ink-soft);
+    text-anchor: middle;
+    transition: x 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                y 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                fill 0.25s ease, font-weight 0.2s ease;
+    pointer-events: none;
+  }
+  .cal-marker.is-active circle {
+    fill: var(--accent);
+    r: 5;
+  }
+  .cal-marker.is-active .marker-label {
+    fill: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Kappa slider */
+  .kappa-control {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: 1.1rem;
+    width: 100%;
+    max-width: 540px;
+  }
+  .kappa-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--ink);
+    font-size: 1.15rem;
+  }
+  .kappa-value {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 500;
+    min-width: 2.6rem;
+  }
+  .kappa-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    height: 18px;
+  }
+  .kappa-slider:focus { outline: none; }
+  .kappa-slider::-webkit-slider-runnable-track {
+    height: 1.5px;
+    background: var(--ink);
+    border: none;
+  }
+  .kappa-slider::-moz-range-track {
+    height: 1.5px;
+    background: var(--ink);
+    border: none;
+  }
+  .kappa-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: -6px;
+    cursor: pointer;
+    border: none;
+  }
+  .kappa-slider::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+  }
+
+  /* E-values display */
+  .evalues-row {
+    margin-top: 0.95rem;
+    width: 100%;
+    max-width: 540px;
+    display: flex;
+    gap: 1.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+  }
+  .ev-item .ev-num {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .ev-item.is-active {
+    color: var(--ink);
+  }
+  .ev-item.is-active .ev-num {
+    font-size: 1.13em;
+  }
+
+  /* F(p) static plot */
+  .f-plot-stage {
+    margin: 1.4rem 0 0.5rem;
+    display: flex;
+    justify-content: center;
+  }
+  svg.f-plot {
+    display: block;
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    overflow: visible;
+  }
+  .f-anchor { fill: var(--accent); }
+  .f-anchor-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 11px;
+    fill: var(--accent);
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 2.5rem 1.25rem 4rem; font-size: 16px; }
+    .stat-row { gap: 1.5rem; }
+    .info { grid-template-columns: 1fr; gap: 0.4rem; }
+    .info .meta { text-align: left; }
+    .run-btn { font-size: 0.95rem; padding: 0.5rem 0.85rem; }
+    .test-buttons { gap: 0.4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="eyebrow">University of Washington &middot; Department of Statistics</div>
+  <div class="masthead-sub">Tyler McCormick Group</div>
+  <h1>From <em>p</em>-values to <em>e</em>-values</h1>
+  <div class="subtitle">A coin flipped ten times</div>
+  <div class="byline">
+    <span class="byline-label">By</span>
+    <span class="byline-author">Georgia Smits</span>
+    <span class="byline-sep">&mdash;</span>
+    <span class="byline-affil">a walk through statistical evidence</span>
+  </div>
+
+  <span class="part-tag">Part I &middot; The sample space</span>
+
+  <h2>An experiment</h2>
+  <p>Suppose we flip a coin ten times. Our null hypothesis <span class="math">H<sub>0</sub></span> says the flips are independent, and that each is equally likely heads or tails.</p>
+  <p>An outcome is a sequence of ten letters &mdash; for instance, <span class="mono">HHTHTTHHTH</span>. The set of all such outcomes is the sample space <span class="math">&Omega;</span>, with <span class="math">2<sup>10</sup> = 1024</span> points: <span class="mono">HHHHHHHHHH</span>, <span class="mono">HHHHHHHHHT</span>, &hellip;, <span class="mono">TTTTTTTTTT</span>. Together with the power-set &sigma;-algebra <span class="math">&#x2131;</span> on <span class="math">&Omega;</span> and the probability measure <span class="math">P</span> induced by <span class="math">H<sub>0</sub></span> &mdash; every singleton has mass <span class="math">1/1024</span> &mdash; the triple <span class="math">(&Omega;, &#x2131;, P)</span> is the probability space we work in throughout.</p>
+
+  <p>Two random-variable summaries of evidence will concern us. A <em>p-variable</em> is a random variable <span class="math">𝔭: &Omega; &rarr; [0,1]</span> super-uniform under <span class="math">P</span>, meaning <span class="math">P(𝔭 &le; &alpha;) &le; &alpha;</span> for every <span class="math">&alpha; &isin; [0,1]</span> &mdash; small <span class="math">𝔭</span> is evidence against <span class="math">H<sub>0</sub></span>. An <em>e-variable</em> is a nonnegative random variable <span class="math">𝔢: &Omega; &rarr; [0,&infin;]</span> with <span class="math">E<sub>P</sub>[𝔢] &le; 1</span> &mdash; large <span class="math">𝔢</span> is evidence (Markov: <span class="math">P(𝔢 &ge; k) &le; 1/k</span>). Part II builds four classical p-variables on this <span class="math">&Omega;</span>; Part III calibrates them into e-variables.</p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="value">1024</div><div class="name">|&Omega;|</div></div>
+    <div class="stat"><div class="value">10</div><div class="name">flips</div></div>
+    <div class="stat"><div class="value">&frac12;</div><div class="name">P(H) under H<sub>0</sub></div></div>
+  </div>
+
+  <span class="part-tag">Part II &middot; A first hypothesis test</span>
+
+  <h2>The classical p-value</h2>
+
+  <p>We pit the fair-coin null against three classical alternatives:</p>
+  <div class="hypotheses">
+    <div class="row">
+      <span class="h-name">H<sub>0</sub>:</span>
+      <span class="h-statement">p = &frac12;</span>
+      <span class="h-aside">the coin is fair</span>
+    </div>
+    <div class="row">
+      <span class="h-name">H<sub>1</sub>:</span>
+      <span class="h-statement">p &gt; &frac12;, &nbsp;p &lt; &frac12;, &nbsp;or&nbsp; p &ne; &frac12;</span>
+      <span class="h-aside">three classical alternatives</span>
+    </div>
+  </div>
+
+  <p>Let <span class="math">X</span> be the number of heads. For <span class="math">p &gt; &frac12;</span> and <span class="math">p &lt; &frac12;</span>, the level sets of <span class="math">X</span> partition <span class="math">&Omega;</span> into eleven equivalence classes. For <span class="math">p &ne; &frac12;</span>, the natural classes are level sets of <span class="math">|X &minus; 5|</span> &mdash; just six, with <span class="mono">HHHHHHHHHH</span> and <span class="mono">TTTTTTTTTT</span> collapsing into a single most-extreme class.</p>
+
+  <p>Each alternative defines its own <em>p</em>-variable <span class="math">&Omega; &rarr; [0,1]</span>:</p>
+
+  <div class="hypotheses" style="margin-top:0.5rem;">
+    <div class="row">
+      <span class="h-name">𝔭<sub>+</sub>(&omega;)</span>
+      <span class="h-statement">= P(X &ge; X(&omega;))</span>
+      <span class="h-aside">upper-tail</span>
+    </div>
+    <div class="row">
+      <span class="h-name">𝔭<sub>&minus;</sub>(&omega;)</span>
+      <span class="h-statement">= P(X &le; X(&omega;))</span>
+      <span class="h-aside">lower-tail</span>
+    </div>
+    <div class="row">
+      <span class="h-name">𝔭<sub>2</sub>(&omega;)</span>
+      <span class="h-statement">= P(|X &minus; 5| &ge; |X(&omega;) &minus; 5|)</span>
+      <span class="h-aside">two-sided</span>
+    </div>
+  </div>
+
+  <p>Less obvious tests are <em>p</em>-variables too. Let <span class="math">R</span> be the number of consecutive runs of identical symbols: <span class="math">R</span>(<span class="mono">HHHHHTTTTT</span>) = 2, <span class="math">R</span>(<span class="mono">HTHTHTHTHT</span>) = 10, <span class="math">R</span>(<span class="mono">HHHTTTTHHH</span>) = 3. Under <span class="math">H<sub>0</sub></span>, each of the nine adjacencies between consecutive flips independently changes (probability <span class="math">&frac12;</span>) or doesn't, so <span class="math">R &minus; 1 ~ Bin(9, &frac12;)</span>. We reject when <span class="math">R</span> is small &mdash; long runs suggest dependence &mdash; and a fourth <em>p</em>-variable joins the list:</p>
+
+  <div class="hypotheses" style="margin-top:0.5rem;">
+    <div class="row">
+      <span class="h-name">𝔭<sub>streak</sub>(&omega;)</span>
+      <span class="h-statement">= P(R &le; R(&omega;))</span>
+      <span class="h-aside">runs test</span>
+    </div>
+  </div>
+
+  <p>For the same observation <span class="mono">HHTHTHTHHH</span> (seven heads, <span class="math">R = 7</span>), the four read <span class="math">0.1719, 0.9453, 0.3438</span>, and <span class="math">0.9102</span> &mdash; same data, four verdicts. And the streak test's classes look nothing like the others: <span class="mono">HHHHHHHHHH</span> and <span class="mono">TTTTTTTTTT</span> land in the most-extreme class (R=1) together, while <span class="mono">HTHTHTHTHT</span> &mdash; perfectly fair-looking by head count &mdash; goes to the very top, the <em>least</em> extreme by R.</p>
+
+  <p>Geometrically, each <em>p</em>-variable carves <span class="math">&Omega;</span> into level sets. As <span class="math">&alpha;</span> grows from 0 to 1, the rejection region <span class="math">𝔭<sup>&minus;1</sup>([0,&alpha;])</span> &mdash; the set of <span class="math">&omega;</span> with <span class="math">𝔭(&omega;) &le; &alpha;</span> &mdash; sweeps <span class="math">&Omega;</span> from the bottom upward through these nested bands, accumulating <span class="math">P</span>-mass at most <span class="math">&alpha;</span> at every step. The condition <span class="math">P(𝔭 &le; &alpha;) &le; &alpha;</span> is exactly that nestedness.</p>
+
+  <p>Press a button. The dots fly into the equivalence classes for that test, ordered with the smallest p-values at the bottom. Switch tests, and the particles rearrange.</p>
+
+  <div class="run-tests">
+    <div class="test-prefix">Test &nbsp;<span class="math">H<sub>0</sub></span>&nbsp; against an alternative:</div>
+    <div class="test-buttons">
+      <button class="run-btn" data-test="upper">H<sub>1</sub>: p &gt; &frac12;</button>
+      <button class="run-btn" data-test="lower">H<sub>1</sub>: p &lt; &frac12;</button>
+      <button class="run-btn" data-test="two_sided">H<sub>1</sub>: p &ne; &frac12;</button>
+      <button class="run-btn" data-test="streak">H<sub>1</sub>: streaks</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <svg class="omega" viewBox="0 0 600 460" xmlns="http://www.w3.org/2000/svg" aria-label="Sample space Omega and p-variable number line">
+      <defs>
+        <marker id="arrowhead" markerWidth="9" markerHeight="7" refX="7" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L9,3.5 L0,7 Z" class="arrow-marker"/>
+        </marker>
+      </defs>
+
+      <text class="omega-label" x="418" y="32" text-anchor="end">&Omega;</text>
+
+      <circle class="boundary" cx="220" cy="235" r="200"/>
+      <g id="band-dividers"></g>
+      <g id="dots-omega"></g>
+      <g id="band-labels"></g>
+
+      <g id="number-line-skel">
+        <line class="num-line" x1="530" y1="75" x2="530" y2="420"/>
+        <line class="num-cap" x1="525" y1="75" x2="535" y2="75"/>
+        <line class="num-cap" x1="525" y1="420" x2="535" y2="420"/>
+        <text class="num-endpoint" x="518" y="79" text-anchor="end">1</text>
+        <text class="num-endpoint" x="518" y="424" text-anchor="end">0</text>
+        <g id="pvalue-ticks"></g>
+      </g>
+
+      <text id="pvar-text" class="pvar-text" x="530" y="42" text-anchor="middle">
+        <tspan>𝔭</tspan><tspan id="pvar-sub" dy="3" font-size="10.5">+</tspan><tspan dy="-3">(&omega;) = </tspan><tspan id="pvar-value" class="pvar-value">&mdash;</tspan>
+      </text>
+
+      <path id="arrow" class="arrow-path" marker-end="url(#arrowhead)"/>
+    </svg>
+
+    <div class="info">
+      <span class="label">&omega; =</span>
+      <span class="seq placeholder" id="seq-omega">hover a point to read its sequence</span>
+      <span class="meta" id="meta-omega"></span>
+    </div>
+
+    <div class="observation-line" id="observation-line" hidden>
+      <span class="obs-pvalue" id="obs-pvalue-formula"></span>
+      <button class="reset-btn" id="reset-btn">Try another outcome</button>
+    </div>
+  </div>
+
+  <p class="footnote">A <em>p</em>-variable on <span class="math">(&Omega;, &#x2131;, P)</span> is any random variable <span class="math">𝔭: &Omega; &rarr; [0,1]</span> with <span class="math">P(𝔭 &le; &alpha;) &le; &alpha;</span> for every <span class="math">&alpha; &isin; [0, 1]</span>. The classical <em>p</em>-values drawn here are the prototypes.</p>
+
+  <span class="part-tag">Part III &middot; From p-values to e-values</span>
+
+  <h2>Calibrators</h2>
+
+  <p>A <em>calibrator</em> is a decreasing function <span class="math">f: [0,1] &rarr; [0, &infin;]</span> that turns p-variables into e-variables: for any probability space <span class="math">(&Omega;, &#x2131;, P)</span> and any p-variable <span class="math">𝔭</span>, the random variable <span class="math">f(𝔭)</span> is an e-variable on <span class="math">(&Omega;, &#x2131;, P)</span> &mdash; nonnegative with <span class="math">E<sub>P</sub>[f(𝔭)] &le; 1</span>. A calibrator <span class="math">f</span> dominates <span class="math">g</span> if <span class="math">f &ge; g</span>, and is admissible if not strictly dominated.</p>
+
+  <p>Vovk &amp; Wang's Proposition 2.1 reduces the definition to a clean integral criterion:</p>
+
+  <div class="formula-block">
+    <span class="math">f</span> is a calibrator &nbsp;&hArr;&nbsp; <span class="math">&int;<sub>0</sub><sup>1</sup> f &le; 1</span>;
+    &nbsp; admissible &nbsp;&hArr;&nbsp; <span class="math">f</span> upper semicontinuous, <span class="math">f(0) = &infin;</span>, <span class="math">&int;<sub>0</sub><sup>1</sup> f = 1</span>.
+  </div>
+
+  <p>The simplest one-parameter family is</p>
+  <div class="formula-block">
+    <span class="math">f<sub>&kappa;</sub>(p) := &kappa; p<sup>&kappa;&minus;1</sup></span>, &nbsp; <span class="math">&kappa; &isin; (0, 1)</span>.
+  </div>
+  <p>Each <span class="math">f<sub>&kappa;</sub></span> is decreasing, blows up at <span class="math">p = 0</span>, equals <span class="math">&kappa;</span> at <span class="math">p = 1</span>, and integrates to <span class="math">[p<sup>&kappa;</sup>]<sub>0</sub><sup>1</sup> = 1</span>; admissible. The exponent <span class="math">&kappa;</span> tunes how aggressively small p-values get amplified.</p>
+
+  <p>The plot below shows <span class="math">f<sub>&kappa;</sub></span> on the log-scaled y-axis, with the four p-values from <span class="mono">HHTHTHTHHH</span> in Part II mapped through the calibrator to four e-values. The dashed gold line marks <span class="math">e = 1</span> &mdash; above it, evidence against <span class="math">H<sub>0</sub></span>; below, evidence for it. Slide <span class="math">&kappa;</span> to watch the curve and the four markers move.</p>
+
+  <div class="calib-stage">
+    <svg class="calibrator" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg" aria-label="Calibrator plot">
+      <defs>
+        <clipPath id="cal-clip">
+          <rect x="60" y="30" width="510" height="290"/>
+        </clipPath>
+      </defs>
+
+      <!-- Grid lines at log decades -->
+      <line class="grid-line" x1="60" y1="320" x2="570" y2="320"/>
+      <line class="grid-line" x1="60" y1="226.67" x2="570" y2="226.67"/>
+      <line class="grid-line" x1="60" y1="133.33" x2="570" y2="133.33"/>
+      <line class="grid-line" x1="60" y1="40" x2="570" y2="40"/>
+
+      <!-- Vertical guide at p=0.5 -->
+      <line class="grid-line" x1="315" y1="40" x2="315" y2="320"/>
+
+      <!-- y-axis tick labels -->
+      <text class="axis-label" x="55" y="324" text-anchor="end">0.1</text>
+      <text class="axis-label" x="55" y="231" text-anchor="end">1</text>
+      <text class="axis-label" x="55" y="137" text-anchor="end">10</text>
+      <text class="axis-label" x="55" y="44"  text-anchor="end">100</text>
+
+      <!-- x-axis -->
+      <line class="axis" x1="60" y1="320" x2="570" y2="320"/>
+      <text class="axis-label" x="60" y="338">0</text>
+      <text class="axis-label" x="315" y="338" text-anchor="middle">0.5</text>
+      <text class="axis-label" x="570" y="338" text-anchor="end">1</text>
+      <text class="axis-title" x="315" y="362" text-anchor="middle">p</text>
+
+      <!-- y-axis -->
+      <line class="axis" x1="60" y1="30" x2="60" y2="320"/>
+      <text class="axis-title" x="22" y="180" text-anchor="middle" transform="rotate(-90, 22, 180)">f<tspan dy="3" font-size="9">&kappa;</tspan><tspan dy="-3">(p)</tspan></text>
+
+      <!-- e=1 reference line -->
+      <line class="ref-line" x1="60" y1="226.67" x2="570" y2="226.67"/>
+      <text class="ref-line-label" x="565" y="222" text-anchor="end">e = 1</text>
+
+      <!-- Curve -->
+      <path id="kappa-curve" class="curve" d="" clip-path="url(#cal-clip)"/>
+
+      <!-- Markers -->
+      <g id="cal-markers" clip-path="url(#cal-clip)">
+        <g class="cal-marker" data-test="upper">
+          <circle cx="0" cy="0" r="4"/>
+          <text class="marker-label" x="0" y="0" dy="-9">+</text>
+        </g>
+        <g class="cal-marker" data-test="lower">
+          <circle cx="0" cy="0" r="4"/>
+          <text class="marker-label" x="0" y="0" dy="-9">&minus;</text>
+        </g>
+        <g class="cal-marker" data-test="two_sided">
+          <circle cx="0" cy="0" r="4"/>
+          <text class="marker-label" x="0" y="0" dy="-9">2</text>
+        </g>
+        <g class="cal-marker" data-test="streak">
+          <circle cx="0" cy="0" r="4"/>
+          <text class="marker-label" x="0" y="0" dy="-9">R</text>
+        </g>
+      </g>
+    </svg>
+
+    <div class="kappa-control">
+      <span class="kappa-label">&kappa;&nbsp;=</span>
+      <span class="kappa-value" id="kappa-value">0.50</span>
+      <input type="range" class="kappa-slider" id="kappa-slider" min="0.05" max="0.95" step="0.01" value="0.50">
+    </div>
+
+    <div class="evalues-row" id="evalues-row">
+      <span class="ev-item" data-test="upper">e<sub>+</sub> = <span class="ev-num" id="ev-upper">&mdash;</span></span>
+      <span class="ev-item" data-test="lower">e<sub>&minus;</sub> = <span class="ev-num" id="ev-lower">&mdash;</span></span>
+      <span class="ev-item" data-test="two_sided">e<sub>2</sub> = <span class="ev-num" id="ev-two_sided">&mdash;</span></span>
+      <span class="ev-item" data-test="streak">e<sub>streak</sub> = <span class="ev-num" id="ev-streak">&mdash;</span></span>
+    </div>
+  </div>
+
+  <p>The four markers all live on a single curve <em>at any given <span class="math">&kappa;</span></em>. Different choices of <span class="math">&kappa;</span> reward different ranges of evidence: small <span class="math">&kappa;</span> rewards extreme p-values dramatically and is harsh on moderate ones; large <span class="math">&kappa;</span> is gentler, with <span class="math">f<sub>&kappa;</sub>(1) = &kappa;</span> approaching one. No single <span class="math">&kappa;</span> is best.</p>
+
+  <p>Averaging the family over <span class="math">&kappa;</span> &mdash; treating <span class="math">&kappa;</span> as itself uniform on <span class="math">[0,1]</span> &mdash; gives a parameter-free calibrator with a closed form:</p>
+  <div class="formula-block">
+    <span class="math">F(p) = &int;<sub>0</sub><sup>1</sup> &kappa; p<sup>&kappa;&minus;1</sup> d&kappa; = <span style="display:inline-block; vertical-align:middle; text-align:center;"><span style="display:block; border-bottom:1px solid currentColor; padding:0 0.3em;">1 &minus; p + p ln p</span><span style="display:block; padding:0 0.3em;">p (ln p)<sup>2</sup></span></span></span>
+  </div>
+
+  <p>This is itself a calibrator (Fubini gives <span class="math">&int; F = &int;&int; f<sub>&kappa;</sub> dp d&kappa; = 1</span>; for the direct check, the substitution <span class="math">t = &minus;ln p</span> reduces <span class="math">&int;<sub>0</sub><sup>1</sup> F</span> to <span class="math">&int;<sub>0</sub><sup>&infin;</sup> (1 &minus; (1+t)e<sup>&minus;t</sup>) / t<sup>2</sup> dt</span>, which integrates by parts to <span class="math">1</span>). It is admissible: <span class="math">F(0) = &infin;</span>, <span class="math">F(1) = ½</span>, monotone decreasing throughout.</p>
+
+  <div class="f-plot-stage">
+    <svg class="f-plot" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" aria-label="F(p) calibrator plot">
+      <defs>
+        <clipPath id="f-clip">
+          <rect x="60" y="30" width="510" height="230"/>
+        </clipPath>
+      </defs>
+
+      <line class="grid-line" x1="60" y1="260" x2="570" y2="260"/>
+      <line class="grid-line" x1="60" y1="183.33" x2="570" y2="183.33"/>
+      <line class="grid-line" x1="60" y1="106.67" x2="570" y2="106.67"/>
+      <line class="grid-line" x1="60" y1="30" x2="570" y2="30"/>
+      <line class="grid-line" x1="315" y1="30" x2="315" y2="260"/>
+
+      <text class="axis-label" x="55" y="264" text-anchor="end">0.1</text>
+      <text class="axis-label" x="55" y="187" text-anchor="end">1</text>
+      <text class="axis-label" x="55" y="111" text-anchor="end">10</text>
+      <text class="axis-label" x="55" y="34"  text-anchor="end">100</text>
+
+      <line class="axis" x1="60" y1="260" x2="570" y2="260"/>
+      <text class="axis-label" x="60" y="278">0</text>
+      <text class="axis-label" x="315" y="278" text-anchor="middle">0.5</text>
+      <text class="axis-label" x="570" y="278" text-anchor="end">1</text>
+      <text class="axis-title" x="315" y="302" text-anchor="middle">p</text>
+
+      <line class="axis" x1="60" y1="30" x2="60" y2="260"/>
+      <text class="axis-title" x="22" y="145" text-anchor="middle" transform="rotate(-90, 22, 145)">F(p)</text>
+
+      <line class="ref-line" x1="60" y1="183.33" x2="570" y2="183.33"/>
+
+      <path id="f-curve" class="curve" d="" clip-path="url(#f-clip)"/>
+
+      <!-- F(1) = 1/2 anchor -->
+      <circle id="f-anchor" class="f-anchor" r="3.5"/>
+      <text id="f-anchor-label" class="f-anchor-label" text-anchor="end">F(1) = ½</text>
+    </svg>
+  </div>
+
+  <p class="footnote">As <span class="math">&kappa; &rarr; 0</span>, <span class="math">f<sub>&kappa;</sub></span> concentrates on tiny p-values (admissible but harsh). As <span class="math">&kappa; &rarr; 1</span>, <span class="math">f<sub>&kappa;</sub> &rarr; 1</span> uniformly &mdash; the trivial calibrator. <span class="math">F</span> sits in between, smooth and parameter-free, and is the prototypical default when <span class="math">&kappa;</span> hasn't been chosen.</p>
+
+</div>
+
+<script>
+(function () {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function sequenceFromIndex(i) {
+    let s = '';
+    for (let b = 9; b >= 0; b--) s += ((i >> b) & 1) ? 'T' : 'H';
+    return s;
+  }
+  function countHeads(seq) {
+    let n = 0;
+    for (const c of seq) if (c === 'H') n++;
+    return n;
+  }
+  function countBlocks(seq) {
+    let r = 1;
+    for (let i = 1; i < seq.length; i++) {
+      if (seq[i] !== seq[i - 1]) r++;
+    }
+    return r;
+  }
+  function diskAreaBelow(y) {
+    if (y >= 1) return Math.PI;
+    if (y <= -1) return 0;
+    return Math.PI / 2 + y * Math.sqrt(1 - y * y) + Math.asin(y);
+  }
+  function findYForArea(target) {
+    if (target <= 0) return -1;
+    if (target >= Math.PI) return 1;
+    let lo = -1, hi = 1;
+    for (let i = 0; i < 50; i++) {
+      const m = (lo + hi) / 2;
+      if (diskAreaBelow(m) < target) lo = m;
+      else hi = m;
+    }
+    return (lo + hi) / 2;
+  }
+  function binom(n, k) {
+    if (k < 0 || k > n) return 0;
+    let r = 1;
+    for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1);
+    return Math.round(r);
+  }
+  function halton(i, base) {
+    let f = 1, r = 0, n = i;
+    while (n > 0) { f /= base; r += f * (n % base); n = Math.floor(n / base); }
+    return r;
+  }
+
+  // Constants
+  const cx = 220, cy = 235;
+  const Rsun = 192;
+  const Rband = 195;
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  const lineX = 530, lineTop = 75, lineBottom = 420;
+  const lineLength = lineBottom - lineTop;
+  const MAX_DIVIDERS = 10;
+  const MAX_LABELS = 11;
+  const MAX_TICKS = 11;
+
+  // Counts and p-variable arrays
+  const counts = [];
+  for (let k = 0; k <= 10; k++) counts[k] = binom(10, k);
+  const pUpper = [], pLower = [], pTwo = [];
+  for (let k = 0; k <= 10; k++) {
+    let su = 0, sl = 0, st = 0;
+    for (let j = k; j <= 10; j++) su += counts[j];
+    for (let j = 0; j <= k; j++) sl += counts[j];
+    const d = Math.abs(k - 5);
+    for (let j = 0; j <= 10; j++) if (Math.abs(j - 5) >= d) st += counts[j];
+    pUpper[k] = su / 1024;
+    pLower[k] = sl / 1024;
+    pTwo[k]   = st / 1024;
+  }
+  // p_streak indexed by R: pStreakByR[r] = P(R <= r | H_0)
+  const pStreakByR = new Array(11);
+  pStreakByR[0] = 0;
+  for (let r = 1; r <= 10; r++) {
+    let s = 0;
+    for (let rr = 1; rr <= r; rr++) s += 2 * binom(9, rr - 1);
+    pStreakByR[r] = s / 1024;
+  }
+
+  // ---- Per-test layouts ----
+  // Classes ordered top-to-bottom (large p at top, small p at bottom).
+  const testLayouts = {
+    upper: {
+      sub: '+',
+      classCount: 11,
+      classOfSeq: (seq) => countHeads(seq),
+      pValueOfClass: (c) => pUpper[c],
+      classLabel: (c) => `k=${c}`,
+      formula: (seq, _c) => `P(X &ge; ${countHeads(seq)})`
+    },
+    lower: {
+      sub: '\u2212',
+      classCount: 11,
+      classOfSeq: (seq) => 10 - countHeads(seq),
+      pValueOfClass: (c) => pLower[10 - c],
+      classLabel: (c) => `k=${10 - c}`,
+      formula: (seq, _c) => `P(X &le; ${countHeads(seq)})`
+    },
+    two_sided: {
+      sub: '2',
+      classCount: 6,
+      classOfSeq: (seq) => Math.abs(countHeads(seq) - 5),
+      pValueOfClass: (c) => pTwo[c === 0 ? 5 : 5 + c],
+      classLabel: (c) => c === 0 ? 'k=5' : `k=${5 - c},${5 + c}`,
+      formula: (seq, _c) => `P(|X &minus; 5| &ge; ${Math.abs(countHeads(seq) - 5)})`
+    },
+    streak: {
+      sub: 'streak',
+      classCount: 10,
+      classOfSeq: (seq) => 10 - countBlocks(seq),
+      pValueOfClass: (c) => pStreakByR[10 - c],
+      classLabel: (c) => `R=${10 - c}`,
+      formula: (seq, _c) => `P(R &le; ${countBlocks(seq)})`
+    }
+  };
+
+  function buildLayout(layout) {
+    const cm = [];
+    for (let c = 0; c < layout.classCount; c++) cm.push([]);
+    for (let i = 0; i < 1024; i++) {
+      const seq = sequenceFromIndex(i);
+      cm[layout.classOfSeq(seq)].push(i);
+    }
+    layout.classMembers = cm;
+
+    const yBounds = [1];
+    let cumSize = 0;
+    for (let c = 0; c < layout.classCount - 1; c++) {
+      cumSize += cm[c].length;
+      yBounds.push(findYForArea(Math.PI * (1024 - cumSize) / 1024));
+    }
+    yBounds.push(-1);
+    layout.yBounds = yBounds;
+
+    const positions = new Array(1024);
+    for (let c = 0; c < layout.classCount; c++) {
+      const yHi = yBounds[c], yLo = yBounds[c + 1];
+      const aLo = diskAreaBelow(yLo), aHi = diskAreaBelow(yHi);
+      const members = cm[c];
+      const sz = members.length;
+      for (let j = 0; j < sz; j++) {
+        const idx = members[j];
+        const hIdx = j + 1 + (sz === 1 ? 1 : 0);
+        const u = halton(hIdx, 2);
+        const v = halton(hIdx, 3);
+        const tA = aLo + u * (aHi - aLo);
+        const my = findYForArea(tA);
+        const half = Math.sqrt(Math.max(0, 1 - my * my));
+        const mx = (2 * v - 1) * half;
+        positions[idx] = [cx + mx * Rband, cy - my * Rband];
+      }
+    }
+    layout.dotPositions = positions;
+
+    layout.labelPositions = [];
+    for (let c = 0; c < layout.classCount; c++) {
+      const yHi = yBounds[c], yLo = yBounds[c + 1];
+      const aLo = diskAreaBelow(yLo), aHi = diskAreaBelow(yHi);
+      const yMid = findYForArea((aLo + aHi) / 2);
+      const half = Math.sqrt(Math.max(0, 1 - yMid * yMid));
+      const ex = cx + half * Rband, ey = cy - yMid * Rband;
+      layout.labelPositions.push([ex + 9, ey + 3]);
+    }
+
+    layout.dividerPositions = [];
+    for (let c = 1; c < layout.classCount; c++) {
+      const my = yBounds[c];
+      const half = Math.sqrt(Math.max(0, 1 - my * my));
+      const x1 = cx - half * Rband;
+      const x2 = cx + half * Rband;
+      const y = cy - my * Rband;
+      layout.dividerPositions.push([x1, y, x2, y]);
+    }
+  }
+
+  for (const tn of Object.keys(testLayouts)) buildLayout(testLayouts[tn]);
+
+  function sunflowerPos(i) {
+    const r = Rsun * Math.sqrt((i + 0.5) / 1024);
+    const theta = i * goldenAngle;
+    return [cx + r * Math.cos(theta), cy + r * Math.sin(theta)];
+  }
+
+  // ---- Render dots in sunflower start ----
+  const dotsGroup = document.getElementById('dots-omega');
+  const dividersGroup = document.getElementById('band-dividers');
+  const labelsGroup = document.getElementById('band-labels');
+  const ticksGroup = document.getElementById('pvalue-ticks');
+
+  const dotEls = new Array(1024);
+  for (let i = 0; i < 1024; i++) {
+    const [x, y] = sunflowerPos(i);
+    const dot = document.createElementNS(SVG_NS, 'circle');
+    dot.setAttribute('cx', x.toFixed(2));
+    dot.setAttribute('cy', y.toFixed(2));
+    dot.setAttribute('r', '2.7');
+    dot.setAttribute('class', 'dot');
+    const seq = sequenceFromIndex(i);
+    dot.dataset.idx = i;
+    dot.dataset.k = countHeads(seq);
+    dot.dataset.seq = seq;
+    dotsGroup.appendChild(dot);
+    dotEls[i] = dot;
+  }
+
+  // ---- Pre-create elements ----
+  const dividerEls = [];
+  for (let i = 0; i < MAX_DIVIDERS; i++) {
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.setAttribute('x1', cx);
+    line.setAttribute('y1', cy);
+    line.setAttribute('x2', cx);
+    line.setAttribute('y2', cy);
+    line.setAttribute('class', 'band-divider');
+    dividersGroup.appendChild(line);
+    dividerEls.push(line);
+  }
+  const labelEls = [];
+  for (let i = 0; i < MAX_LABELS; i++) {
+    const text = document.createElementNS(SVG_NS, 'text');
+    text.setAttribute('x', cx);
+    text.setAttribute('y', cy);
+    text.setAttribute('class', 'band-label');
+    text.textContent = '';
+    labelsGroup.appendChild(text);
+    labelEls.push(text);
+  }
+  const tickEls = [];
+  for (let i = 0; i < MAX_TICKS; i++) {
+    const tick = document.createElementNS(SVG_NS, 'line');
+    tick.setAttribute('x1', (lineX - 4).toFixed(2));
+    tick.setAttribute('y1', lineBottom);
+    tick.setAttribute('x2', (lineX + 4).toFixed(2));
+    tick.setAttribute('y2', lineBottom);
+    tick.setAttribute('class', 'pvalue-tick');
+    ticksGroup.appendChild(tick);
+    tickEls.push(tick);
+  }
+
+  function tickYForP(p) { return lineBottom - p * lineLength; }
+
+  function applyLayout(testName) {
+    const layout = testLayouts[testName];
+    const numClasses = layout.classCount;
+
+    for (let i = 0; i < MAX_DIVIDERS; i++) {
+      if (i < numClasses - 1) {
+        const [x1, y1, x2, y2] = layout.dividerPositions[i];
+        dividerEls[i].setAttribute('x1', x1.toFixed(2));
+        dividerEls[i].setAttribute('y1', y1.toFixed(2));
+        dividerEls[i].setAttribute('x2', x2.toFixed(2));
+        dividerEls[i].setAttribute('y2', y2.toFixed(2));
+        dividerEls[i].classList.add('is-shown');
+      } else {
+        dividerEls[i].classList.remove('is-shown');
+      }
+    }
+    for (let c = 0; c < MAX_LABELS; c++) {
+      if (c < numClasses) {
+        const [x, y] = layout.labelPositions[c];
+        labelEls[c].setAttribute('x', x.toFixed(2));
+        labelEls[c].setAttribute('y', y.toFixed(2));
+        labelEls[c].textContent = layout.classLabel(c);
+        labelEls[c].classList.add('is-shown');
+      } else {
+        labelEls[c].classList.remove('is-shown');
+      }
+    }
+    for (let c = 0; c < MAX_TICKS; c++) {
+      if (c < numClasses) {
+        const ty = tickYForP(layout.pValueOfClass(c));
+        tickEls[c].setAttribute('y1', ty.toFixed(2));
+        tickEls[c].setAttribute('y2', ty.toFixed(2));
+        tickEls[c].dataset.classIdx = c;
+        tickEls[c].classList.add('is-shown');
+      } else {
+        tickEls[c].classList.remove('is-shown');
+      }
+    }
+    for (let i = 0; i < 1024; i++) {
+      const [x, y] = layout.dotPositions[i];
+      dotEls[i].setAttribute('cx', x.toFixed(2));
+      dotEls[i].setAttribute('cy', y.toFixed(2));
+    }
+  }
+
+  // ---- State ----
+  const seqEl = document.getElementById('seq-omega');
+  const metaEl = document.getElementById('meta-omega');
+  const pvarText = document.getElementById('pvar-text');
+  const pvarSub = document.getElementById('pvar-sub');
+  const pvarValue = document.getElementById('pvar-value');
+  const arrowEl = document.getElementById('arrow');
+  const obsLine = document.getElementById('observation-line');
+  const obsFormulaEl = document.getElementById('obs-pvalue-formula');
+  const resetBtn = document.getElementById('reset-btn');
+  const runBtns = document.querySelectorAll('.run-btn');
+
+  let observedDot = null;
+  let isPartitioned = false;
+  let currentTest = null;
+  let observeTimer = null;
+
+  function setHoverDisplay(seq, k) {
+    seqEl.textContent = seq;
+    seqEl.classList.remove('placeholder');
+    metaEl.textContent = `${k} head${k === 1 ? '' : 's'} · ${10 - k} tail${10 - k === 1 ? '' : 's'}`;
+  }
+  function clearHoverDisplay() {
+    seqEl.textContent = isPartitioned
+      ? 'click any outcome to observe it'
+      : 'hover a point to read its sequence';
+    seqEl.classList.add('placeholder');
+    metaEl.textContent = '';
+  }
+
+  dotsGroup.addEventListener('mouseover', (e) => {
+    const t = e.target;
+    if (!t.classList || !t.classList.contains('dot')) return;
+    setHoverDisplay(t.dataset.seq, +t.dataset.k);
+    if (!t.classList.contains('dot-observed')) t.setAttribute('r', '5');
+  });
+  dotsGroup.addEventListener('mouseout', (e) => {
+    const t = e.target;
+    if (!t.classList || !t.classList.contains('dot')) return;
+    if (!t.classList.contains('dot-observed')) t.setAttribute('r', '2.7');
+    if (observedDot) {
+      setHoverDisplay(observedDot.dataset.seq, +observedDot.dataset.k);
+    } else {
+      clearHoverDisplay();
+    }
+  });
+
+  function applyShading(testName, observedC) {
+    const layout = testLayouts[testName];
+    const observedP = layout.pValueOfClass(observedC);
+    const rejectedClasses = new Set();
+    for (let c = 0; c < layout.classCount; c++) {
+      if (layout.pValueOfClass(c) <= observedP + 1e-9) rejectedClasses.add(c);
+    }
+    dotEls.forEach(d => {
+      const seq = d.dataset.seq;
+      const c = layout.classOfSeq(seq);
+      d.classList.toggle('dot-rejected', rejectedClasses.has(c));
+    });
+    for (let c = 0; c < MAX_LABELS; c++) {
+      labelEls[c].classList.toggle('is-rejected', c < layout.classCount && rejectedClasses.has(c));
+    }
+  }
+
+  function showPVarDisplay(testName, c, dotEl) {
+    const layout = testLayouts[testName];
+    const v = layout.pValueOfClass(c);
+
+    pvarSub.textContent = layout.sub;
+    pvarValue.textContent = v.toFixed(4);
+    pvarText.classList.add('show');
+
+    for (let ci = 0; ci < MAX_TICKS; ci++) {
+      if (ci === c) {
+        tickEls[ci].setAttribute('x1', (lineX - 9).toFixed(2));
+        tickEls[ci].setAttribute('x2', (lineX + 9).toFixed(2));
+        tickEls[ci].classList.add('is-active');
+      } else {
+        tickEls[ci].setAttribute('x1', (lineX - 4).toFixed(2));
+        tickEls[ci].setAttribute('x2', (lineX + 4).toFixed(2));
+        tickEls[ci].classList.remove('is-active');
+      }
+    }
+
+    const dx = +dotEl.getAttribute('cx');
+    const dy = +dotEl.getAttribute('cy');
+    const tx = lineX - 11;
+    const ty = tickYForP(v);
+    const c1x = dx + 55, c1y = dy;
+    const c2x = tx - 28, c2y = ty;
+    const path = `M ${dx.toFixed(1)},${dy.toFixed(1)} C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${tx.toFixed(1)},${ty.toFixed(1)}`;
+    arrowEl.setAttribute('d', path);
+    arrowEl.classList.add('show');
+  }
+
+  function hidePVarDisplay() {
+    pvarText.classList.remove('show');
+    arrowEl.classList.remove('show');
+    tickEls.forEach(t => {
+      t.setAttribute('x1', (lineX - 4).toFixed(2));
+      t.setAttribute('x2', (lineX + 4).toFixed(2));
+      t.classList.remove('is-active');
+    });
+  }
+
+  function observe(dot) {
+    if (!currentTest) return;
+    const k = +dot.dataset.k;
+    const seq = dot.dataset.seq;
+    const layout = testLayouts[currentTest];
+    const c = layout.classOfSeq(seq);
+    const pValue = layout.pValueOfClass(c);
+
+    dotEls.forEach(d => {
+      d.classList.remove('dot-observed');
+      d.setAttribute('r', '2.7');
+    });
+    applyShading(currentTest, c);
+
+    dot.classList.add('dot-observed');
+    dot.setAttribute('r', '5.5');
+    observedDot = dot;
+
+    showPVarDisplay(currentTest, c, dot);
+
+    obsFormulaEl.innerHTML = `${layout.formula(seq, c)} = <span class="pv-val">${pValue.toFixed(4)}</span>`;
+    obsLine.hidden = false;
+
+    setHoverDisplay(seq, k);
+    if (typeof updateCalibrator === 'function') updateCalibrator();
+  }
+
+  dotsGroup.addEventListener('click', (e) => {
+    if (!isPartitioned) return;
+    const t = e.target;
+    if (!t.classList || !t.classList.contains('dot')) return;
+    observe(t);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    dotEls.forEach(d => {
+      d.classList.remove('dot-rejected', 'dot-observed');
+      d.setAttribute('r', '2.7');
+    });
+    labelEls.forEach(el => el.classList.remove('is-rejected'));
+    hidePVarDisplay();
+    obsLine.hidden = true;
+    observedDot = null;
+    clearHoverDisplay();
+  });
+
+  function setActiveButton(testName) {
+    runBtns.forEach(b => b.classList.toggle('is-active', b.dataset.test === testName));
+    if (typeof updateCalibrator === 'function') updateCalibrator();
+  }
+
+  function scheduleObservation(delay) {
+    if (observeTimer) clearTimeout(observeTimer);
+    observeTimer = setTimeout(() => {
+      observeTimer = null;
+      const dot = observedDot || dotsGroup.querySelector('[data-seq="HHTHTHTHHH"]');
+      if (dot) observe(dot);
+    }, delay);
+  }
+
+  function runTest(testName) {
+    if (!isPartitioned) {
+      isPartitioned = true;
+      currentTest = testName;
+      setActiveButton(testName);
+
+      dotsGroup.classList.add('is-partitioning');
+      void dotsGroup.getBBox();
+
+      applyLayout(testName);
+
+      setTimeout(() => {
+        document.getElementById('number-line-skel').classList.add('show');
+      }, 350);
+
+      scheduleObservation(1450);
+    } else {
+      currentTest = testName;
+      setActiveButton(testName);
+      hidePVarDisplay();
+      applyLayout(testName);
+      scheduleObservation(1300);
+    }
+  }
+
+  runBtns.forEach(b => {
+    b.addEventListener('click', () => runTest(b.dataset.test));
+  });
+
+  // ---- Part III: Calibrators ----
+  // Plot coords for calibrator SVG (viewBox 0 0 600 380, plot area 60..570 × 30..320)
+  const calX0 = 60, calX1 = 570, calY0 = 30, calY1 = 320;
+  const calLogMin = -1, calLogMax = 2;  // y axis: 0.1 to 100
+
+  function calPlotX(p) { return calX0 + p * (calX1 - calX0); }
+  function calPlotY(v) {
+    if (v <= 0) return calY1;
+    const lv = Math.log10(v);
+    const t = (lv - calLogMin) / (calLogMax - calLogMin);
+    return calY1 - t * (calY1 - calY0);
+  }
+  function fKappa(kappa, p) {
+    if (p <= 0) return Infinity;
+    return kappa * Math.pow(p, kappa - 1);
+  }
+
+  const kappaCurveEl = document.getElementById('kappa-curve');
+  const kappaSlider  = document.getElementById('kappa-slider');
+  const kappaValueEl = document.getElementById('kappa-value');
+  const calMarkerEls = {};
+  ['upper', 'lower', 'two_sided', 'streak'].forEach(t => {
+    calMarkerEls[t] = document.querySelector(`.cal-marker[data-test="${t}"]`);
+  });
+  const evNumEls = {
+    upper:     document.getElementById('ev-upper'),
+    lower:     document.getElementById('ev-lower'),
+    two_sided: document.getElementById('ev-two_sided'),
+    streak:    document.getElementById('ev-streak')
+  };
+  const evItemEls = {};
+  document.querySelectorAll('.ev-item').forEach(el => {
+    evItemEls[el.dataset.test] = el;
+  });
+
+  function buildKappaCurvePath(kappa) {
+    const pts = [];
+    const N = 400;
+    for (let i = 0; i <= N; i++) {
+      // log-spaced p from 10^-3.2 to 1
+      const lp = -3.2 + 3.2 * i / N;
+      const p = Math.min(1, Math.pow(10, lp));
+      const v = fKappa(kappa, p);
+      const x = calPlotX(p);
+      const y = calPlotY(v);
+      // clamp y to a safe range so path doesn't blow up
+      const yc = Math.max(calY0 - 200, Math.min(calY1 + 200, y));
+      pts.push(`${x.toFixed(2)},${yc.toFixed(2)}`);
+    }
+    return 'M ' + pts.join(' L ');
+  }
+
+  function refDot() {
+    return observedDot || dotsGroup.querySelector('[data-seq="HHTHTHTHHH"]');
+  }
+
+  function updateCalibrator() {
+    const kappa = +kappaSlider.value;
+    kappaValueEl.textContent = kappa.toFixed(2);
+    kappaCurveEl.setAttribute('d', buildKappaCurvePath(kappa));
+
+    const dot = refDot();
+    if (!dot) return;
+    const seq = dot.dataset.seq;
+
+    ['upper', 'lower', 'two_sided', 'streak'].forEach(t => {
+      const layout = testLayouts[t];
+      const c = layout.classOfSeq(seq);
+      const p = layout.pValueOfClass(c);
+      const e = fKappa(kappa, p);
+      const x = calPlotX(p);
+      const y = calPlotY(e);
+
+      const g = calMarkerEls[t];
+      const circle = g.querySelector('circle');
+      const label  = g.querySelector('text');
+      circle.setAttribute('cx', x.toFixed(2));
+      circle.setAttribute('cy', y.toFixed(2));
+      label.setAttribute('x', x.toFixed(2));
+      label.setAttribute('y', y.toFixed(2));
+      g.classList.toggle('is-active', t === currentTest);
+
+      if (evNumEls[t])  evNumEls[t].textContent = e.toFixed(3);
+      if (evItemEls[t]) evItemEls[t].classList.toggle('is-active', t === currentTest);
+    });
+  }
+
+  kappaSlider.addEventListener('input', updateCalibrator);
+  updateCalibrator();  // initial render with default obs HHTHTHTHHH
+
+  // ---- F(p) static plot ----
+  // Plot coords for F-plot SVG (viewBox 0 0 600 320, plot area 60..570 × 30..260)
+  const fX0 = 60, fX1 = 570, fY0 = 30, fY1 = 260;
+  const fLogMin = -1, fLogMax = 2;
+  function fPlotX(p) { return fX0 + p * (fX1 - fX0); }
+  function fPlotY(v) {
+    if (v <= 0) return fY1;
+    const lv = Math.log10(v);
+    const t = (lv - fLogMin) / (fLogMax - fLogMin);
+    return fY1 - t * (fY1 - fY0);
+  }
+  function Fp(p) {
+    if (p <= 0) return Infinity;
+    if (p >= 1) return 0.5;
+    const lp = Math.log(p);
+    return (1 - p + p * lp) / (p * lp * lp);
+  }
+
+  function buildFCurvePath() {
+    const pts = [];
+    const N = 500;
+    for (let i = 0; i <= N; i++) {
+      const lp = -3.2 + 3.2 * i / N;
+      const p = Math.min(1, Math.pow(10, lp));
+      const v = Fp(p);
+      const x = fPlotX(p);
+      const y = fPlotY(v);
+      const yc = Math.max(fY0 - 200, Math.min(fY1 + 200, y));
+      pts.push(`${x.toFixed(2)},${yc.toFixed(2)}`);
+    }
+    return 'M ' + pts.join(' L ');
+  }
+  document.getElementById('f-curve').setAttribute('d', buildFCurvePath());
+
+  // F(1) = 1/2 anchor
+  const fAnchorX = fPlotX(1);
+  const fAnchorY = fPlotY(0.5);
+  const fAnchorEl = document.getElementById('f-anchor');
+  fAnchorEl.setAttribute('cx', fAnchorX);
+  fAnchorEl.setAttribute('cy', fAnchorY);
+  const fAnchorLabelEl = document.getElementById('f-anchor-label');
+  fAnchorLabelEl.setAttribute('x', (fAnchorX - 8).toFixed(2));
+  fAnchorLabelEl.setAttribute('y', (fAnchorY + 4).toFixed(2));
+
+})();
+</script>
+</body>
+</html>

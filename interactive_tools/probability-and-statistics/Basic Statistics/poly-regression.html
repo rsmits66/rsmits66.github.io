@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polynomial Regression — Discrete Orthogonal Polynomials</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;--acc-bg:#edf1fb;
+  --green:#1a6a40;--green-bg:#e8f5ec;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.8rem 2.5rem;border-bottom:3px solid var(--gold);display:flex;flex-direction:column;gap:.25rem;}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-size:1.05rem;font-style:italic;}
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:var(--font-head);font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1rem;}
+.card h3{font-family:var(--font-head);font-size:1rem;font-weight:600;color:var(--navy2);margin:.9rem 0 .4rem;}
+
+/* input controls */
+.ctrl-row{display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.93rem;color:var(--navy2);}
+.ctrl-row input[type=number]{width:60px;padding:.25rem .35rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.95rem;text-align:center;}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+
+.pts-row{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;}
+.pt-entry{display:flex;align-items:center;gap:.25rem;background:#f5f7fa;border:1px solid var(--border);border-radius:5px;padding:.22rem .5rem;font-size:.9rem;}
+.pt-entry input{width:54px;padding:.2rem .25rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.9rem;text-align:center;background:#fff;}
+.pt-entry input:focus{outline:none;border-color:var(--accent);}
+.pt-entry .rm{cursor:pointer;color:var(--red);font-weight:700;font-size:.95rem;padding:0 .15rem;}
+
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem;}
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+button:active{transform:scale(.97);}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-add{background:var(--green-bg);color:var(--green);border:1px solid #90c8a0;font-size:.88rem;}
+.btn-add:hover{background:#d0eeda;}
+.btn-go{background:var(--red);color:#fff;padding:.45rem 1.7rem;font-size:.97rem;margin-top:.6rem;}
+.btn-go:hover{background:#952e24;}
+
+/* output */
+.result-box{background:#f5f7fa;border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;margin:.4rem 0;overflow-x:auto;font-size:.93rem;line-height:1.7;}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:6px;padding:.7rem 1.1rem;margin:.6rem 0;font-size:.9rem;line-height:1.65;color:#4a3800;}
+.key-box strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.3rem 0;font-size:.92rem;}
+
+/* step blocks in GS output */
+.gs-step{border-left:3px solid var(--gold);padding:.4rem .9rem;margin:.35rem 0;background:#fffdf5;border-radius:0 5px 5px 0;font-size:.91rem;overflow-x:auto;}
+.gs-step.proj{border-left-color:#90c8a0;background:#f8fff8;}
+.gs-step.norm{border-left-color:var(--accent);background:#f5f8ff;}
+
+/* residual table */
+table.res-tbl{border-collapse:collapse;font-size:.9rem;margin:.5rem 0;}
+table.res-tbl th,table.res-tbl td{border:1px solid var(--border);padding:.3rem .7rem;text-align:center;}
+table.res-tbl thead th{background:#f5f7fa;color:var(--navy2);font-weight:400;font-size:.84rem;}
+table.res-tbl td.pos-res{color:var(--green);font-weight:600;}
+table.res-tbl td.neg-res{color:var(--red);font-weight:600;}
+
+/* variance bars */
+.var-bar-row{display:flex;align-items:center;gap:.6rem;margin:.2rem 0;font-size:.88rem;}
+.var-bar-bg{height:14px;background:#e8e4de;border-radius:2px;flex:1;max-width:320px;overflow:hidden;}
+.var-bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+.var-bar-lbl{min-width:120px;color:var(--gray);}
+.var-bar-val{min-width:80px;color:var(--navy2);text-align:right;}
+
+/* plot */
+.plot-wrap{margin-top:1.2rem;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--paper);}
+.plot-wrap canvas{display:block;width:100%;}
+
+/* two-col layout for results */
+.two-col{display:flex;gap:1.4rem;flex-wrap:wrap;}
+.two-col>*{flex:1;min-width:260px;}
+
+@media(max-width:640px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .7rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Polynomial Regression via Discrete Orthogonal Polynomials</h1>
+  <p>Gram-Schmidt on evaluation nodes → best-fit P<sub>j</sub> without forming the Vandermonde</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Input — Data Points and Degree</h2>
+  <div class="ex-row" id="exRow"></div>
+
+  <div class="ctrl-row">
+    <label>Fit degree j:
+      <input type="number" id="degInput" min="0" max="20" value="2">
+    </label>
+    <button class="btn-add" onclick="addPoint()">+ Add point</button>
+  </div>
+
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.5rem;">
+    Need at least j+2 points for a degree-j regression (otherwise exact interpolation). Enter decimals or fractions like <code>1/3</code>.
+  </p>
+
+  <div class="pts-row" id="ptsRow"></div>
+
+  <button class="btn-go" onclick="runRegression()">Fit Polynomial ▶</button>
+</div>
+
+<div id="output"></div>
+</main>
+<script>
+/* ══════════════════════════════════════════
+   KaTeX helper
+══════════════════════════════════════════ */
+function rk(t,disp){try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}}
+
+/* ══════════════════════════════════════════
+   FLOATING-POINT POLYNOMIAL
+   poly: Float64Array  (coefficient of t^k at index k)
+══════════════════════════════════════════ */
+function pEval(poly,t){
+  var r=0;
+  for(var k=poly.length-1;k>=0;k--) r=r*t+poly[k];
+  return r;
+}
+function pAdd(a,b){
+  var n=Math.max(a.length,b.length);
+  var r=new Float64Array(n);
+  for(var k=0;k<n;k++) r[k]=(k<a.length?a[k]:0)+(k<b.length?b[k]:0);
+  return r;
+}
+function pScale(a,s){return a.map(function(c){return c*s;});}
+function pMul(a,b){
+  var r=new Float64Array(a.length+b.length-1);
+  for(var i=0;i<a.length;i++) for(var j=0;j<b.length;j++) r[i+j]+=a[i]*b[j];
+  return r;
+}
+// Multiply poly by (t - root)
+function pMulRoot(a,root){
+  return pAdd(pMul(a,new Float64Array([-root,1])),new Float64Array(0));
+}
+
+/* ══════════════════════════════════════════
+   DISCRETE INNER PRODUCT  and NORM
+   <f,g>_d = sum_i f(t_i)*g(t_i)
+══════════════════════════════════════════ */
+function discIP(f,g,ts){
+  var s=0;
+  for(var i=0;i<ts.length;i++) s+=pEval(f,ts[i])*pEval(g,ts[i]);
+  return s;
+}
+function discNorm2(f,ts){return discIP(f,f,ts);}
+
+/* ══════════════════════════════════════════
+   THREE-TERM RECURRENCE  (Favard / Lanczos)
+   φ_{k+1} = (t − αₖ)φₖ − βₖ φₖ₋₁,  then normalise
+   αₖ = ⟨t φₖ, φₖ⟩_d       (only two projections per step!)
+   βₖ = ⟨t φₖ, φₖ₋₁⟩_d     (zero for m ≤ k−2 by Favard)
+
+   Cost: O(j·n)  vs  O(j²·n) for full Gram-Schmidt
+═══════════════════════════════════════════ */
+function gramSchmidt(ts,j){
+  var phi=[];    // orthonormal polys (Float64Array each)
+  var steps=[];
+
+  // φ₀ = 1 / ‖1‖_d
+  var v0=new Float64Array([1.0]);
+  var nrm0=Math.sqrt(discNorm2(v0,ts));
+  var phi0=pScale(v0,1/nrm0);
+  phi.push(phi0);
+  steps.push({k:0, alpha:null, beta:null, norm:nrm0, phi:phi0.slice(), isFirst:true});
+
+  for(var k=0;k<j;k++){
+    var phiK=phi[k];
+    var phiPrev=(k>0)?phi[k-1]:null;
+
+    // t·φₖ  as a polynomial: multiply phiK by [0, 1]  (= t)
+    var tPhiK=pMul(phiK, new Float64Array([0,1]));
+
+    // αₖ = ⟨t φₖ, φₖ⟩_d
+    var alpha=discIP(tPhiK, phiK, ts);
+
+    // βₖ = ⟨t φₖ, φₖ₋₁⟩_d  (0 when k=0, no φ₋₁)
+    var beta=(k>0)?discIP(tPhiK, phiPrev, ts):0;
+
+    // v = (t − αₖ)φₖ − βₖ φₖ₋₁
+    var v=pAdd(tPhiK, pScale(phiK, -alpha));
+    if(k>0) v=pAdd(v, pScale(phiPrev, -beta));
+
+    var nrm=Math.sqrt(discNorm2(v,ts));
+    var phiNext=pScale(v,1/nrm);
+    phi.push(phiNext);
+    steps.push({k:k+1, alpha:alpha, beta:(k>0?beta:null), norm:nrm,
+                phi:phiNext.slice(), isFirst:false});
+  }
+  return{phi:phi, steps:steps};
+}
+
+/* ══════════════════════════════════════════
+   REGRESSION
+   c_k = <y, phi_k>_d   (inner product with data)
+   P_j = sum_k c_k * phi_k
+══════════════════════════════════════════ */
+function regress(ts,ys,phi){
+  var coeffs=[];
+  var n=phi.length;
+  for(var k=0;k<n;k++){
+    var ck=0;
+    for(var i=0;i<ts.length;i++) ck+=ys[i]*pEval(phi[k],ts[i]);
+    coeffs.push(ck);
+  }
+  // Build P_j = sum c_k phi_k
+  var P=new Float64Array(phi[n-1].length);
+  for(var k=0;k<n;k++){
+    P=pAdd(P,pScale(phi[k],coeffs[k]));
+  }
+  return{coeffs:coeffs, P:P};
+}
+
+/* ══════════════════════════════════════════
+   POLYNOMIAL  → DISPLAY STRING
+══════════════════════════════════════════ */
+function polyTeX(p,varN){
+  varN=varN||'t';
+  var terms=[];
+  for(var k=p.length-1;k>=0;k--){
+    var c=p[k];
+    if(Math.abs(c)<1e-10) continue;
+    var isNeg=(c<0);
+    var ac=Math.abs(c);
+    var cStr=ac.toFixed(5).replace(/\.?0+$/,'');
+    if(cStr==='1'&&k>0) cStr='';
+    var xStr=k===0?'':(k===1?varN:varN+'^{'+k+'}');
+    terms.push({neg:isNeg, str:(cStr+xStr)||'0'});
+  }
+  if(!terms.length) return'0';
+  var out='';
+  terms.forEach(function(t,i){
+    if(i===0) out+=(t.neg?'-':'')+t.str;
+    else out+=(t.neg?'-':'+')+t.str;
+  });
+  return out;
+}
+
+/* ══════════════════════════════════════════
+   FORMATTING HELPERS
+══════════════════════════════════════════ */
+function fmt(x,d){d=d===undefined?5:d;return parseFloat(x.toFixed(d)).toString();}
+function fmtSig(x){
+  if(Math.abs(x)<1e-10) return'0';
+  return parseFloat(x.toPrecision(5)).toString();
+}
+
+/* ══════════════════════════════════════════
+   MAIN REGRESSION RUNNER
+══════════════════════════════════════════ */
+function runRegression(){
+  var out=document.getElementById('output');out.innerHTML='';
+  var data=getPoints();
+  if(!data){
+    out.innerHTML='<p class="err-msg">⚠ Node values t<sub>i</sub> must be distinct.</p>';return;
+  }
+  var ts=data.ts, ys=data.ys, n=ts.length;
+  var j=parseInt(document.getElementById('degInput').value)||1;
+
+  if(j>=n){
+    out.innerHTML='<p class="err-msg">⚠ Need j &lt; n = '+n+' (more data points than degree). For exact interpolation use the Lagrange tool.</p>';return;
+  }
+  if(j<0){out.innerHTML='<p class="err-msg">⚠ Degree must be ≥ 0.</p>';return;}
+
+  // ── Gram-Schmidt ──
+  var gs=gramSchmidt(ts,j);
+  var phi=gs.phi, gsSteps=gs.steps;
+
+  // ── Regression ──
+  var reg=regress(ts,ys,phi);
+  var coeffs=reg.coeffs, P=reg.P;
+
+  // ── Residuals ──
+  var fitted=ts.map(function(t){return pEval(P,t);});
+  var resids=ys.map(function(y,i){return y-fitted[i];});
+  var rss=resids.reduce(function(s,r){return s+r*r;},0);
+  var tss=ys.reduce(function(s,y,i){
+    var ymean=ys.reduce(function(a,b){return a+b;},0)/n;
+    return s+(y-ymean)*(y-ymean);
+  },0);
+  var r2=tss<1e-14?1:1-rss/tss;
+  var coeff_var=coeffs.map(function(c){return c*c;});
+  var totalExplained=coeff_var.reduce(function(a,b){return a+b;},0);
+
+  // ── Section: recurrence polynomials ──
+  var gsCard=document.createElement('div');gsCard.className='card';
+  gsCard.innerHTML='<h2>Step 1 — Three-Term Recurrence: Discrete Orthogonal Polynomials &phi;<sub>0</sub>&hellip;&phi;<sub>j</sub></h2>';
+
+  var gsNote=document.createElement('div');gsNote.className='key-box';
+  gsNote.innerHTML=
+    '<strong>Discrete inner product:</strong> '+
+    rk('\\langle f,\\,g\\rangle_d = \\sum_{i=0}^{n} f(t_i)\\,g(t_i)')+
+    '<br><strong>Recurrence:</strong> '+
+    rk('\\phi_{k+1}(t)=\\dfrac{(t-\\alpha_k)\\,\\phi_k(t)\\;-\\;\\beta_k\\,\\phi_{k-1}(t)}{\\|\\cdots\\|_d}',true)+
+    rk('\\alpha_k=\\langle t\\,\\phi_k,\\,\\phi_k\\rangle_d, \\qquad \\beta_k=\\langle t\\,\\phi_k,\\,\\phi_{k-1}\\rangle_d')+
+    '<br><strong>Why only two projections?</strong> By Favard\'s theorem, '+rk('t\\phi_k')+
+    ' is already orthogonal to '+rk('\\phi_m')+' for all '+rk('m\\le k-2')+
+    ' — the multiplication-by-'+rk('t')+' operator has a <em>tridiagonal</em> Jacobi matrix in the '+
+    rk('\\{\\phi_k\\}')+' basis. Cost: '+rk('O(jn)')+' vs '+rk('O(j^2 n)')+' for full Gram-Schmidt.';
+  gsCard.appendChild(gsNote);
+
+  gsSteps.forEach(function(st){
+    var h3=document.createElement('h3');
+    if(st.isFirst){
+      h3.innerHTML=rk('\\phi_0')+' — seed: normalise the constant 1';
+    } else {
+      h3.innerHTML=rk('\\phi_{'+ st.k +'}')+' — recurrence from '+rk('\\phi_{'+(st.k-1)+'}');
+    }
+    gsCard.appendChild(h3);
+
+    if(st.isFirst){
+      var d0=document.createElement('div');d0.className='gs-step proj';
+      d0.innerHTML=
+        rk('\\phi_0 = 1/\\|1\\|_d,\\quad \\|1\\|_d=\\sqrt{n+1}='+fmtSig(st.norm));
+      gsCard.appendChild(d0);
+    } else {
+      // show αₖ
+      var da=document.createElement('div');da.className='gs-step proj';
+      da.innerHTML=
+        rk('\\alpha_{'+(st.k-1)+'}=\\langle t\\,\\phi_{'+(st.k-1)+'},\\,\\phi_{'+(st.k-1)+'}\\rangle_d')+
+        ' &ensp;=&ensp; '+rk(fmtSig(st.alpha));
+      gsCard.appendChild(da);
+
+      // show βₖ if k≥1
+      if(st.beta!==null){
+        var db=document.createElement('div');db.className='gs-step proj';
+        db.innerHTML=
+          rk('\\beta_{'+(st.k-1)+'}=\\langle t\\,\\phi_{'+(st.k-1)+'},\\,\\phi_{'+(st.k-2)+'}\\rangle_d')+
+          ' &ensp;=&ensp; '+rk(fmtSig(st.beta));
+        gsCard.appendChild(db);
+      } else {
+        var db0=document.createElement('div');db0.className='gs-step proj';
+        db0.innerHTML=rk('\\beta_0 = 0')+'&ensp;(no '+rk('\\phi_{-1}')+')';
+        gsCard.appendChild(db0);
+      }
+    }
+
+    var dn=document.createElement('div');dn.className='gs-step norm';
+    dn.innerHTML=
+      (st.isFirst?'':rk('\\|v\\|_d = '+fmtSig(st.norm)+'\\;\\Rightarrow\\;'))+
+      rk('\\phi_{'+st.k+'}(t) = '+polyTeX(st.phi));
+    gsCard.appendChild(dn);
+  });
+
+  out.appendChild(gsCard);
+
+  // ── Section: Coefficients and P_j ──
+  var fitCard=document.createElement('div');fitCard.className='card';
+  fitCard.innerHTML='<h2>Step 2 — Projection Coefficients c<sub>k</sub> = &lang;y, &phi;<sub>k</sub>&rang;<sub>d</sub></h2>';
+
+  var cNote=document.createElement('div');cNote.className='key-box';
+  cNote.innerHTML=
+    '<strong>Each coefficient is a single dot product</strong> — independent of the others:<br>'+
+    rk('c_k = \\langle\\mathbf{y},\\,\\phi_k\\rangle_d = \\sum_{i=0}^n y_i\\,\\phi_k(t_i)',true)+
+    'The best-fit polynomial is then '+
+    rk('P_j(t)=\\sum_{k=0}^j c_k\\,\\phi_k(t)')+'.';
+  fitCard.appendChild(cNote);
+
+  // coefficient table
+  var tbl=document.createElement('table');tbl.className='res-tbl';
+  var thead=document.createElement('thead');
+  var hr=document.createElement('tr');
+  ['k', 'φₖ(t)', 'cₖ = ⟨y, φₖ⟩d', 'cₖ²  (energy)'].forEach(function(h){
+    var th=document.createElement('th');th.textContent=h;hr.appendChild(th);
+  });
+  thead.appendChild(hr);tbl.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  coeffs.forEach(function(ck,k){
+    var tr=document.createElement('tr');
+    [k, polyTeX(phi[k]), fmtSig(ck), fmtSig(ck*ck)].forEach(function(v,col){
+      var td=document.createElement('td');
+      if(col===1){td.innerHTML=rk(String(v));}
+      else td.textContent=String(v);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  fitCard.appendChild(tbl);
+
+  // P_j expression
+  var h3p=document.createElement('h3');
+  h3p.innerHTML=rk('P_j(t) = \\sum_{k=0}^{'+j+'} c_k\\,\\phi_k(t)');
+  fitCard.appendChild(h3p);
+  var pBlock=document.createElement('div');pBlock.className='result-box';
+  pBlock.innerHTML=rk('P_{'+j+'}(t) = '+polyTeX(P));
+  fitCard.appendChild(pBlock);
+
+  out.appendChild(fitCard);
+
+  // ── Section: Residuals ──
+  var resCard=document.createElement('div');resCard.className='card';
+  resCard.innerHTML='<h2>Step 3 — Residuals, RSS, and Variance Decomposition</h2>';
+
+  var resNote=document.createElement('div');resNote.className='key-box';
+  resNote.innerHTML=
+    '<strong>Residual:</strong> '+rk('r_i = y_i - P_j(t_i)')+
+    '&ensp;|&ensp;'+
+    '<strong>Pythagoras:</strong> '+
+    rk('\\|\\mathbf{y}\\|_d^2 = \\underbrace{\\sum_{k=0}^{j}c_k^2}_{\\text{explained}} + \\underbrace{\\sum_{k=j+1}^{n}c_k^2}_{\\text{RSS}} = \\text{RSS}',true)+
+    'R&sup2; = '+rk('1 - \\text{RSS}/\\text{TSS} = '+fmtSig(r2));
+  resCard.appendChild(resNote);
+
+  // residual table
+  var rtbl=document.createElement('table');rtbl.className='res-tbl';
+  var rthead=document.createElement('thead');
+  var rhr=document.createElement('tr');
+  ['i', 'tᵢ', 'yᵢ', 'P_j(tᵢ)', 'rᵢ = yᵢ − P_j(tᵢ)', '|rᵢ|'].forEach(function(h){
+    var th=document.createElement('th');th.textContent=h;rhr.appendChild(th);
+  });
+  rthead.appendChild(rhr);rtbl.appendChild(rthead);
+  var rtbody=document.createElement('tbody');
+  ts.forEach(function(t,i){
+    var r=resids[i];
+    var tr=document.createElement('tr');
+    [i, fmt(t,4), fmt(ys[i],4), fmt(fitted[i],5), fmt(r,5), fmt(Math.abs(r),5)].forEach(function(v,col){
+      var td=document.createElement('td');
+      td.textContent=v;
+      if(col===4){td.className=r>1e-10?'pos-res':(r<-1e-10?'neg-res':'');}
+      tr.appendChild(td);
+    });
+    rtbody.appendChild(tr);
+  });
+  rtbl.appendChild(rtbody);
+
+  var rssRow=document.createElement('tr');
+  ['', '', '', '', 'RSS =', fmtSig(rss)].forEach(function(v,col){
+    var td=document.createElement('td');td.textContent=v;
+    td.style.fontWeight='600';if(col===5)td.style.color='var(--red)';
+    rssRow.appendChild(td);
+  });
+  rtbody.appendChild(rssRow);
+  resCard.appendChild(rtbl);
+
+  // variance bar chart
+  var barsTitle=document.createElement('h3');barsTitle.textContent='Energy per coefficient: cₖ² (each is the marginal reduction in RSS from adding degree k)';
+  resCard.appendChild(barsTitle);
+  var barsDiv=document.createElement('div');barsDiv.style.marginTop='.3rem';
+  var maxC2=Math.max.apply(null,coeff_var);
+  coeffs.forEach(function(ck,k){
+    var row=document.createElement('div');row.className='var-bar-row';
+    var lbl=document.createElement('span');lbl.className='var-bar-lbl';
+    lbl.innerHTML=rk('c_{'+k+'}^2 = '+fmtSig(ck*ck));
+    var bg=document.createElement('div');bg.className='var-bar-bg';
+    var fill=document.createElement('div');fill.className='var-bar-fill';
+    fill.style.width=(maxC2>0?ck*ck/maxC2*100:0)+'%';
+    fill.style.background=k===0?'#c8a430':k%2===0?'var(--accent)':'var(--green)';
+    bg.appendChild(fill);
+    var val=document.createElement('span');val.className='var-bar-val';
+    val.textContent=(totalExplained>0?fmtSig(ck*ck/totalExplained*100):'0')+'% of explained';
+    row.appendChild(lbl);row.appendChild(bg);row.appendChild(val);
+    barsDiv.appendChild(row);
+  });
+  resCard.appendChild(barsDiv);
+  out.appendChild(resCard);
+
+  // ── Plot ──
+  var plotCard=document.createElement('div');plotCard.className='card';
+  plotCard.innerHTML='<h2>Plot — P<sub>j</sub>(t), data points, and residuals</h2>';
+  var plotWrap=document.createElement('div');plotWrap.className='plot-wrap';
+  var cv=document.createElement('canvas');cv.id='plotCanvas';cv.height=420;
+  plotWrap.appendChild(cv);plotCard.appendChild(plotWrap);
+  out.appendChild(plotCard);
+
+  // Draw after DOM
+  requestAnimationFrame(function(){drawPlot(cv,ts,ys,P,fitted,resids,j);});
+}
+
+/* ══════════════════════════════════════════
+   CANVAS PLOT
+   — polynomial curve (blue)
+   — data points (red filled circles)
+   — residual lines (orange vertical)
+   — fitted values on curve (open circles)
+══════════════════════════════════════════ */
+function drawPlot(cv,ts,ys,P,fitted,resids,j){
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.parentElement.offsetWidth||750;
+  var cssH=420;
+  cv.width=Math.round(cssW*dpr);
+  cv.height=Math.round(cssH*dpr);
+  cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  var W=cssW,H=cssH;
+
+  // ── Data range ──
+  var tfs=ts.slice();
+  var tMin=Math.min.apply(null,tfs),tMax=Math.max.apply(null,tfs);
+  var tPad=(tMax-tMin)*0.15||1;
+  var xLo=tMin-tPad,xHi=tMax+tPad;
+
+  // Evaluate curve
+  var NC=600;
+  var cxs=[],cys=[];
+  for(var k=0;k<=NC;k++){
+    var t=xLo+(xHi-xLo)*k/NC;
+    cxs.push(t);cys.push(pEval(P,t));
+  }
+  var allY=cys.concat(ys,fitted);
+  var yMin=Math.min.apply(null,allY),yMax=Math.max.apply(null,allY);
+  var yPad=(yMax-yMin)*0.18||1;
+  yMin-=yPad;yMax+=yPad;
+
+  var pad={l:58,r:22,t:26,b:46};
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+
+  function px(x){return pad.l+(x-xLo)/(xHi-xLo)*gW;}
+  function py(y){return pad.t+(1-(y-yMin)/(yMax-yMin))*gH;}
+
+  // Background
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  function niceStep(range,divs){
+    var raw=range/divs;
+    var mag=Math.pow(10,Math.floor(Math.log10(raw)));
+    return [0.1,0.2,0.25,0.5,1,2,2.5,5,10].map(function(f){return f*mag;})
+      .find(function(s){return s>=raw*0.7;})||mag;
+  }
+  var yStep=niceStep(yMax-yMin,6);
+  var xStep=niceStep(xHi-xLo,8);
+  ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.8;
+  for(var yv=Math.ceil(yMin/yStep)*yStep;yv<=yMax+1e-9;yv+=yStep){
+    ctx.beginPath();ctx.moveTo(pad.l,py(yv));ctx.lineTo(pad.l+gW,py(yv));ctx.stroke();
+  }
+  for(var xv=Math.ceil(xLo/xStep)*xStep;xv<=xHi+1e-9;xv+=xStep){
+    ctx.beginPath();ctx.moveTo(px(xv),pad.t);ctx.lineTo(px(xv),pad.t+gH);ctx.stroke();
+  }
+
+  // Axes
+  var y0=Math.max(pad.t,Math.min(pad.t+gH,py(0)));
+  var x0=Math.max(pad.l,Math.min(pad.l+gW,px(0)));
+  ctx.strokeStyle='#18284a';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(pad.l+gW,y0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+gH);ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle='#7a7a8a';ctx.font='11px "Crimson Pro",Georgia,serif';
+  ctx.textAlign='center';
+  for(var xv=Math.ceil(xLo/xStep)*xStep;xv<=xHi+1e-9;xv+=xStep){
+    ctx.fillText(parseFloat(xv.toFixed(5)).toString(),px(xv),pad.t+gH+18);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(px(xv),y0-3);ctx.lineTo(px(xv),y0+3);ctx.stroke();
+  }
+  ctx.textAlign='right';
+  for(var yv=Math.ceil(yMin/yStep)*yStep;yv<=yMax+1e-9;yv+=yStep){
+    ctx.fillText(parseFloat(yv.toFixed(5)).toString(),pad.l-5,py(yv)+4);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(x0-3,py(yv));ctx.lineTo(x0+3,py(yv));ctx.stroke();
+  }
+
+  // ── Residual lines (orange vertical segments) ──
+  ctx.strokeStyle='#e07020';ctx.lineWidth=1.8;ctx.setLineDash([3,3]);
+  ts.forEach(function(t,i){
+    var xp=px(t),yFit=py(fitted[i]),yData=py(ys[i]);
+    ctx.beginPath();ctx.moveTo(xp,yFit);ctx.lineTo(xp,yData);ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // ── Polynomial curve ──
+  ctx.strokeStyle='#3a6eb5';ctx.lineWidth=2.4;
+  ctx.beginPath();var started=false;
+  for(var k=0;k<=NC;k++){
+    var xp=px(cxs[k]),yp2=py(cys[k]);
+    if(yp2<pad.t-30||yp2>pad.t+gH+30){started=false;continue;}
+    started?ctx.lineTo(xp,yp2):ctx.moveTo(xp,yp2);
+    started=true;
+  }
+  ctx.stroke();
+
+  // ── Fitted values on curve (open blue circles) ──
+  ctx.strokeStyle='#3a6eb5';ctx.lineWidth=1.5;
+  ts.forEach(function(t,i){
+    var xp=px(t),yp2=py(fitted[i]);
+    ctx.beginPath();ctx.arc(xp,yp2,5,0,2*Math.PI);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.stroke();
+  });
+
+  // ── Data points (red filled) ──
+  ts.forEach(function(t,i){
+    var xp=px(t),yp2=py(ys[i]);
+    ctx.beginPath();ctx.arc(xp,yp2,6,0,2*Math.PI);
+    ctx.fillStyle='#b33a2f';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  });
+
+  // ── Axis labels ──
+  ctx.fillStyle='#18284a';ctx.font='13px "Crimson Pro",Georgia,serif';ctx.textAlign='center';
+  ctx.fillText('t',pad.l+gW+10,y0+4);
+  ctx.save();ctx.translate(14,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('y',0,0);ctx.restore();
+
+  // ── Legend ──
+  var lx=pad.l+8,ly=pad.t+16;
+  function legendEntry(color,filled,label,dy){
+    ctx.beginPath();ctx.arc(lx+6,ly+dy,5,0,2*Math.PI);
+    ctx.fillStyle=filled?color:'#fff';ctx.fill();
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#18284a';ctx.font='11px "Crimson Pro",Georgia,serif';ctx.textAlign='left';
+    ctx.fillText(label,lx+16,ly+dy+4);
+  }
+  // curve
+  ctx.strokeStyle='#3a6eb5';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(lx+22,ly);ctx.stroke();
+  ctx.fillStyle='#18284a';ctx.font='11px "Crimson Pro",Georgia,serif';ctx.textAlign='left';
+  ctx.fillText('P_j(t)  (fit)',lx+26,ly+4);
+  legendEntry('#b33a2f',true,'data (tᵢ, yᵢ)',18);
+  legendEntry('#3a6eb5',false,'fitted P_j(tᵢ)',36);
+  // residual
+  ctx.strokeStyle='#e07020';ctx.lineWidth=1.8;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(lx,ly+54);ctx.lineTo(lx+22,ly+54);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#18284a';ctx.fillText('residual',lx+26,ly+58);
+}
+
+/* ══════════════════════════════════════════
+   POINT INPUT UI
+══════════════════════════════════════════ */
+var ptCount=0;
+function parseFrac(s){
+  s=(s||'').trim();
+  if(!s) return 0;
+  if(s.indexOf('/')>-1){var p=s.split('/');return parseFloat(p[0])/parseFloat(p[1]);}
+  return parseFloat(s)||0;
+}
+function addPoint(t,y){
+  ptCount++;
+  var id='pt'+ptCount;
+  var row=document.getElementById('ptsRow');
+  var idx=row.children.length;
+  var div=document.createElement('div');div.className='pt-entry';div.id=id;
+  div.innerHTML=
+    '<span style="color:var(--gray);font-size:.8rem">t<sub>'+idx+'</sub>=</span>'+
+    '<input type="text" id="ti'+ptCount+'" value="'+(t!=null?t:'')+'" placeholder="t">'+
+    '<span style="color:var(--gray);font-size:.8rem">y<sub>'+idx+'</sub>=</span>'+
+    '<input type="text" id="yi'+ptCount+'" value="'+(y!=null?y:'')+'" placeholder="y">'+
+    '<span class="rm" onclick="removePoint(\''+id+'\')">×</span>';
+  row.appendChild(div);
+}
+function removePoint(id){
+  var el=document.getElementById(id);if(el)el.remove();
+  var entries=document.querySelectorAll('.pt-entry');
+  entries.forEach(function(e,idx){
+    var spans=e.querySelectorAll('span');
+    if(spans[0])spans[0].innerHTML='t<sub>'+idx+'</sub>=';
+    if(spans[1])spans[1].innerHTML='y<sub>'+idx+'</sub>=';
+  });
+}
+function getPoints(){
+  var entries=document.querySelectorAll('.pt-entry');
+  var ts=[],ys=[];
+  entries.forEach(function(e){
+    var inputs=e.querySelectorAll('input');
+    ts.push(parseFrac(inputs[0]?.value));
+    ys.push(parseFrac(inputs[1]?.value));
+  });
+  for(var i=0;i<ts.length;i++) for(var j=i+1;j<ts.length;j++)
+    if(Math.abs(ts[i]-ts[j])<1e-12) return null;
+  return{ts:ts,ys:ys};
+}
+
+/* ══════════════════════════════════════════
+   PRESETS
+══════════════════════════════════════════ */
+var PRESETS=[
+  {label:'Linear (j=1, 6 pts)',  deg:1, pts:[[-3,1],[-1,2],[0,4],[2,3],[4,5],[5,4]]},
+  {label:'Quadratic (j=2)',       deg:2, pts:[[-2,3],[-1,1],[0,2],[1,4],[2,3],[3,1],[4,5]]},
+  {label:'Cubic (j=3, 8 pts)',    deg:3, pts:[[-3,-1],[-2,2],[-1,3],[0,1],[1,2],[2,4],[3,3],[4,0]]},
+  {label:'Noisy sinusoid',        deg:4, pts:[[-3,0.1],[-2,0.9],[-1,0.0],[0,-0.9],[1,0.0],[2,1.1],[3,-0.1],[4,-0.9],[5,0.2]]},
+  {label:'Constant fit (j=0)',    deg:0, pts:[[1,2],[2,5],[3,4],[4,6],[5,3]]},
+];
+function loadPreset(p){
+  document.getElementById('ptsRow').innerHTML='';
+  ptCount=0;
+  document.getElementById('degInput').value=p.deg;
+  p.pts.forEach(function(pt){addPoint(pt[0],pt[1]);});
+}
+function buildPresets(){
+  var row=document.getElementById('exRow');
+  PRESETS.forEach(function(p){
+    var btn=document.createElement('button');btn.className='btn-ghost';btn.style.fontSize='.85rem';
+    btn.textContent=p.label;
+    btn.addEventListener('click',function(){loadPreset(p);});
+    row.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  buildPresets();
+  // default: degree-2 fit to 7 points
+  var def=PRESETS[1];
+  document.getElementById('degInput').value=def.deg;
+  def.pts.forEach(function(pt){addPoint(pt[0],pt[1]);});
+});
+</script>
+</body>
+</html>

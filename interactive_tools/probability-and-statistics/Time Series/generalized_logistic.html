@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Z(α, β, μ, σ) — the generalized logistic density</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=JetBrains+Mono:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+<style>
+  :root {
+    --paper:        #f3ede1;
+    --paper-deep:   #ebe2cf;
+    --paper-edge:   #d9cdb3;
+    --ink:          #1c1a17;
+    --ink-soft:     #3a342c;
+    --muted:        #7a6b54;
+    --rule:         #c9bd9f;
+    --accent:       #9c2a1f;  /* deep oxide red, plate-ink */
+    --accent-soft:  #c54a36;
+    --navy:         #1c3e5e;
+    --grid:         rgba(28, 26, 23, 0.08);
+    --grid-strong:  rgba(28, 26, 23, 0.18);
+    --shadow:       0 1px 0 #fffaf0 inset, 0 0 0 1px #d9cdb3, 0 14px 30px -18px rgba(40,28,10,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #fdf7e8 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, #ece1c5 0%, transparent 55%),
+      var(--paper);
+    color: var(--ink);
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.55;
+    min-height: 100vh;
+    /* subtle paper grain */
+    background-attachment: fixed;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: .35;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    z-index: 0;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 36px 96px;
+  }
+
+  /* ----- header ----- */
+  header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: end;
+    gap: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 40px;
+  }
+  .mark {
+    font-family: "Fraunces", serif;
+    font-weight: 900;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+  }
+  .mark em {
+    font-style: italic;
+    color: var(--accent);
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+  }
+  h1 {
+    margin: 0;
+    font-family: "Fraunces", serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  h1 .small { display: block; font-style: normal; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-family: "JetBrains Mono", monospace; margin-bottom: 8px; font-weight: 400;}
+  .meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .meta b { color: var(--ink); font-weight: 500; }
+
+  /* ----- formula ----- */
+  .formula {
+    margin: 0 0 36px;
+    padding: 26px 28px 22px;
+    background: linear-gradient(180deg, #fbf6e8 0%, var(--paper-deep) 100%);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .formula::before {
+    content: "§ I";
+    position: absolute;
+    top: 10px; left: 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+  .formula-body { text-align: center; padding: 4px 0; }
+  .formula-caption {
+    text-align: center;
+    font-family: "Newsreader", serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  /* ----- plot ----- */
+  .plot-wrap {
+    background: linear-gradient(180deg, #fcf8eb, #f1e9d3);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: var(--shadow);
+    padding: 18px 16px 10px;
+    margin-bottom: 36px;
+    position: relative;
+  }
+  .plot-wrap::before {
+    content: "§ II  density";
+    position: absolute;
+    top: 10px; left: 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+  .plot-stats {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-align: right;
+  }
+  .plot-stats b { color: var(--ink); font-weight: 500; }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 480px;
+    cursor: crosshair;
+  }
+  .readout {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 4px 4px 0 4px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px dashed var(--rule);
+    margin-top: 4px;
+  }
+  .readout span { color: var(--muted); }
+  .readout b { color: var(--accent); font-weight: 500; }
+
+  /* ----- controls ----- */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .ctrl {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 16px 18px 14px;
+    position: relative;
+    box-shadow: var(--shadow);
+  }
+  .ctrl .glyph {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 42px;
+    line-height: 1;
+    color: var(--accent);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .ctrl .glyph .desc {
+    font-family: "JetBrains Mono", monospace;
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .ctrl input[type="range"] {
+    width: 100%;
+    appearance: none;
+    height: 4px;
+    background: var(--paper-edge);
+    border-radius: 2px;
+    outline: none;
+    margin: 6px 0 10px;
+  }
+  .ctrl input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: grab;
+    transition: transform .15s;
+  }
+  .ctrl input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.18); }
+  .ctrl input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: grab;
+  }
+  .ctrl .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ctrl .row input[type="number"] {
+    width: 80px;
+    padding: 4px 6px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    border-radius: 2px;
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+  .ctrl .row input[type="number"]::-webkit-outer-spin-button,
+  .ctrl .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .ctrl .row input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(156, 42, 31, .15);
+  }
+  .ctrl .bounds {
+    display: flex; justify-content: space-between;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ----- secondary controls ----- */
+  .extras {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: var(--shadow);
+    margin-bottom: 32px;
+  }
+  .extras label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .extras label input { accent-color: var(--accent); width: 14px; height: 14px; }
+  .extras .xrange {
+    display: flex; align-items: center; gap: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .extras .xrange input {
+    width: 76px;
+    padding: 4px 6px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    border-radius: 2px;
+    text-align: right;
+  }
+  .extras .xrange input:disabled { opacity: 0.4; cursor: not-allowed; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .presets button {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    padding: 7px 11px;
+    background: var(--paper);
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .presets button:hover {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+
+  /* ----- footnote ----- */
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    columns: 2;
+    column-gap: 36px;
+  }
+  footer p { margin: 0 0 10px 0; break-inside: avoid; }
+  footer .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--accent);
+    vertical-align: super;
+    margin-right: 4px;
+    font-weight: 500;
+  }
+  footer code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    background: var(--paper-deep);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 900px) {
+    main { padding: 32px 20px; }
+    .controls { grid-template-columns: repeat(2, 1fr); }
+    .extras { grid-template-columns: 1fr; }
+    .presets { justify-content: flex-start; }
+    footer { columns: 1; }
+    header { grid-template-columns: 1fr; gap: 12px; }
+    .meta { text-align: left; }
+    .mark { font-size: 42px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <div class="mark"><em>Z</em></div>
+    <h1>
+      <span class="small">A monograph in one page</span>
+      The generalized logistic density,<br>plotted at the reader's hand
+    </h1>
+    <div class="meta">
+      Z(α, β, μ, σ)<br>
+      <b>support</b> · ℝ<br>
+      <b>special case</b> · α=β=1 ⇒ logistic
+    </div>
+  </header>
+
+  <section class="formula">
+    <div class="formula-body">
+      $$ f(x;\,\mu,\sigma,\alpha,\beta) \;=\; \frac{1}{\sigma\,B(\alpha,\beta)} \cdot \frac{\exp\!\big(\!-\alpha\,\tfrac{x-\mu}{\sigma}\big)}{\Big[\,1+\exp\!\big(\!-\tfrac{x-\mu}{\sigma}\big)\,\Big]^{\alpha+\beta}} $$
+    </div>
+    <div class="formula-caption">
+      where &nbsp;<em>α</em>, <em>β</em>, <em>σ</em> &gt; 0&nbsp; and &nbsp;<em>B</em>(α, β) = Γ(α)Γ(β)/Γ(α+β).
+    </div>
+  </section>
+
+  <section class="plot-wrap">
+    <div class="plot-stats" id="stats">mode · — &nbsp;|&nbsp; peak · —</div>
+    <canvas id="plot"></canvas>
+    <div class="readout">
+      <span>x &nbsp;·&nbsp; <b id="rx">—</b></span>
+      <span>f(x) &nbsp;·&nbsp; <b id="rf">—</b></span>
+      <span>window &nbsp;·&nbsp; <b id="rw">—</b></span>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="ctrl">
+      <div class="glyph">μ <span class="desc">location</span></div>
+      <input type="range" id="mu_s" min="-10" max="10" step="0.05" value="0">
+      <div class="row">
+        <span>value</span>
+        <input type="number" id="mu_n" step="0.1" value="0">
+      </div>
+      <div class="bounds"><span>−10</span><span>+10</span></div>
+    </div>
+    <div class="ctrl">
+      <div class="glyph">σ <span class="desc">scale &gt; 0</span></div>
+      <input type="range" id="sigma_s" min="0.05" max="5" step="0.01" value="1">
+      <div class="row">
+        <span>value</span>
+        <input type="number" id="sigma_n" step="0.05" min="0.01" value="1">
+      </div>
+      <div class="bounds"><span>0.05</span><span>5.00</span></div>
+    </div>
+    <div class="ctrl">
+      <div class="glyph">α <span class="desc">right-tail</span></div>
+      <input type="range" id="alpha_s" min="0.1" max="10" step="0.05" value="1">
+      <div class="row">
+        <span>value</span>
+        <input type="number" id="alpha_n" step="0.1" min="0.01" value="1">
+      </div>
+      <div class="bounds"><span>0.10</span><span>10.0</span></div>
+    </div>
+    <div class="ctrl">
+      <div class="glyph">β <span class="desc">left-tail</span></div>
+      <input type="range" id="beta_s" min="0.1" max="10" step="0.05" value="1">
+      <div class="row">
+        <span>value</span>
+        <input type="number" id="beta_n" step="0.1" min="0.01" value="1">
+      </div>
+      <div class="bounds"><span>0.10</span><span>10.0</span></div>
+    </div>
+  </section>
+
+  <section class="extras">
+    <label>
+      <input type="checkbox" id="autorange" checked>
+      Auto window from parameters
+    </label>
+    <div class="xrange">
+      x ∈ [
+      <input type="number" id="xmin" step="0.5" value="-8" disabled>
+      ,
+      <input type="number" id="xmax" step="0.5" value="8" disabled>
+      ]
+    </div>
+    <div class="presets">
+      <button data-preset="standard">α=β=1 · logistic</button>
+      <button data-preset="rightskew">α=1 · β=4 · right-skew</button>
+      <button data-preset="leftskew">α=4 · β=1 · left-skew</button>
+      <button data-preset="peaked">α=β=8 · peaked</button>
+      <button data-preset="reset">reset</button>
+    </div>
+  </section>
+
+  <footer>
+    <p><span class="num">1</span>When α = β = 1 the expression collapses to the standard logistic density with location μ and scale σ. The two shape parameters α and β separately govern the right- and left-tail decay, respectively, allowing skewness without giving up the closed form.</p>
+    <p><span class="num">2</span>The mode lies at <code>x = μ + σ·log(β/α)</code>. The right tail decays as <code>exp(−αz)</code> and the left tail as <code>exp(βz)</code>, where <code>z = (x−μ)/σ</code>. Larger α flattens the right side; larger β flattens the left.</p>
+    <p><span class="num">3</span>The density is evaluated in log-space using a Lanczos approximation for log Γ and a numerically stable softplus for log(1+e<sup>−z</sup>), so extreme parameter combinations remain well-behaved.</p>
+    <p><span class="num">4</span>Hover the plot to read coordinates. The window auto-fits to capture roughly four orders of magnitude of density on either side of the mode; uncheck the box to set <em>x</em> bounds by hand.</p>
+  </footer>
+
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- math ----------
+  // Lanczos approximation for log Γ(x), x > 0
+  const LZ_G = 7;
+  const LZ_C = [
+    0.99999999999980993,
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.61502916214059,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.9843695780195716e-6,
+    1.5056327351493116e-7
+  ];
+  function logGamma(x) {
+    if (x < 0.5) {
+      // reflection
+      return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+    }
+    x -= 1;
+    let a = LZ_C[0];
+    const t = x + LZ_G + 0.5;
+    for (let i = 1; i < LZ_G + 2; i++) a += LZ_C[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+  // log(1 + exp(-z)) — numerically stable softplus(−z)
+  function softplusNeg(z) {
+    if (z >= 0) return Math.log1p(Math.exp(-z));
+    return -z + Math.log1p(Math.exp(z));
+  }
+  // log f(x; μ, σ, α, β)
+  function logDensity(x, mu, sigma, alpha, beta, logB) {
+    const z = (x - mu) / sigma;
+    return -Math.log(sigma) - logB - alpha * z - (alpha + beta) * softplusNeg(z);
+  }
+
+  // ---------- state ----------
+  const state = {
+    mu: 0, sigma: 1, alpha: 1, beta: 1,
+    auto: true,
+    xmin: -8, xmax: 8,
+    hover: null  // {x, fx} or null
+  };
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const canvas = $('plot');
+  const ctx = canvas.getContext('2d');
+  const stats = $('stats');
+  const rx = $('rx'), rf = $('rf'), rw = $('rw');
+
+  const pairs = [
+    ['mu', 'mu_s', 'mu_n'],
+    ['sigma', 'sigma_s', 'sigma_n'],
+    ['alpha', 'alpha_s', 'alpha_n'],
+    ['beta', 'beta_s', 'beta_n'],
+  ];
+
+  pairs.forEach(([key, sId, nId]) => {
+    const s = $(sId), n = $(nId);
+    const set = (val, src) => {
+      let v = parseFloat(val);
+      if (Number.isNaN(v)) return;
+      if (key !== 'mu' && v <= 0) v = 0.01;
+      state[key] = v;
+      if (src !== s) s.value = v;
+      if (src !== n) n.value = (Math.round(v * 1000) / 1000).toString();
+      draw();
+    };
+    s.addEventListener('input', e => set(e.target.value, s));
+    n.addEventListener('input', e => set(e.target.value, n));
+  });
+
+  $('autorange').addEventListener('change', e => {
+    state.auto = e.target.checked;
+    $('xmin').disabled = state.auto;
+    $('xmax').disabled = state.auto;
+    draw();
+  });
+  $('xmin').addEventListener('input', e => { state.xmin = parseFloat(e.target.value); draw(); });
+  $('xmax').addEventListener('input', e => { state.xmax = parseFloat(e.target.value); draw(); });
+
+  // presets
+  document.querySelectorAll('.presets button').forEach(b => {
+    b.addEventListener('click', () => {
+      const p = b.dataset.preset;
+      const set = (mu, sigma, alpha, beta) => {
+        applyParams({mu, sigma, alpha, beta});
+      };
+      if (p === 'standard') set(0, 1, 1, 1);
+      else if (p === 'rightskew') set(0, 1, 1, 4);
+      else if (p === 'leftskew')  set(0, 1, 4, 1);
+      else if (p === 'peaked')    set(0, 1, 8, 8);
+      else if (p === 'reset')     set(0, 1, 1, 1);
+    });
+  });
+  function applyParams(p) {
+    state.mu = p.mu; state.sigma = p.sigma; state.alpha = p.alpha; state.beta = p.beta;
+    $('mu_s').value = p.mu; $('mu_n').value = p.mu;
+    $('sigma_s').value = p.sigma; $('sigma_n').value = p.sigma;
+    $('alpha_s').value = p.alpha; $('alpha_n').value = p.alpha;
+    $('beta_s').value = p.beta; $('beta_n').value = p.beta;
+    draw();
+  }
+
+  // ---------- canvas ----------
+  function fitCanvas() {
+    const r = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(r.width * dpr);
+    canvas.height = Math.floor(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: r.width, h: r.height };
+  }
+  window.addEventListener('resize', () => draw());
+
+  // hover
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    state.hover = { px: e.clientX - r.left, py: e.clientY - r.top };
+    draw();
+  });
+  canvas.addEventListener('mouseleave', () => { state.hover = null; draw(); });
+
+  // ---------- range selection ----------
+  function chooseRange() {
+    const { mu, sigma, alpha, beta } = state;
+    if (!state.auto) return [state.xmin, state.xmax];
+    // mode is at z = log(β/α)
+    const zMode = Math.log(beta / alpha);
+    // tails: density ∝ exp(-α z) right, exp(β z) left
+    // distance for density to drop ~e^-8 ≈ 3e-4 of peak:
+    const padR = (8 / alpha) + 1.5;
+    const padL = (8 / beta) + 1.5;
+    const zmin = zMode - padL;
+    const zmax = zMode + padR;
+    return [mu + sigma * zmin, mu + sigma * zmax];
+  }
+
+  // ---------- nice tick selection ----------
+  function niceTicks(lo, hi, target = 7) {
+    const span = hi - lo;
+    if (span <= 0) return [lo];
+    const raw = span / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    let step;
+    if (norm < 1.5) step = 1 * mag;
+    else if (norm < 3) step = 2 * mag;
+    else if (norm < 7) step = 5 * mag;
+    else step = 10 * mag;
+    const first = Math.ceil(lo / step) * step;
+    const ticks = [];
+    for (let t = first; t <= hi + step * 1e-9; t += step) {
+      ticks.push(Math.abs(t) < step * 1e-9 ? 0 : t);
+    }
+    return ticks;
+  }
+  function fmt(v, step) {
+    if (v === 0) return '0';
+    const digits = Math.max(0, -Math.floor(Math.log10(Math.abs(step))) + 0);
+    return v.toFixed(Math.min(4, Math.max(0, digits)));
+  }
+
+  // ---------- draw ----------
+  function draw() {
+    const { mu, sigma, alpha, beta } = state;
+    const { w, h } = fitCanvas();
+    ctx.clearRect(0, 0, w, h);
+
+    // margins
+    const M = { l: 60, r: 24, t: 28, b: 44 };
+    const PW = w - M.l - M.r;
+    const PH = h - M.t - M.b;
+
+    // x-range
+    const [xLo, xHi] = chooseRange();
+    if (!isFinite(xLo) || !isFinite(xHi) || xHi <= xLo) return;
+
+    // sample
+    const N = Math.min(1200, Math.max(400, Math.floor(PW * 1.5)));
+    const xs = new Float64Array(N);
+    const ys = new Float64Array(N);
+    let yMax = -Infinity;
+    const logB = logGamma(alpha) + logGamma(beta) - logGamma(alpha + beta);
+    const dx = (xHi - xLo) / (N - 1);
+    for (let i = 0; i < N; i++) {
+      const x = xLo + i * dx;
+      const lf = logDensity(x, mu, sigma, alpha, beta, logB);
+      const f = Math.exp(lf);
+      xs[i] = x;
+      ys[i] = f;
+      if (isFinite(f) && f > yMax) yMax = f;
+    }
+    if (!isFinite(yMax) || yMax <= 0) yMax = 1;
+    const yHi = yMax * 1.10;
+    const yLo = 0;
+
+    // ----- frame -----
+    ctx.save();
+    ctx.translate(M.l, M.t);
+
+    // backdrop
+    ctx.fillStyle = '#fbf6e8';
+    ctx.fillRect(0, 0, PW, PH);
+
+    // ----- grid -----
+    const xTicks = niceTicks(xLo, xHi, 8);
+    const yTicks = niceTicks(yLo, yHi, 6);
+    const xStep = xTicks.length > 1 ? xTicks[1] - xTicks[0] : 1;
+    const yStep = yTicks.length > 1 ? yTicks[1] - yTicks[0] : 0.1;
+
+    const X = x => (x - xLo) / (xHi - xLo) * PW;
+    const Y = y => PH - (y - yLo) / (yHi - yLo) * PH;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(28, 26, 23, 0.07)';
+    ctx.beginPath();
+    xTicks.forEach(t => {
+      const x = X(t);
+      ctx.moveTo(x, 0); ctx.lineTo(x, PH);
+    });
+    yTicks.forEach(t => {
+      const y = Y(t);
+      ctx.moveTo(0, y); ctx.lineTo(PW, y);
+    });
+    ctx.stroke();
+
+    // axes
+    ctx.strokeStyle = 'rgba(28, 26, 23, 0.55)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, PH); ctx.lineTo(PW, PH);
+    ctx.moveTo(0, 0);  ctx.lineTo(0, PH);
+    ctx.stroke();
+
+    // x=0 emphasis if in range
+    if (xLo < 0 && xHi > 0) {
+      const x0 = X(0);
+      ctx.strokeStyle = 'rgba(28, 26, 23, 0.25)';
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0, PH); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // tick labels
+    ctx.fillStyle = '#7a6b54';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    xTicks.forEach(t => {
+      const x = X(t);
+      if (x < -2 || x > PW + 2) return;
+      // tick mark
+      ctx.strokeStyle = 'rgba(28, 26, 23, 0.55)';
+      ctx.beginPath(); ctx.moveTo(x, PH); ctx.lineTo(x, PH + 4); ctx.stroke();
+      ctx.fillText(fmt(t, xStep), x, PH + 7);
+    });
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    yTicks.forEach(t => {
+      const y = Y(t);
+      if (y < -2 || y > PH + 2) return;
+      ctx.strokeStyle = 'rgba(28, 26, 23, 0.55)';
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(-4, y); ctx.stroke();
+      ctx.fillText(fmt(t, yStep), -8, y);
+    });
+
+    // axis titles
+    ctx.fillStyle = '#3a342c';
+    ctx.font = 'italic 13px "Fraunces", serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('x', PW - 6, PH - 18);
+    ctx.save();
+    ctx.translate(-46, PH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('f (x)', 0, 0);
+    ctx.restore();
+
+    // ----- curve fill -----
+    ctx.beginPath();
+    ctx.moveTo(X(xs[0]), Y(0));
+    for (let i = 0; i < N; i++) ctx.lineTo(X(xs[i]), Y(ys[i]));
+    ctx.lineTo(X(xs[N - 1]), Y(0));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 0, 0, PH);
+    grad.addColorStop(0, 'rgba(156, 42, 31, 0.22)');
+    grad.addColorStop(1, 'rgba(156, 42, 31, 0.02)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // ----- curve stroke -----
+    ctx.beginPath();
+    ctx.moveTo(X(xs[0]), Y(ys[0]));
+    for (let i = 1; i < N; i++) ctx.lineTo(X(xs[i]), Y(ys[i]));
+    ctx.strokeStyle = '#9c2a1f';
+    ctx.lineWidth = 2.1;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(156, 42, 31, 0.25)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 0.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    // ----- mode marker -----
+    const modeX = mu + sigma * Math.log(beta / alpha);
+    if (modeX >= xLo && modeX <= xHi) {
+      // recompute density at mode for marker
+      const lfMode = logDensity(modeX, mu, sigma, alpha, beta, logB);
+      const fMode = Math.exp(lfMode);
+      const mx = X(modeX), my = Y(fMode);
+      ctx.strokeStyle = '#1c3e5e';
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(mx, PH); ctx.lineTo(mx, my);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#1c3e5e';
+      ctx.beginPath();
+      ctx.arc(mx, my, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      // mode label
+      ctx.font = '10.5px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('mode', mx + 6, my - 3);
+    }
+
+    // ----- hover crosshair -----
+    if (state.hover) {
+      const { px, py } = state.hover;
+      const localX = px - M.l;
+      const localY = py - M.t;
+      if (localX >= 0 && localX <= PW && localY >= 0 && localY <= PH) {
+        const xVal = xLo + (localX / PW) * (xHi - xLo);
+        const lf = logDensity(xVal, mu, sigma, alpha, beta, logB);
+        const fVal = Math.exp(lf);
+        const cy = Y(fVal);
+        ctx.strokeStyle = 'rgba(28, 26, 23, 0.4)';
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath();
+        ctx.moveTo(localX, 0); ctx.lineTo(localX, PH);
+        ctx.moveTo(0, cy); ctx.lineTo(PW, cy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#1c1a17';
+        ctx.beginPath();
+        ctx.arc(localX, cy, 3, 0, Math.PI * 2);
+        ctx.fill();
+        rx.textContent = xVal.toFixed(3);
+        rf.textContent = fVal.toExponential(3);
+      } else {
+        rx.textContent = '—';
+        rf.textContent = '—';
+      }
+    } else {
+      rx.textContent = '—';
+      rf.textContent = '—';
+    }
+
+    ctx.restore();
+
+    // stats header
+    const peakF = Math.exp(logDensity(modeX, mu, sigma, alpha, beta, logB));
+    stats.innerHTML = `mode · <b>${modeX.toFixed(3)}</b> &nbsp;|&nbsp; peak · <b>${peakF.toExponential(3)}</b>`;
+    rw.textContent = `[${xLo.toFixed(2)}, ${xHi.toFixed(2)}]`;
+  }
+
+  // init
+  $('xmin').value = state.xmin;
+  $('xmax').value = state.xmax;
+  draw();
+
+  // redraw once fonts settle (better axis label positioning)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => draw());
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stationary Gaussian Random Fields — Spectral Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;
+    --crimson-deep: #7a1024;
+    --ochre: #b8923d;
+    --copper: #b54235;
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    font-feature-settings: "ss01", "ss02";
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+    line-height: 1.5;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.30;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    z-index: 0;
+  }
+  .container { max-width: 980px; margin: 0 auto; position: relative; z-index: 1; }
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 18px;
+    align-items: end;
+  }
+  .doc-id {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border-left: 1px solid var(--line);
+    padding: 6px 0 6px 6px;
+  }
+  h1 {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .meta strong { color: var(--ink); font-weight: 500; }
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--paper);
+    padding: 18px 16px;
+    border: 1px solid var(--line);
+    box-shadow: 4px 4px 0 var(--line);
+    position: relative;
+  }
+  .panel-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .controls h2 {
+    font-variation-settings: "wght" 500, "opsz" 36;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    line-height: 1.15;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .controls h2 .num {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--rust);
+    font-weight: 400;
+  }
+  .ctrl-group { margin-bottom: 14px; }
+  .ctrl-row {
+    display: grid;
+    grid-template-columns: 1fr 50px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .ctrl-row label {
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+  }
+  .ctrl-row .value {
+    font-family: var(--mono);
+    text-align: right;
+    color: var(--rust);
+    font-weight: 600;
+    font-size: 0.78rem;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    height: 2px;
+    background: var(--line-strong);
+    outline: none;
+    width: 100%;
+    margin-top: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  .seg-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 5px;
+  }
+  .seg {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    padding: 6px 0;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    cursor: pointer;
+    color: var(--ink);
+    border-right: none;
+    transition: all 0.12s;
+  }
+  .seg:last-child { border-right: 1px solid var(--line-strong); }
+  .seg.active {
+    background: var(--rust);
+    color: #ffffff;
+    border-color: var(--rust);
+  }
+  .seg:hover:not(.active) { background: var(--line); }
+  button.go {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    padding: 10px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    transition: all 0.12s;
+    margin-top: 6px;
+  }
+  button.go:hover { background: var(--rust); border-color: var(--rust); }
+  button.go:disabled { opacity: 0.5; cursor: wait; }
+  button.go.outlined {
+    background: transparent;
+    color: var(--ink);
+    margin-top: 6px;
+  }
+  button.go.outlined:hover { background: var(--ink); color: var(--paper); }
+  button.go.outlined.active {
+    background: var(--rust);
+    color: #ffffff;
+    border-color: var(--rust);
+  }
+  .timing {
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: rgba(184, 146, 61, 0.08);
+    border-left: 3px solid var(--ochre);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    line-height: 1.55;
+  }
+  .timing .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+  .timing .label {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+  }
+  .timing .val { font-weight: 600; color: var(--ink); }
+  .timing .val.cached { color: var(--ochre); }
+  .timing .val.fresh { color: var(--rust); }
+  .grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .field-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+    padding: 10px 10px 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  .field-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    gap: 6px;
+  }
+  .field-card-title {
+    font-variation-settings: "wght" 500, "opsz" 24;
+    font-size: 0.86rem;
+  }
+  .field-card-title em {
+    font-style: italic;
+    color: var(--rust);
+    font-variation-settings: "wght" 400;
+  }
+  .field-card-meta {
+    font-family: var(--mono);
+    font-size: 0.56rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .field-canvas-wrap {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  .field-canvas-wrap.mode-3d { cursor: grab; }
+  .field-canvas-wrap.mode-3d.dragging,
+  .field-canvas-wrap.mode-3d:active { cursor: grabbing; }
+  canvas.field, canvas.field-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  canvas.field-3d {
+    position: absolute;
+    inset: 0;
+    display: none;
+    image-rendering: auto;
+  }
+  .field-canvas-wrap.mode-3d canvas.field { display: none; }
+  .field-canvas-wrap.mode-3d canvas.field-3d { display: block; }
+  .field-card-stats {
+    margin-top: 6px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+  }
+  .stat-cell { text-align: center; }
+  .stat-cell .k {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.55rem;
+  }
+  .stat-cell .v {
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 1px;
+  }
+  .colorbar-row {
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .colorbar {
+    height: 10px;
+    margin: 6px 0 4px;
+    background: linear-gradient(to right,
+      rgb(26, 58, 92),
+      rgb(123, 163, 196),
+      rgb(245, 239, 219),
+      rgb(200, 98, 62),
+      rgb(122, 16, 36));
+    border: 1px solid var(--line-strong);
+  }
+  .colorbar-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 0.6rem;
+  }
+  .hint {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    min-height: 1.2em;
+  }
+  .hint.visible { color: var(--rust); }
+  .notes {
+    margin-top: 22px;
+    padding: 16px 18px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+  .notes h3 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 0.94rem;
+    margin-bottom: 6px;
+  }
+  .notes p {
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .notes p:last-child { margin-bottom: 0; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    background: rgba(158, 27, 50, 0.08);
+    padding: 1px 4px;
+    color: var(--crimson-deep);
+  }
+  footer {
+    margin-top: 26px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="doc-id">Spectral Sim · v2</div>
+    <div>
+      <h1>Random <em>Fields</em></h1>
+      <div class="subtitle">Stationary Gaussian · 2D · FFT spectral method</div>
+    </div>
+    <div class="meta">
+      <strong>method</strong> = circulant embed<br>
+      <strong>FFT</strong> = O(N² log N)<br>
+      <strong>3D</strong> = WebGL · synced rotation
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <div class="panel-tag">Controls</div>
+      <h2><span class="num">§1</span>Parameters</h2>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Variance σ²</label>
+          <span class="value" id="sigma2-val">1.00</span>
+        </div>
+        <input type="range" id="sigma2" min="0.1" max="3" step="0.05" value="1.0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Length scale ℓ</label>
+          <span class="value" id="ell-val">20</span>
+        </div>
+        <input type="range" id="ell" min="3" max="50" step="1" value="20">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Matérn ν</label>
+          <span class="value" id="nu-val">1.5</span>
+        </div>
+        <div class="seg-group" id="nu-seg">
+          <button class="seg" data-nu="0.5">0.5</button>
+          <button class="seg active" data-nu="1.5">1.5</button>
+          <button class="seg" data-nu="2.5">2.5</button>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Grid N</label>
+          <span class="value" id="grid-val">128</span>
+        </div>
+        <div class="seg-group" id="grid-seg">
+          <button class="seg" data-n="64">64</button>
+          <button class="seg active" data-n="128">128</button>
+          <button class="seg" data-n="256">256</button>
+        </div>
+      </div>
+
+      <button class="go" id="regen-btn">Regenerate ▸</button>
+      <button class="go outlined" id="toggle-3d-btn">3D surface view</button>
+
+      <div class="timing">
+        <div class="row"><span class="label">Setup</span><span class="val" id="t-setup">—</span></div>
+        <div class="row"><span class="label">Sample</span><span class="val" id="t-sample">—</span></div>
+        <div class="row"><span class="label">Total</span><span class="val" id="t-total">—</span></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="grid-2x2" id="field-grid">
+        <div class="field-card">
+          <div class="field-card-head">
+            <div class="field-card-title">Exponential <em>ν=½</em></div>
+            <div class="field-card-meta">e<sup>−h/ℓ</sup></div>
+          </div>
+          <div class="field-canvas-wrap" data-cov="exp">
+            <canvas class="field" id="canvas-exp"></canvas>
+            <canvas class="field-3d" id="canvas-3d-exp"></canvas>
+          </div>
+          <div class="field-card-stats">
+            <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-exp-mean">—</div></div>
+            <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-exp-var">—</div></div>
+            <div class="stat-cell"><div class="k">range</div><div class="v" id="stat-exp-range">—</div></div>
+          </div>
+        </div>
+
+        <div class="field-card">
+          <div class="field-card-head">
+            <div class="field-card-title">Squared exp. <em>ν→∞</em></div>
+            <div class="field-card-meta">e<sup>−(h/ℓ)²</sup></div>
+          </div>
+          <div class="field-canvas-wrap" data-cov="gauss">
+            <canvas class="field" id="canvas-gauss"></canvas>
+            <canvas class="field-3d" id="canvas-3d-gauss"></canvas>
+          </div>
+          <div class="field-card-stats">
+            <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-gauss-mean">—</div></div>
+            <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-gauss-var">—</div></div>
+            <div class="stat-cell"><div class="k">range</div><div class="v" id="stat-gauss-range">—</div></div>
+          </div>
+        </div>
+
+        <div class="field-card">
+          <div class="field-card-head">
+            <div class="field-card-title">Matérn <em id="matern-nu-label">ν=3/2</em></div>
+            <div class="field-card-meta" id="matern-formula">(1+√3·h/ℓ)e<sup>−√3·h/ℓ</sup></div>
+          </div>
+          <div class="field-canvas-wrap" data-cov="matern">
+            <canvas class="field" id="canvas-matern"></canvas>
+            <canvas class="field-3d" id="canvas-3d-matern"></canvas>
+          </div>
+          <div class="field-card-stats">
+            <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-matern-mean">—</div></div>
+            <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-matern-var">—</div></div>
+            <div class="stat-cell"><div class="k">range</div><div class="v" id="stat-matern-range">—</div></div>
+          </div>
+        </div>
+
+        <div class="field-card">
+          <div class="field-card-head">
+            <div class="field-card-title">Spherical <em>range=ℓ</em></div>
+            <div class="field-card-meta">1−1.5r+0.5r³</div>
+          </div>
+          <div class="field-canvas-wrap" data-cov="sph">
+            <canvas class="field" id="canvas-sph"></canvas>
+            <canvas class="field-3d" id="canvas-3d-sph"></canvas>
+          </div>
+          <div class="field-card-stats">
+            <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-sph-mean">—</div></div>
+            <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-sph-var">—</div></div>
+            <div class="stat-cell"><div class="k">range</div><div class="v" id="stat-sph-range">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="colorbar-row">
+        Field value · low → high
+        <div class="colorbar"></div>
+        <div class="colorbar-labels">
+          <span id="cbar-min">−3σ</span>
+          <span>0</span>
+          <span id="cbar-max">+3σ</span>
+        </div>
+      </div>
+      <div class="hint" id="hint-3d"></div>
+    </main>
+  </div>
+
+  <section class="notes">
+    <h3>How it works</h3>
+    <p>
+      Each field is sampled by <strong>circulant embedding with the FFT</strong>. The covariance function is tiled onto a torus of size <code>2N × 2N</code>; its 2D FFT gives the discrete power spectrum <code>S(k)</code>; a realization is then <code>Z = Re[ IFFT( √S · W ) ]</code> where <code>W</code> is complex Gaussian white noise. Cropping the toroidal field to <code>N × N</code> suppresses periodicity artifacts. Cost is <code>O(N² log N)</code> per realization.
+    </p>
+    <p>
+      The <strong>spectrum √S is cached</strong> per (covariance, ℓ, ν, N). First click rebuilds it; subsequent regenerates only draw fresh white noise and run the IFFT. Watch <em>Setup</em> drop on repeat clicks; changing ℓ, ν, or grid size invalidates the cache.
+    </p>
+    <p>
+      <strong>3D mode</strong> displaces the surface vertically by the field value and lights it from above-left. Drag any panel to rotate — all four spin together so the same viewpoint reveals four very different roughness signatures.
+    </p>
+  </section>
+
+  <footer>
+    Spectral Gaussian random field simulator · circulant embedding · FFT · WebGL surfaces
+  </footer>
+</div>
+
+<script>
+// ============================================================
+//  1D Cooley-Tukey FFT (in-place, complex)
+// ============================================================
+function fft1d(re, im, inverse) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const ang = (inverse ? 2 : -2) * Math.PI / len;
+    const wRe0 = Math.cos(ang);
+    const wIm0 = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < half; k++) {
+        const aRe = re[i + k];
+        const aIm = im[i + k];
+        const bR = re[i + k + half];
+        const bI = im[i + k + half];
+        const oddRe = bR * curRe - bI * curIm;
+        const oddIm = bR * curIm + bI * curRe;
+        re[i + k] = aRe + oddRe;
+        im[i + k] = aIm + oddIm;
+        re[i + k + half] = aRe - oddRe;
+        im[i + k + half] = aIm - oddIm;
+        const newCurRe = curRe * wRe0 - curIm * wIm0;
+        curIm = curRe * wIm0 + curIm * wRe0;
+        curRe = newCurRe;
+      }
+    }
+  }
+  if (inverse) {
+    const inv = 1 / n;
+    for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+  }
+}
+
+function fft2d(re, im, M, inverse) {
+  const rowRe = new Float64Array(M);
+  const rowIm = new Float64Array(M);
+  for (let j = 0; j < M; j++) {
+    const off = j * M;
+    for (let i = 0; i < M; i++) { rowRe[i] = re[off + i]; rowIm[i] = im[off + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let i = 0; i < M; i++) { re[off + i] = rowRe[i]; im[off + i] = rowIm[i]; }
+  }
+  for (let i = 0; i < M; i++) {
+    for (let j = 0; j < M; j++) { rowRe[j] = re[j * M + i]; rowIm[j] = im[j * M + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let j = 0; j < M; j++) { re[j * M + i] = rowRe[j]; im[j * M + i] = rowIm[j]; }
+  }
+}
+
+// ============================================================
+//  Covariance functions
+// ============================================================
+const SQRT3 = Math.sqrt(3);
+const SQRT5 = Math.sqrt(5);
+function covExponential(h, sigma2, ell) { return sigma2 * Math.exp(-h / ell); }
+function covGaussian(h, sigma2, ell) {
+  const r = h / ell; return sigma2 * Math.exp(-r * r);
+}
+function covSpherical(h, sigma2, ell) {
+  if (h >= ell) return 0;
+  const r = h / ell;
+  return sigma2 * (1 - 1.5 * r + 0.5 * r * r * r);
+}
+function covMatern(h, sigma2, ell, nu) {
+  if (h === 0) return sigma2;
+  if (nu === 0.5) return sigma2 * Math.exp(-h / ell);
+  if (nu === 1.5) {
+    const r = SQRT3 * h / ell;
+    return sigma2 * (1 + r) * Math.exp(-r);
+  }
+  if (nu === 2.5) {
+    const r = SQRT5 * h / ell;
+    return sigma2 * (1 + r + r * r / 3) * Math.exp(-r);
+  }
+  return 0;
+}
+
+// ============================================================
+//  RNG + Box-Muller
+// ============================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fillNormal(arr, rng) {
+  const n = arr.length;
+  for (let i = 0; i < n; i += 2) {
+    let u1 = rng(); if (u1 < 1e-300) u1 = 1e-300;
+    const u2 = rng();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    const ang = 2 * Math.PI * u2;
+    arr[i] = r * Math.cos(ang);
+    if (i + 1 < n) arr[i + 1] = r * Math.sin(ang);
+  }
+}
+
+// ============================================================
+//  Spectrum + sampling
+// ============================================================
+function buildCovGrid(M, dx, covFn) {
+  const C = new Float64Array(M * M);
+  const half = M >> 1;
+  for (let j = 0; j < M; j++) {
+    const ky = j < half ? j : j - M;
+    for (let i = 0; i < M; i++) {
+      const kx = i < half ? i : i - M;
+      const h = Math.sqrt(kx * kx + ky * ky) * dx;
+      C[j * M + i] = covFn(h);
+    }
+  }
+  return C;
+}
+function computeSqrtSpectrum(C, M) {
+  const re = new Float64Array(C);
+  const im = new Float64Array(M * M);
+  fft2d(re, im, M, false);
+  const sqrtS = new Float64Array(M * M);
+  for (let i = 0; i < M * M; i++) {
+    const v = re[i];
+    sqrtS[i] = v > 0 ? Math.sqrt(v) : 0;
+  }
+  return sqrtS;
+}
+function sampleField(sqrtS, M, N, rng) {
+  const re = new Float64Array(M * M);
+  const im = new Float64Array(M * M);
+  const buf = new Float64Array(M * M);
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) re[i] = sqrtS[i] * buf[i];
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) im[i] = sqrtS[i] * buf[i];
+  fft2d(re, im, M, true);
+  const Z = new Float64Array(N * N);
+  const scale = M;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      Z[j * N + i] = re[j * M + i] * scale;
+    }
+  }
+  return Z;
+}
+
+// ============================================================
+//  Diverging colormap
+// ============================================================
+const CMAP_STOPS = [
+  [ 26,  58,  92],
+  [123, 163, 196],
+  [245, 239, 219],
+  [200,  98,  62],
+  [122,  16,  36],
+];
+function valueToRGB(t) {
+  t = Math.max(0, Math.min(1, t));
+  const seg = t * (CMAP_STOPS.length - 1);
+  const i = Math.min(Math.floor(seg), CMAP_STOPS.length - 2);
+  const f = seg - i;
+  const a = CMAP_STOPS[i], b = CMAP_STOPS[i + 1];
+  return [
+    Math.round(a[0] + f * (b[0] - a[0])),
+    Math.round(a[1] + f * (b[1] - a[1])),
+    Math.round(a[2] + f * (b[2] - a[2])),
+  ];
+}
+
+// ============================================================
+//  2D heatmap rendering
+// ============================================================
+function renderField2D(canvas, Z, N, vmin, vmax) {
+  canvas.width = N;
+  canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(N, N);
+  const span = vmax - vmin;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = Z[j * N + i];
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      const idx = (j * N + i) * 4;
+      img.data[idx]     = rgb[0];
+      img.data[idx + 1] = rgb[1];
+      img.data[idx + 2] = rgb[2];
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ============================================================
+//  3D surface rendering (Three.js)
+// ============================================================
+const scenes3d = {}; // covId → { renderer, scene, camera, mesh }
+
+function ensureScene(canvasId) {
+  if (scenes3d[canvasId]) return scenes3d[canvasId];
+  const canvas = document.getElementById(canvasId);
+  // Force canvas to have a real pixel size before WebGL init
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  canvas.width = size;
+  canvas.height = size;
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true, preserveDrawingBuffer: false
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(size, size, false);
+  renderer.setClearColor(0x000000, 0); // transparent
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+  camera.up.set(0, 0, 1);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambient);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+  dir.position.set(2, -3, 4);
+  scene.add(dir);
+  const dir2 = new THREE.DirectionalLight(0xffe4c4, 0.25);
+  dir2.position.set(-3, 2, 1);
+  scene.add(dir2);
+
+  const entry = { renderer, scene, camera, mesh: null, size };
+  scenes3d[canvasId] = entry;
+  return entry;
+}
+
+function buildSurface(canvasId, Z, N, vmin, vmax) {
+  const entry = ensureScene(canvasId);
+  if (entry.mesh) {
+    entry.scene.remove(entry.mesh);
+    entry.mesh.geometry.dispose();
+    entry.mesh.material.dispose();
+    entry.mesh = null;
+  }
+  // PlaneGeometry: vertices ordered row by row in Y.
+  // After rotateX(-PI/2), what was Y becomes Z (height). Easier: keep XY plane,
+  // displace +Z, set up vector to Z, look from +X / -Y with positive Z elevation.
+  const planeSize = 2.0;
+  const geom = new THREE.PlaneGeometry(planeSize, planeSize, N - 1, N - 1);
+  const positions = geom.attributes.position.array;
+  const colors = new Float32Array(N * N * 3);
+  const span = vmax - vmin;
+  // Height scale: bring the field into roughly ±0.4 units so the surface
+  // doesn't dominate the scene visually
+  const heightScale = 0.4 / Math.max(Math.abs(vmin), Math.abs(vmax), 1e-6);
+  // Three.js PlaneGeometry orders vertices: outer loop iy from 0..N-1, inner ix from 0..N-1.
+  // The y-axis is flipped from typical image coords. We just match index→Z.
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const vIdx = iy * N + ix;
+      // Map to Z[] using same ordering (ix=column, iy=row)
+      const v = Z[iy * N + ix];
+      positions[vIdx * 3 + 2] = v * heightScale;
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      colors[vIdx * 3]     = rgb[0] / 255;
+      colors[vIdx * 3 + 1] = rgb[1] / 255;
+      colors[vIdx * 3 + 2] = rgb[2] / 255;
+    }
+  }
+  geom.attributes.position.needsUpdate = true;
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+
+  const mat = new THREE.MeshLambertMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    flatShading: false,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  entry.scene.add(mesh);
+  entry.mesh = mesh;
+  return entry;
+}
+
+function update3DCameras() {
+  const r = 3.4;
+  const theta = state3d.elev;          // elevation from XY plane
+  const phi   = state3d.azim;          // azimuth around Z
+  const cx = r * Math.cos(theta) * Math.sin(phi);
+  const cy = -r * Math.cos(theta) * Math.cos(phi);
+  const cz = r * Math.sin(theta);
+  for (const s of Object.values(scenes3d)) {
+    s.camera.position.set(cx, cy, cz);
+    s.camera.lookAt(0, 0, 0);
+  }
+}
+
+function render3DAll() {
+  for (const s of Object.values(scenes3d)) {
+    s.renderer.render(s.scene, s.camera);
+  }
+}
+
+// Resize the 3D canvases when grid layout changes
+function resize3DCanvases() {
+  for (const [canvasId, entry] of Object.entries(scenes3d)) {
+    const canvas = document.getElementById(canvasId);
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const size = Math.max(64, Math.floor(rect.width));
+    if (size !== entry.size) {
+      entry.size = size;
+      entry.renderer.setSize(size, size, false);
+      entry.camera.aspect = 1;
+      entry.camera.updateProjectionMatrix();
+    }
+  }
+}
+
+// ============================================================
+//  Stats
+// ============================================================
+function fieldStats(Z) {
+  let s = 0, n = Z.length, mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const v = Z[i];
+    s += v;
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+  }
+  const mean = s / n;
+  let s2 = 0;
+  for (let i = 0; i < n; i++) { const d = Z[i] - mean; s2 += d * d; }
+  return { mean, variance: s2 / n, min: mn, max: mx };
+}
+
+// ============================================================
+//  Application state
+// ============================================================
+const state = {
+  sigma2: 1.0,
+  ell: 20,
+  nu: 1.5,
+  N: 128,
+  embed: 2,
+  seed: Math.floor(Math.random() * 0xFFFFFFFF),
+  mode3D: false,
+};
+const state3d = {
+  elev: 0.55,    // initial elevation ~31°
+  azim: 0.55,    // initial azimuth
+};
+
+// Cache the latest field arrays so we can re-render to 3D without recomputing
+const lastFields = {};
+
+const spectrumCache = new Map();
+function cacheKey(cov, sigma2, ell, nu, M) {
+  return cov + '|' + sigma2 + '|' + ell + '|' + nu + '|' + M;
+}
+function getOrComputeSpectrum(cov, M, dx) {
+  const { sigma2, ell, nu } = state;
+  const key = cacheKey(cov, sigma2, ell, nu, M);
+  if (spectrumCache.has(key)) {
+    return { sqrtS: spectrumCache.get(key), cached: true };
+  }
+  const covFn = (h) => {
+    if (cov === 'exp')    return covExponential(h, sigma2, ell);
+    if (cov === 'gauss')  return covGaussian(h, sigma2, ell);
+    if (cov === 'sph')    return covSpherical(h, sigma2, ell);
+    if (cov === 'matern') return covMatern(h, sigma2, ell, nu);
+    return 0;
+  };
+  const C = buildCovGrid(M, dx, covFn);
+  const sqrtS = computeSqrtSpectrum(C, M);
+  spectrumCache.set(key, sqrtS);
+  return { sqrtS, cached: false };
+}
+
+const COV_LIST = [
+  { id: 'exp',    canvas2d: 'canvas-exp',    canvas3d: 'canvas-3d-exp',    statKey: 'exp' },
+  { id: 'gauss',  canvas2d: 'canvas-gauss',  canvas3d: 'canvas-3d-gauss',  statKey: 'gauss' },
+  { id: 'matern', canvas2d: 'canvas-matern', canvas3d: 'canvas-3d-matern', statKey: 'matern' },
+  { id: 'sph',    canvas2d: 'canvas-sph',    canvas3d: 'canvas-3d-sph',    statKey: 'sph' },
+];
+
+function regenerate() {
+  const btn = document.getElementById('regen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+
+  requestAnimationFrame(() => {
+    const N = state.N;
+    const M = N * state.embed;
+    const dx = 1.0;
+
+    let setupTotal = 0;
+    let sampleTotal = 0;
+    let allCached = true;
+
+    const fields = [];
+    for (const cov of COV_LIST) {
+      const t0 = performance.now();
+      const { sqrtS, cached } = getOrComputeSpectrum(cov.id, M, dx);
+      const t1 = performance.now();
+      setupTotal += (t1 - t0);
+      if (!cached) allCached = false;
+
+      const rng = mulberry32(state.seed);
+      const Z = sampleField(sqrtS, M, N, rng);
+      const t2 = performance.now();
+      sampleTotal += (t2 - t1);
+
+      fields.push({ cov, Z });
+      lastFields[cov.id] = { Z, N };
+    }
+
+    const rangeCap = 3 * Math.sqrt(state.sigma2);
+    const vmin = -rangeCap, vmax = rangeCap;
+    document.getElementById('cbar-min').textContent = vmin.toFixed(2);
+    document.getElementById('cbar-max').textContent = '+' + vmax.toFixed(2);
+
+    for (const f of fields) {
+      // 2D render
+      const c2d = document.getElementById(f.cov.canvas2d);
+      renderField2D(c2d, f.Z, N, vmin, vmax);
+      // 3D render (build/update if 3D mode is on)
+      if (state.mode3D) {
+        buildSurface(f.cov.canvas3d, f.Z, N, vmin, vmax);
+      }
+      const s = fieldStats(f.Z);
+      document.getElementById('stat-' + f.cov.statKey + '-mean').textContent = s.mean.toFixed(3);
+      document.getElementById('stat-' + f.cov.statKey + '-var').textContent = s.variance.toFixed(3);
+      document.getElementById('stat-' + f.cov.statKey + '-range').textContent =
+        s.min.toFixed(2) + ' .. ' + s.max.toFixed(2);
+    }
+
+    if (state.mode3D) {
+      update3DCameras();
+      render3DAll();
+    }
+
+    const tSetup = document.getElementById('t-setup');
+    const tSample = document.getElementById('t-sample');
+    const tTotal = document.getElementById('t-total');
+    tSetup.textContent = setupTotal.toFixed(1) + ' ms' + (allCached ? ' (cached)' : '');
+    tSetup.className = 'val ' + (allCached ? 'cached' : 'fresh');
+    tSample.textContent = sampleTotal.toFixed(1) + ' ms';
+    tSample.className = 'val';
+    tTotal.textContent = (setupTotal + sampleTotal).toFixed(1) + ' ms';
+    tTotal.className = 'val';
+
+    btn.disabled = false;
+    btn.textContent = 'Regenerate ▸';
+
+    state.seed = (state.seed * 1664525 + 1013904223) >>> 0;
+  });
+}
+
+// ============================================================
+//  Build/rebuild 3D surfaces from cached fields when toggling 3D on
+// ============================================================
+function rebuildAll3DFromCache() {
+  if (Object.keys(lastFields).length === 0) return;
+  const rangeCap = 3 * Math.sqrt(state.sigma2);
+  const vmin = -rangeCap, vmax = rangeCap;
+  for (const cov of COV_LIST) {
+    const fld = lastFields[cov.id];
+    if (!fld) continue;
+    buildSurface(cov.canvas3d, fld.Z, fld.N, vmin, vmax);
+  }
+  resize3DCanvases();
+  update3DCameras();
+  render3DAll();
+}
+
+// ============================================================
+//  Controls
+// ============================================================
+function invalidateCache() { spectrumCache.clear(); }
+
+document.getElementById('sigma2').addEventListener('input', (e) => {
+  state.sigma2 = parseFloat(e.target.value);
+  document.getElementById('sigma2-val').textContent = state.sigma2.toFixed(2);
+  invalidateCache();
+});
+document.getElementById('ell').addEventListener('input', (e) => {
+  state.ell = parseInt(e.target.value);
+  document.getElementById('ell-val').textContent = state.ell;
+  invalidateCache();
+});
+
+const FORMULAS = {
+  '0.5': '(equivalent to exponential)',
+  '1.5': '(1+√3·h/ℓ)e<sup>−√3·h/ℓ</sup>',
+  '2.5': '(1+√5·h/ℓ+5h²/3ℓ²)e<sup>−√5·h/ℓ</sup>',
+};
+const NU_LABELS = { '0.5': 'ν=½', '1.5': 'ν=3/2', '2.5': 'ν=5/2' };
+document.querySelectorAll('#nu-seg .seg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#nu-seg .seg').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.nu = parseFloat(btn.dataset.nu);
+    document.getElementById('nu-val').textContent = state.nu.toFixed(1);
+    document.getElementById('matern-nu-label').textContent = NU_LABELS[btn.dataset.nu];
+    document.getElementById('matern-formula').innerHTML = FORMULAS[btn.dataset.nu];
+    invalidateCache();
+  });
+});
+
+document.querySelectorAll('#grid-seg .seg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#grid-seg .seg').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.N = parseInt(btn.dataset.n);
+    document.getElementById('grid-val').textContent = state.N;
+    invalidateCache();
+  });
+});
+
+document.getElementById('regen-btn').addEventListener('click', regenerate);
+
+// ---- 3D toggle ----
+const toggle3DBtn = document.getElementById('toggle-3d-btn');
+const hint3D = document.getElementById('hint-3d');
+toggle3DBtn.addEventListener('click', () => {
+  state.mode3D = !state.mode3D;
+  document.querySelectorAll('.field-canvas-wrap').forEach(w => {
+    if (state.mode3D) w.classList.add('mode-3d');
+    else w.classList.remove('mode-3d');
+  });
+  toggle3DBtn.classList.toggle('active', state.mode3D);
+  toggle3DBtn.textContent = state.mode3D ? '2D heatmap view' : '3D surface view';
+  if (state.mode3D) {
+    hint3D.textContent = 'drag to rotate · all four panels rotate together';
+    hint3D.classList.add('visible');
+    rebuildAll3DFromCache();
+  } else {
+    hint3D.textContent = '';
+    hint3D.classList.remove('visible');
+  }
+});
+
+// ---- Drag-to-rotate (synchronized) ----
+const grid = document.getElementById('field-grid');
+let dragging = false, lastX = 0, lastY = 0, dragWrap = null;
+
+function startDrag(clientX, clientY, target) {
+  if (!state.mode3D) return;
+  dragging = true;
+  lastX = clientX; lastY = clientY;
+  dragWrap = target.closest('.field-canvas-wrap');
+  if (dragWrap) dragWrap.classList.add('dragging');
+}
+function moveDrag(clientX, clientY) {
+  if (!dragging) return;
+  const dx = clientX - lastX;
+  const dy = clientY - lastY;
+  lastX = clientX; lastY = clientY;
+  state3d.azim += dx * 0.008;
+  state3d.elev = Math.max(0.06, Math.min(Math.PI / 2 - 0.05, state3d.elev - dy * 0.006));
+  update3DCameras();
+  render3DAll();
+}
+function endDrag() {
+  dragging = false;
+  if (dragWrap) dragWrap.classList.remove('dragging');
+  dragWrap = null;
+}
+
+grid.addEventListener('mousedown', (e) => {
+  if (!state.mode3D) return;
+  const wrap = e.target.closest('.field-canvas-wrap');
+  if (!wrap) return;
+  e.preventDefault();
+  startDrag(e.clientX, e.clientY, e.target);
+});
+window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('mouseleave', endDrag);
+
+grid.addEventListener('touchstart', (e) => {
+  if (!state.mode3D || e.touches.length !== 1) return;
+  const wrap = e.target.closest('.field-canvas-wrap');
+  if (!wrap) return;
+  e.preventDefault();
+  startDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
+}, { passive: false });
+window.addEventListener('touchmove', (e) => {
+  if (!dragging || e.touches.length !== 1) return;
+  e.preventDefault();
+  moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+window.addEventListener('touchend', endDrag);
+
+// Resize observer for the 3D canvases
+window.addEventListener('resize', () => {
+  if (state.mode3D) {
+    resize3DCanvases();
+    render3DAll();
+  }
+});
+
+// ---- Initial run ----
+regenerate();
+</script>
+</body>
+</html>

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boundary-Catalytic Branching · Grebenkov–Ye</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #03070e;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  canvas { display: block; position: absolute; inset: 0; }
+
+  /* ── Side panel ── */
+  #panel {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 240px;
+    background: rgba(4, 10, 20, 0.92);
+    border-left: 1px solid #0d2030;
+    display: flex; flex-direction: column;
+    padding: 22px 18px;
+    gap: 0;
+    z-index: 10;
+  }
+
+  #panel h2 {
+    font-size: 9px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: #00c898; margin-bottom: 4px;
+  }
+  #panel .subtitle {
+    font-size: 8px; font-weight: 300;
+    color: #0d3028; line-height: 1.7;
+    margin-bottom: 18px;
+  }
+
+  .ctrl-block {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #080f1a;
+  }
+  .ctrl-block:last-of-type { border-bottom: none; }
+
+  .ctrl-label {
+    font-size: 9px; font-weight: 400;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    display: flex; justify-content: space-between;
+    align-items: baseline;
+  }
+  .ctrl-label .lname { color: #4a7060; text-transform: uppercase; }
+  .ctrl-label .lval  { font-size: 10px; font-weight: 500; }
+
+  .ctrl-sub {
+    font-size: 8px; color: #0d2820; line-height: 1.6;
+    margin-bottom: 8px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 2px;
+    border-radius: 1px;
+    outline: none; cursor: pointer;
+  }
+  input[type=range].cat {
+    background: linear-gradient(to right, #003322, #00c898);
+  }
+  input[type=range].abs {
+    background: linear-gradient(to right, #200010, #C4385A);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 11px; height: 11px;
+    border-radius: 50%; cursor: pointer;
+  }
+  input[type=range].cat::-webkit-slider-thumb {
+    background: #00c898; box-shadow: 0 0 7px #00c898;
+  }
+  input[type=range].abs::-webkit-slider-thumb {
+    background: #C4385A; box-shadow: 0 0 7px #C4385A;
+  }
+
+  /* Stats */
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px 6px; margin-bottom: 14px;
+  }
+  .stat-cell {
+    background: #040b14;
+    border: 1px solid #0a1a28;
+    border-radius: 4px;
+    padding: 7px 8px;
+  }
+  .stat-cell .sk { font-size: 7.5px; color: #0d2830; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+  .stat-cell .sv { font-size: 13px; font-weight: 500; }
+  .sv.pop   { color: #c8d8e8; }
+  .sv.born  { color: #00c898; }
+  .sv.dead  { color: #C4385A; }
+  .sv.rate  { color: #e8c060; font-size: 11px; }
+
+  /* Phase indicator */
+  #phase {
+    padding: 10px 12px;
+    border-radius: 5px;
+    font-size: 9px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: center;
+    transition: all 0.5s ease;
+    margin-bottom: 14px;
+  }
+  #phase.grow    { background: rgba(0,200,152,.1); color: #00c898; border: 1px solid rgba(0,200,152,.25); }
+  #phase.decay   { background: rgba(196,56,90,.1);  color: #C4385A;  border: 1px solid rgba(196,56,90,.25); }
+  #phase.steady  { background: rgba(232,192,96,.1); color: #e8c060;  border: 1px solid rgba(232,192,96,.25); }
+  #phase.empty   { background: rgba(30,40,50,.3);   color: #1d3040;  border: 1px solid #0a1520; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 6px; margin-top: auto; padding-top: 14px; }
+  .btn {
+    flex: 1; padding: 7px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px; font-weight: 400;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    border-radius: 3px; cursor: pointer;
+    border: 1px solid;
+    transition: all .2s;
+  }
+  .btn-reset {
+    background: transparent; color: #1d4040;
+    border-color: #0a2020;
+  }
+  .btn-reset:hover { background: rgba(0,200,152,.06); color: #00c898; border-color: #00c898; }
+  .btn-burst {
+    background: transparent; color: #2a2010;
+    border-color: #1a1408;
+  }
+  .btn-burst:hover { background: rgba(232,192,96,.07); color: #e8c060; border-color: #e8c060; }
+
+  /* Legend strip */
+  #legend {
+    position: absolute;
+    bottom: 18px; left: 18px;
+    font-size: 8.5px; font-weight: 300;
+    line-height: 2.5; color: #0d2030;
+    pointer-events: none;
+  }
+  .li { display: flex; align-items: center; gap: 8px; }
+  .ls { width: 20px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+  /* Equation strip */
+  #eqstrip {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-60%);
+    font-size: 8px;
+    color: #0d2030;
+    pointer-events: none;
+    text-align: center;
+    line-height: 2;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<!-- Side panel -->
+<div id="panel">
+  <h2>BCB Process</h2>
+  <div class="subtitle">
+    Grebenkov–Ye (2025)<br>
+    Boundary local time roulette
+  </div>
+
+  <!-- Phase indicator -->
+  <div id="phase" class="empty">Initializing…</div>
+
+  <!-- Stats -->
+  <div class="stat-grid">
+    <div class="stat-cell"><div class="sk">Particles</div><div class="sv pop" id="sv-n">0</div></div>
+    <div class="stat-cell"><div class="sk">Growth</div><div class="sv rate" id="sv-rate">—</div></div>
+    <div class="stat-cell"><div class="sk">Branched</div><div class="sv born" id="sv-born">0</div></div>
+    <div class="stat-cell"><div class="sk">Absorbed</div><div class="sv dead" id="sv-dead">0</div></div>
+  </div>
+
+  <!-- Catalytic arc control -->
+  <div class="ctrl-block">
+    <div class="ctrl-label">
+      <span class="lname" style="color:#00c898;">Catalytic arc · Γ<sub>c</sub></span>
+      <span class="lval" style="color:#00c898;" id="lv-qc">q<sub>c</sub> = 0.04</span>
+    </div>
+    <div class="ctrl-sub">
+      Hit → branch with prob ≈ q<sub>c</sub>·δ/σ<br>
+      Child spawns 8px inward from wall
+    </div>
+    <input id="sl-qc" class="cat" type="range" min="0" max="0.30" step="0.005" value="0.04">
+  </div>
+
+  <!-- Absorbing arc control -->
+  <div class="ctrl-block">
+    <div class="ctrl-label">
+      <span class="lname" style="color:#C4385A;">Absorbing arc · Γ<sub>a</sub></span>
+      <span class="lval" style="color:#C4385A;" id="lv-qa">q<sub>a</sub> = 0.06</span>
+    </div>
+    <div class="ctrl-sub">
+      Hit → die with prob ≈ q<sub>a</sub>·δ/σ<br>
+      Otherwise reflects back
+    </div>
+    <input id="sl-qa" class="abs" type="range" min="0" max="0.50" step="0.005" value="0.06">
+  </div>
+
+  <!-- Boundary info -->
+  <div class="ctrl-block" style="padding-bottom:10px;">
+    <div class="ctrl-label">
+      <span class="lname" style="color:#1d4040;">Reflecting arc · Γ<sub>r</sub></span>
+      <span class="lval" style="color:#0d2830;">∂<sub>n</sub>u = 0</span>
+    </div>
+    <div class="ctrl-sub">
+      Remainder of boundary: pure specular reflection.
+      Robin BC: −∂<sub>n</sub>N = q(x)N on ∂Ω
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-reset" id="btn-reset">↺ Reset</button>
+    <button class="btn btn-burst" id="btn-burst">+ Burst</button>
+  </div>
+</div>
+
+<!-- Legend -->
+<div id="legend">
+  <div class="li"><div class="ls" style="background:#00c898;box-shadow:0 0 5px #00c898;"></div><span style="color:#00c898;">Catalytic Γ<sub>c</sub> — branching</span></div>
+  <div class="li"><div class="ls" style="background:#C4385A;box-shadow:0 0 5px #C4385A;"></div><span style="color:#C4385A;">Absorbing Γ<sub>a</sub> — killing</span></div>
+  <div class="li"><div class="ls" style="background:#0d2030;"></div><span>Reflecting Γ<sub>r</sub> — Neumann</span></div>
+</div>
+
+<!-- Equation -->
+<div id="eqstrip">
+  ∂<sub>t</sub>N = DΔN in Ω &nbsp;·&nbsp;
+  −∂<sub>n</sub>N = −q<sub>c</sub>N on Γ<sub>c</sub> &nbsp;·&nbsp;
+  −∂<sub>n</sub>N = q<sub>a</sub>N on Γ<sub>a</sub><br>
+  N(t|x) ~ e<sup>−Dλ₀t</sup> &nbsp;·&nbsp;
+  λ₀ &lt; 0: growth &nbsp;·&nbsp; λ₀ = 0: steady &nbsp;·&nbsp; λ₀ &gt; 0: extinction
+</div>
+
+<script>
+// =========================================================
+//  BOUNDARY-CATALYTIC BRANCHING (BCB) PROCESS
+//  Grebenkov & Ye, arXiv:2512.05637
+//
+//  Boundary ∂Ω = Γc ∪ Γa ∪ Γr
+//
+//  Catalytic arc Γc: particle hits → local time roulette
+//    P(branch) = 1 − exp(−qc · δ/σ)
+//    On branch: 2nd particle spawns 'spawn_off' inside wall
+//
+//  Absorbing arc Γa: particle hits → local time roulette
+//    P(die) = 1 − exp(−qa · δ/σ)
+//
+//  Reflecting arc Γr: specular reflection, no roulette
+//
+//  Initial condition: N₀ particles clustered at center
+//
+//  Population dynamics controlled by principal eigenvalue λ₀:
+//    λ₀ < 0 → exponential growth
+//    λ₀ = 0 → steady state
+//    λ₀ > 0 → extinction
+// =========================================================
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+// Panel width
+const PANEL_W = 240;
+
+let W, H, cx, cy, R;
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = (W - PANEL_W) / 2;
+  cy = H / 2;
+  R  = Math.min(W - PANEL_W, H) * 0.38;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── Parameters ──────────────────────────────────────────
+const sigma      = 9;        // step std-dev (px)
+const MAX_P      = 600;      // hard cap to keep browser sane
+const N0         = 80;       // initial seed
+const SPAWN_OFF  = 10;       // px inward from wall for newborn
+const CAT_LO     = 200, CAT_HI = 340;  // catalytic arc (top)
+const ABS_LO     = 20,  ABS_HI = 160;  // absorbing arc  (bottom)
+
+let qc = 0.04;
+let qa = 0.06;
+
+function toRad(d) { return d * Math.PI / 180; }
+function atan2Deg(a) { return ((a * 180 / Math.PI) + 360) % 360; }
+function getZone(a2) {
+  const d = atan2Deg(a2);
+  if (d >= CAT_LO && d <= CAT_HI) return 'c';
+  if (d >= ABS_LO && d <= ABS_HI) return 'a';
+  return 'r';
+}
+
+// Box-Muller
+let _sp = null;
+function rn() {
+  if (_sp !== null) { const s = _sp; _sp = null; return s; }
+  const u = Math.random() || 1e-12, v = Math.random();
+  const m = Math.sqrt(-2 * Math.log(u));
+  _sp = m * Math.sin(2 * Math.PI * v);
+  return m * Math.cos(2 * Math.PI * v);
+}
+
+// ── Particle ─────────────────────────────────────────────
+let _pid = 0;
+class Particle {
+  constructor(x, y, gen = 0) {
+    this.id  = _pid++;
+    this.x   = x;  this.px = x;
+    this.y   = y;  this.py = y;
+    this.gen = gen;           // generation (for color depth)
+    this.age = 0;
+    // Visual — hue shifts by generation for lineage tracing
+    const baseHue = 158 + (gen * 23) % 80;
+    this.hue = baseHue + Math.random() * 20 - 10;
+    this.sat = 72 + Math.random() * 25;
+    this.lum = 60 + Math.random() * 28;
+    this.sz  = 1.0 + Math.random() * 1.5;
+    this.trail = [];    // short position trail
+  }
+
+  // Returns: 'alive' | 'dead' | Particle (newborn)
+  step(queue) {
+    this.px = this.x; this.py = this.y;
+    this.trail.push([this.x, this.y]);
+    if (this.trail.length > 6) this.trail.shift();
+
+    this.x += sigma * rn();
+    this.y += sigma * rn();
+    this.age++;
+
+    const dx   = this.x - cx;
+    const dy   = this.y - cy;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist > R) {
+      const over = dist - R;
+      const nx   = dx / dist, ny = dy / dist;
+
+      // Specular reflection
+      this.x -= 2 * over * nx;
+      this.y -= 2 * over * ny;
+
+      const zone = getZone(Math.atan2(dy, dx));
+      const dL   = over / sigma;    // local time increment
+
+      if (zone === 'c') {
+        // ── Catalytic: branch roulette ──────────────────
+        const pBranch = 1 - Math.exp(-qc * dL);
+        if (Math.random() < pBranch) {
+          // Spawn child slightly inward from reflection point
+          const childX = this.x - nx * SPAWN_OFF * (0.8 + Math.random() * 0.5);
+          const childY = this.y - ny * SPAWN_OFF * (0.8 + Math.random() * 0.5);
+          const child  = new Particle(childX, childY, this.gen + 1);
+          queue.push(child);
+          return 'branched';
+        }
+
+      } else if (zone === 'a') {
+        // ── Absorbing: kill roulette ────────────────────
+        const pDie = 1 - Math.exp(-qa * dL);
+        if (Math.random() < pDie) return 'dead';
+      }
+      // Reflecting: just stays reflected
+    }
+    return 'alive';
+  }
+}
+
+// ── State ────────────────────────────────────────────────
+let particles  = [];
+let flashes    = [];   // {x,y,r,a,col}
+let frame      = 0;
+let totalBorn  = 0;
+let totalDead  = 0;
+
+// Population history for growth rate estimate
+let popHistory = [];   // [{t, n}]
+const POP_HIST_LEN = 90;
+
+function seed(n = N0) {
+  particles = [];
+  totalBorn = n;
+  totalDead = 0;
+  popHistory = [];
+  _pid = 0;
+  for (let i = 0; i < n; i++) {
+    // Gaussian cluster at center
+    const r = Math.abs(rn()) * R * 0.18;
+    const a = Math.random() * 2 * Math.PI;
+    particles.push(new Particle(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+  }
+}
+
+// ── Draw boundary ─────────────────────────────────────────
+const NS = 480;
+function drawBoundary() {
+  const dA = (2 * Math.PI) / NS;
+  const t  = Date.now();
+
+  for (let i = 0; i < NS; i++) {
+    const a1   = i * dA;
+    const zone = getZone(Math.atan2(Math.sin(a1), Math.cos(a1)));
+    let col;
+    if (zone === 'c') {
+      const p = (Math.sin(t * 0.0025 + i * 0.07) + 1) * 0.5;
+      const intensity = 0.5 + 0.45 * p * Math.min(qc / 0.1, 1);
+      col = `rgba(0, ${Math.round(180+40*p)}, ${Math.round(130+50*p)}, ${intensity})`;
+    } else if (zone === 'a') {
+      const p = (Math.sin(t * 0.003 + i * 0.09) + 1) * 0.5;
+      const intensity = 0.45 + 0.5 * p * Math.min(qa / 0.15, 1);
+      col = `rgba(255, ${Math.round(35+20*p)}, ${Math.round(60+15*p)}, ${intensity})`;
+    } else {
+      col = 'rgba(8, 22, 40, 0.55)';
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, a1, a1 + dA + 0.002);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Catalytic halo (scales with qc)
+  const qcScale = Math.min(qc / 0.15, 1);
+  ctx.save();
+  ctx.shadowColor = '#00c898'; ctx.shadowBlur = 10 + 25 * qcScale;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, toRad(CAT_LO), toRad(CAT_HI));
+  ctx.strokeStyle = `rgba(0,200,152,${0.08 + 0.3 * qcScale})`;
+  ctx.lineWidth = 5; ctx.stroke();
+  ctx.restore();
+
+  // Absorbing halo (scales with qa)
+  const qaScale = Math.min(qa / 0.25, 1);
+  ctx.save();
+  ctx.shadowColor = '#C4385A'; ctx.shadowBlur = 10 + 22 * qaScale;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, toRad(ABS_LO), toRad(ABS_HI));
+  ctx.strokeStyle = `rgba(196,56,90,${0.08 + 0.28 * qaScale})`;
+  ctx.lineWidth = 5; ctx.stroke();
+  ctx.restore();
+
+  // Arc labels
+  ctx.font = '8px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const labelR = R + 16;
+
+  const midCat = toRad((CAT_LO + CAT_HI) / 2);
+  ctx.fillStyle = `rgba(0,200,152,${0.3 + 0.5 * qcScale})`;
+  ctx.fillText('Γc (catalytic)', cx + labelR * Math.cos(midCat), cy + labelR * Math.sin(midCat));
+
+  const midAbs = toRad((ABS_LO + ABS_HI) / 2);
+  ctx.fillStyle = `rgba(196,56,90,${0.3 + 0.5 * qaScale})`;
+  ctx.fillText('Γa (absorbing)', cx + labelR * Math.cos(midAbs), cy + labelR * Math.sin(midAbs));
+}
+
+// ── Draw particle ─────────────────────────────────────────
+function drawParticle(p) {
+  // Short trail
+  if (p.trail.length > 1) {
+    for (let i = 1; i < p.trail.length; i++) {
+      const a = (i / p.trail.length) * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(p.trail[i-1][0], p.trail[i-1][1]);
+      ctx.lineTo(p.trail[i][0],   p.trail[i][1]);
+      ctx.strokeStyle = `hsla(${p.hue},${p.sat}%,${p.lum}%,${a * 0.6})`;
+      ctx.lineWidth = p.sz * 0.7;
+      ctx.stroke();
+    }
+  }
+  // Head to previous position line
+  ctx.beginPath();
+  ctx.moveTo(p.px, p.py);
+  ctx.lineTo(p.x,  p.y);
+  ctx.strokeStyle = `hsla(${p.hue},${p.sat}%,${p.lum}%,0.75)`;
+  ctx.lineWidth = p.sz * 0.85;
+  ctx.stroke();
+
+  // Head dot
+  ctx.save();
+  ctx.shadowColor = `hsl(${p.hue},${p.sat}%,${p.lum}%)`;
+  ctx.shadowBlur  = 5;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.sz, 0, Math.PI * 2);
+  ctx.fillStyle = `hsl(${p.hue},${p.sat}%,92%)`;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── Draw flash ────────────────────────────────────────────
+function drawFlashes() {
+  const nxt = [];
+  for (const f of flashes) {
+    ctx.save();
+    ctx.shadowColor = f.col; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.fillStyle = f.col.replace(')', `,${f.a * 0.6})`).replace('rgb','rgba');
+    ctx.fill(); ctx.restore();
+    f.r *= 1.2; f.a *= 0.72;
+    if (f.a > 0.03) nxt.push(f);
+  }
+  flashes = nxt;
+}
+
+// ── Phase / growth rate ───────────────────────────────────
+function updatePhase() {
+  const n   = particles.length;
+  const el  = document.getElementById('phase');
+  const rt  = document.getElementById('sv-rate');
+
+  popHistory.push({ f: frame, n });
+  if (popHistory.length > POP_HIST_LEN) popHistory.shift();
+
+  let rateStr = '—';
+  let phase   = 'steady';
+
+  if (popHistory.length > 20) {
+    const old  = popHistory[0];
+    const dt   = frame - old.f;
+    if (dt > 0 && old.n > 0 && n > 0) {
+      const lambda = Math.log(n / old.n) / dt;  // per frame
+      const pct    = (lambda * 100).toFixed(2);
+      rateStr = (lambda > 0 ? '+' : '') + pct + '%/f';
+      if (lambda > 0.005)       phase = 'grow';
+      else if (lambda < -0.005) phase = 'decay';
+      else                      phase = 'steady';
+    }
+  }
+
+  if (n === 0) { phase = 'empty'; rateStr = '—'; }
+
+  rt.textContent = rateStr;
+  el.className   = 'phase ' + phase;  // just class, not id
+  el.id          = 'phase';
+
+  const labels = { grow: '▲ Exponential Growth (λ₀ < 0)', decay: '▼ Extinction (λ₀ > 0)', steady: '≈ Steady State (λ₀ ≈ 0)', empty: 'No Particles' };
+  el.textContent = labels[phase];
+  el.className   = phase;
+  el.id          = 'phase';
+}
+
+// ── Main loop ─────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  frame++;
+
+  // Fade
+  ctx.fillStyle = 'rgba(3,7,14,0.16)';
+  ctx.fillRect(0, 0, W - PANEL_W, H);
+
+  drawBoundary();
+
+  // Step all particles; collect births
+  const births = [];
+  const next   = [];
+
+  for (const p of particles) {
+    const result = p.step(births);
+    if (result === 'dead') {
+      totalDead++;
+      flashes.push({ x: p.x, y: p.y, r: 4, a: 1.0, col: 'rgb(196,56,90)' });
+    } else if (result === 'branched') {
+      totalBorn++;
+      // Show branching flash (green)
+      flashes.push({ x: p.x, y: p.y, r: 3, a: 0.9, col: 'rgb(0,200,152)' });
+      drawParticle(p);
+      next.push(p);
+    } else {
+      drawParticle(p);
+      next.push(p);
+    }
+  }
+
+  // Add births (capped to avoid explosion)
+  for (const b of births) {
+    if (next.length + births.length <= MAX_P) {
+      next.push(b);
+    }
+  }
+  particles = next;
+
+  drawFlashes();
+
+  // Update stats every 6 frames
+  if (frame % 6 === 0) {
+    document.getElementById('sv-n').textContent    = particles.length;
+    document.getElementById('sv-born').textContent = totalBorn;
+    document.getElementById('sv-dead').textContent = totalDead;
+    updatePhase();
+  }
+}
+
+// ── Controls ──────────────────────────────────────────────
+const slQc = document.getElementById('sl-qc');
+const slQa = document.getElementById('sl-qa');
+const lvQc = document.getElementById('lv-qc');
+const lvQa = document.getElementById('lv-qa');
+
+function fmtQ(v) { return v.toFixed(3); }
+
+slQc.addEventListener('input', e => {
+  qc = parseFloat(e.target.value);
+  lvQc.textContent = `qc = ${fmtQ(qc)}`;
+});
+slQa.addEventListener('input', e => {
+  qa = parseFloat(e.target.value);
+  lvQa.textContent = `qa = ${fmtQ(qa)}`;
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  flashes = [];
+  seed(N0);
+});
+
+document.getElementById('btn-burst').addEventListener('click', () => {
+  if (particles.length < MAX_P) {
+    for (let i = 0; i < 30; i++) {
+      const r = Math.abs(rn()) * R * 0.15;
+      const a = Math.random() * 2 * Math.PI;
+      particles.push(new Particle(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+      totalBorn++;
+    }
+  }
+});
+
+// Click inside circle to add particles
+canvas.addEventListener('click', e => {
+  const dx = e.clientX - cx, dy = e.clientY - cy;
+  if (Math.hypot(dx, dy) < R && particles.length < MAX_P) {
+    for (let i = 0; i < 15; i++) {
+      particles.push(new Particle(e.clientX + rn() * 6, e.clientY + rn() * 6));
+      totalBorn++;
+    }
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') { flashes = []; seed(N0); }
+  if (e.key === ' ') {
+    for (let i = 0; i < 20; i++) {
+      const r = Math.abs(rn()) * R * 0.15;
+      const a = Math.random() * 2 * Math.PI;
+      particles.push(new Particle(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+      totalBorn++;
+    }
+  }
+  // Fine-tune qc/qa with arrow keys + modifier
+  if (e.shiftKey && e.key === 'ArrowUp')   { qc = Math.min(qc + 0.005, 0.3); slQc.value = qc; lvQc.textContent = `qc = ${fmtQ(qc)}`; }
+  if (e.shiftKey && e.key === 'ArrowDown') { qc = Math.max(qc - 0.005, 0);   slQc.value = qc; lvQc.textContent = `qc = ${fmtQ(qc)}`; }
+  if (e.altKey   && e.key === 'ArrowUp')   { qa = Math.min(qa + 0.005, 0.5); slQa.value = qa; lvQa.textContent = `qa = ${fmtQ(qa)}`; }
+  if (e.altKey   && e.key === 'ArrowDown') { qa = Math.max(qa - 0.005, 0);   slQa.value = qa; lvQa.textContent = `qa = ${fmtQ(qa)}`; }
+});
+
+// ── Boot ──────────────────────────────────────────────────
+seed(N0);
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Multivariate Normal Distribution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --teal:#1a6a58;--teal-bg:#e8f5f2;
+  --indigo:#3a5aa8;--indigo-bg:#edf1fb;
+  --purple:#6a1a80;--purple-bg:#f5e8fb;
+  --amber:#8a5a00;--amber-bg:#fff8ea;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+/* KaTeX fallback — hide MathML layer even if CDN CSS is slow/blocked */
+.katex-mathml{position:absolute!important;clip:rect(1px,1px,1px,1px)!important;width:1px!important;height:1px!important;overflow:hidden!important;padding:0!important;border:0!important;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1180px;margin:0 auto;padding:2rem 1.5rem;}
+
+/* ── NAV ── */
+.toc{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.2rem 1.6rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.toc h2{font-family:var(--font-head);font-size:1.1rem;font-weight:600;margin-bottom:.7rem;}
+.toc-grid{display:flex;flex-wrap:wrap;gap:.4rem .65rem;}
+.toc a{font-size:.86rem;color:var(--accent);text-decoration:none;padding:.16rem .55rem;border-radius:3px;background:var(--indigo-bg);border:1px solid #c0ccdd;transition:background .14s;}
+.toc a:hover{background:#c8daff;}
+
+/* ── CARDS ── */
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:var(--font-head);font-size:1.22rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+.card h3{font-family:var(--font-head);font-size:1.05rem;font-weight:600;color:var(--navy2);margin:1.2rem 0 .6rem;}
+
+/* ── MATH ── */
+.math-block{overflow-x:auto;padding:.5rem 0;text-align:center;}
+p{margin:.45rem 0;}
+
+/* ── BOXES ── */
+.def-box{background:var(--indigo-bg);border:1px solid #c0ccdd;border-left:4px solid var(--indigo);border-radius:6px;padding:1rem 1.3rem;margin:1rem 0;font-size:.95rem;line-height:1.6;}
+.def-box .def-label{font-weight:600;color:var(--indigo);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;}
+.ex-box{background:var(--amber-bg);border:1px solid #e0d0a8;border-left:4px solid var(--gold);border-radius:6px;padding:1rem 1.3rem;margin:1rem 0;font-size:.95rem;line-height:1.6;}
+.ex-box .ex-label{font-weight:600;color:var(--amber);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;}
+.thm-box{background:var(--teal-bg);border:1px solid #a0d4c8;border-left:4px solid var(--teal);border-radius:6px;padding:1rem 1.3rem;margin:1rem 0;font-size:.95rem;line-height:1.6;}
+.thm-box .thm-label{font-weight:600;color:var(--teal);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;}
+.key-box{background:var(--indigo-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:var(--navy2);line-height:1.6;margin:1rem 0;}
+.key-box strong{color:var(--navy);}
+
+/* ── INTERACTIVE AREAS ── */
+.calc-area{background:var(--paper);border:1px solid var(--border);border-radius:6px;padding:1.1rem 1.3rem;margin:1rem 0;}
+.calc-area h4{font-family:var(--font-head);font-size:.95rem;color:var(--navy2);margin-bottom:.6rem;}
+.ctrl-row{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:.6rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.3rem;font-size:.88rem;color:var(--navy2);}
+.ctrl-row input[type=number],.ctrl-row input[type=text]{width:58px;padding:.22rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ctrl-row select{padding:.22rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.9rem;color:var(--navy);}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+button:active{transform:scale(.97);}
+.btn-ghost{background:var(--indigo-bg);color:var(--navy2);border:1px solid #c0ccdd;}
+.btn-ghost:hover{background:#d8e4f8;}
+.btn-go{background:var(--red);color:#fff;padding:.45rem 1.6rem;font-size:.95rem;letter-spacing:.03em;}
+.btn-go:hover{background:#952e24;}
+.btn-sm{padding:.22rem .65rem;font-size:.84rem;}
+
+/* ── MATRIX INPUTS ── */
+.mx-grid{display:inline-grid;gap:4px 5px;align-items:center;}
+.mx-grid input{width:52px;padding:.2rem .25rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.9rem;color:var(--navy);}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-disp{display:inline-grid;gap:2px 6px;padding:.3rem .5rem;border-left:2.5px solid var(--navy);border-right:2.5px solid var(--navy);border-radius:2px;margin:.2rem .2rem;}
+.mx-disp span{text-align:center;padding:.1rem .25rem;font-size:.9rem;}
+
+/* ── CANVASES ── */
+.canvas-wrap{position:relative;border-radius:8px;overflow:hidden;background:#f8f6f2;box-shadow:0 2px 12px rgba(24,40,74,.1);}
+canvas{display:block;max-width:100%;}
+.cv-label{position:absolute;top:8px;left:10px;font-size:.78rem;color:var(--gray);font-style:italic;}
+.two-col{display:flex;gap:1.3rem;flex-wrap:wrap;margin:.8rem 0;}
+.two-col>*{flex:1;min-width:280px;}
+.three-col{display:flex;gap:1rem;flex-wrap:wrap;margin:.8rem 0;}
+.three-col>*{flex:1;min-width:220px;}
+
+/* ── SOLUTION BOX ── */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.2rem 1.8rem;margin:1rem 0;}
+.sol-card h4{font-family:var(--font-head);color:var(--gold);font-size:1.1rem;margin-bottom:.6rem;}
+.sol-list{display:flex;flex-wrap:wrap;gap:.6rem;}
+.sol-item{background:rgba(255,255,255,.1);border-radius:5px;padding:.3rem .8rem;font-size:.95rem;}
+.sol-body{padding:.4rem 0;}
+
+.spacer{height:.8rem;}
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}.two-col>*,.three-col>*{min-width:100%;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>The Multivariate Normal Distribution</h1>
+  <p>Dependence reduced to two objects — a mean vector μ and a covariance matrix Σ</p>
+</header>
+<main>
+
+<div class="toc">
+  <h2>Contents</h2>
+  <div class="toc-grid">
+    <a href="#sec-intro">Introduction</a>
+    <a href="#sec-standard">Standard Normal Z</a>
+    <a href="#sec-transform">Transformation Y = GZ + μ</a>
+    <a href="#sec-biv">Bivariate Explorer</a>
+    <a href="#sec-general">General n-dimensional</a>
+    <a href="#sec-mgf">MGF</a>
+    <a href="#sec-linear">Linear Transforms</a>
+    <a href="#sec-marginal">Marginals</a>
+    <a href="#sec-indep">Independence</a>
+    <a href="#sec-cond">Conditional Distribution</a>
+    <a href="#sec-triv">Trivariate Explorer</a>
+    <a href="#sec-scatter">Scatter Matrix (n ≥ 3)</a>
+    <a href="#sec-glc">General Linear Conditional</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §1  INTRODUCTION                                -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-intro">
+  <h2>§ 1 &ensp; Introduction</h2>
+  <p>The multivariate normal is a collection of <strong>dependent</strong> random variables whose entire dependence
+  structure is captured by just <strong>two objects</strong>: a mean vector <span class="k">\boldsymbol{\mu}</span> and a
+  covariance matrix <span class="k">\boldsymbol{\Sigma}</span>. Every calculation — marginals, conditionals, linear
+  transformations — reduces to <strong>block matrix algebra</strong>. Most remarkably, for multivariate normals,
+  <strong>independence is equivalent to being uncorrelated</strong>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §2  STANDARD NORMAL VECTOR                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-standard">
+  <h2>§ 2 &ensp; The Standard Normal Vector Z</h2>
+  <p>Let <span class="k">Z_1, \ldots, Z_n</span> be independent <span class="k">N(0,1)</span> random variables.
+  Each has marginal density</p>
+  <div class="math-block" id="kb-zi"></div>
+  <p>Since the <span class="k">Z_i</span> are independent, the joint density of
+  <span class="k">\mathbf{Z} = (Z_1, \ldots, Z_n)'</span> is the product of the marginals:</p>
+  <div class="math-block" id="kb-jointz"></div>
+  <p>The level sets <span class="k">f(\mathbf{z}) = c</span> are defined by
+  <span class="k">\mathbf{z}'\mathbf{z} = \text{const}</span>, which are <strong>circles</strong> in
+  <span class="k">\mathbb{R}^2</span> and <strong>spheres</strong> in higher dimensions — reflecting the rotational
+  symmetry of independent standard normals.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §3  TRANSFORMATION                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-transform">
+  <h2>§ 3 &ensp; Transformation: Y = GZ + μ</h2>
+  <p>Define the <span class="k">n \times 1</span> random vector</p>
+  <div class="math-block" id="kb-transform"></div>
+  <p>where <span class="k">\mathbf{G}</span> is an <span class="k">n \times n</span> invertible matrix and
+  <span class="k">\boldsymbol{\mu}</span> is an <span class="k">n \times 1</span> vector. Applying the multivariate
+  change-of-variables formula <span class="k">\mathbf{Z} = \mathbf{G}^{-1}(\mathbf{Y} - \boldsymbol{\mu})</span>
+  with Jacobian <span class="k">|\mathbf{G}\mathbf{G}'|^{-1/2} = |\boldsymbol{\Sigma}|^{-1/2}</span>, we obtain:</p>
+  <div class="math-block" id="kb-density"></div>
+  <p>where the <strong>variance-covariance matrix</strong> is
+  <span class="k">\boldsymbol{\Sigma} = \mathbf{G}\mathbf{G}'</span>, a positive definite matrix.</p>
+
+  <h3>The 2D Case Explicitly</h3>
+  <p>When <span class="k">n = 2</span>, writing
+  <span class="k">\boldsymbol{\Sigma} = \begin{bmatrix} \sigma_1^2 & \rho\sigma_1\sigma_2 \\ \rho\sigma_1\sigma_2 & \sigma_2^2 \end{bmatrix}</span>,
+  the density becomes:</p>
+  <div class="math-block" id="kb-bivar"></div>
+  <p>The level sets are now <strong>ellipses</strong> centered at <span class="k">\boldsymbol{\mu}</span>, tilted and
+  stretched according to <span class="k">\boldsymbol{\Sigma}</span>. The correlation <span class="k">\rho</span> controls
+  the tilt of these ellipses.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §4  BIVARIATE EXPLORER                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-biv">
+  <h2>§ 4 &ensp; Interactive: Bivariate Normal Explorer</h2>
+  <p>Adjust the parameters below to see the joint density surface, contour plot, and conditional distributions in real time.</p>
+
+  <div class="calc-area">
+    <div class="ctrl-row">
+      <label><span class="k">\mu_1</span> <input type="text" id="bv_mu1" value="0"></label>
+      <label><span class="k">\mu_2</span> <input type="text" id="bv_mu2" value="0"></label>
+      <label><span class="k">\sigma_1</span> <input type="text" id="bv_s1" value="1"></label>
+      <label><span class="k">\sigma_2</span> <input type="text" id="bv_s2" value="1.5"></label>
+      <label><span class="k">\rho</span> <input type="text" id="bv_rho" value="0.6"></label>
+      <button class="btn-go btn-sm" onclick="updateBivariate()">Update</button>
+    </div>
+    <div class="ctrl-row">
+      <label>Condition on:
+        <select id="bv_cond" onchange="updateBivariate()">
+          <option value="none">None</option>
+          <option value="y2">Y₂ = c</option>
+          <option value="y1">Y₁ = c</option>
+        </select>
+      </label>
+      <label>c = <input type="text" id="bv_cval" value="1" style="width:48px;"></label>
+      <button class="btn-ghost btn-sm" onclick="updateBivariate()">Apply</button>
+    </div>
+    <div class="ctrl-row" style="gap:.4rem;">
+      <button class="btn-ghost btn-sm" onclick="setBivEx(0,0,1,1,0)">Independent</button>
+      <button class="btn-ghost btn-sm" onclick="setBivEx(1,3,1,2,0.5)">Correlated</button>
+      <button class="btn-ghost btn-sm" onclick="setBivEx(1,3,1,2,-0.8)">Neg. Correlated</button>
+      <button class="btn-ghost btn-sm" onclick="setBivEx(0,0,2,0.5,0)">Different Scales</button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="cv3d" width="520" height="400" style="cursor:grab;"></canvas>
+        <div class="cv-label">3D density surface (drag to rotate)</div>
+      </div>
+    </div>
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="cvContour" width="520" height="400"></canvas>
+        <div class="cv-label">Contour plot</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col" id="condRow" style="display:none;">
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="cvCond1d" width="520" height="220"></canvas>
+        <div class="cv-label">Conditional density</div>
+      </div>
+    </div>
+    <div id="condInfo" style="font-size:.93rem;padding-top:.4rem;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §5  GENERAL CASE                                -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-general">
+  <h2>§ 5 &ensp; The General n-dimensional Case</h2>
+  <div class="def-box">
+    <div class="def-label">Notation</div>
+    We write <span class="k">\mathbf{Y} \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span> for the multivariate normal
+    with <span class="k">n \times 1</span> mean vector <span class="k">\boldsymbol{\mu}</span> and
+    <span class="k">n \times n</span> positive definite covariance matrix <span class="k">\boldsymbol{\Sigma}</span>.
+    The density is
+    <div class="math-block" id="kb-generaldens"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §6  MGF                                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-mgf">
+  <h2>§ 6 &ensp; Moment Generating Function</h2>
+  <div class="thm-box">
+    <div class="thm-label">Theorem — MGF of the Multivariate Normal</div>
+    If <span class="k">\mathbf{Y} \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span>, then for
+    <span class="k">\mathbf{t} \in \mathbb{R}^n</span>,
+    <div class="math-block" id="kb-mgf"></div>
+  </div>
+  <p><em>Proof sketch.</em> Write <span class="k">\mathbf{Y} = \mathbf{G}\mathbf{Z} + \boldsymbol{\mu}</span>. Then
+  <span class="k">m_{\mathbf{Y}}(\mathbf{t}) = e^{\mathbf{t}'\boldsymbol{\mu}}\,E[e^{(\mathbf{G}'\mathbf{t})'\mathbf{Z}}]</span>.
+  The expectation is the MGF of a standard normal evaluated at <span class="k">\mathbf{G}'\mathbf{t}</span>, which
+  completes the square in the exponent to give <span class="k">e^{\frac{1}{2}\mathbf{t}'\boldsymbol{\Sigma}\mathbf{t}}</span>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §7  LINEAR TRANSFORM                            -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-linear">
+  <h2>§ 7 &ensp; Linear Transformations</h2>
+  <div class="thm-box">
+    <div class="thm-label">Theorem — Linear Transform of a Multivariate Normal</div>
+    If <span class="k">\mathbf{Y} \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span>,
+    <span class="k">\mathbf{B}</span> is <span class="k">m \times n</span>, and
+    <span class="k">\mathbf{b}</span> is <span class="k">m \times 1</span>, then
+    <div class="math-block" id="kb-lintrans"></div>
+  </div>
+  <p><em>Proof.</em> The MGF of <span class="k">\mathbf{B}\mathbf{Y} + \mathbf{b}</span> at <span class="k">\mathbf{t}</span> is
+  <span class="k">e^{\mathbf{t}'\mathbf{b}}\,m_{\mathbf{Y}}(\mathbf{B}'\mathbf{t}) = e^{\mathbf{t}'(\mathbf{B}\boldsymbol{\mu}+\mathbf{b}) + \frac{1}{2}\mathbf{t}'(\mathbf{B}\boldsymbol{\Sigma}\mathbf{B}')\mathbf{t}}</span>,
+  which is the MGF of <span class="k">N_m(\mathbf{B}\boldsymbol{\mu}+\mathbf{b},\;\mathbf{B}\boldsymbol{\Sigma}\mathbf{B}')</span>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §8  MARGINALS                                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-marginal">
+  <h2>§ 8 &ensp; Marginal Distributions</h2>
+  <div class="thm-box">
+    <div class="thm-label">Theorem — Marginals</div>
+    If <span class="k">\mathbf{Y} \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span> is partitioned as
+    <span class="k">\mathbf{Y} = (\mathbf{Y}_1', \mathbf{Y}_2')'</span> with corresponding partitions of
+    <span class="k">\boldsymbol{\mu}</span> and <span class="k">\boldsymbol{\Sigma}</span>, then
+    <div class="math-block" id="kb-marginals"></div>
+  </div>
+  <p><em>Proof.</em> Simply note that <span class="k">\mathbf{Y}_1 = [\mathbf{I}_{n_1} \;\; \mathbf{0}]\,\mathbf{Y}</span>
+  and apply the linear transformation theorem.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §9  INDEPENDENCE                                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-indep">
+  <h2>§ 9 &ensp; Independence = Uncorrelated</h2>
+  <div class="thm-box">
+    <div class="thm-label">Theorem — Independence for Multivariate Normals</div>
+    Let <span class="k">\mathbf{Y} = (\mathbf{Y}_1', \ldots, \mathbf{Y}_m')' \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span>.
+    The subvectors <span class="k">\mathbf{Y}_1, \ldots, \mathbf{Y}_m</span> are <strong>independent</strong>
+    if and only if <span class="k">\boldsymbol{\Sigma}_{ij} = \mathbf{0}</span> for all <span class="k">i \neq j</span>.
+  </div>
+  <p><em>Proof (⇐).</em> If all off-diagonal blocks are zero, the joint MGF factors:
+  <span class="k">m_{\mathbf{Y}}(\mathbf{t}) = e^{\mathbf{t}'\boldsymbol{\mu} + \frac{1}{2}\mathbf{t}'\boldsymbol{\Sigma}\mathbf{t}} = \prod_{i=1}^m m_{\mathbf{Y}_i}(\mathbf{t}_i)</span>.</p>
+  <p><em>(⇒).</em> If independent, then <span class="k">\text{Cov}(\mathbf{Y}_i, \mathbf{Y}_j) = \boldsymbol{\Sigma}_{ij} = \mathbf{0}</span>.</p>
+  <div class="key-box">
+    <strong>Key point:</strong> In general, uncorrelated does <em>not</em> imply independent. For multivariate normals, it does.
+    This is because the multivariate normal is completely determined by its first two moments.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §10  CONDITIONAL DISTRIBUTION                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-cond">
+  <h2>§ 10 &ensp; Conditional Distribution</h2>
+  <div class="thm-box">
+    <div class="thm-label">Theorem — Conditional Distribution</div>
+    Let <span class="k">\mathbf{Y} = (\mathbf{Y}_1', \mathbf{Y}_2')' \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span>
+    with the natural partition. Then
+    <div class="math-block" id="kb-condthm"></div>
+  </div>
+
+  <h3>Proof</h3>
+  <p>Define <span class="k">\mathbf{V}_1 = \mathbf{Y}_1 - \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1}\mathbf{Y}_2</span>
+  and <span class="k">\mathbf{V}_2 = \mathbf{Y}_2</span>. This is the block matrix transformation</p>
+  <div class="math-block" id="kb-condproof1"></div>
+  <p>By the linear transformation theorem, <span class="k">(\mathbf{V}_1', \mathbf{V}_2')'</span> is multivariate normal.
+  A direct computation gives:</p>
+  <div class="math-block" id="kb-condproof2"></div>
+  <p>Since the covariance between <span class="k">\mathbf{V}_1</span> and <span class="k">\mathbf{V}_2</span> is zero
+  (the off-diagonal blocks vanish), they are <strong>independent</strong>. When we condition on
+  <span class="k">\mathbf{Y}_2 = \mathbf{c}_2</span>, we have
+  <span class="k">\mathbf{V}_1 = \mathbf{Y}_1 - \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1}\mathbf{c}_2</span>,
+  and since <span class="k">\mathbf{V}_1</span> is independent of <span class="k">\mathbf{V}_2 = \mathbf{Y}_2</span>,
+  the conditional distribution of <span class="k">\mathbf{Y}_1</span> given <span class="k">\mathbf{Y}_2 = \mathbf{c}_2</span>
+  is simply the distribution of <span class="k">\mathbf{V}_1 + \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1}\mathbf{c}_2</span>.</p>
+
+  <div class="key-box">
+    <strong>Key insight:</strong> The conditional mean is a <em>linear function</em> of the conditioning value
+    <span class="k">\mathbf{c}_2</span> — this is the basis of linear regression. The conditional covariance
+    does <em>not depend on</em> <span class="k">\mathbf{c}_2</span> at all.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §11  TRIVARIATE EXPLORER                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-triv">
+  <h2>§ 11 &ensp; Interactive: Trivariate Normal Explorer</h2>
+  <p>Enter a 3-dimensional multivariate normal. The 3D view shows transparent ellipsoidal level sets of the density. Then condition on one or two variables to see the resulting distribution.</p>
+
+  <div class="calc-area">
+    <div class="ctrl-row">
+      <span style="font-size:.85rem;font-weight:600;">μ =</span>
+      <input type="text" id="tv_m1" value="0" style="width:44px;">
+      <input type="text" id="tv_m2" value="0" style="width:44px;">
+      <input type="text" id="tv_m3" value="0" style="width:44px;">
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-start;margin:.4rem 0;">
+      <div>
+        <div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">Σ (symmetric 3×3)</div>
+        <div class="mx-grid" style="grid-template-columns:52px 52px 52px;">
+          <input type="text" id="tv_s11" value="1">
+          <input type="text" id="tv_s12" value="0.5">
+          <input type="text" id="tv_s13" value="0.4">
+          <input type="text" id="tv_s21" value="0.5">
+          <input type="text" id="tv_s22" value="1">
+          <input type="text" id="tv_s23" value="0.2">
+          <input type="text" id="tv_s31" value="0.4">
+          <input type="text" id="tv_s32" value="0.2">
+          <input type="text" id="tv_s33" value="1">
+        </div>
+      </div>
+      <div style="align-self:center;">
+        <button class="btn-go btn-sm" onclick="updateTrivariate()">Draw Ellipsoids →</button>
+      </div>
+    </div>
+    <div class="ctrl-row" style="margin-top:.5rem;">
+      <label>Condition:
+        <select id="tv_cond" onchange="updateTrivCond()">
+          <option value="none">None</option>
+          <option value="y3">Fix Y₃ = c₁</option>
+          <option value="y2">Fix Y₂ = c₁</option>
+          <option value="y1">Fix Y₁ = c₁</option>
+          <option value="y2y3">Fix Y₂ = c₁, Y₃ = c₂</option>
+          <option value="y1y3">Fix Y₁ = c₁, Y₃ = c₂</option>
+          <option value="y1y2">Fix Y₁ = c₁, Y₂ = c₂</option>
+        </select>
+      </label>
+      <label>c₁ = <input type="text" id="tv_c1" value="1" style="width:44px;"></label>
+      <label>c₂ = <input type="text" id="tv_c2" value="0" style="width:44px;"></label>
+      <button class="btn-ghost btn-sm" onclick="updateTrivCond()">Compute</button>
+    </div>
+    <div class="ctrl-row" style="gap:.4rem;">
+      <button class="btn-ghost btn-sm" onclick="setTrivEx(0)">Lecture Example</button>
+      <button class="btn-ghost btn-sm" onclick="setTrivEx(1)">Independent</button>
+      <button class="btn-ghost btn-sm" onclick="setTrivEx(2)">Strong Correlation</button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="cv3dTriv" width="520" height="420" style="cursor:grab;"></canvas>
+        <div class="cv-label">3D ellipsoidal level sets (drag to rotate)</div>
+      </div>
+    </div>
+    <div id="trivOut" style="padding-top:.3rem;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §12  SCATTER MATRIX (n >= 3)                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-scatter">
+  <h2>§ 12 &ensp; Interactive: Scatter Matrix (n ≥ 3)</h2>
+  <p>Beyond three dimensions, geometric visualization breaks down — we cannot draw a 4D ellipsoid. The
+  <strong>scatter matrix</strong> is the standard substitute: every pairwise marginal laid out at once with
+  full coordinate axes. <strong>Histograms</strong> on the diagonal show each <span class="k">Y_i</span> with
+  the theoretical normal curve. <strong>Below the diagonal</strong>: pairwise scatter with 50%/95% density
+  ellipses (the joint geometry). <strong>Above the diagonal</strong>: the same data with the theoretical
+  regression line <span class="k">E[Y_i \mid Y_j = x] = \mu_i + (\Sigma_{ij}/\Sigma_{jj})(x - \mu_j)</span> overlaid
+  — the conditional mean is exactly linear for the multivariate normal. Samples are drawn via
+  <span class="k">\mathbf{Y} = \mathbf{L}\mathbf{Z} + \boldsymbol{\mu}</span> where <span class="k">\mathbf{L}</span>
+  is the Cholesky factor of <span class="k">\boldsymbol{\Sigma}</span>.</p>
+
+  <div class="calc-area">
+    <div class="ctrl-row">
+      <label>Dimension n = <input type="number" id="sm_n" min="3" max="6" value="4" style="width:44px;"></label>
+      <label>Samples = <input type="number" id="sm_N" min="100" max="3000" step="100" value="1200" style="width:64px;"></label>
+      <button class="btn-ghost" onclick="rebuildSM()">Resize</button>
+      <button class="btn-go btn-sm" onclick="resampleSM()">Sample & Draw →</button>
+    </div>
+    <div class="ctrl-row" style="gap:.4rem;">
+      <button class="btn-ghost btn-sm" onclick="loadSMex(0)">3D Independent</button>
+      <button class="btn-ghost btn-sm" onclick="loadSMex(1)">4D AR(1), ρ=0.7</button>
+      <button class="btn-ghost btn-sm" onclick="loadSMex(2)">5D Mixed</button>
+      <button class="btn-ghost btn-sm" onclick="loadSMex(3)">6D Block</button>
+    </div>
+    <div id="smInputs" style="display:flex;gap:1.2rem;flex-wrap:wrap;margin:.6rem 0;align-items:flex-start;"></div>
+  </div>
+
+  <div class="canvas-wrap" style="display:flex;justify-content:center;padding:0;">
+    <canvas id="cvScatterMatrix" width="780" height="780" style="max-width:100%;height:auto;"></canvas>
+    <div class="cv-label">Diagonal: histogram + normal curve. Below: scatter + density ellipses. Above: scatter + regression line.</div>
+  </div>
+
+  <div class="key-box" style="margin-top:1rem;">
+    <strong>Reading the matrix.</strong> Each cell carries its own coordinate axes. Below the diagonal the
+    red ellipses are the theoretical 50% and 95% probability contours derived from the 2×2 submatrix of
+    <span class="k">\boldsymbol{\Sigma}</span> — tight, elongated ellipses signal strong correlation; round
+    clouds signal near-independence. Above the diagonal the red line is the exact conditional mean
+    <span class="k">E[Y_i \mid Y_j]</span> — its slope is <span class="k">\Sigma_{ij}/\Sigma_{jj}</span>, the
+    population regression coefficient. For multivariate normals these two summaries (geometry below, regression
+    above) capture everything there is to say about pairwise dependence.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §13  GENERAL LINEAR CONDITIONAL                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-glc">
+  <h2>§ 13 &ensp; General Linear Conditional</h2>
+  <div class="thm-box">
+    <div class="thm-label">Theorem — General Linear Conditional</div>
+    If <span class="k">\mathbf{Y} \sim N_n(\boldsymbol{\mu}, \boldsymbol{\Sigma})</span>,
+    <span class="k">\mathbf{B}_1</span> is <span class="k">m \times n</span>,
+    <span class="k">\mathbf{B}_2</span> is <span class="k">p \times n</span>, then
+    <div class="math-block" id="kb-glc"></div>
+    where
+    <div class="math-block" id="kb-glc2"></div>
+  </div>
+
+  <div class="calc-area">
+    <h4>General Linear Conditional Calculator</h4>
+    <div class="ctrl-row">
+      <label>n = <input type="number" id="gl_n" min="2" max="6" value="3" style="width:44px;"></label>
+      <label>m (rows of B₁) = <input type="number" id="gl_m" min="1" max="6" value="1" style="width:44px;"></label>
+      <label>p (rows of B₂) = <input type="number" id="gl_p" min="1" max="6" value="1" style="width:44px;"></label>
+      <button class="btn-ghost" onclick="rebuildGLC()">Resize</button>
+    </div>
+    <div class="ctrl-row" style="gap:.4rem;">
+      <button class="btn-ghost btn-sm" onclick="loadGLCex(0)">Y₁ | Y₁+Y₂+Y₃=2</button>
+      <button class="btn-ghost btn-sm" onclick="loadGLCex(1)">2Y₁+Y₂ | Y₁+2Y₂+3Y₃=2</button>
+      <button class="btn-ghost btn-sm" onclick="loadGLCex(2)">(Y₁,Y₂) | Y₃=1</button>
+    </div>
+    <div id="glcInputs" style="display:flex;gap:1.2rem;flex-wrap:wrap;margin:.6rem 0;"></div>
+    <button class="btn-go btn-sm" onclick="computeGLC()">Compute Conditional →</button>
+    <div id="glcOut" style="margin-top:.8rem;"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════
+//   KATEX HELPERS
+// ═══════════════════════════════════════════════════
+// Strip zero-width spaces, Unicode primes, and other invisible chars before KaTeX
+function texSan(t){return t.replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[\u2000-\u200A]/g,' ').replace(/\u2032/g,"'");}
+function rk(t){try{return katex.renderToString(texSan(t),{throwOnError:false,strict:false});}catch(e){return t;}}
+function rkd(t){try{return katex.renderToString(texSan(t),{throwOnError:false,strict:false,displayMode:true});}catch(e){return t;}}
+function renderInlineK(){document.querySelectorAll('span.k:not([data-rendered])').forEach(el=>{const tex=texSan(el.textContent);el.setAttribute('data-rendered','1');try{katex.render(tex,el,{throwOnError:false,strict:false});}catch(e){}});}
+function fmt(v){if(Math.abs(v-Math.round(v))<1e-9)return String(Math.round(v));for(let d=2;d<=12;d++){const n=v*d;if(Math.abs(n-Math.round(n))<1e-9){const nn=Math.round(n);return(nn<0?'-':'')+'\\tfrac{'+Math.abs(nn)+'}{'+d+'}';}}return v.toFixed(4);}
+function fmtD(v){return Math.abs(v-Math.round(v))<1e-9?String(Math.round(v)):v.toFixed(4);}
+
+// ═══════════════════════════════════════════════════
+//   MATRIX UTILITIES
+// ═══════════════════════════════════════════════════
+function zeros(r,c){return Array.from({length:r},()=>Array.from({length:c},()=>0));}
+function eye(n){return Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));}
+function matT(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
+function matMul(A,B){const m=A.length,p=A[0].length,n=B[0].length;const C=zeros(m,n);for(let i=0;i<m;i++)for(let j=0;j<n;j++)for(let k=0;k<p;k++)C[i][j]+=A[i][k]*B[k][j];return C;}
+function matAdd(A,B){return A.map((r,i)=>r.map((v,j)=>v+B[i][j]));}
+function matSub(A,B){return A.map((r,i)=>r.map((v,j)=>v-B[i][j]));}
+function matScale(A,s){return A.map(r=>r.map(v=>v*s));}
+function matInv(A){const n=A.length;const aug=A.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>i===j?1:0)]);for(let c=0;c<n;c++){let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(aug[r][c])>Math.abs(aug[mx][c]))mx=r;[aug[c],aug[mx]]=[aug[mx],aug[c]];if(Math.abs(aug[c][c])<1e-12)return null;const p=aug[c][c];for(let j=0;j<2*n;j++)aug[c][j]/=p;for(let r=0;r<n;r++){if(r===c)continue;const f=aug[r][c];for(let j=0;j<2*n;j++)aug[r][j]-=f*aug[c][j];}}return aug.map(r=>r.slice(n));}
+function matDet(A){const n=A.length;if(n===1)return A[0][0];if(n===2)return A[0][0]*A[1][1]-A[0][1]*A[1][0];const M=A.map(r=>[...r]);let det=1;for(let c=0;c<n;c++){let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;if(mx!==c){[M[c],M[mx]]=[M[mx],M[c]];det*=-1;}if(Math.abs(M[c][c])<1e-14)return 0;det*=M[c][c];for(let r=c+1;r<n;r++){const f=M[r][c]/M[c][c];for(let j=c;j<n;j++)M[r][j]-=f*M[c][j];}}return det;}
+function matTex(M,name){const rows=M.map(r=>r.map(v=>fmt(v)).join(' & ')).join(' \\\\ ');return name?name+' = \\begin{bmatrix} '+rows+' \\end{bmatrix}':'\\begin{bmatrix} '+rows+' \\end{bmatrix}';}
+function vecTex(v,name){const entries=v.map(x=>fmt(x[0])).join(' \\\\ ');return name?name+' = \\begin{pmatrix} '+entries+' \\end{pmatrix}':'\\begin{pmatrix} '+entries+' \\end{pmatrix}';}
+function cholesky(A){const n=A.length;const L=zeros(n,n);for(let i=0;i<n;i++){for(let j=0;j<=i;j++){let s=0;for(let k=0;k<j;k++)s+=L[i][k]*L[j][k];L[i][j]=i===j?Math.sqrt(Math.max(A[i][i]-s,0)):(A[i][j]-s)/(L[j][j]||1e-12);}};return L;}
+
+// ═══════════════════════════════════════════════════
+//   STATIC KATEX BLOCKS
+// ═══════════════════════════════════════════════════
+function renderStatic(){
+  document.getElementById('kb-zi').innerHTML=rkd('f_{Z_i}(z_i) = (2\\pi)^{-1/2}\\, e^{-z_i^2/2}, \\quad -\\infty < z_i < \\infty');
+  document.getElementById('kb-jointz').innerHTML=rkd('f_{\\mathbf{Z}}(\\mathbf{z}) = (2\\pi)^{-n/2}\\, e^{-\\mathbf{z}\'\\mathbf{z}/2}');
+  document.getElementById('kb-transform').innerHTML=rkd('\\mathbf{Y} = \\mathbf{G}\\mathbf{Z} + \\boldsymbol{\\mu}');
+  document.getElementById('kb-density').innerHTML=rkd('f_{\\mathbf{Y}}(\\mathbf{y}) = |\\boldsymbol{\\Sigma}|^{-1/2}(2\\pi)^{-n/2}\\exp\\!\\left(-\\tfrac{1}{2}(\\mathbf{y}-\\boldsymbol{\\mu})\'\\boldsymbol{\\Sigma}^{-1}(\\mathbf{y}-\\boldsymbol{\\mu})\\right)');
+  document.getElementById('kb-bivar').innerHTML=rkd('f(y_1,y_2)=\\frac{1}{2\\pi\\sigma_1\\sigma_2\\sqrt{1-\\rho^2}}\\exp\\!\\left[-\\frac{1}{2(1-\\rho^2)}\\left(\\frac{(y_1-\\mu_1)^2}{\\sigma_1^2}-\\frac{2\\rho(y_1-\\mu_1)(y_2-\\mu_2)}{\\sigma_1\\sigma_2}+\\frac{(y_2-\\mu_2)^2}{\\sigma_2^2}\\right)\\right]');
+  document.getElementById('kb-generaldens').innerHTML=rkd('f_{\\mathbf{Y}}(\\mathbf{y}) = (2\\pi)^{-n/2}|\\boldsymbol{\\Sigma}|^{-1/2}\\exp\\!\\left(-\\tfrac{1}{2}(\\mathbf{y}-\\boldsymbol{\\mu})\'\\boldsymbol{\\Sigma}^{-1}(\\mathbf{y}-\\boldsymbol{\\mu})\\right)');
+  document.getElementById('kb-mgf').innerHTML=rkd('m_{\\mathbf{Y}}(\\mathbf{t}) = \\exp\\!\\left(\\mathbf{t}\'\\boldsymbol{\\mu} + \\tfrac{1}{2}\\mathbf{t}\'\\boldsymbol{\\Sigma}\\mathbf{t}\\right)');
+  document.getElementById('kb-lintrans').innerHTML=rkd('\\mathbf{B}\\mathbf{Y} + \\mathbf{b} \\sim N_m\\!\\left(\\mathbf{B}\\boldsymbol{\\mu}+\\mathbf{b},\\;\\mathbf{B}\\boldsymbol{\\Sigma}\\mathbf{B}\'\\right)');
+  document.getElementById('kb-marginals').innerHTML=rkd('\\mathbf{Y}_1 \\sim N_{n_1}(\\boldsymbol{\\mu}_1,\\,\\boldsymbol{\\Sigma}_{11}), \\qquad \\mathbf{Y}_2 \\sim N_{n_2}(\\boldsymbol{\\mu}_2,\\,\\boldsymbol{\\Sigma}_{22})');
+  document.getElementById('kb-condthm').innerHTML=rkd('\\mathbf{Y}_1 \\mid \\mathbf{Y}_2 = \\mathbf{c}_2 \\;\\sim\\; N_{n_1}\\!\\left(\\boldsymbol{\\mu}_1 + \\boldsymbol{\\Sigma}_{12}\\boldsymbol{\\Sigma}_{22}^{-1}(\\mathbf{c}_2 - \\boldsymbol{\\mu}_2),\\;\\boldsymbol{\\Sigma}_{11} - \\boldsymbol{\\Sigma}_{12}\\boldsymbol{\\Sigma}_{22}^{-1}\\boldsymbol{\\Sigma}_{21}\\right)');
+  document.getElementById('kb-condproof1').innerHTML=rkd('\\begin{pmatrix} \\mathbf{V}_1 \\\\ \\mathbf{V}_2 \\end{pmatrix} = \\begin{pmatrix} \\mathbf{I} & -\\boldsymbol{\\Sigma}_{12}\\boldsymbol{\\Sigma}_{22}^{-1} \\\\ \\mathbf{0} & \\mathbf{I} \\end{pmatrix} \\begin{pmatrix} \\mathbf{Y}_1 \\\\ \\mathbf{Y}_2 \\end{pmatrix}');
+  document.getElementById('kb-condproof2').innerHTML=rkd('\\boldsymbol{\\Sigma}^* = \\begin{pmatrix} \\boldsymbol{\\Sigma}_{11} - \\boldsymbol{\\Sigma}_{12}\\boldsymbol{\\Sigma}_{22}^{-1}\\boldsymbol{\\Sigma}_{21} & \\mathbf{0} \\\\ \\mathbf{0} & \\boldsymbol{\\Sigma}_{22} \\end{pmatrix}');
+  document.getElementById('kb-glc').innerHTML=rkd('\\mathbf{B}_1\\mathbf{Y} \\mid \\mathbf{B}_2\\mathbf{Y} = \\mathbf{b} \\;\\sim\\; N_m(\\boldsymbol{\\mu}_{U|V},\\;\\boldsymbol{\\Sigma}_{U|V})');
+  document.getElementById('kb-glc2').innerHTML=rkd('\\boldsymbol{\\mu}_{U|V} = \\mathbf{B}_1\\boldsymbol{\\mu} + (\\mathbf{B}_1\\boldsymbol{\\Sigma}\\mathbf{B}_2\')(\\mathbf{B}_2\\boldsymbol{\\Sigma}\\mathbf{B}_2\')^{-1}(\\mathbf{b} - \\mathbf{B}_2\\boldsymbol{\\mu}), \\qquad \\boldsymbol{\\Sigma}_{U|V} = \\mathbf{B}_1\\boldsymbol{\\Sigma}\\mathbf{B}_1\' - (\\mathbf{B}_1\\boldsymbol{\\Sigma}\\mathbf{B}_2\')(\\mathbf{B}_2\\boldsymbol{\\Sigma}\\mathbf{B}_2\')^{-1}(\\mathbf{B}_2\\boldsymbol{\\Sigma}\\mathbf{B}_1\')');
+}
+
+// ═══════════════════════════════════════════════════
+//   BIVARIATE NORMAL EXPLORER
+// ═══════════════════════════════════════════════════
+function bivPDF(y1,y2,mu1,mu2,s1,s2,rho){
+  const z1=(y1-mu1)/s1, z2=(y2-mu2)/s2;
+  const Q=(z1*z1-2*rho*z1*z2+z2*z2)/(1-rho*rho);
+  return Math.exp(-Q/2)/(2*Math.PI*s1*s2*Math.sqrt(1-rho*rho));
+}
+
+// ── 3D Surface with Three.js ──
+let bvScene,bvCamera,bvRenderer,bvMesh,bvSliceLine,bvAnimId;
+let bvDrag={active:false,theta:0.8,phi:0.9,r:7,lx:0,ly:0};
+
+function initBV3D(){
+  const cv=document.getElementById('cv3d');
+  bvRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  bvRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  bvRenderer.setSize(cv.width,cv.height,false);
+  bvScene=new THREE.Scene();
+  bvScene.background=new THREE.Color(0xf8f6f2);
+  bvCamera=new THREE.PerspectiveCamera(40,cv.width/cv.height,0.1,100);
+  bvScene.add(new THREE.AmbientLight(0xffffff,0.5));
+  const dl=new THREE.DirectionalLight(0xffffff,0.7);dl.position.set(3,5,4);bvScene.add(dl);
+  // drag controls
+  cv.addEventListener('mousedown',e=>{bvDrag.active=true;bvDrag.lx=e.clientX;bvDrag.ly=e.clientY;cv.style.cursor='grabbing';});
+  cv.addEventListener('mousemove',e=>{if(!bvDrag.active)return;bvDrag.theta-=(e.clientX-bvDrag.lx)*0.008;bvDrag.phi=Math.max(0.15,Math.min(Math.PI*0.48,bvDrag.phi-(e.clientY-bvDrag.ly)*0.008));bvDrag.lx=e.clientX;bvDrag.ly=e.clientY;});
+  cv.addEventListener('mouseup',()=>{bvDrag.active=false;cv.style.cursor='grab';});
+  cv.addEventListener('mouseleave',()=>{bvDrag.active=false;cv.style.cursor='grab';});
+  cv.addEventListener('wheel',e=>{e.preventDefault();bvDrag.r=Math.max(2,Math.min(16,bvDrag.r+e.deltaY*0.008));},{passive:false});
+  // touch
+  cv.addEventListener('touchstart',e=>{if(e.touches.length===1){bvDrag.active=true;bvDrag.lx=e.touches[0].clientX;bvDrag.ly=e.touches[0].clientY;}},{passive:true});
+  cv.addEventListener('touchmove',e=>{if(!bvDrag.active||e.touches.length!==1)return;const t=e.touches[0];bvDrag.theta-=(t.clientX-bvDrag.lx)*0.008;bvDrag.phi=Math.max(0.15,Math.min(Math.PI*0.48,bvDrag.phi-(t.clientY-bvDrag.ly)*0.008));bvDrag.lx=t.clientX;bvDrag.ly=t.clientY;},{passive:true});
+  cv.addEventListener('touchend',()=>bvDrag.active=false);
+  function animate(){bvAnimId=requestAnimationFrame(animate);if(!bvDrag.active)bvDrag.theta+=0.003;bvCamera.position.set(bvDrag.r*Math.sin(bvDrag.phi)*Math.cos(bvDrag.theta),bvDrag.r*Math.cos(bvDrag.phi),bvDrag.r*Math.sin(bvDrag.phi)*Math.sin(bvDrag.theta));bvCamera.lookAt(0,0.3,0);bvRenderer.render(bvScene,bvCamera);}
+  animate();
+}
+
+function buildBVSurface(mu1,mu2,s1,s2,rho){
+  // clear old
+  while(bvScene.children.length>2)bvScene.remove(bvScene.children[bvScene.children.length-1]);
+  // ground grid
+  const gridGeo=new THREE.BufferGeometry();const gpts=[];
+  for(let i=-4;i<=4;i++){gpts.push(-4,0,i,4,0,i);gpts.push(i,0,-4,i,0,4);}
+  gridGeo.setAttribute('position',new THREE.Float32BufferAttribute(gpts,3));
+  bvScene.add(new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:0xddd9d0})));
+  // surface
+  const N=60,r1=3.5*s1,r2=3.5*s2;
+  const maxR=Math.max(r1,r2);const sc=3.5/maxR;// normalize to [-3.5,3.5]
+  const fmax=bivPDF(mu1,mu2,mu1,mu2,s1,s2,rho);
+  const hsc=2.5/fmax;
+  const verts=[],cols=[],inds=[];
+  for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){
+    const y1=mu1-r1+(2*r1*i)/N,y2=mu2-r2+(2*r2*j)/N;
+    const f=bivPDF(y1,y2,mu1,mu2,s1,s2,rho);
+    const x=(y1-mu1)*sc,z=-(y2-mu2)*sc,y=f*hsc;
+    verts.push(x,y,z);
+    // color: cream→gold→navy by height
+    const t=Math.min(f/fmax,1);
+    if(t<0.5){const u=t*2;cols.push(0.98-u*0.2,0.97-u*0.17,0.95-u*0.4);}
+    else{const u=(t-0.5)*2;cols.push(0.78-u*0.69,0.8-u*0.64,0.55-u*0.26);}
+  }
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const a=i*(N+1)+j,b=a+1,c=a+N+1,d=c+1;inds.push(a,c,b,b,c,d);}
+  const geo=new THREE.BufferGeometry();
+  geo.setIndex(inds);
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+  geo.computeVertexNormals();
+  bvMesh=new THREE.Mesh(geo,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity:0.88,shininess:30}));
+  bvScene.add(bvMesh);
+  // axis labels using sprites? skip for simplicity
+  return{sc,hsc,fmax,r1,r2};
+}
+
+function addSliceToBV(mu1,mu2,s1,s2,rho,condType,cval,info){
+  // remove old slice
+  bvScene.children.forEach(c=>{if(c.userData&&c.userData.isSlice)bvScene.remove(c);});
+  bvScene.children=bvScene.children.filter(c=>!(c.userData&&c.userData.isSlice));
+  if(condType==='none')return;
+
+  const{sc,hsc,r1,r2}=info;
+  const pts=[];const N2=80;
+  if(condType==='y2'){
+    // slice at y2=cval
+    const condMean=mu1+rho*s1/s2*(cval-mu2);
+    const condVar=s1*s1*(1-rho*rho);
+    for(let i=0;i<=N2;i++){
+      const y1=mu1-r1+(2*r1*i)/N2;
+      const f=bivPDF(y1,cval,mu1,mu2,s1,s2,rho);
+      pts.push(new THREE.Vector3((y1-mu1)*sc,f*hsc,-(cval-mu2)*sc));
+    }
+    // vertical plane
+    const planeGeo=new THREE.PlaneGeometry(7,3);
+    const planeMat=new THREE.MeshBasicMaterial({color:0xb33a2f,transparent:true,opacity:0.08,side:THREE.DoubleSide});
+    const plane=new THREE.Mesh(planeGeo,planeMat);
+    plane.position.set(0,1.5,-(cval-mu2)*sc);
+    plane.rotation.y=Math.PI/2;
+    plane.userData={isSlice:true};bvScene.add(plane);
+  }else{
+    const condMean=mu2+rho*s2/s1*(cval-mu1);
+    const condVar=s2*s2*(1-rho*rho);
+    for(let i=0;i<=N2;i++){
+      const y2=mu2-r2+(2*r2*i)/N2;
+      const f=bivPDF(cval,y2,mu1,mu2,s1,s2,rho);
+      pts.push(new THREE.Vector3((cval-mu1)*sc,f*hsc,-(y2-mu2)*sc));
+    }
+    const planeGeo=new THREE.PlaneGeometry(7,3);
+    const planeMat=new THREE.MeshBasicMaterial({color:0xb33a2f,transparent:true,opacity:0.08,side:THREE.DoubleSide});
+    const plane=new THREE.Mesh(planeGeo,planeMat);
+    plane.position.set((cval-mu1)*sc,1.5,0);
+    plane.userData={isSlice:true};bvScene.add(plane);
+  }
+  const lineGeo=new THREE.BufferGeometry().setFromPoints(pts);
+  const line=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0xb33a2f,linewidth:2}));
+  line.userData={isSlice:true};
+  bvScene.add(line);
+}
+
+// ── Contour plot ──
+function drawContours(mu1,mu2,s1,s2,rho,condType,cval){
+  const cv=document.getElementById('cvContour');
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f8f6f2';ctx.fillRect(0,0,W,H);
+  const r1=3.5*s1,r2=3.5*s2;
+  const fmax=bivPDF(mu1,mu2,mu1,mu2,s1,s2,rho);
+  // heatmap
+  const img=ctx.createImageData(W,H);
+  for(let py=0;py<H;py++)for(let px=0;px<W;px++){
+    const y1=mu1-r1+(2*r1*px)/W,y2=mu2+r2-(2*r2*py)/H;
+    const f=bivPDF(y1,y2,mu1,mu2,s1,s2,rho);
+    const t=Math.min(f/fmax,1);
+    const idx=(py*W+px)*4;
+    // cream to navy blue
+    img.data[idx]=Math.floor(250-t*160);
+    img.data[idx+1]=Math.floor(247-t*130);
+    img.data[idx+2]=Math.floor(242-t*60);
+    img.data[idx+3]=Math.floor(40+t*180);
+  }
+  ctx.putImageData(img,0,0);
+  // contour lines
+  const levels=[0.05,0.1,0.2,0.35,0.5,0.7,0.85,0.95].map(t=>t*fmax);
+  ctx.lineWidth=1;
+  levels.forEach(lev=>{
+    ctx.strokeStyle='rgba(24,40,74,0.4)';
+    for(let py=0;py<H-2;py+=2)for(let px=0;px<W-2;px+=2){
+      const y1a=mu1-r1+(2*r1*px)/W,y2a=mu2+r2-(2*r2*py)/H;
+      const y1b=mu1-r1+(2*r1*(px+2))/W,y2b=mu2+r2-(2*r2*(py+2))/H;
+      const v00=bivPDF(y1a,y2a,mu1,mu2,s1,s2,rho);
+      const v10=bivPDF(y1b,y2a,mu1,mu2,s1,s2,rho);
+      const v01=bivPDF(y1a,y2b,mu1,mu2,s1,s2,rho);
+      if((v00-lev)*(v10-lev)<0){const fr=(lev-v00)/(v10-v00);ctx.beginPath();ctx.moveTo(px+fr*2,py);ctx.lineTo(px+fr*2,py+1);ctx.stroke();}
+      if((v00-lev)*(v01-lev)<0){const fr=(lev-v00)/(v01-v00);ctx.beginPath();ctx.moveTo(px,py+fr*2);ctx.lineTo(px+1,py+fr*2);ctx.stroke();}
+    }
+  });
+  // axes
+  ctx.strokeStyle='rgba(24,40,74,0.6)';ctx.lineWidth=1.5;
+  const cx=(mu1-(mu1-r1))/(2*r1)*W,cy=(mu2+r2-mu2)/(2*r2)*H;
+  // axis lines through mean
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+  ctx.setLineDash([]);
+  // mean dot
+  ctx.beginPath();ctx.arc(cx,cy,4,0,2*Math.PI);ctx.fillStyle='#c8a430';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  // labels
+  ctx.font='italic 14px Crimson Pro';ctx.fillStyle='#18284a';
+  ctx.fillText('y₁',W-22,cy-8);ctx.fillText('y₂',cx+8,14);
+  ctx.fillText('μ',cx+8,cy-8);
+  // tick labels
+  ctx.font='11px Crimson Pro';ctx.fillStyle='#999';
+  ctx.fillText(fmtD(mu1-r1),4,cy+14);ctx.fillText(fmtD(mu1+r1),W-30,cy+14);
+  ctx.fillText(fmtD(mu2+r2),cx+6,12);ctx.fillText(fmtD(mu2-r2),cx+6,H-4);
+  // conditioning line
+  if(condType==='y2'){
+    const py=(mu2+r2-cval)/(2*r2)*H;
+    ctx.strokeStyle='#b33a2f';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py);ctx.stroke();
+    ctx.fillStyle='#b33a2f';ctx.font='bold 12px Crimson Pro';ctx.fillText('Y₂='+fmtD(cval),W-60,py-5);
+  }else if(condType==='y1'){
+    const px=(cval-(mu1-r1))/(2*r1)*W;
+    ctx.strokeStyle='#b33a2f';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();
+    ctx.fillStyle='#b33a2f';ctx.font='bold 12px Crimson Pro';ctx.fillText('Y₁='+fmtD(cval),px+4,16);
+  }
+}
+
+// ── Conditional 1D density ──
+function drawCond1D(condMean,condVar,label){
+  const cv=document.getElementById('cvCond1d');
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f8f6f2';ctx.fillRect(0,0,W,H);
+  const sd=Math.sqrt(condVar);
+  const lo=condMean-4*sd,hi=condMean+4*sd;
+  const fmax=1/(sd*Math.sqrt(2*Math.PI));
+  const margin={l:40,r:20,t:20,b:30};
+  const pw=W-margin.l-margin.r,ph=H-margin.t-margin.b;
+  // axis
+  ctx.strokeStyle='#bbb';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(margin.l,H-margin.b);ctx.lineTo(W-margin.r,H-margin.b);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(margin.l,margin.t);ctx.lineTo(margin.l,H-margin.b);ctx.stroke();
+  // curve
+  ctx.beginPath();
+  for(let i=0;i<=200;i++){
+    const x=lo+(hi-lo)*i/200;
+    const f=Math.exp(-0.5*((x-condMean)/sd)**2)/(sd*Math.sqrt(2*Math.PI));
+    const px=margin.l+pw*i/200;
+    const py=H-margin.b-ph*(f/fmax)*0.92;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.strokeStyle='#b33a2f';ctx.lineWidth=2.5;ctx.stroke();
+  // fill
+  ctx.lineTo(W-margin.r,H-margin.b);ctx.lineTo(margin.l,H-margin.b);ctx.closePath();
+  ctx.fillStyle='rgba(179,58,47,0.1)';ctx.fill();
+  // mean line
+  const mxPx=margin.l+pw*(condMean-lo)/(hi-lo);
+  ctx.setLineDash([4,3]);ctx.strokeStyle='#c8a430';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(mxPx,margin.t);ctx.lineTo(mxPx,H-margin.b);ctx.stroke();
+  ctx.setLineDash([]);
+  // labels
+  ctx.font='12px Crimson Pro';ctx.fillStyle='#999';
+  ctx.fillText(fmtD(lo),margin.l-5,H-margin.b+14);
+  ctx.fillText(fmtD(hi),W-margin.r-25,H-margin.b+14);
+  ctx.fillText(fmtD(condMean),mxPx-8,H-margin.b+14);
+  ctx.font='italic 13px Crimson Pro';ctx.fillStyle='#18284a';
+  ctx.fillText(label,margin.l+6,margin.t+14);
+}
+
+function updateBivariate(){
+  const mu1=parseFloat(document.getElementById('bv_mu1').value)||0;
+  const mu2=parseFloat(document.getElementById('bv_mu2').value)||0;
+  const s1=Math.max(parseFloat(document.getElementById('bv_s1').value)||1,0.1);
+  const s2=Math.max(parseFloat(document.getElementById('bv_s2').value)||1,0.1);
+  let rho=parseFloat(document.getElementById('bv_rho').value)||0;
+  rho=Math.max(-0.99,Math.min(0.99,rho));
+  const condType=document.getElementById('bv_cond').value;
+  const cval=parseFloat(document.getElementById('bv_cval').value)||0;
+  const info=buildBVSurface(mu1,mu2,s1,s2,rho);
+  addSliceToBV(mu1,mu2,s1,s2,rho,condType,cval,info);
+  drawContours(mu1,mu2,s1,s2,rho,condType,cval);
+  // conditional
+  const condRow=document.getElementById('condRow');
+  const condInfo=document.getElementById('condInfo');
+  if(condType==='none'){condRow.style.display='none';return;}
+  condRow.style.display='flex';
+  let cm,cv2,lbl,freeName,fixName;
+  if(condType==='y2'){
+    cm=mu1+rho*s1/s2*(cval-mu2);cv2=s1*s1*(1-rho*rho);
+    lbl=`Y₁ | Y₂=${fmtD(cval)}`;freeName='Y_1';fixName='Y_2';
+  }else{
+    cm=mu2+rho*s2/s1*(cval-mu1);cv2=s2*s2*(1-rho*rho);
+    lbl=`Y₂ | Y₁=${fmtD(cval)}`;freeName='Y_2';fixName='Y_1';
+  }
+  drawCond1D(cm,cv2,lbl);
+  condInfo.innerHTML=`<div class="sol-card"><h4>Conditional Distribution</h4><div class="sol-body">${rkd(freeName+'\\mid '+fixName+'='+fmtD(cval)+'\\;\\sim\\; N\\!\\left('+fmt(cm)+',\\;'+fmt(cv2)+'\\right)')}<p style="margin-top:.5rem;font-size:.88rem;color:#a0b8d8;">Conditional mean = ${rk(fmt(cm))}<br>Conditional variance = ${rk(fmt(cv2))}<br>Conditional std dev = ${rk(fmt(Math.sqrt(cv2)))}</p></div></div>`;
+}
+function setBivEx(m1,m2,s1,s2,rho){
+  document.getElementById('bv_mu1').value=m1;document.getElementById('bv_mu2').value=m2;
+  document.getElementById('bv_s1').value=s1;document.getElementById('bv_s2').value=s2;
+  document.getElementById('bv_rho').value=rho;updateBivariate();
+}
+
+// ═══════════════════════════════════════════════════
+//   TRIVARIATE NORMAL EXPLORER
+// ═══════════════════════════════════════════════════
+let tvScene,tvCamera,tvRenderer,tvAnimId;
+let tvDrag={active:false,theta:0.6,phi:0.8,r:10,lx:0,ly:0};
+
+function initTV3D(){
+  const cv=document.getElementById('cv3dTriv');
+  tvRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  tvRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  tvRenderer.setSize(cv.width,cv.height,false);
+  tvScene=new THREE.Scene();
+  tvScene.background=new THREE.Color(0xf8f6f2);
+  tvCamera=new THREE.PerspectiveCamera(38,cv.width/cv.height,0.1,100);
+  tvScene.add(new THREE.AmbientLight(0xffffff,0.55));
+  const dl=new THREE.DirectionalLight(0xffffff,0.6);dl.position.set(4,6,3);tvScene.add(dl);
+  cv.addEventListener('mousedown',e=>{tvDrag.active=true;tvDrag.lx=e.clientX;tvDrag.ly=e.clientY;cv.style.cursor='grabbing';});
+  cv.addEventListener('mousemove',e=>{if(!tvDrag.active)return;tvDrag.theta-=(e.clientX-tvDrag.lx)*0.008;tvDrag.phi=Math.max(0.15,Math.min(Math.PI*0.48,tvDrag.phi-(e.clientY-tvDrag.ly)*0.008));tvDrag.lx=e.clientX;tvDrag.ly=e.clientY;});
+  cv.addEventListener('mouseup',()=>{tvDrag.active=false;cv.style.cursor='grab';});
+  cv.addEventListener('mouseleave',()=>{tvDrag.active=false;cv.style.cursor='grab';});
+  cv.addEventListener('wheel',e=>{e.preventDefault();tvDrag.r=Math.max(3,Math.min(20,tvDrag.r+e.deltaY*0.008));},{passive:false});
+  cv.addEventListener('touchstart',e=>{if(e.touches.length===1){tvDrag.active=true;tvDrag.lx=e.touches[0].clientX;tvDrag.ly=e.touches[0].clientY;}},{passive:true});
+  cv.addEventListener('touchmove',e=>{if(!tvDrag.active||e.touches.length!==1)return;const t=e.touches[0];tvDrag.theta-=(t.clientX-tvDrag.lx)*0.008;tvDrag.phi=Math.max(0.15,Math.min(Math.PI*0.48,tvDrag.phi-(t.clientY-tvDrag.ly)*0.008));tvDrag.lx=t.clientX;tvDrag.ly=t.clientY;},{passive:true});
+  cv.addEventListener('touchend',()=>tvDrag.active=false);
+  function animate(){tvAnimId=requestAnimationFrame(animate);if(!tvDrag.active)tvDrag.theta+=0.003;tvCamera.position.set(tvDrag.r*Math.sin(tvDrag.phi)*Math.cos(tvDrag.theta),tvDrag.r*Math.cos(tvDrag.phi),tvDrag.r*Math.sin(tvDrag.phi)*Math.sin(tvDrag.theta));tvCamera.lookAt(0,0,0);tvRenderer.render(tvScene,tvCamera);}
+  animate();
+}
+
+function buildEllipsoids(mu,Sigma){
+  while(tvScene.children.length>2)tvScene.remove(tvScene.children[tvScene.children.length-1]);
+  // axes
+  const axGeo=new THREE.BufferGeometry();const axPts=[];const L=3;
+  [[1,0,0],[0,1,0],[0,0,1]].forEach(a=>{axPts.push(-L*a[0],-L*a[1],-L*a[2],L*a[0],L*a[1],L*a[2]);});
+  axGeo.setAttribute('position',new THREE.Float32BufferAttribute(axPts,3));
+  tvScene.add(new THREE.LineSegments(axGeo,new THREE.LineBasicMaterial({color:0xcccccc})));
+  // Cholesky
+  const Ch=cholesky(Sigma);
+  if(isNaN(Ch[0][0])||Ch[0][0]===0)return;
+  // ellipsoids at chi2(3) quantiles: 50%, 80%, 95%
+  const levels=[{r:Math.sqrt(2.366),color:0x3a6eb5,opacity:0.12},{r:Math.sqrt(4.642),color:0xc8a430,opacity:0.08},{r:Math.sqrt(7.815),color:0xb33a2f,opacity:0.05}];
+  levels.forEach(lev=>{
+    const geo=new THREE.SphereGeometry(1,32,24);
+    const pos=geo.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+      const nx=Ch[0][0]*x+Ch[0][1]*y+Ch[0][2]*z;
+      const ny=Ch[1][0]*x+Ch[1][1]*y+Ch[1][2]*z;
+      const nz=Ch[2][0]*x+Ch[2][1]*y+Ch[2][2]*z;
+      pos.setXYZ(i,lev.r*nx+mu[0],lev.r*ny+mu[1],lev.r*nz+mu[2]);
+    }
+    geo.computeVertexNormals();
+    const mat=new THREE.MeshPhongMaterial({color:lev.color,transparent:true,opacity:lev.opacity,side:THREE.DoubleSide,depthWrite:false});
+    tvScene.add(new THREE.Mesh(geo,mat));
+    // wireframe
+    tvScene.add(new THREE.Mesh(geo.clone(),new THREE.MeshBasicMaterial({color:lev.color,wireframe:true,transparent:true,opacity:lev.opacity*2.5})));
+  });
+  // mean point
+  const dotGeo=new THREE.SphereGeometry(0.06,12,8);
+  tvScene.add(new THREE.Mesh(dotGeo,new THREE.MeshBasicMaterial({color:0xc8a430})));
+  dotGeo.translate(mu[0],mu[1],mu[2]);
+}
+
+function readTrivParams(){
+  const mu=[parseFloat(document.getElementById('tv_m1').value)||0,parseFloat(document.getElementById('tv_m2').value)||0,parseFloat(document.getElementById('tv_m3').value)||0];
+  const S=[[0,0,0],[0,0,0],[0,0,0]];
+  [['tv_s11','tv_s12','tv_s13'],['tv_s21','tv_s22','tv_s23'],['tv_s31','tv_s32','tv_s33']].forEach((r,i)=>r.forEach((id,j)=>{S[i][j]=parseFloat(document.getElementById(id).value)||0;}));
+  return{mu,S};
+}
+
+function updateTrivariate(){
+  const{mu,S}=readTrivParams();
+  buildEllipsoids(mu,S);
+  updateTrivCond();
+}
+
+function updateTrivCond(){
+  const{mu,S}=readTrivParams();
+  const cond=document.getElementById('tv_cond').value;
+  const c1=parseFloat(document.getElementById('tv_c1').value)||0;
+  const c2=parseFloat(document.getElementById('tv_c2').value)||0;
+  const out=document.getElementById('trivOut');
+  if(cond==='none'){out.innerHTML='<div class="key-box"><strong>Level sets:</strong> The three ellipsoids correspond to the 50% (blue), 80% (gold), and 95% (red) probability regions \u2014 the sets where the Mahalanobis distance '+rk("(\\mathbf{y}-\\boldsymbol{\\mu})'\\boldsymbol{\\Sigma}^{-1}(\\mathbf{y}-\\boldsymbol{\\mu}) \\leq \\chi^2_3(\\alpha)")+'.</div>';return;}
+  // determine which indices are free and which are fixed
+  let freeIdx,fixIdx,fixVals;
+  if(cond==='y3'){freeIdx=[0,1];fixIdx=[2];fixVals=[c1];}
+  else if(cond==='y2'){freeIdx=[0,2];fixIdx=[1];fixVals=[c1];}
+  else if(cond==='y1'){freeIdx=[1,2];fixIdx=[0];fixVals=[c1];}
+  else if(cond==='y2y3'){freeIdx=[0];fixIdx=[1,2];fixVals=[c1,c2];}
+  else if(cond==='y1y3'){freeIdx=[1];fixIdx=[0,2];fixVals=[c1,c2];}
+  else if(cond==='y1y2'){freeIdx=[2];fixIdx=[0,1];fixVals=[c1,c2];}
+  // extract submatrices
+  const n1=freeIdx.length,n2=fixIdx.length;
+  const mu1=freeIdx.map(i=>[mu[i]]),mu2=fixIdx.map(i=>[mu[i]]);
+  const S11=freeIdx.map(i=>freeIdx.map(j=>S[i][j]));
+  const S12=freeIdx.map(i=>fixIdx.map(j=>S[i][j]));
+  const S21=fixIdx.map(i=>freeIdx.map(j=>S[i][j]));
+  const S22=fixIdx.map(i=>fixIdx.map(j=>S[i][j]));
+  const c2vec=fixVals.map(v=>[v]);
+  const S22inv=matInv(S22);
+  if(!S22inv){out.innerHTML='<div style="color:var(--red);">Σ₂₂ is singular.</div>';return;}
+  const diff=matSub(c2vec,mu2);
+  const condMean=matAdd(mu1,matMul(S12,matMul(S22inv,diff)));
+  const condCov=matSub(S11,matMul(S12,matMul(S22inv,S21)));
+  const freeNames=freeIdx.map(i=>'Y_'+(i+1));
+  const fixNames=fixIdx.map((fi,i)=>'Y_{'+(fi+1)+'}='+fmtD(fixVals[i]));
+  const fixStr=fixNames.join(',\\;');
+  let distStr;
+  if(n1===1){
+    distStr=freeNames[0]+'\\mid '+fixStr+'\\;\\sim\\; N\\!\\left('+fmt(condMean[0][0])+',\\;'+fmt(condCov[0][0])+'\\right)';
+  }else{
+    distStr='('+freeNames.join(',')+')\'\\mid '+fixStr+'\\;\\sim\\; N_'+n1+'\\!\\left('+vecTex(condMean)+',\\;'+matTex(condCov)+'\\right)';
+  }
+  out.innerHTML=`<div class="sol-card"><h4>Conditional Distribution</h4><div class="sol-body">${rkd(distStr)}</div></div>`;
+}
+
+function setTrivEx(idx){
+  const exs=[
+    {mu:[1,4,-2],S:[[1,.5,.4],[.5,1,.2],[.4,.2,1]]},
+    {mu:[0,0,0],S:[[1,0,0],[0,1,0],[0,0,1]]},
+    {mu:[0,0,0],S:[[1,.8,.6],[.8,1,.7],[.6,.7,1]]}
+  ];
+  const e=exs[idx];
+  document.getElementById('tv_m1').value=e.mu[0];document.getElementById('tv_m2').value=e.mu[1];document.getElementById('tv_m3').value=e.mu[2];
+  [['tv_s11','tv_s12','tv_s13'],['tv_s21','tv_s22','tv_s23'],['tv_s31','tv_s32','tv_s33']].forEach((r,i)=>r.forEach((id,j)=>{document.getElementById(id).value=e.S[i][j];}));
+  updateTrivariate();
+}
+
+// ═══════════════════════════════════════════════════
+//   GENERAL LINEAR CONDITIONAL CALCULATOR
+// ═══════════════════════════════════════════════════
+let gl_n=3,gl_m=1,gl_p=1;
+
+function buildMxInputGrid(containerId,rows,cols,prefix,vals){
+  const cont=document.getElementById(containerId)||document.createElement('div');
+  cont.id=containerId;
+  const g=document.createElement('div');g.className='mx-grid';g.style.gridTemplateColumns=`repeat(${cols},48px)`;
+  for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+    const inp=document.createElement('input');inp.type='text';inp.id=`${prefix}_${i}_${j}`;
+    inp.value=vals?fmtD(vals[i][j]):'0';inp.autocomplete='off';g.appendChild(inp);
+  }
+  cont.innerHTML='';cont.appendChild(g);
+  return cont;
+}
+function buildVecInputGrid(containerId,n,prefix,vals){
+  const cont=document.getElementById(containerId)||document.createElement('div');
+  cont.id=containerId;
+  const g=document.createElement('div');g.className='mx-grid';g.style.gridTemplateColumns=`repeat(1,48px)`;
+  for(let i=0;i<n;i++){
+    const inp=document.createElement('input');inp.type='text';inp.id=`${prefix}_${i}`;
+    inp.value=vals?fmtD(vals[i]):'0';inp.autocomplete='off';g.appendChild(inp);
+  }
+  cont.innerHTML='';cont.appendChild(g);return cont;
+}
+function readMxInput(prefix,rows,cols){return Array.from({length:rows},(_,i)=>Array.from({length:cols},(_,j)=>parseFloat(document.getElementById(`${prefix}_${i}_${j}`)?.value)||0));}
+function readVecInput(prefix,n){return Array.from({length:n},(_,i)=>[parseFloat(document.getElementById(`${prefix}_${i}`)?.value)||0]);}
+
+function rebuildGLC(){
+  gl_n=Math.min(Math.max(parseInt(document.getElementById('gl_n').value)||3,2),6);
+  gl_m=Math.min(Math.max(parseInt(document.getElementById('gl_m').value)||1,1),6);
+  gl_p=Math.min(Math.max(parseInt(document.getElementById('gl_p').value)||1,1),6);
+  const area=document.getElementById('glcInputs');area.innerHTML='';
+  // μ
+  const d1=document.createElement('div');d1.innerHTML='<div style="font-size:.8rem;color:var(--gray);margin-bottom:.2rem;">μ (n×1)</div>';
+  d1.appendChild(buildVecInputGrid('glc_mu',gl_n,'gmu',null));area.appendChild(d1);
+  // Σ
+  const d2=document.createElement('div');d2.innerHTML='<div style="font-size:.8rem;color:var(--gray);margin-bottom:.2rem;">Σ (n×n)</div>';
+  const Ivals=eye(gl_n);d2.appendChild(buildMxInputGrid('glc_sig',gl_n,gl_n,'gs',Ivals));area.appendChild(d2);
+  // B1
+  const d3=document.createElement('div');d3.innerHTML='<div style="font-size:.8rem;color:var(--gray);margin-bottom:.2rem;">B₁ (m×n)</div>';
+  d3.appendChild(buildMxInputGrid('glc_b1',gl_m,gl_n,'gb1',null));area.appendChild(d3);
+  // B2
+  const d4=document.createElement('div');d4.innerHTML='<div style="font-size:.8rem;color:var(--gray);margin-bottom:.2rem;">B₂ (p×n)</div>';
+  d4.appendChild(buildMxInputGrid('glc_b2',gl_p,gl_n,'gb2',null));area.appendChild(d4);
+  // b
+  const d5=document.createElement('div');d5.innerHTML='<div style="font-size:.8rem;color:var(--gray);margin-bottom:.2rem;">b (p×1)</div>';
+  d5.appendChild(buildVecInputGrid('glc_bvec',gl_p,'gbv',null));area.appendChild(d5);
+  document.getElementById('glcOut').innerHTML='';
+}
+
+function loadGLCex(idx){
+  if(idx===0){
+    gl_n=3;gl_m=1;gl_p=1;
+    document.getElementById('gl_n').value=3;document.getElementById('gl_m').value=1;document.getElementById('gl_p').value=1;
+    rebuildGLC();
+    // mu=0, Sigma=I, B1=[1,0,0], B2=[1,1,1], b=[2]
+    for(let i=0;i<3;i++)document.getElementById(`gmu_${i}`).value=0;
+    const I3=eye(3);for(let i=0;i<3;i++)for(let j=0;j<3;j++)document.getElementById(`gs_${i}_${j}`).value=I3[i][j];
+    [[1,0,0]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gb1_${i}_${j}`).value=v;}));
+    [[1,1,1]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gb2_${i}_${j}`).value=v;}));
+    document.getElementById('gbv_0').value=2;
+  }else if(idx===1){
+    gl_n=3;gl_m=1;gl_p=1;
+    document.getElementById('gl_n').value=3;document.getElementById('gl_m').value=1;document.getElementById('gl_p').value=1;
+    rebuildGLC();
+    [1,4,-2].forEach((v,i)=>{document.getElementById(`gmu_${i}`).value=v;});
+    [[1,.5,.4],[.5,1,.2],[.4,.2,1]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gs_${i}_${j}`).value=v;}));
+    [[2,1,0]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gb1_${i}_${j}`).value=v;}));
+    [[1,2,3]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gb2_${i}_${j}`).value=v;}));
+    document.getElementById('gbv_0').value=2;
+  }else if(idx===2){
+    gl_n=3;gl_m=2;gl_p=1;
+    document.getElementById('gl_n').value=3;document.getElementById('gl_m').value=2;document.getElementById('gl_p').value=1;
+    rebuildGLC();
+    [1,4,-2].forEach((v,i)=>{document.getElementById(`gmu_${i}`).value=v;});
+    [[1,.5,.4],[.5,1,.2],[.4,.2,1]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gs_${i}_${j}`).value=v;}));
+    [[1,0,0],[0,1,0]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gb1_${i}_${j}`).value=v;}));
+    [[0,0,1]].forEach((r,i)=>r.forEach((v,j)=>{document.getElementById(`gb2_${i}_${j}`).value=v;}));
+    document.getElementById('gbv_0').value=1;
+  }
+}
+
+function computeGLC(){
+  const mu=readVecInput('gmu',gl_n);
+  const Sigma=readMxInput('gs',gl_n,gl_n);
+  const B1=readMxInput('gb1',gl_m,gl_n);
+  const B2=readMxInput('gb2',gl_p,gl_n);
+  const b=readVecInput('gbv',gl_p);
+  const out=document.getElementById('glcOut');
+  // compute
+  const muU=matMul(B1,mu);
+  const muV=matMul(B2,mu);
+  const SigUU=matMul(B1,matMul(Sigma,matT(B1)));
+  const SigUV=matMul(B1,matMul(Sigma,matT(B2)));
+  const SigVV=matMul(B2,matMul(Sigma,matT(B2)));
+  const SigVU=matT(SigUV);
+  const SigVVinv=matInv(SigVV);
+  if(!SigVVinv){out.innerHTML='<div style="color:var(--red);">Σ_VV = B₂ΣB₂\' is singular and cannot be inverted.</div>';return;}
+  const diff=matSub(b,muV);
+  const condMean=matAdd(muU,matMul(SigUV,matMul(SigVVinv,diff)));
+  const condCov=matSub(SigUU,matMul(SigUV,matMul(SigVVinv,SigVU)));
+
+  let html='<div class="sol-card"><h4>Result: Conditional Distribution</h4><div class="sol-body">';
+  // show steps
+  html+=`<div style="font-size:.88rem;margin-bottom:.7rem;color:#a0b8d8;">`;
+  html+=`${rk('\\boldsymbol{\\mu}_U = \\mathbf{B}_1\\boldsymbol{\\mu} = '+vecTex(muU))}<br>`;
+  html+=`${rk('\\boldsymbol{\\mu}_V = \\mathbf{B}_2\\boldsymbol{\\mu} = '+vecTex(muV))}<br>`;
+  html+=`${rk('\\boldsymbol{\\Sigma}_{UU} = '+matTex(SigUU))}<br>`;
+  html+=`${rk('\\boldsymbol{\\Sigma}_{UV} = '+matTex(SigUV))}<br>`;
+  html+=`${rk('\\boldsymbol{\\Sigma}_{VV} = '+matTex(SigVV))}`;
+  html+=`</div>`;
+  // final answer
+  if(gl_m===1){
+    html+=rkd('\\mathbf{B}_1\\mathbf{Y} \\mid \\mathbf{B}_2\\mathbf{Y}=\\mathbf{b} \\;\\sim\\; N\\!\\left('+fmt(condMean[0][0])+',\\;'+fmt(condCov[0][0])+'\\right)');
+  }else{
+    html+=rkd('\\mathbf{B}_1\\mathbf{Y} \\mid \\mathbf{B}_2\\mathbf{Y}=\\mathbf{b} \\;\\sim\\; N_'+gl_m+'\\!\\left('+vecTex(condMean)+',\\;'+matTex(condCov)+'\\right)');
+  }
+  html+='</div></div>';
+  out.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════
+//   SCATTER MATRIX (n >= 3)
+// ═══════════════════════════════════════════════════
+let smDim=4,smSamples=1200,smMu=null,smSigma=null,smData=null;
+
+// Box-Muller standard normal generator
+function randn(){
+  let u1=Math.random()||1e-12, u2=Math.random();
+  return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+}
+function generateMVN(mu,Sigma,N){
+  const n=mu.length;
+  const L=cholesky(Sigma);
+  // Check Cholesky validity (positive semi-definite enough)
+  for(let i=0;i<n;i++)if(isNaN(L[i][i])){return null;}
+  const data=Array.from({length:n},()=>new Array(N));
+  for(let s=0;s<N;s++){
+    const z=new Array(n);
+    for(let i=0;i<n;i++)z[i]=randn();
+    for(let i=0;i<n;i++){
+      let yi=mu[i];
+      for(let j=0;j<=i;j++)yi+=L[i][j]*z[j];
+      data[i][s]=yi;
+    }
+  }
+  return data;
+}
+
+// 2x2 eigendecomposition for ellipse drawing
+function eigen2(M){
+  const a=M[0][0],b=M[0][1],d=M[1][1];
+  const tr=a+d, det=a*d-b*b;
+  const disc=Math.sqrt(Math.max(tr*tr/4-det,0));
+  const l1=tr/2+disc, l2=Math.max(tr/2-disc,1e-12);
+  let angle;
+  if(Math.abs(b)<1e-12){angle=a>=d?0:Math.PI/2;}
+  else{angle=Math.atan2(l1-a,b);}
+  return{l1,l2,angle};
+}
+
+function rebuildSMInputs(){
+  const n=smDim;
+  const area=document.getElementById('smInputs');
+  area.innerHTML='';
+  // μ
+  const d1=document.createElement('div');
+  d1.innerHTML='<div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">μ (n×1)</div>';
+  const muGrid=document.createElement('div');
+  muGrid.className='mx-grid';
+  muGrid.style.gridTemplateColumns='48px';
+  for(let i=0;i<n;i++){
+    const inp=document.createElement('input');
+    inp.type='text';inp.id=`sm_mu_${i}`;inp.value='0';inp.autocomplete='off';
+    muGrid.appendChild(inp);
+  }
+  d1.appendChild(muGrid);area.appendChild(d1);
+  // Σ
+  const d2=document.createElement('div');
+  d2.innerHTML='<div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">Σ (n×n, symmetric)</div>';
+  const sigGrid=document.createElement('div');
+  sigGrid.className='mx-grid';
+  sigGrid.style.gridTemplateColumns=`repeat(${n},48px)`;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+    const inp=document.createElement('input');
+    inp.type='text';inp.id=`sm_sig_${i}_${j}`;
+    inp.value=(i===j)?'1':'0';inp.autocomplete='off';
+    sigGrid.appendChild(inp);
+  }
+  d2.appendChild(sigGrid);area.appendChild(d2);
+}
+
+function rebuildSM(){
+  smDim=Math.min(Math.max(parseInt(document.getElementById('sm_n').value)||3,3),6);
+  rebuildSMInputs();
+  resampleSM();
+}
+
+function readSMParams(){
+  const n=smDim;
+  const mu=new Array(n);
+  for(let i=0;i<n;i++)mu[i]=parseFloat(document.getElementById(`sm_mu_${i}`).value)||0;
+  const S=Array.from({length:n},()=>new Array(n).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)S[i][j]=parseFloat(document.getElementById(`sm_sig_${i}_${j}`).value)||0;
+  // Symmetrize
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    const avg=(S[i][j]+S[j][i])/2;
+    S[i][j]=avg;S[j][i]=avg;
+  }
+  return{mu,S};
+}
+
+function resampleSM(){
+  const{mu,S}=readSMParams();
+  smMu=mu;smSigma=S;
+  smSamples=Math.min(Math.max(parseInt(document.getElementById('sm_N').value)||1200,100),3000);
+  smData=generateMVN(mu,S,smSamples);
+  drawScatterMatrix();
+}
+
+function loadSMex(idx){
+  let n,mu,S;
+  if(idx===0){
+    n=3;mu=[0,0,0];S=eye(3);
+  }else if(idx===1){
+    n=4;mu=[0,0,0,0];
+    S=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>Math.pow(0.7,Math.abs(i-j))));
+  }else if(idx===2){
+    n=5;mu=[1,2,-1,0,3];
+    S=[
+      [1.0, 0.6,-0.3, 0.1, 0.0],
+      [0.6, 1.5, 0.2,-0.4, 0.3],
+      [-0.3,0.2, 0.8, 0.5, 0.0],
+      [0.1,-0.4, 0.5, 1.2, 0.6],
+      [0.0, 0.3, 0.0, 0.6, 1.0]
+    ];
+  }else{
+    n=6;mu=[0,0,0,0,0,0];
+    S=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{
+      if(i===j)return 1;
+      const b1=Math.floor(i/3),b2=Math.floor(j/3);
+      return b1===b2?0.75:0.1;
+    }));
+  }
+  document.getElementById('sm_n').value=n;
+  smDim=n;
+  rebuildSMInputs();
+  for(let i=0;i<n;i++)document.getElementById(`sm_mu_${i}`).value=fmtD(mu[i]);
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)document.getElementById(`sm_sig_${i}_${j}`).value=fmtD(S[i][j]);
+  resampleSM();
+}
+
+function drawScatterMatrix(){
+  const cv=document.getElementById('cvScatterMatrix');
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.fillStyle='#fbfaf6';ctx.fillRect(0,0,W,H);
+
+  if(!smData){
+    ctx.fillStyle='#b33a2f';ctx.font='15px Crimson Pro';
+    ctx.textAlign='center';
+    ctx.fillText('Σ is not positive definite — adjust entries and resample.',W/2,H/2);
+    ctx.textAlign='left';return;
+  }
+  const n=smDim;
+  const padOuter=14;
+  const cell=(W-padOuter*2)/n;
+
+  // Pre-compute ranges per variable so axes are consistent across the row/column
+  const ranges=[];
+  for(let i=0;i<n;i++){
+    const sd=Math.sqrt(Math.max(smSigma[i][i],1e-6));
+    ranges.push({lo:smMu[i]-3.5*sd,hi:smMu[i]+3.5*sd,sd});
+  }
+
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+    const x0=padOuter+j*cell;
+    const y0=padOuter+i*cell;
+    if(i===j){
+      drawDiagCell(ctx,x0,y0,cell,smData[i],ranges[i],smMu[i],ranges[i].sd,i+1);
+    }else{
+      // Off-diagonal: scatter for both triangles
+      // Lower (i>j): density ellipses overlay
+      // Upper (i<j): regression line overlay
+      drawScatterCell(ctx,x0,y0,cell,
+        smData[j],smData[i],ranges[j],ranges[i],
+        smMu[j],smMu[i],smSigma[j][j],smSigma[i][i],smSigma[i][j],
+        /*showRegLine=*/ i<j);
+    }
+  }
+}
+
+// Compute "nice" tick values across a range
+function niceTicks(lo,hi,nWanted){
+  const span=hi-lo;
+  if(span<=0)return[lo];
+  const rough=span/(nWanted-1);
+  const mag=Math.pow(10,Math.floor(Math.log10(rough)));
+  const norm=rough/mag;
+  let step;
+  if(norm<1.5)step=1*mag;
+  else if(norm<3.5)step=2*mag;
+  else if(norm<7.5)step=5*mag;
+  else step=10*mag;
+  const first=Math.ceil(lo/step)*step;
+  const ticks=[];
+  for(let v=first;v<=hi+1e-9;v+=step){
+    const rounded=Math.round(v/step)*step;
+    if(rounded>=lo-1e-9&&rounded<=hi+1e-9)ticks.push(rounded);
+  }
+  return ticks;
+}
+
+// Format tick label compactly (no spurious decimals)
+function fmtTick(v){
+  if(Math.abs(v)<1e-9)return '0';
+  if(Math.abs(v-Math.round(v))<1e-6)return String(Math.round(v));
+  return v.toFixed(1);
+}
+
+// Plot frame + ticks + numeric labels
+function drawFrameAndAxes(ctx,px,py,pw,ph,rangeX,rangeY,showY){
+  // Frame
+  ctx.strokeStyle='#bbb';ctx.lineWidth=0.7;
+  ctx.strokeRect(px+0.35,py+0.35,pw-0.7,ph-0.7);
+  // X ticks
+  ctx.fillStyle='#7a7a8a';
+  ctx.font='9px "Crimson Pro", Georgia, serif';
+  ctx.strokeStyle='#999';ctx.lineWidth=0.5;
+  ctx.textAlign='center';ctx.textBaseline='top';
+  const xTicks=niceTicks(rangeX.lo,rangeX.hi,4);
+  xTicks.forEach(v=>{
+    const xp=px+pw*(v-rangeX.lo)/(rangeX.hi-rangeX.lo);
+    ctx.beginPath();ctx.moveTo(xp,py+ph);ctx.lineTo(xp,py+ph+2.5);ctx.stroke();
+    ctx.fillText(fmtTick(v),xp,py+ph+3.5);
+  });
+  if(showY){
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    const yTicks=niceTicks(rangeY.lo,rangeY.hi,4);
+    yTicks.forEach(v=>{
+      const yp=py+ph-ph*(v-rangeY.lo)/(rangeY.hi-rangeY.lo);
+      ctx.beginPath();ctx.moveTo(px,yp);ctx.lineTo(px-2.5,yp);ctx.stroke();
+      ctx.fillText(fmtTick(v),px-3.5,yp);
+    });
+  }
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+
+// Internal gridlines (subtle)
+function drawGrid(ctx,px,py,pw,ph,rangeX,rangeY){
+  ctx.strokeStyle='rgba(0,0,0,0.05)';ctx.lineWidth=0.5;
+  const xTicks=niceTicks(rangeX.lo,rangeX.hi,4);
+  xTicks.forEach(v=>{
+    const xp=px+pw*(v-rangeX.lo)/(rangeX.hi-rangeX.lo);
+    ctx.beginPath();ctx.moveTo(xp,py);ctx.lineTo(xp,py+ph);ctx.stroke();
+  });
+  const yTicks=niceTicks(rangeY.lo,rangeY.hi,4);
+  yTicks.forEach(v=>{
+    const yp=py+ph-ph*(v-rangeY.lo)/(rangeY.hi-rangeY.lo);
+    ctx.beginPath();ctx.moveTo(px,yp);ctx.lineTo(px+pw,yp);ctx.stroke();
+  });
+}
+
+function drawDiagCell(ctx,x0,y0,cell,data,range,mu,sigma,idx){
+  const mL=28,mR=6,mT=6,mB=20;
+  const px=x0+mL,py=y0+mT,pw=cell-mL-mR,ph=cell-mT-mB;
+
+  // Plot background
+  ctx.fillStyle='#fbfaf6';
+  ctx.fillRect(px,py,pw,ph);
+
+  // Histogram
+  const nBins=Math.min(22,Math.max(10,Math.floor(Math.sqrt(data.length)/2)));
+  const binW=(range.hi-range.lo)/nBins;
+  const bins=new Array(nBins).fill(0);
+  for(const v of data){
+    const k=Math.floor((v-range.lo)/binW);
+    if(k>=0&&k<nBins)bins[k]++;
+  }
+  const maxCount=Math.max(...bins,1);
+  const fpeak=1/(sigma*Math.sqrt(2*Math.PI));
+  const peakExpected=data.length*binW*fpeak;
+  const scaleMax=Math.max(maxCount,peakExpected)*1.05;
+
+  ctx.fillStyle='rgba(58,110,181,0.55)';
+  for(let k=0;k<nBins;k++){
+    const barH=ph*bins[k]/scaleMax;
+    const bx=px+pw*k/nBins;
+    const bw=pw/nBins;
+    ctx.fillRect(bx+0.5,py+ph-barH,bw-1,barH);
+  }
+  // Theoretical normal curve
+  ctx.strokeStyle='#b33a2f';ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<=120;i++){
+    const x=range.lo+(range.hi-range.lo)*i/120;
+    const f=Math.exp(-0.5*((x-mu)/sigma)**2)/(sigma*Math.sqrt(2*Math.PI));
+    const expectedCount=data.length*binW*f;
+    const cy2=py+ph-ph*expectedCount/scaleMax;
+    const cx2=px+pw*(x-range.lo)/(range.hi-range.lo);
+    if(i===0)ctx.moveTo(cx2,cy2);else ctx.lineTo(cx2,cy2);
+  }
+  ctx.stroke();
+  // Mean tick line
+  const mxPx=px+pw*(mu-range.lo)/(range.hi-range.lo);
+  ctx.setLineDash([3,3]);
+  ctx.strokeStyle='rgba(200,164,48,0.95)';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(mxPx,py);ctx.lineTo(mxPx,py+ph);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // X-axis ticks only (y is frequency — not informative)
+  drawFrameAndAxes(ctx,px,py,pw,ph,range,null,false);
+
+  // Variable label (prominent, top-right)
+  ctx.fillStyle='#18284a';
+  ctx.font='600 20px "Playfair Display", Georgia, serif';
+  ctx.textAlign='right';ctx.textBaseline='top';
+  ctx.fillText('Y'+toSubscript(idx),px+pw-4,py+3);
+  // μ, σ small label below it
+  ctx.font='italic 10px "Crimson Pro", Georgia, serif';
+  ctx.fillStyle='#7a7a8a';
+  ctx.fillText('μ='+fmtD(mu)+', σ='+fmtD(sigma),px+pw-4,py+24);
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+
+function drawScatterCell(ctx,x0,y0,cell,dataX,dataY,rangeX,rangeY,muX,muY,sxx,syy,sxy,showRegLine){
+  const mL=28,mR=6,mT=6,mB=20;
+  const px=x0+mL,py=y0+mT,pw=cell-mL-mR,ph=cell-mT-mB;
+
+  // Background
+  ctx.fillStyle='#fff';
+  ctx.fillRect(px,py,pw,ph);
+
+  // Gridlines
+  drawGrid(ctx,px,py,pw,ph,rangeX,rangeY);
+
+  const x2p=pw/(rangeX.hi-rangeX.lo);
+  const y2p=ph/(rangeY.hi-rangeY.lo);
+  const cxPix=px+(muX-rangeX.lo)*x2p;
+  const cyPix=py+ph-(muY-rangeY.lo)*y2p;
+
+  // Mean cross-hairs
+  ctx.strokeStyle='rgba(200,164,48,0.35)';ctx.lineWidth=1;
+  ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(px,cyPix);ctx.lineTo(px+pw,cyPix);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cxPix,py);ctx.lineTo(cxPix,py+ph);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Clip to plot area for points & ellipses & line
+  ctx.save();
+  ctx.beginPath();ctx.rect(px,py,pw,ph);ctx.clip();
+
+  // Scatter points
+  ctx.fillStyle='rgba(24,40,74,0.32)';
+  const N=dataX.length;
+  for(let s=0;s<N;s++){
+    const xp=px+(dataX[s]-rangeX.lo)*x2p;
+    const yp=py+ph-(dataY[s]-rangeY.lo)*y2p;
+    ctx.fillRect(xp-0.6,yp-0.6,1.6,1.6);
+  }
+
+  if(showRegLine){
+    // Theoretical regression line: E[Y_row | Y_col = x] = muY + (sxy/sxx)*(x - muX)
+    const slope=sxy/sxx;
+    const xLo=rangeX.lo,xHi=rangeX.hi;
+    const yAtXLo=muY+slope*(xLo-muX);
+    const yAtXHi=muY+slope*(xHi-muX);
+    ctx.strokeStyle='#b33a2f';ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(px+(xLo-rangeX.lo)*x2p,py+ph-(yAtXLo-rangeY.lo)*y2p);
+    ctx.lineTo(px+(xHi-rangeX.lo)*x2p,py+ph-(yAtXHi-rangeY.lo)*y2p);
+    ctx.stroke();
+  }else{
+    // Density ellipses 50%, 95% from the (j,i) submatrix [[sxx,sxy],[sxy,syy]]
+    const {l1,l2,angle}=eigen2([[sxx,sxy],[sxy,syy]]);
+    function drawEll(q,strokeStyle,lw){
+      const a=Math.sqrt(l1*q),b=Math.sqrt(l2*q);
+      const ct=Math.cos(angle),st=Math.sin(angle);
+      ctx.beginPath();
+      for(let t=0;t<=2*Math.PI+0.02;t+=0.04){
+        const c0=Math.cos(t),s0=Math.sin(t);
+        const dx=a*c0*ct-b*s0*st;
+        const dy=a*c0*st+b*s0*ct;
+        const xp=cxPix+dx*x2p;
+        const yp=cyPix-dy*y2p;
+        if(t===0)ctx.moveTo(xp,yp);else ctx.lineTo(xp,yp);
+      }
+      ctx.strokeStyle=strokeStyle;ctx.lineWidth=lw;ctx.stroke();
+    }
+    drawEll(5.991,'rgba(179,58,47,0.35)',1);
+    drawEll(1.386,'#b33a2f',1.6);
+  }
+  ctx.restore();
+
+  // Mean dot
+  if(cxPix>=px&&cxPix<=px+pw&&cyPix>=py&&cyPix<=py+ph){
+    ctx.beginPath();
+    ctx.arc(cxPix,cyPix,2.5,0,2*Math.PI);
+    ctx.fillStyle='#c8a430';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+  }
+
+  // Slope annotation in upper triangle (small, top-left of plot area)
+  if(showRegLine){
+    const slope=sxy/sxx;
+    ctx.fillStyle='#b33a2f';
+    ctx.font='italic 10px "Crimson Pro", Georgia, serif';
+    ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText('slope = '+slope.toFixed(2),px+4,py+3);
+    ctx.textBaseline='alphabetic';
+  }
+
+  // Frame + ticks
+  drawFrameAndAxes(ctx,px,py,pw,ph,rangeX,rangeY,true);
+}
+
+function toSubscript(n){
+  const map=['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
+  return String(n).split('').map(c=>map[+c]||c).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//   INIT
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  renderInlineK();
+  renderStatic();
+  initBV3D();
+  updateBivariate();
+  initTV3D();
+  updateTrivariate();
+  loadSMex(1);
+  rebuildGLC();
+  loadGLCex(0);
+});
+</script>
+</body>
+</html>

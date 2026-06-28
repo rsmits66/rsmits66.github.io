@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bayes Theorem — The Odds Way</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500;600&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0e14;
+  --bg2: #111720;
+  --bg3: #171e2b;
+  --bg4: #1d2636;
+  --text: #c8d1dc;
+  --text-dim: #6b7a8d;
+  --text-bright: #eaf0f7;
+  --blue: #5b9ef5;
+  --blue-dim: rgba(91,158,245,0.12);
+  --orange: #e0943a;
+  --orange-dim: rgba(224,148,58,0.12);
+  --green: #4cc87c;
+  --green-dim: rgba(76,200,124,0.12);
+  --pink: #d66ba0;
+  --border: #252f3f;
+  --font-serif: 'Crimson Pro', Georgia, serif;
+  --font-sans: 'Source Sans 3', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: 18.5px;
+  line-height: 1.75;
+  min-height: 100vh;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+.hero {
+  padding: 110px 0 50px;
+  text-align: center;
+}
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.hero h1 em { font-style: normal; color: var(--blue); }
+
+section { padding: 44px 0; border-top: 1px solid var(--border); }
+h2 {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--blue);
+  margin-bottom: 18px;
+}
+p { margin-bottom: 16px; }
+.m {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  color: var(--text-bright);
+  background: rgba(255,255,255,0.04);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.recipe {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blue);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin: 28px 0;
+}
+.recipe p { margin-bottom: 8px; }
+.recipe p:last-child { margin-bottom: 0; }
+.recipe strong { color: var(--text-bright); }
+
+.nn-wrap {
+  margin: 36px 0;
+  display: flex;
+  justify-content: center;
+}
+.nn-wrap svg { width: 100%; max-width: 740px; height: auto; }
+
+.ex {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 28px 0;
+  overflow: hidden;
+}
+.ex-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 22px; background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.ex-head:hover { background: var(--bg4); }
+.ex-num {
+  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600;
+  background: var(--blue); color: var(--bg);
+  padding: 2px 10px; border-radius: 20px; white-space: nowrap;
+}
+.ex-title {
+  font-family: var(--font-sans); font-size: 1rem; font-weight: 600;
+  color: var(--text-bright); flex: 1;
+}
+.ex-arrow { color: var(--text-dim); font-size: 1.1rem; transition: transform 0.3s; }
+.ex.open .ex-arrow { transform: rotate(180deg); }
+.ex-body { display: none; padding: 22px 24px; }
+.ex.open .ex-body { display: block; }
+
+.step {
+  font-family: var(--font-sans); font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--green); margin: 16px 0 6px;
+}
+.step:first-child { margin-top: 0; }
+
+.note {
+  font-family: var(--font-sans); font-size: 0.84rem;
+  color: var(--text-dim); font-style: italic; margin-top: 6px;
+}
+
+.calc-panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px; margin: 28px 0;
+}
+.calc-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-bottom: 18px;
+}
+@media (max-width:580px) { .calc-grid { grid-template-columns:1fr; } }
+.calc-group label {
+  display: block; font-family: var(--font-sans); font-size: 0.75rem;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-dim); margin-bottom: 5px;
+}
+.calc-group input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; padding: 9px 12px; color: var(--text-bright);
+  font-family: var(--font-mono); font-size: 0.9rem; outline: none;
+}
+.calc-group input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-dim); }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--blue); color: var(--bg); border: none; border-radius: 7px;
+  padding: 10px 22px; font-family: var(--font-sans); font-size: 0.9rem;
+  font-weight: 600; cursor: pointer; transition: filter 0.2s;
+}
+.btn:hover { filter: brightness(1.15); }
+.calc-result { margin-top: 18px; min-height: 40px; }
+
+.footer {
+  text-align: center; padding: 50px 0 40px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ======== HERO ======== -->
+<div class="hero">
+  <h1>Bayes Theorem<br><em>the Odds Way</em></h1>
+</div>
+
+<!-- ======== RECIPE + MACHINERY ======== -->
+<section>
+  <h2>The Recipe</h2>
+  <div class="recipe">
+    <p><strong>①</strong> Write down <strong>prior weights</strong> — one number per hypothesis.</p>
+    <p><strong>②</strong> Write down <strong>likelihoods</strong> — for each hypothesis, how likely is the evidence you observed?</p>
+    <p><strong>③</strong> Multiply element-wise (Hadamard ⊙). That gives <strong>posterior odds</strong>.</p>
+    <p><strong>④</strong> Normalize only at the very end if you need a probability.</p>
+  </div>
+
+  <p>That's it. No denominator. No Law of Total Probability. The "denominator" <span class="m">P(E)</span> is just the sum of the posterior weights — it falls out automatically.</p>
+
+  <h2 style="margin-top:36px;">The Machinery</h2>
+
+  <p>Think of it as a single-layer network. Each prior weight feeds through its own likelihood gate — no cross-connections — and the product emerges as the posterior odds. The dashed rectangle around the likelihood column marks the "evidence layer" that mediates the update.</p>
+
+  <div class="nn-wrap">
+    <svg viewBox="0 0 740 370" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah-gen" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+          <path d="M0,0 L7,2.5 L0,5" fill="none" stroke="#6b7a8d" stroke-width="1"/>
+        </marker>
+      </defs>
+
+      <!-- Column labels -->
+      <text x="100" y="30" text-anchor="middle" fill="#5b9ef5" font-family="Source Sans 3,sans-serif" font-size="12.5" font-weight="700" letter-spacing="1.5">PRIOR ODDS</text>
+      <text x="100" y="50" text-anchor="middle" fill="#6b7a8d" font-family="JetBrains Mono,monospace" font-size="15" font-style="italic">θ<tspan baseline-shift="sub" font-size="10">i</tspan></text>
+
+      <text x="360" y="30" text-anchor="middle" fill="#e0943a" font-family="Source Sans 3,sans-serif" font-size="12.5" font-weight="700" letter-spacing="1.5">LIKELIHOOD</text>
+      <text x="360" y="50" text-anchor="middle" fill="#6b7a8d" font-family="JetBrains Mono,monospace" font-size="13" font-style="italic">P(E | θ<tspan baseline-shift="sub" font-size="9">i</tspan>)</text>
+
+      <text x="620" y="30" text-anchor="middle" fill="#4cc87c" font-family="Source Sans 3,sans-serif" font-size="12.5" font-weight="700" letter-spacing="1.5">POSTERIOR ODDS</text>
+      <text x="620" y="50" text-anchor="middle" fill="#6b7a8d" font-family="JetBrains Mono,monospace" font-size="15" font-style="italic">θ̃<tspan baseline-shift="sub" font-size="10">i</tspan></text>
+
+      <!-- Hidden rectangle -->
+      <rect x="300" y="70" width="120" height="282" rx="8" ry="8"
+            fill="none" stroke="#e0943a" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+
+      <!-- Row 1 -->
+      <circle cx="100" cy="120" r="30" fill="#111720" stroke="#5b9ef5" stroke-width="1.8"/>
+      <text x="100" y="125" text-anchor="middle" fill="#5b9ef5" font-family="JetBrains Mono,monospace" font-size="15" font-weight="600">π₁</text>
+      <line x1="132" y1="120" x2="328" y2="120" stroke="#6b7a8d" stroke-width="1.2" marker-end="url(#ah-gen)"/>
+      <circle cx="360" cy="120" r="30" fill="#111720" stroke="#e0943a" stroke-width="1.8"/>
+      <text x="360" y="125" text-anchor="middle" fill="#e0943a" font-family="JetBrains Mono,monospace" font-size="15" font-weight="600">ℓ₁</text>
+      <line x1="392" y1="120" x2="554" y2="120" stroke="#6b7a8d" stroke-width="1.2" marker-end="url(#ah-gen)"/>
+      <ellipse cx="620" cy="120" rx="56" ry="26" fill="#111720" stroke="#4cc87c" stroke-width="1.8"/>
+      <text x="620" y="125" text-anchor="middle" fill="#4cc87c" font-family="JetBrains Mono,monospace" font-size="14" font-weight="500">π₁ · ℓ₁</text>
+
+      <!-- Row 2 -->
+      <circle cx="100" cy="210" r="30" fill="#111720" stroke="#5b9ef5" stroke-width="1.8"/>
+      <text x="100" y="215" text-anchor="middle" fill="#5b9ef5" font-family="JetBrains Mono,monospace" font-size="15" font-weight="600">π₂</text>
+      <line x1="132" y1="210" x2="328" y2="210" stroke="#6b7a8d" stroke-width="1.2" marker-end="url(#ah-gen)"/>
+      <circle cx="360" cy="210" r="30" fill="#111720" stroke="#e0943a" stroke-width="1.8"/>
+      <text x="360" y="215" text-anchor="middle" fill="#e0943a" font-family="JetBrains Mono,monospace" font-size="15" font-weight="600">ℓ₂</text>
+      <line x1="392" y1="210" x2="554" y2="210" stroke="#6b7a8d" stroke-width="1.2" marker-end="url(#ah-gen)"/>
+      <ellipse cx="620" cy="210" rx="56" ry="26" fill="#111720" stroke="#4cc87c" stroke-width="1.8"/>
+      <text x="620" y="215" text-anchor="middle" fill="#4cc87c" font-family="JetBrains Mono,monospace" font-size="14" font-weight="500">π₂ · ℓ₂</text>
+
+      <!-- Vdots -->
+      <text x="100" y="275" text-anchor="middle" fill="#6b7a8d" font-size="20">⋮</text>
+      <text x="360" y="275" text-anchor="middle" fill="#6b7a8d" font-size="20">⋮</text>
+      <text x="620" y="275" text-anchor="middle" fill="#6b7a8d" font-size="20">⋮</text>
+
+      <!-- Row n -->
+      <circle cx="100" cy="320" r="30" fill="#111720" stroke="#5b9ef5" stroke-width="1.8"/>
+      <text x="100" y="325" text-anchor="middle" fill="#5b9ef5" font-family="JetBrains Mono,monospace" font-size="14" font-weight="600">πₙ</text>
+      <line x1="132" y1="320" x2="328" y2="320" stroke="#6b7a8d" stroke-width="1.2" marker-end="url(#ah-gen)"/>
+      <circle cx="360" cy="320" r="30" fill="#111720" stroke="#e0943a" stroke-width="1.8"/>
+      <text x="360" y="325" text-anchor="middle" fill="#e0943a" font-family="JetBrains Mono,monospace" font-size="14" font-weight="600">ℓₙ</text>
+      <line x1="392" y1="320" x2="554" y2="320" stroke="#6b7a8d" stroke-width="1.2" marker-end="url(#ah-gen)"/>
+      <ellipse cx="620" cy="320" rx="56" ry="26" fill="#111720" stroke="#4cc87c" stroke-width="1.8"/>
+      <text x="620" y="325" text-anchor="middle" fill="#4cc87c" font-family="JetBrains Mono,monospace" font-size="14" font-weight="500">πₙ · ℓₙ</text>
+
+      <!-- Hadamard circle -->
+      <circle cx="230" cy="210" r="20" fill="#111720" stroke="#d66ba0" stroke-width="2"/>
+      <text x="230" y="217" text-anchor="middle" fill="#d66ba0" font-family="JetBrains Mono,monospace" font-size="20" font-weight="700">⊙</text>
+    </svg>
+  </div>
+
+  <p style="text-align:center; font-family:var(--font-sans); font-size:0.84rem; color:var(--text-dim); margin-top:-14px;">
+    Arrows go only horizontally. Each prior is scaled by its own likelihood — no cross-connections.
+  </p>
+
+  <h2 style="margin-top:36px;">Binary Case &amp; the Bayes Factor</h2>
+  <p>When there are two hypotheses (<span class="m">H</span> vs. <span class="m">Hᶜ</span>), the ratio of posterior weights is the <em>posterior odds</em>:</p>
+  <p style="text-align:center; font-family:var(--font-mono); color:var(--text-bright); font-size:1rem;">
+    O(H | E) &nbsp;=&nbsp; <span style="color:var(--orange)">[P(E|H) / P(E|Hᶜ)]</span> &nbsp;×&nbsp; O(H)
+  </p>
+  <p>The ratio <span class="m" style="color:var(--orange)">P(E|H) / P(E|Hᶜ)</span> is the <strong>Bayes factor</strong> — how many times the evidence multiplied the odds.</p>
+</section>
+
+<!-- ======== EXAMPLES ======== -->
+<section>
+  <h2>Examples</h2>
+
+  <!-- Ex 1: Restaurant -->
+  <div class="ex open" id="ex1">
+    <div class="ex-head" onclick="tog('ex1')">
+      <span class="ex-num">1</span>
+      <span class="ex-title">Restaurant Safety Inspections</span>
+      <span class="ex-arrow">▼</span>
+    </div>
+    <div class="ex-body">
+      <p>A health department found that 82% of restaurants in a city district had "pass" ratings and 18% had "warning" ratings.  A year later, 30% of the warning-rated restaurants improved to pass, while 15% of the pass-rated restaurants slipped to warning — meaning 85% of pass-rated restaurants still have a pass rating.  If you walk into a restaurant that <em>currently</em> has a pass rating, what is the probability it had a warning rating last year?</p>
+
+      <div class="step">Setup</div>
+      <p>
+        Hypotheses: <span class="m">H₁</span> = was Pass last year, <span class="m">H₂</span> = was Warning last year.<br>
+        Evidence <span class="m">E</span> = currently has a Pass rating.<br>
+        Prior weights: <span class="m" style="color:var(--blue)">[.82, .18]</span><br>
+        Likelihoods of "currently Pass": if it was Pass, it stays Pass with probability .85 (since 15% slipped, 85% still pass). If it was Warning, it improved to Pass with probability .30. So <span class="m" style="color:var(--orange)">[.85, .30]</span>
+      </p>
+
+      <div class="nn-wrap" id="nn-ex1"></div>
+
+      <div class="step">Normalize</div>
+      <p><span class="m">sum = 0.697 + 0.054 = 0.751</span></p>
+      <p>P(was Warning | currently Pass) = <span class="m" style="color:var(--pink)">0.054 / 0.751 ≈ 7.2%</span></p>
+    </div>
+  </div>
+
+  <!-- Ex 2: Park Fire -->
+  <div class="ex" id="ex2">
+    <div class="ex-head" onclick="tog('ex2')">
+      <span class="ex-num">2</span>
+      <span class="ex-title">Park Fire — Lightning as Cause</span>
+      <span class="ex-arrow">▼</span>
+    </div>
+    <div class="ex-body">
+      <p>In a national park, 20% of fires occur in the North zone, 50% in the Central zone, and 30% in the South zone.  If a fire occurs in the North, there is a 40% chance lightning was the cause: <span class="m">P(L|N) = .4</span>.  Similarly <span class="m">P(L|C) = .7</span> and <span class="m">P(L|S) = .2</span>.  A fire is reported and determined to have been caused by lightning.  What are the updated odds for each zone?</p>
+
+      <div class="step">Setup</div>
+      <p>
+        Prior weights: <span class="m" style="color:var(--blue)">[.20, .50, .30]</span><br>
+        Likelihoods of lightning: <span class="m" style="color:var(--orange)">[.40, .70, .20]</span>
+      </p>
+
+      <div class="nn-wrap" id="nn-ex2"></div>
+
+      <div class="step">Normalize</div>
+      <p><span class="m">sum = 0.08 + 0.35 + 0.06 = 0.49</span></p>
+      <p>
+        P(North | lightning) ≈ <span class="m" style="color:var(--pink)">16.3%</span> &ensp;
+        P(Central | lightning) ≈ <span class="m" style="color:var(--pink)">71.4%</span> &ensp;
+        P(South | lightning) ≈ <span class="m" style="color:var(--pink)">12.2%</span>
+      </p>
+      <p>Lightning as the cause shifted the probability mass toward Central, which had the highest lightning-likelihood.</p>
+    </div>
+  </div>
+
+  <!-- Ex 3: Factory Defects -->
+  <div class="ex" id="ex3">
+    <div class="ex-head" onclick="tog('ex3')">
+      <span class="ex-num">3</span>
+      <span class="ex-title">Factory Defect Tracing</span>
+      <span class="ex-arrow">▼</span>
+    </div>
+    <div class="ex-body">
+      <p>Factories 1 through 5 have defective ratios of .1, .2, .3, .4, and .5 respectively.  A company buys 10% of its product from Factory 1, 15% from Factory 2, 25% from Factory 3, 30% from Factory 4, and 20% from Factory 5.  If a product is found defective, what are the updated chances it was purchased from factory <em>i</em>?</p>
+
+      <div class="step">Setup</div>
+      <p>
+        Prior weights (purchase shares): <span class="m" style="color:var(--blue)">[.10, .15, .25, .30, .20]</span><br>
+        Likelihoods (defect rates): <span class="m" style="color:var(--orange)">[.10, .20, .30, .40, .50]</span>
+      </p>
+
+      <div class="nn-wrap" id="nn-ex3"></div>
+
+      <div class="step">Normalize</div>
+      <p><span class="m">sum = 0.010 + 0.030 + 0.075 + 0.120 + 0.100 = 0.335</span></p>
+      <p>
+        F1 ≈ <span class="m" style="color:var(--pink)">3.0%</span> &ensp;
+        F2 ≈ <span class="m" style="color:var(--pink)">9.0%</span> &ensp;
+        F3 ≈ <span class="m" style="color:var(--pink)">22.4%</span> &ensp;
+        F4 ≈ <span class="m" style="color:var(--pink)">35.8%</span> &ensp;
+        F5 ≈ <span class="m" style="color:var(--pink)">29.9%</span>
+      </p>
+      <p>Factory 4 is the most likely source (≈ 36%), followed by Factory 5 (≈ 30%).  Note that the overall probability of drawing a defective item (0.335) fell out as the sum of the weight vector.</p>
+    </div>
+  </div>
+
+  <!-- Ex 4: Airport -->
+  <div class="ex" id="ex4">
+    <div class="ex-head" onclick="tog('ex4')">
+      <span class="ex-num">4</span>
+      <span class="ex-title">Airport Security Screening</span>
+      <span class="ex-arrow">▼</span>
+    </div>
+    <div class="ex-body">
+      <p>An airport X-ray scanner correctly flags a prohibited item 96% of the time (sensitivity).  It also incorrectly flags 4% of harmless bags (false-positive rate).  Suppose 0.3% of bags actually contain a prohibited item.  A bag is flagged — what is the chance it contains a prohibited item?</p>
+
+      <div class="step">Setup</div>
+      <p>
+        Prior weights: <span class="m" style="color:var(--blue)">[.003, .997]</span> &ensp;(prohibited vs. harmless)<br>
+        Likelihoods of being flagged: <span class="m" style="color:var(--orange)">[.96, .04]</span>
+      </p>
+
+      <div class="nn-wrap" id="nn-ex4"></div>
+
+      <div class="step">Normalize</div>
+      <p>P(prohibited | flagged) = <span class="m" style="color:var(--pink)">0.00288 / 0.04276 ≈ 6.7%</span></p>
+      <p>The <strong>Bayes factor</strong> is 0.96 / 0.04 = <strong style="color:var(--orange)">24</strong>.  The evidence is 24× more likely if the bag is truly dangerous.  But the prior odds were so low (0.003 : 0.997 ≈ 1 : 332) that even a 24-fold boost only brings us to about 1 : 14, or 6.7%.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ======== CALCULATOR ======== -->
+<section>
+  <h2>Try It Yourself</h2>
+  <div class="calc-panel">
+    <div class="calc-grid">
+      <div class="calc-group">
+        <label>Prior weights (comma-separated)</label>
+        <input type="text" id="c-prior" value="0.82, 0.18">
+      </div>
+      <div class="calc-group">
+        <label>Likelihoods (comma-separated)</label>
+        <input type="text" id="c-like" value="0.85, 0.30">
+      </div>
+    </div>
+    <button class="btn" onclick="calc()">Compute ⊙</button>
+    <div class="calc-result" id="c-out">
+      <div class="nn-wrap" id="nn-calc"></div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  prior ⊙ likelihood = posterior odds &nbsp;→&nbsp; normalize &nbsp;→&nbsp; probability
+</div>
+
+</div>
+
+<script>
+function tog(id) { document.getElementById(id).classList.toggle('open'); }
+
+function buildNN(containerID, priors, likes, posteriors, opts = {}) {
+  const n = priors.length;
+  const nodeR = opts.nodeR || 27;
+  const rowGap = opts.rowGap || 68;
+  const topPad = 14;
+  const h = topPad + n * rowGap + 10;
+  const w = 720;
+  const xP = 88, xHad = 218, xL = 348;
+  const xO = opts.xO || 585;
+  const ellRx = opts.ellRx || 55;
+
+  let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs><marker id="a${containerID}" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <path d="M0,0 L7,2.5 L0,5" fill="none" stroke="#6b7a8d" stroke-width="1"/></marker></defs>`;
+
+  // Hidden rectangle
+  const ry1 = topPad + rowGap / 2 - nodeR - 12;
+  const rh = (n - 1) * rowGap + 2 * nodeR + 24;
+  svg += `<rect x="${xL - nodeR - 12}" y="${ry1}" width="${2 * nodeR + 24}" height="${rh}" rx="7" ry="7"
+    fill="none" stroke="#e0943a" stroke-width="1.4" stroke-dasharray="6,3" opacity="0.4"/>`;
+
+  // Hadamard circle
+  const midY = topPad + rowGap / 2 + ((n - 1) * rowGap) / 2;
+  svg += `<circle cx="${xHad}" cy="${midY}" r="18" fill="#111720" stroke="#d66ba0" stroke-width="1.8"/>`;
+  svg += `<text x="${xHad}" y="${midY + 6}" text-anchor="middle" fill="#d66ba0" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700">⊙</text>`;
+
+  for (let i = 0; i < n; i++) {
+    const y = topPad + rowGap / 2 + i * rowGap;
+
+    // Prior node
+    svg += `<circle cx="${xP}" cy="${y}" r="${nodeR}" fill="#111720" stroke="#5b9ef5" stroke-width="1.7"/>`;
+    svg += `<text x="${xP}" y="${y + 5}" text-anchor="middle" fill="#5b9ef5" font-family="JetBrains Mono,monospace" font-size="14" font-weight="600">${priors[i]}</text>`;
+
+    // Arrow prior → likelihood
+    svg += `<line x1="${xP + nodeR + 2}" y1="${y}" x2="${xL - nodeR - 2}" y2="${y}" stroke="#6b7a8d" stroke-width="1.1" marker-end="url(#a${containerID})"/>`;
+
+    // Likelihood node
+    svg += `<circle cx="${xL}" cy="${y}" r="${nodeR}" fill="#111720" stroke="#e0943a" stroke-width="1.7"/>`;
+    svg += `<text x="${xL}" y="${y + 5}" text-anchor="middle" fill="#e0943a" font-family="JetBrains Mono,monospace" font-size="14" font-weight="600">${likes[i]}</text>`;
+
+    // Arrow likelihood → posterior
+    svg += `<line x1="${xL + nodeR + 2}" y1="${y}" x2="${xO - ellRx - 2}" y2="${y}" stroke="#6b7a8d" stroke-width="1.1" marker-end="url(#a${containerID})"/>`;
+
+    // Posterior ellipse
+    svg += `<ellipse cx="${xO}" cy="${y}" rx="${ellRx}" ry="${nodeR - 3}" fill="#111720" stroke="#4cc87c" stroke-width="1.7"/>`;
+    const ptxt = posteriors[i];
+    const fontSize = ptxt.length > 16 ? 10.5 : ptxt.length > 12 ? 12 : 13;
+    svg += `<text x="${xO}" y="${y + 4}" text-anchor="middle" fill="#4cc87c" font-family="JetBrains Mono,monospace" font-size="${fontSize}" font-weight="500">${ptxt}</text>`;
+  }
+
+  svg += `</svg>`;
+  const el = document.getElementById(containerID);
+  if (el) el.innerHTML = svg;
+}
+
+function initDiagrams() {
+  buildNN('nn-ex1',
+    ['.82', '.18'],
+    ['.85', '.30'],
+    ['(.82)(.85) = .697', '(.18)(.30) = .054'],
+    { ellRx: 82, xO: 592 }
+  );
+  buildNN('nn-ex2',
+    ['.20', '.50', '.30'],
+    ['.40', '.70', '.20'],
+    ['(.20)(.40) = .08', '(.50)(.70) = .35', '(.30)(.20) = .06'],
+    { ellRx: 78, xO: 588 }
+  );
+  buildNN('nn-ex3',
+    ['.10', '.15', '.25', '.30', '.20'],
+    ['.10', '.20', '.30', '.40', '.50'],
+    ['.010', '.030', '.075', '.120', '.100'],
+    { ellRx: 42, rowGap: 60, nodeR: 24 }
+  );
+  buildNN('nn-ex4',
+    ['.003', '.997'],
+    ['.96', '.04'],
+    ['(.003)(.96) = .00288', '(.997)(.04) = .03988'],
+    { ellRx: 90, xO: 600 }
+  );
+}
+
+function calc() {
+  const parse = s => s.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
+  const pr = parse(document.getElementById('c-prior').value);
+  const lk = parse(document.getElementById('c-like').value);
+  if (!pr.length || !lk.length || pr.length !== lk.length) {
+    document.getElementById('nn-calc').innerHTML = '<p style="color:#f85149;font-family:var(--font-sans);font-size:0.9rem;">Vectors must have the same length.</p>';
+    return;
+  }
+  const w = pr.map((p, i) => p * lk[i]);
+  const s = w.reduce((a, b) => a + b, 0);
+  const post = w.map(v => v / s);
+  const fmt = x => {
+    if (Math.abs(x) >= 0.01) return x.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+    return x.toExponential(3);
+  };
+
+  buildNN('nn-calc',
+    pr.map(v => fmt(v)),
+    lk.map(v => fmt(v)),
+    w.map(v => fmt(v)),
+    { ellRx: 50 }
+  );
+
+  let probEl = document.getElementById('calc-prob');
+  if (!probEl) {
+    probEl = document.createElement('p');
+    probEl.id = 'calc-prob';
+    probEl.style.cssText = 'text-align:center;font-family:var(--font-mono);font-size:0.88rem;color:#d66ba0;margin-top:4px;';
+    document.getElementById('c-out').appendChild(probEl);
+  }
+  probEl.innerHTML = `sum = ${fmt(s)}&ensp;→&ensp;P = [ ${post.map(v => (v*100).toFixed(2)+'%').join(' , ')} ]`;
+}
+
+document.addEventListener('DOMContentLoaded', initDiagrams);
+</script>
+</body>
+</html>

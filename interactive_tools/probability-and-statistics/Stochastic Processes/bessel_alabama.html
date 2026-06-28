@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bessel Process — UA Mathematics</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson:    #9E1B32;
+    --crimson-lt: #C0202D;
+    --crimson-dk: #7A1225;
+    --bg:         #FFFFFF;
+    --bg-panel:   #F7F3F3;
+    --border:     #E0D0D2;
+    --text:       #1A1A1A;
+    --text-md:    #444;
+    --text-lt:    #888;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'EB Garamond', Georgia, serif;
+    min-height: 100vh;
+    font-size: 16px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--crimson);
+    color: #fff;
+    padding: 1.4rem 2rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    border-bottom: 4px solid var(--crimson-dk);
+  }
+
+  .ua-mark {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    font-style: italic;
+    color: #fff;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .header-divider {
+    width: 1px; height: 2.2rem;
+    background: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+
+  .dept {
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0.2rem;
+  }
+
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.15;
+  }
+
+  .page-title em { font-style: italic; font-weight: 400; }
+
+  /* ── MAIN ── */
+  .main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 720px) { .main { grid-template-columns: 1fr; } }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--crimson);
+    border-radius: 2px;
+    padding: 1.4rem 1.2rem;
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  .sidebar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .control-group { margin-bottom: 1.2rem; }
+
+  label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-md);
+    margin-bottom: 0.38rem;
+  }
+
+  label span {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.92rem;
+    color: var(--crimson);
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 600;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none; cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--crimson);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    transition: box-shadow 0.15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    box-shadow: 0 1px 8px rgba(158,27,50,0.4);
+  }
+
+  .btn {
+    width: 100%; padding: 0.7rem;
+    background: var(--crimson);
+    color: #fff; border: none; border-radius: 2px;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; margin-top: 0.3rem;
+    transition: background 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(158,27,50,0.2);
+  }
+
+  .btn:hover { background: var(--crimson-lt); }
+  .btn:active { background: var(--crimson-dk); }
+
+  .eq-box {
+    margin-top: 1.2rem;
+    background: #fff;
+    border-left: 3px solid var(--crimson);
+    padding: 0.75rem 0.85rem;
+    font-size: 0.8rem;
+    line-height: 2;
+    color: var(--text-md);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .eq-box .eq {
+    font-style: italic;
+    color: var(--crimson-dk);
+    font-size: 0.93rem;
+    display: block;
+  }
+
+  /* ── PLOT AREA ── */
+  .plot-area { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .canvas-wrap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  .canvas-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-lt);
+    margin-bottom: 0.55rem;
+  }
+
+  canvas { width: 100%; display: block; }
+
+  .legend {
+    display: flex; gap: 1.5rem;
+    font-size: 0.78rem; font-style: italic;
+    color: var(--text-lt); align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.4rem;
+  }
+
+  .leg-line {
+    display: inline-block;
+    width: 22px; height: 2px;
+    border-radius: 1px;
+    vertical-align: middle; margin-right: 5px;
+  }
+
+  /* stats */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 560px) { .stats-bar { grid-template-columns: repeat(2,1fr); } }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--crimson);
+    border-radius: 2px;
+    padding: 0.8rem 0.7rem;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--crimson);
+    line-height: 1;
+  }
+
+  .stat-lbl {
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-lt);
+    margin-top: 0.3rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 1.1rem;
+    font-size: 0.76rem;
+    color: var(--text-lt);
+    font-style: italic;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ua-mark">UA</div>
+  <div class="header-divider"></div>
+  <div>
+    <div class="dept">Barefield College of Arts &amp; Sciences</div>
+    <div class="page-title">Mathematics Department &nbsp;&middot;&nbsp; <em>Bessel Process Simulator</em></div>
+  </div>
+</header>
+
+<div class="main">
+
+  <aside class="sidebar">
+    <div class="sidebar-title">Parameters</div>
+
+    <div class="control-group">
+      <label>Realizations <span id="val-r">12</span></label>
+      <input type="range" id="sl-r" min="2" max="40" value="12">
+    </div>
+    <div class="control-group">
+      <label>Time Steps <span id="val-n">3000</span></label>
+      <input type="range" id="sl-n" min="500" max="8000" step="500" value="3000">
+    </div>
+    <div class="control-group">
+      <label>Total Time T <span id="val-t">6</span></label>
+      <input type="range" id="sl-t" min="1" max="20" value="6">
+    </div>
+    <div class="control-group">
+      <label>X₀ (initial) <span id="val-x0">1.0</span></label>
+      <input type="range" id="sl-x0" min="0.1" max="5" step="0.1" value="1">
+    </div>
+    <div class="control-group">
+      <label>Dimension δ <span id="val-d">2.0</span></label>
+      <input type="range" id="sl-d" min="0.5" max="6" step="0.5" value="2">
+    </div>
+
+    <button class="btn" id="btn-run">▶ Run Simulation</button>
+
+    <div class="eq-box">
+      <small>Squared Bessel (BESQ<sup>δ</sup>):</small>
+      <span class="eq">dρ = δ dt + 2√ρ dW</span>
+      <small>Recover X via:</small>
+      <span class="eq">X<sub>t</sub> = √ρ<sub>t</sub> ≥ 0</span>
+    </div>
+  </aside>
+
+  <section class="plot-area">
+
+    <div class="canvas-wrap">
+      <div class="canvas-label">Sample Paths — X<sub>t</sub> = √ρ<sub>t</sub></div>
+      <canvas id="cvs-paths" height="360"></canvas>
+      <div class="legend">
+        <span><span class="leg-line" style="background:#ccc;"></span>Ensemble paths</span>
+        <span><span class="leg-line" style="background:#9E1B32; height:3px;"></span>Featured path</span>
+      </div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-val" id="st-mean">—</div><div class="stat-lbl">Mean X<sub>T</sub></div></div>
+      <div class="stat-card"><div class="stat-val" id="st-std">—</div><div class="stat-lbl">Std Dev</div></div>
+      <div class="stat-card"><div class="stat-val" id="st-min">—</div><div class="stat-lbl">Min X<sub>T</sub></div></div>
+      <div class="stat-card"><div class="stat-val" id="st-max">—</div><div class="stat-lbl">Max X<sub>T</sub></div></div>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas-label">Terminal Distribution — X<sub>T</sub></div>
+      <canvas id="cvs-hist" height="200"></canvas>
+    </div>
+
+  </section>
+</div>
+
+<footer>
+  Euler–Maruyama on BESQ<sup>δ</sup> &nbsp;&middot;&nbsp;
+  X<sub>t</sub> guaranteed non-negative by construction &nbsp;&middot;&nbsp;
+  Barefield College of Arts &amp; Sciences · UA Department of Mathematics
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const randn = () => {
+  let u; do { u = Math.random(); } while (u === 0);
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+};
+
+// sliders
+[['sl-r','val-r', v=>Math.round(v)],
+ ['sl-n','val-n', v=>Math.round(v)],
+ ['sl-t','val-t', v=>+v],
+ ['sl-x0','val-x0', v=>(+v).toFixed(1)],
+ ['sl-d','val-d',  v=>(+v).toFixed(1)],
+].forEach(([sid,vid,fmt]) => {
+  const sl=$(sid), vl=$(vid);
+  vl.textContent = fmt(sl.value);
+  sl.addEventListener('input', () => vl.textContent = fmt(sl.value));
+});
+
+function simulate() {
+  const R  = +$('sl-r').value;
+  const N  = +$('sl-n').value;
+  const T  = +$('sl-t').value;
+  const X0 = +$('sl-x0').value;
+  const d  = +$('sl-d').value;
+  const dt = T / N, sqdt = Math.sqrt(dt);
+  const paths = [];
+  for (let j = 0; j < R; j++) {
+    const row = new Float32Array(N);
+    let rho = X0 * X0;
+    row[0] = X0;
+    for (let i = 1; i < N; i++) {
+      rho += d * dt + 2 * Math.sqrt(Math.max(rho, 0)) * sqdt * randn();
+      if (rho < 0) rho = 0;
+      row[i] = Math.sqrt(rho);
+    }
+    paths.push(row);
+  }
+  return { paths, N, T };
+}
+
+const CRIMSON   = '#9E1B32';
+const GRAY_PATH = 'rgba(150,130,130,0.38)';
+const AXIS_C    = '#ddd';
+const TEXT_C    = '#999';
+const LABEL_C   = '#555';
+
+function drawPaths(canvas, paths, N, T) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = {l:50, r:16, t:14, b:36};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+
+  let yMax = 0.1;
+  paths.forEach(p => p.forEach(v => { if(v > yMax) yMax = v; }));
+  yMax *= 1.1;
+
+  const tx = i => pad.l + (i / (N-1)) * pw;
+  const ty = v => pad.t + ph - (v / yMax) * ph;
+
+  // grid
+  ctx.strokeStyle = AXIS_C; ctx.lineWidth = 0.5; ctx.setLineDash([3,5]);
+  for (let k=0; k<=5; k++) {
+    const yv = (k/5)*yMax, yp = ty(yv);
+    ctx.beginPath(); ctx.moveTo(pad.l, yp); ctx.lineTo(pad.l+pw, yp); ctx.stroke();
+    ctx.fillStyle = TEXT_C; ctx.font = '11px EB Garamond, serif';
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(1), pad.l-6, yp+4);
+  }
+  for (let k=0; k<=6; k++) {
+    const tv = (k/6)*T, xp = pad.l+(k/6)*pw;
+    ctx.beginPath(); ctx.moveTo(xp, pad.t); ctx.lineTo(xp, pad.t+ph); ctx.stroke();
+    ctx.fillStyle = TEXT_C; ctx.textAlign = 'center';
+    ctx.fillText(tv.toFixed(1), xp, pad.t+ph+16);
+  }
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+  ctx.fillStyle = LABEL_C; ctx.font = 'italic 12px EB Garamond, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('t', pad.l + pw/2, H - 2);
+  ctx.save(); ctx.translate(13, pad.t+ph/2);
+  ctx.rotate(-Math.PI/2); ctx.fillText('X(t)', 0, 0); ctx.restore();
+
+  // gray paths
+  for (let j = 0; j < paths.length - 1; j++) {
+    ctx.beginPath(); ctx.strokeStyle = GRAY_PATH; ctx.lineWidth = 0.9;
+    paths[j].forEach((v,i) => i===0 ? ctx.moveTo(tx(i),ty(v)) : ctx.lineTo(tx(i),ty(v)));
+    ctx.stroke();
+  }
+
+  // crimson featured
+  const feat = paths[paths.length-1];
+  ctx.beginPath(); ctx.strokeStyle = CRIMSON; ctx.lineWidth = 2;
+  feat.forEach((v,i) => i===0 ? ctx.moveTo(tx(i),ty(v)) : ctx.lineTo(tx(i),ty(v)));
+  ctx.stroke();
+}
+
+function drawHist(canvas, finals) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = {l:50, r:16, t:14, b:34};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+
+  const bins = Math.max(20, Math.round(Math.sqrt(finals.length)*3));
+  const mn = Math.min(...finals), mx = Math.max(...finals);
+  const range = mx - mn || 1;
+  const counts = new Array(bins).fill(0);
+  finals.forEach(v => {
+    let b = Math.floor(((v-mn)/range)*bins);
+    if (b >= bins) b = bins-1;
+    counts[b]++;
+  });
+  const maxC = Math.max(...counts);
+  const bw = pw / bins;
+
+  ctx.strokeStyle = AXIS_C; ctx.lineWidth = 0.5; ctx.setLineDash([3,5]);
+  for (let k=1; k<=4; k++) {
+    const yp = pad.t + ph - (k/4)*ph;
+    ctx.beginPath(); ctx.moveTo(pad.l,yp); ctx.lineTo(pad.l+pw,yp); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  counts.forEach((c,i) => {
+    const bh = (c/maxC)*ph;
+    ctx.fillStyle = CRIMSON;
+    ctx.globalAlpha = 0.72;
+    ctx.fillRect(pad.l + i*bw + 0.5, pad.t+ph-bh, bw-1, bh);
+  });
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+  ctx.fillStyle = TEXT_C; ctx.font = '11px EB Garamond, serif';
+  for (let k=0; k<=5; k++) {
+    const v = mn + (k/5)*range;
+    ctx.textAlign = 'center';
+    ctx.fillText(v.toFixed(2), pad.l+(k/5)*pw, pad.t+ph+16);
+  }
+  ctx.fillStyle = LABEL_C; ctx.font = 'italic 12px EB Garamond, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('X(T)', pad.l+pw/2, H-1);
+}
+
+function updateStats(finals) {
+  const n = finals.length;
+  const mean = finals.reduce((a,b)=>a+b,0)/n;
+  const std  = Math.sqrt(finals.reduce((s,v)=>s+(v-mean)**2,0)/n);
+  $('st-mean').textContent = mean.toFixed(3);
+  $('st-std').textContent  = std.toFixed(3);
+  $('st-min').textContent  = Math.min(...finals).toFixed(3);
+  $('st-max').textContent  = Math.max(...finals).toFixed(3);
+}
+
+function run() {
+  const {paths, N, T} = simulate();
+  drawPaths($('cvs-paths'), paths, N, T);
+  drawHist($('cvs-hist'), paths.map(p => p[N-1]));
+  updateStats(paths.map(p => p[N-1]));
+}
+
+$('btn-run').addEventListener('click', run);
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(run, 150); });
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Confidence Interval Coverage Simulator</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f4ef;
+    --text: #1a1915;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.15);
+    --border-strong: rgba(0,0,0,0.3);
+    --accent: #9E1B32;
+    --accent-dark: #6B0F23;
+    --hit: #828A8F;
+    --miss: #E24B4A;
+    --bar: #828A8F;
+    --bar-alt: #B4B9BD;
+    --btn-bg: transparent;
+    --btn-hover: #ededea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #ffffff;
+      --surface: #f5f4ef;
+      --text: #1a1915;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #888780;
+      --border: rgba(0,0,0,0.15);
+      --border-strong: rgba(0,0,0,0.3);
+      --accent: #9E1B32;
+      --accent-dark: #6B0F23;
+      --hit: #828A8F;
+      --miss: #E24B4A;
+      --bar: #828A8F;
+      --bar-alt: #B4B9BD;
+      --btn-hover: #ededea;
+    }
+    html, body { color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem 3rem; border-top: 3px solid var(--accent); }
+  h1 { font-size: 24px; font-weight: 500; margin: 0 0 0.25rem; color: var(--accent); letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 1.5rem; }
+  .ci-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .hidden { display: none !important; }
+  .ci-label { font-size: 14px; color: var(--text-secondary); min-width: 110px; }
+  .ci-value { font-size: 14px; font-weight: 500; min-width: 60px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); height: 20px; }
+  select {
+    flex: 1; padding: 8px 12px;
+    border: 0.5px solid var(--border-strong); border-radius: 8px;
+    background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 14px; cursor: pointer;
+  }
+  button {
+    background: var(--btn-bg); color: var(--text);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px; padding: 8px 16px;
+    font-size: 14px; font-family: inherit; cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+  }
+  button:hover:not(:disabled) { background: var(--btn-hover); }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 1.25rem 0; }
+  .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 1.25rem 0; }
+  .ci-metric { background: var(--surface); border-radius: 8px; padding: 12px 14px; }
+  .ci-metric-label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+  .ci-metric-value { font-size: 22px; font-weight: 500; display: block; font-variant-numeric: tabular-nums; }
+  .ci-metric-value.small { font-size: 15px; }
+  .ci-metric-sub { font-size: 11px; color: var(--text-tertiary); display: block; margin-top: 2px; }
+  .ci-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .ci-swatch { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 6px; }
+  .ci-swatch-box { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+  svg { width: 100%; height: auto; }
+  .formula {
+    background: var(--surface); border-radius: 8px;
+    padding: 10px 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px; color: var(--text-secondary);
+    margin: 0 0 1.25rem; word-spacing: 2px;
+  }
+  .notes {
+    margin-top: 2rem; padding-top: 1.5rem;
+    border-top: 0.5px solid var(--border);
+    font-size: 14px; color: var(--text-secondary);
+  }
+  .notes h2 { font-size: 16px; font-weight: 500; color: var(--text); margin: 1rem 0 0.5rem; }
+  .notes code {
+    background: var(--surface); padding: 1px 6px; border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Confidence interval coverage simulator</h1>
+  <p class="subtitle">
+    Four pivotal-quantity and resampling examples. The first three show long-run coverage across many
+    experiments. The bootstrap example builds one interval from one observed sample.
+  </p>
+
+  <div class="ci-row">
+    <label class="ci-label" for="ci-dist">Distribution</label>
+    <select id="ci-dist">
+      <option value="uniform">Uniform(0, θ) — one-sided lower bound</option>
+      <option value="exponential">Exponential(mean = θ) — two-sided interval</option>
+      <option value="normal">Large-sample normal (known σ) — two-sided interval</option>
+      <option value="bootstrap">Bootstrap for mean (one sample, n = 64) — percentile interval</option>
+    </select>
+  </div>
+
+  <div class="formula" id="ci-formula"></div>
+
+  <div class="ci-row" id="ci-theta-row">
+    <label class="ci-label" for="ci-theta">True θ</label>
+    <input type="range" id="ci-theta" min="1" max="20" step="0.5" value="10" />
+    <span class="ci-value" id="ci-theta-out">10.0</span>
+  </div>
+  <div class="ci-row hidden" id="ci-n-row">
+    <label class="ci-label" for="ci-n">Sample size n</label>
+    <input type="range" id="ci-n" min="5" max="200" step="5" value="30" />
+    <span class="ci-value" id="ci-n-out">30</span>
+  </div>
+  <div class="ci-row">
+    <label class="ci-label" for="ci-conf">Confidence</label>
+    <input type="range" id="ci-conf" min="50" max="99" step="1" value="95" />
+    <span class="ci-value" id="ci-conf-out">95%</span>
+  </div>
+
+  <div class="btn-row" id="ci-coverage-buttons">
+    <button id="ci-draw1">Draw 1</button>
+    <button id="ci-draw50">Draw 50</button>
+    <button id="ci-draw500">Draw 500</button>
+    <button id="ci-reset">Reset</button>
+  </div>
+  <div class="btn-row hidden" id="ci-boot-buttons">
+    <button id="ci-boot-gen">Generate 64 samples</button>
+    <button id="ci-boot-run" disabled>Run bootstrap (10,000)</button>
+    <button id="ci-boot-reset">Reset</button>
+  </div>
+
+  <div class="metrics" id="ci-coverage-metrics">
+    <div class="ci-metric">
+      <span class="ci-metric-label">Intervals drawn</span>
+      <span class="ci-metric-value" id="ci-total">0</span>
+    </div>
+    <div class="ci-metric">
+      <span class="ci-metric-label">Contain θ</span>
+      <span class="ci-metric-value" id="ci-hits">0</span>
+    </div>
+    <div class="ci-metric">
+      <span class="ci-metric-label">Coverage</span>
+      <span class="ci-metric-value" id="ci-cov">—</span>
+      <span class="ci-metric-sub" id="ci-cov-target">target: 95%</span>
+    </div>
+  </div>
+  <div class="metrics hidden" id="ci-boot-metrics">
+    <div class="ci-metric">
+      <span class="ci-metric-label">Sample mean ȳ</span>
+      <span class="ci-metric-value" id="ci-boot-mean">—</span>
+    </div>
+    <div class="ci-metric">
+      <span class="ci-metric-label">Sample SD s</span>
+      <span class="ci-metric-value" id="ci-boot-sd">—</span>
+    </div>
+    <div class="ci-metric">
+      <span class="ci-metric-label">Bootstrap CI</span>
+      <span class="ci-metric-value small" id="ci-boot-ci">—</span>
+      <span class="ci-metric-sub" id="ci-boot-ci-sub">95% percentile</span>
+    </div>
+  </div>
+
+  <div class="ci-legend" id="ci-legend-coverage">
+    <span><span class="ci-swatch" style="background: var(--accent);"></span>true θ</span>
+    <span><span class="ci-swatch" style="background: var(--hit);"></span>interval contains θ</span>
+    <span><span class="ci-swatch" style="background: var(--miss);"></span>interval misses θ</span>
+  </div>
+  <div class="ci-legend hidden" id="ci-legend-boot">
+    <span><span class="ci-swatch-box" style="background: var(--bar);"></span>bootstrap means</span>
+    <span><span class="ci-swatch" style="background: var(--accent);"></span>sample mean ȳ</span>
+    <span><span class="ci-swatch" style="background: var(--miss);"></span>percentile CI endpoints</span>
+  </div>
+
+  <svg id="ci-viz" viewBox="0 0 680 470" role="img" aria-label="Simulation plot."></svg>
+
+  <div class="notes">
+    <h2>How it works</h2>
+    <p id="howtext"></p>
+    <h2>Try this</h2>
+    <p id="trytext"></p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const SIGMA = 2;
+  const BOOT_N = 64;
+  const BOOT_REPS = 10000;
+  const GAMMA_SHAPE = 33 * 33 / 256;
+  const GAMMA_RATE = 33 / 256;
+
+  const state = {
+    distribution: 'uniform',
+    theta: 10,
+    confLevel: 0.95,
+    sampleSize: 30,
+    total: 0,
+    hits: 0,
+    intervals: [],
+    bootData: null,
+    bootDataMean: null,
+    bootDataSD: null,
+    bootMeans: null
+  };
+  const MAX_VISIBLE = 50;
+
+  function getColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function expQuantiles(confLevel) {
+    const alpha = 1 - confLevel;
+    return { a: -Math.log(1 - alpha / 2), b: -Math.log(alpha / 2) };
+  }
+
+  function invNormal(p) {
+    const a1=-3.969683028665376e+01, a2=2.209460984245205e+02, a3=-2.759285104469687e+02,
+          a4=1.383577518672690e+02, a5=-3.066479806614716e+01, a6=2.506628277459239e+00;
+    const b1=-5.447609879822406e+01, b2=1.615858368580409e+02, b3=-1.556989798598866e+02,
+          b4=6.680131188771972e+01, b5=-1.328068155288572e+01;
+    const c1=-7.784894002430293e-03, c2=-3.223964580411365e-01, c3=-2.400758277161838e+00,
+          c4=-2.549732539343734e+00, c5=4.374664141464968e+00, c6=2.938163982698783e+00;
+    const d1=7.784695709041462e-03, d2=3.224671290700398e-01, d3=2.445134137142996e+00,
+          d4=3.754408661907416e+00;
+    const plow = 0.02425, phigh = 1 - plow;
+    let q, r;
+    if (p < plow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
+    } else if (p <= phigh) {
+      q = p - 0.5; r = q * q;
+      return (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6) * q / (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
+    }
+  }
+
+  function randn() {
+    const u1 = Math.random();
+    const u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function rgamma(shape, rate) {
+    if (shape < 1) {
+      const g = rgamma(shape + 1, 1);
+      return g * Math.pow(Math.random(), 1 / shape) / rate;
+    }
+    const d = shape - 1 / 3;
+    const c = 1 / Math.sqrt(9 * d);
+    while (true) {
+      let x, v;
+      do {
+        x = randn();
+        v = 1 + c * x;
+      } while (v <= 0);
+      v = v * v * v;
+      const u = Math.random();
+      if (u < 1 - 0.0331 * x * x * x * x) return d * v / rate;
+      if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v / rate;
+    }
+  }
+
+  function arrMean(arr) {
+    let s = 0;
+    for (let i = 0; i < arr.length; i++) s += arr[i];
+    return s / arr.length;
+  }
+
+  function arrSD(arr, mu) {
+    let s = 0;
+    for (let i = 0; i < arr.length; i++) { const d = arr[i] - mu; s += d * d; }
+    return Math.sqrt(s / (arr.length - 1));
+  }
+
+  function quantileSorted(sorted, p) {
+    const idx = p * (sorted.length - 1);
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+  }
+
+  function draw(n) {
+    for (let i = 0; i < n; i++) {
+      let lower, upper, covers;
+      if (state.distribution === 'uniform') {
+        const Y = Math.random() * state.theta;
+        lower = Y / state.confLevel;
+        upper = Infinity;
+        covers = state.theta >= lower;
+      } else if (state.distribution === 'exponential') {
+        const Y = -state.theta * Math.log(Math.random());
+        const q = expQuantiles(state.confLevel);
+        lower = Y / q.b;
+        upper = Y / q.a;
+        covers = state.theta >= lower && state.theta <= upper;
+      } else {
+        const SE = SIGMA / Math.sqrt(state.sampleSize);
+        const ybar = state.theta + SE * randn();
+        const z = invNormal(1 - (1 - state.confLevel) / 2);
+        lower = ybar - z * SE;
+        upper = ybar + z * SE;
+        covers = state.theta >= lower && state.theta <= upper;
+      }
+      state.total++;
+      if (covers) state.hits++;
+      state.intervals.push({ lower: lower, upper: upper, covers: covers });
+      if (state.intervals.length > MAX_VISIBLE) state.intervals.shift();
+    }
+    render();
+  }
+
+  function reset() {
+    state.total = 0;
+    state.hits = 0;
+    state.intervals = [];
+    render();
+  }
+
+  function generateBootSample() {
+    const data = new Array(BOOT_N);
+    for (let i = 0; i < BOOT_N; i++) data[i] = rgamma(GAMMA_SHAPE, GAMMA_RATE);
+    state.bootData = data;
+    state.bootDataMean = arrMean(data);
+    state.bootDataSD = arrSD(data, state.bootDataMean);
+    state.bootMeans = null;
+    document.getElementById('ci-boot-run').disabled = false;
+    render();
+  }
+
+  function runBootstrap() {
+    if (!state.bootData) return;
+    const data = state.bootData;
+    const n = data.length;
+    const means = new Array(BOOT_REPS);
+    for (let i = 0; i < BOOT_REPS; i++) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) sum += data[Math.floor(Math.random() * n)];
+      means[i] = sum / n;
+    }
+    means.sort((a, b) => a - b);
+    state.bootMeans = means;
+    render();
+  }
+
+  function resetBootstrap() {
+    state.bootData = null;
+    state.bootDataMean = null;
+    state.bootDataSD = null;
+    state.bootMeans = null;
+    document.getElementById('ci-boot-run').disabled = true;
+    render();
+  }
+
+  function updateFormula() {
+    const el = document.getElementById('ci-formula');
+    const pct = Math.round(state.confLevel * 100);
+    if (state.distribution === 'uniform') {
+      const c = state.confLevel.toFixed(2);
+      el.textContent = 'Y ~ Uniform(0, θ)   ·   pivot U = Y/θ ~ Uniform(0, 1)   ·   ' + pct + '% bound: [ Y / ' + c + ',  ∞ )';
+    } else if (state.distribution === 'exponential') {
+      const q = expQuantiles(state.confLevel);
+      el.textContent = 'Y ~ Exponential(mean = θ)   ·   pivot U = Y/θ ~ Exp(1)   ·   ' + pct + '% interval: [ Y / ' + q.b.toFixed(3) + ',  Y / ' + q.a.toFixed(3) + ' ]';
+    } else if (state.distribution === 'normal') {
+      const z = invNormal(1 - (1 - state.confLevel) / 2);
+      const SE = SIGMA / Math.sqrt(state.sampleSize);
+      el.textContent = 'ȳ ~ Normal(θ, σ²/n), σ = ' + SIGMA + ', n = ' + state.sampleSize + '   ·   pivot Z = (ȳ − θ) / (σ/√n) ~ N(0, 1)   ·   ' + pct + '% interval: ȳ ± ' + z.toFixed(3) + ' × ' + SE.toFixed(3);
+    } else {
+      el.textContent = 'Data ~ Gamma(shape = ' + GAMMA_SHAPE.toFixed(3) + ', rate = ' + GAMMA_RATE.toFixed(3) + '), n = ' + BOOT_N + '   ·   resample with replacement 10,000 times   ·   ' + pct + '% CI = percentiles [' + (((1 - state.confLevel) / 2) * 100).toFixed(1) + '%, ' + ((1 - (1 - state.confLevel) / 2) * 100).toFixed(1) + '%]';
+    }
+  }
+
+  function updateNotes() {
+    const howText = document.getElementById('howtext');
+    const tryText = document.getElementById('trytext');
+    if (state.distribution === 'uniform') {
+      howText.textContent = 'Each experiment draws a single Y from Uniform(0, θ). The lower confidence bound is Y divided by the confidence level, giving the interval [Y / confidence level, ∞). The interval is drawn in gray if θ lies inside it and red if the lower bound exceeds θ. Because the pivotal quantity U = Y/θ has a distribution that does not depend on θ, the coverage probability matches the nominal confidence level for every value of θ.';
+      tryText.textContent = 'Move the θ slider — coverage still hovers near the target regardless of θ. Click "Draw 500" a few times and watch the coverage stabilize. Drop the confidence level to 80 percent and roughly 1 in 5 intervals should now turn red.';
+    } else if (state.distribution === 'exponential') {
+      howText.textContent = 'Each experiment draws a single Y from an exponential distribution with mean θ. Using the pivotal quantity U = Y/θ ~ Exp(1), we pick quantiles a and b so that P(a ≤ U ≤ b) equals the confidence level. The interval for θ is then [Y/b, Y/a]. The plot uses a logarithmic x-axis because exponential-based intervals vary dramatically in width. An interval is drawn in gray if it captures θ and red if θ lies outside it.';
+      tryText.textContent = 'Notice how interval widths vary wildly — a small Y gives a narrow interval near zero, while a large Y gives a very wide one. Change θ and watch the picture shift horizontally while coverage stays near target. Bump confidence to 99 percent and see intervals widen dramatically.';
+    } else if (state.distribution === 'normal') {
+      howText.textContent = 'Each experiment draws a sample of size n from Normal(θ, σ²) with known σ = 2 and computes the sample mean ȳ. The pivot Z = (ȳ − θ) / (σ/√n) is exactly standard normal. Choosing z so that P(|Z| ≤ z) equals the confidence level gives the interval ȳ ± z × σ/√n. Every interval has the same width; what varies experiment-to-experiment is the center ȳ.';
+      tryText.textContent = 'Slide the sample size up and watch the intervals shrink — quadrupling n cuts the width in half. Change confidence and watch z scale the width. Coverage holds at the target for any n ≥ 5 because the population is exactly normal.';
+    } else {
+      howText.textContent = 'This example mirrors the shopping-time problem: ȳ ≈ 33 minutes, s² ≈ 256 from n = 64 customers. Click "Generate 64 samples" to simulate a realistic dataset from a Gamma population with that mean and variance. Then click "Run bootstrap" to resample from those 64 values with replacement 10,000 times, computing the mean each time. The middle 95 percent of those bootstrap means forms the percentile confidence interval. Unlike the previous examples, there is no coverage plot — the bootstrap produces one interval from one observed sample, and the question is whether that interval is close to the interval you would get from the classical formula ȳ ± 1.645 × s/√n.';
+      tryText.textContent = 'Generate a sample and look at ȳ and s — they will be close to but not exactly 33 and 16 because each generated sample is random. Run the bootstrap and compare the CI to the classical 90 percent formula (change confidence to 90). Generate a fresh sample and run again to see how the CI varies from one realized dataset to the next. Change confidence to 50 percent to see how narrow the interval becomes.';
+    }
+  }
+
+  function updateUI() {
+    const isBoot = state.distribution === 'bootstrap';
+    const isNormal = state.distribution === 'normal';
+    document.getElementById('ci-theta-row').classList.toggle('hidden', isBoot);
+    document.getElementById('ci-n-row').classList.toggle('hidden', !isNormal);
+    document.getElementById('ci-coverage-buttons').classList.toggle('hidden', isBoot);
+    document.getElementById('ci-boot-buttons').classList.toggle('hidden', !isBoot);
+    document.getElementById('ci-coverage-metrics').classList.toggle('hidden', isBoot);
+    document.getElementById('ci-boot-metrics').classList.toggle('hidden', !isBoot);
+    document.getElementById('ci-legend-coverage').classList.toggle('hidden', isBoot);
+    document.getElementById('ci-legend-boot').classList.toggle('hidden', !isBoot);
+  }
+
+  function render() {
+    updateFormula();
+    const pct = Math.round(state.confLevel * 100);
+
+    if (state.distribution !== 'bootstrap') {
+      document.getElementById('ci-total').textContent = state.total.toLocaleString();
+      document.getElementById('ci-hits').textContent = state.hits.toLocaleString();
+      document.getElementById('ci-cov').textContent = state.total > 0
+        ? (state.hits / state.total * 100).toFixed(1) + '%' : '—';
+      document.getElementById('ci-cov-target').textContent = 'target: ' + pct + '%';
+
+      if (state.distribution === 'uniform') renderUniform();
+      else if (state.distribution === 'exponential') renderExponential();
+      else renderNormal();
+    } else {
+      if (state.bootData) {
+        document.getElementById('ci-boot-mean').textContent = state.bootDataMean.toFixed(2);
+        document.getElementById('ci-boot-sd').textContent = state.bootDataSD.toFixed(2);
+      } else {
+        document.getElementById('ci-boot-mean').textContent = '—';
+        document.getElementById('ci-boot-sd').textContent = '—';
+      }
+      if (state.bootMeans) {
+        const alpha = 1 - state.confLevel;
+        const lo = quantileSorted(state.bootMeans, alpha / 2);
+        const hi = quantileSorted(state.bootMeans, 1 - alpha / 2);
+        document.getElementById('ci-boot-ci').textContent = '(' + lo.toFixed(2) + ', ' + hi.toFixed(2) + ')';
+      } else {
+        document.getElementById('ci-boot-ci').textContent = '—';
+      }
+      document.getElementById('ci-boot-ci-sub').textContent = pct + '% percentile';
+      renderBootstrap();
+    }
+  }
+
+  function renderUniform() {
+    const theta = state.theta;
+    const xMax = theta / state.confLevel * 1.1;
+    const plotLeft = 40, plotRight = 665, plotTop = 34, plotBottom = 420;
+    const scale = x => plotLeft + (x / xMax) * (plotRight - plotLeft);
+    const rowH = (plotBottom - plotTop) / MAX_VISIBLE;
+    const border = getColor('--border-strong'), textSec = getColor('--text-secondary');
+    const accent = getColor('--accent'), accentDark = getColor('--accent-dark');
+    const hitColor = getColor('--hit'), missColor = getColor('--miss');
+    const parts = [];
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotBottom + '" x2="' + plotRight + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+    for (const t of [0, theta, xMax]) {
+      const x = scale(t);
+      parts.push('<line x1="' + x + '" y1="' + plotBottom + '" x2="' + x + '" y2="' + (plotBottom + 5) + '" stroke="' + border + '"/>');
+      parts.push('<text x="' + x + '" y="' + (plotBottom + 20) + '" text-anchor="middle" font-size="12" fill="' + textSec + '">' + t.toFixed(1) + '</text>');
+    }
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotBottom + 42) + '" text-anchor="middle" font-size="13" fill="' + textSec + '">parameter axis</text>');
+    const thetaX = scale(theta);
+    parts.push('<line x1="' + thetaX + '" y1="' + (plotTop - 6) + '" x2="' + thetaX + '" y2="' + plotBottom + '" stroke="' + accent + '" stroke-width="2" stroke-dasharray="5 3"/>');
+    parts.push('<text x="' + thetaX + '" y="' + (plotTop - 12) + '" text-anchor="middle" font-size="12" font-weight="500" fill="' + accentDark + '">true θ = ' + theta.toFixed(1) + '</text>');
+    state.intervals.forEach((iv, i) => {
+      const y = plotTop + (i + 0.5) * rowH;
+      const lx = scale(Math.min(iv.lower, xMax));
+      const color = iv.covers ? hitColor : missColor;
+      const sw = iv.covers ? 0.8 : 1.5, op = iv.covers ? 0.55 : 1;
+      parts.push('<line x1="' + lx + '" y1="' + y + '" x2="' + plotRight + '" y2="' + y + '" stroke="' + color + '" stroke-width="' + sw + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + lx + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+    });
+    document.getElementById('ci-viz').innerHTML = parts.join('');
+  }
+
+  function renderExponential() {
+    const theta = state.theta;
+    const xMin = theta / 100, xMax = theta * 100;
+    const logMin = Math.log10(xMin), logMax = Math.log10(xMax);
+    const plotLeft = 40, plotRight = 665, plotTop = 34, plotBottom = 420;
+    const scale = x => {
+      const safe = Math.max(x, xMin / 10);
+      const lx = Math.log10(safe);
+      const clamped = Math.min(Math.max(lx, logMin), logMax);
+      return plotLeft + (clamped - logMin) / (logMax - logMin) * (plotRight - plotLeft);
+    };
+    const rowH = (plotBottom - plotTop) / MAX_VISIBLE;
+    const border = getColor('--border-strong'), textSec = getColor('--text-secondary');
+    const accent = getColor('--accent'), accentDark = getColor('--accent-dark');
+    const hitColor = getColor('--hit'), missColor = getColor('--miss');
+    const parts = [];
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotBottom + '" x2="' + plotRight + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+    for (let k = 0; k <= 4; k++) {
+      const val = xMin * Math.pow(10, k);
+      const x = scale(val);
+      parts.push('<line x1="' + x + '" y1="' + plotBottom + '" x2="' + x + '" y2="' + (plotBottom + 5) + '" stroke="' + border + '"/>');
+      let label;
+      if (val < 1) label = val.toFixed(2);
+      else if (val < 100) label = val < 10 ? val.toFixed(1) : Math.round(val).toString();
+      else label = Math.round(val).toLocaleString();
+      parts.push('<text x="' + x + '" y="' + (plotBottom + 20) + '" text-anchor="middle" font-size="12" fill="' + textSec + '">' + label + '</text>');
+    }
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotBottom + 42) + '" text-anchor="middle" font-size="13" fill="' + textSec + '">parameter axis (log scale)</text>');
+    const thetaX = scale(theta);
+    parts.push('<line x1="' + thetaX + '" y1="' + (plotTop - 6) + '" x2="' + thetaX + '" y2="' + plotBottom + '" stroke="' + accent + '" stroke-width="2" stroke-dasharray="5 3"/>');
+    parts.push('<text x="' + thetaX + '" y="' + (plotTop - 12) + '" text-anchor="middle" font-size="12" font-weight="500" fill="' + accentDark + '">true θ = ' + theta.toFixed(1) + '</text>');
+    state.intervals.forEach((iv, i) => {
+      const y = plotTop + (i + 0.5) * rowH;
+      const lx = scale(iv.lower), ux = scale(iv.upper);
+      const color = iv.covers ? hitColor : missColor;
+      const sw = iv.covers ? 1 : 1.8, op = iv.covers ? 0.6 : 1;
+      parts.push('<line x1="' + lx + '" y1="' + y + '" x2="' + ux + '" y2="' + y + '" stroke="' + color + '" stroke-width="' + sw + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + lx + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + ux + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+    });
+    document.getElementById('ci-viz').innerHTML = parts.join('');
+  }
+
+  function renderNormal() {
+    const theta = state.theta;
+    const SE = SIGMA / Math.sqrt(state.sampleSize);
+    const halfRange = Math.max((invNormal(0.995) + 3) * SE, 1);
+    const xMin = theta - halfRange, xMax = theta + halfRange;
+    const plotLeft = 40, plotRight = 665, plotTop = 34, plotBottom = 420;
+    const scale = x => {
+      const clamped = Math.min(Math.max(x, xMin), xMax);
+      return plotLeft + (clamped - xMin) / (xMax - xMin) * (plotRight - plotLeft);
+    };
+    const rowH = (plotBottom - plotTop) / MAX_VISIBLE;
+    const border = getColor('--border-strong'), textSec = getColor('--text-secondary');
+    const accent = getColor('--accent'), accentDark = getColor('--accent-dark');
+    const hitColor = getColor('--hit'), missColor = getColor('--miss');
+    const parts = [];
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotBottom + '" x2="' + plotRight + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+    for (const t of [xMin, (xMin + theta) / 2, theta, (theta + xMax) / 2, xMax]) {
+      const x = scale(t);
+      parts.push('<line x1="' + x + '" y1="' + plotBottom + '" x2="' + x + '" y2="' + (plotBottom + 5) + '" stroke="' + border + '"/>');
+      parts.push('<text x="' + x + '" y="' + (plotBottom + 20) + '" text-anchor="middle" font-size="12" fill="' + textSec + '">' + t.toFixed(1) + '</text>');
+    }
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotBottom + 42) + '" text-anchor="middle" font-size="13" fill="' + textSec + '">parameter axis</text>');
+    const thetaX = scale(theta);
+    parts.push('<line x1="' + thetaX + '" y1="' + (plotTop - 6) + '" x2="' + thetaX + '" y2="' + plotBottom + '" stroke="' + accent + '" stroke-width="2" stroke-dasharray="5 3"/>');
+    parts.push('<text x="' + thetaX + '" y="' + (plotTop - 12) + '" text-anchor="middle" font-size="12" font-weight="500" fill="' + accentDark + '">true θ = ' + theta.toFixed(1) + '</text>');
+    state.intervals.forEach((iv, i) => {
+      const y = plotTop + (i + 0.5) * rowH;
+      const lx = scale(iv.lower), ux = scale(iv.upper);
+      const color = iv.covers ? hitColor : missColor;
+      const sw = iv.covers ? 1 : 1.8, op = iv.covers ? 0.6 : 1;
+      parts.push('<line x1="' + lx + '" y1="' + y + '" x2="' + ux + '" y2="' + y + '" stroke="' + color + '" stroke-width="' + sw + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + lx + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + ux + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+    });
+    document.getElementById('ci-viz').innerHTML = parts.join('');
+  }
+
+  function renderBootstrap() {
+    const plotLeft = 40, plotRight = 665, plotTop = 40, plotBottom = 420;
+    const border = getColor('--border-strong'), textSec = getColor('--text-secondary');
+    const accent = getColor('--accent'), accentDark = getColor('--accent-dark');
+    const missColor = getColor('--miss'), barColor = getColor('--bar'), barAlt = getColor('--bar-alt');
+    const textPri = getColor('--text');
+    const parts = [];
+
+    if (!state.bootData) {
+      parts.push('<text x="340" y="235" text-anchor="middle" font-size="14" fill="' + textSec + '">Click "Generate 64 samples" to create a dataset.</text>');
+      document.getElementById('ci-viz').innerHTML = parts.join('');
+      return;
+    }
+
+    const showBoot = !!state.bootMeans;
+    const values = showBoot ? state.bootMeans : state.bootData;
+
+    let minV = values[0], maxV = values[0];
+    for (const v of values) { if (v < minV) minV = v; if (v > maxV) maxV = v; }
+
+    const numBins = showBoot ? 40 : 16;
+    const binWidth = (maxV - minV) / numBins;
+    const counts = new Array(numBins).fill(0);
+    for (const v of values) {
+      let bin = Math.floor((v - minV) / binWidth);
+      if (bin >= numBins) bin = numBins - 1;
+      if (bin < 0) bin = 0;
+      counts[bin]++;
+    }
+
+    let ciLo = null, ciHi = null;
+    if (showBoot) {
+      const alpha = 1 - state.confLevel;
+      ciLo = quantileSorted(values, alpha / 2);
+      ciHi = quantileSorted(values, 1 - alpha / 2);
+    }
+
+    const pad = (maxV - minV) * 0.05;
+    let xMin = minV - pad, xMax = maxV + pad;
+    if (showBoot) {
+      xMin = Math.min(xMin, ciLo - pad, state.bootDataMean - pad);
+      xMax = Math.max(xMax, ciHi + pad, state.bootDataMean + pad);
+    }
+
+    const scale = x => plotLeft + (x - xMin) / (xMax - xMin) * (plotRight - plotLeft);
+    const totalCount = values.length;
+    const maxDensity = Math.max.apply(null, counts) / (totalCount * binWidth);
+    const plotHeight = (plotBottom - plotTop) * 0.9;
+
+    const title = showBoot ? 'Bootstrap distribution of sample mean' : 'Original sample (n = 64)';
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotTop - 18) + '" text-anchor="middle" font-size="14" font-weight="500" fill="' + textPri + '">' + title + '</text>');
+
+    const fillColor = showBoot ? barColor : barAlt;
+    for (let i = 0; i < numBins; i++) {
+      const c = counts[i];
+      if (c === 0) continue;
+      const density = c / (totalCount * binWidth);
+      const h = density / maxDensity * plotHeight;
+      const binL = minV + i * binWidth;
+      const binR = binL + binWidth;
+      const x1 = scale(binL), x2 = scale(binR);
+      const w = Math.max(x2 - x1 - 0.5, 1);
+      parts.push('<rect x="' + x1 + '" y="' + (plotBottom - h) + '" width="' + w + '" height="' + h + '" fill="' + fillColor + '" opacity="0.8"/>');
+    }
+
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotBottom + '" x2="' + plotRight + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+
+    const nTicks = 6;
+    for (let i = 0; i <= nTicks; i++) {
+      const val = xMin + i * (xMax - xMin) / nTicks;
+      const x = scale(val);
+      parts.push('<line x1="' + x + '" y1="' + plotBottom + '" x2="' + x + '" y2="' + (plotBottom + 5) + '" stroke="' + border + '"/>');
+      parts.push('<text x="' + x + '" y="' + (plotBottom + 20) + '" text-anchor="middle" font-size="12" fill="' + textSec + '">' + val.toFixed(1) + '</text>');
+    }
+    const axisLabel = showBoot ? 'bootstrap sample means (minutes)' : 'shopping times (minutes)';
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotBottom + 42) + '" text-anchor="middle" font-size="13" fill="' + textSec + '">' + axisLabel + '</text>');
+
+    if (showBoot) {
+      const meanX = scale(state.bootDataMean);
+      parts.push('<line x1="' + meanX + '" y1="' + plotTop + '" x2="' + meanX + '" y2="' + plotBottom + '" stroke="' + accent + '" stroke-width="2"/>');
+      parts.push('<text x="' + meanX + '" y="' + (plotTop + 12) + '" text-anchor="middle" font-size="11" font-weight="500" fill="' + accentDark + '">ȳ = ' + state.bootDataMean.toFixed(2) + '</text>');
+      const loX = scale(ciLo), hiX = scale(ciHi);
+      parts.push('<line x1="' + loX + '" y1="' + plotTop + '" x2="' + loX + '" y2="' + plotBottom + '" stroke="' + missColor + '" stroke-width="2" stroke-dasharray="5 3"/>');
+      parts.push('<line x1="' + hiX + '" y1="' + plotTop + '" x2="' + hiX + '" y2="' + plotBottom + '" stroke="' + missColor + '" stroke-width="2" stroke-dasharray="5 3"/>');
+      parts.push('<text x="' + loX + '" y="' + (plotBottom - 6) + '" text-anchor="middle" font-size="11" font-weight="500" fill="' + missColor + '">' + ciLo.toFixed(2) + '</text>');
+      parts.push('<text x="' + hiX + '" y="' + (plotBottom - 6) + '" text-anchor="middle" font-size="11" font-weight="500" fill="' + missColor + '">' + ciHi.toFixed(2) + '</text>');
+    }
+
+    document.getElementById('ci-viz').innerHTML = parts.join('');
+  }
+
+  document.getElementById('ci-dist').addEventListener('change', e => {
+    state.distribution = e.target.value;
+    updateUI();
+    updateNotes();
+    if (state.distribution !== 'bootstrap') reset();
+    else render();
+  });
+  document.getElementById('ci-theta').addEventListener('input', e => {
+    state.theta = parseFloat(e.target.value);
+    document.getElementById('ci-theta-out').textContent = state.theta.toFixed(1);
+    reset();
+  });
+  document.getElementById('ci-n').addEventListener('input', e => {
+    state.sampleSize = parseInt(e.target.value);
+    document.getElementById('ci-n-out').textContent = state.sampleSize;
+    reset();
+  });
+  document.getElementById('ci-conf').addEventListener('input', e => {
+    state.confLevel = parseInt(e.target.value) / 100;
+    document.getElementById('ci-conf-out').textContent = e.target.value + '%';
+    if (state.distribution !== 'bootstrap') reset();
+    else render();
+  });
+  document.getElementById('ci-draw1').onclick = () => draw(1);
+  document.getElementById('ci-draw50').onclick = () => draw(50);
+  document.getElementById('ci-draw500').onclick = () => draw(500);
+  document.getElementById('ci-reset').onclick = reset;
+
+  document.getElementById('ci-boot-gen').onclick = generateBootSample;
+  document.getElementById('ci-boot-run').onclick = runBootstrap;
+  document.getElementById('ci-boot-reset').onclick = resetBootstrap;
+
+  updateUI();
+  updateNotes();
+  render();
+})();
+</script>
+</body>
+</html>

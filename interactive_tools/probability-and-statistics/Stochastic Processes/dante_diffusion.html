@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dante's Diffusion Stopped at the Origin — NMSU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* NMSU palette — Aggie Crimson core, Mesilla Valley Sunset accent, Desert Monsoon muted */
+  --cream:#fbf8f3; --ink:#2a1820; --sunset:#F2824F; --sunsetDk:#C46732;
+  --crimson:#8C0B42; --crimson2:#6B0832; --crimsonLt:#f7e0e8;
+  --crimsonPale:#E9B7C5; --muted:#6D6E71; --border:#d7d2cc; --panel:#f5efe9;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--ink);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:24px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--sunset);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#f0c8d0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--sunset),var(--sunsetDk));}
+
+.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 16px 6px;
+          max-width:960px;width:100%;}
+.ctrl-group{display:flex;align-items:center;gap:6px;}
+.ctrl-group label{font-style:italic;color:var(--ink);font-size:.95rem;}
+input[type="number"]{
+  font-family:'Crimson Pro',Georgia,serif;font-size:.9rem;color:var(--ink);
+  background:#fff;border:1px solid var(--border);border-radius:3px;
+  padding:4px 8px;width:80px;text-align:center;outline:none;
+  transition:border-color .15s;
+}
+input[type="number"]:focus{border-color:var(--crimson);}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:5px 14px;font-size:.86rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+
+.wrap{max-width:960px;width:100%;padding:6px 16px 0;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:6px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;width:100%;height:auto;}
+
+.caption{max-width:960px;width:100%;padding:12px 16px 0;font-style:italic;font-size:.9rem;
+         color:var(--muted);text-align:center;line-height:1.6;}
+.caption strong{font-style:normal;color:var(--ink);font-weight:600;}
+.epigraph{max-width:780px;width:100%;padding:14px 16px 0;text-align:center;
+          font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:.85rem;
+          color:var(--crimson2);letter-spacing:.02em;}
+.epigraph .src{color:var(--muted);font-size:.72rem;font-style:normal;letter-spacing:.05em;
+               text-transform:uppercase;display:block;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">New Mexico State University &ensp;&mdash;&ensp; Mathematics Department &ensp;&middot;&ensp; Stochastic Processes</div>
+  <div class="hdr-main">
+    <h1>Dante's Diffusion Stopped at the Origin</h1>
+    <div class="subtitle">
+      dX<sub>t</sub> = dW<sub>t</sub> &minus; &beta; X<sub>t</sub><sup>&minus;p</sup> dt,&ensp;
+      &beta; = 1,&ensp; X<sub>0</sub> = 5,&ensp;
+      &tau;<sub>0</sub> = inf{ t : X<sub>t</sub> = 0 } &ensp;&middot;&ensp; Euler&ndash;Maruyama, dt = 1/1000
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="epigraph">
+  &ldquo;Lasciate ogne speranza, voi ch'intrate.&rdquo;
+  <span class="src">Inferno III, 9 &ensp;&middot;&ensp; once a path crosses zero, it does not return</span>
+</div>
+
+<div class="controls">
+  <div class="ctrl-group"><label for="p">p</label><input type="number" id="p" value="0.5" min="-2" max="3" step="0.05"></div>
+  <button id="btnRedraw" class="primary">Redraw paths</button>
+  <span class="hint">&mdash; 20 paths in pale crimson, one highlighted in Aggie Crimson; absorbed on hitting 0</span>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="phdr">Sample paths on [0, T] &nbsp;&middot;&nbsp; T = 8</div>
+    <canvas id="c" width="920" height="480"></canvas>
+  </div>
+</div>
+
+<div class="caption">
+  Larger <strong>p</strong> &rarr; stronger singular pull toward 0 as X gets small &rarr; faster absorption.
+  &ensp;&middot;&ensp; <strong>p &lt; 0</strong>: drift weakens near 0;
+  &ensp;<strong>p = 0</strong>: constant drift &minus;&beta;; &ensp;<strong>p &gt; 0</strong>: drift singular at 0.
+</div>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const padL = 55, padR = 20, padT = 20, padB = 40;
+
+const T = 8;
+const dt = 1/1000;
+const X0 = 5;
+const beta = 1;
+const M = 21; // total realizations: 1 highlighted + 20 background
+const N = Math.round(T / dt) + 1;
+
+// Standard normal via Box-Muller
+function randn(){
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function simulate(p){
+  const sqrtDt = Math.sqrt(dt);
+  const paths = [];
+  for (let j = 0; j < M; j++){
+    const X = new Float64Array(N);
+    X[0] = X0;
+    let alive = true;
+    for (let i = 1; i < N; i++){
+      if (!alive){ X[i] = 0; continue; }
+      const xPrev = X[i-1];
+      const drift = -beta * Math.pow(xPrev, -p);
+      const xNew = xPrev + drift * dt + sqrtDt * randn();
+      if (xNew <= 0){ X[i] = 0; alive = false; }
+      else { X[i] = xNew; }
+    }
+    paths.push(X);
+  }
+  return paths;
+}
+
+function draw(){
+  const p = parseFloat(document.getElementById('p').value);
+  const paths = simulate(p);
+
+  let mx = X0 + 1;
+  for (const X of paths){
+    for (let i = 0; i < N; i++) if (X[i] > mx) mx = X[i];
+  }
+  const ymax = mx + 0.5;
+  const ymin = 0;
+
+  const xs = i => padL + (W - padL - padR) * (i / (N - 1));
+  const ys = v => H - padB - (H - padT - padB) * (v - ymin) / (ymax - ymin);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // grid (very subtle)
+  ctx.strokeStyle = '#ece5dc'; ctx.lineWidth = 1;
+  for (let k = 0; k <= 8; k++){
+    const x = padL + (W - padL - padR) * k / 8;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+  }
+  const yTicks = 8;
+  for (let k = 0; k <= yTicks; k++){
+    const y = padT + (H - padT - padB) * k / yTicks;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+
+  // Mesilla Valley Sunset zero line — the absorbing boundary
+  ctx.strokeStyle = '#F2824F'; ctx.lineWidth = 1.6;
+  const y0 = ys(0);
+  ctx.beginPath(); ctx.moveTo(padL, y0); ctx.lineTo(W - padR, y0); ctx.stroke();
+
+  // ink box
+  ctx.strokeStyle = '#2a1820'; ctx.lineWidth = 1.2;
+  ctx.strokeRect(padL, padT, W - padL - padR, H - padT - padB);
+
+  // tick labels (x: time)
+  ctx.fillStyle = '#6D6E71';
+  ctx.font = "12px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let k = 0; k <= 8; k++){
+    const tVal = T * k / 8;
+    const x = padL + (W - padL - padR) * k / 8;
+    ctx.fillText(tVal.toString(), x, H - padB + 6);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let k = 0; k <= yTicks; k++){
+    const v = ymin + (ymax - ymin) * (1 - k / yTicks);
+    const y = padT + (H - padT - padB) * k / yTicks;
+    ctx.fillText(v.toFixed(1), padL - 7, y);
+  }
+
+  // axis titles
+  ctx.fillStyle = '#2a1820';
+  ctx.font = "italic 13px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('time t', W / 2, H - padB + 20);
+  ctx.save();
+  ctx.translate(14, H / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('X\u209C', 0, 0);
+  ctx.restore();
+
+  // current p label inside chart, top-right
+  ctx.fillStyle = '#2a1820';
+  ctx.font = "italic 14px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(`p = ${p.toFixed(2)}`, W - padR - 8, padT + 6);
+
+  function drawSeries(X, color, lw){
+    ctx.strokeStyle = color; ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(xs(0), ys(X[0]));
+    for (let i = 1; i < N; i++){
+      ctx.lineTo(xs(i), ys(X[i]));
+    }
+    ctx.stroke();
+  }
+
+  // background paths in pale crimson
+  const bgColor = 'rgba(233, 183, 197, 0.6)';
+  for (let j = 0; j < M - 1; j++){
+    drawSeries(paths[j], bgColor, 1);
+  }
+  // highlighted path on top
+  drawSeries(paths[M - 1], '#8C0B42', 1.6);
+}
+
+document.getElementById('btnRedraw').addEventListener('click', draw);
+document.getElementById('p').addEventListener('keydown', e => { if (e.key === 'Enter') draw(); });
+draw();
+</script>
+</body>
+</html>

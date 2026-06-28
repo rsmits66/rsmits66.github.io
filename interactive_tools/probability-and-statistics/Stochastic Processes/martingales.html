@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Martingales · A Pacific Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --husky:        #4B2E83;
+    --husky-deep:   #2E1B5B;
+    --husky-bright: #6B47B3;
+    --gold:         #8B7A4F;
+    --gold-soft:    #B7A57A;
+    --gold-bright:  #D4A52A;
+    --gold-deep:    #A07B14;
+    --cedar:        #2D5A4D;
+    --copper:       #B8533B;
+    --paper:        #eceae0;
+    --paper-soft:   #f3f0e6;
+    --paper-card:   #f8f6ec;
+    --ink:          #19142a;
+    --ink-muted:    #5a5269;
+    --border:       #cfc8ad;
+    --border-soft:  #ddd6bb;
+
+    --accent-current: var(--husky);
+    --empirical:      #B8533B;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.6;
+    padding: 3rem 1.25rem 4rem;
+    min-height: 100vh;
+
+    background-image:
+      repeating-linear-gradient(170deg, transparent 0, transparent 16px, rgba(75, 46, 131, 0.028) 16px, rgba(75, 46, 131, 0.028) 17px),
+      radial-gradient(ellipse 80% 50% at 50% 0%,   rgba(75, 46, 131, 0.07), transparent 70%),
+      radial-gradient(ellipse 80% 50% at 50% 100%, rgba(183, 165, 122, 0.08), transparent 70%);
+  }
+
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  /* ── Header ─────────────────────────────────────────── */
+  header {
+    text-align: center;
+    margin-bottom: 2.75rem;
+    padding-bottom: 0.5rem;
+    position: relative;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.1rem;
+    font-weight: 500;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: "▲";
+    margin: 0 0.8em;
+    color: var(--husky);
+    font-size: 0.7em;
+    vertical-align: 0.15em;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 6.5vw, 5rem);
+    font-weight: 500;
+    margin: 0 0 0.35rem 0;
+    letter-spacing: -0.018em;
+    font-style: italic;
+    line-height: 1;
+    color: var(--ink);
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--husky);
+    font-weight: 700;
+    transition: color 0.3s;
+  }
+  .subtitle {
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 1.18rem;
+    color: var(--ink-muted);
+    margin: 0.65rem 0 0;
+  }
+
+  .ornament {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1rem;
+    margin: 1.7rem auto 0;
+    max-width: 460px;
+  }
+  .ornament .rule { flex: 1; height: 0; border-top: 1px solid var(--gold); }
+  .ornament .peaks {
+    color: var(--husky);
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    line-height: 1;
+    transition: color 0.3s;
+  }
+
+  /* ── Cards ──────────────────────────────────────────── */
+  .card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    box-shadow:
+      0 1px 0 rgba(75, 46, 131, 0.04),
+      inset 0 0 0 1px rgba(255, 255, 250, 0.6);
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .card::before, .card::after {
+    content: "";
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 1px solid var(--gold);
+  }
+  .card::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .card::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  .card-inner { padding: 1.7rem 1.9rem; }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+
+  /* ── Process picker ─────────────────────────────────── */
+  .process-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.7rem;
+    margin-bottom: 1.75rem;
+  }
+  .process-btn {
+    background: var(--paper-soft);
+    border: 1px solid var(--border);
+    padding: 1.05rem 1.15rem;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--ink);
+    text-align: left;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .process-btn::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 3px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .process-btn:hover {
+    border-color: var(--ink);
+    background: #fefdf8;
+    transform: translateY(-1px);
+  }
+  .process-btn.active {
+    border-color: var(--accent-current);
+    background: #fefdf8;
+    box-shadow: inset 0 0 0 1px var(--accent-current);
+    transform: translateY(-1px);
+  }
+  .process-btn.active::after { background: var(--accent-current); }
+
+  .process-btn .name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.7rem;
+    font-style: italic;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.1rem;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .process-btn.active .name { color: var(--accent-current); }
+  .process-btn .desc {
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--ink-muted);
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+  }
+  .process-btn .name sub { font-size: 0.58em; font-style: normal; }
+
+  /* ── Parameters ──────────────────────────────────────── */
+  .params {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+  }
+  .field input {
+    width: 100%;
+    padding: 0.72rem 0.9rem;
+    background: var(--paper-soft);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink);
+    font-size: 0.95rem;
+    transition: all 0.15s;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent-current);
+    background: #fefdf8;
+    box-shadow: inset 0 0 0 1px var(--accent-current);
+  }
+
+  #regen-btn {
+    padding: 0.8rem 1.7rem;
+    background: var(--husky);
+    color: #fff;
+    border: 1px solid var(--husky-deep);
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.01em;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: inset 0 0 0 1px rgba(183, 165, 122, 0.45);
+  }
+  #regen-btn:hover {
+    background: var(--husky-deep);
+    transform: translateY(-1px);
+    box-shadow: inset 0 0 0 1px rgba(183, 165, 122, 0.6), 0 3px 8px rgba(75, 46, 131, 0.15);
+  }
+  #regen-btn:active { transform: translateY(0); }
+
+  /* ── Formula card ────────────────────────────────────── */
+  .formula-card {
+    border-left: 4px solid var(--accent-current);
+    transition: border-left-color 0.3s;
+  }
+  .formula-card .process-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.65rem;
+    font-weight: 600;
+    color: var(--accent-current);
+    margin-bottom: 1rem;
+    transition: color 0.3s;
+    line-height: 1.15;
+  }
+  .formula-card .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.96rem;
+    margin: 0.5rem 0;
+    color: var(--ink);
+  }
+  .formula-card .formula b {
+    display: inline-block;
+    min-width: 5.8rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    color: var(--accent-current);
+    margin-right: 0.5rem;
+    transition: color 0.3s;
+    font-size: 1.1rem;
+  }
+  .formula-card .explanation {
+    margin-top: 1rem;
+    color: var(--ink-muted);
+    font-style: italic;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+    border-top: 1px dotted var(--border-soft);
+    padding-top: 0.9rem;
+  }
+
+  /* ── Canvas / figure ─────────────────────────────────── */
+  .canvas-wrap {
+    padding: 2rem 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fefdf8;
+  }
+  .figure-head {
+    width: 100%;
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .figure-head .fig-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    color: var(--accent-current);
+    font-size: 1.2rem;
+    transition: color 0.3s;
+  }
+  .figure-head .fig-caption {
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    text-align: right;
+  }
+  #matrix, #path-canvas {
+    max-width: 100%;
+    display: block;
+    transition: opacity 0.2s ease;
+  }
+
+  /* Path-card has a slight gold edge to remind that it's about the gold path */
+  .path-card {
+    background: #fefdf8;
+  }
+  .path-card .figure-head {
+    border-bottom-color: var(--gold-soft);
+  }
+  .path-card .fig-num {
+    color: var(--gold-deep);
+  }
+
+  /* ── Highlight card (the gold path) ──────────────────── */
+  .highlight-card {
+    background:
+      linear-gradient(to right, rgba(212, 165, 42, 0.10), rgba(212, 165, 42, 0.03) 60%, transparent),
+      var(--paper-card);
+    border-color: var(--gold-soft);
+    margin-top: -0.25rem;
+  }
+  .highlight-card::before, .highlight-card::after {
+    border-color: var(--gold-bright);
+  }
+  .highlight-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    padding: 0.95rem 1.6rem;
+    flex-wrap: wrap;
+  }
+  .highlight-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--gold-bright);
+    border: 1.5px solid var(--ink);
+    box-shadow: 0 0 0 3px rgba(254, 253, 248, 0.95);
+    flex-shrink: 0;
+  }
+  .highlight-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    flex-shrink: 0;
+  }
+  .highlight-meta .label {
+    margin-bottom: 0.1rem;
+    color: var(--gold-deep);
+  }
+  .highlight-id {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+  }
+  .highlight-id span { color: var(--gold-deep); }
+  .highlight-values {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.5rem;
+    font-size: 0.95rem;
+    color: var(--ink);
+    min-width: 200px;
+  }
+  .highlight-values .val-pair {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+  .highlight-values .val-pair .t {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.06rem;
+    color: var(--gold-deep);
+    font-weight: 600;
+  }
+  .highlight-values .val-pair .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem;
+  }
+  #repick-btn {
+    padding: 0.5rem 1.05rem;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--gold-deep);
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.18s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #repick-btn:hover {
+    background: var(--gold-bright);
+    color: var(--ink);
+    border-color: var(--gold-deep);
+  }
+
+  /* ── Legend ──────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    font-size: 0.96rem;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin: 1.3rem 0 1.6rem;
+    flex-wrap: wrap;
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.6rem; }
+  .legend-line { width: 28px; height: 0; border-top: 2px solid var(--ink); }
+  .legend-line.theoretical { border-top-style: dashed; }
+  .legend-line.empirical   { border-top: 2.5px solid var(--copper); }
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent-current);
+    opacity: 0.55;
+    transition: background 0.3s;
+  }
+  .legend-dot.gold {
+    background: var(--gold-bright);
+    border: 1px solid var(--ink);
+    opacity: 1;
+    width: 10px; height: 10px;
+  }
+
+  /* ── Reading key ─────────────────────────────────────── */
+  .reading-key {
+    background: linear-gradient(to bottom, var(--paper-card), var(--paper-soft));
+    padding: 1.5rem 1.9rem;
+  }
+  .reading-key .label { margin-bottom: 1rem; }
+  .reading-key .row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1.3rem;
+    padding: 0.5rem 0;
+    align-items: baseline;
+    border-bottom: 1px dotted var(--border-soft);
+  }
+  .reading-key .row:last-child { border-bottom: none; }
+  .reading-key .row b {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 1.1rem;
+  }
+  .reading-key .below-diag {
+    color: var(--accent-current);
+    transition: color 0.3s;
+  }
+  .reading-key .gold-path { color: var(--gold-deep); }
+  .reading-key .row span {
+    color: var(--ink-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+  }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 0.92rem;
+    font-style: italic;
+    margin-top: 2.5rem;
+    padding-top: 1.2rem;
+    font-family: 'Spectral', serif;
+    font-weight: 300;
+    position: relative;
+  }
+  footer::before {
+    content: "△  ▲  △";
+    display: block;
+    color: var(--gold);
+    letter-spacing: 0.4em;
+    font-size: 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+
+  body.process-BM  { --accent-current: var(--husky); }
+  body.process-CP  { --accent-current: var(--gold);  }
+  body.process-BM2 { --accent-current: var(--cedar); }
+
+  @media (max-width: 720px) {
+    .process-picker { grid-template-columns: 1fr; }
+    .params { grid-template-columns: 1fr; }
+    .canvas-wrap { padding: 0.9rem; }
+    .card-inner { padding: 1.2rem 1.3rem; }
+    body { padding: 1.5rem 0.75rem 2rem; }
+    .reading-key .row { grid-template-columns: 1fr; gap: 0.2rem; }
+    .highlight-inner { padding: 0.95rem 1rem; }
+  }
+</style>
+</head>
+<body class="process-BM">
+
+<div class="container">
+  <header>
+    <div class="eyebrow">A Pacific Probability Notebook · Vol. IV</div>
+    <h1>Martingales<em>,</em> in pictures</h1>
+    <p class="subtitle">scatter matrices &amp; their conditional expectation curves</p>
+    <div class="ornament">
+      <span class="rule"></span>
+      <span class="peaks">△  ▲  △</span>
+      <span class="rule"></span>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="card-inner">
+      <div class="label">i. choose a process</div>
+      <div class="process-picker">
+        <button class="process-btn active" data-process="BM" type="button">
+          <span class="name">B<sub>t</sub></span>
+          <span class="desc">Brownian motion</span>
+        </button>
+        <button class="process-btn" data-process="CP" type="button">
+          <span class="name">N<sub>t</sub> − λt</span>
+          <span class="desc">compensated Poisson</span>
+        </button>
+        <button class="process-btn" data-process="BM2" type="button">
+          <span class="name">B<sub>t</sub>² − t</span>
+          <span class="desc">quadratic martingale</span>
+        </button>
+      </div>
+
+      <div class="label">ii. set the parameters</div>
+      <div class="params">
+        <div class="field">
+          <input type="text" id="times-input" value="3, 5, 9" />
+          <div class="label" style="margin-top: 0.5rem; font-size: 0.66rem; letter-spacing: 0.16em;">times · comma- or space-separated · 2 to 7 values</div>
+        </div>
+        <div class="field">
+          <input type="number" id="n-input" value="1000" min="100" max="5000" step="100" />
+          <div class="label" style="margin-top: 0.5rem; font-size: 0.66rem; letter-spacing: 0.16em;">realizations · 100—5000</div>
+        </div>
+        <button id="regen-btn" type="button">Boundless ⟳</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card formula-card" id="formula">
+    <div class="card-inner">
+      <div class="process-name" id="formula-name">Brownian motion · B_t</div>
+      <div class="formula" id="formula-forward"></div>
+      <div class="formula" id="formula-backward"></div>
+      <div class="explanation" id="formula-explain"></div>
+    </div>
+  </section>
+
+  <section class="card canvas-wrap">
+    <div class="figure-head">
+      <span class="fig-num">Fig. I</span>
+      <span class="fig-caption">scatter matrix · samples, theoretical line, empirical curve, one gold path</span>
+    </div>
+    <canvas id="matrix" width="800" height="800"></canvas>
+  </section>
+
+  <section class="card canvas-wrap path-card">
+    <div class="figure-head">
+      <span class="fig-num">Fig. II</span>
+      <span class="fig-caption">the gold path · full trajectory between 0 and the largest time</span>
+    </div>
+    <canvas id="path-canvas" width="900" height="280"></canvas>
+  </section>
+
+  <section class="card highlight-card">
+    <div class="highlight-inner">
+      <span class="highlight-glyph" aria-hidden="true"></span>
+      <div class="highlight-meta">
+        <span class="label">the gold path</span>
+        <span class="highlight-id">realization <span id="highlight-id">#—</span></span>
+      </div>
+      <div class="highlight-values" id="highlight-values"></div>
+      <button id="repick-btn" type="button">↻ pick another</button>
+    </div>
+  </section>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot"></span> samples</span>
+    <span class="legend-item"><span class="legend-dot gold"></span> highlighted realization</span>
+    <span class="legend-item"><span class="legend-line theoretical"></span> theoretical &nbsp;E[ Y | X ]</span>
+    <span class="legend-item"><span class="legend-line empirical"></span> empirical &nbsp;(binned mean)</span>
+  </div>
+
+  <section class="card reading-key">
+    <div class="label">how to read the matrix</div>
+    <div class="row"><b class="below-diag">below diagonal</b><span>the forward direction — conditioning on the past, predicting the future. For each of these three processes the empirical curve should ride the dashed 45° line. <em>That is the martingale.</em></span></div>
+    <div class="row"><b>above diagonal</b><span>the backward direction — conditioning on the future. Shrinkage toward zero. Slope is <em>s/t</em> for B and the compensated Poisson, and <em>(s/t)²</em> for the quadratic.</span></div>
+    <div class="row"><b>diagonal</b><span>marginal histogram, tinted in the process's accent.</span></div>
+    <div class="row"><b class="gold-path">the gold path</b><span>one single realization, highlighted across every cell — appears as a gold dot in each scatter, a gold notch on every histogram, and a continuous trajectory in <em>Fig. II</em>. The vertical guides on Fig. II mark the chosen times; their values are exactly the gold dots in Fig. I.</span></div>
+  </section>
+
+  <footer>built with vanilla javascript and one canvas · <em>go dawgs</em></footer>
+</div>
+
+<script>
+"use strict";
+
+// ============================================================
+// State
+// ============================================================
+const state = {
+  process: 'BM',
+  times: [3, 5, 9],
+  n: 1000,
+  cols: [],
+  ranges: [],
+  highlighted: 0,
+  highlightedPath: null   // { fineTimes, fineValues, sampled }
+};
+
+// ============================================================
+// Random number generators
+// ============================================================
+function randn() {
+  let u = Math.random();
+  while (u <= 1e-12) u = Math.random();
+  const v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function poisson(lambda) {
+  if (lambda <= 0) return 0;
+  if (lambda > 30) {
+    return Math.max(0, Math.round(lambda + Math.sqrt(lambda) * randn()));
+  }
+  const L = Math.exp(-lambda);
+  let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+}
+
+// ============================================================
+// Process generation — the 1000-realization scatter matrix data
+// ============================================================
+function generate() {
+  const { process, times, n } = state;
+  state.cols = times.map(() => new Float64Array(n));
+
+  const order = times.map((_, i) => i).sort((a, b) => times[a] - times[b]);
+
+  for (let r = 0; r < n; r++) {
+    let B = 0;
+    let prevT = 0;
+    for (const idx of order) {
+      const t = times[idx];
+      const dt = t - prevT;
+      if (process === 'BM') {
+        B += Math.sqrt(dt) * randn();
+        state.cols[idx][r] = B;
+      } else if (process === 'CP') {
+        B += poisson(dt);
+        state.cols[idx][r] = B - t;
+      } else {
+        B += Math.sqrt(dt) * randn();
+        state.cols[idx][r] = B * B - t;
+      }
+      prevT = t;
+    }
+  }
+
+  state.ranges = state.cols.map(c => {
+    let mn = Infinity, mx = -Infinity;
+    for (let i = 0; i < c.length; i++) {
+      const v = c[i];
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    }
+    const pad = Math.max(0.4, (mx - mn) * 0.07);
+    return [mn - pad, mx + pad];
+  });
+
+  state.highlighted = Math.floor(Math.random() * n);
+}
+
+// ============================================================
+// Fine-grained path for the highlighted realization.
+// times is already sorted ascending. We generate increments
+// across each (prevT, t) segment using a sub-grid, so the
+// values at the discrete times come out exactly.
+// ============================================================
+function generateFinePath() {
+  const { process, times } = state;
+  const stepsPerSeg = 100;
+
+  const fineTimes  = [0];
+  const fineValues = [0];   // X_0 = 0 for all three processes
+
+  let B = 0;
+  let prevT = 0;
+  const tIndex = [0];       // index in fineValues where each times[k] lives
+
+  for (const t of times) {
+    const segDt = (t - prevT) / stepsPerSeg;
+    for (let k = 1; k <= stepsPerSeg; k++) {
+      const tCur = prevT + k * segDt;
+      if (process === 'BM') {
+        B += Math.sqrt(segDt) * randn();
+        fineValues.push(B);
+      } else if (process === 'CP') {
+        B += poisson(segDt);
+        fineValues.push(B - tCur);
+      } else {
+        B += Math.sqrt(segDt) * randn();
+        fineValues.push(B * B - tCur);
+      }
+      fineTimes.push(tCur);
+    }
+    tIndex.push(fineTimes.length - 1);
+    prevT = t;
+  }
+
+  const sampled = times.map((_, k) => fineValues[tIndex[k + 1]]);
+  return { fineTimes, fineValues, sampled, tIndex };
+}
+
+function injectHighlightedPath() {
+  state.highlightedPath = generateFinePath();
+  // Make the scatter-matrix entries at the highlighted index match the path exactly.
+  for (let i = 0; i < state.times.length; i++) {
+    state.cols[i][state.highlighted] = state.highlightedPath.sampled[i];
+  }
+}
+
+// ============================================================
+// Conditional mean slope
+// ============================================================
+function condMeanSlope(process, tx, ty) {
+  if (tx === ty) return null;
+  if (tx < ty) return 1;
+  if (process === 'BM2') return Math.pow(ty / tx, 2);
+  return ty / tx;
+}
+
+// ============================================================
+// Empirical binned mean
+// ============================================================
+function binnedMean(x, y, nBins) {
+  const n = x.length;
+  const idx = new Array(n);
+  for (let i = 0; i < n; i++) idx[i] = i;
+  idx.sort((a, b) => x[a] - x[b]);
+
+  const perBin = Math.max(1, Math.floor(n / nBins));
+  const centers = [], means = [];
+
+  for (let b = 0; b < nBins; b++) {
+    const start = b * perBin;
+    const end = (b === nBins - 1) ? n : Math.min(n, start + perBin);
+    if (start >= end) break;
+    let sx = 0, sy = 0;
+    for (let i = start; i < end; i++) {
+      sx += x[idx[i]];
+      sy += y[idx[i]];
+    }
+    const c = end - start;
+    centers.push(sx / c);
+    means.push(sy / c);
+  }
+  return { centers, means };
+}
+
+// ============================================================
+// Drawing helpers
+// ============================================================
+function cssVar(name) {
+  return getComputedStyle(document.body).getPropertyValue(name).trim();
+}
+
+function hexWithAlpha(hex, alpha) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function formatNum(v) {
+  if (!isFinite(v)) return '';
+  const a = Math.abs(v);
+  if (a < 0.01) return v.toFixed(3);
+  if (a < 1) return v.toFixed(2);
+  if (a < 10) return v.toFixed(1);
+  if (a < 1000) return v.toFixed(0);
+  return v.toExponential(1);
+}
+
+function formatTime(t) {
+  if (Number.isInteger(t)) return t.toString();
+  return t.toFixed(2).replace(/\.?0+$/, '');
+}
+
+// ============================================================
+// Fig. I — scatter matrix
+// ============================================================
+function draw() {
+  const canvas = document.getElementById('matrix');
+  const parent = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+
+  const targetSize = Math.min(820, parent.clientWidth - 36);
+  canvas.width  = Math.round(targetSize * dpr);
+  canvas.height = Math.round(targetSize * dpr);
+  canvas.style.width  = targetSize + 'px';
+  canvas.style.height = targetSize + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = targetSize, H = targetSize;
+  ctx.clearRect(0, 0, W, H);
+
+  const { times, cols, ranges, process, highlighted } = state;
+  const k = times.length;
+  const accent     = cssVar('--accent-current');
+  const empirical  = cssVar('--empirical');
+  const ink        = cssVar('--ink');
+  const gold       = cssVar('--gold');
+  const goldBright = cssVar('--gold-bright');
+
+  const margin = { top: 30, right: 18, bottom: 56, left: 64 };
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  const cellW = plotW / k;
+  const cellH = plotH / k;
+
+  const xPix = (j, dx) => {
+    const [mn, mx] = ranges[j];
+    return margin.left + j * cellW + ((dx - mn) / (mx - mn)) * cellW;
+  };
+  const yPix = (i, dy) => {
+    const [mn, mx] = ranges[i];
+    return margin.top + i * cellH + cellH - ((dy - mn) / (mx - mn)) * cellH;
+  };
+
+  for (let i = 0; i < k; i++) {
+    for (let j = 0; j < k; j++) {
+      const cx = margin.left + j * cellW;
+      const cy = margin.top + i * cellH;
+
+      if (i === j) {
+        ctx.fillStyle = hexWithAlpha(accent, 0.05);
+      } else if (i > j) {
+        ctx.fillStyle = hexWithAlpha(accent, 0.035);
+      } else {
+        ctx.fillStyle = hexWithAlpha(gold, 0.05);
+      }
+      ctx.fillRect(cx, cy, cellW, cellH);
+
+      if (i === j) {
+        drawHist(ctx, cols[i], ranges[i], cx, cy, cellW, cellH, accent);
+        drawHistHighlight(ctx, cols[i][highlighted], ranges[i], cx, cy, cellW, cellH, goldBright, ink);
+      } else {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cx, cy, cellW, cellH);
+        ctx.clip();
+
+        drawScatter(ctx, cols[j], cols[i], j, i, xPix, yPix, accent, process);
+
+        const slope = condMeanSlope(process, times[j], times[i]);
+        if (slope !== null) drawTheoreticalLine(ctx, slope, 0, j, i, ranges, xPix, yPix, ink);
+
+        const { centers, means } = binnedMean(cols[j], cols[i], 15);
+        drawEmpiricalCurve(ctx, centers, means, j, i, xPix, yPix, empirical);
+
+        const hx = cols[j][highlighted];
+        const hy = cols[i][highlighted];
+        drawHighlightDot(ctx, xPix(j, hx), yPix(i, hy), goldBright, ink);
+
+        ctx.restore();
+
+        drawSlopeBadge(ctx, slope, process, times[j], times[i], cx, cy, cellW, accent, ink);
+      }
+
+      ctx.strokeStyle = hexWithAlpha(gold, 0.5);
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(cx + 0.25, cy + 0.25, cellW - 0.5, cellH - 0.5);
+    }
+  }
+
+  ctx.strokeStyle = hexWithAlpha(accent, 0.55);
+  ctx.lineWidth = 1.3;
+  ctx.strokeRect(margin.left + 0.5, margin.top + 0.5, plotW - 1, plotH - 1);
+
+  // Tick & axis labels
+  ctx.font = '500 10px "JetBrains Mono", monospace';
+  ctx.fillStyle = hexWithAlpha(ink, 0.55);
+
+  ctx.textBaseline = 'top';
+  for (let j = 0; j < k; j++) {
+    const [mn, mx] = ranges[j];
+    const yBase = margin.top + plotH + 4;
+    ctx.textAlign = 'left';
+    ctx.fillText(formatNum(mn), margin.left + j * cellW + 3, yBase);
+    ctx.textAlign = 'right';
+    ctx.fillText(formatNum(mx), margin.left + (j + 1) * cellW - 3, yBase);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i < k; i++) {
+    const [mn, mx] = ranges[i];
+    ctx.textBaseline = 'top';
+    ctx.fillText(formatNum(mx), margin.left - 4, margin.top + i * cellH + 3);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(formatNum(mn), margin.left - 4, margin.top + (i + 1) * cellH - 3);
+  }
+
+  ctx.font = 'italic 600 16px "Cormorant Garamond", serif';
+  ctx.fillStyle = accent;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let j = 0; j < k; j++) {
+    ctx.fillText(`t = ${formatTime(times[j])}`, margin.left + (j + 0.5) * cellW, margin.top + plotH + 22);
+  }
+  for (let i = 0; i < k; i++) {
+    ctx.save();
+    ctx.translate(18, margin.top + (i + 0.5) * cellH);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`t = ${formatTime(times[i])}`, 0, 0);
+    ctx.restore();
+  }
+}
+
+function drawHist(ctx, data, range, x, y, w, h, accent) {
+  const [mn, mx] = range;
+  const nBins = Math.min(34, Math.max(12, Math.floor(Math.sqrt(data.length))));
+  const bw = (mx - mn) / nBins;
+  const counts = new Array(nBins).fill(0);
+  for (let i = 0; i < data.length; i++) {
+    let b = Math.floor((data[i] - mn) / bw);
+    if (b < 0) b = 0;
+    if (b >= nBins) b = nBins - 1;
+    counts[b]++;
+  }
+  let mc = 0;
+  for (let i = 0; i < nBins; i++) if (counts[i] > mc) mc = counts[i];
+  if (mc === 0) return;
+
+  const reserveTop = 6;
+  const innerH = h - reserveTop - 6;
+  const innerY = y + reserveTop;
+
+  ctx.fillStyle = hexWithAlpha(accent, 0.42);
+  const barW = w / nBins;
+  for (let b = 0; b < nBins; b++) {
+    const bh = (counts[b] / mc) * innerH;
+    const bx = x + b * barW;
+    const by = innerY + (innerH - bh);
+    if (bh > 0.5) ctx.fillRect(bx, by, barW - 0.4, bh);
+  }
+
+  ctx.strokeStyle = hexWithAlpha(accent, 0.9);
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  ctx.moveTo(x, innerY + innerH);
+  ctx.lineTo(x + w, innerY + innerH);
+  ctx.stroke();
+
+  if (mn < 0 && mx > 0) {
+    const x0 = x + ((-mn) / (mx - mn)) * w;
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+    ctx.lineWidth = 0.6;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x0, innerY);
+    ctx.lineTo(x0, innerY + innerH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawHistHighlight(ctx, value, range, x, y, w, h, gold, ink) {
+  const [mn, mx] = range;
+  if (value < mn || value > mx) return;
+  const px = x + ((value - mn) / (mx - mn)) * w;
+  const baseY = y + h - 6;
+  const topY  = y + 4;
+
+  ctx.strokeStyle = hexWithAlpha(ink, 0.45);
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 2]);
+  ctx.beginPath();
+  ctx.moveTo(px, baseY);
+  ctx.lineTo(px, topY + 4);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = gold;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px,       topY);
+  ctx.lineTo(px - 4.5, topY + 6);
+  ctx.lineTo(px + 4.5, topY + 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = gold;
+  ctx.beginPath();
+  ctx.arc(px, baseY, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(px, baseY, 3, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawScatter(ctx, xData, yData, j, i, xPix, yPix, accent, process) {
+  const n = xData.length;
+  const radius = n > 2000 ? 1.0 : (n > 1000 ? 1.4 : 1.8);
+  const alpha  = n > 2000 ? 0.22 : (n > 1000 ? 0.32 : 0.42);
+
+  ctx.fillStyle = hexWithAlpha(accent, alpha);
+  const jitterAmt = process === 'CP' ? 0.4 : 0;
+  for (let r = 0; r < n; r++) {
+    let xv = xData[r], yv = yData[r];
+    if (jitterAmt) {
+      xv += (Math.random() - 0.5) * jitterAmt;
+      yv += (Math.random() - 0.5) * jitterAmt;
+    }
+    const px = xPix(j, xv);
+    const py = yPix(i, yv);
+    ctx.beginPath();
+    ctx.arc(px, py, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawTheoreticalLine(ctx, slope, intercept, j, i, ranges, xPix, yPix, ink) {
+  const [xmn, xmx] = ranges[j];
+  const [ymn, ymx] = ranges[i];
+
+  const pts = [];
+  for (const xv of [xmn, xmx]) {
+    const yv = slope * xv + intercept;
+    if (yv >= ymn - 1e-9 && yv <= ymx + 1e-9) pts.push([xv, yv]);
+  }
+  if (slope !== 0) {
+    for (const yv of [ymn, ymx]) {
+      const xv = (yv - intercept) / slope;
+      if (xv >= xmn - 1e-9 && xv <= xmx + 1e-9) pts.push([xv, yv]);
+    }
+  }
+  if (pts.length < 2) return;
+
+  pts.sort((a, b) => a[0] - b[0]);
+  const p1 = pts[0], p2 = pts[pts.length - 1];
+
+  ctx.strokeStyle = hexWithAlpha(ink, 0.78);
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(xPix(j, p1[0]), yPix(i, p1[1]));
+  ctx.lineTo(xPix(j, p2[0]), yPix(i, p2[1]));
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawEmpiricalCurve(ctx, centers, means, j, i, xPix, yPix, empirical) {
+  if (centers.length < 2) return;
+
+  ctx.strokeStyle = 'rgba(254, 253, 248, 0.95)';
+  ctx.lineWidth = 4.5;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (let k = 0; k < centers.length; k++) {
+    const px = xPix(j, centers[k]);
+    const py = yPix(i, means[k]);
+    if (k === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = empirical;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let k = 0; k < centers.length; k++) {
+    const px = xPix(j, centers[k]);
+    const py = yPix(i, means[k]);
+    if (k === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = empirical;
+  for (let k = 0; k < centers.length; k++) {
+    const px = xPix(j, centers[k]);
+    const py = yPix(i, means[k]);
+    ctx.beginPath();
+    ctx.arc(px, py, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawHighlightDot(ctx, px, py, gold, ink) {
+  ctx.fillStyle = 'rgba(254, 253, 248, 0.95)';
+  ctx.beginPath();
+  ctx.arc(px, py, 7.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = gold;
+  ctx.beginPath();
+  ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255, 252, 235, 0.85)';
+  ctx.beginPath();
+  ctx.arc(px - 1.5, py - 1.5, 1.4, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSlopeBadge(ctx, slope, process, tx, ty, cx, cy, cw, accent, ink) {
+  if (slope === null) return;
+  let label;
+  if (tx < ty) {
+    label = 'slope = 1';
+  } else if (process === 'BM2') {
+    label = `slope = (${formatTime(ty)}/${formatTime(tx)})² = ${slope.toFixed(3)}`;
+  } else {
+    label = `slope = ${formatTime(ty)}/${formatTime(tx)} = ${slope.toFixed(3)}`;
+  }
+  ctx.font = '500 10px "JetBrains Mono", monospace';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+
+  const pad = 5;
+  const metrics = ctx.measureText(label);
+  const bw = metrics.width + pad * 2;
+  const bh = 15;
+  const bx = cx + 4;
+  const by = cy + 4;
+
+  ctx.fillStyle = 'rgba(254, 253, 248, 0.92)';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = hexWithAlpha(accent, 0.5);
+  ctx.lineWidth = 0.7;
+  ctx.strokeRect(bx + 0.25, by + 0.25, bw - 0.5, bh - 0.5);
+
+  ctx.fillStyle = hexWithAlpha(ink, 0.82);
+  ctx.fillText(label, bx + pad, by + 3);
+}
+
+// ============================================================
+// Fig. II — full trajectory of the highlighted realization
+// ============================================================
+function drawPath() {
+  const canvas = document.getElementById('path-canvas');
+  const parent = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+
+  const W = Math.min(960, parent.clientWidth - 36);
+  const H = Math.max(240, Math.round(W * 0.30));
+
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!state.highlightedPath) return;
+
+  const { fineTimes, fineValues, sampled } = state.highlightedPath;
+  const { times, process } = state;
+  const accent     = cssVar('--accent-current');
+  const ink        = cssVar('--ink');
+  const gold       = cssVar('--gold');
+  const goldBright = cssVar('--gold-bright');
+  const inkMuted   = cssVar('--ink-muted');
+
+  const padL = 60, padR = 24, padT = 18, padB = 50;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const tMax = fineTimes[fineTimes.length - 1];
+  let mn = Infinity, mx = -Infinity;
+  for (const v of fineValues) {
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+  }
+  const pad = Math.max(0.4, (mx - mn) * 0.10);
+  mn -= pad; mx += pad;
+
+  const xs = t => padL + (t / tMax) * innerW;
+  const ys = v => padT + innerH - ((v - mn) / (mx - mn)) * innerH;
+
+  // Background tint
+  ctx.fillStyle = hexWithAlpha(accent, 0.025);
+  ctx.fillRect(padL, padT, innerW, innerH);
+
+  // Soft grid
+  ctx.strokeStyle = hexWithAlpha(gold, 0.22);
+  ctx.lineWidth = 0.5;
+  for (let k = 1; k < 10; k++) {
+    const x = padL + (innerW * k) / 10;
+    ctx.beginPath();
+    ctx.moveTo(x, padT);
+    ctx.lineTo(x, padT + innerH);
+    ctx.stroke();
+  }
+  const yTicks = 5;
+  for (let k = 1; k < yTicks; k++) {
+    const y = padT + (innerH * k) / yTicks;
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + innerW, y);
+    ctx.stroke();
+  }
+
+  // Zero line in gold dashed (only if in range)
+  if (mn < 0 && mx > 0) {
+    const y0 = ys(0);
+    ctx.strokeStyle = hexWithAlpha(gold, 0.85);
+    ctx.lineWidth = 0.9;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(padL, y0);
+    ctx.lineTo(padL + innerW, y0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Vertical accent guides at each chosen time
+  ctx.strokeStyle = hexWithAlpha(accent, 0.55);
+  ctx.lineWidth = 1.1;
+  ctx.setLineDash([4, 3]);
+  for (const t of times) {
+    const x = xs(t);
+    ctx.beginPath();
+    ctx.moveTo(x, padT);
+    ctx.lineTo(x, padT + innerH);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Outer frame
+  ctx.strokeStyle = hexWithAlpha(accent, 0.55);
+  ctx.lineWidth = 1.3;
+  ctx.strokeRect(padL + 0.5, padT + 0.5, innerW - 1, innerH - 1);
+
+  // The path itself — cream halo then gold line
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(padL, padT, innerW, innerH);
+  ctx.clip();
+
+  // Halo
+  ctx.strokeStyle = 'rgba(254, 253, 248, 0.95)';
+  ctx.lineWidth = 4.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(xs(fineTimes[0]), ys(fineValues[0]));
+  for (let i = 1; i < fineTimes.length; i++) {
+    ctx.lineTo(xs(fineTimes[i]), ys(fineValues[i]));
+  }
+  ctx.stroke();
+
+  // Gold line + dark inner detail
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  ctx.moveTo(xs(fineTimes[0]), ys(fineValues[0]));
+  for (let i = 1; i < fineTimes.length; i++) {
+    ctx.lineTo(xs(fineTimes[i]), ys(fineValues[i]));
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = goldBright;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(xs(fineTimes[0]), ys(fineValues[0]));
+  for (let i = 1; i < fineTimes.length; i++) {
+    ctx.lineTo(xs(fineTimes[i]), ys(fineValues[i]));
+  }
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Big gold dots at the chosen times
+  for (let k = 0; k < times.length; k++) {
+    const t = times[k];
+    const v = sampled[k];
+    const px = xs(t), py = ys(v);
+
+    ctx.fillStyle = 'rgba(254, 253, 248, 0.98)';
+    ctx.beginPath();
+    ctx.arc(px, py, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = goldBright;
+    ctx.beginPath();
+    ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 252, 235, 0.85)';
+    ctx.beginPath();
+    ctx.arc(px - 2, py - 2, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Tick labels
+  ctx.font = '500 10px "JetBrains Mono", monospace';
+  ctx.fillStyle = hexWithAlpha(ink, 0.55);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  for (let k = 0; k <= 10; k++) {
+    const x = padL + (innerW * k) / 10;
+    const t = tMax * k / 10;
+    let lbl;
+    if (tMax < 10) lbl = t.toFixed(1).replace(/\.0$/, '');
+    else lbl = t.toFixed(0);
+    ctx.fillText(lbl, x, padT + innerH + 5);
+  }
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let k = 0; k <= yTicks; k++) {
+    const v = mn + (mx - mn) * (1 - k / yTicks);
+    const y = padT + (innerH * k) / yTicks;
+    ctx.fillText(formatNum(v), padL - 6, y);
+  }
+
+  // Annotated time labels at the bottom (accent color, italic)
+  ctx.font = 'italic 600 13px "Cormorant Garamond", serif';
+  ctx.fillStyle = accent;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const t of times) {
+    const x = xs(t);
+    ctx.fillText(`t = ${formatTime(t)}`, x, padT + innerH + 22);
+  }
+
+  // Y-axis label
+  ctx.save();
+  ctx.translate(15, padT + innerH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.font = 'italic 600 15px "Cormorant Garamond", serif';
+  ctx.fillStyle = accent;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  let yLabel;
+  if (process === 'BM') yLabel = 'B(t)';
+  else if (process === 'CP') yLabel = 'N(t) − t';
+  else yLabel = 'B(t)² − t';
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+
+  // X-axis label
+  ctx.font = 'italic 600 14px "Cormorant Garamond", serif';
+  ctx.fillStyle = hexWithAlpha(ink, 0.7);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('time', padL + innerW / 2, H - 4);
+}
+
+// ============================================================
+// UI: formulas + highlight bar
+// ============================================================
+function updateFormula() {
+  const p = state.process;
+  const name = document.getElementById('formula-name');
+  const fwd  = document.getElementById('formula-forward');
+  const bwd  = document.getElementById('formula-backward');
+  const exp  = document.getElementById('formula-explain');
+
+  if (p === 'BM') {
+    name.innerHTML = 'Brownian motion · B<sub>t</sub>';
+    fwd.innerHTML = '<b>forward</b> E[ B<sub>t</sub> | B<sub>s</sub> ] = B<sub>s</sub>     (slope 1)';
+    bwd.innerHTML = '<b>backward</b> E[ B<sub>s</sub> | B<sub>t</sub> ] = (s/t) · B<sub>t</sub>     (s &lt; t)';
+    exp.textContent = "Zero-mean Gaussian increments. The canonical martingale: best guess of the future given the past is the present value. Cov(B_s, B_t) = min(s, t).";
+  } else if (p === 'CP') {
+    name.innerHTML = 'Compensated Poisson · M<sub>t</sub> = N<sub>t</sub> − λt   (λ = 1)';
+    fwd.innerHTML = '<b>forward</b> E[ M<sub>t</sub> | M<sub>s</sub> ] = M<sub>s</sub>     (slope 1)';
+    bwd.innerHTML = '<b>backward</b> E[ M<sub>s</sub> | M<sub>t</sub> ] = (s/t) · M<sub>t</sub>     (s &lt; t)';
+    exp.textContent = "Discrete jumps, but subtracting λt cancels the drift. Same covariance kernel min(s,t) as Brownian motion — its discrete cousin.";
+  } else {
+    name.innerHTML = "Quadratic martingale · M<sub>t</sub> = B<sub>t</sub>² − t";
+    fwd.innerHTML = "<b>forward</b> E[ B<sub>t</sub>² − t | B<sub>s</sub> ] = B<sub>s</sub>² − s     (slope 1)";
+    bwd.innerHTML = "<b>backward</b> E[ M<sub>s</sub> | M<sub>t</sub> ] = (s/t)² · M<sub>t</sub>     (s &lt; t)";
+    exp.textContent = "The −t exactly compensates the variance B_t accumulates. Marginals are heavily skewed, yet conditional means remain linear — forward slope 1, backward slope squared.";
+  }
+}
+
+function updateHighlightUI() {
+  document.getElementById('highlight-id').textContent = '#' + (state.highlighted + 1).toLocaleString();
+  const valBox = document.getElementById('highlight-values');
+  valBox.innerHTML = '';
+  for (let i = 0; i < state.times.length; i++) {
+    const pair = document.createElement('span');
+    pair.className = 'val-pair';
+    const t = document.createElement('span');
+    t.className = 't';
+    t.textContent = `t = ${formatTime(state.times[i])}`;
+    const arrow = document.createTextNode(' ⇒ ');
+    const v = document.createElement('span');
+    v.className = 'v';
+    const val = state.cols[i][state.highlighted];
+    v.textContent = (val >= 0 ? '+' : '') + val.toFixed(3);
+    pair.appendChild(t);
+    pair.appendChild(arrow);
+    pair.appendChild(v);
+    valBox.appendChild(pair);
+  }
+}
+
+function parseTimes(input) {
+  return [...new Set(
+    input.split(/[,\s]+/)
+         .map(s => s.trim())
+         .filter(s => s.length > 0)
+         .map(s => parseFloat(s))
+         .filter(t => !isNaN(t) && t > 0 && t < 1000)
+  )].sort((a, b) => a - b);
+}
+
+function regenerate() {
+  const inp = document.getElementById('times-input');
+  const nInp = document.getElementById('n-input');
+  let times = parseTimes(inp.value);
+
+  if (times.length < 2) {
+    inp.style.borderColor = '#B8533B';
+    setTimeout(() => { inp.style.borderColor = ''; }, 800);
+    return;
+  }
+  if (times.length > 7) times = times.slice(0, 7);
+
+  inp.value = times.map(t => formatTime(t)).join(', ');
+  state.times = times;
+
+  let n = parseInt(nInp.value);
+  if (!isFinite(n)) n = 1000;
+  state.n = Math.min(5000, Math.max(100, n));
+  nInp.value = state.n;
+
+  const matrixCv = document.getElementById('matrix');
+  const pathCv = document.getElementById('path-canvas');
+  matrixCv.style.opacity = '0.25';
+  pathCv.style.opacity = '0.25';
+  setTimeout(() => {
+    generate();
+    injectHighlightedPath();
+    draw();
+    drawPath();
+    updateHighlightUI();
+    matrixCv.style.opacity = '1';
+    pathCv.style.opacity = '1';
+  }, 60);
+}
+
+function repick() {
+  if (!state.cols.length) return;
+  let next = Math.floor(Math.random() * state.n);
+  if (state.n > 1 && next === state.highlighted) {
+    next = (next + 1) % state.n;
+  }
+  state.highlighted = next;
+  injectHighlightedPath();
+  draw();
+  drawPath();
+  updateHighlightUI();
+}
+
+// ── Event listeners ────────────────────────────────────
+document.querySelectorAll('.process-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.process-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.process = btn.dataset.process;
+    document.body.className = 'process-' + state.process;
+    updateFormula();
+    regenerate();
+  });
+});
+
+document.getElementById('regen-btn').addEventListener('click', regenerate);
+document.getElementById('repick-btn').addEventListener('click', repick);
+document.getElementById('times-input').addEventListener('keypress', e => { if (e.key === 'Enter') regenerate(); });
+document.getElementById('n-input').addEventListener('keypress', e => { if (e.key === 'Enter') regenerate(); });
+
+let _rsTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_rsTimer);
+  _rsTimer = setTimeout(() => { draw(); drawPath(); }, 120);
+});
+
+// Initial render
+updateFormula();
+generate();
+injectHighlightedPath();
+draw();
+drawPath();
+updateHighlightUI();
+</script>
+</body>
+</html>

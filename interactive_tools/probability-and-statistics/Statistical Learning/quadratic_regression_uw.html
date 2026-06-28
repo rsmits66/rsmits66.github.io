@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quadratic Regression — Interactive — University of Washington</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#C79900; --goldDk:#8E632A;
+  --crimson:#39275B; --crimson2:#2a1d44; --crimsonLt:#e8e3f0;
+  --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:20px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#c4bdd0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#c4bdd0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px 4px;
+          max-width:1200px;width:100%;}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:4px 11px;font-size:.84rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+.toggle{display:flex;align-items:center;gap:4px;font-size:.78rem;color:var(--muted);cursor:pointer;}
+.toggle input{accent-color:var(--crimson);cursor:pointer;}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+
+.entry{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 16px 6px;
+       max-width:1200px;width:100%;font-size:.82rem;}
+.entry label{color:var(--muted);font-style:italic;}
+.entry input[type=text]{font-family:'Crimson Pro',Georgia,serif;font-size:.85rem;
+       padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:#fff;
+       color:var(--navy);width:230px;}
+.entry input[type=text]:focus{outline:none;border-color:var(--crimson);}
+
+.wrap{max-width:1200px;width:100%;padding:6px 16px 0;}
+.grid{display:grid;grid-template-columns:540px 1fr;gap:12px;align-items:start;}
+.col{display:flex;flex-direction:column;gap:12px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:5px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;cursor:crosshair;background:#fff;}
+
+.stats{padding:11px 16px;font-size:.82rem;line-height:1.55;}
+.stats h3{font-family:'Playfair Display',Georgia,serif;font-size:.85rem;color:var(--crimson);
+          margin-top:7px;margin-bottom:2px;border-bottom:1px solid var(--border);padding-bottom:1px;}
+.stats h3:first-child{margin-top:0;}
+.stat-row{display:flex;justify-content:space-between;gap:8px;font-size:.79rem;}
+.stat-key{color:var(--muted);}
+.stat-val{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;}
+.pass{color:#1a6a40;font-weight:600;font-size:.78rem;}
+.fail{color:var(--crimson);font-weight:600;font-size:.78rem;}
+.note{font-size:.72rem;color:var(--muted);font-style:italic;margin-top:3px;}
+
+.guess-stats{padding:8px 12px;background:var(--panel);border-top:1px solid var(--border);
+             font-size:.78rem;line-height:1.55;}
+.empty{color:var(--muted);font-style:italic;text-align:center;padding:24px 14px;font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Quadratic Regression</div>
+  <div class="hdr-main">
+    <h1>Quadratic Regression &thinsp;&mdash;&thinsp; Least Squares &amp; Residual Analysis</h1>
+    <div class="subtitle">
+      Y<sub>i</sub> = &beta;<sub>0</sub> + &beta;<sub>1</sub> x<sub>i</sub> + &beta;<sub>2</sub> x<sub>i</sub><sup>2</sup> + &epsilon;<sub>i</sub>,&ensp;
+      &epsilon;<sub>i</sub> iid mean 0 variance &sigma;&sup2; &ensp;&middot;&ensp;
+      &beta;&#770; = (X&prime;X)<sup>&minus;1</sup>X&prime;y &ensp;&middot;&ensp;
+      &sigma;&#770;&sup2; = SSE/(n&minus;3) &ensp;&middot;&ensp;
+      test residuals for normality
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <button id="btnClear">Clear</button>
+  <button id="btnExample" class="primary">Load example</button>
+  <label class="toggle"><input type="checkbox" id="tgSSE" checked> SSE squares</label>
+  <label class="toggle"><input type="checkbox" id="tgSSy" checked> S<sub>yy</sub> squares</label>
+  <label class="toggle"><input type="checkbox" id="tgLine" checked> LS curve</label>
+  <label class="toggle"><input type="checkbox" id="tgMean" checked> &#x0233; line</label>
+  <span class="hint">&mdash; click point to inspect &middot; shift-click to remove</span>
+</div>
+
+<div class="entry">
+  <label>x =</label>
+  <input type="text" id="xInput" placeholder="e.g. 1, 2, 3, 4, 5">
+  <label>y =</label>
+  <input type="text" id="yInput" placeholder="e.g. 2.1, 3.9, 6.0, 7.8, 10.2">
+  <button id="btnLoadVec">Load vectors</button>
+  <span class="hint">&mdash; comma or space separated, must have equal length</span>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <div class="phdr">Scatter with Least-Squares Quadratic &ensp;&middot;&ensp; SSE squares (purple) &ensp;&middot;&ensp; S<sub>yy</sub> squares (gold)</div>
+        <canvas id="main" width="540" height="360"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr">Residual histogram with N(0, S&sup2;) overlay &ensp;&middot;&ensp; Shapiro&ndash;Wilk normality test</div>
+        <canvas id="hist" width="540" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr">Confidence intervals for &beta;<sub>0</sub>, &beta;<sub>1</sub>, &beta;<sub>2</sub> &ensp;&middot;&ensp; prediction interval for Y at x*</div>
+        <div style="padding:5px 12px 4px;background:var(--panel);border-bottom:1px solid var(--border);
+                    display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;">
+          <label style="color:var(--muted);font-style:italic;">level 1&minus;&alpha; =</label>
+          <select id="confSel" style="font-family:'Crimson Pro',Georgia,serif;font-size:.83rem;
+                  padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--navy);">
+            <option value="0.80">80%</option>
+            <option value="0.90">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+            <option value="0.999">99.9%</option>
+            <option value="custom">custom…</option>
+          </select>
+          <input type="text" id="confCustom" placeholder="0.95" style="font-family:'Crimson Pro',Georgia,serif;
+                 font-size:.83rem;padding:2px 7px;border:1px solid var(--border);border-radius:3px;
+                 background:#fff;color:var(--navy);width:55px;display:none;">
+          <span style="color:var(--border);">|</span>
+          <label style="color:var(--muted);font-style:italic;">x* =</label>
+          <input type="text" id="xStarInput" placeholder="e.g. 1.5" style="font-family:'Crimson Pro',Georgia,serif;
+                 font-size:.85rem;padding:2px 7px;border:1px solid var(--border);border-radius:3px;
+                 background:#fff;color:var(--navy);width:65px;">
+          <button id="btnXStar" style="padding:3px 10px;font-size:.78rem;">Compute</button>
+          <button id="btnXStarClr" style="padding:3px 10px;font-size:.78rem;">Clear x*</button>
+        </div>
+        <canvas id="ci" width="540" height="260"></canvas>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <div class="phdr">Estimates &amp; inference</div>
+        <div class="stats" id="statsPanel"></div>
+      </div>
+      <div class="card">
+        <div class="phdr">Beat least squares &ensp;&middot;&ensp; drag the handles</div>
+        <canvas id="guess" width="380" height="280"></canvas>
+        <div class="guess-stats" id="guessStats"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let XMIN=0, XMAX=10, YMIN=0, YMAX=10;
+const DEFAULT_BOUNDS={x:[0,10],y:[0,10]};
+let points=[];
+
+function fitBounds(){
+  if(points.length===0){
+    XMIN=DEFAULT_BOUNDS.x[0];XMAX=DEFAULT_BOUNDS.x[1];
+    YMIN=DEFAULT_BOUNDS.y[0];YMAX=DEFAULT_BOUNDS.y[1];
+    gx1=XMIN+0.15*(XMAX-XMIN); gx2=XMIN+0.50*(XMAX-XMIN); gx3=XMIN+0.85*(XMAX-XMIN);
+    gy1=5; gy2=5; gy3=5;
+    return;
+  }
+  let xlo=Infinity,xhi=-Infinity,ylo=Infinity,yhi=-Infinity;
+  for(const p of points){
+    if(p.x<xlo)xlo=p.x; if(p.x>xhi)xhi=p.x;
+    if(p.y<ylo)ylo=p.y; if(p.y>yhi)yhi=p.y;
+  }
+  // pad ~12% on each side
+  const xr=Math.max(xhi-xlo,1), yr=Math.max(yhi-ylo,1);
+  XMIN=xlo-0.12*xr; XMAX=xhi+0.12*xr;
+  YMIN=ylo-0.12*yr; YMAX=yhi+0.12*yr;
+  // place 3 handles at 15%, 50%, 85% of the x-range (interior)
+  gx1=XMIN+0.15*(XMAX-XMIN); gx2=XMIN+0.50*(XMAX-XMIN); gx3=XMIN+0.85*(XMAX-XMIN);
+  // start them flat at the y-mean
+  const ymid=(ylo+yhi)/2;
+  gy1=ymid; gy2=ymid; gy3=ymid;
+}
+let selectedIdx=-1;
+let tgSSE=true, tgSSy=true, tgLine=true, tgMean=true;
+let gx1=2,gy1=5, gx2=5,gy2=5, gx3=8,gy3=5;
+let xStar=null;
+let confLevel=0.95;
+let guessDragging=null;
+
+const cMain=document.getElementById('main'), ctxM=cMain.getContext('2d');
+const cHist=document.getElementById('hist'), ctxH=cHist.getContext('2d');
+const cCI=document.getElementById('ci'), ctxC=cCI.getContext('2d');
+const cGuess=document.getElementById('guess'), ctxG=cGuess.getContext('2d');
+
+const Mpad={l:42,r:14,t:14,b:32};
+const MgW=cMain.width-Mpad.l-Mpad.r, MgH=cMain.height-Mpad.t-Mpad.b;
+function mX(x){return Mpad.l+(x-XMIN)/(XMAX-XMIN)*MgW;}
+function mY(y){return Mpad.t+(YMAX-y)/(YMAX-YMIN)*MgH;}
+function mXinv(px){return XMIN+(px-Mpad.l)/MgW*(XMAX-XMIN);}
+function mYinv(py){return YMAX-(py-Mpad.t)/MgH*(YMAX-YMIN);}
+
+const Gpad={l:34,r:12,t:12,b:28};
+const GgW=cGuess.width-Gpad.l-Gpad.r, GgH=cGuess.height-Gpad.t-Gpad.b;
+function gX(x){return Gpad.l+(x-XMIN)/(XMAX-XMIN)*GgW;}
+function gY(y){return Gpad.t+(YMAX-y)/(YMAX-YMIN)*GgH;}
+function gYinv(py){return YMAX-(py-Gpad.t)/GgH*(YMAX-YMIN);}
+function gXinv(px){return XMIN+(px-Gpad.l)/GgW*(XMAX-XMIN);}
+
+// Invert a 3x3 matrix; returns null if singular.
+function invert3(M){
+  const a=M[0][0],b=M[0][1],c=M[0][2];
+  const d=M[1][0],e=M[1][1],f=M[1][2];
+  const g=M[2][0],h=M[2][1],i=M[2][2];
+  const det = a*(e*i-f*h) - b*(d*i-f*g) + c*(d*h-e*g);
+  if(Math.abs(det)<1e-14) return null;
+  const inv = 1/det;
+  return [
+    [(e*i-f*h)*inv, (c*h-b*i)*inv, (b*f-c*e)*inv],
+    [(f*g-d*i)*inv, (a*i-c*g)*inv, (c*d-a*f)*inv],
+    [(d*h-e*g)*inv, (b*g-a*h)*inv, (a*e-b*d)*inv]
+  ];
+}
+
+// Quadratic form v' M v for 3x3 M and 3-vector v.
+function quadForm(M,v){
+  let s=0;
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) s += v[i]*M[i][j]*v[j];
+  return s;
+}
+
+function computeFit(){
+  const n = points.length;
+  if(n < 3) return null;
+  // Build X'X and X'y for the quadratic design X = [1, x, x^2]
+  // X'X is the 3x3 matrix of moment sums.
+  let s0=n, s1=0, s2=0, s3=0, s4=0;
+  let sy=0, sxy=0, sx2y=0, syy=0;
+  for(const p of points){
+    const x=p.x, y=p.y;
+    const x2=x*x, x3=x2*x, x4=x2*x2;
+    s1+=x; s2+=x2; s3+=x3; s4+=x4;
+    sy+=y; sxy+=x*y; sx2y+=x2*y; syy+=y*y;
+  }
+  const ybar = sy/n;
+  const xbar = s1/n;
+  const Syy  = syy - n*ybar*ybar;
+  const Sxx  = s2 - n*xbar*xbar;
+  
+  const XtX = [[s0,s1,s2],[s1,s2,s3],[s2,s3,s4]];
+  const XtXinv = invert3(XtX);
+  if(!XtXinv) return null;  // collinear x's (need ≥ 3 distinct values)
+  
+  const Xty = [sy, sxy, sx2y];
+  const b0 = XtXinv[0][0]*Xty[0]+XtXinv[0][1]*Xty[1]+XtXinv[0][2]*Xty[2];
+  const b1 = XtXinv[1][0]*Xty[0]+XtXinv[1][1]*Xty[1]+XtXinv[1][2]*Xty[2];
+  const b2 = XtXinv[2][0]*Xty[0]+XtXinv[2][1]*Xty[1]+XtXinv[2][2]*Xty[2];
+  
+  const yhat = points.map(p=>b0+b1*p.x+b2*p.x*p.x);
+  const resid = points.map((p,i)=>p.y-yhat[i]);
+  const sse  = resid.reduce((s,r)=>s+r*r,0);
+  const ssr  = Syy - sse;
+  const df   = n - 3;
+  const s2hat = df>0 ? sse/df : 0;
+  
+  const c00 = XtXinv[0][0], c11 = XtXinv[1][1], c22 = XtXinv[2][2];
+  const c01 = XtXinv[0][1], c02 = XtXinv[0][2], c12 = XtXinv[1][2];
+  
+  return {n, df, b0, b1, b2,
+          yhat, resid, sse, ssr, s2:s2hat,
+          ybar, xbar, Syy, Sxx,
+          XtX, XtXinv, c00, c11, c22, c01, c02, c12};
+}
+
+// Normal CDF via Abramowitz & Stegun 7.1.26 erf approximation (max err ~1.5e-7)
+function normalCDF(x){
+  const sign = x < 0 ? -1 : 1;
+  const xa = Math.abs(x) / Math.SQRT2;
+  const a1 =  0.254829592, a2 = -0.284496736, a3 =  1.421413741;
+  const a4 = -1.453152027, a5 =  1.061405429, p_ = 0.3275911;
+  const t = 1.0 / (1.0 + p_ * xa);
+  const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-xa*xa);
+  return 0.5 * (1 + sign*y);
+}
+
+// Shapiro-Wilk test of normality (Royston AS R94 algorithm)
+// Returns {W, p, n} or null if too few/many points
+function shapiroWilk(resid){
+  const n = resid.length;
+  if(n < 3 || n > 5000) return null;
+  const sorted = [...resid].sort((a,b)=>a-b);
+  const mean = sorted.reduce((s,r)=>s+r,0)/n;
+  let ss = 0;
+  for(const r of sorted){const d=r-mean; ss+=d*d;}
+  if(ss < 1e-14) return null;
+
+  let W;
+  if(n===3){
+    // Exact: a = (sqrt(0.5), 0, -sqrt(0.5))
+    const a1 = Math.sqrt(0.5);
+    const num = a1*(sorted[2]-sorted[0]);
+    W = (num*num)/ss;
+  } else {
+    const n2 = Math.floor(n/2);
+    const an25 = n + 0.25;
+    const m = new Array(n2);
+    let summ2 = 0;
+    for(let i=1; i<=n2; i++){
+      m[i-1] = invNormal((i - 3/8)/an25);  // negative values (smallest order stats)
+      summ2 += m[i-1]*m[i-1];
+    }
+    summ2 *= 2;
+    const ssumm2 = Math.sqrt(summ2);
+    const rsn = 1/Math.sqrt(n);
+    const poly = (c,x)=>{let r=0; for(let i=c.length-1;i>=0;i--) r=r*x+c[i]; return r;};
+    const c1 = [0, .221157, -.147981, -2.071190, 4.434685, -2.706056];
+    const c2 = [0, .042981, -.293762, -1.752460, 5.682633, -3.582633];
+
+    const a1 = poly(c1,rsn) - m[0]/ssumm2;
+    const a = new Array(n2);
+    let i1, fac;
+    if(n > 5){
+      const a2 = poly(c2,rsn) - m[1]/ssumm2;
+      fac = Math.sqrt((summ2 - 2*m[0]*m[0] - 2*m[1]*m[1])/(1 - 2*a1*a1 - 2*a2*a2));
+      a[0] = a1; a[1] = a2; i1 = 3;
+    } else {
+      // n in {4, 5}
+      fac = Math.sqrt((summ2 - 2*m[0]*m[0])/(1 - 2*a1*a1));
+      a[0] = a1; i1 = 2;
+    }
+    for(let i=i1; i<=n2; i++) a[i-1] = -m[i-1]/fac;
+
+    // W = (Σ a_(n+1-i)·(x_(n+1-i) - x_(i)))² / Σ(xᵢ-x̄)²
+    let num = 0;
+    for(let i=1; i<=n2; i++){
+      num += a[i-1] * (sorted[n-i] - sorted[i-1]);
+    }
+    W = (num*num)/ss;
+  }
+
+  // p-value via Royston (1992) normalising transformation
+  let p;
+  if(n === 3){
+    // Exact: F(W) = (6/π)·(arcsin(√W) − arcsin(√(3/4)))
+    const F = (6/Math.PI)*(Math.asin(Math.sqrt(W)) - Math.asin(Math.sqrt(0.75)));
+    p = 1 - F;
+    if(p<0) p=0; if(p>1) p=1;
+  } else if(n <= 11){
+    const gamma = -2.273 + 0.459*n;
+    const mu = 0.5440 - 0.39978*n + 0.025054*n*n - 0.0006714*n*n*n;
+    const sigma = Math.exp(1.3822 - 0.77857*n + 0.062767*n*n - 0.0020322*n*n*n);
+    const arg = gamma - Math.log(1 - W);
+    if(arg <= 0){p = 1;}
+    else {
+      const y = -Math.log(arg);
+      const z = (y - mu)/sigma;
+      p = 1 - normalCDF(z);
+    }
+  } else {
+    const u = Math.log(n);
+    const mu = -1.5861 - 0.31082*u - 0.083751*u*u + 0.0038915*u*u*u;
+    const sigma = Math.exp(-0.4803 - 0.082676*u + 0.0030302*u*u);
+    const y = Math.log(1 - W);
+    const z = (y - mu)/sigma;
+    p = 1 - normalCDF(z);
+  }
+  return {W, p, n};
+}
+
+// Inverse standard normal (Beasley-Springer-Moro rational approximation)
+function invNormal(p){
+  if(p<=0) return -Infinity;
+  if(p>=1) return Infinity;
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,
+           1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,
+            6.680131188771972e+01,-1.328068155288572e+01];
+  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,
+           -2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,
+           3.754408661907416e+00];
+  const pl=0.02425, ph=1-pl;
+  let q,r,x;
+  if(p<pl){
+    q=Math.sqrt(-2*Math.log(p));
+    x=(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }else if(p<=ph){
+    q=p-0.5; r=q*q;
+    x=(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  }else{
+    q=Math.sqrt(-2*Math.log(1-p));
+    x=-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+  return x;
+}
+
+// t critical value: returns t such that P(|T_df| > t) = alpha (two-tail)
+// Uses inverse normal + Cornish-Fisher expansion (accurate for df ≥ 2)
+// For df=1 (Cauchy), uses closed form.
+function tCritical(df,alpha){
+  if(df<1) return Infinity;
+  const oneTail=alpha/2;
+  if(df===1){
+    // T_1 = Cauchy: P(|T|>t) = 2*(1 - atan(t)/pi - 1/2) = 1 - (2/pi)*atan(t)
+    // so t = tan(pi*(1 - alpha)/2)
+    return Math.tan(Math.PI*(1-alpha)/2);
+  }
+  const z=invNormal(1-oneTail);
+  const z2=z*z, z3=z*z2, z5=z3*z2, z7=z5*z2, z9=z7*z2;
+  const t = z
+    + (z3+z)/(4*df)
+    + (5*z5+16*z3+3*z)/(96*df*df)
+    + (3*z7+19*z5+17*z3-15*z)/(384*df*df*df)
+    + (79*z9+776*z7+1482*z5-1920*z3-945*z)/(92160*df*df*df*df);
+  return t;
+}
+
+function normalPdf(x,mu,sigma){
+  const z=(x-mu)/sigma;
+  return Math.exp(-0.5*z*z)/(sigma*Math.sqrt(2*Math.PI));
+}
+
+function niceStep(range,divs){
+  const raw=range/divs;
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  return [0.1,0.2,0.25,0.5,1,2,2.5,5,10].map(f=>f*mag).find(s=>s>=raw*0.7)||mag;
+}
+
+function drawGridAxes(ctx,pad,gW,gH,xmin,xmax,ymin,ymax){
+  const xStep=niceStep(xmax-xmin,8);
+  const yStep=niceStep(ymax-ymin,6);
+  const xDec=Math.max(0,-Math.floor(Math.log10(xStep))+(xStep<1?1:0));
+  const yDec=Math.max(0,-Math.floor(Math.log10(yStep))+(yStep<1?1:0));
+  ctx.fillStyle='#fff';
+  ctx.fillRect(pad.l,pad.t,gW,gH);
+  ctx.strokeStyle='rgba(57,39,91,0.07)';
+  ctx.lineWidth=1;
+  for(let x=Math.ceil(xmin/xStep)*xStep;x<=xmax+1e-9;x+=xStep){
+    const px=pad.l+(x-xmin)/(xmax-xmin)*gW;
+    ctx.beginPath();ctx.moveTo(px,pad.t);ctx.lineTo(px,pad.t+gH);ctx.stroke();
+  }
+  for(let y=Math.ceil(ymin/yStep)*yStep;y<=ymax+1e-9;y+=yStep){
+    const py=pad.t+(ymax-y)/(ymax-ymin)*gH;
+    ctx.beginPath();ctx.moveTo(pad.l,py);ctx.lineTo(pad.l+gW,py);ctx.stroke();
+  }
+  // Zero axes if visible (heavier)
+  if(xmin<0 && xmax>0){
+    const x0=pad.l+(0-xmin)/(xmax-xmin)*gW;
+    ctx.strokeStyle='rgba(24,40,74,0.35)';
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+gH);ctx.stroke();
+  }
+  if(ymin<0 && ymax>0){
+    const y0=pad.t+(ymax-0)/(ymax-ymin)*gH;
+    ctx.strokeStyle='rgba(24,40,74,0.35)';
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(pad.l+gW,y0);ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(24,40,74,0.5)';
+  ctx.lineWidth=1.2;
+  ctx.strokeRect(pad.l,pad.t,gW,gH);
+  ctx.fillStyle='rgba(24,40,74,0.6)';
+  ctx.font='10px "Crimson Pro",Georgia,serif';
+  ctx.textAlign='center';
+  for(let x=Math.ceil(xmin/xStep)*xStep;x<=xmax+1e-9;x+=xStep){
+    const px=pad.l+(x-xmin)/(xmax-xmin)*gW;
+    ctx.fillText(x.toFixed(xDec),px,pad.t+gH+12);
+  }
+  ctx.textAlign='right';
+  for(let y=Math.ceil(ymin/yStep)*yStep;y<=ymax+1e-9;y+=yStep){
+    const py=pad.t+(ymax-y)/(ymax-ymin)*gH;
+    ctx.fillText(y.toFixed(yDec),pad.l-4,py+3);
+  }
+  ctx.fillStyle='#18284a';
+  ctx.font='italic 11px "Crimson Pro",Georgia,serif';
+  ctx.textAlign='center';
+  ctx.fillText('x',pad.l+gW/2,pad.t+gH+24);
+  ctx.save();
+  ctx.translate(11,pad.t+gH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('y',0,0);
+  ctx.restore();
+}
+
+function drawMain(){
+  ctxM.clearRect(0,0,cMain.width,cMain.height);
+  drawGridAxes(ctxM,Mpad,MgW,MgH,XMIN,XMAX,YMIN,YMAX);
+  
+  if(points.length===0){
+    ctxM.fillStyle='rgba(122,122,138,0.8)';
+    ctxM.font='italic 13px "Crimson Pro",Georgia,serif';
+    ctxM.textAlign='center';
+    ctxM.fillText('click anywhere on the grid to add data points',cMain.width/2,cMain.height/2-8);
+    ctxM.fillText('or press "Load example" / paste row vectors',cMain.width/2,cMain.height/2+10);
+    return;
+  }
+  
+  const fit=computeFit();
+  const ybar=fit?fit.ybar:points.reduce((s,p)=>s+p.y,0)/points.length;
+  
+  ctxM.save();
+  ctxM.beginPath();
+  ctxM.rect(Mpad.l,Mpad.t,MgW,MgH);
+  ctxM.clip();
+  
+  // Syy squares — light gold, drawn to LEFT of point
+  if(tgSSy && tgMean){
+    const pyBar=mY(ybar);
+    for(const p of points){
+      const px=mX(p.x), py=mY(p.y);
+      const sidePx=Math.abs(py-pyBar);
+      if(sidePx<1) continue;
+      const left=px-sidePx;
+      const top=Math.min(py,pyBar);
+      ctxM.fillStyle='rgba(199,153,0,0.20)';
+      ctxM.fillRect(left,top,sidePx,sidePx);
+      ctxM.strokeStyle='rgba(199,153,0,0.55)';
+      ctxM.lineWidth=0.8;
+      ctxM.strokeRect(left,top,sidePx,sidePx);
+    }
+  }
+  
+  // SSE squares — crimson, drawn to RIGHT of point
+  if(tgSSE && fit){
+    for(let i=0;i<points.length;i++){
+      const p=points[i];
+      const px=mX(p.x), py=mY(p.y);
+      const pyHat=mY(fit.yhat[i]);
+      const sidePx=Math.abs(py-pyHat);
+      if(sidePx<1) continue;
+      const left=px;
+      const top=Math.min(py,pyHat);
+      const isSel=(i===selectedIdx);
+      ctxM.fillStyle=isSel?'rgba(57,39,91,0.50)':'rgba(57,39,91,0.25)';
+      ctxM.fillRect(left,top,sidePx,sidePx);
+      ctxM.strokeStyle=isSel?'#39275B':'rgba(57,39,91,0.70)';
+      ctxM.lineWidth=isSel?1.6:0.9;
+      ctxM.strokeRect(left,top,sidePx,sidePx);
+    }
+  }
+  
+  // ybar line
+  if(tgMean){
+    ctxM.strokeStyle='#C79900';
+    ctxM.lineWidth=2;
+    ctxM.setLineDash([8,4]);
+    ctxM.beginPath();
+    ctxM.moveTo(Mpad.l,mY(ybar));
+    ctxM.lineTo(Mpad.l+MgW,mY(ybar));
+    ctxM.stroke();
+    ctxM.setLineDash([]);
+  }
+  
+  // LS quadratic curve
+  if(tgLine && fit){
+    ctxM.strokeStyle='#18284a';
+    ctxM.lineWidth=2.5;
+    ctxM.beginPath();
+    const NC=180;
+    for(let k=0;k<=NC;k++){
+      const x=XMIN+(XMAX-XMIN)*k/NC;
+      const y=fit.b0+fit.b1*x+fit.b2*x*x;
+      const px=mX(x), py=mY(y);
+      if(k===0) ctxM.moveTo(px,py); else ctxM.lineTo(px,py);
+    }
+    ctxM.stroke();
+    // equation label near right edge of curve
+    const midX=(XMIN+XMAX)*0.62;
+    const midY=fit.b0+fit.b1*midX+fit.b2*midX*midX;
+    ctxM.fillStyle='#18284a';
+    ctxM.font='bold italic 11px "Crimson Pro",Georgia,serif';
+    ctxM.textAlign='left';
+    const sgn1=fit.b1>=0?' + ':' − ', sgn2=fit.b2>=0?' + ':' − ';
+    const eq='ŷ = '+fit.b0.toFixed(2)+sgn1+Math.abs(fit.b1).toFixed(2)+'x'+sgn2+Math.abs(fit.b2).toFixed(2)+'x²';
+    ctxM.fillText(eq,mX(midX)+8,mY(midY)-8);
+  }
+  
+  // points
+  for(let i=0;i<points.length;i++){
+    const p=points[i];
+    const isSel=(i===selectedIdx);
+    ctxM.beginPath();
+    ctxM.arc(mX(p.x),mY(p.y),isSel?5.5:4.2,0,2*Math.PI);
+    ctxM.fillStyle=isSel?'#2a1d44':'#39275B';
+    ctxM.fill();
+    ctxM.strokeStyle='#fff';
+    ctxM.lineWidth=1.3;
+    ctxM.stroke();
+  }
+  
+  ctxM.restore();
+  
+  if(tgMean){
+    ctxM.fillStyle='#C79900';
+    ctxM.font='bold 11px "Crimson Pro",Georgia,serif';
+    ctxM.textAlign='left';
+    ctxM.fillText('ȳ = '+ybar.toFixed(2),Mpad.l+5,mY(ybar)-5);
+  }
+  
+  if(selectedIdx>=0 && fit){
+    const p=points[selectedIdx];
+    const r=fit.resid[selectedIdx];
+    ctxM.fillStyle='#18284a';
+    ctxM.font='bold 10px "Crimson Pro",Georgia,serif';
+    ctxM.textAlign='left';
+    const tx=Math.min(mX(p.x)+8,cMain.width-115);
+    ctxM.fillText('('+p.x.toFixed(2)+', '+p.y.toFixed(2)+')',tx,mY(p.y)-7);
+    ctxM.fillStyle='#39275B';
+    ctxM.fillText('residual = '+r.toFixed(3),tx,mY(p.y)+12);
+  }
+}
+
+function drawHist(){
+  ctxH.clearRect(0,0,cHist.width,cHist.height);
+  const fit=computeFit();
+  if(!fit || fit.n<2){
+    ctxH.fillStyle='rgba(122,122,138,0.7)';
+    ctxH.font='italic 12px "Crimson Pro",Georgia,serif';
+    ctxH.textAlign='center';
+    ctxH.fillText('need at least 2 points for residuals',cHist.width/2,cHist.height/2);
+    return;
+  }
+  
+  const resid=fit.resid;
+  const n=resid.length;
+  const sigma=Math.sqrt(Math.max(fit.s2,1e-10));
+  
+  const rmin=Math.min(...resid);
+  const rmax=Math.max(...resid);
+  let lo=Math.min(rmin,-3*sigma);
+  let hi=Math.max(rmax,3*sigma);
+  if(hi-lo<0.1){lo-=0.5;hi+=0.5;}
+  const padR=(hi-lo)*0.08;
+  lo-=padR; hi+=padR;
+  
+  const nbins=Math.max(6,Math.min(22,Math.ceil(Math.sqrt(n))+2));
+  const bw=(hi-lo)/nbins;
+  const bins=new Array(nbins).fill(0);
+  const binIdx=resid.map(r=>{
+    return Math.min(nbins-1,Math.max(0,Math.floor((r-lo)/bw)));
+  });
+  for(const b of binIdx) bins[b]++;
+  const binMax=Math.max(...bins,1);
+  
+  const hpad={l:42,r:14,t:12,b:32};
+  const hW=cHist.width-hpad.l-hpad.r;
+  const hH=cHist.height-hpad.t-hpad.b;
+  function hX(r){return hpad.l+(r-lo)/(hi-lo)*hW;}
+  const peakDensity=n*bw*normalPdf(0,0,sigma);
+  const yMax=Math.max(binMax,peakDensity)*1.1;
+  function hY(c){return hpad.t+(1-c/yMax)*hH;}
+  
+  ctxH.fillStyle='#fff';
+  ctxH.fillRect(hpad.l,hpad.t,hW,hH);
+  
+  for(let b=0;b<nbins;b++){
+    const x1=hX(lo+b*bw);
+    const x2=hX(lo+(b+1)*bw);
+    const y1=hY(bins[b]);
+    const y2=hpad.t+hH;
+    const isSel=selectedIdx>=0 && binIdx[selectedIdx]===b;
+    ctxH.fillStyle=isSel?'rgba(57,39,91,0.55)':'rgba(120,120,130,0.45)';
+    ctxH.fillRect(x1+1,y1,x2-x1-2,y2-y1);
+    ctxH.strokeStyle=isSel?'#39275B':'rgba(80,80,90,0.7)';
+    ctxH.lineWidth=isSel?1.4:0.9;
+    ctxH.strokeRect(x1+1,y1,x2-x1-2,y2-y1);
+  }
+  
+  const x0=hX(0);
+  if(x0>=hpad.l && x0<=hpad.l+hW){
+    ctxH.strokeStyle='rgba(24,40,74,0.45)';
+    ctxH.lineWidth=1;
+    ctxH.setLineDash([4,3]);
+    ctxH.beginPath();ctxH.moveTo(x0,hpad.t);ctxH.lineTo(x0,hpad.t+hH);ctxH.stroke();
+    ctxH.setLineDash([]);
+  }
+  
+  ctxH.strokeStyle='#39275B';
+  ctxH.lineWidth=2.2;
+  ctxH.beginPath();
+  const NP=200;
+  for(let i=0;i<=NP;i++){
+    const r=lo+(hi-lo)*i/NP;
+    const count=normalPdf(r,0,sigma)*n*bw;
+    const px=hX(r), py=hY(count);
+    i===0?ctxH.moveTo(px,py):ctxH.lineTo(px,py);
+  }
+  ctxH.stroke();
+  
+  if(selectedIdx>=0){
+    const rv=resid[selectedIdx];
+    const px=hX(rv);
+    if(px>=hpad.l && px<=hpad.l+hW){
+      ctxH.strokeStyle='#18284a';
+      ctxH.lineWidth=1.4;
+      ctxH.setLineDash([3,3]);
+      ctxH.beginPath();
+      ctxH.moveTo(px,hpad.t);
+      ctxH.lineTo(px,hpad.t+hH);
+      ctxH.stroke();
+      ctxH.setLineDash([]);
+      ctxH.fillStyle='#18284a';
+      ctxH.font='bold 10px "Crimson Pro",Georgia,serif';
+      ctxH.textAlign='center';
+      ctxH.fillText('e = '+rv.toFixed(2),px,hpad.t-2);
+    }
+  }
+  
+  ctxH.strokeStyle='rgba(24,40,74,0.5)';
+  ctxH.lineWidth=1.2;
+  ctxH.strokeRect(hpad.l,hpad.t,hW,hH);
+  
+  ctxH.fillStyle='rgba(24,40,74,0.6)';
+  ctxH.font='10px "Crimson Pro",Georgia,serif';
+  ctxH.textAlign='center';
+  const xStep=niceStep(hi-lo,7);
+  const decimals=Math.max(0,-Math.floor(Math.log10(xStep))+1);
+  for(let x=Math.ceil(lo/xStep)*xStep;x<=hi+1e-9;x+=xStep){
+    ctxH.fillText(x.toFixed(decimals),hX(x),hpad.t+hH+12);
+  }
+  ctxH.fillStyle='#18284a';
+  ctxH.font='italic 11px "Crimson Pro",Georgia,serif';
+  ctxH.fillText('residual  e = y − ŷ',hpad.l+hW/2,hpad.t+hH+25);
+  
+  ctxH.fillStyle='rgba(24,40,74,0.6)';
+  ctxH.font='10px "Crimson Pro",Georgia,serif';
+  ctxH.textAlign='right';
+  const yStep=Math.max(1,Math.ceil(binMax/5));
+  for(let k=0;k<=binMax;k+=yStep){
+    ctxH.fillText(k,hpad.l-4,hY(k)+3);
+  }
+  
+  ctxH.strokeStyle='#39275B';
+  ctxH.lineWidth=2.2;
+  ctxH.beginPath();
+  ctxH.moveTo(hpad.l+hW-150,hpad.t+10);
+  ctxH.lineTo(hpad.l+hW-132,hpad.t+10);
+  ctxH.stroke();
+  ctxH.fillStyle='#39275B';
+  ctxH.font='italic 10px "Crimson Pro",Georgia,serif';
+  ctxH.textAlign='left';
+  ctxH.fillText('N(0, S² = '+fit.s2.toFixed(3)+')',hpad.l+hW-127,hpad.t+13);
+}
+
+function drawCI(){
+  ctxC.clearRect(0,0,cCI.width,cCI.height);
+  const fit=computeFit();
+  
+  if(!fit || fit.df<1){
+    ctxC.fillStyle='rgba(122,122,138,0.7)';
+    ctxC.font='italic 12px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='center';
+    ctxC.fillText('need n ≥ 4 distinct x-values for confidence intervals',cCI.width/2,cCI.height/2);
+    return;
+  }
+  
+  const df=fit.df;
+  const alpha=1-confLevel;
+  const tc=tCritical(df,alpha);
+  const pctLabel=(confLevel*100).toFixed(confLevel*100===Math.round(confLevel*100)?0:1);
+  const S=Math.sqrt(fit.s2);
+  const seB0=S*Math.sqrt(Math.max(fit.c00,0));
+  const seB1=S*Math.sqrt(Math.max(fit.c11,0));
+  const seB2=S*Math.sqrt(Math.max(fit.c22,0));
+  const m0=tc*seB0, m1=tc*seB1, m2=tc*seB2;
+  const lo0=fit.b0-m0, hi0=fit.b0+m0;
+  const lo1=fit.b1-m1, hi1=fit.b1+m1;
+  const lo2=fit.b2-m2, hi2=fit.b2+m2;
+  
+  // Region split: top 60% for beta CIs, bottom 40% for prediction interval
+  const cpad={l:50,r:18,t:18,b:28};
+  const cW=cCI.width-cpad.l-cpad.r;
+  const cH=cCI.height-cpad.t-cpad.b;
+  const splitY=cpad.t+cH*0.62;
+  const topH=splitY-cpad.t-6;
+  const botH=cpad.t+cH-splitY-2;
+  
+  function drawInterval(yPos,est,lo,hi,label,xScale,significantNote){
+    const xL=xScale(lo), xH=xScale(hi), xE=xScale(est);
+    ctxC.strokeStyle='#39275B';
+    ctxC.lineWidth=2.4;
+    ctxC.beginPath();ctxC.moveTo(xL,yPos);ctxC.lineTo(xH,yPos);ctxC.stroke();
+    ctxC.lineWidth=1.8;
+    ctxC.beginPath();ctxC.moveTo(xL,yPos-5);ctxC.lineTo(xL,yPos+5);ctxC.stroke();
+    ctxC.beginPath();ctxC.moveTo(xH,yPos-5);ctxC.lineTo(xH,yPos+5);ctxC.stroke();
+    ctxC.beginPath();ctxC.arc(xE,yPos,4,0,2*Math.PI);
+    ctxC.fillStyle='#C79900';
+    ctxC.strokeStyle='#39275B';
+    ctxC.lineWidth=1.4;
+    ctxC.fill();ctxC.stroke();
+    ctxC.fillStyle='#18284a';
+    ctxC.font='bold 11px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='right';
+    ctxC.fillText(label,cpad.l-5,yPos+4);
+    ctxC.fillStyle='#18284a';
+    ctxC.font='9px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='center';
+    ctxC.fillText('['+lo.toFixed(3)+',  '+hi.toFixed(3)+']',(xL+xH)/2,yPos-7);
+    if(significantNote){
+      ctxC.fillStyle=significantNote.color;
+      ctxC.font=(significantNote.bold?'bold ':'italic ')+'9px "Crimson Pro",Georgia,serif';
+      ctxC.textAlign='left';
+      ctxC.fillText(significantNote.text,xH+6,yPos+3);
+    }
+  }
+  
+  function drawScale(yTop,yBot,xLo,xHi,xScaleFn){
+    ctxC.fillStyle='#fff';
+    ctxC.fillRect(cpad.l,yTop,cW,yBot-yTop);
+    const xStep=niceStep(xHi-xLo,6);
+    const decimals=Math.max(0,-Math.floor(Math.log10(xStep))+1);
+    ctxC.fillStyle='rgba(24,40,74,0.6)';
+    ctxC.font='9px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='center';
+    for(let x=Math.ceil(xLo/xStep)*xStep;x<=xHi+1e-9;x+=xStep){
+      ctxC.strokeStyle='rgba(57,39,91,0.06)';
+      ctxC.lineWidth=1;
+      ctxC.beginPath();ctxC.moveTo(xScaleFn(x),yTop);ctxC.lineTo(xScaleFn(x),yBot);ctxC.stroke();
+      if(Math.abs(x)>1e-9){
+        ctxC.fillText(x.toFixed(decimals),xScaleFn(x),yBot+10);
+      }
+    }
+    if(xLo<0 && xHi>0){
+      const x0=xScaleFn(0);
+      ctxC.strokeStyle='rgba(24,40,74,0.4)';
+      ctxC.lineWidth=1;
+      ctxC.setLineDash([4,3]);
+      ctxC.beginPath();ctxC.moveTo(x0,yTop);ctxC.lineTo(x0,yBot);ctxC.stroke();
+      ctxC.setLineDash([]);
+      ctxC.fillStyle='rgba(24,40,74,0.55)';
+      ctxC.font='9px "Crimson Pro",Georgia,serif';
+      ctxC.textAlign='center';
+      ctxC.fillText('0',x0,yBot+10);
+    }
+    ctxC.strokeStyle='rgba(24,40,74,0.5)';
+    ctxC.lineWidth=1.2;
+    ctxC.strokeRect(cpad.l,yTop,cW,yBot-yTop);
+  }
+  
+  // ── TOP region: 3 beta CIs on shared scale ──
+  const allLo=Math.min(lo0,lo1,lo2,0);
+  const allHi=Math.max(hi0,hi1,hi2,0);
+  const span=allHi-allLo;
+  const xLoT=allLo-span*0.10;
+  const xHiT=allHi+span*0.10;
+  function vXT(v){return cpad.l+(v-xLoT)/(xHiT-xLoT)*cW;}
+  
+  drawScale(cpad.t,cpad.t+topH,xLoT,xHiT,vXT);
+  
+  function noteFor(lo,hi){
+    if(lo<=0 && hi>=0) return {text:' covers 0',color:'rgba(122,122,138,0.85)',bold:false};
+    return {text:' ★ excludes 0',color:'#1a6a40',bold:true};
+  }
+  drawInterval(cpad.t+topH*0.22,fit.b0,lo0,hi0,'β̂₀',vXT,noteFor(lo0,hi0));
+  drawInterval(cpad.t+topH*0.55,fit.b1,lo1,hi1,'β̂₁',vXT,noteFor(lo1,hi1));
+  drawInterval(cpad.t+topH*0.88,fit.b2,lo2,hi2,'β̂₂',vXT,noteFor(lo2,hi2));
+  
+  ctxC.fillStyle='#18284a';
+  ctxC.font='italic 9px "Crimson Pro",Georgia,serif';
+  ctxC.textAlign='left';
+  ctxC.fillText('df = '+df+',  α = '+alpha.toFixed(3)+',  t = '+tc.toFixed(3)+',  S = '+S.toFixed(3)+'  ('+pctLabel+'% intervals,  SE = S√cᵢᵢ)',cpad.l,cpad.t-5);
+  
+  // ── BOTTOM region: prediction interval at x* ──
+  if(xStar!==null && isFinite(xStar)){
+    const xv=[1, xStar, xStar*xStar];
+    const q=quadForm(fit.XtXinv,xv);  // x*' (X'X)^{-1} x*
+    const yhStar=fit.b0+fit.b1*xStar+fit.b2*xStar*xStar;
+    const sePred=S*Math.sqrt(Math.max(1+q,0));
+    const seMean=S*Math.sqrt(Math.max(q,0));
+    const mp=tc*sePred, mm=tc*seMean;
+    const loP=yhStar-mp, hiP=yhStar+mp;
+    const loM=yhStar-mm, hiM=yhStar+mm;
+    
+    const xLoB=Math.min(loP,loM,yhStar);
+    const xHiB=Math.max(hiP,hiM,yhStar);
+    const spanB=Math.max(xHiB-xLoB,1e-9);
+    const xLoB2=xLoB-spanB*0.08, xHiB2=xHiB+spanB*0.08;
+    function vXB(v){return cpad.l+(v-xLoB2)/(xHiB2-xLoB2)*cW;}
+    
+    drawScale(splitY+8,cpad.t+cH,xLoB2,xHiB2,vXB);
+    
+    const yPI=splitY+8+(cpad.t+cH-splitY-8)*0.50;
+    const xLM=vXB(loM), xHM=vXB(hiM);
+    ctxC.strokeStyle='rgba(199,153,0,0.85)';
+    ctxC.lineWidth=4;
+    ctxC.beginPath();ctxC.moveTo(xLM,yPI+10);ctxC.lineTo(xHM,yPI+10);ctxC.stroke();
+    ctxC.fillStyle='#8E632A';
+    ctxC.font='italic 9px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='center';
+    ctxC.fillText('CI for E[Y|x*]: ['+loM.toFixed(3)+', '+hiM.toFixed(3)+']',(xLM+xHM)/2,yPI+22);
+    
+    drawInterval(yPI,yhStar,loP,hiP,'Ŷ(x*)',vXB,null);
+    
+    ctxC.fillStyle='#18284a';
+    ctxC.font='italic 9px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='left';
+    ctxC.fillText('x* = '+xStar.toFixed(3)+',  ŷ(x*) = '+yhStar.toFixed(3)+',  SE_pred = S√(1 + x*′(X′X)⁻¹x*)',cpad.l,splitY+5);
+  } else {
+    ctxC.fillStyle='#fff';
+    ctxC.fillRect(cpad.l,splitY+8,cW,cpad.t+cH-splitY-8);
+    ctxC.strokeStyle='rgba(24,40,74,0.25)';
+    ctxC.lineWidth=1;
+    ctxC.setLineDash([3,3]);
+    ctxC.strokeRect(cpad.l,splitY+8,cW,cpad.t+cH-splitY-8);
+    ctxC.setLineDash([]);
+    ctxC.fillStyle='rgba(122,122,138,0.7)';
+    ctxC.font='italic 11px "Crimson Pro",Georgia,serif';
+    ctxC.textAlign='center';
+    ctxC.fillText('enter x* above and click "Compute" to show prediction interval for Y',
+      cpad.l+cW/2,splitY+8+(cpad.t+cH-splitY-8)/2+4);
+  }
+}
+
+function quadFromHandles(){
+  const V=[[1,gx1,gx1*gx1],[1,gx2,gx2*gx2],[1,gx3,gx3*gx3]];
+  const Vinv=invert3(V);
+  if(!Vinv) return null;
+  return {
+    b0: Vinv[0][0]*gy1+Vinv[0][1]*gy2+Vinv[0][2]*gy3,
+    b1: Vinv[1][0]*gy1+Vinv[1][1]*gy2+Vinv[1][2]*gy3,
+    b2: Vinv[2][0]*gy1+Vinv[2][1]*gy2+Vinv[2][2]*gy3
+  };
+}
+
+function drawGuess(){
+  ctxG.clearRect(0,0,cGuess.width,cGuess.height);
+  drawGridAxes(ctxG,Gpad,GgW,GgH,XMIN,XMAX,YMIN,YMAX);
+  
+  ctxG.save();
+  ctxG.beginPath();
+  ctxG.rect(Gpad.l,Gpad.t,GgW,GgH);
+  ctxG.clip();
+  
+  const fit=computeFit();
+  const guess=quadFromHandles();
+  
+  // residual squares for guess quadratic
+  if(guess){
+    for(const p of points){
+      const yhG=guess.b0+guess.b1*p.x+guess.b2*p.x*p.x;
+      const px=gX(p.x), py=gY(p.y), pyH=gY(yhG);
+      const sidePx=Math.abs(py-pyH);
+      if(sidePx<1) continue;
+      ctxG.fillStyle='rgba(57,39,91,0.20)';
+      ctxG.fillRect(px,Math.min(py,pyH),sidePx,sidePx);
+      ctxG.strokeStyle='rgba(57,39,91,0.6)';
+      ctxG.lineWidth=0.7;
+      ctxG.strokeRect(px,Math.min(py,pyH),sidePx,sidePx);
+    }
+  }
+  
+  // LS quadratic curve (dashed navy reference)
+  if(fit){
+    ctxG.strokeStyle='rgba(24,40,74,0.35)';
+    ctxG.lineWidth=1.5;
+    ctxG.setLineDash([5,3]);
+    ctxG.beginPath();
+    const NC=120;
+    for(let k=0;k<=NC;k++){
+      const x=XMIN+(XMAX-XMIN)*k/NC;
+      const y=fit.b0+fit.b1*x+fit.b2*x*x;
+      const px=gX(x), py=gY(y);
+      if(k===0) ctxG.moveTo(px,py); else ctxG.lineTo(px,py);
+    }
+    ctxG.stroke();
+    ctxG.setLineDash([]);
+  }
+  
+  // user guess quadratic curve (solid crimson)
+  if(guess){
+    ctxG.strokeStyle='#39275B';
+    ctxG.lineWidth=2.5;
+    ctxG.beginPath();
+    const NC=120;
+    for(let k=0;k<=NC;k++){
+      const x=XMIN+(XMAX-XMIN)*k/NC;
+      const y=guess.b0+guess.b1*x+guess.b2*x*x;
+      const px=gX(x), py=gY(y);
+      if(k===0) ctxG.moveTo(px,py); else ctxG.lineTo(px,py);
+    }
+    ctxG.stroke();
+  }
+  
+  // data points
+  for(const p of points){
+    ctxG.beginPath();
+    ctxG.arc(gX(p.x),gY(p.y),3.5,0,2*Math.PI);
+    ctxG.fillStyle='#18284a';
+    ctxG.fill();
+    ctxG.strokeStyle='#fff';
+    ctxG.lineWidth=1;
+    ctxG.stroke();
+  }
+  
+  ctxG.restore();
+  
+  // 3 handles (drawn outside clip)
+  for(const [xv,yv] of [[gx1,gy1],[gx2,gy2],[gx3,gy3]]){
+    ctxG.beginPath();
+    ctxG.arc(gX(xv),gY(yv),7,0,2*Math.PI);
+    ctxG.fillStyle='#C79900';
+    ctxG.strokeStyle='#39275B';
+    ctxG.lineWidth=1.8;
+    ctxG.fill();ctxG.stroke();
+  }
+  
+  if(fit){
+    ctxG.fillStyle='rgba(24,40,74,0.7)';
+    ctxG.font='italic 9px "Crimson Pro",Georgia,serif';
+    ctxG.textAlign='left';
+    ctxG.fillText('— LS quadratic',Gpad.l+5,Gpad.t+11);
+    ctxG.fillStyle='#39275B';
+    ctxG.fillText('— your guess',Gpad.l+5,Gpad.t+22);
+  }
+}
+
+function updateStatsPanel(){
+  const panel=document.getElementById('statsPanel');
+  const fit=computeFit();
+  if(!fit){
+    panel.innerHTML='<div class="empty">Add at least 3 points with distinct x values to see estimates.</div>';
+    return;
+  }
+  const sigma=Math.sqrt(Math.max(fit.s2,0));
+  const seB0=Math.sqrt(Math.max(fit.s2*fit.c00,0));
+  const seB1=Math.sqrt(Math.max(fit.s2*fit.c11,0));
+  const seB2=Math.sqrt(Math.max(fit.s2*fit.c22,0));
+  const sw=shapiroWilk(fit.resid);
+  
+  let h='<h3>Estimates</h3>';
+  h+='<div class="stat-row"><span class="stat-key">n</span><span class="stat-val">'+fit.n+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">x̄ , ȳ</span><span class="stat-val">'+fit.xbar.toFixed(3)+' , '+fit.ybar.toFixed(3)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">β̂₀  (intercept)</span><span class="stat-val">'+fit.b0.toFixed(4)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">β̂₁  (linear)</span><span class="stat-val">'+fit.b1.toFixed(4)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">β̂₂  (quadratic)</span><span class="stat-val">'+fit.b2.toFixed(4)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">df = n − 3</span><span class="stat-val">'+fit.df+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">S² = SSE/(n−3)</span><span class="stat-val">'+(fit.df>0?fit.s2.toFixed(4):'—')+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">S</span><span class="stat-val">'+(fit.df>0?sigma.toFixed(4):'—')+'</span></div>';
+  
+  h+='<h3>Sum of squares</h3>';
+  h+='<div class="stat-row"><span class="stat-key">S<sub>yy</sub> = Σ(yᵢ−ȳ)²</span><span class="stat-val">'+fit.Syy.toFixed(4)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">SSR (explained)</span><span class="stat-val">'+fit.ssr.toFixed(4)+'</span></div>';
+  h+='<div class="stat-row"><span class="stat-key">SSE = Σ(yᵢ−ŷᵢ)²</span><span class="stat-val">'+fit.sse.toFixed(4)+'</span></div>';
+  
+  if(fit.df>0){
+    h+='<h3>Standard errors  (matrix form)</h3>';
+    h+='<div class="note" style="margin-bottom:6px;">β̂ = (X′X)⁻¹X′y, &ensp; V(β̂) = σ²(X′X)⁻¹ &nbsp;⇒&nbsp; Cov(β̂ᵢ,β̂ⱼ) = c<sub>ij</sub>σ²</div>';
+    function fmtSci(x){
+      if(Math.abs(x)<1e-12) return '0';
+      const a=Math.abs(x);
+      if(a>=0.001 && a<10000) return x.toFixed(4);
+      return x.toExponential(2);
+    }
+    function matTable(label,M,scale){
+      let t='<div style="margin:5px 0 7px;"><div style="font-size:.78rem;color:var(--muted);font-style:italic;margin-bottom:2px;">'+label+'</div>';
+      t+='<table style="border-collapse:collapse;font-size:.76rem;font-variant-numeric:tabular-nums;">';
+      for(let i=0;i<3;i++){
+        t+='<tr>';
+        for(let j=0;j<3;j++){
+          const v=M[i][j]*(scale||1);
+          const onDiag=(i===j);
+          t+='<td style="padding:2px 7px;border:1px solid var(--border);text-align:right;'+
+             (onDiag?'background:#fff5e8;font-weight:600;color:var(--crimson);':'color:var(--navy);')+'">'+
+             fmtSci(v)+'</td>';
+        }
+        t+='</tr>';
+      }
+      t+='</table></div>';
+      return t;
+    }
+    h+=matTable('c<sub>ij</sub> = (X′X)⁻¹  &nbsp;(diagonals in gold; SE(β̂ᵢ) = S√c<sub>ii</sub>)',fit.XtXinv);
+    // Build Cov(β̂) = S² · (X'X)^{-1}
+    const Cov=[
+      [fit.s2*fit.XtXinv[0][0], fit.s2*fit.XtXinv[0][1], fit.s2*fit.XtXinv[0][2]],
+      [fit.s2*fit.XtXinv[1][0], fit.s2*fit.XtXinv[1][1], fit.s2*fit.XtXinv[1][2]],
+      [fit.s2*fit.XtXinv[2][0], fit.s2*fit.XtXinv[2][1], fit.s2*fit.XtXinv[2][2]]
+    ];
+    h+=matTable('Cov&#770;(β̂) = S² · (X′X)⁻¹  &nbsp;(diagonals = V&#770;(β̂ᵢ); off-diagonals = Cov&#770;(β̂ᵢ,β̂ⱼ))',Cov);
+    h+='<div class="stat-row"><span class="stat-key">SE(β̂₀) = S√c₀₀</span><span class="stat-val">'+seB0.toFixed(4)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">SE(β̂₁) = S√c₁₁</span><span class="stat-val">'+seB1.toFixed(4)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">SE(β̂₂) = S√c₂₂</span><span class="stat-val">'+seB2.toFixed(4)+'</span></div>';
+  }
+  
+  h+='<h3>Shapiro–Wilk test for ε ~ Normal</h3>';
+  if(sw){
+    h+='<div class="stat-row"><span class="stat-key">W statistic</span><span class="stat-val">'+sw.W.toFixed(4)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">p-value</span><span class="stat-val">'+sw.p.toFixed(4)+'</span></div>';
+    const reject=sw.p<0.05;
+    h+='<div class="stat-row"><span class="stat-key">H₀: residuals normal</span>';
+    h+='<span class="'+(reject?'fail':'pass')+'">'+(reject?'REJECT α=.05':'DO NOT REJECT α=.05')+'</span></div>';
+    h+='<div class="note">W ∈ (0, 1]; values near 1 support normality.</div>';
+    if(fit.n<8){
+      h+='<div class="note">⚠ low power for small n='+fit.n+'.</div>';
+    }
+  }else{
+    h+='<div class="note">Need n ≥ 3 for the Shapiro–Wilk test.</div>';
+  }
+  
+  panel.innerHTML=h;
+}
+
+function updateGuessStats(){
+  const panel=document.getElementById('guessStats');
+  const fit=computeFit();
+  if(!fit || points.length===0){
+    panel.innerHTML='<span style="color:var(--muted);font-style:italic;">add points and drag the gold handles to fit a quadratic by eye</span>';
+    return;
+  }
+  const guess=quadFromHandles();
+  if(!guess){
+    panel.innerHTML='<span style="color:var(--crimson);font-style:italic;">handles too close together — spread them out</span>';
+    return;
+  }
+  let sseG=0;
+  for(const p of points){
+    const yh=guess.b0+guess.b1*p.x+guess.b2*p.x*p.x;
+    sseG+=(p.y-yh)*(p.y-yh);
+  }
+  const diff=sseG-fit.sse;
+  const pct=fit.sse>1e-9?100*diff/fit.sse:0;
+  function fmtQ(b0,b1,b2){
+    const s1=b1>=0?' + ':' − ', s2=b2>=0?' + ':' − ';
+    return 'ŷ = '+b0.toFixed(2)+s1+Math.abs(b1).toFixed(2)+'x'+s2+Math.abs(b2).toFixed(2)+'x²';
+  }
+  let h='<div><span class="stat-key">your:</span> <span class="stat-val">'+fmtQ(guess.b0,guess.b1,guess.b2)+'</span></div>';
+  h+='<div><span class="stat-key">LS:</span> <span class="stat-val">'+fmtQ(fit.b0,fit.b1,fit.b2)+'</span></div>';
+  h+='<div><span class="stat-key">your SSE:</span> <span class="stat-val">'+sseG.toFixed(3)+'</span> &ensp;|&ensp; <span class="stat-key">LS SSE:</span> <span class="stat-val">'+fit.sse.toFixed(3)+'</span></div>';
+  h+='<div><span class="stat-key">excess:</span> <span class="stat-val">'+(diff>=0?'+':'')+diff.toFixed(3)+'</span> ('+(pct>=0?'+':'')+pct.toFixed(1)+'%)</div>';
+  if(diff<0.005){
+    h+='<div class="pass">⭐ matched least squares</div>';
+  }
+  panel.innerHTML=h;
+}
+
+function update(){
+  drawMain();
+  drawHist();
+  drawCI();
+  drawGuess();
+  updateStatsPanel();
+  updateGuessStats();
+}
+
+cMain.addEventListener('click',function(e){
+  const r=cMain.getBoundingClientRect();
+  const sx=cMain.width/r.width, sy=cMain.height/r.height;
+  const px=(e.clientX-r.left)*sx, py=(e.clientY-r.top)*sy;
+  const x=mXinv(px), y=mYinv(py);
+  if(x<XMIN-0.1||x>XMAX+0.1||y<YMIN-0.1||y>YMAX+0.1) return;
+  let nearest=-1, bestD=120;
+  for(let i=0;i<points.length;i++){
+    const dx=mX(points[i].x)-px, dy=mY(points[i].y)-py;
+    const d=dx*dx+dy*dy;
+    if(d<bestD){bestD=d;nearest=i;}
+  }
+  if(e.shiftKey){
+    if(nearest>=0){
+      points.splice(nearest,1);
+      selectedIdx=-1;
+      update();
+    }
+  }else if(nearest>=0){
+    selectedIdx=(nearest===selectedIdx?-1:nearest);
+    update();
+  }else{
+    points.push({x:Math.max(XMIN,Math.min(XMAX,x)),y:Math.max(YMIN,Math.min(YMAX,y))});
+    selectedIdx=-1;
+    update();
+  }
+});
+
+document.getElementById('btnClear').addEventListener('click',function(){
+  points=[];selectedIdx=-1;xStar=null;
+  fitBounds();
+  document.getElementById('xInput').value='';
+  document.getElementById('yInput').value='';
+  document.getElementById('xStarInput').value='';
+  update();
+});
+
+document.getElementById('btnExample').addEventListener('click',function(){
+  points=[];
+  // True quadratic: y = 0.5 + 2.0 x - 0.20 x^2 (parabola peaking around x=5)
+  const b0t=0.5, b1t=2.0, b2t=-0.20;
+  const xs=[],ys=[];
+  for(let i=0;i<25;i++){
+    const x=0.5+9*i/24;
+    const noise=((Math.random()+Math.random()+Math.random()+Math.random())-2)*0.5;
+    const y=b0t+b1t*x+b2t*x*x+noise;
+    if(y>=0.1 && y<=9.9){
+      const xr=Math.round(x*10)/10, yr=Math.round(y*100)/100;
+      points.push({x:xr,y:yr});
+      xs.push(xr);ys.push(yr);
+    }
+  }
+  document.getElementById('xInput').value=xs.join(', ');
+  document.getElementById('yInput').value=ys.join(', ');
+  fitBounds();
+  selectedIdx=-1;
+  update();
+});
+
+function parseVec(s){
+  if(!s) return [];
+  return s.split(/[\s,;]+/).filter(t=>t.length>0).map(t=>{
+    if(t.indexOf('/')>-1){const p=t.split('/');return parseFloat(p[0])/parseFloat(p[1]);}
+    return parseFloat(t);
+  }).filter(v=>!isNaN(v));
+}
+document.getElementById('btnLoadVec').addEventListener('click',function(){
+  const xs=parseVec(document.getElementById('xInput').value);
+  const ys=parseVec(document.getElementById('yInput').value);
+  if(xs.length===0 || ys.length===0){
+    alert('Please enter both x and y values.');return;
+  }
+  if(xs.length!==ys.length){
+    alert('x and y must have the same length (got '+xs.length+' and '+ys.length+').');return;
+  }
+  points=[];
+  for(let i=0;i<xs.length;i++){
+    points.push({x:xs[i],y:ys[i]});
+  }
+  fitBounds();
+  selectedIdx=-1;
+  update();
+});
+
+document.getElementById('btnXStar').addEventListener('click',function(){
+  const v=parseFloat(document.getElementById('xStarInput').value);
+  if(isNaN(v)){alert('Please enter a numeric value for x*');return;}
+  xStar=v;
+  drawCI();
+});
+document.getElementById('btnXStarClr').addEventListener('click',function(){
+  xStar=null;
+  document.getElementById('xStarInput').value='';
+  drawCI();
+});
+document.getElementById('xStarInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    document.getElementById('btnXStar').click();
+  }
+});
+
+document.getElementById('confSel').addEventListener('change',function(){
+  const v=this.value;
+  const customBox=document.getElementById('confCustom');
+  if(v==='custom'){
+    customBox.style.display='inline-block';
+    customBox.focus();
+  }else{
+    customBox.style.display='none';
+    confLevel=parseFloat(v);
+    update();
+  }
+});
+document.getElementById('confCustom').addEventListener('change',function(){
+  let v=parseFloat(this.value);
+  if(isNaN(v)) return;
+  if(v>1) v=v/100;  // accept 95 or 0.95
+  if(v<=0 || v>=1){alert('Confidence level must be between 0 and 1 (or 0 and 100).');return;}
+  confLevel=v;
+  update();
+});
+document.getElementById('confCustom').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){this.dispatchEvent(new Event('change'));}
+});
+
+['tgSSE','tgSSy','tgLine','tgMean'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',function(){
+    if(id==='tgSSE') tgSSE=this.checked;
+    else if(id==='tgSSy') tgSSy=this.checked;
+    else if(id==='tgLine') tgLine=this.checked;
+    else if(id==='tgMean') tgMean=this.checked;
+    drawMain();
+  });
+});
+
+function guessMousePos(e){
+  const r=cGuess.getBoundingClientRect();
+  const sx=cGuess.width/r.width, sy=cGuess.height/r.height;
+  return {px:(e.clientX-r.left)*sx, py:(e.clientY-r.top)*sy};
+}
+cGuess.addEventListener('mousedown',function(e){
+  const {px,py}=guessMousePos(e);
+  const ds=[
+    {key:1, d:Math.hypot(px-gX(gx1),py-gY(gy1))},
+    {key:2, d:Math.hypot(px-gX(gx2),py-gY(gy2))},
+    {key:3, d:Math.hypot(px-gX(gx3),py-gY(gy3))}
+  ];
+  ds.sort((a,b)=>a.d-b.d);
+  if(ds[0].d<14) guessDragging=ds[0].key;
+  e.preventDefault();
+});
+window.addEventListener('mousemove',function(e){
+  if(!guessDragging) return;
+  const {px,py}=guessMousePos(e);
+  let x=gXinv(px), y=gYinv(py);
+  x=Math.max(XMIN,Math.min(XMAX,x));
+  y=Math.max(YMIN,Math.min(YMAX,y));
+  if(guessDragging===1){gx1=x; gy1=y;}
+  else if(guessDragging===2){gx2=x; gy2=y;}
+  else if(guessDragging===3){gx3=x; gy3=y;}
+  drawGuess();
+  updateGuessStats();
+});
+window.addEventListener('mouseup',function(){guessDragging=null;});
+
+update();
+</script>
+</body>
+</html>

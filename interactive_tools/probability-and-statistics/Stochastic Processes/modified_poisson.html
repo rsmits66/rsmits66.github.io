@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Modified Poisson Simulation — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#c8a430; --goldDk:#a07820;
+  --crimson:#9E1B32; --crimson2:#7a1426; --crimsonLt:#fce8eb;
+  --crimsonPale:#E8B4BD; --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:24px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#f0c8d0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 16px 6px;
+          max-width:960px;width:100%;}
+.ctrl-group{display:flex;align-items:center;gap:6px;}
+.ctrl-group label{font-style:italic;color:var(--navy);font-size:.95rem;}
+input[type="number"]{
+  font-family:'Crimson Pro',Georgia,serif;font-size:.9rem;color:var(--navy);
+  background:#fff;border:1px solid var(--border);border-radius:3px;
+  padding:4px 8px;width:72px;text-align:center;outline:none;
+  transition:border-color .15s;
+}
+input[type="number"]:focus{border-color:var(--crimson);}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:5px 14px;font-size:.86rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+
+.wrap{max-width:960px;width:100%;padding:6px 16px 0;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:6px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;width:100%;height:auto;}
+
+.caption{max-width:960px;width:100%;padding:12px 16px 0;font-style:italic;font-size:.9rem;
+         color:var(--muted);text-align:center;line-height:1.6;}
+.caption strong{font-style:normal;color:var(--navy);font-weight:600;}
+.caption .crimson-val{color:var(--crimson);font-weight:600;font-style:normal;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama &ensp;&mdash;&ensp; Mathematics Department &ensp;&middot;&ensp; Stochastic Processes</div>
+  <div class="hdr-main">
+    <h1>Modified Poisson Simulation</h1>
+    <div class="subtitle">
+      &Delta;X<sub>n</sub> = +1 w.p. p,&ensp; &minus;t/(1&minus;t) w.p. 1&minus;p &ensp;&middot;&ensp;
+      compensated jump martingale (when p = t) on a discrete time grid
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group"><label for="N">N</label><input type="number" id="N" value="2000" min="100" max="20000" step="100"></div>
+  <div class="ctrl-group"><label for="M">M</label><input type="number" id="M" value="15" min="1" max="100" step="1"></div>
+  <div class="ctrl-group"><label for="p">p</label><input type="number" id="p" value="0.03125" min="0.001" max="0.99" step="0.001"></div>
+  <div class="ctrl-group"><label for="t">t</label><input type="number" id="t" value="0.03125" min="0.001" max="0.99" step="0.001"></div>
+  <button id="btnRedraw" class="primary">Redraw paths</button>
+  <span class="hint">&mdash; up-jumps drawn as dots, downward drift as line segments</span>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="phdr">Sample paths &nbsp;&middot;&nbsp; M+1 realizations on the time grid 0, t, 2t, &hellip;, (N&minus;1)t</div>
+    <canvas id="c" width="920" height="480"></canvas>
+  </div>
+</div>
+
+<div class="caption">
+  Highlighted final value X<sub>N&minus;1</sub>: <span class="crimson-val" id="statHighlight">&mdash;</span> &ensp;&middot;&ensp;
+  Mean across paths: <strong id="statMean">&mdash;</strong> &ensp;&middot;&ensp;
+  Std dev: <strong id="statStd">&mdash;</strong> &ensp;&middot;&ensp;
+  Per-step drift E[&Delta;X]: <strong id="statDrift">&mdash;</strong>
+</div>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const padL = 55, padR = 20, padT = 20, padB = 40;
+
+function simulate(N, M, p_up, dt){
+  // Returns array of {walk: Float64Array(N), up: Uint8Array(N)} for j = 0..M
+  const paths = [];
+  const drift = dt / (1 - dt);
+  for (let j = 0; j <= M; j++){
+    const walk = new Float64Array(N);
+    const up = new Uint8Array(N);
+    walk[0] = 0;
+    for (let i = 1; i < N; i++){
+      if (Math.random() < p_up){
+        walk[i] = walk[i-1] + 1;
+        up[i] = 1;
+      } else {
+        walk[i] = walk[i-1] - drift;
+        up[i] = 0;
+      }
+    }
+    paths.push({ walk, up });
+  }
+  return paths;
+}
+
+function draw(){
+  const N = parseInt(document.getElementById('N').value) || 2000;
+  const M = parseInt(document.getElementById('M').value) || 15;
+  const p = parseFloat(document.getElementById('p').value) || 1/32;
+  const dt = parseFloat(document.getElementById('t').value) || 1/32;
+  const paths = simulate(N, M, p, dt);
+
+  const tmax = (N - 1) * dt;
+
+  let mn = Infinity, mx = -Infinity;
+  for (const { walk } of paths){
+    for (let i = 0; i < N; i++){
+      if (walk[i] < mn) mn = walk[i];
+      if (walk[i] > mx) mx = walk[i];
+    }
+  }
+  const pad = 0.06 * (mx - mn) || 1;
+  mn -= pad; mx += pad;
+
+  const xs = i => padL + (W - padL - padR) * (i / (N - 1));
+  const ys = v => H - padB - (H - padT - padB) * (v - mn) / (mx - mn);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = '#ece8df'; ctx.lineWidth = 1;
+  for (let k = 0; k <= 10; k++){
+    const x = padL + (W - padL - padR) * k / 10;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+  }
+  const yTicks = 8;
+  for (let k = 0; k <= yTicks; k++){
+    const y = padT + (H - padT - padB) * k / yTicks;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+
+  // gold zero line (only if zero is in range)
+  if (mn < 0 && mx > 0){
+    ctx.strokeStyle = '#c8a430'; ctx.lineWidth = 1;
+    const y0 = ys(0);
+    ctx.beginPath(); ctx.moveTo(padL, y0); ctx.lineTo(W - padR, y0); ctx.stroke();
+  }
+
+  // navy box
+  ctx.strokeStyle = '#18284a'; ctx.lineWidth = 1.2;
+  ctx.strokeRect(padL, padT, W - padL - padR, H - padT - padB);
+
+  // tick labels (x)
+  ctx.fillStyle = '#7a7a8a';
+  ctx.font = "12px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let k = 0; k <= 10; k++){
+    const tVal = tmax * k / 10;
+    const x = padL + (W - padL - padR) * k / 10;
+    const lbl = tVal < 10 ? tVal.toFixed(1).replace(/\.0$/, '') : Math.round(tVal).toString();
+    ctx.fillText(lbl, x, H - padB + 6);
+  }
+  // tick labels (y)
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let k = 0; k <= yTicks; k++){
+    const v = mn + (mx - mn) * (1 - k / yTicks);
+    const y = padT + (H - padT - padB) * k / yTicks;
+    ctx.fillText(v.toFixed(2), padL - 7, y);
+  }
+
+  // axis titles
+  ctx.fillStyle = '#18284a';
+  ctx.font = "italic 13px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('time', W / 2, H - padB + 20);
+  ctx.save();
+  ctx.translate(14, H / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('X', 0, 0);
+  ctx.restore();
+
+  // adaptive alpha for many paths
+  const bgAlpha = Math.max(0.18, Math.min(0.9, 8 / Math.max(1, M)));
+  const bgColor = `rgba(232, 180, 189, ${bgAlpha})`;
+
+  function drawPath(walk, up, color, lineWidth, dotR){
+    // Down-drift: line segments, broken by up-jumps
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    let pen = false;
+    for (let i = 0; i < N; i++){
+      const x = xs(i), y = ys(walk[i]);
+      if (!up[i]){
+        if (!pen){ ctx.moveTo(x, y); pen = true; }
+        else { ctx.lineTo(x, y); }
+      } else {
+        pen = false;
+      }
+    }
+    ctx.stroke();
+
+    // Up-jumps as small filled dots
+    ctx.fillStyle = color;
+    for (let i = 0; i < N; i++){
+      if (up[i]){
+        ctx.beginPath();
+        ctx.arc(xs(i), ys(walk[i]), dotR, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+  }
+
+  // background paths
+  for (let j = 0; j < M; j++){
+    drawPath(paths[j].walk, paths[j].up, bgColor, 0.9, 1.4);
+  }
+  // highlighted path on top
+  drawPath(paths[M].walk, paths[M].up, '#9E1B32', 1.6, 2.2);
+
+  // stats
+  const finals = paths.map(p => p.walk[N - 1]);
+  const highlight = finals[finals.length - 1];
+  const mean = finals.reduce((a, b) => a + b, 0) / finals.length;
+  const std = Math.sqrt(finals.reduce((a, b) => a + (b - mean) ** 2, 0) / finals.length);
+  const perStep = p * 1 + (1 - p) * (-dt / (1 - dt));
+
+  document.getElementById('statHighlight').textContent = highlight.toFixed(3);
+  document.getElementById('statMean').textContent = mean.toFixed(3);
+  document.getElementById('statStd').textContent = std.toFixed(3);
+  document.getElementById('statDrift').textContent = perStep.toFixed(4);
+}
+
+document.getElementById('btnRedraw').addEventListener('click', draw);
+['N','M','p','t'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') draw(); });
+});
+draw();
+</script>
+</body>
+</html>

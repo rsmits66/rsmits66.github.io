@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Geostatistics Explorer II — Exotic Variogram Models &amp; Kriging</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;
+    --crimson-deep: #7a1024;
+    --ochre: #b8923d;
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+    --sample-red: #c41a3b;
+    --predict-blue: #1e5fa8;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    font-feature-settings: "ss01", "ss02";
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1240px; margin: 0 auto; }
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+  }
+  h1 {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+
+  /* Top mode-strip: which variogram family */
+  .vario-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--line-strong);
+    margin-bottom: 18px;
+    background: var(--paper);
+  }
+  .vario-btn {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 12px 8px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--line-strong);
+    cursor: pointer;
+    color: var(--ink);
+    text-transform: uppercase;
+    transition: all 0.12s;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .vario-btn:last-child { border-right: none; }
+  .vario-btn .vb-num {
+    display: block;
+    color: var(--rust);
+    font-weight: 700;
+    font-size: 0.62rem;
+    margin-bottom: 3px;
+    letter-spacing: 0.1em;
+  }
+  .vario-btn .vb-label {
+    display: block;
+    font-weight: 600;
+  }
+  .vario-btn .vb-sub {
+    display: block;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 400;
+    text-transform: none;
+  }
+  .vario-btn:hover { background: var(--line); }
+  .vario-btn.active {
+    background: var(--rust);
+    color: #fff;
+  }
+  .vario-btn.active .vb-num { color: var(--ochre); }
+  .vario-btn.active .vb-sub { color: rgba(255,255,255,0.78); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    padding: 18px 16px;
+    border: 1px solid var(--line);
+    box-shadow: 4px 4px 0 var(--line);
+    position: relative;
+  }
+  .panel + .panel { margin-top: 22px; }
+  .panel-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .panel h2 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+    line-height: 1.15;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .panel h2 .num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--rust);
+    font-weight: 400;
+  }
+  .panel-caption {
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+
+  /* Field canvas */
+  .canvas-wrap {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  .canvas-wrap.mode-3d { cursor: grab; }
+  .canvas-wrap.mode-3d.dragging { cursor: grabbing; }
+  .canvas-wrap.kriging-mode:not(.mode-3d) { cursor: crosshair; }
+  canvas.field, canvas.field-3d, canvas.overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  canvas.field {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  canvas.field-3d {
+    display: none;
+    image-rendering: auto;
+  }
+  canvas.overlay {
+    pointer-events: none;
+  }
+  .canvas-wrap.mode-3d canvas.field { display: none; }
+  .canvas-wrap.mode-3d canvas.field-3d { display: block; }
+  .canvas-wrap.mode-3d canvas.overlay { display: none; }
+  /* In kriging mode, the field becomes translucent */
+  .canvas-wrap.kriging-mode canvas.field {
+    opacity: 0.4;
+  }
+
+  /* Controls */
+  .ctrl-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .ctrl-row label {
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+  }
+  .ctrl-row .value {
+    font-family: var(--mono);
+    color: var(--rust);
+    font-weight: 600;
+    font-size: 0.78rem;
+    min-width: 50px;
+    text-align: right;
+  }
+  input[type="range"] {
+    grid-column: 1 / -1;
+    -webkit-appearance: none; appearance: none;
+    height: 2px;
+    background: var(--line-strong);
+    outline: none;
+    width: 100%;
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+
+  .ctrl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 700px) { .ctrl-grid { grid-template-columns: 1fr 1fr; } }
+
+  /* Buttons */
+  button.go {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    padding: 10px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.12s;
+    width: 100%;
+  }
+  button.go:hover { background: var(--rust); border-color: var(--rust); }
+  button.go.outlined {
+    background: transparent;
+    color: var(--ink);
+  }
+  button.go.outlined:hover { background: var(--ink); color: var(--paper); }
+  button.go:disabled { opacity: 0.5; cursor: wait; }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .view-toggle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 8px;
+    border: 1px solid var(--line-strong);
+  }
+  .view-toggle {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    padding: 8px 0;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--line-strong);
+    cursor: pointer;
+    color: var(--ink);
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  .view-toggle:last-child { border-right: none; }
+  .view-toggle:hover:not(.active) { background: var(--line); }
+  .view-toggle.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .view-toggle .vt-icon {
+    color: var(--rust);
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  .view-toggle.active .vt-icon { color: var(--ochre); }
+
+  /* Sample overlay (purely a hint while in non-kriging mode) */
+  .colorbar-mini {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .colorbar-mini-grad {
+    height: 9px;
+    margin: 4px 0 3px;
+    background: linear-gradient(to right,
+      rgb(26, 58, 92),
+      rgb(123, 163, 196),
+      rgb(245, 239, 219),
+      rgb(200, 98, 62),
+      rgb(122, 16, 36));
+    border: 1px solid var(--line-strong);
+  }
+  .colorbar-mini-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 0.6rem;
+  }
+
+  .stats-grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+  }
+  .stat-cell { text-align: center; padding: 4px 0; }
+  .stat-cell .k {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.56rem;
+  }
+  .stat-cell .v {
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Variogram canvas */
+  .vario-canvas-wrap {
+    aspect-ratio: 1.7;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  canvas.vario {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .hint {
+    margin-top: 8px;
+    padding: 8px 11px;
+    background: rgba(30, 95, 168, 0.06);
+    border-left: 3px solid var(--predict-blue);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* Math display blocks */
+  .math-block {
+    background: var(--paper);
+    padding: 14px 12px;
+    border: 1px solid var(--line);
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .math-block-title {
+    font-variation-settings: "wght" 500, "opsz" 28;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .math-block-title .num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--rust);
+    margin-right: 6px;
+  }
+  .math-block-caption {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+  .matrix-display {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .matrix-display .matrix {
+    display: inline-grid;
+    border-left: 1.5px solid var(--ink);
+    border-right: 1.5px solid var(--ink);
+    padding: 4px 6px;
+  }
+  .matrix-display .matrix.A { grid-template-columns: repeat(17, auto); gap: 0 4px; }
+  .matrix-display .matrix.lambda, .matrix-display .matrix.b { grid-template-columns: 1fr; }
+  .matrix-display .matrix .cell {
+    text-align: right;
+    padding: 1px 2px;
+    color: var(--ink);
+    min-width: 26px;
+  }
+  .matrix-display .matrix .cell.muted { color: var(--muted); }
+  .matrix-display .matrix .cell.constraint { color: var(--rust); font-weight: 700; }
+  .matrix-display .matrix .cell.diag { color: var(--ochre); }
+  .matrix-display .equals { font-family: var(--serif); font-size: 1.4rem; padding: 0 4px; }
+  .matrix-display .matrix-label {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.9rem;
+    align-self: center;
+  }
+  .solution-list {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    line-height: 1.6;
+  }
+  .solution-list .row {
+    display: grid;
+    grid-template-columns: 50px 1fr 60px 70px;
+    gap: 8px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+  .solution-list .row.header {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.56rem;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .solution-list .row.mu-row {
+    color: var(--rust);
+    font-weight: 600;
+    margin-top: 4px;
+    border-top: 1px solid var(--line-strong);
+    padding-top: 4px;
+  }
+  .solution-list .label-cell { color: var(--rust); }
+  .solution-list .neg { color: var(--predict-blue); }
+
+  .prediction-box {
+    margin-top: 8px;
+    padding: 12px 14px;
+    background: linear-gradient(to right, rgba(30, 95, 168, 0.05), rgba(196, 26, 59, 0.05));
+    border-left: 3px solid var(--predict-blue);
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    line-height: 1.6;
+  }
+  .prediction-box .header {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .prediction-box .equation {
+    font-size: 0.74rem;
+    margin: 5px 0;
+    word-break: break-word;
+  }
+  .prediction-box .result {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--predict-blue);
+    margin-top: 6px;
+  }
+  .prediction-box .result .label {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-right: 8px;
+    font-weight: 400;
+  }
+  .prediction-box .truth {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .prediction-box .truth .truth-val {
+    color: var(--rust);
+    font-family: var(--mono);
+    font-style: normal;
+    font-weight: 600;
+    margin-left: 5px;
+  }
+
+  .empty-state {
+    padding: 22px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.86rem;
+  }
+
+  .stage-banner {
+    background: linear-gradient(to right, rgba(196, 26, 59, 0.08), rgba(30, 95, 168, 0.05));
+    padding: 12px 14px;
+    border-left: 4px solid var(--rust);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .stage-banner .stage-text {
+    flex: 1;
+    min-width: 200px;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .stage-banner .stage-text strong {
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  footer {
+    margin-top: 26px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Geostatistics <em>Explorer II</em></h1>
+    <div class="subtitle">Exotic variograms · hole effect · rational · anisotropy · interactive kriging</div>
+  </header>
+
+  <!-- Variogram family picker -->
+  <div class="vario-strip" id="vario-strip">
+    <button class="vario-btn active" data-model="hole">
+      <span class="vb-num">A</span>
+      <span class="vb-label">Hole effect</span>
+      <span class="vb-sub">oscillating γ(h)</span>
+    </button>
+    <button class="vario-btn" data-model="prismato">
+      <span class="vb-num">B</span>
+      <span class="vb-label">Prismato-magnetic</span>
+      <span class="vb-sub">rational / Cauchy</span>
+    </button>
+    <button class="vario-btn" data-model="aniso-exp">
+      <span class="vb-num">C</span>
+      <span class="vb-label">Anisotropic exp</span>
+      <span class="vb-sub">directional stretch</span>
+    </button>
+    <button class="vario-btn" data-model="power-pseudo">
+      <span class="vb-num">D</span>
+      <span class="vb-label">Power (truncated)</span>
+      <span class="vb-sub">α-fractal-like</span>
+    </button>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: field display + controls -->
+    <div>
+      <div class="panel">
+        <div class="panel-tag">Field</div>
+        <h2><span class="num">§1</span><span id="stage-title">Explore the random field</span></h2>
+        <div class="panel-caption" id="stage-caption">
+          Choose a variogram family above. Adjust parameters. Switch between 2D heatmap and 3D surface views. When you're ready, press <strong>Start kriging</strong>.
+        </div>
+
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas class="field" id="field-canvas"></canvas>
+          <canvas class="field-3d" id="field-canvas-3d"></canvas>
+          <canvas class="overlay" id="overlay-canvas"></canvas>
+        </div>
+
+        <div class="colorbar-mini">
+          <span id="cbar-label">Field value · low → high</span>
+          <div class="colorbar-mini-grad"></div>
+          <div class="colorbar-mini-labels">
+            <span id="cbar-min">0</span>
+            <span id="cbar-mid">225</span>
+            <span id="cbar-max">600</span>
+          </div>
+        </div>
+
+        <div class="view-toggle-row">
+          <button class="view-toggle active" data-view="2d"><span class="vt-icon">▦</span>2D heatmap</button>
+          <button class="view-toggle" data-view="3d"><span class="vt-icon">⬢</span>3D surface</button>
+        </div>
+        <div class="hint" id="view-hint" style="display:none;">drag in 3D view to rotate</div>
+
+        <div class="stats-grid">
+          <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-mean">—</div></div>
+          <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-var">—</div></div>
+          <div class="stat-cell"><div class="k">range (data)</div><div class="v" id="stat-range">—</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-tag">Parameters</div>
+        <h2><span class="num">§2</span>Variogram parameters</h2>
+
+        <div class="ctrl-grid">
+          <div>
+            <div class="ctrl-row"><label>Sill C</label><span class="value" id="sill-val">28000</span></div>
+            <input type="range" id="sill" min="2000" max="60000" step="1000" value="28000">
+          </div>
+          <div>
+            <div class="ctrl-row"><label>Range a</label><span class="value" id="range-val">2.50</span></div>
+            <input type="range" id="range" min="1" max="6" step="0.25" value="2.5">
+          </div>
+          <div>
+            <div class="ctrl-row"><label>Nugget c₀</label><span class="value" id="nugget-val">5000</span></div>
+            <input type="range" id="nugget" min="0" max="30000" step="1000" value="5000">
+          </div>
+        </div>
+
+        <!-- Auxiliary parameter (λ, k, or α — context-sensitive) -->
+        <div id="aux-param-wrap" style="margin-top: 4px;">
+          <div class="ctrl-row">
+            <label id="aux-label">λ (hole wavelength)</label>
+            <span class="value" id="aux-val">3.00</span>
+          </div>
+          <input type="range" id="aux" min="1.5" max="6" step="0.25" value="3.0">
+        </div>
+
+        <div class="button-row">
+          <button class="go outlined" id="regen-btn">▸ New realization</button>
+          <button class="go" id="krige-mode-btn">Start kriging ▸</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: variogram + (when kriging) solver -->
+    <div>
+      <div class="panel">
+        <div class="panel-tag">Variogram</div>
+        <h2><span class="num">§3</span>γ(h) <span id="vario-extra-title"></span></h2>
+        <div class="panel-caption" id="vario-caption">
+          The chosen variogram. After picking a kriging point, distances |x<sub>i</sub> − x<sub>new</sub>| appear as ticks.
+        </div>
+        <div class="vario-canvas-wrap">
+          <canvas class="vario" id="vario-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="panel" id="solver-panel" style="display:none;">
+        <div class="panel-tag">Solver</div>
+        <h2><span class="num">§4</span>Ordinary kriging system</h2>
+        <div class="panel-caption" id="solver-caption">
+          Click a point in the field on the left, then press <strong>Krige</strong>.
+        </div>
+        <div class="button-row" style="margin-top: 0; margin-bottom: 12px;">
+          <button class="go outlined" id="exit-krige-btn">◂ Back to field exploration</button>
+          <button class="go" id="krige-btn" disabled>Krige z(x_new)</button>
+        </div>
+        <div id="solver-content">
+          <div class="empty-state">
+            The kriging matrix and solution will appear here once you choose <strong>x<sub>new</sub></strong> and press <strong>Krige</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Exotic variograms · hole effect (Bessel) · prismato-magnetic · anisotropic exponential · pseudo-power
+  </footer>
+</div>
+
+<script>
+// ============================================================
+//  FFT (Cooley-Tukey, radix-2)
+// ============================================================
+function fft1d(re, im, inverse) {
+  const n = re.length;
+  if ((n & (n - 1)) !== 0) throw new Error('fft1d requires power-of-2 length');
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const ang = (inverse ? 2 : -2) * Math.PI / len;
+    const wRe0 = Math.cos(ang);
+    const wIm0 = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < half; k++) {
+        const aRe = re[i + k], aIm = im[i + k];
+        const bR = re[i + k + half], bI = im[i + k + half];
+        const oddRe = bR * curRe - bI * curIm;
+        const oddIm = bR * curIm + bI * curRe;
+        re[i + k] = aRe + oddRe;
+        im[i + k] = aIm + oddIm;
+        re[i + k + half] = aRe - oddRe;
+        im[i + k + half] = aIm - oddIm;
+        const newCurRe = curRe * wRe0 - curIm * wIm0;
+        curIm = curRe * wIm0 + curIm * wRe0;
+        curRe = newCurRe;
+      }
+    }
+  }
+  if (inverse) {
+    const inv = 1 / n;
+    for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+  }
+}
+function fft2d(re, im, M, inverse) {
+  const rowRe = new Float64Array(M);
+  const rowIm = new Float64Array(M);
+  for (let j = 0; j < M; j++) {
+    const off = j * M;
+    for (let i = 0; i < M; i++) { rowRe[i] = re[off + i]; rowIm[i] = im[off + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let i = 0; i < M; i++) { re[off + i] = rowRe[i]; im[off + i] = rowIm[i]; }
+  }
+  for (let i = 0; i < M; i++) {
+    for (let j = 0; j < M; j++) { rowRe[j] = re[j * M + i]; rowIm[j] = im[j * M + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let j = 0; j < M; j++) { re[j * M + i] = rowRe[j]; im[j * M + i] = rowIm[j]; }
+  }
+}
+
+// ============================================================
+//  RNG + Box-Muller
+// ============================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fillNormal(arr, rng) {
+  const n = arr.length;
+  for (let i = 0; i < n; i += 2) {
+    let u1 = rng(); if (u1 < 1e-300) u1 = 1e-300;
+    const u2 = rng();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    const ang = 2 * Math.PI * u2;
+    arr[i] = r * Math.cos(ang);
+    if (i + 1 < n) arr[i + 1] = r * Math.sin(ang);
+  }
+}
+
+// ============================================================
+//  Variogram model registry — exotic models
+//  Each model exposes:
+//    covStruct(h)   — structured covariance (no nugget), isotropic
+//    covStruct2D(kx, ky)  — optional, for anisotropic models (in cell units)
+//    gamma(h)       — full variogram WITH nugget for kriging/plot
+//    label, formula
+//    auxLabel, auxMin, auxMax, auxStep, auxDefault — for the aux slider
+// ============================================================
+function bessJ0(x) {
+  // Approximation to Bessel J0(x), accurate to ~1e-7 for all x.
+  // For small x use Taylor series; for large x use asymptotic.
+  const ax = Math.abs(x);
+  if (ax < 8.0) {
+    const y = x * x;
+    const ans1 = 57568490574.0 + y*(-13362590354.0 + y*(651619640.7
+      + y*(-11214424.18 + y*(77392.33017 + y*(-184.9052456)))));
+    const ans2 = 57568490411.0 + y*(1029532985.0 + y*(9494680.718
+      + y*(59272.64853 + y*(267.8532712 + y))));
+    return ans1 / ans2;
+  } else {
+    const z = 8.0 / ax;
+    const y = z * z;
+    const ans1 = 1.0 + y*(-0.1098628627e-2 + y*(0.2734510407e-4
+      + y*(-0.2073370639e-5 + y*0.2093887211e-6)));
+    const ans2 = -0.1562499995e-1 + y*(0.1430488765e-3
+      + y*(-0.6911147651e-5 + y*(0.7621095161e-6 + y*(-0.934935152e-7))));
+    const xx = ax - 0.785398164;
+    return Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * ans1 - z * Math.sin(xx) * ans2);
+  }
+}
+
+function makeModel(modelKey) {
+  const sigma2 = state.sill;
+  const ell = state.range;
+  const nugget = state.nugget;
+  const aux = state.aux;
+
+  if (modelKey === 'hole') {
+    // 2D hole-effect (Armstrong eq. 3.27):
+    //   γ(h) = C * (1 - exp(-h/a) * J0(2π h / λ))
+    //   C(h) = σ² * exp(-h/a) * J0(2π h / λ)  (structured covariance)
+    // Oscillates: produces alternating high/low patches at scale ~λ
+    const lam = aux;
+    return {
+      key: modelKey,
+      label: 'Hole effect 2D',
+      formula: 'γ(h) = c₀ + C·[1 − exp(−h/a)·J₀(2π h/λ)]',
+      covStruct: (h) => {
+        if (h <= 0) return sigma2;
+        return sigma2 * Math.exp(-h / ell) * bessJ0(2 * Math.PI * h / lam);
+      },
+      gamma: (h) => {
+        if (h <= 1e-9) return 0;
+        return nugget + sigma2 * (1 - Math.exp(-h / ell) * bessJ0(2 * Math.PI * h / lam));
+      },
+    };
+  }
+
+  if (modelKey === 'prismato') {
+    // Prismato-magnetic (Cauchy ν=1.5):
+    //   γ(h) = C * (1 - 1/(1+r²)^1.5),  r = h/a
+    //   C(h) = σ² * 1/(1+r²)^1.5
+    // Heavy-tailed approach to the sill — slower than Gaussian.
+    return {
+      key: modelKey,
+      label: 'Prismato-magnetic',
+      formula: 'γ(h) = c₀ + C·[1 − 1/(1 + (h/a)²)^1.5]',
+      covStruct: (h) => {
+        const r = h / ell;
+        return sigma2 / Math.pow(1 + r * r, 1.5);
+      },
+      gamma: (h) => {
+        if (h <= 1e-9) return 0;
+        const r = h / ell;
+        return nugget + sigma2 * (1 - 1 / Math.pow(1 + r * r, 1.5));
+      },
+    };
+  }
+
+  if (modelKey === 'aniso-exp') {
+    // Anisotropic exponential:
+    //   γ(h) = C·(1 - exp(-sqrt(h₁² + k² h₂²)/a))
+    //   k > 1: features stretched in y-direction; k < 1: stretched in x-direction
+    //   k = 1: ordinary isotropic exponential
+    // For kriging we still need an isotropic γ(d) on actual sample geometry, but
+    // we honor the anisotropy by using an "effective distance" sqrt(dx² + k²dy²)
+    // via a closure that captures k.
+    const k = aux;
+    return {
+      key: modelKey,
+      label: 'Anisotropic exponential',
+      formula: 'γ(h) = c₀ + C·[1 − exp(−√(h₁²+k²h₂²)/a)]',
+      isAnisotropic: true,
+      anisotropyK: k,
+      // For 2D field simulation, evaluated on (kx, ky) lag in cell-units.
+      // h_eff = sqrt((kx*DX)² + (k * ky*DX)²) in sample-spacing units.
+      covStruct2D: (kxCells, kyCells) => {
+        const hx = kxCells * DX;
+        const hy = kyCells * DX;
+        const hEff = Math.sqrt(hx * hx + k * k * hy * hy);
+        return sigma2 * Math.exp(-hEff / ell);
+      },
+      // For variogram plots we show the isotropic version (along x-axis only).
+      // For kriging on samples, we use the anisotropic distance via a 2D γ.
+      covStruct: (h) => sigma2 * Math.exp(-h / ell),
+      gamma: (h) => {
+        if (h <= 1e-9) return 0;
+        return nugget + sigma2 * (1 - Math.exp(-h / ell));
+      },
+      // 2D variogram for kriging: takes (dx, dy) in sample-spacing units
+      gamma2D: (dx, dy) => {
+        const hEff = Math.sqrt(dx * dx + k * k * dy * dy);
+        if (hEff <= 1e-9) return 0;
+        return nugget + sigma2 * (1 - Math.exp(-hEff / ell));
+      },
+    };
+  }
+
+  if (modelKey === 'power-pseudo') {
+    // Pseudo-power model: γ(h) = C·(h/a)^α, capped at sill 1.5C.
+    // True power model is intrinsic (unbounded γ). We truncate to make it
+    // FFT-simulatable and kriging-compatible. For 0<α<2 it mimics fractal-like
+    // behavior at scales smaller than the cap.
+    // The effective "range" where γ hits the cap: a·1.5^(1/α).
+    const alpha = aux;
+    const capValue = 1.5 * sigma2;  // truncation point of γ
+    return {
+      key: modelKey,
+      label: 'Power (truncated, α=' + alpha.toFixed(2) + ')',
+      formula: 'γ(h) = c₀ + min(C·(h/a)^α, 1.5·C)',
+      // Treat the structured covariance as: C_eff(0) = capValue, C_eff(h) = capValue - power_part
+      // for h within the capped region; capValue - capValue = 0 outside.
+      covStruct: (h) => {
+        const gammaPower = sigma2 * Math.pow(h / ell, alpha);
+        const gammaCapped = Math.min(gammaPower, capValue);
+        return capValue - gammaCapped; // covariance derived from variogram via C(0)=capValue
+      },
+      gamma: (h) => {
+        if (h <= 1e-9) return 0;
+        const gammaPower = sigma2 * Math.pow(h / ell, alpha);
+        return nugget + Math.min(gammaPower, capValue);
+      },
+    };
+  }
+}
+
+// ============================================================
+//  Field simulator — uses currently selected model
+// ============================================================
+const N = 128;
+const CELLS_PER_SAMPLE_UNIT = 16;
+const DX = 1.0 / CELLS_PER_SAMPLE_UNIT;
+const M = N * 4;  // 4× embedding — needed for hole-effect, prismato, anisotropic
+const MEAN_GRADE = 224.4;
+
+function buildSpectrum(model) {
+  const C = new Float64Array(M * M);
+  const half = M >> 1;
+  if (model.covStruct2D) {
+    // Anisotropic: use kx, ky directly
+    for (let j = 0; j < M; j++) {
+      const ky = j < half ? j : j - M;
+      for (let i = 0; i < M; i++) {
+        const kx = i < half ? i : i - M;
+        C[j * M + i] = model.covStruct2D(kx, ky);
+      }
+    }
+  } else {
+    for (let j = 0; j < M; j++) {
+      const ky = j < half ? j : j - M;
+      for (let i = 0; i < M; i++) {
+        const kx = i < half ? i : i - M;
+        const h = Math.sqrt(kx * kx + ky * ky) * DX;
+        C[j * M + i] = model.covStruct(h);
+      }
+    }
+  }
+  const re = new Float64Array(C);
+  const im = new Float64Array(M * M);
+  fft2d(re, im, M, false);
+  let peak = 0;
+  for (let i = 0; i < M * M; i++) if (re[i] > peak) peak = re[i];
+  const noiseFloor = peak * 1e-9;
+  const sqrtS = new Float64Array(M * M);
+  for (let i = 0; i < M * M; i++) {
+    const v = re[i];
+    sqrtS[i] = v > noiseFloor ? Math.sqrt(v) : 0;
+  }
+  return sqrtS;
+}
+
+function sampleField(model, seed) {
+  const sqrtS = buildSpectrum(model);
+  const rng = mulberry32(seed);
+  const re = new Float64Array(M * M);
+  const im = new Float64Array(M * M);
+  const buf = new Float64Array(M * M);
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) re[i] = sqrtS[i] * buf[i];
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) im[i] = sqrtS[i] * buf[i];
+  fft2d(re, im, M, true);
+  const Z = new Float64Array(N * N);
+  const scale = M;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      Z[j * N + i] = re[j * M + i] * scale;
+    }
+  }
+  if (state.nugget > 0) {
+    const sd = Math.sqrt(state.nugget);
+    fillNormal(buf, rng);
+    for (let i = 0; i < N * N; i++) Z[i] += sd * buf[i];
+  }
+  for (let i = 0; i < N * N; i++) Z[i] += MEAN_GRADE;
+  for (let i = 0; i < N * N; i++) if (Z[i] < 0) Z[i] = 0;
+  return Z;
+}
+
+// ============================================================
+//  Color and rendering
+// ============================================================
+const CMAP_STOPS = [
+  [ 26,  58,  92],
+  [123, 163, 196],
+  [245, 239, 219],
+  [200,  98,  62],
+  [122,  16,  36],
+];
+function valueToRGB(t) {
+  t = Math.max(0, Math.min(1, t));
+  const seg = t * (CMAP_STOPS.length - 1);
+  const i = Math.min(Math.floor(seg), CMAP_STOPS.length - 2);
+  const f = seg - i;
+  const a = CMAP_STOPS[i], b = CMAP_STOPS[i + 1];
+  return [
+    Math.round(a[0] + f * (b[0] - a[0])),
+    Math.round(a[1] + f * (b[1] - a[1])),
+    Math.round(a[2] + f * (b[2] - a[2])),
+  ];
+}
+function renderField2D(canvas, Z, N, vmin, vmax) {
+  canvas.width = N;
+  canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(N, N);
+  const span = vmax - vmin;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = Z[j * N + i];
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      const idx = (j * N + i) * 4;
+      img.data[idx] = rgb[0];
+      img.data[idx + 1] = rgb[1];
+      img.data[idx + 2] = rgb[2];
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ============================================================
+//  3D rendering (Three.js)
+// ============================================================
+let scene3d = null;
+function ensureScene3D() {
+  if (scene3d) return scene3d;
+  const canvas = document.getElementById('field-canvas-3d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  canvas.width = size;
+  canvas.height = size;
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true, preserveDrawingBuffer: false
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(size, size, false);
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+  camera.up.set(0, 0, 1);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+  dir.position.set(2, -3, 4); scene.add(dir);
+  const dir2 = new THREE.DirectionalLight(0xffe4c4, 0.25);
+  dir2.position.set(-3, 2, 1); scene.add(dir2);
+  scene3d = { renderer, scene, camera, mesh: null, size };
+  return scene3d;
+}
+function buildSurface3D(Z, N, vmin, vmax) {
+  const s = ensureScene3D();
+  if (s.mesh) {
+    s.scene.remove(s.mesh);
+    s.mesh.geometry.dispose();
+    s.mesh.material.dispose();
+    s.mesh = null;
+  }
+  const planeSize = 2.0;
+  const geom = new THREE.PlaneGeometry(planeSize, planeSize, N - 1, N - 1);
+  const positions = geom.attributes.position.array;
+  const colors = new Float32Array(N * N * 3);
+  const span = vmax - vmin;
+  let actualMin = Infinity, actualMax = -Infinity;
+  for (let i = 0; i < Z.length; i++) {
+    if (Z[i] < actualMin) actualMin = Z[i];
+    if (Z[i] > actualMax) actualMax = Z[i];
+  }
+  const actualSpan = Math.max(actualMax - actualMin, 1e-6);
+  const heightScale = 0.30 / actualSpan;
+  const midY = (actualMin + actualMax) / 2;
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const vIdx = iy * N + ix;
+      const v = Z[iy * N + ix];
+      positions[vIdx * 3 + 2] = (v - midY) * heightScale;
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      colors[vIdx * 3] = rgb[0] / 255;
+      colors[vIdx * 3 + 1] = rgb[1] / 255;
+      colors[vIdx * 3 + 2] = rgb[2] / 255;
+    }
+  }
+  geom.attributes.position.needsUpdate = true;
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  const mat = new THREE.MeshLambertMaterial({
+    vertexColors: true, side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  s.scene.add(mesh);
+  s.mesh = mesh;
+}
+function update3DCamera() {
+  if (!scene3d) return;
+  const r = 2.8;
+  const theta = state3d.elev;
+  const phi = state3d.azim;
+  const cx = r * Math.cos(theta) * Math.sin(phi);
+  const cy = -r * Math.cos(theta) * Math.cos(phi);
+  const cz = r * Math.sin(theta);
+  scene3d.camera.position.set(cx, cy, cz);
+  scene3d.camera.lookAt(0, 0, 0);
+}
+function render3D() {
+  if (!scene3d) return;
+  scene3d.renderer.render(scene3d.scene, scene3d.camera);
+}
+function resize3DCanvas() {
+  if (!scene3d) return;
+  const canvas = document.getElementById('field-canvas-3d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  if (size !== scene3d.size) {
+    scene3d.size = size;
+    scene3d.renderer.setSize(size, size, false);
+    scene3d.camera.aspect = 1;
+    scene3d.camera.updateProjectionMatrix();
+  }
+}
+
+// ============================================================
+//  Sample geometry
+// ============================================================
+function sampleCenters() {
+  const out = [];
+  for (let J = 0; J < 4; J++) {
+    for (let I = 0; I < 4; I++) {
+      const cx = 32 * I + 8;
+      const cy = 32 * J + 8;
+      out.push({
+        I, J, cx, cy,
+        gx: (cx + 0.5) / N,
+        gy: (cy + 0.5) / N,
+        x_sample: 2 * I + 0.5,
+        y_sample: 2 * J + 0.5,
+        x: 2 * I + 0.5,
+        y: 2 * J + 0.5,
+      });
+    }
+  }
+  return out;
+}
+function sampleAverage(Z, N, cx, cy) {
+  const half = CELLS_PER_SAMPLE_UNIT / 2;
+  let sum = 0, count = 0;
+  const i0 = Math.max(0, cx - half);
+  const i1 = Math.min(N, cx + half);
+  const j0 = Math.max(0, cy - half);
+  const j1 = Math.min(N, cy + half);
+  for (let j = j0; j < j1; j++) {
+    for (let i = i0; i < i1; i++) {
+      sum += Z[j * N + i]; count++;
+    }
+  }
+  return count > 0 ? sum / count : 0;
+}
+function gridFracToSampleCoord(gx, gy) {
+  return { x: 8 * gx, y: 8 * gy };
+}
+
+// ============================================================
+//  Linear algebra and ordinary kriging
+// ============================================================
+function solveLinear(A, b) {
+  const n = b.length;
+  const aug = new Array(n);
+  for (let i = 0; i < n; i++) {
+    aug[i] = new Float64Array(n + 1);
+    for (let j = 0; j < n; j++) aug[i][j] = A[i][j];
+    aug[i][n] = b[i];
+  }
+  for (let k = 0; k < n; k++) {
+    let piv = k, pivVal = Math.abs(aug[k][k]);
+    for (let r = k + 1; r < n; r++) {
+      if (Math.abs(aug[r][k]) > pivVal) { piv = r; pivVal = Math.abs(aug[r][k]); }
+    }
+    if (piv !== k) { const tmp = aug[k]; aug[k] = aug[piv]; aug[piv] = tmp; }
+    if (Math.abs(aug[k][k]) < 1e-14) throw new Error('Singular matrix');
+    for (let r = k + 1; r < n; r++) {
+      const factor = aug[r][k] / aug[k][k];
+      for (let c = k; c <= n; c++) aug[r][c] -= factor * aug[k][c];
+    }
+  }
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let s = aug[i][n];
+    for (let j = i + 1; j < n; j++) s -= aug[i][j] * x[j];
+    x[i] = s / aug[i][i];
+  }
+  return x;
+}
+function ordinaryKriging(samples, model, xn, yn) {
+  const n = samples.length;
+  // Use gamma2D for anisotropic models, else isotropic gamma(distance)
+  const gammaPair = model.gamma2D
+    ? (x1, y1, x2, y2) => model.gamma2D(x1 - x2, y1 - y2)
+    : (x1, y1, x2, y2) => model.gamma(Math.hypot(x1 - x2, y1 - y2));
+
+  const A = new Array(n + 1);
+  for (let i = 0; i <= n; i++) A[i] = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      A[i][j] = gammaPair(samples[i].x, samples[i].y, samples[j].x, samples[j].y);
+    }
+    A[i][n] = 1;
+    A[n][i] = 1;
+  }
+  A[n][n] = 0;
+  const b = new Float64Array(n + 1);
+  const gammaToTarget = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    gammaToTarget[i] = gammaPair(samples[i].x, samples[i].y, xn, yn);
+    b[i] = gammaToTarget[i];
+  }
+  b[n] = 1;
+  const sol = solveLinear(A, b);
+  const weights = new Float64Array(n);
+  for (let i = 0; i < n; i++) weights[i] = sol[i];
+  const mu = sol[n];
+  let prediction = 0;
+  for (let i = 0; i < n; i++) prediction += weights[i] * samples[i].value;
+  let kvar = mu;
+  for (let i = 0; i < n; i++) kvar += weights[i] * gammaToTarget[i];
+  return { weights, mu, prediction, krigingVariance: kvar, gammaToTarget, gammaMatrix: A };
+}
+
+// ============================================================
+//  State
+// ============================================================
+const state = {
+  modelKey: 'hole',
+  sill: 28000,
+  range: 2.5,
+  nugget: 5000,
+  aux: 3.0,         // auxiliary param: λ for hole, k for aniso, α for power
+  view: '2d',
+  Z: null,
+  samples: [],
+  xNew: null,
+  inKrigingMode: false,
+  seed: Math.floor(Math.random() * 0xFFFFFFFF),
+};
+const state3d = { elev: 0.85, azim: 0.55 };
+
+// ============================================================
+//  Stats helper
+// ============================================================
+function fieldStats(Z) {
+  let s = 0, n = Z.length, mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const v = Z[i];
+    s += v;
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+  }
+  const mean = s / n;
+  let s2 = 0;
+  for (let i = 0; i < n; i++) { const d = Z[i] - mean; s2 += d * d; }
+  return { mean, variance: s2 / n, min: mn, max: mx };
+}
+
+// ============================================================
+//  Variogram drawing
+// ============================================================
+function drawVariogram() {
+  const canvas = document.getElementById('vario-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  if (cssW === 0 || cssH === 0) return;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  const ML = 48, MR = 14, MT = 18, MB = 36;
+  const plotW = W - ML - MR;
+  const plotH = H - MT - MB;
+
+  const model = makeModel(state.modelKey);
+  const totalSill = state.nugget + state.sill;
+  // x-axis range: model-dependent
+  let xMax;
+  if (state.modelKey === 'hole') xMax = state.range * 4.0;  // need to see oscillations
+  else if (state.modelKey === 'prismato') xMax = state.range * 4.0;  // heavy tail
+  else if (state.modelKey === 'aniso-exp') xMax = state.range * 3.5;
+  else if (state.modelKey === 'power-pseudo') xMax = state.range * 2.0;  // hits cap
+  else xMax = state.range * 3.0;
+
+  // Extend if any sample distance exceeds
+  if (state.xNew && state.samples.length > 0) {
+    for (const s of state.samples) {
+      const d = Math.hypot(s.x_sample - state.xNew.sx, s.y_sample - state.xNew.sy);
+      if (d > xMax) xMax = d * 1.05;
+    }
+  }
+  // For the hole-effect model, γ can overshoot the sill. Sample the curve to
+  // find the actual maximum.
+  let gammaMax = totalSill;
+  if (state.modelKey === 'hole') {
+    for (let i = 1; i <= 250; i++) {
+      const h = (i / 250) * xMax;
+      const g = model.gamma(h);
+      if (g > gammaMax) gammaMax = g;
+    }
+  }
+  const yMax = gammaMax * 1.18;
+
+  const sx = (h) => ML + (h / xMax) * plotW;
+  const sy = (g) => MT + plotH - (g / yMax) * plotH;
+
+  ctx.strokeStyle = '#eee5cc';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) {
+    const yPx = sy((k / 4) * yMax);
+    ctx.beginPath();
+    ctx.moveTo(ML, yPx); ctx.lineTo(ML + plotW, yPx);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#b8923d';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(ML, sy(totalSill)); ctx.lineTo(ML + plotW, sy(totalSill));
+  ctx.stroke();
+  if (state.range < xMax) {
+    ctx.beginPath();
+    ctx.moveTo(sx(state.range), MT); ctx.lineTo(sx(state.range), MT + plotH);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(ML, MT); ctx.lineTo(ML, MT + plotH);
+  ctx.lineTo(ML + plotW, MT + plotH);
+  ctx.stroke();
+
+  // Theoretical curve (with nugget jump)
+  ctx.strokeStyle = '#9e1b32';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(state.nugget));
+  const NP = 250;
+  for (let i = 1; i <= NP; i++) {
+    const h = (i / NP) * xMax;
+    ctx.lineTo(sx(h), sy(model.gamma(h)));
+  }
+  ctx.stroke();
+
+  if (state.nugget > 0) {
+    ctx.strokeStyle = '#9e1b32';
+    ctx.setLineDash([2, 2]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx(0), sy(0));
+    ctx.lineTo(sx(0), sy(state.nugget));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#9e1b32';
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.fillText('c₀', sx(0) + 4, sy(state.nugget * 0.5) + 3);
+  }
+
+  if (state.xNew && state.samples.length > 0) {
+    const distances = state.samples.map((s, i) => {
+      const dx = s.x_sample - state.xNew.sx;
+      const dy = s.y_sample - state.xNew.sy;
+      let d, g;
+      if (model.gamma2D) {
+        // For anisotropic models, plot ticks at the effective anisotropic distance
+        // so they line up with the (isotropic-shape) γ curve drawn on the plot.
+        const k = state.aux;
+        d = Math.sqrt(dx * dx + k * k * dy * dy);
+        g = model.gamma2D(dx, dy);
+      } else {
+        d = Math.sqrt(dx * dx + dy * dy);
+        g = model.gamma(d);
+      }
+      return { i: i + 1, d, gamma: g };
+    });
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'center';
+    const sorted = distances.slice().sort((a, b) => a.d - b.d);
+    let lastLabelX = -Infinity;
+    let labelRow = 0;
+    for (const d of sorted) {
+      const x = sx(d.d);
+      ctx.strokeStyle = '#1e5fa8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, MT + plotH);
+      ctx.lineTo(x, MT + plotH + 4);
+      ctx.stroke();
+      if (x - lastLabelX < 16) labelRow = (labelRow + 1) % 2;
+      else labelRow = 0;
+      lastLabelX = x;
+      const ly = MT + plotH + 14 + labelRow * 11;
+      ctx.fillStyle = '#1e5fa8';
+      ctx.fillText('x' + d.i, x, ly);
+    }
+    for (const d of distances) {
+      const px = sx(d.d);
+      const py = sy(d.gamma);
+      ctx.strokeStyle = 'rgba(196, 26, 59, 0.25)';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(px, MT + plotH);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fill();
+      ctx.fillStyle = '#c41a3b';
+      ctx.beginPath();
+      ctx.arc(px, py, 2.2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  ctx.fillStyle = '#6e6863';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 4; k++) {
+    const yVal = (k / 4) * yMax;
+    const txt = yVal >= 1000 ? (yVal / 1000).toFixed(0) + 'k' : yVal.toFixed(0);
+    ctx.fillText(txt, ML - 4, sy(yVal) + 3);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#6e6863';
+  for (let k = 0; k <= Math.ceil(xMax); k++) {
+    if (k > xMax) break;
+    ctx.fillText(k.toFixed(0), sx(k), MT + plotH + 13);
+  }
+
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = "italic 10px 'Fraunces', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('h  (sample-spacing units)', ML + plotW / 2, MT + plotH + 32);
+  ctx.save();
+  ctx.translate(13, MT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('γ(h)', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = '#b8923d';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  ctx.fillText('sill ' + (totalSill / 1000).toFixed(0) + 'k', ML + plotW - 4, sy(totalSill) - 3);
+  if (state.range < xMax) {
+    ctx.textAlign = 'center';
+    ctx.fillText('a=' + state.range.toFixed(2), sx(state.range), MT + 11);
+  }
+}
+
+// ============================================================
+//  Overlay rendering (samples, x_new, gamma lines)
+// ============================================================
+function renderOverlay() {
+  const canvas = document.getElementById('overlay-canvas');
+  const wrap = canvas.parentElement;
+  const cssW = wrap.clientWidth;
+  const cssH = wrap.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  if (!state.inKrigingMode) return;
+
+  const W = cssW, H = cssH;
+
+  // Light grid
+  ctx.strokeStyle = 'rgba(74, 74, 74, 0.35)';
+  ctx.lineWidth = 0.5;
+  for (let k = 1; k < 8; k++) {
+    if (k % 2 === 0) continue;
+    const px = (k / 8) * W;
+    const py = (k / 8) * H;
+    ctx.beginPath();
+    ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    ctx.moveTo(0, py); ctx.lineTo(W, py);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(26, 26, 26, 0.55)';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) {
+    const px = (k / 4) * W;
+    const py = (k / 4) * H;
+    ctx.beginPath();
+    ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    ctx.moveTo(0, py); ctx.lineTo(W, py);
+    ctx.stroke();
+  }
+
+  if (state.xNew && state.samples.length > 0) {
+    const model = makeModel(state.modelKey);
+    ctx.strokeStyle = 'rgba(30, 95, 168, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    const xnPx = state.xNew.gx * W;
+    const ynPx = state.xNew.gy * H;
+    for (const s of state.samples) {
+      ctx.beginPath();
+      ctx.moveTo(s.gx * W, s.gy * H);
+      ctx.lineTo(xnPx, ynPx);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const s of state.samples) {
+      const dx = s.x_sample - state.xNew.sx;
+      const dy = s.y_sample - state.xNew.sy;
+      const g = model.gamma2D ? model.gamma2D(dx, dy) : model.gamma(Math.sqrt(dx * dx + dy * dy));
+      const t = 0.32;
+      const lx = s.gx * W * (1 - t) + state.xNew.gx * W * t;
+      const ly = s.gy * H * (1 - t) + state.xNew.gy * H * t;
+      const txt = g >= 1000 ? (g / 1000).toFixed(1) + 'k' : g.toFixed(0);
+      const padX = 3;
+      const w = ctx.measureText(txt).width + padX * 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillRect(lx - w/2, ly - 7, w, 13);
+      ctx.fillStyle = 'rgba(30, 95, 168, 0.95)';
+      ctx.fillText(txt, lx, ly);
+    }
+  }
+
+  // Sample dots
+  for (const s of state.samples) {
+    const px = s.gx * W;
+    const py = s.gy * H;
+    ctx.beginPath();
+    ctx.arc(px, py, 3.5, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fill();
+    ctx.fillStyle = 'rgba(196, 26, 59, 1)';
+    ctx.beginPath();
+    ctx.arc(px, py, 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    const txt = Math.round(s.value).toString();
+    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(txt, px + 5, py - 1);
+    ctx.fillStyle = 'rgba(196, 26, 59, 1)';
+    ctx.fillText(txt, px + 5, py - 1);
+  }
+
+  if (state.xNew) {
+    const px = state.xNew.gx * W;
+    const py = state.xNew.gy * H;
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, 4.5, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(30, 95, 168, 1)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(px - 9, py); ctx.lineTo(px + 9, py);
+    ctx.moveTo(px, py - 9); ctx.lineTo(px, py + 9);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(30, 95, 168, 1)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(px - 9, py); ctx.lineTo(px + 9, py);
+    ctx.moveTo(px, py - 9); ctx.lineTo(px, py + 9);
+    ctx.stroke();
+    ctx.font = "italic bold 11px 'Fraunces', serif";
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeText('x_new', px + 11, py + 1);
+    ctx.fillStyle = 'rgba(30, 95, 168, 1)';
+    ctx.fillText('x_new', px + 11, py + 1);
+  }
+}
+
+// ============================================================
+//  Regenerate (build new field from current model + parameters)
+// ============================================================
+function regenerate() {
+  const model = makeModel(state.modelKey);
+  const Z = sampleField(model, state.seed);
+  state.Z = Z;
+  state.xNew = null;
+
+  const vmin = 0, vmax = 600;
+  document.getElementById('cbar-min').textContent = vmin.toFixed(0);
+  document.getElementById('cbar-mid').textContent = ((vmin + vmax) / 2).toFixed(0);
+  document.getElementById('cbar-max').textContent = vmax.toFixed(0);
+
+  renderField2D(document.getElementById('field-canvas'), Z, N, vmin, vmax);
+  if (state.view === '3d') {
+    buildSurface3D(Z, N, vmin, vmax);
+    resize3DCanvas();
+    update3DCamera();
+    render3D();
+  }
+
+  // Compute samples (needed both for displaying values when in kriging mode,
+  // and for stats)
+  state.samples = sampleCenters().map(s => ({
+    ...s,
+    value: sampleAverage(Z, N, s.cx, s.cy),
+  }));
+
+  renderOverlay();
+  drawVariogram();
+
+  const s = fieldStats(Z);
+  document.getElementById('stat-mean').textContent = s.mean.toFixed(1);
+  document.getElementById('stat-var').textContent = s.variance.toFixed(0);
+  document.getElementById('stat-range').textContent = s.min.toFixed(0) + '..' + s.max.toFixed(0);
+
+  // Reset kriging UI if in kriging mode
+  if (state.inKrigingMode) {
+    document.getElementById('krige-btn').disabled = true;
+    document.getElementById('solver-content').innerHTML =
+      '<div class="empty-state">Field regenerated. Click <strong>x<sub>new</sub></strong> in the field, then press <strong>Krige</strong>.</div>';
+  }
+
+  state.seed = (state.seed * 1664525 + 1013904223) >>> 0;
+}
+
+// ============================================================
+//  Mode switching: explore ↔ kriging
+// ============================================================
+function enterKrigingMode() {
+  state.inKrigingMode = true;
+  state.xNew = null;
+  document.getElementById('canvas-wrap').classList.add('kriging-mode');
+  document.getElementById('stage-title').textContent = 'Kriging mode — click to set x_new';
+  document.getElementById('stage-caption').innerHTML =
+    'The field is now translucent. Red dots are 16 sample points. Click anywhere to set <strong>x<sub>new</sub></strong>, then press <strong>Krige</strong>.';
+  document.getElementById('solver-panel').style.display = 'block';
+  document.getElementById('krige-mode-btn').style.display = 'none';
+  // Switch back to 2D when entering kriging
+  setView('2d');
+  renderOverlay();
+}
+function exitKrigingMode() {
+  state.inKrigingMode = false;
+  state.xNew = null;
+  document.getElementById('canvas-wrap').classList.remove('kriging-mode');
+  document.getElementById('stage-title').textContent = 'Explore the random field';
+  document.getElementById('stage-caption').innerHTML =
+    'Choose a variogram family above. Adjust parameters. Switch between 2D heatmap and 3D surface views. When you\'re ready, press <strong>Start kriging</strong>.';
+  document.getElementById('solver-panel').style.display = 'none';
+  document.getElementById('krige-mode-btn').style.display = 'block';
+  renderOverlay();
+  drawVariogram();
+}
+
+// ============================================================
+//  View toggle (2D / 3D)
+// ============================================================
+function setView(view) {
+  state.view = view;
+  document.querySelectorAll('.view-toggle').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  const wrap = document.getElementById('canvas-wrap');
+  if (view === '3d') {
+    wrap.classList.add('mode-3d');
+    document.getElementById('view-hint').style.display = 'block';
+    if (state.Z) {
+      buildSurface3D(state.Z, N, 0, 600);
+      resize3DCanvas();
+      update3DCamera();
+      render3D();
+    }
+  } else {
+    wrap.classList.remove('mode-3d');
+    document.getElementById('view-hint').style.display = 'none';
+  }
+}
+
+// ============================================================
+//  Wire up controls
+// ============================================================
+const sillSlider = document.getElementById('sill');
+const sillVal = document.getElementById('sill-val');
+sillSlider.addEventListener('input', () => {
+  state.sill = parseFloat(sillSlider.value);
+  sillVal.textContent = state.sill;
+  drawVariogram();
+});
+sillSlider.addEventListener('change', () => regenerate());
+
+const rangeSlider = document.getElementById('range');
+const rangeVal = document.getElementById('range-val');
+rangeSlider.addEventListener('input', () => {
+  state.range = parseFloat(rangeSlider.value);
+  rangeVal.textContent = state.range.toFixed(2);
+  drawVariogram();
+});
+rangeSlider.addEventListener('change', () => regenerate());
+
+const nuggetSlider = document.getElementById('nugget');
+const nuggetVal = document.getElementById('nugget-val');
+nuggetSlider.addEventListener('input', () => {
+  state.nugget = parseFloat(nuggetSlider.value);
+  nuggetVal.textContent = state.nugget;
+  drawVariogram();
+});
+nuggetSlider.addEventListener('change', () => regenerate());
+
+const auxSlider = document.getElementById('aux');
+const auxVal = document.getElementById('aux-val');
+auxSlider.addEventListener('input', () => {
+  state.aux = parseFloat(auxSlider.value);
+  auxVal.textContent = state.aux.toFixed(2);
+  drawVariogram();
+});
+auxSlider.addEventListener('change', () => regenerate());
+
+document.querySelectorAll('.vario-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vario-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.modelKey = btn.dataset.model;
+    configureAuxSlider();
+    regenerate();
+  });
+});
+
+// Configure auxiliary slider based on chosen model
+function configureAuxSlider() {
+  const wrap = document.getElementById('aux-param-wrap');
+  const label = document.getElementById('aux-label');
+  const slider = document.getElementById('aux');
+  const valLabel = document.getElementById('aux-val');
+  const k = state.modelKey;
+
+  if (k === 'hole') {
+    wrap.style.display = 'block';
+    label.textContent = 'λ (hole wavelength)';
+    slider.min = 1.5; slider.max = 6; slider.step = 0.25;
+    state.aux = 3.0;
+    slider.value = state.aux;
+    valLabel.textContent = state.aux.toFixed(2);
+  } else if (k === 'prismato') {
+    wrap.style.display = 'none';  // no aux parameter
+    state.aux = 0;
+  } else if (k === 'aniso-exp') {
+    wrap.style.display = 'block';
+    label.textContent = 'k (anisotropy ratio)';
+    slider.min = 0.5; slider.max = 3; slider.step = 0.1;
+    state.aux = 2.0;
+    slider.value = state.aux;
+    valLabel.textContent = state.aux.toFixed(2);
+  } else if (k === 'power-pseudo') {
+    wrap.style.display = 'block';
+    label.textContent = 'α (power exponent, 0<α<2)';
+    slider.min = 0.3; slider.max = 1.95; slider.step = 0.05;
+    state.aux = 1.0;
+    slider.value = state.aux;
+    valLabel.textContent = state.aux.toFixed(2);
+  }
+}
+
+// Initial aux configuration
+configureAuxSlider();
+
+document.querySelectorAll('.view-toggle').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+
+document.getElementById('regen-btn').addEventListener('click', regenerate);
+document.getElementById('krige-mode-btn').addEventListener('click', enterKrigingMode);
+document.getElementById('exit-krige-btn').addEventListener('click', exitKrigingMode);
+
+// Click on canvas (only in kriging mode + 2D)
+const canvasWrap = document.getElementById('canvas-wrap');
+canvasWrap.addEventListener('click', (e) => {
+  if (!state.inKrigingMode || state.view !== '2d') return;
+  const rect = canvasWrap.getBoundingClientRect();
+  const gx = (e.clientX - rect.left) / rect.width;
+  const gy = (e.clientY - rect.top) / rect.height;
+  if (gx < 0 || gx > 1 || gy < 0 || gy > 1) return;
+  const sc = gridFracToSampleCoord(gx, gy);
+  state.xNew = { gx, gy, sx: sc.x, sy: sc.y };
+  renderOverlay();
+  drawVariogram();
+  document.getElementById('krige-btn').disabled = false;
+  document.getElementById('solver-caption').innerHTML =
+    'Selected x<sub>new</sub> = (' + sc.x.toFixed(2) + ', ' + sc.y.toFixed(2) + '). Press <strong>Krige</strong> to solve.';
+});
+
+// 3D drag
+let dragging = false, lastX = 0, lastY = 0;
+canvasWrap.addEventListener('mousedown', (e) => {
+  if (state.view !== '3d') return;
+  e.preventDefault();
+  dragging = true;
+  lastX = e.clientX; lastY = e.clientY;
+  canvasWrap.classList.add('dragging');
+});
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  state3d.azim += dx * 0.008;
+  state3d.elev = Math.max(0.06, Math.min(Math.PI / 2 - 0.05, state3d.elev - dy * 0.006));
+  update3DCamera();
+  render3D();
+});
+window.addEventListener('mouseup', () => { dragging = false; canvasWrap.classList.remove('dragging'); });
+window.addEventListener('mouseleave', () => { dragging = false; canvasWrap.classList.remove('dragging'); });
+
+window.addEventListener('resize', () => {
+  renderOverlay();
+  drawVariogram();
+  if (state.view === '3d') {
+    resize3DCanvas();
+    render3D();
+  }
+});
+
+// ============================================================
+//  Krige button → solve and render
+// ============================================================
+function fmt(v, digits=1) {
+  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(digits) + 'k';
+  return v.toFixed(digits);
+}
+function fmtSigned(v, digits=3) {
+  if (v >= 0) return '+' + v.toFixed(digits);
+  return v.toFixed(digits);
+}
+function buildMatrixHTML(result) {
+  const n = state.samples.length;
+  const A = result.gammaMatrix;
+  const lambdas = result.weights;
+  const mu = result.mu;
+  const b = result.gammaToTarget;
+
+  let html = '<div class="math-block">';
+  html += '<div class="math-block-title"><span class="num">§4a</span>The kriging system AX = B</div>';
+  html += '<div class="math-block-caption">17 × 17 system. Values in thousands (k = 1000).</div>';
+  html += '<div class="matrix-display"><div class="matrix A">';
+  for (let i = 0; i <= n; i++) {
+    for (let j = 0; j <= n; j++) {
+      let val = A[i][j];
+      let cls = 'cell';
+      let txt;
+      if (i === n && j === n) { txt = '0'; cls += ' constraint'; }
+      else if (i === n || j === n) { txt = '1'; cls += ' constraint'; }
+      else if (i === j) { txt = '0'; cls += ' diag'; }
+      else txt = fmt(val, 1);
+      html += `<div class="${cls}">${txt}</div>`;
+    }
+  }
+  html += '</div>';
+  html += '<div class="matrix-label">·</div>';
+  html += '<div class="matrix lambda">';
+  for (let i = 0; i < n; i++) html += `<div class="cell muted">λ<sub>${i+1}</sub></div>`;
+  html += `<div class="cell constraint">μ</div></div>`;
+  html += '<div class="equals">=</div>';
+  html += '<div class="matrix b">';
+  for (let i = 0; i < n; i++) html += `<div class="cell">${fmt(b[i], 1)}</div>`;
+  html += `<div class="cell constraint">1</div></div>`;
+  html += '</div></div>';
+
+  html += '<div class="math-block">';
+  html += '<div class="math-block-title"><span class="num">§4b</span>Solution &mdash; the kriging weights</div>';
+  html += '<div class="math-block-caption">Solved by Gaussian elimination. Negative weights are normal in kriging (screen effect).</div>';
+  html += '<div class="solution-list">';
+  html += '<div class="row header"><div>i</div><div>x_i</div><div>z_i</div><div>λ_i</div></div>';
+  let sumLambda = 0;
+  for (let i = 0; i < n; i++) {
+    const s = state.samples[i];
+    const w = lambdas[i];
+    sumLambda += w;
+    const wClass = w < 0 ? 'neg' : '';
+    html += `<div class="row"><div class="label-cell">x<sub>${i+1}</sub></div>`;
+    html += `<div>(${s.x_sample.toFixed(1)},${s.y_sample.toFixed(1)})</div>`;
+    html += `<div>${Math.round(s.value)}</div>`;
+    html += `<div class="${wClass}">${fmtSigned(w, 4)}</div></div>`;
+  }
+  html += `<div class="row mu-row"><div>μ</div><div>(Lagrange)</div><div></div><div>${fmtSigned(mu, 1)}</div></div>`;
+  html += `<div class="row" style="margin-top: 4px; border-bottom: none; color: var(--muted); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em;"><div>check</div><div>Σ λ_i = 1</div><div></div><div>${sumLambda.toFixed(4)}</div></div>`;
+  html += '</div></div>';
+
+  html += '<div class="prediction-box">';
+  html += '<div class="header">§4c · Prediction</div>';
+  html += '<div class="equation">z(x<sub>new</sub>) = ';
+  let parts = [];
+  for (let i = 0; i < n; i++) {
+    const w = lambdas[i];
+    const z = state.samples[i].value;
+    const sign = w >= 0 ? (i === 0 ? '' : ' + ') : ' − ';
+    parts.push(`${sign}${Math.abs(w).toFixed(3)}·${Math.round(z)}`);
+  }
+  html += parts.join('') + '</div>';
+  html += `<div class="result"><span class="label">ẑ(x<sub>new</sub>) =</span>${result.prediction.toFixed(1)}</div>`;
+  if (state.Z && state.xNew) {
+    const ix = Math.min(N - 1, Math.max(0, Math.floor(state.xNew.gx * N)));
+    const iy = Math.min(N - 1, Math.max(0, Math.floor(state.xNew.gy * N)));
+    const truth = state.Z[iy * N + ix];
+    const err = result.prediction - truth;
+    const krigStd = Math.sqrt(Math.max(result.krigingVariance, 0));
+    html += `<div class="truth">true z(x<sub>new</sub>) at this pixel = <span class="truth-val">${truth.toFixed(1)}</span> · error ${fmtSigned(err, 1)} · kriging σ ≈ ${krigStd.toFixed(1)}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+document.getElementById('krige-btn').addEventListener('click', () => {
+  if (!state.xNew) return;
+  const model = makeModel(state.modelKey);
+  const result = ordinaryKriging(state.samples, model, state.xNew.sx, state.xNew.sy);
+  document.getElementById('solver-caption').textContent =
+    'Solving for the weights at x_new = (' + state.xNew.sx.toFixed(2) + ', ' + state.xNew.sy.toFixed(2) + ').';
+  document.getElementById('solver-content').innerHTML = buildMatrixHTML(result);
+});
+
+// Initial
+regenerate();
+</script>
+</body>
+</html>

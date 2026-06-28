@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMF Mass Visualization — Sum of Two Dice (Scanning CDF)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f7f7;
+    --text: #2c2a26;
+    --text-dim: #6b6560;
+    --accent: #9E1B32;
+    --accent-glow: rgba(158, 27, 50, 0.15);
+    --axis: #a09888;
+    --scan: #cc3344;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container { width: 100%; max-width: 960px; }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header h1 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+  }
+
+  .stats {
+    display: flex;
+    gap: 2rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+  }
+
+  .stat-group label {
+    color: var(--text-dim);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  .stat-group span {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  .formula-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 1.25rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(158, 27, 50, 0.06);
+    border: 1px solid rgba(158, 27, 50, 0.15);
+    border-radius: 6px;
+    flex-wrap: wrap;
+  }
+
+  .formula-bar .katex { font-size: 0.92rem; color: var(--text); }
+
+  .canvas-wrap {
+    position: relative;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 2rem 2.5rem 3rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+
+  canvas { display: block; width: 100%; height: auto; cursor: crosshair; }
+
+  .controls {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .control-group label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 110px;
+    height: 4px;
+    background: var(--axis);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .value-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 3ch;
+    text-align: right;
+  }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.2rem;
+    background: transparent;
+    border: 1px solid var(--axis);
+    color: var(--text-dim);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .btn-scan {
+    border-color: var(--scan);
+    color: var(--scan);
+  }
+
+  .btn-scan:hover {
+    box-shadow: 0 0 12px rgba(204, 51, 68, 0.2);
+  }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.96);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--axis);
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>PMF Mass Visualization</h1>
+    <div class="stats">
+      <div class="stat-group">
+        <label>Distribution</label>
+        <span>Sum of Two Dice</span>
+      </div>
+      <div class="stat-group">
+        <label>Support</label>
+        <span>{2, 3, …, 12}</span>
+      </div>
+      <div class="stat-group">
+        <label>E[X]</label>
+        <span>7</span>
+      </div>
+      <div class="stat-group">
+        <label>Var</label>
+        <span>5.83</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="formula-bar">
+    <span id="formulaMain"></span>
+    <span style="margin-left: 1rem;" id="formulaCdf"></span>
+    <span style="margin-left: 1rem;" id="formulaEcdf"></span>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="plot" width="1800" height="950"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Rolls</label>
+      <input type="range" id="nSlider" min="30" max="600" step="10" value="200">
+      <span class="value-display" id="nVal">200</span>
+    </div>
+    <div class="control-group">
+      <label>Spread</label>
+      <input type="range" id="spreadSlider" min="0.02" max="0.25" step="0.01" value="0.12">
+      <span class="value-display" id="spreadVal">0.12</span>
+    </div>
+    <button class="btn" id="redrawBtn">Redraw</button>
+    <button class="btn btn-scan" id="scanBtn">▶ Scan CDF</button>
+    <div class="control-group">
+      <label>Speed</label>
+      <input type="range" id="speedSlider" min="1" max="10" step="1" value="4">
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+// PMF for sum of two fair dice
+const values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const ways  = [1, 2, 3, 4, 5, 6, 5, 4,  3,  2,  1];
+const pmf = {};
+values.forEach((v, i) => { pmf[v] = ways[i] / 36; });
+
+// Precompute theoretical CDF
+const cdf = {};
+let cumSum = 0;
+for (const v of values) { cumSum += pmf[v]; cdf[v] = cumSum; }
+
+let N = 200;
+let spread = 0.12;
+let particles = [];
+let animFrame = null;
+let scanAnim = null;
+let scanX = null; // current scan line x position (null = not scanning)
+
+// Layout
+const PAD = { left: 80, right: 60, top: 340, bottom: 110 };
+const xMin = 1.0, xMax = 13.2;
+
+function canvasX(x) {
+  return PAD.left + ((x - xMin) / (xMax - xMin)) * (canvas.width - PAD.left - PAD.right);
+}
+function canvasY(y) {
+  const plotH = canvas.height - PAD.top - PAD.bottom;
+  const mid = PAD.top + plotH / 2;
+  return mid - y * plotH;
+}
+
+function rollTwo() {
+  return Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
+}
+
+function generateParticles() {
+  particles = [];
+  for (let i = 0; i < N; i++) {
+    particles.push({
+      x: rollTwo(),
+      y: (Math.random() - 0.5) * 2 * spread
+    });
+  }
+}
+
+// ─── Count helpers ───
+function getCounts() {
+  const counts = {};
+  for (const v of values) counts[v] = 0;
+  for (const p of particles) counts[p.x]++;
+  return counts;
+}
+
+// ─── Draw axis with counts and relative frequencies ───
+function drawAxis() {
+  const axisY = canvas.height - PAD.bottom;
+  ctx.strokeStyle = '#a09888';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(canvasX(xMin), axisY);
+  ctx.lineTo(canvasX(xMax), axisY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#5a5248';
+  ctx.font = '600 24px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const v of values) {
+    const tx = canvasX(v);
+    ctx.strokeStyle = '#a09888';
+    ctx.beginPath();
+    ctx.moveTo(tx, axisY);
+    ctx.lineTo(tx, axisY + 8);
+    ctx.stroke();
+    ctx.fillText(v, tx, axisY + 14);
+  }
+
+  // Counts
+  const counts = getCounts();
+  ctx.font = '600 22px "IBM Plex Mono", monospace';
+  ctx.fillStyle = '#2c2a26';
+  ctx.textAlign = 'center';
+  for (const v of values) {
+    ctx.fillText(counts[v], canvasX(v), axisY + 42);
+  }
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#2c2a26';
+  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.fillText('count', canvasX(values[0]) - 24, axisY + 44);
+
+  // Relative frequency
+  const total = particles.length || 1;
+  ctx.font = '500 20px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#2c2a26';
+  for (const v of values) {
+    ctx.fillText((counts[v] / total).toFixed(3), canvasX(v), axisY + 70);
+  }
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#2c2a26';
+  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.fillText('rel freq', canvasX(values[0]) - 24, axisY + 71);
+
+  // Vertical guides
+  ctx.setLineDash([4, 8]);
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.12)';
+  ctx.lineWidth = 1;
+  for (const v of values) {
+    const tx = canvasX(v);
+    ctx.beginPath();
+    ctx.moveTo(tx, PAD.top + 20);
+    ctx.lineTo(tx, canvas.height - PAD.bottom);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Mean marker (E[X] = 7)
+  const mean = 7;
+  const mx = canvasX(mean);
+  const y0 = canvasY(0);
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = 'rgba(158, 27, 50, 0.2)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(mx, PAD.top); ctx.lineTo(mx, axisY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8a8078'; ctx.font = '400 15px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('E[X]=7', mx, y0 + 14);
+}
+
+// ─── Draw cloud particles ───
+// Particles to the left of scanX get brightened; those to the right stay dim
+function drawCloudWithScan() {
+  const rO = N < 100 ? 8 : N < 400 ? 6 : 4;
+  const rI = N < 100 ? 4.5 : N < 400 ? 3.5 : 2.2;
+  const aOOn  = N < 100 ? 0.40 : N < 400 ? 0.28 : 0.15;
+  const aOOff = N < 100 ? 0.20 : N < 400 ? 0.12 : 0.06;
+  const aIOn  = N < 100 ? 0.55 : N < 400 ? 0.35 : 0.15;
+  const aIOff = N < 100 ? 0.28 : N < 400 ? 0.16 : 0.06;
+
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const cx = canvasX(p.x);
+    const cy = canvasY(p.y);
+    const on = scanX !== null && p.x <= scanX;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rO, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(158, 27, 50, ${on ? aOOn : aOOff})`;
+    ctx.fill();
+  }
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const cx = canvasX(p.x);
+    const cy = canvasY(p.y);
+    const on = scanX !== null && p.x <= scanX;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rI, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(130, 20, 42, ${on ? aIOn : aIOff})`;
+    ctx.fill();
+  }
+}
+
+// ─── Draw the scanning vertical bar ───
+function drawScanLine() {
+  if (scanX === null) return;
+  const sx = canvasX(scanX);
+  const y0 = PAD.top;
+  const y1 = canvas.height - PAD.bottom;
+
+  // Glow
+  ctx.save();
+  ctx.shadowColor = 'rgba(204, 51, 68, 0.4)';
+  ctx.shadowBlur = 16;
+  ctx.strokeStyle = 'rgba(204, 51, 68, 0.75)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(sx, y0);
+  ctx.lineTo(sx, y1);
+  ctx.stroke();
+  ctx.restore();
+
+  // Core
+  ctx.strokeStyle = 'rgba(204, 51, 68, 0.9)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(sx, y0);
+  ctx.lineTo(sx, y1);
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = 'rgba(204, 51, 68, 0.9)';
+  ctx.font = '600 18px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('scan', sx, y0 - 4);
+}
+
+// ─── Shared panel geometry ───
+const PANEL = {
+  gap: 16, ih: 280, iy: 16,
+  ip: { left: 50, right: 16, top: 44, bottom: 44 },
+  get panelW() { return (canvas.width - 40 - this.gap * 2) / 3; }
+};
+
+function panelX(idx) { return 20 + idx * (PANEL.panelW + PANEL.gap); }
+function panelValX(ix, v) {
+  const px0 = ix + PANEL.ip.left;
+  const pw = PANEL.panelW - PANEL.ip.left - PANEL.ip.right;
+  return px0 + ((v - 1.5) / 11.5) * pw;
+}
+
+function drawPanelBg(ix, borderColor) {
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath();
+  ctx.roundRect(ix, PANEL.iy, PANEL.panelW, PANEL.ih, 8);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(ix, PANEL.iy, PANEL.panelW, PANEL.ih, 8);
+  ctx.stroke();
+}
+
+function panelPlotBounds(ix) {
+  const px0 = ix + PANEL.ip.left;
+  const px1 = ix + PANEL.panelW - PANEL.ip.right;
+  const py0 = PANEL.iy + PANEL.ip.top;
+  const py1 = PANEL.iy + PANEL.ih - PANEL.ip.bottom;
+  return { px0, px1, py0, py1, pw: px1 - px0, ph: py1 - py0 };
+}
+
+function drawPanelAxes(b) {
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py1); ctx.lineTo(b.px1, b.py1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py0); ctx.lineTo(b.px0, b.py1); ctx.stroke();
+}
+
+function drawPanelXTicks(ix, b) {
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  ctx.font = '400 13px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const v of values) {
+    const tx = panelValX(ix, v);
+    ctx.fillText(v, tx, b.py1 + 5);
+    ctx.strokeStyle = 'rgba(120, 110, 100, 0.4)';
+    ctx.beginPath(); ctx.moveTo(tx, b.py1); ctx.lineTo(tx, b.py1 + 4); ctx.stroke();
+  }
+}
+
+function drawPanelScanLine(ix, b) {
+  if (scanX === null) return;
+  const scanPx = panelValX(ix, Math.min(Math.max(scanX, 1.5), 12.5));
+  if (scanPx >= b.px0 && scanPx <= b.px1) {
+    ctx.strokeStyle = 'rgba(204, 51, 68, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(scanPx, b.py0); ctx.lineTo(scanPx, b.py1); ctx.stroke();
+  }
+}
+
+// ─── PANEL 1: PMF stem plot (left) ───
+function drawPmfInset() {
+  const ix = panelX(0);
+  drawPanelBg(ix, 'rgba(158, 27, 50, 0.2)');
+  const b = panelPlotBounds(ix);
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 20px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('p(x)', ix + PANEL.ip.left, PANEL.iy + 10);
+
+  drawPanelAxes(b);
+  drawPanelXTicks(ix, b);
+
+  const yMax = 0.24;
+
+  // Y ticks
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  for (const yt of [{ val: 1/36, label: '¹⁄₃₆' }, { val: 6/36, label: '⁶⁄₃₆' }]) {
+    const yy = b.py0 + (1 - yt.val / yMax) * b.ph;
+    ctx.fillText(yt.label, b.px0 - 6, yy);
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(158, 27, 50, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Stems + dots
+  for (const v of values) {
+    const p = pmf[v];
+    const sx = panelValX(ix, v);
+    const sy = b.py0 + (1 - p / yMax) * b.ph;
+    const scanned = scanX !== null && v <= scanX;
+
+    ctx.strokeStyle = scanned ? 'rgba(158, 27, 50, 0.7)' : 'rgba(158, 27, 50, 0.25)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(sx, b.py1); ctx.lineTo(sx, sy); ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(sx, sy, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = scanned ? 'rgba(158, 27, 50, 0.85)' : 'rgba(158, 27, 50, 0.3)';
+    ctx.fill();
+  }
+
+  drawPanelScanLine(ix, b);
+}
+
+// ─── Shared CDF step-function drawer ───
+function drawCdfSteps(ix, b, cdfData, accent, accentDim, drawUpTo, showScanDot) {
+  const yMaxCdf = 1.1;
+  function pyF(f) { return b.py0 + (1 - f / yMaxCdf) * b.ph; }
+
+  const dotR = 4.5;
+  let prevY = pyF(0);
+  const firstSx = panelValX(ix, values[0]);
+
+  // Horizontal at 0 before first value
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(b.px0, prevY);
+
+  if (drawUpTo < values[0]) {
+    const tipPx = panelValX(ix, Math.min(drawUpTo, 12.5));
+    ctx.lineTo(Math.min(tipPx, firstSx), prevY);
+    ctx.stroke();
+    if (showScanDot) {
+      ctx.beginPath();
+      ctx.arc(Math.min(tipPx, b.px1), prevY, dotR + 1, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(204, 51, 68, 0.9)';
+      ctx.fill();
+    }
+    return;
+  }
+
+  ctx.lineTo(firstSx, prevY);
+  ctx.stroke();
+
+  // Open circle at (first, 0)
+  ctx.beginPath();
+  ctx.arc(firstSx, prevY, dotR, 0, Math.PI * 2);
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v > drawUpTo) break;
+
+    const F = cdfData[v];
+    const sx = panelValX(ix, v);
+    const sy = pyF(F);
+
+    // Vertical jump
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = accentDim;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(sx, prevY); ctx.lineTo(sx, sy); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Filled circle
+    ctx.beginPath();
+    ctx.arc(sx, sy, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+
+    // Horizontal segment
+    const nextVal = (i < values.length - 1) ? values[i + 1] : 13;
+    const drawTo = Math.min(drawUpTo, nextVal);
+    const nextPx = panelValX(ix, Math.min(drawTo, 12.5));
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(Math.min(nextPx, b.px1), sy); ctx.stroke();
+
+    // Open circle at next jump
+    if (i < values.length - 1 && values[i + 1] <= drawUpTo) {
+      const openX = panelValX(ix, values[i + 1]);
+      ctx.beginPath();
+      ctx.arc(openX, sy, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fill();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    prevY = sy;
+  }
+
+  // Red tracking dot
+  if (showScanDot && drawUpTo !== Infinity) {
+    const tipVal = Math.min(drawUpTo, 12.5);
+    const lastIdx = values.reduce((acc, v, i) => v <= drawUpTo ? i : acc, -1);
+    const tipF = lastIdx >= 0 ? cdfData[values[lastIdx]] : 0;
+    const tipPx = panelValX(ix, tipVal);
+    const tipPy = pyF(tipF);
+    ctx.beginPath();
+    ctx.arc(Math.min(tipPx, b.px1), tipPy, dotR + 1, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(204, 51, 68, 0.9)';
+    ctx.fill();
+
+    // F̂ readout
+    ctx.fillStyle = 'rgba(204, 51, 68, 0.9)';
+    ctx.font = '600 16px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`F̂ = ${tipF.toFixed(3)}`, b.px0 + b.pw * 0.55, b.py0 + b.ph * 0.15);
+  }
+}
+
+// ─── PANEL 2: Theoretical CDF (middle) ───
+function drawCdfInset() {
+  const ix = panelX(1);
+  drawPanelBg(ix, 'rgba(95, 106, 114, 0.2)');
+  const b = panelPlotBounds(ix);
+  const yMaxCdf = 1.1;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 20px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('F(x)', ix + PANEL.ip.left, PANEL.iy + 10);
+
+  drawPanelAxes(b);
+  drawPanelXTicks(ix, b);
+
+  // Y ticks
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  for (const yt of [{ val: 0.5, label: '0.5' }, { val: 1.0, label: '1.0' }]) {
+    const yy = b.py0 + (1 - yt.val / yMaxCdf) * b.ph;
+    ctx.fillText(yt.label, b.px0 - 6, yy);
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(95, 106, 114, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw full theoretical CDF (always complete) — Pachyderm gray
+  drawCdfSteps(ix, b, cdf,
+    'rgba(95, 106, 114, 0.8)', 'rgba(95, 106, 114, 0.25)',
+    Infinity, false);
+
+  drawPanelScanLine(ix, b);
+}
+
+// ─── PANEL 3: Empirical CDF (right) ───
+function drawEcdfInset() {
+  const ix = panelX(2);
+  drawPanelBg(ix, 'rgba(30, 80, 160, 0.18)');
+  const b = panelPlotBounds(ix);
+  const yMaxCdf = 1.1;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 20px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('F̂(x)', ix + PANEL.ip.left, PANEL.iy + 10);
+
+  drawPanelAxes(b);
+  drawPanelXTicks(ix, b);
+
+  // Y ticks
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  for (const yt of [{ val: 0.5, label: '0.5' }, { val: 1.0, label: '1.0' }]) {
+    const yy = b.py0 + (1 - yt.val / yMaxCdf) * b.ph;
+    ctx.fillText(yt.label, b.px0 - 6, yy);
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(30, 80, 160, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Faint theoretical CDF as reference (Pachyderm gray)
+  drawCdfSteps(ix, b, cdf,
+    'rgba(95, 106, 114, 0.15)', 'rgba(95, 106, 114, 0.06)',
+    Infinity, false);
+
+  // Empirical CDF — only if scan is active
+  if (scanX === null) return;
+
+  const counts = getCounts();
+  const total = particles.length || 1;
+  let empCum = 0;
+  const empCdf = {};
+  for (const v of values) { empCum += counts[v] / total; empCdf[v] = empCum; }
+
+  drawCdfSteps(ix, b, empCdf,
+    'rgba(30, 80, 160, 0.85)', 'rgba(30, 80, 160, 0.3)',
+    scanX, true);
+
+  drawPanelScanLine(ix, b);
+}
+
+// ─── Full render ───
+function fullDraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawAxis();
+  drawCloudWithScan();
+  drawScanLine();
+  drawPmfInset();
+  drawCdfInset();
+  drawEcdfInset();
+}
+
+// ─── Scan animation ───
+function startScan() {
+  if (scanAnim) cancelAnimationFrame(scanAnim);
+  const speed = parseInt(document.getElementById('speedSlider').value);
+  const scanStart = 0.8;  // start before the support
+  const scanEnd = 13.0;
+  const totalFrames = Math.round(400 / speed);
+  let frame = 0;
+
+  function step() {
+    const t = frame / totalFrames;
+    scanX = scanStart + (scanEnd - scanStart) * t;
+    fullDraw();
+    frame++;
+    if (frame <= totalFrames) {
+      scanAnim = requestAnimationFrame(step);
+    } else {
+      // Hold final state
+      scanX = scanEnd;
+      fullDraw();
+    }
+  }
+  step();
+}
+
+// ─── Controls ───
+const nSlider = document.getElementById('nSlider');
+const spreadSlider = document.getElementById('spreadSlider');
+const nVal = document.getElementById('nVal');
+const spreadVal = document.getElementById('spreadVal');
+
+function updateLabels() {
+  nVal.textContent = parseInt(nSlider.value);
+  spreadVal.textContent = parseFloat(spreadSlider.value).toFixed(2);
+}
+
+nSlider.addEventListener('input', updateLabels);
+spreadSlider.addEventListener('input', updateLabels);
+
+document.getElementById('redrawBtn').addEventListener('click', () => {
+  if (scanAnim) cancelAnimationFrame(scanAnim);
+  scanX = null;
+  N = parseInt(nSlider.value);
+  spread = parseFloat(spreadSlider.value);
+  generateParticles();
+  fullDraw();
+});
+
+document.getElementById('scanBtn').addEventListener('click', () => {
+  startScan();
+});
+
+// Tooltip
+const wrap = document.querySelector('.canvas-wrap');
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const plotW = canvas.width - PAD.left - PAD.right;
+  const xVal = xMin + ((mx - PAD.left) / plotW) * (xMax - xMin);
+  const nearest = Math.round(xVal);
+  if (nearest >= 2 && nearest <= 12 && Math.abs(xVal - nearest) < 0.4) {
+    const p = pmf[nearest];
+    const w = ways[nearest - 2];
+    tooltip.textContent = `X = ${nearest}   p(${nearest}) = ${w}/36 ≈ ${p.toFixed(4)}`;
+    tooltip.style.left = (e.clientX - wrap.getBoundingClientRect().left + 12) + 'px';
+    tooltip.style.top = (e.clientY - wrap.getBoundingClientRect().top - 30) + 'px';
+    tooltip.style.opacity = 1;
+  } else {
+    tooltip.style.opacity = 0;
+  }
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+
+// Formulas
+katex.render(
+  String.raw`p(x) = \frac{6 - |x - 7|}{36}`,
+  document.getElementById('formulaMain'),
+  { throwOnError: false }
+);
+katex.render(
+  String.raw`F(x) = \sum_{k \leq x} p(k)`,
+  document.getElementById('formulaCdf'),
+  { throwOnError: false }
+);
+katex.render(
+  String.raw`\hat{F}_n(x) = \frac{1}{n}\sum_{i=1}^{n} \mathbf{1}(X_i \leq x)`,
+  document.getElementById('formulaEcdf'),
+  { throwOnError: false }
+);
+
+// Init
+generateParticles();
+fullDraw();
+</script>
+</body>
+</html>

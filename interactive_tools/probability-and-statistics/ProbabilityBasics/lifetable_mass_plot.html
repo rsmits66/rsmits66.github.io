@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMF Mass Visualization — Life Table (SSA 2022)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f7f7;
+    --text: #2c2a26;
+    --text-dim: #6b6560;
+    --accent: #9E1B32;
+    --accent-glow: rgba(158, 27, 50, 0.15);
+    --axis: #a09888;
+    --scan: #cc3344;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container { width: 100%; max-width: 1000px; }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+
+  .header h1 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    font-size: 1.2rem;
+    letter-spacing: 0.02em;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1.4rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-group label {
+    color: var(--text-dim);
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+
+  .stat-group span {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.85rem;
+  }
+
+  .formula-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    padding: 0.6rem 1rem;
+    background: rgba(158, 27, 50, 0.06);
+    border: 1px solid rgba(158, 27, 50, 0.15);
+    border-radius: 6px;
+    flex-wrap: wrap;
+  }
+
+  .formula-bar .katex { font-size: 0.82rem; color: var(--text); }
+
+  .canvas-wrap {
+    position: relative;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1.5rem 2rem 2.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+
+  canvas { display: block; width: 100%; height: auto; cursor: crosshair; }
+
+  .controls {
+    margin-top: 1.2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .control-group label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 85px;
+    height: 4px;
+    background: var(--axis);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .value-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 2.5ch;
+    text-align: right;
+  }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.45rem 1rem;
+    background: transparent;
+    border: 1px solid var(--axis);
+    color: var(--text-dim);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .btn-scan { border-color: var(--scan); color: var(--scan); }
+  .btn-scan:hover { box-shadow: 0 0 12px rgba(204, 51, 68, 0.2); }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.96);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--axis);
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Life Table Distribution — SSA 2022</h1>
+    <div class="stats">
+      <div class="stat-group">
+        <label>Gender</label>
+        <span id="genderLabel">Male</span>
+      </div>
+      <div class="stat-group">
+        <label>e₀ (life exp.)</label>
+        <span id="e0Label">74.74</span>
+      </div>
+      <div class="stat-group">
+        <label>Median</label>
+        <span id="medLabel">—</span>
+      </div>
+      <div class="stat-group">
+        <label>Mode</label>
+        <span id="modeLabel">—</span>
+      </div>
+      <div class="stat-group">
+        <label>ℓ₀</label>
+        <span>100,000</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="formula-bar">
+    <span id="formulaPmf"></span>
+    <span style="margin-left: 0.6rem;" id="formulaCdf"></span>
+    <span style="margin-left: 0.6rem;" id="formulaEcdf"></span>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="plot" width="1800" height="880"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn active" id="btnMale">Male</button>
+    <button class="btn" id="btnFemale">Female</button>
+    <div class="control-group">
+      <label>Entry age</label>
+      <input type="range" id="ageSlider" min="0" max="90" step="1" value="0" style="width:180px">
+      <span class="value-display" id="ageVal">0</span>
+    </div>
+    <div class="control-group" style="gap:0.25rem">
+      <button class="btn" style="padding:0.3rem 0.5rem;font-size:0.6rem" onclick="setAge(0)">0</button>
+      <button class="btn" style="padding:0.3rem 0.5rem;font-size:0.6rem" onclick="setAge(25)">25</button>
+      <button class="btn" style="padding:0.3rem 0.5rem;font-size:0.6rem" onclick="setAge(40)">40</button>
+      <button class="btn" style="padding:0.3rem 0.5rem;font-size:0.6rem" onclick="setAge(55)">55</button>
+      <button class="btn" style="padding:0.3rem 0.5rem;font-size:0.6rem" onclick="setAge(65)">65</button>
+      <button class="btn" style="padding:0.3rem 0.5rem;font-size:0.6rem" onclick="setAge(75)">75</button>
+    </div>
+    <div class="control-group">
+      <label>Draws</label>
+      <input type="range" id="nSlider" min="50" max="3000" step="10" value="500">
+      <span class="value-display" id="nVal">500</span>
+    </div>
+    <button class="btn" id="redrawBtn">Redraw</button>
+    <button class="btn btn-scan" id="scanBtn">▶ Scan CDF</button>
+    <div class="control-group">
+      <label>Speed</label>
+      <input type="range" id="speedSlider" min="1" max="10" step="1" value="4">
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+// ═══════════════════════════════════
+// SSA 2022 Period Life Table (2025 Trustees Report)
+// Complete q_x for every integer age 0–119
+// ═══════════════════════════════════
+
+const maleQx = [
+  0.006064,0.000491,0.000309,0.000248,0.000199,0.000167,0.000143,0.000126,0.000121,0.000121,
+  0.000127,0.000143,0.000171,0.000227,0.000320,0.000451,0.000622,0.000826,0.001026,0.001182,
+  0.001301,0.001404,0.001498,0.001586,0.001679,0.001776,0.001881,0.001985,0.002095,0.002219,
+  0.002332,0.002445,0.002562,0.002653,0.002716,0.002791,0.002894,0.002994,0.003091,0.003217,
+  0.003353,0.003499,0.003642,0.003811,0.003996,0.004175,0.004388,0.004666,0.004973,0.005305,
+  0.005666,0.006069,0.006539,0.007073,0.007675,0.008348,0.009051,0.009822,0.010669,0.011548,
+  0.012458,0.013403,0.014450,0.015571,0.016737,0.017897,0.019017,0.020213,0.021569,0.023088,
+  0.024828,0.026705,0.028761,0.031116,0.033861,0.037088,0.041126,0.045241,0.049793,0.054768,
+  0.060660,0.067027,0.073999,0.081737,0.090458,0.100525,0.111793,0.124494,0.138398,0.153207,
+  0.169704,0.187963,0.208395,0.230808,0.253914,0.277402,0.300882,0.324326,0.347332,0.369430,
+  0.391927,0.414726,0.437722,0.460800,0.483840,0.508032,0.533434,0.560105,0.588111,0.617516,
+  0.648392,0.680812,0.714852,0.750595,0.788125,0.827531,0.868907,0.912353,0.957970,1.000000
+];
+
+const femaleQx = [
+  0.005119,0.000398,0.000240,0.000198,0.000160,0.000134,0.000118,0.000109,0.000106,0.000106,
+  0.000111,0.000121,0.000140,0.000162,0.000188,0.000224,0.000276,0.000337,0.000395,0.000450,
+  0.000496,0.000532,0.000567,0.000610,0.000650,0.000699,0.000743,0.000796,0.000855,0.000924,
+  0.000988,0.001053,0.001123,0.001198,0.001263,0.001324,0.001403,0.001493,0.001596,0.001700,
+  0.001803,0.001905,0.002009,0.002116,0.002223,0.002352,0.002516,0.002712,0.002936,0.003177,
+  0.003407,0.003642,0.003917,0.004238,0.004619,0.005040,0.005493,0.005987,0.006509,0.007067,
+  0.007658,0.008305,0.008991,0.009681,0.010343,0.011018,0.011743,0.012532,0.013512,0.014684,
+  0.016025,0.017468,0.019195,0.021195,0.023452,0.025980,0.029153,0.032394,0.035888,0.039676,
+  0.044156,0.049087,0.054635,0.061066,0.068431,0.076841,0.086205,0.096851,0.109019,0.121867,
+  0.135805,0.151108,0.168020,0.186340,0.206432,0.228086,0.250406,0.273699,0.296984,0.319502,
+  0.342716,0.366532,0.390844,0.415531,0.440463,0.466891,0.494904,0.524599,0.556075,0.589439,
+  0.624805,0.662294,0.702031,0.744153,0.788125,0.827531,0.868907,0.912353,0.957970,1.000000
+];
+
+function buildLifeTable(qxArr) {
+  const qx = qxArr;
+  const lx = new Array(121).fill(0);
+  const dx = new Array(120).fill(0);
+  lx[0] = 100000;
+  for (let x = 0; x < 120; x++) {
+    dx[x] = lx[x] * qx[x];
+    lx[x + 1] = lx[x] - dx[x];
+    if (lx[x + 1] < 0) lx[x + 1] = 0;
+  }
+
+  const pmf = dx.map(d => d / 100000);
+  const cdf = new Array(120).fill(0);
+  let cum = 0;
+  for (let x = 0; x < 120; x++) { cum += pmf[x]; cdf[x] = Math.min(cum, 1); }
+
+  let sumL = 0;
+  for (let x = 1; x <= 120; x++) sumL += lx[x];
+  const e0 = sumL / lx[0];
+
+  let median = 0;
+  for (let x = 0; x < 120; x++) { if (cdf[x] >= 0.5) { median = x; break; } }
+
+  let mode = 0, maxP = 0;
+  for (let x = 0; x < 120; x++) { if (pmf[x] > maxP) { maxP = pmf[x]; mode = x; } }
+
+  return { qx, lx, dx, pmf, cdf, e0, median, mode };
+}
+
+const maleTable = buildLifeTable(maleQx);
+const femaleTable = buildLifeTable(femaleQx);
+
+let gender = 'male';
+let entryAge = 0;
+let N = 500;
+let particles = [];
+let scanX = null;
+let scanAnim = null;
+
+// Current table and conditional distributions
+let table, condPmf, condCdf, condStart, condEnd;
+
+function getTable() { return gender === 'male' ? maleTable : femaleTable; }
+
+function buildConditional() {
+  table = getTable();
+  condStart = entryAge;
+  condEnd = 119;
+  // Conditional PMF: P(X=x | X >= entryAge)
+  const survProb = entryAge === 0 ? 1 : (table.lx[entryAge] / table.lx[0]);
+  condPmf = new Array(120).fill(0);
+  condCdf = new Array(120).fill(0);
+  let cum = 0;
+  for (let x = entryAge; x < 120; x++) {
+    condPmf[x] = table.pmf[x] / survProb;
+    cum += condPmf[x];
+    condCdf[x] = Math.min(cum, 1);
+  }
+}
+
+function sampleAge() {
+  const u = Math.random();
+  for (let x = condStart; x < 120; x++) {
+    if (condCdf[x] >= u) return x;
+  }
+  return 119;
+}
+
+function generateParticles() {
+  buildConditional();
+  particles = [];
+  for (let i = 0; i < N; i++) {
+    particles.push({ x: sampleAge(), y: (Math.random() - 0.5) * 0.35 });
+  }
+}
+
+const PAD = { left: 50, right: 30, top: 510, bottom: 50 };
+const xLo = -2, xHi = 122;
+
+function canvasXv(v) {
+  return PAD.left + ((v - xLo) / (xHi - xLo)) * (canvas.width - PAD.left - PAD.right);
+}
+function canvasY(y) {
+  const plotH = canvas.height - PAD.top - PAD.bottom;
+  const mid = PAD.top + plotH / 2;
+  return mid - y * plotH;
+}
+
+// ─── Axis ───
+function drawAxis() {
+  const y0 = canvasY(0);
+  const axisY = canvas.height - PAD.bottom;
+
+  ctx.strokeStyle = '#a09888'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(canvasXv(xLo), axisY); ctx.lineTo(canvasXv(xHi), axisY); ctx.stroke();
+
+  ctx.fillStyle = '#5a5248';
+  ctx.font = '600 18px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let v = 0; v <= 120; v += 10) {
+    const tx = canvasXv(v);
+    ctx.strokeStyle = '#a09888';
+    ctx.beginPath(); ctx.moveTo(tx, axisY); ctx.lineTo(tx, axisY + 6); ctx.stroke();
+    ctx.fillText(v, tx, axisY + 10);
+  }
+
+  // Subtle vertical guides
+  ctx.setLineDash([4, 8]);
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.10)'; ctx.lineWidth = 1;
+  for (let v = 0; v <= 120; v += 10) {
+    ctx.beginPath(); ctx.moveTo(canvasXv(v), PAD.top + 10); ctx.lineTo(canvasXv(v), axisY); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Mean marker (life expectancy from entry age)
+  const ex = entryAge === 0 ? table.e0 : (function() {
+    let s = 0;
+    for (let x = entryAge; x < 120; x++) s += condPmf[x] * x;
+    return s;
+  })();
+  const mx = canvasXv(ex);
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = 'rgba(158, 27, 50, 0.2)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(mx, PAD.top); ctx.lineTo(mx, axisY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8a8078'; ctx.font = '400 14px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('E[X]=' + ex.toFixed(1), mx, y0 + 14);
+
+  // Age label
+  ctx.fillStyle = '#8a8078'; ctx.font = '400 16px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Age at Death', canvasXv(60), axisY + 30);
+}
+
+// ─── Cloud ───
+function drawCloudWithScan() {
+  const rO = N < 100 ? 7 : N < 300 ? 5 : N < 1000 ? 4 : 3;
+  const rI = N < 100 ? 4 : N < 300 ? 3 : N < 1000 ? 2.2 : 1.5;
+  const aOOn = N < 100 ? 0.40 : N < 300 ? 0.25 : N < 1000 ? 0.15 : 0.08;
+  const aOOff = N < 100 ? 0.20 : N < 300 ? 0.12 : N < 1000 ? 0.06 : 0.03;
+  const aIOn = N < 100 ? 0.55 : N < 300 ? 0.35 : N < 1000 ? 0.18 : 0.08;
+  const aIOff = N < 100 ? 0.28 : N < 300 ? 0.16 : N < 1000 ? 0.07 : 0.03;
+
+  for (const p of particles) {
+    const cx = canvasXv(p.x), cy = canvasY(p.y);
+    const on = scanX !== null && p.x <= scanX;
+    ctx.beginPath(); ctx.arc(cx, cy, rO, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(158, 27, 50, ${on ? aOOn : aOOff})`; ctx.fill();
+  }
+  for (const p of particles) {
+    const cx = canvasXv(p.x), cy = canvasY(p.y);
+    const on = scanX !== null && p.x <= scanX;
+    ctx.beginPath(); ctx.arc(cx, cy, rI, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(130, 20, 42, ${on ? aIOn : aIOff})`; ctx.fill();
+  }
+}
+
+// ─── Scan line ───
+function drawScanLine() {
+  if (scanX === null) return;
+  const sx = canvasXv(Math.min(Math.max(scanX, xLo), xHi));
+  const y0 = PAD.top, y1 = canvas.height - PAD.bottom;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(204, 51, 68, 0.4)'; ctx.shadowBlur = 16;
+  ctx.strokeStyle = 'rgba(204, 51, 68, 0.75)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(sx, y0); ctx.lineTo(sx, y1); ctx.stroke();
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(204, 51, 68, 0.9)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(sx, y0); ctx.lineTo(sx, y1); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(204, 51, 68, 0.9)';
+  ctx.font = '600 16px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('scan', sx, y0 - 4);
+}
+
+// ════════════════════════════════════════
+// Three panels
+// ════════════════════════════════════════
+const PANEL = {
+  gap: 16, ih: 450, iy: 10,
+  ip: { left: 45, right: 12, top: 40, bottom: 40 },
+  get panelW() { return (canvas.width - 40 - this.gap * 2) / 3; }
+};
+
+function pox(idx) { return 20 + idx * (PANEL.panelW + PANEL.gap); }
+
+function drawPanelBg(ix, bc) {
+  ctx.save(); ctx.globalAlpha = 0.92; ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath(); ctx.roundRect(ix, PANEL.iy, PANEL.panelW, PANEL.ih, 8); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = bc; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(ix, PANEL.iy, PANEL.panelW, PANEL.ih, 8); ctx.stroke();
+}
+
+function bnd(ix) {
+  const px0 = ix + PANEL.ip.left, px1 = ix + PANEL.panelW - PANEL.ip.right;
+  const py0 = PANEL.iy + PANEL.ip.top, py1 = PANEL.iy + PANEL.ih - PANEL.ip.bottom;
+  return { px0, px1, py0, py1, pw: px1 - px0, ph: py1 - py0 };
+}
+
+function drawPA(b) {
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py1); ctx.lineTo(b.px1, b.py1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py0); ctx.lineTo(b.px0, b.py1); ctx.stroke();
+}
+
+function pnlX(b, v) { return b.px0 + ((v - xLo) / (xHi - xLo)) * b.pw; }
+
+function drawPXT(b) {
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  ctx.font = '400 11px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let v = 0; v <= 120; v += 20) {
+    const tx = pnlX(b, v);
+    ctx.fillText(v, tx, b.py1 + 4);
+    ctx.strokeStyle = 'rgba(120, 110, 100, 0.4)';
+    ctx.beginPath(); ctx.moveTo(tx, b.py1); ctx.lineTo(tx, b.py1 + 3); ctx.stroke();
+  }
+}
+
+function pSL(b) {
+  if (scanX === null) return;
+  const clamped = Math.min(Math.max(scanX, xLo), xHi);
+  const sx = pnlX(b, clamped);
+  if (sx >= b.px0 && sx <= b.px1) {
+    ctx.strokeStyle = 'rgba(204, 51, 68, 0.4)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(sx, b.py0); ctx.lineTo(sx, b.py1); ctx.stroke();
+  }
+}
+
+// ─── PANEL 1: PMF — deaths by age ───
+function drawPmfInset() {
+  const ix = pox(0);
+  drawPanelBg(ix, 'rgba(158, 27, 50, 0.2)');
+  const b = bnd(ix);
+
+  let maxP = 0;
+  for (let x = condStart; x < 120; x++) maxP = Math.max(maxP, condPmf[x]);
+  const yMax = maxP * 1.15;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('p(x) — deaths', ix + PANEL.ip.left, PANEL.iy + 10);
+
+  drawPA(b); drawPXT(b);
+
+  // Draw as filled bars (too many values for individual stems)
+  for (let x = condStart; x < 120; x++) {
+    const p = condPmf[x];
+    if (p < 1e-8) continue;
+    const bx = pnlX(b, x);
+    const bw = pnlX(b, x + 1) - bx;
+    const by = b.py0 + (1 - p / yMax) * b.ph;
+    const scanned = scanX !== null && x <= scanX;
+
+    ctx.fillStyle = scanned ? 'rgba(158, 27, 50, 0.65)' : 'rgba(158, 27, 50, 0.25)';
+    ctx.fillRect(bx, by, Math.max(bw - 0.5, 1), b.py1 - by);
+  }
+
+  // Peak label
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.5)';
+  ctx.font = '400 11px "IBM Plex Mono", monospace';
+  const peakY = b.py0 + (1 - maxP / yMax) * b.ph;
+  ctx.fillText(maxP.toFixed(4), b.px0 - 4, peakY);
+
+  pSL(b);
+}
+
+// ─── PANEL 2: CDF — Pachyderm ───
+function drawCdfInset() {
+  const ix = pox(1);
+  drawPanelBg(ix, 'rgba(95, 106, 114, 0.2)');
+  const b = bnd(ix);
+  const yMax = 1.05;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('F(x)', ix + PANEL.ip.left, PANEL.iy + 10);
+
+  drawPA(b); drawPXT(b);
+
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  for (const yt of [0.5, 1.0]) {
+    const yy = b.py0 + (1 - yt / yMax) * b.ph;
+    ctx.fillText(yt.toFixed(1), b.px0 - 4, yy);
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(95, 106, 114, 0.15)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw CDF as connected steps
+  ctx.beginPath();
+  let started = false;
+  for (let x = condStart; x < 120; x++) {
+    const sx = pnlX(b, x);
+    const sy = b.py0 + (1 - condCdf[x] / yMax) * b.ph;
+    const sxNext = pnlX(b, x + 1);
+    if (!started) { ctx.moveTo(pnlX(b, condStart), b.py0 + b.ph); started = true; }
+    ctx.lineTo(sx, sy);
+    ctx.lineTo(sxNext, sy);
+  }
+  ctx.strokeStyle = 'rgba(95, 106, 114, 0.85)'; ctx.lineWidth = 2;
+  ctx.stroke();
+
+  pSL(b);
+
+  if (scanX !== null) {
+    const xc = Math.floor(Math.min(Math.max(scanX, condStart), 119));
+    const Fs = xc >= condStart ? condCdf[xc] : 0;
+    const dx = pnlX(b, Math.min(Math.max(scanX, xLo), xHi));
+    const dy = b.py0 + (1 - Fs / yMax) * b.ph;
+    ctx.beginPath(); ctx.arc(dx, dy, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(204, 51, 68, 0.9)'; ctx.fill();
+
+    ctx.fillStyle = 'rgba(95, 106, 114, 0.85)';
+    ctx.font = '600 14px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`F = ${Fs.toFixed(3)}`, b.px0 + b.pw * 0.55, b.py0 + 14);
+  }
+}
+
+// ─── PANEL 3: Empirical CDF ───
+function drawEcdfInset() {
+  const ix = pox(2);
+  drawPanelBg(ix, 'rgba(30, 80, 160, 0.18)');
+  const b = bnd(ix);
+  const yMax = 1.05;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('F̂(x)', ix + PANEL.ip.left, PANEL.iy + 10);
+
+  drawPA(b); drawPXT(b);
+
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)';
+  for (const yt of [0.5, 1.0]) {
+    const yy = b.py0 + (1 - yt / yMax) * b.ph;
+    ctx.fillText(yt.toFixed(1), b.px0 - 4, yy);
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(30, 80, 160, 0.12)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Faint theoretical CDF (Pachyderm)
+  ctx.beginPath();
+  let started = false;
+  for (let x = condStart; x < 120; x++) {
+    const sx = pnlX(b, x), sxN = pnlX(b, x + 1);
+    const sy = b.py0 + (1 - condCdf[x] / yMax) * b.ph;
+    if (!started) { ctx.moveTo(pnlX(b, condStart), b.py0 + b.ph); started = true; }
+    ctx.lineTo(sx, sy); ctx.lineTo(sxN, sy);
+  }
+  ctx.strokeStyle = 'rgba(95, 106, 114, 0.15)'; ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  if (scanX === null) return;
+
+  // Empirical CDF from sorted sample
+  const sorted = particles.map(p => p.x).sort((a, b) => a - b);
+  const n = sorted.length;
+  const drawUpTo = Math.min(Math.max(scanX, xLo), xHi);
+
+  let countBelow = 0;
+  for (let i = 0; i < n; i++) { if (sorted[i] <= drawUpTo) countBelow = i + 1; else break; }
+
+  ctx.beginPath();
+  let prevPy = b.py0 + b.ph;
+  ctx.moveTo(b.px0, prevPy);
+
+  const maxSteps = 500;
+  const stepSize = Math.max(1, Math.floor(countBelow / maxSteps));
+
+  for (let i = 0; i < countBelow; i += stepSize) {
+    const xv = sorted[i];
+    const Fhat = (i + 1) / n;
+    const sx = pnlX(b, xv), sy = b.py0 + (1 - Fhat / yMax) * b.ph;
+    ctx.lineTo(sx, prevPy);
+    ctx.lineTo(sx, sy);
+    prevPy = sy;
+  }
+
+  const endPx = pnlX(b, drawUpTo);
+  ctx.lineTo(endPx, prevPy);
+  ctx.strokeStyle = 'rgba(30, 80, 160, 0.85)'; ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const Fhat = countBelow / n;
+  ctx.beginPath(); ctx.arc(endPx, prevPy, 5, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(204, 51, 68, 0.9)'; ctx.fill();
+
+  pSL(b);
+
+  ctx.fillStyle = 'rgba(204, 51, 68, 0.9)';
+  ctx.font = '600 14px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`F̂ = ${Fhat.toFixed(3)}`, b.px0 + b.pw * 0.55, b.py0 + 14);
+}
+
+// ─── Full render ───
+function fullDraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawAxis();
+  drawCloudWithScan();
+  drawScanLine();
+  drawPmfInset();
+  drawCdfInset();
+  drawEcdfInset();
+}
+
+// ─── Scan ───
+function startScan() {
+  if (scanAnim) cancelAnimationFrame(scanAnim);
+  const speed = parseInt(document.getElementById('speedSlider').value);
+  const totalFrames = Math.round(400 / speed);
+  let frame = 0;
+  const s0 = xLo - 1, s1 = xHi + 1;
+
+  function step() {
+    scanX = s0 + (s1 - s0) * (frame / totalFrames);
+    fullDraw();
+    frame++;
+    if (frame <= totalFrames) scanAnim = requestAnimationFrame(step);
+    else { scanX = s1; fullDraw(); }
+  }
+  step();
+}
+
+// ─── Update header stats ───
+function updateStats() {
+  buildConditional();
+  document.getElementById('genderLabel').textContent = gender === 'male' ? 'Male' : 'Female';
+
+  // Compute conditional e_x, median, mode
+  let ex = 0;
+  for (let x = condStart; x < 120; x++) ex += condPmf[x] * x;
+
+  let median = condStart;
+  for (let x = condStart; x < 120; x++) { if (condCdf[x] >= 0.5) { median = x; break; } }
+
+  let mode = condStart, maxP = 0;
+  for (let x = condStart; x < 120; x++) { if (condPmf[x] > maxP) { maxP = condPmf[x]; mode = x; } }
+
+  document.getElementById('e0Label').textContent = ex.toFixed(2);
+  document.getElementById('medLabel').textContent = median;
+  document.getElementById('modeLabel').textContent = mode;
+}
+
+// ─── Controls ───
+function updateLabels() {
+  document.getElementById('ageVal').textContent = parseInt(document.getElementById('ageSlider').value);
+  document.getElementById('nVal').textContent = parseInt(document.getElementById('nSlider').value);
+}
+
+document.getElementById('ageSlider').addEventListener('input', updateLabels);
+document.getElementById('nSlider').addEventListener('input', updateLabels);
+
+document.getElementById('btnMale').addEventListener('click', () => {
+  gender = 'male';
+  document.getElementById('btnMale').classList.add('active');
+  document.getElementById('btnFemale').classList.remove('active');
+  rebuild();
+});
+
+document.getElementById('btnFemale').addEventListener('click', () => {
+  gender = 'female';
+  document.getElementById('btnFemale').classList.add('active');
+  document.getElementById('btnMale').classList.remove('active');
+  rebuild();
+});
+
+function rebuild() {
+  if (scanAnim) cancelAnimationFrame(scanAnim);
+  scanX = null;
+  entryAge = parseInt(document.getElementById('ageSlider').value);
+  N = parseInt(document.getElementById('nSlider').value);
+  updateStats();
+  generateParticles();
+  fullDraw();
+}
+
+function setAge(a) {
+  document.getElementById('ageSlider').value = a;
+  document.getElementById('ageVal').textContent = a;
+  rebuild();
+}
+
+document.getElementById('redrawBtn').addEventListener('click', rebuild);
+document.getElementById('scanBtn').addEventListener('click', startScan);
+
+// Tooltip
+const wrap = document.querySelector('.canvas-wrap');
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const plotW = canvas.width - PAD.left - PAD.right;
+  const xVal = xLo + ((mx - PAD.left) / plotW) * (xHi - xLo);
+  const nearest = Math.round(xVal);
+  if (nearest >= condStart && nearest <= 119) {
+    const p = condPmf[nearest] || 0;
+    const F = condCdf[nearest] || 0;
+    const qx = table.qx[nearest];
+    const lx = table.lx[nearest];
+    tooltip.textContent = `age ${nearest}   p = ${p.toFixed(4)}   F = ${F.toFixed(3)}   q_${nearest} = ${qx.toFixed(5)}   ℓ_${nearest} = ${Math.round(lx).toLocaleString()}`;
+    tooltip.style.left = (e.clientX - wrap.getBoundingClientRect().left + 12) + 'px';
+    tooltip.style.top = (e.clientY - wrap.getBoundingClientRect().top - 30) + 'px';
+    tooltip.style.opacity = 1;
+  } else { tooltip.style.opacity = 0; }
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+
+// Formulas
+katex.render(
+  String.raw`p(x) = \frac{d_x}{\ell_0} = \frac{\ell_x \cdot q_x}{\ell_0}`,
+  document.getElementById('formulaPmf'),
+  { throwOnError: false }
+);
+katex.render(
+  String.raw`F(x) = 1 - \frac{\ell_{x+1}}{\ell_0} = \sum_{k=0}^{x}p(k)`,
+  document.getElementById('formulaCdf'),
+  { throwOnError: false }
+);
+katex.render(
+  String.raw`\hat{F}_n(x) = \frac{1}{n}\sum_{i=1}^{n}\mathbf{1}(X_i \leq x)`,
+  document.getElementById('formulaEcdf'),
+  { throwOnError: false }
+);
+
+// Init
+updateStats();
+generateParticles();
+fullDraw();
+</script>
+</body>
+</html>

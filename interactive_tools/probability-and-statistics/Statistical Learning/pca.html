@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCA — Principal Component Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --bg:#0c0c0f;--surface:#141418;--surface2:#1c1c22;
+  --border:#2a2a34;--border-hi:#3d3d4a;
+  --text:#e8e6e3;--text2:#9b98a0;--text3:#5f5d66;
+  --accent:#6e8efb;--accent2:#a777e3;
+  --X-col:#4ade80;    /* X matrix — green */
+  --Xb-col:#fbbf24;   /* X_bar — gold */
+  --B-col:#38bdf8;    /* B centered — cyan */
+  --C-col:#f87171;    /* C covariance — red */
+  --V-col:#a777e3;    /* V eigenvectors — purple */
+  --D-col:#fb923c;    /* D eigenvalues — orange */
+  --PC-col:#34d399;   /* PC scores — emerald */
+  --mono:'JetBrains Mono',monospace;
+  --sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{padding:16px 20px;max-width:1300px;margin:0 auto;}
+
+header{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--border);}
+header h1{font-family:var(--mono);font-size:16px;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+header .sub{font-size:12px;color:var(--text3);}
+
+/* ── Step cards ── */
+.step{background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.step-title{font-family:var(--mono);font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;}
+.step-num{width:22px;height:22px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-size:10px;font-weight:700;
+  flex-shrink:0;}
+.formula{overflow-x:auto;margin:6px 0;padding:4px 0;line-height:1.65;}
+.note{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.6;}
+
+/* ── Matrix tables ── */
+.mat-wrap{overflow-x:auto;margin:8px 0;}
+table.mat{border-collapse:collapse;font-family:var(--mono);font-size:11px;
+  white-space:nowrap;}
+table.mat th{background:var(--surface2);color:var(--text3);
+  padding:4px 8px;border:1px solid var(--border);font-weight:500;
+  text-align:center;font-size:10px;}
+table.mat td{padding:4px 9px;border:1px solid var(--border);
+  text-align:right;font-variant-numeric:tabular-nums;}
+table.mat td.row-hd{background:var(--surface2);color:var(--text3);
+  text-align:left;font-size:10px;padding-left:8px;}
+table.mat td.X-c{color:var(--X-col);}
+table.mat td.Xb-c{color:var(--Xb-col);}
+table.mat td.B-c{color:var(--B-col);}
+table.mat td.C-c{color:var(--C-col);}
+table.mat td.V-c{color:var(--V-col);}
+table.mat td.D-c{color:var(--D-col);}
+table.mat td.PC-c{color:var(--PC-col);}
+table.mat td.zero{color:var(--text3);}
+
+/* ── Two-col layout ── */
+.two-col{display:flex;gap:14px;flex-wrap:wrap;}
+.two-col>*{flex:1;min-width:280px;}
+
+/* ── Scree plot ── */
+#screeCanvas{display:block;width:100%;max-width:520px;border-radius:6px;
+  background:var(--surface2);}
+
+/* ── Biplot ── */
+#biplotCanvas{display:block;width:100%;max-width:480px;border-radius:6px;
+  background:var(--surface2);}
+
+/* ── Controls ── */
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.pbtn{background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+  color:var(--text2);font-family:var(--mono);font-size:10px;padding:4px 9px;
+  cursor:pointer;transition:border-color .12s;}
+.pbtn:hover{border-color:var(--accent);color:var(--text);}
+.pbtn.active{border-color:var(--accent);color:var(--accent);}
+.inp-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);}
+
+/* Editable cells */
+.edit-cell{background:var(--surface2);border:1px solid var(--border-hi);
+  border-radius:3px;color:var(--X-col);font-family:var(--mono);font-size:11px;
+  width:60px;text-align:right;padding:2px 5px;outline:none;}
+.edit-cell:focus{border-color:var(--accent);}
+
+/* Variance bars */
+.var-bar-wrap{margin-top:4px;}
+.var-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;}
+.var-bar-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:36px;}
+.var-bar{height:14px;border-radius:2px;min-width:2px;transition:width .4s;}
+.var-bar-val{font-family:var(--mono);font-size:10px;color:var(--text2);min-width:44px;}
+
+/* Eigenvector heatmap cell */
+table.mat td.hm{/* color set inline */}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PCA — Principal Component Analysis from Statistics</h1>
+  <span class="sub">X → center → covariance C → eigendecomposition CV = VD → principal components</span>
+</header>
+
+<!-- ── Dataset selector ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--X-col)">
+    <span class="step-num" style="background:rgba(74,222,128,.15);color:var(--X-col)">★</span>
+    Dataset — edit cells or choose a preset
+  </div>
+  <div class="ctrl-row">
+    <button class="pbtn active" onclick="loadData('body')">Body measurements (NHANES-style)</button>
+    <button class="pbtn" onclick="loadData('exam')">Exam scores</button>
+    <button class="pbtn" onclick="loadData('iris')">Iris (4 traits)</button>
+    <button class="pbtn" onclick="runPCA()">↻ Recompute</button>
+  </div>
+  <div class="mat-wrap" id="dataTableWrap"></div>
+  <div class="note" id="dataNote"></div>
+</div>
+
+<!-- ── Step 1: Mean vector ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--Xb-col)">
+    <span class="step-num" style="background:rgba(251,191,36,.15);color:var(--Xb-col)">1</span>
+    Mean vector and X̄
+  </div>
+  <div class="formula" id="meanFormula"></div>
+  <div class="two-col">
+    <div>
+      <div class="note" style="margin-bottom:4px">Mean row vector x̄ (column means of X):</div>
+      <div class="mat-wrap" id="meanVecWrap"></div>
+    </div>
+    <div>
+      <div class="note" style="margin-bottom:4px">X̄ = <b>1</b>·x̄ — each row is the mean vector:</div>
+      <div class="mat-wrap" id="xbarWrap"></div>
+    </div>
+  </div>
+  <div class="note">
+    <b>Why?</b> We treat each of the 10 rows as a random vector observation. The mean vector x̄ is the centroid of the point cloud. 
+    X̄ is formed by stacking x̄ ten times (one per person) — it is the outer product <b>1</b>₁₀ · x̄.
+  </div>
+</div>
+
+<!-- ── Step 2: Centered matrix B ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--B-col)">
+    <span class="step-num" style="background:rgba(56,189,248,.15);color:var(--B-col)">2</span>
+    Centered matrix B = X − X̄
+  </div>
+  <div class="formula" id="centerFormula"></div>
+  <div class="mat-wrap" id="Bwrap"></div>
+  <div class="note">
+    After centering, each column of B has mean exactly 0. 
+    The rows of B are the <em>deviations</em> of each person's trait vector from the average person.
+  </div>
+</div>
+
+<!-- ── Step 3: Covariance matrix C ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--C-col)">
+    <span class="step-num" style="background:rgba(248,113,113,.15);color:var(--C-col)">3</span>
+    Variance-Covariance matrix C = B<sup>T</sup>B / (n−1)
+  </div>
+  <div class="formula" id="covFormula"></div>
+  <div class="mat-wrap" id="Cwrap"></div>
+  <div class="note" id="covNote"></div>
+</div>
+
+<!-- ── Step 4: Eigendecomposition ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--V-col)">
+    <span class="step-num" style="background:rgba(167,119,227,.15);color:var(--V-col)">4</span>
+    Eigendecomposition of C: CV = VD
+  </div>
+  <div class="formula" id="eigFormula"></div>
+  <div class="two-col">
+    <div>
+      <div class="note" style="margin-bottom:4px;color:var(--V-col)">V — eigenvectors (columns = principal directions):</div>
+      <div class="mat-wrap" id="Vwrap"></div>
+    </div>
+    <div>
+      <div class="note" style="margin-bottom:4px;color:var(--D-col)">D — diagonal eigenvalue matrix:</div>
+      <div class="mat-wrap" id="Dwrap"></div>
+    </div>
+  </div>
+  <div class="formula" id="checkFormula"></div>
+  <div class="note" id="eigNote"></div>
+</div>
+
+<!-- ── Step 5: Variance explained + Scree ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--D-col)">
+    <span class="step-num" style="background:rgba(251,146,60,.15);color:var(--D-col)">5</span>
+    Variance explained — Scree plot
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="var-bar-wrap" id="varBars"></div>
+      <div class="note" style="margin-top:6px" id="varNote"></div>
+    </div>
+    <div>
+      <canvas id="screeCanvas" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── Step 6: PC scores ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--PC-col)">
+    <span class="step-num" style="background:rgba(52,211,153,.15);color:var(--PC-col)">6</span>
+    Principal Component Scores: Z = B · V
+  </div>
+  <div class="formula" id="scoreFormula"></div>
+  <div class="two-col">
+    <div>
+      <div class="note" style="margin-bottom:4px">Score matrix Z (10 persons × 4 PCs):</div>
+      <div class="mat-wrap" id="Zwrap"></div>
+    </div>
+    <div>
+      <div class="note" style="margin-bottom:4px">Biplot — PC1 vs PC2 scores + loading arrows:</div>
+      <canvas id="biplotCanvas" height="280"></canvas>
+    </div>
+  </div>
+  <div class="note" id="scoreNote"></div>
+</div>
+
+<!-- ── Step 7: Connection to SVD ── -->
+<div class="step">
+  <div class="step-title" style="color:var(--accent)">
+    <span class="step-num" style="background:rgba(110,142,251,.15);color:var(--accent)">7</span>
+    Connection: SVD of B and eigendecomposition of C
+  </div>
+  <div class="formula" id="svdFormula"></div>
+  <div class="note" id="svdNote"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   KaTeX helper
+════════════════════════════════════════ */
+function rk(t,opts){
+  try{return katex.renderToString(t,Object.assign({throwOnError:false,displayMode:false},opts||{}));}
+  catch(e){return t;}
+}
+
+/* ════════════════════════════════════════
+   DATASETS
+════════════════════════════════════════ */
+const DATASETS={
+  body:{
+    note:'Anthropometric measurements based on NHANES 2017–2018 reference ranges for US adults. '+
+         'Height (cm), Weight (kg), Arm Span (cm), Resting Heart Rate (bpm).',
+    cols:['Height (cm)','Weight (kg)','Arm Span (cm)','Resting HR (bpm)'],
+    rows:[
+      [178, 82, 180, 68],
+      [165, 62, 163, 72],
+      [183, 91, 185, 65],
+      [170, 74, 171, 78],
+      [158, 55, 156, 82],
+      [176, 79, 177, 70],
+      [168, 69, 169, 74],
+      [181, 88, 182, 66],
+      [162, 60, 162, 80],
+      [175, 76, 174, 71],
+    ]
+  },
+  exam:{
+    note:'Fictional final exam scores (out of 100) for 10 students across 4 subjects.',
+    cols:['Math','Physics','Statistics','Programming'],
+    rows:[
+      [88,82,90,79],
+      [72,68,75,85],
+      [95,91,94,88],
+      [61,65,58,70],
+      [84,78,80,76],
+      [77,74,73,82],
+      [90,87,88,84],
+      [65,70,62,68],
+      [80,75,83,77],
+      [70,66,69,73],
+    ]
+  },
+  iris:{
+    note:'Subset of the Fisher Iris dataset (first 10 rows, setosa only). '+
+         'Sepal length (cm), Sepal width (cm), Petal length (cm), Petal width (cm).',
+    cols:['Sepal L','Sepal W','Petal L','Petal W'],
+    rows:[
+      [5.1,3.5,1.4,0.2],
+      [4.9,3.0,1.4,0.2],
+      [4.7,3.2,1.3,0.2],
+      [4.6,3.1,1.5,0.2],
+      [5.0,3.6,1.4,0.2],
+      [5.4,3.9,1.7,0.4],
+      [4.6,3.4,1.4,0.3],
+      [5.0,3.4,1.5,0.2],
+      [4.4,2.9,1.4,0.2],
+      [4.9,3.1,1.5,0.1],
+    ]
+  }
+};
+
+let currentData=null;
+
+function loadData(key){
+  currentData=JSON.parse(JSON.stringify(DATASETS[key]));
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  buildDataTable();
+  runPCA();
+}
+
+/* ════════════════════════════════════════
+   EDITABLE DATA TABLE
+════════════════════════════════════════ */
+function buildDataTable(){
+  const D=currentData;
+  const wrap=document.getElementById('dataTableWrap');
+  const tbl=document.createElement('table');tbl.className='mat';
+  // header
+  const hr=document.createElement('tr');
+  let th0=document.createElement('th');th0.textContent='Person';hr.appendChild(th0);
+  D.cols.forEach(c=>{const th=document.createElement('th');th.textContent=c;hr.appendChild(th);});
+  tbl.appendChild(hr);
+  // rows
+  D.rows.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    const td0=document.createElement('td');td0.className='row-hd';
+    td0.textContent='Person_'+(i+1);tr.appendChild(td0);
+    row.forEach((v,j)=>{
+      const td=document.createElement('td');
+      const inp=document.createElement('input');
+      inp.className='edit-cell';inp.type='text';inp.value=v;
+      inp.addEventListener('change',()=>{
+        const n=parseFloat(inp.value);
+        if(!isNaN(n)){currentData.rows[i][j]=n;runPCA();}
+      });
+      td.appendChild(inp);tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  wrap.innerHTML='';wrap.appendChild(tbl);
+  document.getElementById('dataNote').textContent=D.note;
+}
+
+/* ════════════════════════════════════════
+   MATRIX ARITHMETIC
+════════════════════════════════════════ */
+function zeros(r,c){return Array.from({length:r},()=>new Array(c).fill(0));}
+function transpose(M){
+  const R=M.length,C=M[0].length;
+  return Array.from({length:C},(_,j)=>Array.from({length:R},(_,i)=>M[i][j]));
+}
+function mmul(A,B){
+  const R=A.length,N=A[0].length,C=B[0].length;
+  const out=zeros(R,C);
+  for(let i=0;i<R;i++)for(let k=0;k<N;k++)for(let j=0;j<C;j++)
+    out[i][j]+=A[i][k]*B[k][j];
+  return out;
+}
+function mscale(M,s){return M.map(r=>r.map(x=>x*s));}
+function madd(A,B){return A.map((r,i)=>r.map((x,j)=>x+B[i][j]));}
+function msub(A,B){return A.map((r,i)=>r.map((x,j)=>x-B[i][j]));}
+
+/* ════════════════════════════════════════
+   JACOBI EIGENVALUE  (symmetric matrix)
+   Returns {values, vectors} sorted desc
+════════════════════════════════════════ */
+function jacobiEigen(A){
+  const n=A.length;
+  let S=A.map(r=>r.slice());       // working copy
+  let V=zeros(n,n);for(let i=0;i<n;i++)V[i][i]=1; // starts as identity
+  for(let iter=0;iter<500;iter++){
+    // find off-diag element with max |S[p][q]|
+    let p=0,q=1,maxVal=0;
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)
+      if(Math.abs(S[i][j])>maxVal){maxVal=Math.abs(S[i][j]);p=i;q=j;}
+    if(maxVal<1e-12)break;
+    // compute Jacobi rotation
+    const tau=(S[q][q]-S[p][p])/(2*S[p][q]);
+    const t=tau>=0?1/(tau+Math.sqrt(1+tau*tau)):1/(tau-Math.sqrt(1+tau*tau));
+    const c=1/Math.sqrt(1+t*t),s=t*c;
+    // apply rotation to S
+    const Spp=S[p][p],Sqq=S[q][q],Spq=S[p][q];
+    S[p][p]=c*c*Spp-2*s*c*Spq+s*s*Sqq;
+    S[q][q]=s*s*Spp+2*s*c*Spq+c*c*Sqq;
+    S[p][q]=0;S[q][p]=0;
+    for(let i=0;i<n;i++){
+      if(i===p||i===q)continue;
+      const Sip=S[i][p],Siq=S[i][q];
+      S[i][p]=c*Sip-s*Siq;S[p][i]=S[i][p];
+      S[i][q]=s*Sip+c*Siq;S[q][i]=S[i][q];
+    }
+    // accumulate rotations into V
+    for(let i=0;i<n;i++){
+      const Vip=V[i][p],Viq=V[i][q];
+      V[i][p]=c*Vip-s*Viq;
+      V[i][q]=s*Vip+c*Viq;
+    }
+  }
+  // extract eigenvalues and sort descending
+  let pairs=Array.from({length:n},(_,i)=>({val:S[i][i],vec:V.map(r=>r[i])}));
+  pairs.sort((a,b)=>b.val-a.val);
+  return{
+    values:pairs.map(p=>p.val),
+    vectors:pairs.map(p=>p.vec)   // each is a column vector
+  };
+}
+
+/* ════════════════════════════════════════
+   FORMAT HELPERS
+════════════════════════════════════════ */
+function fmt(x,d){
+  d=d===undefined?3:d;
+  if(Math.abs(x)<5e-10)return'0';
+  return parseFloat(x.toFixed(d)).toString();
+}
+function pct(x){return (x*100).toFixed(1)+'%';}
+
+function matTable(M,rowLabels,colLabels,cellCls){
+  const tbl=document.createElement('table');tbl.className='mat';
+  if(colLabels){
+    const hr=document.createElement('tr');
+    const th0=document.createElement('th');hr.appendChild(th0);
+    colLabels.forEach(c=>{const th=document.createElement('th');th.textContent=c;hr.appendChild(th);});
+    tbl.appendChild(hr);
+  }
+  M.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    if(rowLabels){
+      const td=document.createElement('td');td.className='row-hd';
+      td.textContent=rowLabels[i];tr.appendChild(td);
+    }
+    row.forEach((v,j)=>{
+      const td=document.createElement('td');
+      let cls=cellCls||(Math.abs(v)<5e-10?'zero':'');
+      td.className=cls;
+      td.textContent=fmt(v);
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  const wrap=document.createElement('div');wrap.className='mat-wrap';wrap.appendChild(tbl);
+  return wrap;
+}
+
+function setEl(id,html){document.getElementById(id).innerHTML=html;}
+function setElNode(id,node){
+  const el=document.getElementById(id);el.innerHTML='';el.appendChild(node);
+}
+
+/* ════════════════════════════════════════
+   MAIN PCA COMPUTATION
+════════════════════════════════════════ */
+function runPCA(){
+  const D=currentData;
+  const n=D.rows.length,p=D.cols.length;
+  const X=D.rows.map(r=>r.slice());
+  const rowLabels=D.rows.map((_,i)=>'Person_'+(i+1));
+  const colLabels=D.cols;
+
+  /* ── Step 1: Mean ── */
+  const xbar=new Array(p).fill(0);
+  X.forEach(row=>row.forEach((v,j)=>xbar[j]+=v));
+  xbar.forEach((v,j)=>xbar[j]=v/n);
+
+  const Xbar=Array.from({length:n},()=>xbar.slice());
+
+  setEl('meanFormula', rk(
+    '\\bar{x} = \\frac{1}{n}\\sum_{i=1}^{n} x_i = \\frac{1}{'+n+'}\\mathbf{1}^T X, '+
+    '\\quad\\bar{X} = \\mathbf{1}_{'+n+'}\\,\\bar{x}',{displayMode:true}));
+
+  // Mean vector table (1×p)
+  const meanDiv=document.createElement('div');meanDiv.className='mat-wrap';
+  const meanTbl=document.createElement('table');meanTbl.className='mat';
+  const mhr=document.createElement('tr');const mh0=document.createElement('th');mhr.appendChild(mh0);
+  colLabels.forEach(c=>{const th=document.createElement('th');th.textContent=c;mhr.appendChild(th);});
+  meanTbl.appendChild(mhr);
+  const mtr=document.createElement('tr');
+  const mtd0=document.createElement('td');mtd0.className='row-hd';mtd0.textContent='x̄';mtr.appendChild(mtd0);
+  xbar.forEach(v=>{const td=document.createElement('td');td.className='Xb-c';td.textContent=fmt(v,2);mtr.appendChild(td);});
+  meanTbl.appendChild(mtr);meanDiv.appendChild(meanTbl);
+  setElNode('meanVecWrap',meanDiv);
+  setElNode('xbarWrap',matTable(Xbar,rowLabels,colLabels,'Xb-c'));
+
+  /* ── Step 2: B = X - X_bar ── */
+  const B=msub(X,Xbar);
+
+  setEl('centerFormula',rk(
+    'B = X - \\bar{X} \\quad\\Longrightarrow\\quad \\frac{1}{n}\\mathbf{1}^T B = \\mathbf{0}',
+    {displayMode:true}));
+  setElNode('Bwrap',matTable(B,rowLabels,colLabels,'B-c'));
+
+  /* ── Step 3: C = B^T B / (n-1) ── */
+  const BT=transpose(B);
+  const BTB=mmul(BT,B);
+  const C=mscale(BTB,1/(n-1));
+
+  setEl('covFormula',rk(
+    'C = \\frac{1}{n-1}B^TB = \\frac{1}{'+( n-1)+'}B^TB',{displayMode:true}));
+  // Covariance matrix with heatmap coloring
+  const Ctbl=buildCovTable(C,colLabels);
+  setElNode('Cwrap',Ctbl);
+
+  const covNoteEl=document.getElementById('covNote');
+  let covNoteHTML='<b>Diagonal entries</b> are the sample variances: &nbsp;';
+  for(let j=0;j<p;j++) covNoteHTML+=rk('\\text{Var}('+colLabels[j].split(' ')[0]+')='+fmt(C[j][j],2))+' &nbsp; ';
+  covNoteHTML+='<br><b>Off-diagonal</b>: covariances between traits. '+
+    'Positive = tend to increase together; negative = one increases as the other decreases.';
+  covNoteEl.innerHTML=covNoteHTML;
+
+  /* ── Step 4: Eigendecomposition C·V = V·D ── */
+  const eig=jacobiEigen(C);
+  const eigenvals=eig.values;
+  // V: columns are eigenvectors
+  const V=zeros(p,p);
+  eig.vectors.forEach((vec,j)=>vec.forEach((v,i)=>V[i][j]=v));
+  // ensure positive leading component (sign convention)
+  for(let j=0;j<p;j++){
+    let maxAbs=0,maxI=0;
+    for(let i=0;i<p;i++) if(Math.abs(V[i][j])>maxAbs){maxAbs=Math.abs(V[i][j]);maxI=i;}
+    if(V[maxI][j]<0) for(let i=0;i<p;i++) V[i][j]=-V[i][j];
+  }
+  const D_mat=zeros(p,p);eigenvals.forEach((v,i)=>D_mat[i][i]=v);
+
+  setEl('eigFormula',rk(
+    'CV = VD \\quad\\Longleftrightarrow\\quad C\\,v_j = \\lambda_j\\,v_j, '+
+    '\\quad D = \\mathrm{diag}(\\lambda_1,\\ldots,\\lambda_p), \\quad \\lambda_1\\geq\\lambda_2\\geq\\cdots',
+    {displayMode:true}));
+
+  setElNode('Vwrap',buildHeatTable(V,colLabels,['PC1','PC2','PC3','PC4'],'V-c'));
+  setElNode('Dwrap',matTable(D_mat,['PC1','PC2','PC3','PC4'],['PC1','PC2','PC3','PC4'],'D-c'));
+
+  // Verify C·V = V·D
+  const CV=mmul(C,V);
+  const VD=mmul(V,D_mat);
+  const maxErr=CV.reduce((m,r,i)=>Math.max(m,...r.map((v,j)=>Math.abs(v-VD[i][j]))),0);
+  setEl('checkFormula',rk(
+    '\\text{Verification: }\\|CV - VD\\|_{\\max} = '+maxErr.toExponential(2),
+    {displayMode:false}));
+
+  const eigNoteEl=document.getElementById('eigNote');
+  let eigNoteHTML='<b>Eigenvalues:</b> ';
+  eigenvals.forEach((v,i)=>eigNoteHTML+=rk('\\lambda_{'+(i+1)+'}='+fmt(v,3))+' &nbsp;');
+  eigNoteHTML+='<br><b>V is orthogonal:</b> '+rk('V^TV = I')+
+    ' (verified max error '+
+    (()=>{const VTV=mmul(transpose(V),V);let e=0;
+      for(let i=0;i<p;i++)for(let j=0;j<p;j++)e=Math.max(e,Math.abs(VTV[i][j]-(i===j?1:0)));
+      return e.toExponential(1);})()+')<br>'+
+    '<b>C is recovered:</b> '+rk('C = V\\,D\\,V^T')+
+    ' — the spectral decomposition. Each eigenvalue is the variance of the data along the corresponding eigenvector.';
+  eigNoteEl.innerHTML=eigNoteHTML;
+
+  /* ── Step 5: Variance explained ── */
+  const totalVar=eigenvals.reduce((a,b)=>a+b,0);
+  const varExp=eigenvals.map(v=>v/totalVar);
+  const cumVar=varExp.reduce((acc,v,i)=>{acc.push((acc[acc.length-1]||0)+v);return acc;},[]);
+
+  const barsEl=document.getElementById('varBars');barsEl.innerHTML='';
+  const barCols=['#a777e3','#6e8efb','#38bdf8','#4ade80'];
+  varExp.forEach((v,i)=>{
+    const row=document.createElement('div');row.className='var-bar-row';
+    const lbl=document.createElement('span');lbl.className='var-bar-lbl';lbl.textContent='PC'+(i+1);
+    const bar=document.createElement('div');bar.className='var-bar';
+    bar.style.width=(v*320)+'px';bar.style.background=barCols[i];
+    const val=document.createElement('span');val.className='var-bar-val';
+    val.textContent=pct(v)+' (cum '+pct(cumVar[i])+')';
+    row.appendChild(lbl);row.appendChild(bar);row.appendChild(val);barsEl.appendChild(row);
+  });
+
+  document.getElementById('varNote').innerHTML=
+    'PC1 explains <b>'+pct(varExp[0])+'</b> of total variance. '+
+    'PC1+PC2 explain <b>'+pct(cumVar[1])+'</b> together.<br>'+
+    'Total variance (sum of eigenvalues = trace of C): '+rk(fmt(totalVar,3));
+
+  drawScree(eigenvals,varExp,cumVar);
+
+  /* ── Step 6: PC scores Z = B · V ── */
+  const Z=mmul(B,V);
+  setEl('scoreFormula',rk(
+    'Z = B\\,V \\quad (n\\times p) \\quad '+
+    '[z_i]_{\\text{PC}_j} = b_i \\cdot v_j',{displayMode:true}));
+
+  setElNode('Zwrap',matTable(Z,rowLabels,['PC1','PC2','PC3','PC4'],'PC-c'));
+
+  document.getElementById('scoreNote').innerHTML=
+    'Each row of Z is person i\'s coordinates in the principal component basis. '+
+    'The columns of Z are orthogonal and their variances equal '+rk('\\lambda_1,\\ldots,\\lambda_p')+'. '+
+    'Verify: '+rk('\\frac{1}{n-1}Z^TZ = D')+' (max error: '+
+    (()=>{const ZTZ=mscale(mmul(transpose(Z),Z),1/(n-1));
+      let e=0;for(let i=0;i<p;i++)for(let j=0;j<p;j++)
+        e=Math.max(e,Math.abs(ZTZ[i][j]-D_mat[i][j]));
+      return e.toExponential(1);})()+ ').';
+
+  drawBiplot(Z,V,colLabels,eigenvals,varExp,rowLabels);
+
+  /* ── Step 7: SVD connection ── */
+  setEl('svdFormula',rk(
+    'B = U\\Sigma V^T \\;\\Longrightarrow\\; B^TB = V\\Sigma^T U^T U\\Sigma V^T = V(\\Sigma^T\\Sigma)V^T',
+    {displayMode:true}));
+  setEl('svdNote',
+    'Since U is orthogonal: '+rk('B^TB = V\\,(\\Sigma^T\\Sigma)\\,V^T')+
+    '. Dividing by (n−1):<br>'+
+    rk('C = \\frac{1}{n-1}B^TB = V\\underbrace{\\dfrac{\\Sigma^T\\Sigma}{n-1}}_{=D}V^T')+
+    '<br><br>So the <b>columns of V</b> (right singular vectors of B) <b>are the eigenvectors of C</b>, '+
+    'and the <b>eigenvalues of C are '+rk('\\sigma_j^2/(n-1)')+'</b>, where '+rk('\\sigma_j')+'are the singular values of B.<br><br>'+
+    '<b>Why SVD?</b> For large p (many traits), computing B<sup>T</sup>B explicitly is expensive and may lose precision. '+
+    'A direct SVD of B is numerically more stable — this is how modern PCA software (NumPy, R\'s prcomp, sklearn) actually works.');
+}
+
+/* ════════════════════════════════════════
+   COVARIANCE TABLE  with heatmap colouring
+════════════════════════════════════════ */
+function buildCovTable(C,labels){
+  const tbl=document.createElement('table');tbl.className='mat';
+  const hr=document.createElement('tr');
+  const th0=document.createElement('th');hr.appendChild(th0);
+  labels.forEach(l=>{const th=document.createElement('th');th.textContent=l.split(' ')[0];hr.appendChild(th);});
+  tbl.appendChild(hr);
+  // find max abs off-diag for scaling
+  let maxOff=0;
+  C.forEach((r,i)=>r.forEach((v,j)=>{if(i!==j)maxOff=Math.max(maxOff,Math.abs(v));}));
+  labels.forEach((lbl,i)=>{
+    const tr=document.createElement('tr');
+    const td0=document.createElement('td');td0.className='row-hd';td0.textContent=lbl.split(' ')[0];tr.appendChild(td0);
+    C[i].forEach((v,j)=>{
+      const td=document.createElement('td');
+      td.textContent=fmt(v,2);
+      if(i===j){
+        td.style.color='var(--C-col)';td.style.fontWeight='600';
+      } else {
+        const t=Math.abs(v)/maxOff;
+        const r=v>0?0:200,g=v>0?180:60,b=v>0?120:60;
+        td.style.color=`rgba(${r},${g},${b},${0.4+0.6*t})`;
+      }
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  const wrap=document.createElement('div');wrap.className='mat-wrap';wrap.appendChild(tbl);
+  return wrap;
+}
+
+/* Eigenvector table with loading heatmap */
+function buildHeatTable(V,rowLabels,colLabels,defCls){
+  const tbl=document.createElement('table');tbl.className='mat';
+  const hr=document.createElement('tr');
+  const th0=document.createElement('th');hr.appendChild(th0);
+  colLabels.forEach(l=>{const th=document.createElement('th');th.textContent=l;hr.appendChild(th);});
+  tbl.appendChild(hr);
+  rowLabels.forEach((lbl,i)=>{
+    const tr=document.createElement('tr');
+    const td0=document.createElement('td');td0.className='row-hd';td0.textContent=lbl.split(' ')[0];tr.appendChild(td0);
+    V[i].forEach((v,j)=>{
+      const td=document.createElement('td');
+      td.textContent=fmt(v,4);
+      const a=Math.abs(v);
+      td.style.background=v>0?`rgba(74,222,128,${a*0.35})`:`rgba(248,113,113,${a*0.35})`;
+      td.style.color=v>0?'var(--X-col)':'var(--C-col)';
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  const wrap=document.createElement('div');wrap.className='mat-wrap';wrap.appendChild(tbl);
+  return wrap;
+}
+
+/* ════════════════════════════════════════
+   SCREE PLOT
+════════════════════════════════════════ */
+function drawScree(eigenvals,varExp,cumVar){
+  const cv=document.getElementById('screeCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth||400,H=200;
+  cv.width=W*dpr;cv.height=H*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.fillStyle='#1c1c22';ctx.fillRect(0,0,W,H);
+
+  const pad={l:40,r:20,t:20,b:36};
+  const gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  const n=eigenvals.length;
+
+  // axes
+  ctx.strokeStyle='#2a2a34';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);
+  ctx.lineTo(pad.l+gW,pad.t+gH);ctx.stroke();
+
+  // bars — variance explained
+  const bw=gW/(n*2+1),gap=bw;
+  const cols=['#a777e3','#6e8efb','#38bdf8','#4ade80'];
+  varExp.forEach((v,i)=>{
+    const bh=v*gH;
+    const x=pad.l+gap+(bw+gap)*i;
+    ctx.fillStyle=cols[i];ctx.globalAlpha=0.7;
+    ctx.fillRect(x,pad.t+gH-bh,bw,bh);
+    ctx.globalAlpha=1;
+    ctx.fillStyle=cols[i];
+    ctx.font=`${9*1}px 'JetBrains Mono',monospace`;ctx.textAlign='center';
+    ctx.fillText(pct(v),x+bw/2,pad.t+gH-bh-4);
+    // x axis label
+    ctx.fillStyle='#5f5d66';
+    ctx.fillText('PC'+(i+1),x+bw/2,pad.t+gH+16);
+  });
+
+  // cumulative line
+  ctx.strokeStyle='#fb923c';ctx.lineWidth=2;ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  cumVar.forEach((v,i)=>{
+    const x=pad.l+gap+(bw+gap)*i+bw/2;
+    const y=pad.t+gH-v*gH;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();ctx.setLineDash([]);
+  // cum dots
+  cumVar.forEach((v,i)=>{
+    const x=pad.l+gap+(bw+gap)*i+bw/2;
+    const y=pad.t+gH-v*gH;
+    ctx.fillStyle='#fb923c';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  });
+
+  // y axis label
+  ctx.save();ctx.translate(10,pad.t+gH/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#5f5d66';ctx.font='9px DM Sans,sans-serif';ctx.textAlign='center';
+  ctx.fillText('Variance explained',0,0);ctx.restore();
+  // legend
+  ctx.fillStyle='#fb923c';ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='left';
+  ctx.fillText('— cumulative',pad.l+gW-80,pad.t+12);
+}
+
+/* ════════════════════════════════════════
+   BIPLOT  (PC1 vs PC2)
+════════════════════════════════════════ */
+function drawBiplot(Z,V,colLabels,eigenvals,varExp,rowLabels){
+  const cv=document.getElementById('biplotCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth||380,H=280;
+  cv.width=W*dpr;cv.height=H*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.fillStyle='#1c1c22';ctx.fillRect(0,0,W,H);
+
+  const scores=Z.map(r=>[r[0],r[1]]);
+  // loadings scaled for display
+  const sc=Math.sqrt(eigenvals[0]);
+  const loadings=V.map(row=>[row[0]*sc*0.8,row[1]*sc*0.8]);
+
+  // determine scale
+  const allX=scores.map(p=>p[0]).concat(loadings.map(l=>l[0]));
+  const allY=scores.map(p=>p[1]).concat(loadings.map(l=>l[1]));
+  const xRange=Math.max(...allX.map(Math.abs))*1.3||1;
+  const yRange=Math.max(...allY.map(Math.abs))*1.3||1;
+  const scale=Math.min((W-50)/(2*xRange),(H-50)/(2*yRange));
+  const cx=W/2,cy=H/2;
+  const toC=(x,y)=>[cx+x*scale,cy-y*scale];
+
+  // axes
+  ctx.strokeStyle='#2a2a34';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+  // axis labels
+  ctx.fillStyle='#3d3d4a';ctx.font='9px JetBrains Mono,monospace';
+  ctx.textAlign='center';
+  ctx.fillText('PC1 ('+pct(varExp[0])+')',cx,H-4);
+  ctx.save();ctx.translate(10,cy);ctx.rotate(-Math.PI/2);
+  ctx.fillText('PC2 ('+pct(varExp[1])+')',0,0);ctx.restore();
+
+  // score points
+  const pcols=['#4ade80','#6e8efb','#f87171','#fbbf24','#38bdf8',
+               '#a777e3','#fb923c','#34d399','#f472b6','#94a3b8'];
+  scores.forEach((p,i)=>{
+    const[cx2,cy2]=toC(p[0],p[1]);
+    ctx.fillStyle=pcols[i%pcols.length];
+    ctx.beginPath();ctx.arc(cx2,cy2,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#9b98a0';ctx.font='8px DM Sans,sans-serif';ctx.textAlign='left';
+    ctx.fillText('P'+(i+1),cx2+6,cy2+3);
+  });
+
+  // loading arrows
+  const lcols=['#f87171','#fbbf24','#38bdf8','#a777e3'];
+  loadings.forEach((l,j)=>{
+    const[x2,y2]=toC(l[0],l[1]);
+    ctx.strokeStyle=lcols[j];ctx.lineWidth=1.8;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x2,y2);ctx.stroke();
+    // arrowhead
+    const dx=x2-cx,dy=y2-cy;const len=Math.sqrt(dx*dx+dy*dy);if(len<4)return;
+    const ux=dx/len,uy=dy/len,hl=8,ha=0.4;
+    ctx.fillStyle=lcols[j];ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-hl*(ux*Math.cos(ha)-uy*Math.sin(ha)),y2-hl*(uy*Math.cos(ha)+ux*Math.sin(ha)));
+    ctx.lineTo(x2-hl*(ux*Math.cos(-ha)-uy*Math.sin(-ha)),y2-hl*(uy*Math.cos(-ha)+ux*Math.sin(-ha)));
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle=lcols[j];ctx.font='bold 9px JetBrains Mono,monospace';ctx.textAlign='left';
+    ctx.fillText(colLabels[j].split(' ')[0],x2+4,y2);
+  });
+}
+
+/* ════════════════════════════════════════
+   BOOT
+════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  currentData=JSON.parse(JSON.stringify(DATASETS.body));
+  buildDataTable();
+  runPCA();
+  window.addEventListener('resize',runPCA);
+});
+</script>
+</body>
+</html>

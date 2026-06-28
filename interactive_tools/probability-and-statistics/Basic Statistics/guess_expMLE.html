@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guess the Exponential — A Visual Estimation Exercise</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --crimson:#9E1B32;
+    --crimson-dark:#7a1426;
+    --ink:#1a1a1a;
+    --muted:#666;
+    --bg:#fafafa;
+    --panel:#ffffff;
+    --accent:#1f4e79;
+    --gold:#e08e00;
+    --green:#2e7d32;
+    --cream:#f4ecd8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.45}
+
+  /* houndstooth pattern as a thin accent strip — generated with SVG */
+  .houndstooth{
+    height:10px;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><rect width='24' height='24' fill='%23ffffff'/><path d='M0 0 L12 0 L12 6 L18 6 L18 12 L24 12 L24 24 L12 24 L12 18 L6 18 L6 12 L0 12 Z' fill='%231a1a1a'/></svg>");
+    background-size:14px 14px;
+  }
+
+  header{
+    background:linear-gradient(135deg, var(--crimson) 0%, var(--crimson-dark) 100%);
+    color:#fff;padding:8px 20px;
+    display:flex;align-items:center;gap:12px;
+    border-bottom:2px solid var(--crimson-dark);
+  }
+  .ua-mark{
+    flex:0 0 auto;width:34px;height:34px;
+    background:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+    font-size:22px;line-height:1;
+  }
+  .ua-text{flex:1 1 auto}
+  header h1{margin:0;font-size:1.05rem;font-weight:700;letter-spacing:.01em;line-height:1.2}
+  header .sub{margin:1px 0 0;opacity:.92;font-size:.78rem;line-height:1.25}
+  header .institute{
+    font-size:.62rem;text-transform:uppercase;letter-spacing:.14em;
+    opacity:.8;margin:0;font-weight:600;
+  }
+
+  main{max-width:1280px;margin:0 auto;padding:22px}
+  .panel{background:var(--panel);border:1px solid #e2e2e2;border-radius:10px;
+         padding:18px 22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(0,0,0,.03);
+         border-top:3px solid var(--crimson)}
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  button{font:inherit;padding:8px 16px;border:1px solid #ccc;border-radius:6px;
+         background:#fff;cursor:pointer}
+  button.primary{background:var(--crimson);color:#fff;border-color:var(--crimson);font-weight:600}
+  button.primary:hover{background:var(--crimson-dark);border-color:var(--crimson-dark)}
+  button.guess{min-width:120px}
+  button.guess.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.reveal{background:var(--gold);color:#fff;border-color:var(--gold)}
+  button.reveal:hover{filter:brightness(1.05)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .cell{
+    background:#fff;border:2px solid #e2e2e2;border-radius:8px;padding:10px;
+    transition:border-color .25s, box-shadow .25s;
+  }
+  .cell h3{
+    margin:0 0 4px;font-size:.95rem;color:var(--accent);
+    font-variant-numeric:tabular-nums;
+  }
+  .cell.truth{border-color:var(--green);box-shadow:0 0 0 3px rgba(46,125,50,0.15)}
+  .cell.guessWrong{border-color:var(--crimson)}
+  .cell .verdict{float:right;font-size:.82rem;font-weight:600}
+  .cell.truth .verdict{color:var(--green)}
+  .cell.guessWrong .verdict{color:var(--crimson)}
+  canvas{display:block;width:100%;height:200px;background:#fff}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:8px}
+  .stat{background:#f5f5f7;border-radius:6px;padding:8px 12px;border-left:3px solid var(--crimson)}
+  .stat .lab{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stat .val{font-size:1.1rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .formula{background:#f5f5f7;border-left:3px solid var(--crimson);
+           padding:8px 12px;border-radius:4px;font-family:"Cambria Math",Georgia,serif;
+           font-size:.95rem;margin:6px 0}
+  .note{font-size:.88rem;color:var(--muted);margin:6px 0}
+  .data-strip{
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem;
+    background:var(--cream);border-radius:6px;padding:8px 12px;margin-top:6px;
+    overflow-x:auto;white-space:nowrap;
+    border-left:3px solid var(--crimson);
+  }
+  .reveal-box{
+    margin-top:10px;padding:10px 14px;border-radius:6px;font-size:.95rem;
+    display:none;
+  }
+  .reveal-box.show{display:block}
+  .reveal-box.correct{background:#e8f5e9;color:var(--green);border:1px solid #c8e6c9}
+  .reveal-box.wrong{background:#fdecea;color:var(--crimson);border:1px solid #f5c6c0}
+  .reveal-box.idle{background:#eef2f7;color:var(--accent);border:1px solid #cfd8e3}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.78rem;font-weight:600;
+         vertical-align:middle;margin-left:6px}
+  .badge.green{background:var(--green);color:#fff}
+  .badge.gold{background:var(--gold);color:#fff}
+
+  footer{
+    text-align:center;padding:18px;color:var(--muted);font-size:.85rem;
+    border-top:1px solid #e2e2e2;margin-top:20px;background:#fff;
+  }
+  footer .roll{
+    font-weight:700;color:var(--crimson);letter-spacing:.05em;font-size:1.0rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ua-mark" aria-label="Crimson Tide">🐘</div>
+  <div class="ua-text">
+    <div class="institute">The University of Alabama &nbsp;·&nbsp; Math Stats I</div>
+    <h1>Guess the Exponential</h1>
+    <div class="sub">The data on the x-axis was sampled from <em>one</em> of the four candidate distributions. Which one?</div>
+  </div>
+</header>
+<div class="houndstooth" aria-hidden="true"></div>
+
+<main>
+
+<section class="panel">
+  <h3 style="margin:0 0 6px;color:var(--crimson)">The setup</h3>
+  <p class="note">
+    Each of the four panels below shows an Exponential density f(x|β) = (1/β) e<sup>−x/β</sup> for a
+    different mean β ∈ {0.5, 1, 2, 4}. When you press <strong>Generate</strong>, observations are
+    drawn at random from <em>just one</em> of these four populations, and the same values appear
+    as red dots on every panel, with dashed stems up to that panel's pdf. Your job: by eye,
+    decide which density best <em>fits</em> the data. Then click <strong>Reveal</strong>.
+    Try both <em>n = 9</em> (a small sample, where mistakes are common) and <em>n = 25</em>
+    (where the picture is much clearer).
+  </p>
+  <p class="note" style="margin-bottom:0">
+    Useful facts about Exponential(β): &nbsp; mean = β, &nbsp; variance = β², &nbsp; median = β·ln 2.
+    The MLE of the mean is the sample mean, β̂ = x̄.
+  </p>
+</section>
+
+<section class="panel">
+  <div class="controls">
+    <button id="gen" class="primary">▶ Generate sample</button>
+    <label style="font-size:.88rem;color:var(--muted)">size:
+      <select id="nSel" style="font:inherit;padding:4px 8px;border:1px solid #ccc;border-radius:6px;margin-left:4px">
+        <option value="9" selected>n = 9</option>
+        <option value="25">n = 25</option>
+      </select>
+    </label>
+    <button id="reveal" class="reveal" disabled>Reveal</button>
+    <button id="reset">Reset guess</button>
+    <span class="note" id="status">Pick which density you think the sample came from by clicking one of the panels, then press Reveal.</span>
+  </div>
+
+  <div class="data-strip" id="dataStrip">data: (press Generate to begin)</div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="reveal-box idle" id="revealBox"></div>
+</section>
+
+<section class="panel">
+  <div class="grid" id="grid">
+    <!-- four cells inserted by JS -->
+  </div>
+</section>
+
+</main>
+
+<div class="houndstooth" aria-hidden="true"></div>
+<footer>
+  <span class="roll">Roll Tide</span> &nbsp;·&nbsp; Math Stats I &nbsp;·&nbsp; The University of Alabama
+</footer>
+
+<script>
+const MEANS = [0.5, 1, 2, 4];
+let N = 9;
+const COLORS = ["#1f4e79","#2e7d32","#9E1B32","#e08e00"]; // panel accents
+let data = [];
+let truthIdx = -1;
+let guessIdx = -1;
+let revealed = false;
+
+// ---------- canvas helpers ----------
+function fitCanvas(c){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  const w = rect.width  || c.clientWidth  || 400;
+  const h = rect.height || c.clientHeight || 200;
+  c.width  = Math.max(1, Math.floor(w*dpr));
+  c.height = Math.max(1, Math.floor(h*dpr));
+  c.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+  return {w,h};
+}
+function axes(ctx, w, h, pad, xmin, xmax, ymin, ymax, xlabel, ylabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle="#ececec"; ctx.lineWidth=1;
+  ctx.beginPath();
+  for(let i=0;i<=8;i++){
+    const gx = pad.l + (w-pad.l-pad.r)*i/8;
+    ctx.moveTo(gx, pad.t); ctx.lineTo(gx, h-pad.b);
+  }
+  for(let i=0;i<=4;i++){
+    const gy = pad.t + (h-pad.t-pad.b)*i/4;
+    ctx.moveTo(pad.l, gy); ctx.lineTo(w-pad.r, gy);
+  }
+  ctx.stroke();
+  ctx.strokeStyle="#333"; ctx.lineWidth=1.1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, h-pad.b); ctx.lineTo(w-pad.r, h-pad.b);
+  ctx.stroke();
+  ctx.fillStyle="#666"; ctx.font="10px -apple-system,Segoe UI,sans-serif";
+  ctx.textAlign="center"; ctx.textBaseline="top";
+  for(let i=0;i<=4;i++){
+    const v = xmin + (xmax-xmin)*i/4;
+    const gx = pad.l + (w-pad.l-pad.r)*i/4;
+    ctx.fillText(v.toFixed(1), gx, h-pad.b+3);
+  }
+  ctx.textAlign="right"; ctx.textBaseline="middle";
+  for(let i=0;i<=4;i++){
+    const v = ymin + (ymax-ymin)*(1 - i/4);
+    const gy = pad.t + (h-pad.t-pad.b)*i/4;
+    ctx.fillText(v.toFixed(2), pad.l-4, gy);
+  }
+  ctx.fillStyle="#333"; ctx.font="11px -apple-system,Segoe UI,sans-serif";
+  ctx.textAlign="center"; ctx.textBaseline="bottom";
+  ctx.fillText(xlabel, (pad.l+w-pad.r)/2, h-2);
+}
+const xToPx = (x,w,pad,xmin,xmax) => pad.l + (w-pad.l-pad.r)*(x-xmin)/(xmax-xmin);
+const yToPx = (y,h,pad,ymin,ymax) => h-pad.b - (h-pad.t-pad.b)*(y-ymin)/(ymax-ymin);
+
+// ---------- build the four cells ----------
+const grid = document.getElementById('grid');
+const cells = [];
+MEANS.forEach((mean, idx) => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.dataset.idx = idx;
+  cell.innerHTML = `
+    <h3>Candidate ${idx+1}: Exponential, mean β = ${mean}
+        <span id="ll-${idx}" style="color:var(--muted);font-weight:500;margin-left:8px"></span>
+        <span class="verdict" id="verdict-${idx}"></span></h3>
+    <canvas id="cvs-${idx}"></canvas>
+  `;
+  cell.addEventListener('click', () => {
+    if(revealed) return;
+    if(data.length === 0) return;
+    setGuess(idx);
+  });
+  grid.appendChild(cell);
+  cells.push({el:cell, mean, canvas: cell.querySelector('canvas'), ctx: null, dim: null});
+});
+cells.forEach(c => { c.ctx = c.canvas.getContext('2d'); });
+
+function refit(){ cells.forEach(c => { c.dim = fitCanvas(c.canvas); }); }
+
+// ---------- exponential density ----------
+const expPdf = (x, beta) => x < 0 ? 0 : Math.exp(-x/beta)/beta;
+
+// ---------- common x-axis range across all panels ----------
+function commonXMax(){
+  // fixed at 5 — data beyond this is rare for these means
+  return 5;
+}
+
+// ---------- draw one cell ----------
+function drawCell(c){
+  const pad = {l:42,r:12,t:14,b:26};
+  const xMax = commonXMax();
+  // y-axis sized so the peak (1/β) of THIS panel's pdf occupies ~70%
+  const yMax = (1/c.mean) * 1.45;
+  axes(c.ctx, c.dim.w, c.dim.h, pad, 0, xMax, 0, yMax, "x");
+
+  // pdf curve
+  c.ctx.strokeStyle = "#1f4e79"; c.ctx.lineWidth = 2.0;
+  c.ctx.beginPath();
+  const NX = 300;
+  for(let i=0;i<NX;i++){
+    const x = (xMax)*i/(NX-1);
+    const y = expPdf(x, c.mean);
+    const px = xToPx(x, c.dim.w, pad, 0, xMax);
+    const py = yToPx(y, c.dim.h, pad, 0, yMax);
+    if(i===0) c.ctx.moveTo(px,py); else c.ctx.lineTo(px,py);
+  }
+  c.ctx.stroke();
+
+  // dashed stems
+  if(data.length){
+    const yBase = yToPx(0, c.dim.h, pad, 0, yMax);
+    c.ctx.save();
+    c.ctx.beginPath();
+    c.ctx.rect(pad.l, pad.t, c.dim.w-pad.l-pad.r, c.dim.h-pad.t-pad.b);
+    c.ctx.clip();
+    c.ctx.strokeStyle = "#666"; c.ctx.setLineDash([4,3]); c.ctx.lineWidth = 1.0;
+    for(const x of data){
+      if(x > xMax) continue;
+      const px = xToPx(x, c.dim.w, pad, 0, xMax);
+      const f = expPdf(x, c.mean);
+      const py = yToPx(f, c.dim.h, pad, 0, yMax);
+      c.ctx.beginPath(); c.ctx.moveTo(px, yBase); c.ctx.lineTo(px, py); c.ctx.stroke();
+    }
+    c.ctx.setLineDash([]);
+    // red dots on x-axis
+    c.ctx.fillStyle = "#9E1B32";
+    for(const x of data){
+      if(x > xMax) continue;
+      const px = xToPx(x, c.dim.w, pad, 0, xMax);
+      c.ctx.beginPath(); c.ctx.arc(px, yBase, 4, 0, Math.PI*2); c.ctx.fill();
+    }
+    // small blue dots at the pdf
+    c.ctx.fillStyle = "#1f4e79";
+    for(const x of data){
+      if(x > xMax) continue;
+      const px = xToPx(x, c.dim.w, pad, 0, xMax);
+      const py = yToPx(expPdf(x, c.mean), c.dim.h, pad, 0, yMax);
+      c.ctx.beginPath(); c.ctx.arc(px, py, 2.5, 0, Math.PI*2); c.ctx.fill();
+    }
+    c.ctx.restore();
+
+    // small notice if data points fell beyond x=5
+    const offCount = data.filter(x => x > xMax).length;
+    if(offCount > 0){
+      c.ctx.fillStyle = "#9E1B32"; c.ctx.font = "10px -apple-system,sans-serif";
+      c.ctx.textAlign = "right"; c.ctx.textBaseline = "bottom";
+      c.ctx.fillText(`+${offCount} off-screen →`, c.dim.w-pad.r-2, c.dim.h-pad.b-2);
+    }
+  }
+}
+
+function drawAll(){
+  cells.forEach(drawCell);
+  updateLogLikHeaders();
+}
+
+// ---------- ln L in each candidate header ----------
+function updateLogLikHeaders(){
+  if(data.length === 0){
+    cells.forEach((c,i) => { document.getElementById('ll-'+i).innerHTML = ''; });
+    return;
+  }
+  const lls = cells.map(c => {
+    let s = 0;
+    for(const x of data) s += Math.log(expPdf(x, c.mean));
+    return s;
+  });
+  const bestIdx = lls.indexOf(Math.max(...lls));
+  cells.forEach((c,i) => {
+    const el = document.getElementById('ll-'+i);
+    const isBest = revealed && (i === bestIdx);
+    el.innerHTML =
+      `&nbsp;&nbsp;ln L = <span style="font-variant-numeric:tabular-nums;` +
+      (isBest ? `color:var(--green);font-weight:600` : `color:#444`) +
+      `">${lls[i].toFixed(2)}</span>` +
+      (isBest ? ` <span class="badge" style="background:var(--green);color:#fff">best fit on this sample</span>` : '');
+  });
+}
+
+// ---------- sampling ----------
+function sampleExponential(beta){ return -beta*Math.log(1 - Math.random()); }
+
+function generate(){
+  N = parseInt(document.getElementById('nSel').value);
+  truthIdx = Math.floor(Math.random()*MEANS.length);
+  const beta = MEANS[truthIdx];
+  data = Array.from({length:N}, () => sampleExponential(beta));
+  data.sort((a,b)=>a-b);
+  guessIdx = -1;
+  revealed = false;
+  // clear cell highlights
+  cells.forEach((c,i) => {
+    c.el.classList.remove('truth','guessWrong');
+    document.getElementById('verdict-'+i).textContent = '';
+  });
+  document.getElementById('reveal').disabled = false;
+  document.getElementById('revealBox').className = 'reveal-box idle show';
+  document.getElementById('revealBox').innerHTML =
+    `Sample drawn. <strong>Click a panel</strong> to lock in your guess, then press <strong>Reveal</strong>.`;
+  document.getElementById('status').textContent = "";
+  updateDataStrip();
+  updateStats();
+  drawAll();
+}
+
+function setGuess(idx){
+  guessIdx = idx;
+  cells.forEach((c,i) => {
+    c.el.style.outline = (i===idx) ? `3px solid ${COLORS[i]}` : 'none';
+    c.el.style.outlineOffset = '-2px';
+  });
+  document.getElementById('revealBox').innerHTML =
+    `Your guess: <strong>β = ${MEANS[idx]}</strong>. Press <strong>Reveal</strong> to check.`;
+}
+
+function reveal(){
+  if(data.length === 0) return;
+  revealed = true;
+  document.getElementById('reveal').disabled = true;
+
+  // figure out which candidate has the highest ln L on this sample
+  const lls = cells.map(c => {
+    let s = 0;
+    for(const x of data) s += Math.log(expPdf(x, c.mean));
+    return s;
+  });
+  const bestIdx = lls.indexOf(Math.max(...lls));
+
+  // mark truth panel green
+  cells[truthIdx].el.classList.add('truth');
+  document.getElementById('verdict-'+truthIdx).innerHTML = '✓ truth';
+
+  // mark wrong guess (if any) red
+  if(guessIdx >= 0 && guessIdx !== truthIdx){
+    cells[guessIdx].el.classList.add('guessWrong');
+    document.getElementById('verdict-'+guessIdx).innerHTML = '✗ your guess';
+  }
+
+  const beta = MEANS[truthIdx];
+  const xbar = data.reduce((a,b)=>a+b,0)/data.length;
+  const box = document.getElementById('revealBox');
+  let verdict;
+  if(guessIdx < 0){
+    verdict = `No guess locked in. The truth was <strong>β = ${beta}</strong>.`;
+    box.className = 'reveal-box idle show';
+  } else if(guessIdx === truthIdx){
+    verdict = `Correct! The data came from <strong>Exponential(β = ${beta})</strong>.`;
+    box.className = 'reveal-box correct show';
+  } else {
+    verdict = `Not quite — the truth was <strong>β = ${beta}</strong>, you guessed β = ${MEANS[guessIdx]}.`;
+    box.className = 'reveal-box wrong show';
+  }
+  verdict += ` &nbsp;<span class="badge gold">MLE</span> Sample mean x̄ = ${xbar.toFixed(3)}, ` +
+             `so the (continuous) MLE of β based on this sample is β̂ = ${xbar.toFixed(3)}.`;
+
+  // highlight when highest ln L disagrees with truth — this is the most
+  // important pedagogical moment
+  if(bestIdx !== truthIdx){
+    verdict += `<br><br><strong>Notice:</strong> the candidate with the highest ln L on this sample ` +
+               `is β = ${MEANS[bestIdx]}, but the data actually came from β = ${beta}. ` +
+               `With only n = ${N} observations the likelihoods of neighboring β values overlap, ` +
+               `so the "best-fit candidate" is itself a random variable. The MLE x̄ = ${xbar.toFixed(3)} ` +
+               `is also off — it has a sampling distribution centered on the true β with standard error β/√n ≈ ${(beta/Math.sqrt(N)).toFixed(3)}. ` +
+               `Generate more samples to see how often the highest ln L lands on the wrong candidate.`;
+  } else {
+    verdict += `<br><br>On this sample the highest ln L correctly lands on β = ${beta}. ` +
+               `With n = ${N} that won't always happen — try generating more samples to see how often ` +
+               `the "best-fit candidate" disagrees with the truth. ` +
+               (N >= 25 ? `(With n = 25 the standard error β/√n ≈ ${(beta/Math.sqrt(N)).toFixed(3)} is much smaller than at n = 9, so mistakes get rarer.)`
+                        : `(Try n = 25 above to see how the picture sharpens with more data.)`);
+  }
+  box.innerHTML = verdict;
+
+  drawAll();
+}
+
+function resetGuess(){
+  if(data.length === 0) return;
+  guessIdx = -1;
+  cells.forEach(c => c.el.style.outline = 'none');
+  if(!revealed){
+    document.getElementById('revealBox').innerHTML =
+      `Click a panel to lock in your guess, then press <strong>Reveal</strong>.`;
+  }
+}
+
+// ---------- summary stats ----------
+function updateDataStrip(){
+  const strip = document.getElementById('dataStrip');
+  if(data.length === 0){ strip.textContent = "data: (press Generate to begin)"; return; }
+  strip.textContent = "sorted data:  " + data.map(v => v.toFixed(3)).join(",  ");
+}
+function updateStats(){
+  const wrap = document.getElementById('stats');
+  if(data.length === 0){ wrap.innerHTML = ""; return; }
+  const n = data.length;
+  const xbar = data.reduce((a,b)=>a+b,0)/n;
+  let ss = 0;
+  for(const x of data) ss += (x-xbar)*(x-xbar);
+  const sd = Math.sqrt(ss/(n-1));
+  const med = (n % 2)
+    ? data[(n-1)/2]
+    : 0.5*(data[n/2 - 1] + data[n/2]);
+  const mn = data[0], mx = data[n-1];
+  const stat = (lab,val) => `<div class="stat"><div class="lab">${lab}</div><div class="val">${val}</div></div>`;
+  wrap.innerHTML =
+    stat("n", n) +
+    stat("mean x̄", xbar.toFixed(3)) +
+    stat("median", med.toFixed(3)) +
+    stat("std dev s", sd.toFixed(3)) +
+    stat("min", mn.toFixed(3)) +
+    stat("max", mx.toFixed(3));
+}
+
+// ---------- wire up ----------
+document.getElementById('gen').addEventListener('click', generate);
+document.getElementById('reveal').addEventListener('click', reveal);
+document.getElementById('reset').addEventListener('click', resetGuess);
+window.addEventListener('resize', ()=>{ refit(); drawAll(); });
+window.addEventListener('load', ()=>{ refit(); drawAll(); });
+refit(); drawAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Logistic Regression — Interactive — University of Washington</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#C79900; --goldDk:#8E632A;
+  --crimson:#39275B; --crimson2:#2a1d44; --crimsonLt:#e8e3f0;
+  --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+  --teal:#1a6a40;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:20px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#c4bdd0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#c4bdd0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+/* ---- background / explainer ---- */
+details.bg{max-width:1200px;width:100%;padding:8px 16px 0;}
+details.bg>summary{font-family:'Playfair Display',Georgia,serif;font-size:.82rem;
+  color:var(--crimson);cursor:pointer;padding:5px 0;list-style:none;}
+details.bg>summary::-webkit-details-marker{display:none;}
+details.bg>summary::before{content:"▸ ";color:var(--gold);}
+details.bg[open]>summary::before{content:"▾ ";}
+.bg-body{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);padding:12px 18px;font-size:.84rem;line-height:1.62;}
+.bg-body p{margin:5px 0;}
+.bg-body h4{font-family:'Playfair Display',Georgia,serif;font-size:.82rem;color:var(--crimson);
+  margin:11px 0 3px;}
+.bg-body h4:first-child{margin-top:0;}
+.eq{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);
+  border-radius:0 3px 3px 0;padding:7px 14px;margin:7px 0;font-style:italic;
+  text-align:center;font-size:.92rem;color:var(--navy);}
+.eq small{font-style:normal;color:var(--muted);font-size:.74rem;}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px 4px;
+          max-width:1200px;width:100%;}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:4px 11px;font-size:.84rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+button:disabled{opacity:.45;cursor:not-allowed;}
+.seg{display:inline-flex;border:1px solid var(--crimson);border-radius:3px;overflow:hidden;}
+.seg button{border:none;border-radius:0;margin:0;padding:4px 14px;font-size:.84rem;}
+.seg button.on{background:var(--crimson);color:#fff;}
+.seg button:not(.on){background:#fff;color:var(--crimson);}
+.toggle{display:flex;align-items:center;gap:4px;font-size:.78rem;color:var(--muted);cursor:pointer;}
+.toggle input{accent-color:var(--crimson);cursor:pointer;}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+.sep{color:var(--border);}
+
+.entry{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 16px 6px;
+       max-width:1200px;width:100%;font-size:.82rem;}
+.entry label{color:var(--muted);font-style:italic;}
+.entry input[type=text]{font-family:'Crimson Pro',Georgia,serif;font-size:.85rem;
+       padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:#fff;
+       color:var(--navy);width:235px;}
+.entry input[type=text]:focus{outline:none;border-color:var(--crimson);}
+
+.wrap{max-width:1200px;width:100%;padding:6px 16px 0;}
+.grid{display:grid;grid-template-columns:540px 1fr;gap:12px;align-items:start;}
+.col{display:flex;flex-direction:column;gap:12px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:5px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;}
+
+.stats{padding:11px 16px;font-size:.82rem;line-height:1.55;}
+.stats h3{font-family:'Playfair Display',Georgia,serif;font-size:.85rem;color:var(--crimson);
+          margin-top:7px;margin-bottom:2px;border-bottom:1px solid var(--border);padding-bottom:1px;}
+.stats h3:first-child{margin-top:0;}
+.stat-row{display:flex;justify-content:space-between;gap:8px;font-size:.79rem;}
+.stat-key{color:var(--muted);}
+.stat-val{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;}
+.pass{color:var(--teal);font-weight:600;font-size:.78rem;}
+.fail{color:var(--crimson);font-weight:600;font-size:.78rem;}
+.note{font-size:.72rem;color:var(--muted);font-style:italic;margin-top:3px;}
+.warnbox{background:#fbf3e4;border:1px solid var(--gold);border-radius:3px;
+  padding:6px 9px;font-size:.74rem;line-height:1.5;color:var(--goldDk);margin-top:6px;}
+.warnbox b{color:var(--crimson);}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:3px;}
+.tbl th{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:.7rem;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:right;
+  padding:2px 5px;border-bottom:1px solid var(--border);}
+.tbl th:first-child{text-align:left;}
+.tbl td{text-align:right;padding:2px 5px;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #efece4;}
+.tbl td:first-child{text-align:left;color:var(--muted);}
+.tbl td.v{color:var(--crimson);font-weight:600;}
+
+.strip{padding:5px 12px 4px;background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;}
+.strip label{color:var(--muted);font-style:italic;}
+.strip input[type=range]{accent-color:var(--crimson);cursor:pointer;}
+.strip .val{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;min-width:34px;}
+
+.guess-stats{padding:8px 12px;background:var(--panel);border-top:1px solid var(--border);
+             font-size:.78rem;line-height:1.55;}
+.slider-area{padding:7px 14px 3px;}
+.slider-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:.82rem;}
+.slider-row .lbl{width:26px;color:var(--navy);font-style:italic;font-weight:600;}
+.slider-row input[type=range]{flex:1;accent-color:var(--crimson);cursor:pointer;}
+.slider-row input[type=number]{font-family:'Crimson Pro',Georgia,serif;font-size:.82rem;
+  width:64px;padding:2px 5px;border:1px solid var(--border);border-radius:3px;
+  background:#fff;color:var(--navy);}
+.mcmc-area{padding:9px 14px 4px;}
+.mcmc-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:.79rem;}
+.mcmc-grid label{color:var(--muted);font-style:italic;display:flex;align-items:center;
+  justify-content:space-between;gap:6px;}
+.mcmc-grid input{font-family:'Crimson Pro',Georgia,serif;font-size:.81rem;width:74px;
+  padding:2px 5px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--navy);}
+.empty{color:var(--muted);font-style:italic;text-align:center;padding:24px 14px;font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Logistic Regression</div>
+  <div class="hdr-main">
+    <h1>Simple Logistic Regression &thinsp;&mdash;&thinsp; Maximum Likelihood &amp; Bayesian MCMC</h1>
+    <div class="subtitle">
+      p(x) = Pr(Y = 1 | x) = e<sup>&beta;<sub>0</sub>+&beta;<sub>1</sub>x</sup> / (1 + e<sup>&beta;<sub>0</sub>+&beta;<sub>1</sub>x</sup>) &ensp;&middot;&ensp;
+      binary outcome on a single predictor &ensp;&middot;&ensp;
+      fit by maximum likelihood or MCMC &ensp;&middot;&ensp;
+      propose your own &beta;<sub>0</sub>, &beta;<sub>1</sub> and race the likelihood
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<details class="bg" open>
+  <summary>Background &mdash; what logistic regression is doing, and the two ways this page fits it</summary>
+  <div class="bg-body">
+    <h4>The question behind a yes/no outcome</h4>
+    <p>A Falcon&nbsp;9 booster either lands or it does not &mdash; there is no middle value to average.
+    Record the result of launch i as y<sub>i</sub> = 1 for a recovered booster and y<sub>i</sub> = 0 for a
+    lost one. What can change smoothly with a launch's payload mass x is not that label but the
+    <em>chance</em> the label comes up 1. That chance is the quantity the model is built around: write
+    p(x) = Pr(Y = 1 | x), the probability of a successful landing at payload x. It is a number trapped
+    between 0 and 1, and the 0/1 outcomes in the data are the coin flips it produced.</p>
+
+    <h4>A linear predictor, but kept on a leash</h4>
+    <p>A straight line &beta;<sub>0</sub> + &beta;<sub>1</sub>x is the natural starting point &mdash; it is
+    cheap to fit and each coefficient has a plain reading. Used directly as the probability, though, it
+    misbehaves in two ways. First, a line has no ceiling or floor: extend it far enough in either
+    direction and it reports &ldquo;probabilities&rdquo; below 0 or above 1, which are not probabilities
+    at all. Second, its slope never changes, so it insists that an extra ton of payload moves the chance
+    of success by the same amount whether that chance started at 50% or at 99% &mdash; yet a probability
+    near its limits can barely budge, while one in the middle is free to swing.</p>
+    <p>The remedy keeps the convenient linear term &eta; = &beta;<sub>0</sub> + &beta;<sub>1</sub>x and
+    feeds it through a function that smoothly compresses the entire number line into the open interval
+    (0,&nbsp;1):</p>
+    <div class="eq">p(x) = e<sup>&eta;</sup> &frasl; (1 + e<sup>&eta;</sup>),&ensp; with &ensp;&eta; = &beta;<sub>0</sub> + &beta;<sub>1</sub>x &ensp;<small>&mdash; the logistic, or sigmoid, transform</small></div>
+    <p>Whatever value &eta; takes, p(x) lands strictly inside (0,&nbsp;1); the curve climbs fastest through
+    its middle and levels off toward each end &mdash; exactly the cautious behaviour a probability shows
+    as it nears certainty.</p>
+
+    <h4>Reading the coefficients: odds and log-odds</h4>
+    <p>Because the sigmoid bends the relationship, &beta;<sub>1</sub> is no longer &ldquo;the change in
+    probability per ton&rdquo; &mdash; that change depends on where x already sits. The coefficients
+    become interpretable again once the model is rewritten in terms of the <em>odds</em>, the ratio of
+    the chance of success to the chance of failure. Solving the equation above for that ratio gives</p>
+    <div class="eq">p(x) &frasl; [1 &minus; p(x)] = e<sup>&beta;<sub>0</sub>+&beta;<sub>1</sub>x</sup></div>
+    <p>and a logarithm straightens it back into a line &mdash; the <em>log-odds</em>, or logit:</p>
+    <div class="eq">log( p(x) &frasl; [1 &minus; p(x)] ) = &beta;<sub>0</sub> + &beta;<sub>1</sub>x</div>
+    <p>On this scale the model is linear and the coefficients read cleanly. Because the predictor is
+    centred, x = 0 corresponds to the average payload, so &beta;<sub>0</sub> is the log-odds of success
+    for a typical launch; &beta;<sub>1</sub> is the shift in log-odds bought by each additional ton.
+    Exponentiating, every extra ton multiplies the odds by the fixed factor e<sup>&beta;<sub>1</sub></sup>.
+    Its sign is the headline &mdash; a negative &beta;<sub>1</sub> means heavier payloads make recovery
+    less likely &mdash; while its pull on the probability itself is felt most in the steep part of the
+    curve and fades to almost nothing out in the flats.</p>
+
+    <h4>Two routes to &beta;<sub>0</sub> and &beta;<sub>1</sub> &mdash; and this page walks both</h4>
+    <p><b>Maximum likelihood.</b> Any candidate pair (&beta;<sub>0</sub>, &beta;<sub>1</sub>) assigns a
+    probability to every launch on record: p(x<sub>i</sub>) to the boosters that landed and
+    1 &minus; p(x<sub>i</sub>) to those that did not. Multiplying these numbers together scores how well
+    that pair accounts for the data as a whole,</p>
+    <div class="eq">&ell;(&beta;<sub>0</sub>, &beta;<sub>1</sub>) = &prod;<sub>&thinsp;successes</sub> p(x<sub>i</sub>) &times; &prod;<sub>&thinsp;failures</sub> [1 &minus; p(x<sub>i</sub>)]</div>
+    <p>and the maximum-likelihood estimate is just the pair that drives this product &mdash; or, in
+    practice, its logarithm, &sum;<sub>i</sub>[ y<sub>i</sub> log p(x<sub>i</sub>) +
+    (1 &minus; y<sub>i</sub>) log(1 &minus; p(x<sub>i</sub>)) ] &mdash; as high as it will go. No tidy
+    formula delivers it the way one delivers a least-squares line, so the page climbs the log-likelihood
+    surface numerically with Newton's method. In <em>Maximum likelihood</em> mode you can also drop your
+    own (&beta;<sub>0</sub>, &beta;<sub>1</sub>) onto that surface and see how far your log-likelihood
+    falls short of the summit.</p>
+    <p><b>Bayesian sampling with MCMC.</b> The second route declines to commit to a single pair. It opens
+    with a <em>prior</em> &mdash; here independent Normal(0, &sigma;<sup>2</sup>) distributions, a mild
+    statement that implausibly large coefficients are unlikely before any data are seen &mdash; and lets
+    the likelihood reshape it into a <em>posterior</em>:</p>
+    <div class="eq">posterior(&beta;<sub>0</sub>, &beta;<sub>1</sub>) &prop; likelihood &times; prior</div>
+    <p>This posterior has no closed form, so it is charted by simulation. A random-walk Metropolis
+    sampler wanders the (&beta;<sub>0</sub>, &beta;<sub>1</sub>) plane, at each step proposing a small
+    random move and keeping or discarding it according to how the posterior density changes. Left to run,
+    it dwells in each region in proportion to that region's posterior probability &mdash; so the cloud of
+    retained draws <em>is</em> the answer, its centre supplying point estimates and its spread supplying
+    credible intervals.</p>
+    <p class="note">Throughout, the payload predictor is centred: the sample mean is subtracted from every
+    value. This leaves the slope &beta;<sub>1</sub> and the shape of the fit untouched &mdash; it only
+    re-anchors &beta;<sub>0</sub> to the average payload and keeps the sampler's two coordinates from
+    moving in lockstep, which lets it explore more efficiently.</p>
+  </div>
+</details>
+
+<div class="controls">
+  <span class="seg"><button id="mMLE" class="on">Maximum likelihood</button><button id="mMCMC">Bayesian MCMC</button></span>
+  <button id="btnReload">Reload rocket data</button>
+  <span class="sep">|</span>
+  <label class="toggle mle-ctl"><input type="checkbox" id="tgLinear"> linear-probability line</label>
+  <label class="toggle mle-ctl"><input type="checkbox" id="tgMyCurve" checked> my proposed curve</label>
+  <label class="toggle mcmc-ctl" style="display:none"><input type="checkbox" id="tgDraws" checked> posterior draws</label>
+  <label class="toggle mcmc-ctl" style="display:none"><input type="checkbox" id="tgBand" checked> 95% credible band</label>
+  <span class="hint" id="modeHint">&mdash; fit by maximum likelihood; nominate your own coefficients in the lower-right panel</span>
+</div>
+
+<div class="entry">
+  <label>payload x =</label>
+  <input type="text" id="xInput" placeholder="e.g. 0.5, 3.1, 4.5, ...">
+  <label>success y =</label>
+  <input type="text" id="yInput" placeholder="e.g. 1, 0, 0, ... (0/1 only)">
+  <button id="btnLoadVec">Load vectors</button>
+  <span class="hint">&mdash; comma or space separated, equal length, y must be 0 or 1</span>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <div class="phdr" id="hdrMain">Landing outcome vs payload &ensp;&middot;&ensp; fitted logistic curve</div>
+        <canvas id="main" width="540" height="340"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr" id="hdrB">Log-likelihood surface over (&beta;<sub>0</sub>, &beta;<sub>1</sub>) &ensp;&middot;&ensp; click to set your proposal</div>
+        <canvas id="panelB" width="540" height="245"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr" id="hdrC">Classification at a probability threshold</div>
+        <div class="strip" id="threshStrip">
+          <label>threshold p* =</label>
+          <input type="range" id="threshSlider" min="0.05" max="0.95" step="0.01" value="0.5" style="width:150px;">
+          <span class="val" id="threshVal">0.50</span>
+          <span class="sep">|</span>
+          <span class="hint">predict success when p(x) &gt; p*</span>
+        </div>
+        <canvas id="panelC" width="540" height="215"></canvas>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <div class="phdr" id="hdrStats">Estimates &amp; inference</div>
+        <div class="stats" id="statsPanel"></div>
+      </div>
+      <div class="card">
+        <div class="phdr" id="hdrInteract">Propose your own &beta;<sub>0</sub>, &beta;<sub>1</sub> &ensp;&middot;&ensp; race the likelihood</div>
+        <div id="mleInteract">
+          <canvas id="guess" width="380" height="180"></canvas>
+          <div class="slider-area">
+            <div class="slider-row">
+              <span class="lbl">&beta;<sub>0</sub></span>
+              <input type="range" id="sB0" min="-5" max="5" step="0.05" value="0">
+              <input type="number" id="nB0" min="-5" max="5" step="0.05" value="0">
+            </div>
+            <div class="slider-row">
+              <span class="lbl">&beta;<sub>1</sub></span>
+              <input type="range" id="sB1" min="-8" max="4" step="0.05" value="0">
+              <input type="number" id="nB1" min="-8" max="4" step="0.05" value="0">
+            </div>
+          </div>
+          <div class="guess-stats" id="guessStats"></div>
+        </div>
+        <div id="mcmcInteract" style="display:none">
+          <div class="mcmc-area">
+            <div class="mcmc-grid">
+              <label>iterations <input type="number" id="mcIters" value="8000" min="500" max="60000" step="500"></label>
+              <label>burn-in <input type="number" id="mcBurn" value="2000" min="0" max="40000" step="500"></label>
+              <label>proposal SD &beta;<sub>0</sub> <input type="number" id="mcProp0" value="1.0" min="0.02" max="8" step="0.1"></label>
+              <label>proposal SD &beta;<sub>1</sub> <input type="number" id="mcProp1" value="1.0" min="0.02" max="12" step="0.1"></label>
+              <label>prior SD &sigma; <input type="number" id="mcPrior" value="5" min="0.5" max="100" step="0.5"></label>
+              <label>start (&beta;<sub>0</sub>,&beta;<sub>1</sub>) <input type="text" id="mcStart" value="0, 0"></label>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+              <button id="btnRunMCMC" class="primary">Run MCMC</button>
+              <span class="hint">random-walk Metropolis &middot; posterior &prop; likelihood &times; Normal prior</span>
+            </div>
+          </div>
+          <div class="guess-stats" id="mcmcStatus">
+            <span style="color:var(--muted);font-style:italic;">set the sampler options and click &ldquo;Run MCMC&rdquo;.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   DATA  —  synthetic R dataset, preloaded
+   payload_mass : payload in metric tons ;  success : 1 landed, 0 failed
+   The classes overlap (failures down to 2.2 t, successes up to 4.1 t)
+   so the maximum-likelihood fit converges with sensible standard errors.
+   To use a different dataset, replace the two arrays below.
+   =================================================================== */
+const PAYLOAD_DEFAULT = [0.5,3.1,4.5,2.2,1.3,5.2,4.7,1.9,3.3,5.3,
+                         2.0,4.1,1.4,5.5,4.2,2.5,1.2,4.0,3.8,2.2,
+                         4.8,3.0,2.8,5.0,1.8,4.6,2.4,3.5,4.9,2.1];
+const SUCCESS_DEFAULT = [1,0,0,0,1,0,0,1,0,0,
+                         1,1,1,0,0,0,1,0,1,1,
+                         0,1,0,0,1,0,1,0,0,1];
+
+/* ---- state ---- */
+let payload = PAYLOAD_DEFAULT.slice();
+let success = SUCCESS_DEFAULT.slice();
+let data = [];          // {x: centred mass, y: 0/1, raw: payload}
+let meanMass = 0;
+let mle = null;         // result of fitMLE()
+let mcmc = null;        // result of runMCMC()  (null until run)
+let mode = 'mle';
+let guessB0 = 0, guessB1 = 0;
+let threshold = 0.5;
+let tgLinear = false, tgMyCurve = true, tgDraws = true, tgBand = true;
+
+const B0RANGE = [-5, 5], B1RANGE = [-8, 4];   // slider + contour window
+
+function buildData(){
+  meanMass = payload.reduce((a,b)=>a+b,0)/payload.length;
+  data = payload.map((m,i)=>({x:m-meanMass, y:success[i], raw:m}));
+}
+
+/* ===================================================================
+   CORE MATH
+   =================================================================== */
+function sigmoid(eta){
+  if(eta>=0){ const z=Math.exp(-eta); return 1/(1+z); }
+  const z=Math.exp(eta); return z/(1+z);
+}
+// log(1+e^x), numerically stable
+function log1pexp(x){
+  if(x>33) return x;
+  if(x<-33) return Math.exp(x);
+  return Math.log1p(Math.exp(x));
+}
+// log-likelihood of the logistic model at (b0,b1)
+function logLik(b0,b1){
+  let s=0;
+  for(const d of data){
+    const eta=b0+b1*d.x;
+    s += d.y===1 ? -log1pexp(-eta) : -log1pexp(eta);
+  }
+  return s;
+}
+function logPrior(b0,b1,priorSD){
+  const v=priorSD*priorSD;
+  return -0.5*(b0*b0+b1*b1)/v;       // constants dropped
+}
+// standard normal draw (Box–Muller)
+function randn(){
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+// Abramowitz & Stegun 7.1.26 normal CDF
+function normalCDF(x){
+  const sign=x<0?-1:1, xa=Math.abs(x)/Math.SQRT2;
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p_=0.3275911;
+  const t=1/(1+p_*xa);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-xa*xa);
+  return 0.5*(1+sign*y);
+}
+function quantile(sorted,q){
+  if(sorted.length===0) return NaN;
+  const pos=(sorted.length-1)*q, lo=Math.floor(pos), hi=Math.ceil(pos);
+  if(lo===hi) return sorted[lo];
+  return sorted[lo]+(sorted[hi]-sorted[lo])*(pos-lo);
+}
+// effective sample size via summed autocorrelation
+function ess(x){
+  const n=x.length;
+  if(n<10) return n;
+  const m=x.reduce((a,b)=>a+b,0)/n;
+  let v=0; for(const xi of x){const d=xi-m; v+=d*d;} v/=n;
+  if(v<1e-12) return n;
+  let sum=0;
+  const maxLag=Math.min(n-2,400);
+  for(let lag=1;lag<maxLag;lag++){
+    let c=0;
+    for(let i=0;i<n-lag;i++) c+=(x[i]-m)*(x[i+lag]-m);
+    c/=(n*v);
+    if(c<0) break;
+    sum+=c;
+  }
+  return Math.max(1,Math.round(n/(1+2*sum)));
+}
+
+/* ---- maximum likelihood via Newton–Raphson ---- */
+function fitMLE(){
+  let b0=0,b1=0, converged=false, separated=false, iters=0;
+  for(let it=0; it<60; it++){
+    iters=it+1;
+    let g0=0,g1=0,h00=0,h01=0,h11=0;
+    for(const d of data){
+      const p=sigmoid(b0+b1*d.x), w=p*(1-p);
+      g0+=(d.y-p); g1+=(d.y-p)*d.x;
+      h00+=w; h01+=w*d.x; h11+=w*d.x*d.x;
+    }
+    const det=h00*h11-h01*h01;
+    if(det<1e-13){ separated=true; break; }
+    const i00=h11/det, i01=-h01/det, i11=h00/det;
+    const step0=i00*g0+i01*g1, step1=i01*g0+i11*g1;
+    b0+=step0; b1+=step1;
+    if(Math.abs(step0)<1e-9 && Math.abs(step1)<1e-9){ converged=true; break; }
+    if(Math.abs(b0)>80 || Math.abs(b1)>80){ separated=true; break; }
+  }
+  // perfect-fit / separation check
+  let allClean=true;
+  for(const d of data){
+    const p=sigmoid(b0+b1*d.x);
+    if(Math.abs(p-d.y)>1e-3){ allClean=false; break; }
+  }
+  if(!converged && (separated||allClean)) separated=true;
+
+  // observed-information matrix at the solution
+  let h00=0,h01=0,h11=0;
+  for(const d of data){
+    const p=sigmoid(b0+b1*d.x), w=p*(1-p);
+    h00+=w; h01+=w*d.x; h11+=w*d.x*d.x;
+  }
+  const det=h00*h11-h01*h01;
+  let se0=NaN,se1=NaN;
+  if(det>1e-12 && !separated){
+    se0=Math.sqrt(h11/det);
+    se1=Math.sqrt(h00/det);
+  }
+  // null model (intercept only)
+  const ybar=data.reduce((s,d)=>s+d.y,0)/data.length;
+  const nb0=Math.log(ybar/(1-ybar));
+  const nullLL=logLik(nb0,0);
+  const ll=logLik(b0,b1);
+  return {b0,b1,se0,se1,ll,nullLL,iters,converged,separated,
+          devResid:-2*ll, devNull:-2*nullLL};
+}
+
+/* ---- random-walk Metropolis ---- */
+function runMCMC(opt){
+  let b0=opt.start0, b1=opt.start1;
+  let lp=logLik(b0,b1)+logPrior(b0,b1,opt.priorSD);
+  const c0=new Array(opt.iters), c1=new Array(opt.iters), lt=new Array(opt.iters);
+  let accept=0;
+  for(let it=0; it<opt.iters; it++){
+    const p0=b0+opt.prop0*randn(), p1=b1+opt.prop1*randn();
+    const lpC=logLik(p0,p1)+logPrior(p0,p1,opt.priorSD);
+    if(Math.log(Math.random()) < lpC-lp){
+      b0=p0; b1=p1; lp=lpC; accept++;
+    }
+    c0[it]=b0; c1[it]=b1; lt[it]=lp;
+  }
+  const burn=Math.min(opt.burn,opt.iters-1);
+  const post0=c0.slice(burn), post1=c1.slice(burn);
+  const s0=[...post0].sort((a,b)=>a-b), s1=[...post1].sort((a,b)=>a-b);
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const sd=(a,m)=>Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length);
+  const m0=mean(post0), m1=mean(post1);
+  let negFrac=0; for(const v of post1) if(v<0) negFrac++; negFrac/=post1.length;
+  return {
+    c0,c1,lt, post0,post1, burn,
+    accRate:accept/opt.iters,
+    opt,
+    summ:{
+      b0:{mean:m0,sd:sd(post0,m0),lo:quantile(s0,0.025),med:quantile(s0,0.5),hi:quantile(s0,0.975),ess:ess(post0)},
+      b1:{mean:m1,sd:sd(post1,m1),lo:quantile(s1,0.025),med:quantile(s1,0.5),hi:quantile(s1,0.975),ess:ess(post1)},
+      negFrac
+    }
+  };
+}
+
+/* ===================================================================
+   DRAWING HELPERS
+   =================================================================== */
+const FT='"Crimson Pro",Georgia,serif';
+function niceStep(range,divs){
+  const raw=range/divs;
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  return [0.1,0.2,0.25,0.5,1,2,2.5,5,10].map(f=>f*mag).find(s=>s>=raw*0.7)||mag;
+}
+function lerpColor(t,a,b){
+  return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+
+                Math.round(a[1]+(b[1]-a[1])*t)+','+
+                Math.round(a[2]+(b[2]-a[2])*t)+')';
+}
+function fmt(x,d){ return (x===null||x===undefined||!isFinite(x))?'\u2014':x.toFixed(d); }
+
+// generic boxed axes; returns scale fns
+function axes(ctx,pad,W,H,xmin,xmax,ymin,ymax,xlabel,ylabel,yDecOverride){
+  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  const sx=x=>pad.l+(x-xmin)/(xmax-xmin)*gW;
+  const sy=y=>pad.t+(ymax-y)/(ymax-ymin)*gH;
+  ctx.fillStyle='#fff'; ctx.fillRect(pad.l,pad.t,gW,gH);
+  const xStep=niceStep(xmax-xmin,7), yStep=niceStep(ymax-ymin,5);
+  const xDec=Math.max(0,-Math.floor(Math.log10(xStep))+(xStep<1?1:0));
+  const yDec=(yDecOverride!=null)?yDecOverride:Math.max(0,-Math.floor(Math.log10(yStep))+(yStep<1?1:0));
+  ctx.strokeStyle='rgba(57,39,91,0.07)'; ctx.lineWidth=1;
+  for(let x=Math.ceil(xmin/xStep)*xStep;x<=xmax+1e-9;x+=xStep){
+    ctx.beginPath();ctx.moveTo(sx(x),pad.t);ctx.lineTo(sx(x),pad.t+gH);ctx.stroke();
+  }
+  for(let y=Math.ceil(ymin/yStep)*yStep;y<=ymax+1e-9;y+=yStep){
+    ctx.beginPath();ctx.moveTo(pad.l,sy(y));ctx.lineTo(pad.l+gW,sy(y));ctx.stroke();
+  }
+  if(xmin<0&&xmax>0){ ctx.strokeStyle='rgba(24,40,74,0.32)';ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.moveTo(sx(0),pad.t);ctx.lineTo(sx(0),pad.t+gH);ctx.stroke(); }
+  if(ymin<0&&ymax>0){ ctx.strokeStyle='rgba(24,40,74,0.32)';ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.moveTo(pad.l,sy(0));ctx.lineTo(pad.l+gW,sy(0));ctx.stroke(); }
+  ctx.strokeStyle='rgba(24,40,74,0.5)';ctx.lineWidth=1.2;
+  ctx.strokeRect(pad.l,pad.t,gW,gH);
+  ctx.fillStyle='rgba(24,40,74,0.6)';ctx.font='10px '+FT;ctx.textAlign='center';
+  for(let x=Math.ceil(xmin/xStep)*xStep;x<=xmax+1e-9;x+=xStep)
+    ctx.fillText(x.toFixed(xDec),sx(x),pad.t+gH+12);
+  ctx.textAlign='right';
+  for(let y=Math.ceil(ymin/yStep)*yStep;y<=ymax+1e-9;y+=yStep)
+    ctx.fillText(y.toFixed(yDec),pad.l-4,sy(y)+3);
+  ctx.fillStyle='#18284a';ctx.font='italic 10.5px '+FT;ctx.textAlign='center';
+  if(xlabel) ctx.fillText(xlabel,pad.l+gW/2,pad.t+gH+24);
+  if(ylabel){ ctx.save();ctx.translate(11,pad.t+gH/2);ctx.rotate(-Math.PI/2);
+    ctx.fillText(ylabel,0,0);ctx.restore(); }
+  return {sx,sy,gW,gH};
+}
+
+/* canvas refs */
+const cMain=document.getElementById('main'), ctxM=cMain.getContext('2d');
+const cB=document.getElementById('panelB'), ctxB=cB.getContext('2d');
+const cC=document.getElementById('panelC'), ctxC=cC.getContext('2d');
+const cG=document.getElementById('guess'),  ctxG=cG.getContext('2d');
+
+function xRange(){
+  let lo=Infinity,hi=-Infinity;
+  for(const d of data){ if(d.x<lo)lo=d.x; if(d.x>hi)hi=d.x; }
+  const r=Math.max(hi-lo,1);
+  return [lo-0.12*r, hi+0.12*r];
+}
+
+/* ---------- MAIN PANEL ---------- */
+function drawMain(){
+  ctxM.clearRect(0,0,cMain.width,cMain.height);
+  const pad={l:46,r:16,t:14,b:34};
+  const [xlo,xhi]=xRange();
+  const S=axes(ctxM,pad,cMain.width,cMain.height,xlo,xhi,-0.09,1.09,
+               'payload mass, centred  (tons \u2212 mean)','Pr(success)',1);
+  // 0 / 1 reference lines
+  ctxM.strokeStyle='rgba(24,40,74,0.18)';ctxM.lineWidth=1;ctxM.setLineDash([3,3]);
+  for(const yv of [0,1]){ ctxM.beginPath();
+    ctxM.moveTo(S.sx(xlo),S.sy(yv));ctxM.lineTo(S.sx(xhi),S.sy(yv));ctxM.stroke(); }
+  ctxM.setLineDash([]);
+
+  ctxM.save();
+  ctxM.beginPath();ctxM.rect(pad.l,pad.t,S.gW,S.gH);ctxM.clip();
+  const NP=240;
+
+  if(mode==='mcmc' && mcmc){
+    // posterior draw curves
+    if(tgDraws){
+      const draws=Math.min(60,mcmc.post0.length);
+      const stride=Math.max(1,Math.floor(mcmc.post0.length/draws));
+      ctxM.strokeStyle='rgba(57,39,91,0.13)';ctxM.lineWidth=1;
+      for(let k=0;k<mcmc.post0.length;k+=stride){
+        ctxM.beginPath();
+        for(let i=0;i<=NP;i++){
+          const x=xlo+(xhi-xlo)*i/NP, p=sigmoid(mcmc.post0[k]+mcmc.post1[k]*x);
+          i===0?ctxM.moveTo(S.sx(x),S.sy(p)):ctxM.lineTo(S.sx(x),S.sy(p));
+        }
+        ctxM.stroke();
+      }
+    }
+    // credible band + mean curve
+    const gx=[],meanC=[],loC=[],hiC=[];
+    const sub=Math.min(mcmc.post0.length,500);
+    const st=Math.max(1,Math.floor(mcmc.post0.length/sub));
+    for(let i=0;i<=NP;i++){
+      const x=xlo+(xhi-xlo)*i/NP;
+      const ps=[];
+      for(let k=0;k<mcmc.post0.length;k+=st) ps.push(sigmoid(mcmc.post0[k]+mcmc.post1[k]*x));
+      ps.sort((a,b)=>a-b);
+      gx.push(x);
+      meanC.push(ps.reduce((a,b)=>a+b,0)/ps.length);
+      loC.push(quantile(ps,0.025)); hiC.push(quantile(ps,0.975));
+    }
+    if(tgBand){
+      ctxM.fillStyle='rgba(199,153,0,0.22)';
+      ctxM.beginPath();
+      for(let i=0;i<=NP;i++) i===0?ctxM.moveTo(S.sx(gx[i]),S.sy(hiC[i])):ctxM.lineTo(S.sx(gx[i]),S.sy(hiC[i]));
+      for(let i=NP;i>=0;i--) ctxM.lineTo(S.sx(gx[i]),S.sy(loC[i]));
+      ctxM.closePath();ctxM.fill();
+    }
+    ctxM.strokeStyle='#39275B';ctxM.lineWidth=2.6;
+    ctxM.beginPath();
+    for(let i=0;i<=NP;i++) i===0?ctxM.moveTo(S.sx(gx[i]),S.sy(meanC[i])):ctxM.lineTo(S.sx(gx[i]),S.sy(meanC[i]));
+    ctxM.stroke();
+  } else {
+    // linear-probability line (the "bad" fit)
+    if(tgLinear){
+      // least-squares line of y on x
+      let sx0=0,sy0=0,sxx=0,sxy=0,n=data.length;
+      for(const d of data){ sx0+=d.x;sy0+=d.y;sxx+=d.x*d.x;sxy+=d.x*d.y; }
+      const xb=sx0/n,yb=sy0/n, b1=(sxy-n*xb*yb)/(sxx-n*xb*xb), b0=yb-b1*xb;
+      ctxM.strokeStyle='#C79900';ctxM.lineWidth=2;ctxM.setLineDash([7,4]);
+      ctxM.beginPath();
+      ctxM.moveTo(S.sx(xlo),S.sy(b0+b1*xlo));
+      ctxM.lineTo(S.sx(xhi),S.sy(b0+b1*xhi));
+      ctxM.stroke();ctxM.setLineDash([]);
+    }
+    // user proposed curve
+    if(tgMyCurve){
+      ctxM.strokeStyle='rgba(199,153,0,0.95)';ctxM.lineWidth=2;
+      ctxM.beginPath();
+      for(let i=0;i<=NP;i++){
+        const x=xlo+(xhi-xlo)*i/NP, p=sigmoid(guessB0+guessB1*x);
+        i===0?ctxM.moveTo(S.sx(x),S.sy(p)):ctxM.lineTo(S.sx(x),S.sy(p));
+      }
+      ctxM.stroke();
+    }
+    // MLE logistic curve
+    if(mle){
+      ctxM.strokeStyle='#39275B';ctxM.lineWidth=2.7;
+      ctxM.beginPath();
+      for(let i=0;i<=NP;i++){
+        const x=xlo+(xhi-xlo)*i/NP, p=sigmoid(mle.b0+mle.b1*x);
+        i===0?ctxM.moveTo(S.sx(x),S.sy(p)):ctxM.lineTo(S.sx(x),S.sy(p));
+      }
+      ctxM.stroke();
+    }
+  }
+
+  // data points
+  for(const d of data){
+    const px=S.sx(d.x), py=S.sy(d.y);
+    ctxM.beginPath();ctxM.arc(px,py,4.6,0,2*Math.PI);
+    if(d.y===1){ ctxM.fillStyle='rgba(57,39,91,0.85)'; }
+    else{ ctxM.fillStyle='rgba(142,99,42,0.8)'; }
+    ctxM.fill();
+    ctxM.strokeStyle='#fff';ctxM.lineWidth=1.2;ctxM.stroke();
+  }
+  ctxM.restore();
+
+  // legend
+  ctxM.font='italic 9.5px '+FT;ctxM.textAlign='left';
+  let ly=pad.t+10;
+  function leg(color,txt,dash){
+    ctxM.strokeStyle=color;ctxM.lineWidth=2.4;
+    if(dash)ctxM.setLineDash([6,3]);
+    ctxM.beginPath();ctxM.moveTo(pad.l+8,ly);ctxM.lineTo(pad.l+26,ly);ctxM.stroke();
+    ctxM.setLineDash([]);
+    ctxM.fillStyle=color;ctxM.fillText(txt,pad.l+30,ly+3);
+    ly+=13;
+  }
+  if(mode==='mcmc' && mcmc){
+    leg('#39275B','posterior mean p(x)',false);
+    if(tgBand){ ctxM.fillStyle='rgba(199,153,0,0.5)';
+      ctxM.fillRect(pad.l+8,ly-4,18,8);
+      ctxM.fillStyle='#8E632A';ctxM.fillText('95% credible band',pad.l+30,ly+3);ly+=13; }
+  } else {
+    if(mle) leg(mle.separated?'#8E632A':'#39275B', mle.separated?'fitted curve (diverging)':'MLE logistic curve',false);
+    if(tgMyCurve) leg('rgba(199,153,0,0.95)','your proposed curve',false);
+    if(tgLinear) leg('#C79900','linear-probability line',true);
+  }
+  ctxM.fillStyle='rgba(122,122,138,0.85)';ctxM.font='9.5px '+FT;ctxM.textAlign='right';
+  ctxM.fillText('\u25CF success    \u25CF failure',pad.l+S.gW-6,pad.t+11);
+}
+
+/* ---------- PANEL B :  MLE = log-likelihood surface ;  MCMC = traces ---------- */
+let llGrid=null;
+function buildLLGrid(){
+  const NX=78, NY=42;
+  const g=new Float64Array(NX*NY);
+  let mx=-Infinity;
+  for(let j=0;j<NY;j++){
+    const b1=B1RANGE[0]+(B1RANGE[1]-B1RANGE[0])*j/(NY-1);
+    for(let i=0;i<NX;i++){
+      const b0=B0RANGE[0]+(B0RANGE[1]-B0RANGE[0])*i/(NX-1);
+      const v=logLik(b0,b1);
+      g[j*NX+i]=v; if(v>mx)mx=v;
+    }
+  }
+  llGrid={g,NX,NY,max:mx};
+}
+function drawPanelB(){
+  ctxB.clearRect(0,0,cB.width,cB.height);
+  if(mode==='mle'){
+    const pad={l:46,r:16,t:14,b:34};
+    const gW=cB.width-pad.l-pad.r, gH=cB.height-pad.t-pad.b;
+    if(!llGrid) buildLLGrid();
+    const {g,NX,NY,max}=llGrid;
+    const cw=gW/NX, ch=gH/NY;
+    const lightC=[250,247,242], darkC=[57,39,91];
+    for(let j=0;j<NY;j++){
+      for(let i=0;i<NX;i++){
+        let t=(g[j*NX+i]-(max-24))/24;
+        t=Math.max(0,Math.min(1,t));
+        ctxB.fillStyle=lerpColor(t,lightC,darkC);
+        ctxB.fillRect(pad.l+i*cw, pad.t+(NY-1-j)*ch, cw+1, ch+1);
+      }
+    }
+    const sx=b0=>pad.l+(b0-B0RANGE[0])/(B0RANGE[1]-B0RANGE[0])*gW;
+    const sy=b1=>pad.t+(B1RANGE[1]-b1)/(B1RANGE[1]-B1RANGE[0])*gH;
+    // axis frame + ticks
+    ctxB.strokeStyle='rgba(24,40,74,0.5)';ctxB.lineWidth=1.2;
+    ctxB.strokeRect(pad.l,pad.t,gW,gH);
+    ctxB.fillStyle='rgba(255,255,255,0.85)';ctxB.font='10px '+FT;ctxB.textAlign='center';
+    for(let b0=-4;b0<=4;b0+=2){ ctxB.fillStyle='rgba(24,40,74,0.7)';
+      ctxB.fillText(b0.toFixed(0),sx(b0),pad.t+gH+12); }
+    ctxB.textAlign='right';
+    for(let b1=-8;b1<=4;b1+=4){ ctxB.fillStyle='rgba(24,40,74,0.7)';
+      ctxB.fillText(b1.toFixed(0),pad.l-4,sy(b1)+3); }
+    ctxB.fillStyle='#18284a';ctxB.font='italic 10.5px '+FT;ctxB.textAlign='center';
+    ctxB.fillText('intercept  \u03B2\u2080',pad.l+gW/2,pad.t+gH+24);
+    ctxB.save();ctxB.translate(12,pad.t+gH/2);ctxB.rotate(-Math.PI/2);
+    ctxB.fillText('slope  \u03B2\u2081',0,0);ctxB.restore();
+    // guess marker
+    if(tgMyCurve){
+      const gx=sx(Math.max(B0RANGE[0],Math.min(B0RANGE[1],guessB0)));
+      const gy=sy(Math.max(B1RANGE[0],Math.min(B1RANGE[1],guessB1)));
+      ctxB.beginPath();ctxB.arc(gx,gy,6,0,2*Math.PI);
+      ctxB.fillStyle='#C79900';ctxB.strokeStyle='#fff';ctxB.lineWidth=2;
+      ctxB.fill();ctxB.stroke();
+      ctxB.fillStyle='#fff';ctxB.font='bold 9px '+FT;ctxB.textAlign='left';
+      ctxB.fillText('your \u03B2',gx+9,gy-7);
+    }
+    // MLE marker (or divergence arrow)
+    if(mle){
+      if(mle.separated){
+        const ax=pad.l+gW*0.5;
+        ctxB.strokeStyle='#fff';ctxB.lineWidth=2.4;
+        ctxB.beginPath();ctxB.moveTo(ax,pad.t+gH-30);ctxB.lineTo(ax,pad.t+gH-6);ctxB.stroke();
+        ctxB.beginPath();
+        ctxB.moveTo(ax-5,pad.t+gH-13);ctxB.lineTo(ax,pad.t+gH-6);ctxB.lineTo(ax+5,pad.t+gH-13);
+        ctxB.stroke();
+        ctxB.fillStyle='#fff';ctxB.font='italic 9.5px '+FT;ctxB.textAlign='center';
+        ctxB.fillText('no finite MLE \u2014 surface keeps rising',ax,pad.t+gH-36);
+      } else if(mle.b0>=B0RANGE[0]&&mle.b0<=B0RANGE[1]&&mle.b1>=B1RANGE[0]&&mle.b1<=B1RANGE[1]){
+        const mx2=sx(mle.b0),my2=sy(mle.b1);
+        ctxB.beginPath();
+        for(let k=0;k<5;k++){
+          const a=-Math.PI/2+k*2*Math.PI/5;
+          ctxB.lineTo(mx2+8*Math.cos(a),my2+8*Math.sin(a));
+          const a2=a+Math.PI/5;
+          ctxB.lineTo(mx2+3.4*Math.cos(a2),my2+3.4*Math.sin(a2));
+        }
+        ctxB.closePath();
+        ctxB.fillStyle='#fff';ctxB.strokeStyle='#39275B';ctxB.lineWidth=1.4;
+        ctxB.fill();ctxB.stroke();
+      }
+    }
+    // colour caption
+    ctxB.fillStyle='rgba(122,122,138,0.95)';ctxB.font='italic 9px '+FT;ctxB.textAlign='left';
+    ctxB.fillText('darker = higher log-likelihood',pad.l+4,pad.t+gH-6);
+  } else {
+    // MCMC trace plots, stacked
+    if(!mcmc){
+      ctxB.fillStyle='rgba(122,122,138,0.7)';ctxB.font='italic 12px '+FT;ctxB.textAlign='center';
+      ctxB.fillText('run the sampler to see the trace plots',cB.width/2,cB.height/2);
+      return;
+    }
+    drawTrace(ctxB,{l:50,r:14,t:12,b:6},cB.width,cB.height*0.5,mcmc.c0,'\u03B2\u2080');
+    drawTrace(ctxB,{l:50,r:14,t:12,b:24},cB.width,cB.height*0.5,mcmc.c1,'\u03B2\u2081',cB.height*0.5);
+  }
+}
+function drawTrace(ctx,pad,W,H,chain,label,yOff){
+  yOff=yOff||0;
+  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  let lo=Infinity,hi=-Infinity;
+  for(const v of chain){ if(v<lo)lo=v; if(v>hi)hi=v; }
+  const r=Math.max(hi-lo,0.4); lo-=0.08*r; hi+=0.08*r;
+  const n=chain.length;
+  const sx=i=>pad.l+i/(n-1)*gW;
+  const sy=v=>yOff+pad.t+(hi-v)/(hi-lo)*gH;
+  ctx.fillStyle='#fff';ctx.fillRect(pad.l,yOff+pad.t,gW,gH);
+  // burn-in shading
+  const bx=sx(mcmc.burn);
+  ctx.fillStyle='rgba(199,153,0,0.10)';
+  ctx.fillRect(pad.l,yOff+pad.t,bx-pad.l,gH);
+  // chain
+  ctx.strokeStyle='rgba(57,39,91,0.78)';ctx.lineWidth=0.7;
+  ctx.beginPath();
+  for(let i=0;i<n;i++) i===0?ctx.moveTo(sx(i),sy(chain[i])):ctx.lineTo(sx(i),sy(chain[i]));
+  ctx.stroke();
+  // posterior mean line
+  const pm=label.indexOf('0')>=0?mcmc.summ.b0.mean:mcmc.summ.b1.mean;
+  ctx.strokeStyle='#C79900';ctx.lineWidth=1.6;ctx.setLineDash([6,3]);
+  ctx.beginPath();ctx.moveTo(bx,sy(pm));ctx.lineTo(pad.l+gW,sy(pm));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(24,40,74,0.5)';ctx.lineWidth=1.1;
+  ctx.strokeRect(pad.l,yOff+pad.t,gW,gH);
+  ctx.fillStyle='#18284a';ctx.font='bold 10px '+FT;ctx.textAlign='left';
+  ctx.fillText(label+' chain',pad.l+5,yOff+pad.t+11);
+  ctx.fillStyle='rgba(24,40,74,0.6)';ctx.font='9px '+FT;ctx.textAlign='right';
+  ctx.fillText(hi.toFixed(1),pad.l-4,yOff+pad.t+8);
+  ctx.fillText(lo.toFixed(1),pad.l-4,yOff+pad.t+gH);
+  ctx.textAlign='center';
+  ctx.fillText('iteration',pad.l+gW/2,yOff+pad.t+gH+ (pad.b>10?16:0));
+  if(pad.b>10){
+    ctx.fillStyle='rgba(142,99,42,0.9)';ctx.font='italic 9px '+FT;ctx.textAlign='left';
+    ctx.fillText('shaded = burn-in (discarded)',pad.l+5,yOff+pad.t+gH-5);
+  }
+}
+
+/* ---------- PANEL C :  MLE = classification ;  MCMC = posterior histograms ---------- */
+function drawPanelC(){
+  ctxC.clearRect(0,0,cC.width,cC.height);
+  if(mode==='mle'){
+    const pad={l:46,r:16,t:14,b:34};
+    const [xlo,xhi]=xRange();
+    const S=axes(ctxC,pad,cC.width,cC.height,xlo,xhi,-0.09,1.09,
+                 'payload mass, centred','Pr(success)',1);
+    ctxC.save();ctxC.beginPath();ctxC.rect(pad.l,pad.t,S.gW,S.gH);ctxC.clip();
+    // threshold band
+    ctxC.fillStyle='rgba(57,39,91,0.05)';
+    ctxC.fillRect(S.sx(xlo),S.sy(1.09),S.gW,S.sy(threshold)-S.sy(1.09));
+    ctxC.strokeStyle='rgba(57,39,91,0.55)';ctxC.lineWidth=1.4;ctxC.setLineDash([5,3]);
+    ctxC.beginPath();ctxC.moveTo(S.sx(xlo),S.sy(threshold));ctxC.lineTo(S.sx(xhi),S.sy(threshold));ctxC.stroke();
+    ctxC.setLineDash([]);
+    // curve
+    const b0=mle?mle.b0:0, b1=mle?mle.b1:0;
+    ctxC.strokeStyle='#39275B';ctxC.lineWidth=2.4;
+    ctxC.beginPath();
+    for(let i=0;i<=240;i++){
+      const x=xlo+(xhi-xlo)*i/240, p=sigmoid(b0+b1*x);
+      i===0?ctxC.moveTo(S.sx(x),S.sy(p)):ctxC.lineTo(S.sx(x),S.sy(p));
+    }
+    ctxC.stroke();
+    // decision boundary (where p = threshold)
+    if(b1!==0){
+      const xStar=(Math.log(threshold/(1-threshold))-b0)/b1;
+      if(xStar>xlo&&xStar<xhi){
+        ctxC.strokeStyle='rgba(199,153,0,0.9)';ctxC.lineWidth=1.6;
+        ctxC.beginPath();ctxC.moveTo(S.sx(xStar),S.sy(-0.09));ctxC.lineTo(S.sx(xStar),S.sy(1.09));ctxC.stroke();
+      }
+    }
+    // points coloured by correctness
+    let tp=0,tn=0,fp=0,fn=0;
+    for(const d of data){
+      const p=sigmoid(b0+b1*d.x), pred=p>threshold?1:0;
+      const correct=pred===d.y;
+      if(pred===1&&d.y===1)tp++; else if(pred===0&&d.y===0)tn++;
+      else if(pred===1&&d.y===0)fp++; else fn++;
+      ctxC.beginPath();ctxC.arc(S.sx(d.x),S.sy(d.y),4.4,0,2*Math.PI);
+      ctxC.fillStyle=correct?'rgba(26,106,64,0.85)':'rgba(57,39,91,0.9)';
+      ctxC.fill();
+      ctxC.strokeStyle='#fff';ctxC.lineWidth=1.1;ctxC.stroke();
+    }
+    ctxC.restore();
+    const acc=((tp+tn)/data.length*100);
+    ctxC.fillStyle='#18284a';ctxC.font='9.5px '+FT;ctxC.textAlign='left';
+    ctxC.fillText('hits '+(tp+tn)+'/'+data.length+'  ('+acc.toFixed(1)+'%)   '+
+      'TP '+tp+'  TN '+tn+'  FP '+fp+'  FN '+fn,pad.l+4,pad.t+11);
+    ctxC.fillStyle='rgba(26,106,64,0.9)';ctxC.textAlign='right';
+    ctxC.fillText('\u25CF correct',pad.l+S.gW-66,pad.t+11);
+    ctxC.fillStyle='rgba(57,39,91,0.9)';
+    ctxC.fillText('\u25CF wrong',pad.l+S.gW-6,pad.t+11);
+  } else {
+    if(!mcmc){
+      ctxC.fillStyle='rgba(122,122,138,0.7)';ctxC.font='italic 12px '+FT;ctxC.textAlign='center';
+      ctxC.fillText('run the sampler to see the posterior',cC.width/2,cC.height/2);
+      return;
+    }
+    drawHist(ctxC,{l:8,r:6,t:12,b:30},cC.width/2,cC.height,mcmc.post0,mcmc.summ.b0,'\u03B2\u2080  (intercept)');
+    drawHist(ctxC,{l:8,r:6,t:12,b:30},cC.width/2,cC.height,mcmc.post1,mcmc.summ.b1,'\u03B2\u2081  (slope)',cC.width/2);
+  }
+}
+function drawHist(ctx,pad,W,H,samp,summ,label,xOff){
+  xOff=xOff||0;
+  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  let lo=Math.min(...samp), hi=Math.max(...samp);
+  const r=Math.max(hi-lo,0.5); lo-=0.05*r; hi+=0.05*r;
+  const nb=26, bw=(hi-lo)/nb, bins=new Array(nb).fill(0);
+  for(const v of samp){
+    let b=Math.floor((v-lo)/bw); b=Math.max(0,Math.min(nb-1,b)); bins[b]++;
+  }
+  const bmax=Math.max(...bins,1);
+  const sx=v=>xOff+pad.l+(v-lo)/(hi-lo)*gW;
+  const sy=c=>pad.t+(1-c/(bmax*1.12))*gH;
+  ctx.fillStyle='#fff';ctx.fillRect(xOff+pad.l,pad.t,gW,gH);
+  for(let b=0;b<nb;b++){
+    const x1=sx(lo+b*bw), x2=sx(lo+(b+1)*bw);
+    ctx.fillStyle='rgba(57,39,91,0.4)';
+    ctx.fillRect(x1+0.6,sy(bins[b]),x2-x1-1.2,pad.t+gH-sy(bins[b]));
+    ctx.strokeStyle='rgba(57,39,91,0.65)';ctx.lineWidth=0.7;
+    ctx.strokeRect(x1+0.6,sy(bins[b]),x2-x1-1.2,pad.t+gH-sy(bins[b]));
+  }
+  // 95% credible interval
+  for(const q of [summ.lo,summ.hi]){
+    ctx.strokeStyle='rgba(57,39,91,0.85)';ctx.lineWidth=1.3;ctx.setLineDash([3,2]);
+    ctx.beginPath();ctx.moveTo(sx(q),pad.t);ctx.lineTo(sx(q),pad.t+gH);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // posterior mean
+  ctx.strokeStyle='#C79900';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(sx(summ.mean),pad.t);ctx.lineTo(sx(summ.mean),pad.t+gH);ctx.stroke();
+  ctx.strokeStyle='rgba(24,40,74,0.5)';ctx.lineWidth=1.1;
+  ctx.strokeRect(xOff+pad.l,pad.t,gW,gH);
+  ctx.fillStyle='#18284a';ctx.font='bold 10px '+FT;ctx.textAlign='center';
+  ctx.fillText(label,xOff+pad.l+gW/2,pad.t+gH+14);
+  ctx.fillStyle='rgba(24,40,74,0.65)';ctx.font='9px '+FT;
+  ctx.fillText(lo.toFixed(1),xOff+pad.l,pad.t+gH+24);
+  ctx.fillText(hi.toFixed(1),xOff+pad.l+gW,pad.t+gH+24);
+  ctx.fillStyle='#8E632A';ctx.font='italic 9px '+FT;
+  ctx.fillText('mean '+summ.mean.toFixed(2),xOff+pad.l+gW/2,pad.t+10);
+}
+
+/* ---------- GUESS MINI-CANVAS (MLE interact) ---------- */
+function drawGuess(){
+  ctxG.clearRect(0,0,cG.width,cG.height);
+  const pad={l:34,r:12,t:12,b:26};
+  const [xlo,xhi]=xRange();
+  const S=axes(ctxG,pad,cG.width,cG.height,xlo,xhi,-0.1,1.1,null,null,1);
+  ctxG.save();ctxG.beginPath();ctxG.rect(pad.l,pad.t,S.gW,S.gH);ctxG.clip();
+  // MLE curve faint
+  if(mle){
+    ctxG.strokeStyle='rgba(57,39,91,0.32)';ctxG.lineWidth=1.6;ctxG.setLineDash([5,3]);
+    ctxG.beginPath();
+    for(let i=0;i<=200;i++){
+      const x=xlo+(xhi-xlo)*i/200, p=sigmoid(mle.b0+mle.b1*x);
+      i===0?ctxG.moveTo(S.sx(x),S.sy(p)):ctxG.lineTo(S.sx(x),S.sy(p));
+    }
+    ctxG.stroke();ctxG.setLineDash([]);
+  }
+  // your curve
+  ctxG.strokeStyle='#C79900';ctxG.lineWidth=2.4;
+  ctxG.beginPath();
+  for(let i=0;i<=200;i++){
+    const x=xlo+(xhi-xlo)*i/200, p=sigmoid(guessB0+guessB1*x);
+    i===0?ctxG.moveTo(S.sx(x),S.sy(p)):ctxG.lineTo(S.sx(x),S.sy(p));
+  }
+  ctxG.stroke();
+  for(const d of data){
+    ctxG.beginPath();ctxG.arc(S.sx(d.x),S.sy(d.y),3.4,0,2*Math.PI);
+    ctxG.fillStyle=d.y===1?'rgba(57,39,91,0.8)':'rgba(142,99,42,0.75)';
+    ctxG.fill();ctxG.strokeStyle='#fff';ctxG.lineWidth=0.9;ctxG.stroke();
+  }
+  ctxG.restore();
+  ctxG.fillStyle='rgba(24,40,74,0.65)';ctxG.font='italic 9px '+FT;ctxG.textAlign='left';
+  ctxG.fillText('\u2014 your curve',pad.l+4,pad.t+10);
+  if(mle){ ctxG.fillStyle='rgba(57,39,91,0.5)';
+    ctxG.fillText('\u00B7\u00B7 fitted curve',pad.l+4,pad.t+21); }
+}
+
+/* ===================================================================
+   STATS PANELS
+   =================================================================== */
+function updateStats(){
+  const panel=document.getElementById('statsPanel');
+  if(mode==='mle'){
+    if(!mle){ panel.innerHTML='<div class="empty">No data.</div>'; return; }
+    const nS=data.reduce((s,d)=>s+d.y,0);
+    const z0=mle.b0/mle.se0, z1=mle.b1/mle.se1;
+    const p0=2*(1-normalCDF(Math.abs(z0))), p1=2*(1-normalCDF(Math.abs(z1)));
+    let h='<h3>Data</h3>';
+    h+='<div class="stat-row"><span class="stat-key">n launches</span><span class="stat-val">'+data.length+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">successes / failures</span><span class="stat-val">'+nS+' / '+(data.length-nS)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">mean payload (t)</span><span class="stat-val">'+meanMass.toFixed(3)+'</span></div>';
+
+    h+='<h3>Maximum-likelihood fit</h3>';
+    h+='<table class="tbl"><tr><th>term</th><th>est.</th><th>std err</th><th>z</th><th>p-value</th></tr>';
+    h+='<tr><td>\u03B2\u2080 intercept</td><td class="v">'+fmt(mle.b0,3)+'</td><td>'+fmt(mle.se0,3)+
+       '</td><td>'+fmt(z0,2)+'</td><td>'+(isFinite(p0)?(p0<0.001?'<0.001':p0.toFixed(3)):'\u2014')+'</td></tr>';
+    h+='<tr><td>\u03B2\u2081 slope</td><td class="v">'+fmt(mle.b1,3)+'</td><td>'+fmt(mle.se1,3)+
+       '</td><td>'+fmt(z1,2)+'</td><td>'+(isFinite(p1)?(p1<0.001?'<0.001':p1.toFixed(3)):'\u2014')+'</td></tr>';
+    h+='</table>';
+    h+='<div class="note">Newton\u2013Raphson, '+mle.iters+' iteration'+(mle.iters===1?'':'s')+
+       ' \u2014 '+(mle.converged?'converged.':'<b>did not converge.</b>')+'</div>';
+
+    h+='<h3>Likelihood &amp; deviance</h3>';
+    h+='<div class="stat-row"><span class="stat-key">log-likelihood</span><span class="stat-val">'+mle.ll.toFixed(4)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">residual deviance</span><span class="stat-val">'+mle.devResid.toFixed(3)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">null deviance</span><span class="stat-val">'+mle.devNull.toFixed(3)+'</span></div>';
+
+    h+='<h3>Odds interpretation</h3>';
+    const or=Math.exp(mle.b1);
+    h+='<div class="stat-row"><span class="stat-key">odds ratio e^\u03B2\u2081</span><span class="stat-val">'+fmt(or,4)+'</span></div>';
+    h+='<div class="note">Each extra ton of payload multiplies the odds of a successful landing by about '+
+       fmt(or,3)+' (a '+(or<1?'drop':'rise')+' of roughly '+Math.abs(100*(or-1)).toFixed(1)+'%).</div>';
+
+    if(mle.separated){
+      h+='<div class="warnbox"><b>Perfect separation detected.</b> Every success has a smaller '+
+         'payload than every failure, so the likelihood keeps increasing as the slope grows without '+
+         'bound. There is <b>no finite maximum-likelihood estimate</b> &mdash; the coefficients above are '+
+         'just where the iteration was stopped, and the standard errors are not meaningful. This is '+
+         'precisely the case where the Bayesian / MCMC route, whose priors keep the coefficients finite, '+
+         'gives a stable and usable answer. Switch to <b>Bayesian MCMC</b> to see it.</div>';
+    }
+    panel.innerHTML=h;
+  } else {
+    if(!mcmc){
+      panel.innerHTML='<div class="empty">Run the MCMC sampler (lower-right panel) to see posterior summaries.</div>';
+      return;
+    }
+    const s=mcmc.summ;
+    let h='<h3>Sampler</h3>';
+    h+='<div class="stat-row"><span class="stat-key">iterations / burn-in</span><span class="stat-val">'+
+       mcmc.opt.iters+' / '+mcmc.burn+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">acceptance rate</span><span class="stat-val">'+
+       (mcmc.accRate*100).toFixed(1)+'%</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">prior</span><span class="stat-val">N(0, '+
+       mcmc.opt.priorSD+'\u00B2)</span></div>';
+    h+='<div class="note">Effective sample size \u2014 \u03B2\u2080: '+s.b0.ess+',  \u03B2\u2081: '+s.b1.ess+
+       '. A healthy random walk accepts roughly 20\u201350% of proposals.</div>';
+
+    h+='<h3>Posterior summaries</h3>';
+    h+='<table class="tbl"><tr><th>term</th><th>mean</th><th>sd</th><th>2.5%</th><th>97.5%</th></tr>';
+    h+='<tr><td>\u03B2\u2080 intercept</td><td class="v">'+s.b0.mean.toFixed(3)+'</td><td>'+s.b0.sd.toFixed(3)+
+       '</td><td>'+s.b0.lo.toFixed(3)+'</td><td>'+s.b0.hi.toFixed(3)+'</td></tr>';
+    h+='<tr><td>\u03B2\u2081 slope</td><td class="v">'+s.b1.mean.toFixed(3)+'</td><td>'+s.b1.sd.toFixed(3)+
+       '</td><td>'+s.b1.lo.toFixed(3)+'</td><td>'+s.b1.hi.toFixed(3)+'</td></tr>';
+    h+='</table>';
+    h+='<div class="note">The 2.5% and 97.5% columns are the 95% credible interval \u2014 the parameter '+
+       'lies between them with 95% posterior probability.</div>';
+
+    h+='<h3>Odds interpretation</h3>';
+    h+='<div class="stat-row"><span class="stat-key">odds ratio e^\u03B2\u2081 (median)</span><span class="stat-val">'+
+       Math.exp(s.b1.med).toFixed(4)+'</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">95% CI for e^\u03B2\u2081</span><span class="stat-val">['+
+       Math.exp(s.b1.lo).toFixed(3)+', '+Math.exp(s.b1.hi).toFixed(3)+']</span></div>';
+    h+='<div class="stat-row"><span class="stat-key">P(\u03B2\u2081 &lt; 0 | data)</span><span class="stat-val">'+
+       (s.negFrac*100).toFixed(1)+'%</span></div>';
+    h+='<div class="note">P(\u03B2\u2081 &lt; 0 | data) is the posterior probability that heavier payloads '+
+       'lower the chance of success.</div>';
+    if(mle && mle.separated){
+      h+='<div class="warnbox">With this separated dataset the maximum-likelihood slope has no finite '+
+         'value, yet the posterior above is perfectly well defined: the Normal prior supplies just enough '+
+         'information to keep \u03B2\u2080 and \u03B2\u2081 finite. The width of the credible interval honestly '+
+         'reflects how little the data alone can pin the slope down.</div>';
+    }
+    panel.innerHTML=h;
+  }
+}
+
+function updateGuessStats(){
+  const panel=document.getElementById('guessStats');
+  const yourLL=logLik(guessB0,guessB1);
+  const bestLL=mle?mle.ll:0;
+  const gap=bestLL-yourLL;
+  let h='<div><span class="stat-key">your curve:</span> <span class="stat-val">'+
+    'logit p = '+guessB0.toFixed(2)+(guessB1>=0?' + ':' \u2212 ')+Math.abs(guessB1).toFixed(2)+' x</span></div>';
+  h+='<div><span class="stat-key">your log-likelihood:</span> <span class="stat-val">'+yourLL.toFixed(4)+'</span></div>';
+  if(mle){
+    h+='<div><span class="stat-key">best fit found:</span> <span class="stat-val">'+bestLL.toFixed(4)+'</span>';
+    if(mle.separated) h+=' <span class="hint">(unattainable \u2014 separated data)</span>';
+    h+='</div>';
+    h+='<div><span class="stat-key">gap to best:</span> <span class="stat-val">'+gap.toFixed(4)+'</span></div>';
+    if(gap<0.01 && !mle.separated){
+      h+='<div class="pass">\u2605 you matched the maximum-likelihood fit</div>';
+    } else if(mle.separated && yourLL>-0.5){
+      h+='<div class="pass">\u2605 about as high as the likelihood can practically go</div>';
+    }
+  }
+  panel.innerHTML=h;
+}
+
+/* ===================================================================
+   ORCHESTRATION
+   =================================================================== */
+function recomputeMLE(){
+  mle=fitMLE();
+  llGrid=null;             // invalidate surface cache (data changed)
+}
+function update(){
+  drawMain();
+  drawPanelB();
+  drawPanelC();
+  updateStats();
+  if(mode==='mle'){ drawGuess(); updateGuessStats(); }
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('mMLE').classList.toggle('on',m==='mle');
+  document.getElementById('mMCMC').classList.toggle('on',m==='mcmc');
+  document.getElementById('mleInteract').style.display = m==='mle'?'block':'none';
+  document.getElementById('mcmcInteract').style.display = m==='mcmc'?'block':'none';
+  document.querySelectorAll('.mle-ctl').forEach(e=>e.style.display=m==='mle'?'flex':'none');
+  document.querySelectorAll('.mcmc-ctl').forEach(e=>e.style.display=m==='mcmc'?'flex':'none');
+  document.getElementById('threshStrip').style.display=m==='mle'?'flex':'none';
+  document.getElementById('hdrB').innerHTML = m==='mle'
+    ? 'Log-likelihood surface over (\u03B2<sub>0</sub>, \u03B2<sub>1</sub>) &ensp;&middot;&ensp; click to set your proposal'
+    : 'MCMC trace plots &ensp;&middot;&ensp; the sampler walking through (\u03B2<sub>0</sub>, \u03B2<sub>1</sub>)';
+  document.getElementById('hdrC').innerHTML = m==='mle'
+    ? 'Classification at a probability threshold'
+    : 'Posterior distributions of \u03B2<sub>0</sub> and \u03B2<sub>1</sub>';
+  document.getElementById('hdrMain').innerHTML = m==='mle'
+    ? 'Landing outcome vs payload &ensp;&middot;&ensp; fitted logistic curve'
+    : 'Landing outcome vs payload &ensp;&middot;&ensp; posterior mean curve &amp; credible band';
+  document.getElementById('hdrInteract').innerHTML = m==='mle'
+    ? 'Propose your own \u03B2<sub>0</sub>, \u03B2<sub>1</sub> &ensp;&middot;&ensp; race the likelihood'
+    : 'Random-walk Metropolis sampler &ensp;&middot;&ensp; settings';
+  document.getElementById('modeHint').textContent = m==='mle'
+    ? '\u2014 fit by maximum likelihood; nominate your own coefficients in the lower-right panel'
+    : '\u2014 sample the posterior with random-walk Metropolis; set options and run in the lower-right panel';
+  update();
+}
+
+/* ---------- events ---------- */
+document.getElementById('mMLE').addEventListener('click',()=>setMode('mle'));
+document.getElementById('mMCMC').addEventListener('click',()=>setMode('mcmc'));
+
+document.getElementById('btnReload').addEventListener('click',()=>{
+  payload=PAYLOAD_DEFAULT.slice(); success=SUCCESS_DEFAULT.slice();
+  document.getElementById('xInput').value='';
+  document.getElementById('yInput').value='';
+  buildData(); recomputeMLE(); mcmc=null;
+  update();
+});
+
+function parseVec(s){
+  if(!s) return [];
+  return s.split(/[\s,;]+/).filter(t=>t.length>0).map(parseFloat).filter(v=>!isNaN(v));
+}
+document.getElementById('btnLoadVec').addEventListener('click',()=>{
+  const xs=parseVec(document.getElementById('xInput').value);
+  const ys=parseVec(document.getElementById('yInput').value);
+  if(xs.length===0||ys.length===0){ alert('Enter both payload x and success y values.'); return; }
+  if(xs.length!==ys.length){
+    alert('x and y must have equal length (got '+xs.length+' and '+ys.length+').'); return; }
+  if(!ys.every(v=>v===0||v===1)){ alert('Success values y must all be 0 or 1.'); return; }
+  if(ys.every(v=>v===ys[0])){ alert('y has only one class \u2014 logistic regression needs both 0s and 1s.'); return; }
+  payload=xs.slice(); success=ys.slice();
+  buildData(); recomputeMLE(); mcmc=null;
+  update();
+});
+
+document.getElementById('tgLinear').addEventListener('change',function(){tgLinear=this.checked;drawMain();});
+document.getElementById('tgMyCurve').addEventListener('change',function(){tgMyCurve=this.checked;drawMain();drawPanelB();});
+document.getElementById('tgDraws').addEventListener('change',function(){tgDraws=this.checked;drawMain();});
+document.getElementById('tgBand').addEventListener('change',function(){tgBand=this.checked;drawMain();});
+
+/* threshold slider */
+const threshSlider=document.getElementById('threshSlider');
+threshSlider.addEventListener('input',function(){
+  threshold=parseFloat(this.value);
+  document.getElementById('threshVal').textContent=threshold.toFixed(2);
+  drawPanelC();
+});
+
+/* guess sliders / numbers */
+function syncGuess(src){
+  const sB0=document.getElementById('sB0'), sB1=document.getElementById('sB1');
+  const nB0=document.getElementById('nB0'), nB1=document.getElementById('nB1');
+  if(src==='slider'){ guessB0=parseFloat(sB0.value); guessB1=parseFloat(sB1.value);
+    nB0.value=guessB0.toFixed(2); nB1.value=guessB1.toFixed(2); }
+  else{
+    let b0=parseFloat(nB0.value), b1=parseFloat(nB1.value);
+    if(isNaN(b0))b0=0; if(isNaN(b1))b1=0;
+    b0=Math.max(B0RANGE[0],Math.min(B0RANGE[1],b0));
+    b1=Math.max(B1RANGE[0],Math.min(B1RANGE[1],b1));
+    guessB0=b0; guessB1=b1;
+    sB0.value=b0; sB1.value=b1; nB0.value=b0.toFixed(2); nB1.value=b1.toFixed(2);
+  }
+  drawMain(); drawPanelB(); drawGuess(); updateGuessStats();
+}
+['sB0','sB1'].forEach(id=>document.getElementById(id).addEventListener('input',()=>syncGuess('slider')));
+['nB0','nB1'].forEach(id=>document.getElementById(id).addEventListener('change',()=>syncGuess('number')));
+
+/* click the log-likelihood surface to set the proposal */
+cB.addEventListener('click',function(e){
+  if(mode!=='mle') return;
+  const r=cB.getBoundingClientRect();
+  const px=(e.clientX-r.left)*cB.width/r.width;
+  const py=(e.clientY-r.top)*cB.height/r.height;
+  const pad={l:46,r:16,t:14,b:34};
+  const gW=cB.width-pad.l-pad.r, gH=cB.height-pad.t-pad.b;
+  if(px<pad.l||px>pad.l+gW||py<pad.t||py>pad.t+gH) return;
+  guessB0=B0RANGE[0]+(px-pad.l)/gW*(B0RANGE[1]-B0RANGE[0]);
+  guessB1=B1RANGE[1]-(py-pad.t)/gH*(B1RANGE[1]-B1RANGE[0]);
+  guessB0=Math.round(guessB0*20)/20; guessB1=Math.round(guessB1*20)/20;
+  document.getElementById('sB0').value=guessB0;
+  document.getElementById('sB1').value=guessB1;
+  document.getElementById('nB0').value=guessB0.toFixed(2);
+  document.getElementById('nB1').value=guessB1.toFixed(2);
+  tgMyCurve=true; document.getElementById('tgMyCurve').checked=true;
+  drawMain(); drawPanelB(); drawGuess(); updateGuessStats();
+});
+
+/* run MCMC */
+document.getElementById('btnRunMCMC').addEventListener('click',function(){
+  const iters=Math.round(+document.getElementById('mcIters').value)||8000;
+  const burn=Math.round(+document.getElementById('mcBurn').value)||0;
+  const prop0=+document.getElementById('mcProp0').value||1.0;
+  const prop1=+document.getElementById('mcProp1').value||1.0;
+  const priorSD=+document.getElementById('mcPrior').value||5;
+  const st=parseVec(document.getElementById('mcStart').value);
+  const start0=st.length>0?st[0]:0, start1=st.length>1?st[1]:0;
+  if(burn>=iters){ alert('Burn-in must be smaller than the number of iterations.'); return; }
+  const status=document.getElementById('mcmcStatus');
+  status.innerHTML='<span style="color:var(--muted);font-style:italic;">sampling\u2026</span>';
+  this.disabled=true;
+  setTimeout(()=>{
+    const t0=performance.now();
+    mcmc=runMCMC({iters,burn,prop0,prop1,priorSD,start0,start1});
+    const ms=Math.round(performance.now()-t0);
+    const s=mcmc.summ;
+    let warn='';
+    if(mcmc.accRate<0.12) warn=' &mdash; <b>acceptance low</b>; try smaller proposal SDs.';
+    else if(mcmc.accRate>0.7) warn=' &mdash; <b>acceptance high</b>; try larger proposal SDs.';
+    status.innerHTML='<div><span class="stat-key">drew</span> <span class="stat-val">'+iters+
+      '</span> samples in '+ms+' ms, kept '+(iters-burn)+' after burn-in.</div>'+
+      '<div><span class="stat-key">acceptance</span> <span class="stat-val">'+(mcmc.accRate*100).toFixed(1)+'%</span>'+warn+'</div>'+
+      '<div><span class="stat-key">posterior mean</span> <span class="stat-val">\u03B2\u2080 = '+
+      s.b0.mean.toFixed(3)+',  \u03B2\u2081 = '+s.b1.mean.toFixed(3)+'</span></div>';
+    document.getElementById('btnRunMCMC').disabled=false;
+    update();
+  },30);
+});
+
+/* ---------- init ---------- */
+buildData();
+recomputeMLE();
+setMode('mle');
+</script>
+</body>
+</html>

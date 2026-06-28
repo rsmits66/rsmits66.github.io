@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Azéma's Martingale — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#c8a430; --goldDk:#a07820;
+  --crimson:#9E1B32; --crimson2:#7a1426; --crimsonLt:#fce8eb;
+  --crimsonPale:#E8B4BD; --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:24px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#f0c8d0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px 6px;
+          max-width:960px;width:100%;}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:5px 14px;font-size:.86rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+
+.wrap{max-width:960px;width:100%;padding:6px 16px 0;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:6px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;width:100%;height:auto;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama &ensp;&mdash;&ensp; Mathematics Department &ensp;&middot;&ensp; Stochastic Processes</div>
+  <div class="hdr-main">
+    <h1>Azéma's Martingale</h1>
+    <div class="subtitle">
+      M<sub>t</sub> = sgn(B<sub>t</sub>) &radic;(t &minus; g<sub>t</sub>),&ensp;
+      g<sub>t</sub> = sup{ s &le; t : B<sub>s</sub> = 0 } &ensp;&middot;&ensp;
+      simulated from a discrete Brownian path
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <button id="btnRedraw" class="primary">Redraw paths</button>
+  <span class="hint">&mdash; 10 sample paths in pale crimson, one highlighted in crimson</span>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="phdr">Sample paths of M<sub>t</sub> on [0, 1]</div>
+    <canvas id="c" width="920" height="480"></canvas>
+  </div>
+</div>
+
+<script>
+const N=1000, M=11, dt=1/N;
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+const tArr=Array.from({length:N},(_,i)=>i/(N-1));
+
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=cv.width,H=cv.height,padL=55,padR=20,padT=20,padB=40;
+
+function simulate(){
+  const paths=[];
+  for(let j=0;j<M;j++){
+    const B=new Float64Array(N), Mg=new Float64Array(N);
+    let g=0;
+    for(let i=1;i<N;i++){
+      B[i]=B[i-1]+Math.sqrt(dt)*randn();
+      if(B[i]*B[i-1]<=0) g=tArr[i];
+      Mg[i]=Math.sign(B[i])*Math.sqrt(tArr[i]-g);
+    }
+    paths.push(Mg);
+  }
+  return paths;
+}
+
+function draw(){
+  const paths=simulate();
+  let mn=Infinity,mx=-Infinity;
+  paths.forEach(p=>p.forEach(v=>{if(v<mn)mn=v;if(v>mx)mx=v;}));
+  const pad=0.08*(mx-mn); mn-=pad; mx+=pad;
+  const xs=i=>padL+(W-padL-padR)*i/(N-1);
+  const ys=v=>H-padB-(H-padT-padB)*(v-mn)/(mx-mn);
+
+  ctx.clearRect(0,0,W,H);
+
+  ctx.strokeStyle='#ece8df'; ctx.lineWidth=1;
+  for(let k=0;k<=10;k++){
+    const x=padL+(W-padL-padR)*k/10;
+    ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,H-padB);ctx.stroke();
+  }
+  for(let k=0;k<=8;k++){
+    const y=padT+(H-padT-padB)*k/8;
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+  }
+  ctx.strokeStyle='#c8a430'; ctx.lineWidth=1;
+  const y0=ys(0);
+  ctx.beginPath();ctx.moveTo(padL,y0);ctx.lineTo(W-padR,y0);ctx.stroke();
+
+  ctx.strokeStyle='#18284a'; ctx.lineWidth=1.2;
+  ctx.strokeRect(padL,padT,W-padL-padR,H-padT-padB);
+
+  ctx.fillStyle='#7a7a8a';
+  ctx.font="12px 'Crimson Pro',Georgia,serif";
+  ctx.textAlign='center';ctx.textBaseline='top';
+  for(let k=0;k<=10;k++){
+    const x=padL+(W-padL-padR)*k/10;
+    ctx.fillText((k/10).toFixed(1),x,H-padB+6);
+  }
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let k=0;k<=8;k++){
+    const v=mn+(mx-mn)*(1-k/8);
+    const y=padT+(H-padT-padB)*k/8;
+    ctx.fillText(v.toFixed(2),padL-7,y);
+  }
+  ctx.fillStyle='#18284a';
+  ctx.font="italic 13px 'Crimson Pro',Georgia,serif";
+  ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText('t',W/2,H-padB+20);
+  ctx.save();
+  ctx.translate(14,H/2);ctx.rotate(-Math.PI/2);
+  ctx.textBaseline='middle';
+  ctx.fillText('M\u209C',0,0);
+  ctx.restore();
+
+  function plot(p,color,w){
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=w;
+    for(let i=0;i<N;i++){const x=xs(i),y=ys(p[i]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.stroke();
+  }
+  for(let j=0;j<M-1;j++) plot(paths[j],'#E8B4BD',1);
+  plot(paths[M-1],'#9E1B32',1.8);
+}
+
+document.getElementById('btnRedraw').addEventListener('click',draw);
+draw();
+</script>
+</body>
+</html>

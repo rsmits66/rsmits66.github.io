@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Least Squares · MLE · MAP — A Prior on the Intercept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,9..144,400;9..144,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3eede;
+    --paper-2:#fbf8ef;
+    --paper-3:#fffdf7;
+    --ink:#221c15;
+    --ink-soft:#5f5648;
+    --ink-faint:#8c8270;
+    --crimson:#9e1b32;
+    --crimson-deep:#7a1426;
+    --green:#2e7d4f;
+    --violet:#6a4aa3;
+    --line:#ddd3ba;
+    --line-soft:#e8e0cc;
+    --shadow:18px 22px 48px -28px rgba(60,40,18,.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--paper);}
+  body{
+    font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(rgba(158,27,50,.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(158,27,50,.035) 1px,transparent 1px);
+    background-size:30px 30px;
+    background-position:-1px -1px;
+  }
+  .wrap{max-width:1140px;margin:0 auto;padding:54px 26px 80px;}
+
+  /* ---------- entrance ---------- */
+  .reveal{opacity:0;transform:translateY(16px);animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- header ---------- */
+  header{margin-bottom:38px;}
+  .kicker{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--crimson);font-weight:500;
+  }
+  .kicker::before{content:"";display:inline-block;width:26px;height:1px;
+    background:var(--crimson);vertical-align:middle;margin-right:12px;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(2.5rem,6vw,4.1rem);
+    line-height:1.02;
+    letter-spacing:-.015em;
+    margin:.32em 0 .12em;
+  }
+  h1 em{font-style:italic;color:var(--crimson);font-weight:500;}
+  .lede{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+    font-size:clamp(1.05rem,2.4vw,1.4rem);
+    color:var(--ink-soft);max-width:42ch;
+  }
+
+  /* ---------- generic card ---------- */
+  .card{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:3px;
+    box-shadow:var(--shadow);
+  }
+  section{margin-top:34px;}
+  .sec-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:13px;display:flex;align-items:center;gap:12px;
+  }
+  .sec-label::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  /* ---------- setup / math ---------- */
+  .setup{padding:30px 30px 12px;}
+  .setup p.intro{max-width:74ch;color:var(--ink-soft);font-size:15px;margin-bottom:22px;}
+  .setup p.intro b{color:var(--ink);font-weight:600;}
+  .est-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .est{background:var(--paper-3);padding:20px 20px 22px;}
+  .est .tag{
+    display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    font-weight:600;letter-spacing:.08em;padding:3px 9px;border-radius:2px;margin-bottom:11px;
+  }
+  .est.lsq .tag{background:rgba(158,27,50,.12);color:var(--crimson-deep);}
+  .est.mle .tag{background:rgba(46,125,79,.14);color:var(--green);}
+  .est.map .tag{background:rgba(106,74,163,.14);color:var(--violet);}
+  .est h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.18rem;margin-bottom:7px;}
+  .est p{font-size:13.5px;color:var(--ink-soft);}
+  .est .formula{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line-soft);border-left:3px solid currentColor;
+    padding:9px 11px;border-radius:2px;margin:11px 0;line-height:1.5;overflow-x:auto;
+  }
+  .est.lsq .formula{border-left-color:var(--crimson);}
+  .est.mle .formula{border-left-color:var(--green);}
+  .est.map .formula{border-left-color:var(--violet);}
+  .formula sub,.formula sup{font-size:.72em;}
+  .eq-badge{
+    margin:20px 0 8px;padding:11px 16px;font-size:13.5px;
+    background:rgba(46,125,79,.09);border:1px dashed rgba(46,125,79,.5);border-radius:3px;
+    color:var(--ink);
+  }
+  .eq-badge b{color:var(--green);font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- tool ---------- */
+  .tool{display:grid;grid-template-columns:296px 1fr;gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .panel{background:var(--paper-3);padding:24px 22px;}
+  .figure{background:var(--paper-3);padding:20px 20px 16px;}
+  .panel h2{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:600;margin-bottom:4px;}
+  .panel .hint{font-size:12px;color:var(--ink-faint);margin-bottom:20px;}
+
+  .control{margin-bottom:21px;}
+  .control .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;}
+  .control label{font-size:13px;font-weight:500;color:var(--ink);}
+  .control .val{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;
+    color:var(--crimson-deep);background:var(--paper);padding:2px 8px;border-radius:2px;
+    border:1px solid var(--line-soft);
+  }
+  .control .sub{font-size:11px;color:var(--ink-faint);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
+
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:3px;background:var(--line);border-radius:3px;
+  }
+  input[type=range]::-moz-range-track{height:3px;background:var(--line);border-radius:3px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:17px;height:17px;border-radius:50%;
+    background:var(--crimson);border:3px solid var(--paper-3);
+    box-shadow:0 0 0 1px var(--crimson);margin-top:-7.5px;transition:transform .12s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.18);}
+  input[type=range]::-moz-range-thumb{
+    width:14px;height:14px;border-radius:50%;background:var(--crimson);
+    border:3px solid var(--paper-3);box-shadow:0 0 0 1px var(--crimson);
+  }
+
+  .btn{
+    width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper-2);border:none;border-radius:3px;
+    padding:13px;cursor:pointer;transition:background .15s,transform .08s;
+  }
+  .btn:hover{background:var(--crimson);}
+  .btn:active{transform:translateY(1px);}
+  .btn span{display:inline-block;margin-right:7px;}
+
+  .figure-cap{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;margin-bottom:3px;}
+  .figure-note{font-size:12px;color:var(--ink-faint);margin-bottom:12px;}
+  canvas{display:block;width:100%;}
+  .readout{
+    margin-top:14px;font-size:13px;color:var(--ink-soft);
+    background:var(--paper);border:1px solid var(--line-soft);border-radius:3px;padding:11px 13px;
+  }
+  .readout b{color:var(--ink);}
+  .readout .crim{color:var(--crimson-deep);font-weight:600;}
+  .readout .vio{color:var(--violet);font-weight:600;}
+
+  /* ---------- secondary row ---------- */
+  .secondary{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .subcard{padding:22px 22px 24px;}
+  .subcard h2{font-family:'Fraunces',serif;font-size:1.12rem;font-weight:600;margin-bottom:14px;}
+  table.est-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;}
+  table.est-table th,table.est-table td{
+    text-align:right;padding:9px 8px;font-size:13px;border-bottom:1px solid var(--line-soft);
+  }
+  table.est-table th{
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);
+    font-weight:600;border-bottom:1px solid var(--line);
+  }
+  table.est-table td:first-child,table.est-table th:first-child{text-align:left;}
+  table.est-table .name{font-family:'IBM Plex Sans',sans-serif;font-weight:500;}
+  table.est-table tr.r-true td{color:var(--green);}
+  table.est-table tr.r-lsq td{color:var(--crimson-deep);}
+  table.est-table tr.r-map td{color:var(--violet);}
+  table.est-table tr.r-mle td{color:var(--ink-soft);}
+  table.est-table .dot{display:inline-block;width:9px;height:9px;border-radius:50%;
+    margin-right:7px;vertical-align:middle;}
+  .tbl-foot{font-size:12.5px;color:var(--ink-soft);margin-top:13px;line-height:1.55;}
+  .tbl-foot .pill{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:1px 6px;
+    border-radius:2px;background:rgba(46,125,79,.13);color:var(--green);font-weight:600;}
+
+  /* ---------- prior toggle ---------- */
+  .segmented{display:flex;background:var(--paper);border:1px solid var(--line-soft);
+    border-radius:3px;padding:3px;gap:3px;margin-top:2px;}
+  .segmented button{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+    font-weight:600;letter-spacing:.03em;border:none;background:transparent;color:var(--ink-faint);
+    padding:9px 6px;border-radius:2px;cursor:pointer;transition:background .15s,color .15s;}
+  .segmented button.active{background:var(--crimson);color:var(--paper-2);}
+  .segmented button:not(.active):hover{color:var(--ink);background:rgba(158,27,50,.07);}
+
+  /* ---------- choosing-the-prior cards ---------- */
+  .section-intro{max-width:78ch;color:var(--ink-soft);font-size:14.5px;margin-bottom:15px;}
+  .duo-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .pcard{background:var(--paper-2);padding:24px 24px 22px;position:relative;
+    transition:background .2s,box-shadow .2s;}
+  .pcard.sel{background:var(--paper-3);box-shadow:inset 0 0 0 2.5px var(--crimson);}
+  .pcard-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;}
+  .tag.tg-v{background:rgba(106,74,163,.14);color:var(--violet);}
+  .useflag{display:none;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--crimson);}
+  .useflag::before{content:"\25CF";margin-right:5px;font-size:8px;vertical-align:middle;}
+  .pcard.sel .useflag{display:inline-block;}
+  .pcard h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.14rem;margin-bottom:4px;}
+  .pcard p{font-size:13.5px;color:var(--ink-soft);}
+  .pcard .formula{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line-soft);border-left:3px solid var(--violet);
+    padding:9px 11px;border-radius:2px;margin:11px 0;line-height:1.5;overflow-x:auto;
+  }
+  .pcard .formula sub,.pcard .formula sup{font-size:.72em;}
+  .map-tag{font-style:italic;font-weight:400;color:var(--ink-faint);font-size:.86em;}
+
+  /* ---------- notes ---------- */
+  .notes{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .note{background:var(--paper-2);padding:22px 22px;}
+  .note .n{font-family:'Fraunces',serif;font-style:italic;font-size:1.5rem;color:var(--crimson);
+    line-height:1;}
+  .note h3{font-family:'Fraunces',serif;font-size:1.08rem;font-weight:600;margin:8px 0 6px;}
+  .note p{font-size:13.5px;color:var(--ink-soft);}
+  .note p code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--paper);
+    padding:1px 5px;border-radius:2px;color:var(--ink);}
+
+  footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+
+  @media (max-width:820px){
+    .est-grid,.duo-grid,.tool,.secondary,.notes{grid-template-columns:1fr;}
+    .tool{border:none;}.panel,.figure{border:1px solid var(--line);border-radius:3px;}
+    .secondary{gap:24px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HEADER ============ -->
+  <header class="reveal" style="animation-delay:.05s">
+    <div class="kicker">Math 452 · Bayesian Regression</div>
+    <h1>Three ways to<br>fit <em>one line</em>.</h1>
+    <p class="lede">Least squares, maximum likelihood, and maximum&nbsp;a&nbsp;posteriori — and a prior on the intercept, Gaussian or Laplace, that quietly separates them.</p>
+  </header>
+
+  <!-- ============ SETUP / MATH ============ -->
+  <section class="reveal" style="animation-delay:.16s">
+    <div class="sec-label">The setup</div>
+    <div class="card setup">
+      <p class="intro">
+        We fit a straight line <b>y = a·x + b</b> to noisy data, where the noise is Gaussian:
+        <b>y<sub>i</sub> = a·x<sub>i</sub> + b + ε<sub>i</sub></b>, &nbsp;ε<sub>i</sub> ~ N(0,&nbsp;σ²).
+        All three methods estimate the slope <b>a</b> and intercept <b>b</b> — but only one of them
+        is told anything <em>before</em> seeing the data. Here that belief is a prior placed
+        <b>only on the intercept</b>, symmetric about zero — and you may choose its shape:
+        a <b>Gaussian</b> or a <b>Laplace</b>.
+      </p>
+
+      <div class="est-grid">
+        <div class="est lsq">
+          <span class="tag">LEAST SQUARES</span>
+          <h3>Minimize the misfit</h3>
+          <div class="formula">min<sub>a,b</sub> &nbsp;Σ<sub>i</sub> (y<sub>i</sub> − a·x<sub>i</sub> − b)<sup>2</sup></div>
+          <p>Pick the line whose vertical residuals have the smallest total square. No probabilities, no assumptions — just geometry.</p>
+        </div>
+        <div class="est mle">
+          <span class="tag">MAXIMUM LIKELIHOOD</span>
+          <h3>Most probable data</h3>
+          <div class="formula">max<sub>a,b</sub> &nbsp;Π<sub>i</sub> N(y<sub>i</sub>;&nbsp;a·x<sub>i</sub>+b,&nbsp;σ²)</div>
+          <p>With Gaussian noise the log-likelihood is just −RSS⁄(2σ²). Maximizing it <em>is</em> minimizing the sum of squares.</p>
+        </div>
+        <div class="est map">
+          <span class="tag">MAXIMUM A POSTERIORI</span>
+          <h3>Belief meets data</h3>
+          <div class="formula">min<sub>a,b</sub> &nbsp;RSS &nbsp;+&nbsp; λ·P(b)</div>
+          <p>A prior on the intercept adds a penalty P(b), pulling b toward 0. Its shape depends on the prior — <b>b²</b> for a Gaussian, <b>|b|</b> for a Laplace. The slope is left unpenalized.</p>
+        </div>
+      </div>
+
+      <div class="eq-badge">
+        Because the noise is Gaussian, <b>maximum likelihood and least squares return the
+        identical line</b> — they are the same estimator wearing two names. The genuine contrast
+        in this lecture is between that line and the <span style="color:var(--violet);font-weight:600;font-family:'IBM Plex Mono',monospace">MAP</span> line.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHOOSING THE PRIOR ============ -->
+  <section class="reveal" style="animation-delay:.27s">
+    <div class="sec-label">Choosing the prior</div>
+    <p class="section-intro">
+      Both priors are symmetric about 0 — both say <em>“the intercept is probably small.”</em>
+      But their shapes differ, and so do the penalties they hand to the MAP objective. This is the
+      ridge-versus-lasso contrast, now acting on a single coefficient. Pick one with the toggle in
+      the experiment below.
+    </p>
+    <div class="duo-grid">
+      <div class="pcard" id="pc-gauss">
+        <div class="pcard-head">
+          <span class="tag tg-v">GAUSSIAN PRIOR</span>
+          <span class="useflag">in use</span>
+        </div>
+        <h3>Smooth shrinkage — the ridge penalty</h3>
+        <div class="formula">g(b) ∝ exp( −b<sup>2</sup> ⁄ 2σ<sub>b</sub><sup>2</sup> ) &nbsp;⟹&nbsp; penalty&nbsp; λ·b<sup>2</sup>, &nbsp; λ = σ²⁄σ<sub>b</sub><sup>2</sup></div>
+        <p>A round, smooth bowl. The MAP intercept is pulled <em>proportionally</em> toward 0 — shrunk, but never landing exactly on it. The ridge-style penalty.</p>
+      </div>
+      <div class="pcard" id="pc-lap">
+        <div class="pcard-head">
+          <span class="tag tg-v">LAPLACE PRIOR</span>
+          <span class="useflag">in use</span>
+        </div>
+        <h3>Soft-thresholding — the lasso penalty</h3>
+        <div class="formula">g(b) ∝ exp( −|b| ⁄ c ) &nbsp;⟹&nbsp; penalty&nbsp; λ·|b|, &nbsp; λ = 2σ²⁄c</div>
+        <p>A sharp peak at 0. The MAP intercept is <em>soft-thresholded</em>: &nbsp;b̂ = sign(b̂<sub>LSQ</sub>)·max( |b̂<sub>LSQ</sub>| − λ⁄2A, &nbsp;0 ). Weak enough data ⟹ b is set <b>exactly to 0</b>. The lasso-style penalty.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INTERACTIVE TOOL ============ -->
+  <section class="reveal" style="animation-delay:.38s">
+    <div class="sec-label">The experiment</div>
+    <div class="tool">
+
+      <!-- controls -->
+      <div class="panel">
+        <h2>Controls</h2>
+        <p class="hint">A different dataset than the lecture's worked example — regenerate it freely.</p>
+
+        <div class="control">
+          <div class="row"><label>Prior on the intercept</label></div>
+          <div class="segmented" id="prior-type">
+            <button type="button" data-type="gaussian" class="active">Gaussian</button>
+            <button type="button" data-type="laplace">Laplace</button>
+          </div>
+          <div class="sub" id="sub-type">Gaussian → quadratic penalty λ·b²  (ridge-style)</div>
+        </div>
+
+        <div class="control">
+          <div class="row">
+            <label for="s-prior">Prior strength on intercept</label>
+            <span class="val" id="v-prior">1.00</span>
+          </div>
+          <input type="range" id="s-prior" min="0" max="1" step="0.001" value="0.5">
+          <div class="sub" id="sub-prior">σ_b = 1.00 &nbsp;→&nbsp; λ = σ²/σ_b² = 2.56</div>
+        </div>
+
+        <div class="control">
+          <div class="row">
+            <label for="s-trueb">True intercept&nbsp; b</label>
+            <span class="val" id="v-trueb">2.00</span>
+          </div>
+          <input type="range" id="s-trueb" min="-5" max="5" step="0.25" value="2">
+          <div class="sub">The prior assumes b ≈ 0 — slide this to test that belief.</div>
+        </div>
+
+        <div class="control">
+          <div class="row">
+            <label for="s-noise">Noise level&nbsp; σ</label>
+            <span class="val" id="v-noise">1.60</span>
+          </div>
+          <input type="range" id="s-noise" min="0.3" max="4" step="0.1" value="1.6">
+          <div class="sub">Standard deviation of the Gaussian errors.</div>
+        </div>
+
+        <div class="control">
+          <div class="row">
+            <label for="s-n">Sample size&nbsp; n</label>
+            <span class="val" id="v-n">14</span>
+          </div>
+          <input type="range" id="s-n" min="5" max="60" step="1" value="14">
+          <div class="sub">Fewer points → the prior carries more weight.</div>
+        </div>
+
+        <button class="btn" id="regen"><span>⟳</span>Regenerate sample</button>
+      </div>
+
+      <!-- main figure -->
+      <div class="figure">
+        <div class="figure-cap">Fitted lines on a shared dataset</div>
+        <div class="figure-note">True slope a = 0.80 (fixed). Least squares and MLE coincide — one crimson line.</div>
+        <canvas id="plot"></canvas>
+        <div class="readout" id="readout"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ SECONDARY: TABLE + PRIOR ============ -->
+  <section class="reveal" style="animation-delay:.49s">
+    <div class="sec-label">Estimates &amp; the prior</div>
+    <div class="secondary">
+
+      <div class="card subcard">
+        <h2>What each method estimates</h2>
+        <table class="est-table">
+          <thead>
+            <tr><th>Method</th><th>slope&nbsp;a</th><th>intercept&nbsp;b</th><th>|b − b<sub>true</sub>|</th></tr>
+          </thead>
+          <tbody>
+            <tr class="r-true"><td class="name"><span class="dot" style="background:var(--green)"></span>True values</td><td id="t-a-true">0.800</td><td id="t-b-true">2.000</td><td>—</td></tr>
+            <tr class="r-lsq"><td class="name"><span class="dot" style="background:var(--crimson)"></span>Least Squares</td><td id="t-a-lsq">—</td><td id="t-b-lsq">—</td><td id="t-e-lsq">—</td></tr>
+            <tr class="r-mle"><td class="name"><span class="dot" style="background:#bdb6a4"></span>Maximum Likelihood</td><td id="t-a-mle">—</td><td id="t-b-mle">—</td><td id="t-e-mle">—</td></tr>
+            <tr class="r-map"><td class="name"><span class="dot" style="background:var(--violet)"></span>Maximum a Posteriori <span class="map-tag" id="map-tag">· Gaussian</span></td><td id="t-a-map">—</td><td id="t-b-map">—</td><td id="t-e-map">—</td></tr>
+          </tbody>
+        </table>
+        <p class="tbl-foot">
+          The <span class="pill">MLE = LSQ</span> rows are numerically identical by construction.
+          <span id="verdict"></span>
+        </p>
+      </div>
+
+      <div class="card subcard">
+        <h2>The prior on the intercept</h2>
+        <canvas id="prior"></canvas>
+        <p class="tbl-foot" style="margin-top:14px;" id="prior-caption"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ NOTES ============ -->
+  <section class="reveal" style="animation-delay:.60s">
+    <div class="sec-label">What to notice</div>
+    <div class="notes">
+      <div class="note">
+        <div class="n">i.</div>
+        <h3>MLE is least squares in disguise</h3>
+        <p>Gaussian noise makes the log-likelihood a negative multiple of the residual sum of squares. The two objectives have the same minimizer, so the orange MLE line lies exactly under the crimson one.</p>
+      </div>
+      <div class="note">
+        <div class="n">ii.</div>
+        <h3>The prior is a single penalty term</h3>
+        <p>A prior on <code>b</code> adds exactly one term to the objective: <code>λ·b²</code> for a Gaussian, <code>λ·|b|</code> for a Laplace. Only the intercept is shrunk — the slope keeps a flat prior and moves freely.</p>
+      </div>
+      <div class="note">
+        <div class="n">iii.</div>
+        <h3>Gaussian shrinks; Laplace selects</h3>
+        <p>Toggle the prior. The Gaussian bowl shrinks <code>b</code> smoothly and proportionally — never to exactly 0. The Laplace peak <em>soft-thresholds</em> it and can set the intercept <b>exactly to 0</b>, pinning the line through the origin. This is the ridge-versus-lasso contrast.</p>
+      </div>
+      <div class="note">
+        <div class="n">iv.</div>
+        <h3>It helps when the belief is true</h3>
+        <p>When the true intercept sits near 0, either prior trims error from a noisy fit. Push <em>true intercept</em> far from 0 and the same prior becomes a bias. Widen <em>prior strength</em> until λ→0 and every method collapses back onto least squares.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>LSQ &amp; MLE &mdash; normal equations · MAP &mdash; Gaussian (ridge) or Laplace (lasso) penalty on b</span>
+    <span>Interactive companion · Bayesian Linear Regression</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- constants ---------------- */
+  var TRUE_A = 0.80;     // fixed true slope
+  var XMAX   = 10;       // x drawn uniformly on [0, XMAX]
+  var PRIOR_MIN = 0.05, PRIOR_MAX = 20;   // range of sigma_b (log scale)
+
+  /* ---------------- state ---------------- */
+  var state = { priorT:0.5, priorType:'gaussian', trueB:2.0, noise:1.6, n:14, seed:20260519 };
+  var data  = { xs:[], ys:[] };
+
+  /* ---------------- seeded RNG ---------------- */
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function gaussMaker(rand){
+    var spare = null;
+    return function(){
+      if(spare !== null){ var s = spare; spare = null; return s; }
+      var u,v,r;
+      do{ u = rand()*2-1; v = rand()*2-1; r = u*u+v*v; } while(r>=1 || r===0);
+      var m = Math.sqrt(-2*Math.log(r)/r);
+      spare = v*m; return u*m;
+    };
+  }
+
+  /* ---------------- helpers ---------------- */
+  // both priors share the same standard deviation, set by the slider
+  function priorSD(){ return PRIOR_MIN * Math.pow(PRIOR_MAX/PRIOR_MIN, state.priorT); }
+  function lapScale(){ return priorSD()/Math.SQRT2; }            // Laplace scale c  (Var = 2c^2)
+  function lambdaGauss(){ var s=priorSD(); return (state.noise*state.noise)/(s*s); }
+  function lambdaLaplace(){ return 2*state.noise*state.noise/lapScale(); }
+  function isLaplace(){ return state.priorType==='laplace'; }
+
+  function generateData(){
+    var rand = mulberry32(state.seed);
+    var g = gaussMaker(rand);
+    var xs = [], ys = [];
+    for(var i=0;i<state.n;i++){
+      var xi = rand()*XMAX;
+      var zi = g();
+      xs.push(xi);
+      ys.push(TRUE_A*xi + state.trueB + state.noise*zi);
+    }
+    data.xs = xs; data.ys = ys;
+  }
+
+  // closed-form fit of  min  RSS + lam*b^2   (lam = 0 gives ordinary least squares)
+  function fit(lam){
+    var xs = data.xs, ys = data.ys, n = xs.length;
+    var Sx=0,Sy=0,Sxx=0,Sxy=0;
+    for(var i=0;i<n;i++){
+      var x=xs[i], y=ys[i];
+      Sx+=x; Sy+=y; Sxx+=x*x; Sxy+=x*y;
+    }
+    var D = Sxx*(n+lam) - Sx*Sx;
+    var a = (Sxy*(n+lam) - Sx*Sy)/D;
+    var b = (Sxx*Sy - Sx*Sxy)/D;
+    return { a:a, b:b };
+  }
+
+  // closed-form MAP for a Laplace prior on b only:  min  RSS + lam*|b|.
+  // Profiling out the slope a leaves a 1-D soft-thresholding problem in b.
+  function fitLaplace(lam){
+    var xs=data.xs, ys=data.ys, n=xs.length;
+    var Sx=0,Sy=0,Sxx=0,Sxy=0,i;
+    for(i=0;i<n;i++){ var x=xs[i],y=ys[i]; Sx+=x;Sy+=y;Sxx+=x*x;Sxy+=x*y; }
+    var bOls=(Sxx*Sy-Sx*Sxy)/(Sxx*n-Sx*Sx);   // least-squares intercept
+    var A=n-Sx*Sx/Sxx;                          // curvature of profiled RSS in b  (>0)
+    var thr=lam/(2*A);                          // soft-threshold amount
+    var b=Math.sign(bOls)*Math.max(Math.abs(bOls)-thr,0);
+    var a=(Sxy-b*Sx)/Sxx;                       // optimal slope given b
+    return { a:a, b:b, thr:thr, bOls:bOls };
+  }
+
+  // the active MAP fit, chosen by the prior type
+  function mapFit(){
+    return isLaplace() ? fitLaplace(lambdaLaplace()) : fit(lambdaGauss());
+  }
+
+  function fmt(v,d){ d = d===undefined?3:d; return (v>=0?" ":"") + v.toFixed(d); }
+
+  /* ---------------- canvas plumbing ---------------- */
+  function prepCanvas(cv, cssW, cssH){
+    var dpr = window.devicePixelRatio || 1;
+    cv.width  = Math.round(cssW*dpr);
+    cv.height = Math.round(cssH*dpr);
+    cv.style.height = cssH + "px";
+    var ctx = cv.getContext("2d");
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return ctx;
+  }
+
+  /* ---------------- main plot ---------------- */
+  function drawPlot(){
+    var cv = document.getElementById("plot");
+    var cssW = cv.clientWidth || cv.parentNode.clientWidth;
+    var cssH = Math.max(300, Math.min(440, Math.round(cssW*0.64)));
+    var ctx = prepCanvas(cv, cssW, cssH);
+
+    var mL=52, mR=18, mT=18, mB=42;
+    var pw = cssW-mL-mR, ph = cssH-mT-mB;
+
+    // domains
+    var ymin=Infinity, ymax=-Infinity, i;
+    for(i=0;i<data.ys.length;i++){ if(data.ys[i]<ymin)ymin=data.ys[i]; if(data.ys[i]>ymax)ymax=data.ys[i]; }
+    var lsq=fit(0), map=mapFit();
+    // include line endpoints so no fitted line is clipped away
+    [0,XMAX].forEach(function(xx){
+      [TRUE_A*xx+state.trueB, lsq.a*xx+lsq.b, map.a*xx+map.b].forEach(function(yy){
+        if(yy<ymin)ymin=yy; if(yy>ymax)ymax=yy;
+      });
+    });
+    var pad=(ymax-ymin)*0.10 || 1; ymin-=pad; ymax+=pad;
+    var xmin=-0.3, xmax=XMAX+0.3;
+
+    function X(v){ return mL + (v-xmin)/(xmax-xmin)*pw; }
+    function Y(v){ return mT + (1-(v-ymin)/(ymax-ymin))*ph; }
+
+    ctx.clearRect(0,0,cssW,cssH);
+    // plot field
+    ctx.fillStyle="#fffdf7";
+    ctx.fillRect(mL,mT,pw,ph);
+
+    // gridlines + ticks
+    ctx.font="11px 'IBM Plex Mono', monospace";
+    ctx.strokeStyle="#ece3cd"; ctx.fillStyle="#8c8270"; ctx.lineWidth=1;
+    var gx; for(gx=0;gx<=XMAX;gx+=2){
+      var px=X(gx);
+      ctx.beginPath(); ctx.moveTo(px,mT); ctx.lineTo(px,mT+ph); ctx.stroke();
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      ctx.fillText(String(gx), px, mT+ph+8);
+    }
+    var ystep = niceStep((ymax-ymin)/5);
+    var gy=Math.ceil(ymin/ystep)*ystep;
+    for(; gy<=ymax; gy+=ystep){
+      var py=Y(gy);
+      ctx.beginPath(); ctx.moveTo(mL,py); ctx.lineTo(mL+pw,py); ctx.stroke();
+      ctx.textAlign="right"; ctx.textBaseline="middle";
+      ctx.fillText(gy.toFixed(ystep<1?1:0), mL-9, py);
+    }
+
+    // frame
+    ctx.strokeStyle="#cdc2a4"; ctx.lineWidth=1.2;
+    ctx.strokeRect(mL,mT,pw,ph);
+
+    // axis labels
+    ctx.fillStyle="#5f5648"; ctx.font="500 12px 'IBM Plex Sans', sans-serif";
+    ctx.textAlign="center"; ctx.textBaseline="top";
+    ctx.fillText("x", mL+pw/2, mT+ph+22);
+    ctx.save();
+    ctx.translate(15, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.textBaseline="bottom"; ctx.fillText("y",0,0);
+    ctx.restore();
+
+    // clip to plot field for lines
+    ctx.save();
+    ctx.beginPath(); ctx.rect(mL,mT,pw,ph); ctx.clip();
+
+    function line(a,b,color,width,dash){
+      ctx.strokeStyle=color; ctx.lineWidth=width;
+      ctx.setLineDash(dash||[]);
+      ctx.beginPath();
+      ctx.moveTo(X(xmin), Y(a*xmin+b));
+      ctx.lineTo(X(xmax), Y(a*xmax+b));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    line(TRUE_A, state.trueB, "#2e7d4f", 2, [7,5]);   // true
+    line(map.a, map.b, "#6a4aa3", 2.6);               // MAP
+    line(lsq.a, lsq.b, "#9e1b32", 2.6);               // LSQ = MLE
+
+    // data points
+    for(i=0;i<data.xs.length;i++){
+      ctx.beginPath();
+      ctx.arc(X(data.xs[i]), Y(data.ys[i]), 4.1, 0, 6.2832);
+      ctx.fillStyle="#2b2419"; ctx.fill();
+      ctx.lineWidth=1.4; ctx.strokeStyle="#fffdf7"; ctx.stroke();
+    }
+    ctx.restore();
+
+    // legend
+    var lx=mL+13, ly=mT+13, lw=190, lh=86;
+    ctx.fillStyle="rgba(255,253,247,.92)";
+    ctx.strokeStyle="#d8cfba"; ctx.lineWidth=1;
+    ctx.fillRect(lx,ly,lw,lh); ctx.strokeRect(lx,ly,lw,lh);
+    var items=[
+      {c:"#2b2419", t:"Data points", dot:true},
+      {c:"#2e7d4f", t:"True line", dash:true},
+      {c:"#9e1b32", t:"Least Squares = MLE"},
+      {c:"#6a4aa3", t:"MAP \u2014 "+(isLaplace()?"Laplace prior":"Gaussian prior")}
+    ];
+    ctx.font="11.5px 'IBM Plex Sans', sans-serif"; ctx.textAlign="left"; ctx.textBaseline="middle";
+    items.forEach(function(it,k){
+      var yy=ly+16+k*18;
+      if(it.dot){
+        ctx.beginPath(); ctx.arc(lx+15,yy,4,0,6.2832);
+        ctx.fillStyle=it.c; ctx.fill();
+        ctx.lineWidth=1.2; ctx.strokeStyle="#fffdf7"; ctx.stroke();
+      } else {
+        ctx.strokeStyle=it.c; ctx.lineWidth=2.6;
+        ctx.setLineDash(it.dash?[6,4]:[]);
+        ctx.beginPath(); ctx.moveTo(lx+8,yy); ctx.lineTo(lx+24,yy); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.fillStyle="#221c15";
+      ctx.fillText(it.t, lx+32, yy);
+    });
+  }
+
+  function niceStep(raw){
+    var p=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10));
+    var r=raw/p;
+    var m = r<1.5?1 : r<3?2 : r<7?5 : 10;
+    return m*p;
+  }
+
+  /* ---------------- prior plot ---------------- */
+  function drawPrior(){
+    var cv=document.getElementById("prior");
+    var cssW=cv.clientWidth || cv.parentNode.clientWidth;
+    var cssH=210;
+    var ctx=prepCanvas(cv,cssW,cssH);
+
+    var mL=14,mR=14,mT=14,mB=34;
+    var pw=cssW-mL-mR, ph=cssH-mT-mB;
+
+    var lsq=fit(0), map=mapFit();
+    var sd=priorSD();
+    var bR=Math.max(6, Math.abs(lsq.b)+1.6, Math.abs(state.trueB)+1.6);
+
+    function X(v){ return mL + (v+bR)/(2*bR)*pw; }
+
+    ctx.clearRect(0,0,cssW,cssH);
+    ctx.fillStyle="#fffdf7"; ctx.fillRect(mL,mT,pw,ph);
+
+    // baseline + zero axis
+    var base=mT+ph;
+    ctx.strokeStyle="#cdc2a4"; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(mL,base); ctx.lineTo(mL+pw,base); ctx.stroke();
+
+    // ticks
+    ctx.font="10.5px 'IBM Plex Mono', monospace";
+    ctx.fillStyle="#8c8270"; ctx.strokeStyle="#ece3cd";
+    var t; for(t=-Math.floor(bR);t<=Math.floor(bR);t+=2){
+      var px=X(t);
+      ctx.beginPath(); ctx.moveTo(px,mT); ctx.lineTo(px,base); ctx.lineWidth=1; ctx.stroke();
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      ctx.fillStyle="#8c8270"; ctx.fillText(String(t),px,base+7);
+    }
+
+    // prior density, peak normalised to 1:
+    //   Gaussian bell  exp(-b^2 / 2 sd^2)   vs   Laplace peak  exp(-|b| / c)
+    var cL=lapScale(), lap=isLaplace();
+    function dens(z){
+      return lap ? Math.exp(-Math.abs(z)/cL) : Math.exp(-(z*z)/(2*sd*sd));
+    }
+    var steps=240, j, gx;
+    // fill
+    ctx.beginPath();
+    for(j=0;j<=steps;j++){
+      gx=-bR + (2*bR)*j/steps;
+      var px2=X(gx), py2=base-dens(gx)*(ph-6);
+      if(j===0) ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+    }
+    ctx.lineTo(X(bR),base); ctx.lineTo(X(-bR),base); ctx.closePath();
+    ctx.fillStyle="rgba(106,74,163,.12)"; ctx.fill();
+    // stroke curve
+    ctx.beginPath();
+    for(j=0;j<=steps;j++){
+      gx=-bR + (2*bR)*j/steps;
+      var qx=X(gx), qy=base-dens(gx)*(ph-6);
+      if(j===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+    }
+    ctx.strokeStyle="#6a4aa3"; ctx.lineWidth=2; ctx.stroke();
+
+    // vertical markers — staggered heights so close values never collide
+    function mark(val,color,label,row){
+      var px=X(val);
+      if(px<mL+2)px=mL+2; if(px>mL+pw-2)px=mL+pw-2;
+      var yy=mT+11+row*15;
+      ctx.strokeStyle=color; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(px,yy); ctx.lineTo(px,base); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(px,yy,3.4,0,6.2832); ctx.fillStyle=color; ctx.fill();
+      ctx.font="600 10px 'IBM Plex Mono', monospace";
+      ctx.fillStyle=color;
+      var side = px > mL+pw*0.62 ? -1 : 1;
+      ctx.textAlign = side<0 ? "right":"left";
+      ctx.textBaseline="middle";
+      ctx.fillText(label+" "+val.toFixed(2), px + (side<0?-7:7), yy);
+    }
+    mark(state.trueB,"#2e7d4f","true",0);
+    mark(lsq.b,"#9e1b32","LSQ",1);
+    mark(map.b,"#6a4aa3","MAP",2);
+
+    // caption
+    ctx.font="500 11px 'IBM Plex Sans', sans-serif";
+    ctx.fillStyle="#5f5648"; ctx.textAlign="center"; ctx.textBaseline="top";
+    ctx.fillText("intercept  b", mL+pw/2, base+20);
+  }
+
+  /* ---------------- readouts ---------------- */
+  function updateReadouts(){
+    var lsq=fit(0), map=mapFit(), sd=priorSD(), lap=isLaplace();
+    var lam = lap ? lambdaLaplace() : lambdaGauss();
+
+    // --- controls ---
+    document.getElementById("v-prior").textContent = sd.toFixed(2);
+    if(lap){
+      document.getElementById("sub-prior").textContent =
+        "scale c = "+lapScale().toFixed(2)+"  \u2192  \u03BB = 2\u03C3\u00B2/c = "+lam.toFixed(2);
+      document.getElementById("sub-type").textContent =
+        "Laplace \u2192 absolute-value penalty \u03BB\u00B7|b|  (lasso-style)";
+    } else {
+      document.getElementById("sub-prior").textContent =
+        "\u03C3_b = "+sd.toFixed(2)+"  \u2192  \u03BB = \u03C3\u00B2/\u03C3_b\u00B2 = "+lam.toFixed(2);
+      document.getElementById("sub-type").textContent =
+        "Gaussian \u2192 quadratic penalty \u03BB\u00B7b\u00B2  (ridge-style)";
+    }
+    document.getElementById("v-trueb").textContent = state.trueB.toFixed(2);
+    document.getElementById("v-noise").textContent = state.noise.toFixed(2);
+    document.getElementById("v-n").textContent = state.n;
+
+    // --- prior-type selection state ---
+    var btns=document.querySelectorAll("#prior-type button");
+    Array.prototype.forEach.call(btns,function(btn){
+      btn.classList.toggle("active", btn.getAttribute("data-type")===state.priorType);
+    });
+    document.getElementById("map-tag").textContent = lap ? "\u00B7 Laplace" : "\u00B7 Gaussian";
+    var pg=document.getElementById("pc-gauss"), pl=document.getElementById("pc-lap");
+    if(pg) pg.classList.toggle("sel", !lap);
+    if(pl) pl.classList.toggle("sel", lap);
+
+    // --- table ---
+    function set(id,v){ document.getElementById(id).textContent=v; }
+    set("t-a-true", TRUE_A.toFixed(3)); set("t-b-true", state.trueB.toFixed(3));
+    set("t-a-lsq", lsq.a.toFixed(3));   set("t-b-lsq", lsq.b.toFixed(3));
+    set("t-a-mle", lsq.a.toFixed(3));   set("t-b-mle", lsq.b.toFixed(3));
+    set("t-a-map", map.a.toFixed(3));   set("t-b-map", map.b.toFixed(3));
+    var eL=Math.abs(lsq.b-state.trueB), eM=Math.abs(map.b-state.trueB);
+    set("t-e-lsq", eL.toFixed(3)); set("t-e-mle", eL.toFixed(3));
+    set("t-e-map", eM.toFixed(3));
+
+    // --- verdict ---
+    var verdict=document.getElementById("verdict");
+    if(Math.abs(eL-eM)<1e-3){
+      verdict.innerHTML=" With this prior the intercept estimates essentially agree.";
+    } else if(eM<eL){
+      verdict.innerHTML=" Here the prior <b>helps</b>: MAP's intercept is closer to the truth "+
+        "("+eM.toFixed(3)+" vs "+eL.toFixed(3)+").";
+    } else {
+      verdict.innerHTML=" Here the prior <b>hurts</b>: it biases MAP away from the true intercept "+
+        "("+eM.toFixed(3)+" vs "+eL.toFixed(3)+").";
+    }
+
+    // --- prior-panel caption ---
+    var pcap=document.getElementById("prior-caption");
+    if(lap){
+      pcap.innerHTML="The curve is <b>b ~ Laplace(0,&nbsp;c)</b> — a sharp peak at 0. "+
+        "That kink lets MAP <em>soft-threshold</em> the intercept: once the data signal is weak "+
+        "enough, b is set <b>exactly to 0</b> — a line through the origin.";
+    } else {
+      pcap.innerHTML="The curve is <b>b ~ N(0,&nbsp;\u03C3<sub>b</sub><sup>2</sup>)</b> — a smooth bell. "+
+        "MAP slides the intercept from the least-squares mark <em>proportionally</em> toward 0, "+
+        "but never quite reaches it.";
+    }
+
+    // --- figure readout ---
+    var ro=document.getElementById("readout");
+    if(lap){
+      var thr=map.thr;
+      if(map.b===0){
+        ro.innerHTML=
+          "Least squares &amp; MLE give <span class='crim'>b = "+lsq.b.toFixed(3)+"</span>. "+
+          "The Laplace prior soft-thresholds the intercept by \u03BB/2A = "+thr.toFixed(3)+
+          " — enough to drive it <span class='vio'>exactly to b = 0</span>. "+
+          "The MAP line is pinned through the origin, and the slope absorbs the shift "+
+          "("+lsq.a.toFixed(3)+" \u2192 "+map.a.toFixed(3)+").";
+      } else {
+        ro.innerHTML=
+          "Least squares &amp; MLE give <span class='crim'>b = "+lsq.b.toFixed(3)+"</span>. "+
+          "The Laplace prior soft-thresholds it toward 0 by \u03BB/2A = "+thr.toFixed(3)+", to "+
+          "<span class='vio'>b = "+map.b.toFixed(3)+"</span>. "+
+          "Strengthen the prior a little more and the intercept snaps to exactly 0.";
+      }
+    } else {
+      var pull = lsq.b!==0 ? (1-map.b/lsq.b)*100 : 0;
+      ro.innerHTML=
+        "Least squares &amp; MLE give <span class='crim'>b = "+lsq.b.toFixed(3)+"</span>. "+
+        "The Gaussian prior shrinks the intercept <b>"+Math.abs(pull).toFixed(0)+"%</b> "+
+        "of the way toward 0, to <span class='vio'>b = "+map.b.toFixed(3)+"</span>. "+
+        "The slope barely moves ("+lsq.a.toFixed(3)+" \u2192 "+map.a.toFixed(3)+"); "+
+        "no prior constrains it.";
+    }
+  }
+
+  /* ---------------- orchestration ---------------- */
+  function recompute(){ generateData(); }
+  function redraw(){ drawPlot(); drawPrior(); updateReadouts(); }
+  function refresh(){ recompute(); redraw(); }
+
+  /* ---------------- wiring ---------------- */
+  document.getElementById("s-prior").addEventListener("input",function(e){
+    state.priorT=parseFloat(e.target.value); redraw();   // prior change: data unchanged
+  });
+  document.getElementById("s-trueb").addEventListener("input",function(e){
+    state.trueB=parseFloat(e.target.value); refresh();
+  });
+  document.getElementById("s-noise").addEventListener("input",function(e){
+    state.noise=parseFloat(e.target.value); refresh();
+  });
+  document.getElementById("s-n").addEventListener("input",function(e){
+    state.n=parseInt(e.target.value,10); refresh();
+  });
+  document.getElementById("regen").addEventListener("click",function(){
+    state.seed=(state.seed*1664525+1013904223)>>>0; refresh();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("#prior-type button"),function(btn){
+    btn.addEventListener("click",function(){
+      state.priorType=btn.getAttribute("data-type");
+      redraw();   // prior type changed: data unchanged, only the MAP fit
+    });
+  });
+
+  var rt;
+  window.addEventListener("resize",function(){
+    clearTimeout(rt); rt=setTimeout(redraw,90);
+  });
+  window.addEventListener("load",redraw);
+
+  /* ---------------- start ---------------- */
+  refresh();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Regression Tree on Hitters &mdash; University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#C79900; --goldDk:#8E632A;
+  --crimson:#39275B; --crimson2:#2a1d44; --crimsonLt:#e8e3f0;
+  --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:30px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#c4bdd0;
+         letter-spacing:.07em;text-transform:uppercase;text-align:center;}
+.hdr-main{padding:.55rem 1.6rem .55rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.4rem;font-weight:700;}
+header .subtitle{color:#c4bdd0;font-style:italic;margin-top:.18rem;font-size:.84rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px 6px;
+          max-width:1160px;width:100%;}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:5px 14px;font-size:.88rem;border-radius:3px;
+       transition:all .15s;}
+button:hover:not(:disabled){background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover:not(:disabled){background:var(--crimson2);}
+button:disabled{opacity:.4;cursor:wait;}
+.phase-num{display:inline-block;background:var(--crimson);color:#fff;border-radius:50%;
+           width:24px;height:24px;font-size:.85rem;text-align:center;line-height:24px;
+           font-weight:600;margin-right:8px;font-family:'Playfair Display',Georgia,serif;}
+#desc{font-size:.88rem;color:var(--navy);font-style:italic;flex:1;min-width:280px;line-height:1.4;}
+
+.wrap{max-width:1160px;width:100%;padding:6px 16px 0;}
+.grid{display:grid;grid-template-columns:720px 1fr;gap:14px;margin-bottom:12px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.65rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:5px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;}
+.legend{font-size:.78rem;color:var(--muted);text-align:center;padding:3px 0 6px;
+        font-style:italic;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Regression Trees</div>
+  <div class="hdr-main">
+    <h1>Building a Regression Tree on the Hitters Data</h1>
+    <div class="subtitle">
+      Predicting log(Salary) from Years and Hits &ensp;&middot;&ensp;
+      reproducing ISLR Figures 8.1 and 8.2 step by step
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <button id="reset">Reset</button>
+  <button id="next" class="primary">Next step &#9654;</button>
+  <span id="desc"><span class="phase-num">0</span>The 263 players with non-missing salary in the 1986/87 Hitters data. Color shows log(Salary) &mdash; light gold = low pay, dark crimson = top of the market. Click <b>Next step</b> to begin.</span>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <div class="phdr">Hitters scatter &ensp;&middot;&ensp; Years (1&ndash;24) on x &ensp;&middot;&ensp; Hits (1&ndash;238) on y &ensp;&middot;&ensp; color = log(Salary)</div>
+      <canvas id="scatter" width="720" height="450"></canvas>
+    </div>
+    <div class="card">
+      <div class="phdr">Regression tree</div>
+      <canvas id="tree" width="412" height="450"></canvas>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="phdr">RSS as a function of Years split point s</div>
+      <canvas id="rssY" width="555" height="170"></canvas>
+    </div>
+    <div class="card">
+      <div class="phdr">RSS as a function of Hits split point s</div>
+      <canvas id="rssH" width="555" height="170"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+const data = [[14,81,6.163],[3,130,6.174],[11,141,6.215],[2,87,4.516],[11,169,6.620],[2,37,4.248],[3,73,4.605],[2,81,4.317],[13,92,7.003],[10,159,6.248],[9,53,6.239],[4,113,6.310],[6,60,6.551],[13,43,5.481],[15,158,6.653],[5,46,5.165],[8,32,4.905],[1,92,4.605],[1,109,4.745],[6,116,6.397],[18,168,6.655],[6,163,6.640],[7,73,6.563],[10,129,6.620],[5,152,6.438],[14,137,6.802],[3,108,4.700],[5,168,6.418],[7,49,5.704],[14,106,6.745],[2,60,4.500],[2,41,4.212],[4,46,5.193],[6,68,5.720],[3,132,5.371],[5,57,5.511],[6,146,6.703],[17,101,6.774],[2,53,4.248],[9,168,7.090],[12,101,6.515],[6,102,6.028],[4,58,5.829],[12,78,6.032],[6,177,7.208],[1,113,4.500],[16,44,5.617],[4,56,5.438],[4,53,5.416],[17,139,6.856],[3,53,4.317],[4,142,4.654],[17,81,5.768],[14,131,6.745],[18,122,6.282],[15,137,6.839],[9,119,6.745],[4,97,5.347],[6,103,5.784],[4,96,5.617],[15,70,6.109],[5,238,7.588],[11,163,7.550],[9,83,6.397],[14,174,6.949],[2,82,4.700],[16,41,5.561],[4,114,6.163],[5,83,6.067],[4,123,7.107],[1,78,4.248],[3,138,4.977],[12,119,6.389],[14,148,7.529],[3,115,5.704],[7,110,6.194],[10,151,7.808],[8,49,5.927],[14,154,6.620],[5,198,7.069],[1,51,4.248],[14,128,7.313],[5,76,5.953],[13,125,7.563],[3,152,5.371],[6,171,6.802],[4,118,5.043],[16,77,6.551],[9,94,6.282],[8,85,5.893],[15,96,6.598],[20,77,5.298],[5,139,5.991],[5,84,5.991],[11,126,6.603],[5,78,6.215],[8,120,6.397],[5,158,6.496],[7,169,6.856],[7,104,6.620],[5,54,5.695],[18,70,5.784],[4,99,4.472],[9,39,5.165],[3,40,4.500],[6,170,7.121],[15,103,6.064],[2,103,4.605],[2,144,5.106],[4,200,5.521],[12,55,7.170],[17,133,6.651],[6,132,6.916],[14,39,5.617],[5,183,6.653],[11,136,6.745],[15,70,5.900],[2,41,4.554],[1,86,4.700],[10,95,4.605],[10,147,5.626],[5,102,4.382],[13,94,6.397],[3,163,5.298],[6,174,6.488],[3,39,4.317],[13,200,7.788],[14,66,5.521],[3,76,5.043],[4,157,6.461],[6,92,5.704],[4,73,4.700],[13,91,6.715],[3,101,5.273],[11,47,6.109],[5,184,6.446],[1,58,4.460],[8,118,7.170],[14,150,6.908],[13,171,7.496],[6,147,7.178],[10,74,6.603],[4,161,6.438],[2,91,4.828],[9,159,6.950],[10,136,6.586],[7,85,5.704],[3,223,5.900],[1,64,4.317],[7,127,7.076],[2,127,5.311],[12,70,5.416],[15,141,6.263],[6,52,5.580],[7,149,6.669],[10,84,6.685],[13,128,6.376],[3,92,4.977],[10,157,6.040],[1,54,4.317],[5,179,6.354],[7,131,6.659],[2,56,4.500],[2,93,5.011],[13,148,6.551],[6,131,6.310],[9,65,6.477],[1,54,4.220],[3,71,4.605],[6,77,6.507],[3,120,5.165],[3,60,4.920],[2,1,7.663],[7,94,6.774],[3,43,4.787],[3,75,4.942],[4,167,5.347],[7,110,6.685],[4,76,5.481],[5,93,5.858],[2,137,5.165],[2,152,5.298],[9,144,7.570],[7,80,6.551],[4,163,6.620],[14,83,6.109],[1,135,5.147],[9,123,7.139],[24,52,6.620],[5,56,5.247],[6,154,6.363],[5,72,4.868],[12,77,6.109],[5,96,5.704],[12,56,5.521],[16,70,6.957],[3,108,5.371],[18,68,5.991],[9,110,6.328],[8,160,7.421],[20,101,6.189],[5,82,6.052],[11,145,6.215],[6,76,5.521],[12,52,5.991],[10,90,6.109],[9,135,6.620],[1,68,4.248],[7,119,6.774],[4,27,5.247],[6,68,5.252],[6,178,6.607],[4,86,5.521],[3,57,4.942],[1,101,4.580],[12,113,6.607],[1,149,4.942],[10,63,5.834],[13,163,6.908],[6,117,4.605],[3,66,4.500],[4,140,5.298],[2,112,4.905],[2,145,5.043],[6,159,6.163],[18,142,7.279],[4,96,5.011],[2,103,4.654],[4,122,5.858],[6,210,4.500],[8,169,6.273],[8,76,5.834],[6,152,6.846],[4,213,5.858],[8,103,5.789],[4,70,5.521],[5,211,6.607],[7,68,6.052],[8,141,6.830],[4,120,5.220],[1,4,6.824],[7,43,5.658],[6,47,5.501],[17,61,5.460],[7,147,7.048],[3,138,5.075],[5,113,6.052],[10,42,6.802],[19,32,6.215],[4,69,5.626],[7,112,6.620],[2,139,5.075],[6,186,7.170],[7,81,6.263],[7,124,6.310],[5,207,7.378],[1,117,4.787],[1,172,5.106],[5,127,6.551],[12,136,6.774],[6,126,5.953],[8,144,6.867],[11,170,6.908]];
+
+// ===== State =====
+let phase = 0;
+let animating = false;
+let scanDisplay = null;
+let yearsRSSCurve = null;
+let hitsRSSCurve = null;
+let rootSplit = null;
+let leftSplit = null;
+let rightSplit = null;
+
+// ===== Color scale =====
+let lMin = Infinity, lMax = -Infinity;
+for (const d of data) {
+  if (d[2] < lMin) lMin = d[2];
+  if (d[2] > lMax) lMax = d[2];
+}
+function colorRGB(l) {
+  const t = (l - lMin) / (lMax - lMin);
+  const r = Math.round(245 + t * (57 - 245));
+  const g = Math.round(224 + t * (39 - 224));
+  const b = Math.round(168 + t * (91 - 168));
+  return [r, g, b];
+}
+function colorFor(l) {
+  const [r, g, b] = colorRGB(l);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function colorForA(l, a) {
+  const [r, g, b] = colorRGB(l);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+
+// ===== Bounds =====
+const Y_MIN = 0.5, Y_MAX = 24.5;
+const H_MIN = -8, H_MAX = 248;
+
+// ===== Canvases =====
+const cS = document.getElementById('scatter'), ctxS = cS.getContext('2d');
+const cT = document.getElementById('tree'), ctxT = cT.getContext('2d');
+const cY = document.getElementById('rssY'), ctxY = cY.getContext('2d');
+const cH = document.getElementById('rssH'), ctxH = cH.getContext('2d');
+
+const Spad = {l:50, r:18, t:18, b:36};
+const SgW = cS.width - Spad.l - Spad.r, SgH = cS.height - Spad.t - Spad.b;
+function sx(y) { return Spad.l + (y - Y_MIN) / (Y_MAX - Y_MIN) * SgW; }
+function syy(h) { return Spad.t + (H_MAX - h) / (H_MAX - H_MIN) * SgH; }
+
+const RYpad = {l:44, r:14, t:14, b:30};
+const RYgW = cY.width - RYpad.l - RYpad.r, RYgH = cY.height - RYpad.t - RYpad.b;
+const RHpad = {l:44, r:14, t:14, b:30};
+const RHgW = cH.width - RHpad.l - RHpad.r, RHgH = cH.height - RHpad.t - RHpad.b;
+
+// ===== Algorithm: best split for a feature on a set of points =====
+function bestSplit(points, feature) {
+  if (points.length < 2) return null;
+  const idx = feature === 'years' ? 0 : 1;
+  const sorted = [...points].sort((a, b) => a[idx] - b[idx]);
+  const n = sorted.length;
+  let totalSum = 0, totalSq = 0;
+  for (const p of sorted) { totalSum += p[2]; totalSq += p[2] * p[2]; }
+  let leftSum = 0, leftSq = 0;
+  let bestVal = null, bestRSS = Infinity;
+  const curve = [];
+  for (let k = 0; k < n - 1; k++) {
+    leftSum += sorted[k][2];
+    leftSq += sorted[k][2] * sorted[k][2];
+    if (sorted[k][idx] === sorted[k+1][idx]) continue;
+    const nL = k + 1, nR = n - k - 1;
+    const meanL = leftSum / nL;
+    const meanR = (totalSum - leftSum) / nR;
+    const rssL = leftSq - leftSum * leftSum / nL;
+    const rssR = (totalSq - leftSq) - (totalSum - leftSum) * (totalSum - leftSum) / nR;
+    const rss = rssL + rssR;
+    const splitVal = (sorted[k][idx] + sorted[k+1][idx]) / 2;
+    curve.push({split: splitVal, rss: rss, nL, nR, meanL, meanR, rssL, rssR});
+    if (rss < bestRSS) {
+      bestRSS = rss;
+      bestVal = splitVal;
+    }
+  }
+  return {bestVal, bestRSS, curve};
+}
+
+function getRegionPoints(reg) {
+  if (reg === 'all' || !reg || !rootSplit) return data;
+  const idx = rootSplit.feature === 'years' ? 0 : 1;
+  const v = rootSplit.value;
+  if (reg === 'L') return data.filter(p => p[idx] < v);
+  if (reg === 'R') return data.filter(p => p[idx] >= v);
+  return data;
+}
+
+function meanLog(pts) {
+  if (pts.length === 0) return 0;
+  let s = 0;
+  for (const p of pts) s += p[2];
+  return s / pts.length;
+}
+
+function niceStep(range, divs) {
+  const raw = range / divs;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const f of [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10]) {
+    if (f * mag >= raw * 0.7) return f * mag;
+  }
+  return mag;
+}
+
+// ===== Drawing: scatter =====
+function drawScatter() {
+  ctxS.clearRect(0, 0, cS.width, cS.height);
+  ctxS.fillStyle = '#fff';
+  ctxS.fillRect(0, 0, cS.width, cS.height);
+
+  // Region shading after root split
+  if (rootSplit && rootSplit.feature === 'years') {
+    const xCut = sx(rootSplit.value);
+    ctxS.fillStyle = 'rgba(199,153,0,0.07)';
+    ctxS.fillRect(Spad.l, Spad.t, xCut - Spad.l, SgH);
+    ctxS.fillStyle = 'rgba(57,39,91,0.05)';
+    ctxS.fillRect(xCut, Spad.t, Spad.l + SgW - xCut, SgH);
+  }
+
+  // Scan-time region shading (color by current mean log salary)
+  let scanCur = null;
+  if (scanDisplay && scanDisplay.idx > 0) {
+    scanCur = scanDisplay.curve[Math.min(scanDisplay.idx - 1, scanDisplay.curve.length - 1)];
+  }
+  if (scanCur) {
+    let xL = Spad.l, xR = Spad.l + SgW;
+    if (scanDisplay.region === 'L' && rootSplit && rootSplit.feature === 'years') xR = sx(rootSplit.value);
+    if (scanDisplay.region === 'R' && rootSplit && rootSplit.feature === 'years') xL = sx(rootSplit.value);
+    if (scanDisplay.feature === 'years') {
+      const xCut = sx(scanCur.split);
+      ctxS.fillStyle = colorForA(scanCur.meanL, 0.22);
+      ctxS.fillRect(xL, Spad.t, xCut - xL, SgH);
+      ctxS.fillStyle = colorForA(scanCur.meanR, 0.22);
+      ctxS.fillRect(xCut, Spad.t, xR - xCut, SgH);
+    } else {
+      const yCut = syy(scanCur.split);
+      // upper region (Hits >= s) has the higher x-sorted index → meanR
+      ctxS.fillStyle = colorForA(scanCur.meanR, 0.22);
+      ctxS.fillRect(xL, Spad.t, xR - xL, yCut - Spad.t);
+      // lower region (Hits < s) → meanL
+      ctxS.fillStyle = colorForA(scanCur.meanL, 0.22);
+      ctxS.fillRect(xL, yCut, xR - xL, Spad.t + SgH - yCut);
+    }
+  }
+
+  // Grid
+  ctxS.strokeStyle = 'rgba(57,39,91,0.06)';
+  ctxS.lineWidth = 1;
+  for (let y = 5; y <= 24; y += 5) {
+    ctxS.beginPath(); ctxS.moveTo(sx(y), Spad.t); ctxS.lineTo(sx(y), Spad.t + SgH); ctxS.stroke();
+  }
+  for (let h = 50; h <= 240; h += 50) {
+    ctxS.beginPath(); ctxS.moveTo(Spad.l, syy(h)); ctxS.lineTo(Spad.l + SgW, syy(h)); ctxS.stroke();
+  }
+
+  // Box
+  ctxS.strokeStyle = 'rgba(24,40,74,0.55)';
+  ctxS.lineWidth = 1.2;
+  ctxS.strokeRect(Spad.l, Spad.t, SgW, SgH);
+
+  // Determine active region for dimming
+  let activeRegion = 'all';
+  if (scanDisplay) activeRegion = scanDisplay.region || 'all';
+
+  // Points
+  for (const p of data) {
+    let isActive = true;
+    if (activeRegion !== 'all' && rootSplit) {
+      const idx = rootSplit.feature === 'years' ? 0 : 1;
+      const inLeft = p[idx] < rootSplit.value;
+      isActive = (activeRegion === 'L' && inLeft) || (activeRegion === 'R' && !inLeft);
+    }
+    ctxS.beginPath();
+    ctxS.arc(sx(p[0]), syy(p[1]), 3.6, 0, 2*Math.PI);
+    ctxS.fillStyle = isActive ? colorFor(p[2]) : 'rgba(180,180,180,0.45)';
+    ctxS.fill();
+    ctxS.strokeStyle = isActive ? 'rgba(24,40,74,0.45)' : 'rgba(180,180,180,0.4)';
+    ctxS.lineWidth = 0.5;
+    ctxS.stroke();
+  }
+
+  // Root split line
+  if (rootSplit) drawSplitLine(rootSplit, '#39275B', 2.6);
+  // Sub-splits
+  if (leftSplit) drawSubSplitLine(leftSplit, 'L', '#2a1d44', 2);
+  if (rightSplit) drawSubSplitLine(rightSplit, 'R', '#2a1d44', 2);
+
+  // Region labels
+  if (rootSplit && rootSplit.feature === 'years') {
+    ctxS.fillStyle = 'rgba(24,40,74,0.5)';
+    ctxS.font = 'italic bold 13px "Crimson Pro",Georgia,serif';
+    if (!leftSplit) {
+      ctxS.textAlign = 'center';
+      ctxS.fillText('R\u2081', sx(rootSplit.value/2), Spad.t + 18);
+    }
+    if (!rightSplit) {
+      ctxS.textAlign = 'center';
+      ctxS.fillText('R\u2082', sx((rootSplit.value+24)/2), Spad.t + 18);
+    } else if (rightSplit.feature === 'hits') {
+      ctxS.textAlign = 'center';
+      const xMid = sx((rootSplit.value+24)/2);
+      ctxS.fillText('R\u2083', xMid, syy(rightSplit.value)-7);
+      ctxS.fillText('R\u2082', xMid, syy(rightSplit.value)+18);
+    }
+  }
+
+  // Scanning overlay
+  if (scanDisplay && animating) {
+    drawScanLine(scanDisplay);
+    drawScanStats(scanDisplay);
+  }
+
+  // Axes
+  ctxS.fillStyle = 'rgba(24,40,74,0.7)';
+  ctxS.font = '10px "Crimson Pro",Georgia,serif';
+  ctxS.textAlign = 'center';
+  for (let y = 5; y <= 24; y += 5) ctxS.fillText(y, sx(y), Spad.t + SgH + 13);
+  ctxS.fillText('1', sx(1), Spad.t + SgH + 13);
+  ctxS.fillText('24', sx(24), Spad.t + SgH + 13);
+  ctxS.textAlign = 'right';
+  for (let h = 0; h <= 240; h += 50) ctxS.fillText(h, Spad.l - 4, syy(h) + 3);
+  ctxS.fillStyle = '#18284a';
+  ctxS.font = 'italic 12px "Crimson Pro",Georgia,serif';
+  ctxS.textAlign = 'center';
+  ctxS.fillText('Years', Spad.l + SgW/2, Spad.t + SgH + 28);
+  ctxS.save();
+  ctxS.translate(13, Spad.t + SgH/2);
+  ctxS.rotate(-Math.PI/2);
+  ctxS.fillText('Hits', 0, 0);
+  ctxS.restore();
+}
+
+function drawSplitLine(split, color, lineWidth) {
+  ctxS.strokeStyle = color;
+  ctxS.lineWidth = lineWidth;
+  ctxS.beginPath();
+  if (split.feature === 'years') {
+    const x = sx(split.value);
+    ctxS.moveTo(x, Spad.t); ctxS.lineTo(x, Spad.t + SgH);
+  } else {
+    const y = syy(split.value);
+    ctxS.moveTo(Spad.l, y); ctxS.lineTo(Spad.l + SgW, y);
+  }
+  ctxS.stroke();
+  // Label
+  ctxS.fillStyle = color;
+  ctxS.font = 'bold 11px "Crimson Pro",Georgia,serif';
+  if (split.feature === 'years') {
+    ctxS.textAlign = 'center';
+    ctxS.fillText(split.value.toFixed(1), sx(split.value), Spad.t + SgH + 13);
+  } else {
+    ctxS.textAlign = 'left';
+    ctxS.fillText(split.value.toFixed(1), Spad.l + SgW + 4, syy(split.value) + 3);
+  }
+}
+
+function drawSubSplitLine(split, region, color, lineWidth) {
+  if (!rootSplit) return;
+  ctxS.strokeStyle = color;
+  ctxS.lineWidth = lineWidth;
+  ctxS.beginPath();
+  if (split.feature === 'years') {
+    const x = sx(split.value);
+    ctxS.moveTo(x, Spad.t); ctxS.lineTo(x, Spad.t + SgH);
+  } else {
+    const y = syy(split.value);
+    let xL = Spad.l, xR = Spad.l + SgW;
+    if (rootSplit.feature === 'years') {
+      if (region === 'L') xR = sx(rootSplit.value);
+      else xL = sx(rootSplit.value);
+    }
+    ctxS.moveTo(xL, y); ctxS.lineTo(xR, y);
+  }
+  ctxS.stroke();
+}
+
+function drawScanLine(disp) {
+  if (disp.idx === 0) return;
+  const cur = disp.curve[Math.min(disp.idx - 1, disp.curve.length - 1)];
+  if (!cur) return;
+  let xL = Spad.l, xR = Spad.l + SgW;
+  if (disp.region === 'L' && rootSplit && rootSplit.feature === 'years') xR = sx(rootSplit.value);
+  if (disp.region === 'R' && rootSplit && rootSplit.feature === 'years') xL = sx(rootSplit.value);
+  ctxS.strokeStyle = '#18284a';
+  ctxS.lineWidth = 2;
+  ctxS.setLineDash([5, 3]);
+  ctxS.beginPath();
+  if (disp.feature === 'years') {
+    const x = sx(cur.split);
+    ctxS.moveTo(x, Spad.t); ctxS.lineTo(x, Spad.t + SgH);
+  } else {
+    const y = syy(cur.split);
+    ctxS.moveTo(xL, y); ctxS.lineTo(xR, y);
+  }
+  ctxS.stroke();
+  ctxS.setLineDash([]);
+  ctxS.fillStyle = '#18284a';
+  ctxS.font = 'bold 10px "Crimson Pro",Georgia,serif';
+  if (disp.feature === 'years') {
+    ctxS.textAlign = 'center';
+    ctxS.fillText('s = ' + cur.split.toFixed(1), sx(cur.split), Spad.t - 4);
+  } else {
+    ctxS.textAlign = 'left';
+    const x0 = (disp.region === 'R' && rootSplit && rootSplit.feature === 'years') ? sx(rootSplit.value) + 4 : Spad.l + 4;
+    ctxS.fillText('s = ' + cur.split.toFixed(0), x0, syy(cur.split) - 3);
+  }
+}
+
+function drawScanStats(disp) {
+  if (disp.idx === 0) return;
+  const cur = disp.curve[Math.min(disp.idx - 1, disp.curve.length - 1)];
+  if (!cur) return;
+  let xL = Spad.l, xR = Spad.l + SgW;
+  if (disp.region === 'L' && rootSplit && rootSplit.feature === 'years') xR = sx(rootSplit.value);
+  if (disp.region === 'R' && rootSplit && rootSplit.feature === 'years') xL = sx(rootSplit.value);
+
+  function fmt(n, m, r) {
+    return 'n=' + n + '   \u0233=' + m.toFixed(2) + '   RSS=' + r.toFixed(1);
+  }
+  function box(text, x, y, align) {
+    ctxS.font = 'bold 10.5px "Crimson Pro",Georgia,serif';
+    ctxS.textAlign = align;
+    const w = ctxS.measureText(text).width;
+    let bx;
+    if (align === 'left') bx = x;
+    else if (align === 'right') bx = x - w;
+    else bx = x - w / 2;
+    ctxS.fillStyle = 'rgba(255,255,255,0.92)';
+    ctxS.fillRect(bx - 5, y - 11, w + 10, 15);
+    ctxS.strokeStyle = 'rgba(57,39,91,0.45)';
+    ctxS.lineWidth = 0.7;
+    ctxS.strokeRect(bx - 5, y - 11, w + 10, 15);
+    ctxS.fillStyle = '#18284a';
+    ctxS.fillText(text, x, y);
+  }
+
+  if (disp.feature === 'years') {
+    const txtL = fmt(cur.nL, cur.meanL, cur.rssL);
+    const txtR = fmt(cur.nR, cur.meanR, cur.rssR);
+    box(txtL, xL + 7, Spad.t + 13, 'left');
+    box(txtR, xR - 7, Spad.t + 13, 'right');
+    // Total RSS in middle
+    ctxS.fillStyle = '#39275B';
+    ctxS.font = 'italic bold 11px "Crimson Pro",Georgia,serif';
+    ctxS.textAlign = 'center';
+    const totXC = (xL + xR) / 2;
+    const totTxt = 'total RSS = ' + (cur.rssL + cur.rssR).toFixed(2);
+    const tw = ctxS.measureText(totTxt).width;
+    ctxS.fillStyle = 'rgba(255,255,255,0.92)';
+    ctxS.fillRect(totXC - tw/2 - 5, Spad.t + SgH - 22, tw + 10, 16);
+    ctxS.strokeStyle = 'rgba(57,39,91,0.45)';
+    ctxS.lineWidth = 0.7;
+    ctxS.strokeRect(totXC - tw/2 - 5, Spad.t + SgH - 22, tw + 10, 16);
+    ctxS.fillStyle = '#39275B';
+    ctxS.fillText(totTxt, totXC, Spad.t + SgH - 10);
+  } else {
+    const txtUpper = fmt(cur.nR, cur.meanR, cur.rssR);
+    const txtLower = fmt(cur.nL, cur.meanL, cur.rssL);
+    const midX = (xL + xR) / 2;
+    box(txtUpper, midX, Spad.t + 13, 'center');
+    box(txtLower, midX, Spad.t + SgH - 8, 'center');
+    // Total RSS at the side
+    ctxS.fillStyle = '#39275B';
+    ctxS.font = 'italic bold 11px "Crimson Pro",Georgia,serif';
+    ctxS.textAlign = 'left';
+    const yCut = syy(cur.split);
+    const totTxt = 'total RSS = ' + (cur.rssL + cur.rssR).toFixed(2);
+    const tw = ctxS.measureText(totTxt).width;
+    const tx = xL + 7;
+    const ty = yCut - 6;
+    ctxS.fillStyle = 'rgba(255,255,255,0.92)';
+    ctxS.fillRect(tx - 5, ty - 11, tw + 10, 16);
+    ctxS.strokeStyle = 'rgba(57,39,91,0.45)';
+    ctxS.lineWidth = 0.7;
+    ctxS.strokeRect(tx - 5, ty - 11, tw + 10, 16);
+    ctxS.fillStyle = '#39275B';
+    ctxS.fillText(totTxt, tx, ty);
+  }
+}
+
+// ===== RSS curve drawing =====
+function drawRSSCurve(ctx, canvas, pad, gW, gH, feature, store, xLo, xHi) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!store || !store.curve || store.curve.length === 0) {
+    ctx.strokeStyle = 'rgba(24,40,74,0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(pad.l, pad.t, gW, gH);
+    ctx.fillStyle = 'rgba(122,122,138,0.7)';
+    ctx.font = 'italic 12px "Crimson Pro",Georgia,serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('(no scan yet)', pad.l + gW/2, pad.t + gH/2 + 4);
+    return;
+  }
+  const curve = store.curve;
+  const partialIdx = store.partialIdx;
+  const bestVal = store.bestVal;
+  let yMin = Infinity, yMax = -Infinity;
+  for (const p of curve) {
+    if (p.rss < yMin) yMin = p.rss;
+    if (p.rss > yMax) yMax = p.rss;
+  }
+  const ypad = (yMax - yMin) * 0.10 + 0.001;
+  yMin -= ypad; yMax += ypad;
+
+  function px(s) { return pad.l + (s - xLo) / (xHi - xLo) * gW; }
+  function py(r) { return pad.t + (yMax - r) / (yMax - yMin) * gH; }
+
+  // Box
+  ctx.strokeStyle = 'rgba(24,40,74,0.55)';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(pad.l, pad.t, gW, gH);
+
+  // Curve up to partialIdx
+  const lim = partialIdx == null ? curve.length : Math.min(partialIdx, curve.length);
+  if (lim > 1) {
+    ctx.strokeStyle = '#39275B';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < lim; i++) {
+      const X = px(curve[i].split), Y = py(curve[i].rss);
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+  }
+
+  // Best dot once full
+  if (lim >= curve.length && bestVal != null) {
+    const bestPt = curve.find(p => Math.abs(p.split - bestVal) < 1e-9);
+    if (bestPt) {
+      const X = px(bestPt.split), Y = py(bestPt.rss);
+      ctx.beginPath();
+      ctx.arc(X, Y, 6, 0, 2*Math.PI);
+      ctx.fillStyle = '#C79900';
+      ctx.strokeStyle = '#39275B';
+      ctx.lineWidth = 1.8;
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#18284a';
+      ctx.font = 'bold 10px "Crimson Pro",Georgia,serif';
+      ctx.textAlign = X < pad.l + gW * 0.6 ? 'left' : 'right';
+      ctx.fillText('s* = ' + bestPt.split.toFixed(1) + '   RSS = ' + bestPt.rss.toFixed(2), X + (X < pad.l + gW * 0.6 ? 9 : -9), Y - 6);
+    }
+  } else if (lim > 0) {
+    // Current scan position marker
+    const cur = curve[lim - 1];
+    const X = px(cur.split), Y = py(cur.rss);
+    ctx.beginPath();
+    ctx.arc(X, Y, 4.5, 0, 2*Math.PI);
+    ctx.fillStyle = '#18284a';
+    ctx.fill();
+  }
+
+  // Axes
+  ctx.fillStyle = 'rgba(24,40,74,0.7)';
+  ctx.font = '10px "Crimson Pro",Georgia,serif';
+  ctx.textAlign = 'center';
+  const xStep = niceStep(xHi - xLo, 6);
+  for (let x = Math.ceil(xLo / xStep) * xStep; x <= xHi; x += xStep) {
+    ctx.fillText(x.toFixed(0), px(x), pad.t + gH + 12);
+  }
+  ctx.fillStyle = '#18284a';
+  ctx.font = 'italic 11px "Crimson Pro",Georgia,serif';
+  ctx.fillText('split point  s', pad.l + gW/2, pad.t + gH + 25);
+
+  ctx.fillStyle = 'rgba(24,40,74,0.7)';
+  ctx.font = '10px "Crimson Pro",Georgia,serif';
+  ctx.textAlign = 'right';
+  const yStep = niceStep(yMax - yMin, 4);
+  const yDec = Math.max(0, -Math.floor(Math.log10(yStep)) + 1);
+  for (let y = Math.ceil(yMin / yStep) * yStep; y <= yMax; y += yStep) {
+    ctx.fillText(y.toFixed(yDec), pad.l - 4, py(y) + 3);
+  }
+  ctx.save();
+  ctx.translate(11, pad.t + gH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = '#18284a';
+  ctx.font = 'italic 11px "Crimson Pro",Georgia,serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('RSS', 0, 0);
+  ctx.restore();
+}
+
+// ===== Tree drawing =====
+function drawTree() {
+  ctxT.clearRect(0, 0, cT.width, cT.height);
+  ctxT.fillStyle = '#fff';
+  ctxT.fillRect(0, 0, cT.width, cT.height);
+
+  if (!rootSplit) {
+    ctxT.fillStyle = 'rgba(122,122,138,0.7)';
+    ctxT.font = 'italic 12px "Crimson Pro",Georgia,serif';
+    ctxT.textAlign = 'center';
+    ctxT.fillText('(no splits yet)', cT.width/2, cT.height/2);
+    return;
+  }
+
+  const cx = cT.width / 2;
+  const topY = 36;
+  const midY = 150;
+  const leafY = 270;
+
+  function drawLeaf(x, y, val, count, label) {
+    ctxT.fillStyle = '#f4eed8';
+    ctxT.strokeStyle = '#8E632A';
+    ctxT.lineWidth = 1.5;
+    const w = 64, h = 32;
+    ctxT.fillRect(x - w/2, y - h/2, w, h);
+    ctxT.strokeRect(x - w/2, y - h/2, w, h);
+    ctxT.fillStyle = '#2a1d44';
+    ctxT.font = 'bold 13px "Crimson Pro",Georgia,serif';
+    ctxT.textAlign = 'center';
+    ctxT.fillText(val.toFixed(2), x, y + 1);
+    ctxT.fillStyle = 'rgba(122,122,138,0.85)';
+    ctxT.font = 'italic 9px "Crimson Pro",Georgia,serif';
+    ctxT.fillText('n=' + count, x, y + 13);
+    if (label) {
+      ctxT.fillStyle = 'rgba(24,40,74,0.55)';
+      ctxT.font = 'italic 10px "Crimson Pro",Georgia,serif';
+      ctxT.fillText(label, x, y + 28);
+    }
+  }
+
+  function drawNode(x, y, label) {
+    ctxT.fillStyle = '#fff';
+    ctxT.strokeStyle = '#39275B';
+    ctxT.lineWidth = 1.6;
+    const w = 108, h = 26;
+    ctxT.fillRect(x - w/2, y - h/2, w, h);
+    ctxT.strokeRect(x - w/2, y - h/2, w, h);
+    ctxT.fillStyle = '#39275B';
+    ctxT.font = 'bold 12px "Crimson Pro",Georgia,serif';
+    ctxT.textAlign = 'center';
+    ctxT.fillText(label, x, y + 4);
+  }
+
+  function drawBranch(x1, y1, x2, y2, label) {
+    ctxT.strokeStyle = '#18284a';
+    ctxT.lineWidth = 1.4;
+    ctxT.beginPath();
+    ctxT.moveTo(x1, y1); ctxT.lineTo(x2, y2);
+    ctxT.stroke();
+    if (label) {
+      ctxT.fillStyle = '#7a7a8a';
+      ctxT.font = 'italic 9px "Crimson Pro",Georgia,serif';
+      ctxT.textAlign = 'center';
+      const tx = (x1 + x2) / 2 + (x2 < x1 ? -7 : 7);
+      const ty = (y1 + y2) / 2;
+      ctxT.fillText(label, tx, ty);
+    }
+  }
+
+  // Root
+  const rootLabel = rootSplit.feature === 'years'
+    ? 'Years < ' + rootSplit.value.toFixed(1)
+    : 'Hits < ' + rootSplit.value.toFixed(1);
+  drawNode(cx, topY, rootLabel);
+
+  const leftX = cx - 100;
+  const rightX = cx + 100;
+
+  drawBranch(cx, topY + 13, leftX, midY - 13, 'yes');
+  drawBranch(cx, topY + 13, rightX, midY - 13, 'no');
+
+  // Left subtree
+  if (leftSplit) {
+    const lab = leftSplit.feature === 'years'
+      ? 'Years < ' + leftSplit.value.toFixed(1)
+      : 'Hits < ' + leftSplit.value.toFixed(1);
+    drawNode(leftX, midY, lab);
+    const lpAll = getRegionPoints('L');
+    const lIdx = leftSplit.feature === 'years' ? 0 : 1;
+    const llPts = lpAll.filter(p => p[lIdx] < leftSplit.value);
+    const lrPts = lpAll.filter(p => p[lIdx] >= leftSplit.value);
+    const llX = leftX - 50, lrX = leftX + 50;
+    drawBranch(leftX, midY + 13, llX, leafY - 16, 'yes');
+    drawBranch(leftX, midY + 13, lrX, leafY - 16, 'no');
+    drawLeaf(llX, leafY, meanLog(llPts), llPts.length);
+    drawLeaf(lrX, leafY, meanLog(lrPts), lrPts.length);
+  } else {
+    const lp = getRegionPoints('L');
+    drawLeaf(leftX, midY, meanLog(lp), lp.length, 'R\u2081');
+  }
+
+  // Right subtree
+  if (rightSplit) {
+    const lab = rightSplit.feature === 'years'
+      ? 'Years < ' + rightSplit.value.toFixed(1)
+      : 'Hits < ' + rightSplit.value.toFixed(1);
+    drawNode(rightX, midY, lab);
+    const rpAll = getRegionPoints('R');
+    const rIdx = rightSplit.feature === 'years' ? 0 : 1;
+    const rlPts = rpAll.filter(p => p[rIdx] < rightSplit.value);
+    const rrPts = rpAll.filter(p => p[rIdx] >= rightSplit.value);
+    const rlX = rightX - 50, rrX = rightX + 50;
+    drawBranch(rightX, midY + 13, rlX, leafY - 16, 'yes');
+    drawBranch(rightX, midY + 13, rrX, leafY - 16, 'no');
+    drawLeaf(rlX, leafY, meanLog(rlPts), rlPts.length);
+    drawLeaf(rrX, leafY, meanLog(rrPts), rrPts.length);
+  } else {
+    const rp = getRegionPoints('R');
+    drawLeaf(rightX, midY, meanLog(rp), rp.length, 'R\u2082');
+  }
+}
+
+function drawAll() {
+  drawScatter();
+  drawTree();
+  drawRSSCurve(ctxY, cY, RYpad, RYgW, RYgH, 'years', yearsRSSCurve, Y_MIN, Y_MAX);
+  drawRSSCurve(ctxH, cH, RHpad, RHgW, RHgH, 'hits', hitsRSSCurve, H_MIN, H_MAX);
+}
+
+// ===== Animation =====
+function _scanInternal(feature, region, totalFrames, onDone) {
+  const points = getRegionPoints(region);
+  const result = bestSplit(points, feature);
+  if (!result) { onDone(); return; }
+
+  scanDisplay = {feature, region, curve: result.curve, idx: 0};
+
+  let curveStore;
+  if (feature === 'years') {
+    curveStore = yearsRSSCurve = {curve: result.curve, partialIdx: 0, bestVal: result.bestVal};
+  } else {
+    curveStore = hitsRSSCurve = {curve: result.curve, partialIdx: 0, bestVal: result.bestVal};
+  }
+
+  let frame = 0;
+  function tick() {
+    frame++;
+    const pidx = Math.floor(result.curve.length * frame / totalFrames);
+    scanDisplay.idx = pidx;
+    curveStore.partialIdx = pidx;
+    drawAll();
+    if (frame >= totalFrames) {
+      curveStore.partialIdx = result.curve.length;
+      scanDisplay.idx = result.curve.length;
+      drawAll();
+      setTimeout(onDone, 600);
+    } else {
+      setTimeout(tick, 55);
+    }
+  }
+  tick();
+}
+
+function lockAndScan(scans, finalCallback) {
+  animating = true;
+  document.getElementById('next').disabled = true;
+  let i = 0;
+  function nextScan() {
+    if (i >= scans.length) {
+      scanDisplay = null;
+      if (finalCallback) finalCallback();
+      drawAll();
+      animating = false;
+      document.getElementById('next').disabled = false;
+      return;
+    }
+    const [f, r] = scans[i];
+    i++;
+    _scanInternal(f, r, 80, nextScan);
+  }
+  nextScan();
+}
+
+// ===== Phase machine =====
+const PHASES = [
+  'The 263 players with non-missing salary in the 1986/87 Hitters data. Color shows log(Salary) &mdash; light gold = low pay, dark crimson = top of the market. Click <b>Next step</b> to begin.',
+  'Step 1: scanning candidate <b>Years</b> splits over all 263 players. The vertical line sweeps through the candidate values; for each split <i>s</i> we compute the mean log(Salary) in {Years &lt; <i>s</i>} and {Years &ge; <i>s</i>}, sum the squared residuals from those means, and look for the <i>s</i> that minimizes total RSS.',
+  'Step 2: same procedure for <b>Hits</b>. Horizontal line sweeps from low hit totals up. Notice the minimum on the Hits RSS curve sits noticeably higher than the minimum on the Years RSS curve &mdash; <b>Years is the better root predictor</b>.',
+  'Step 3: the Years split has the lower RSS (115.06 vs 160.97), so we adopt <b>Years &lt; 4.5</b> as the root of the tree. The scatter is now divided into a left region R\u2081 (young players) and a right region containing the rest, and the tree shows the root condition with two leaves.',
+  'Step 4: <b>recurse on the right region</b> (Years &ge; 4.5). Same scanning procedure, but only on those 173 players. The RSS curves below now show the recomputed values for this subset; the other points are dimmed for clarity.',
+  'Step 5: split the right region. Among the 173 veterans, <b>Hits &lt; 117.5</b> beats every Years split &mdash; this gives us the same R\u2082 / R\u2083 partition as ISLR Figure 8.1 (R\u2082 = veterans with few hits, R\u2083 = veterans with many).',
+  'Step 6: <b>recurse on the left region</b> (Years &lt; 4.5) &mdash; the 90 young players. Scan both predictors within this subset.',
+  'Step 7: split the left region. The algorithm finds <b>Hits &lt; 15.5</b> just barely beats Years &lt; 3.5. We now have <b>4 terminal regions</b> with 4 leaf values. <i>(This sub-split is shallow; ISLR stops at 3 leaves because the RSS gain is small.)</i>'
+];
+
+function setDesc(i) {
+  document.getElementById('desc').innerHTML = '<span class="phase-num">' + i + '</span>' + PHASES[i];
+}
+
+function nextPhase() {
+  if (animating || phase >= PHASES.length - 1) return;
+  phase++;
+  setDesc(phase);
+
+  switch (phase) {
+    case 1:
+      lockAndScan([['years', 'all']]);
+      break;
+    case 2:
+      lockAndScan([['hits', 'all']]);
+      break;
+    case 3: {
+      const yr = bestSplit(data, 'years');
+      const hr = bestSplit(data, 'hits');
+      if (yr.bestRSS < hr.bestRSS) {
+        rootSplit = {feature: 'years', value: yr.bestVal, rss: yr.bestRSS};
+      } else {
+        rootSplit = {feature: 'hits', value: hr.bestVal, rss: hr.bestRSS};
+      }
+      // Reset RSS curves so user knows we'll recompute on the subregions
+      yearsRSSCurve = null;
+      hitsRSSCurve = null;
+      drawAll();
+      break;
+    }
+    case 4:
+      lockAndScan([['years', 'R'], ['hits', 'R']]);
+      break;
+    case 5: {
+      const rp = getRegionPoints('R');
+      const ryr = bestSplit(rp, 'years');
+      const rhr = bestSplit(rp, 'hits');
+      if (ryr && (!rhr || ryr.bestRSS < rhr.bestRSS)) {
+        rightSplit = {feature: 'years', value: ryr.bestVal, rss: ryr.bestRSS};
+      } else if (rhr) {
+        rightSplit = {feature: 'hits', value: rhr.bestVal, rss: rhr.bestRSS};
+      }
+      drawAll();
+      break;
+    }
+    case 6:
+      yearsRSSCurve = null;
+      hitsRSSCurve = null;
+      drawAll();
+      lockAndScan([['years', 'L'], ['hits', 'L']]);
+      break;
+    case 7: {
+      const lp = getRegionPoints('L');
+      const lyr = bestSplit(lp, 'years');
+      const lhr = bestSplit(lp, 'hits');
+      if (lyr && (!lhr || lyr.bestRSS < lhr.bestRSS)) {
+        leftSplit = {feature: 'years', value: lyr.bestVal, rss: lyr.bestRSS};
+      } else if (lhr) {
+        leftSplit = {feature: 'hits', value: lhr.bestVal, rss: lhr.bestRSS};
+      }
+      drawAll();
+      break;
+    }
+  }
+}
+
+function reset() {
+  if (animating) return;
+  phase = 0;
+  rootSplit = null;
+  leftSplit = null;
+  rightSplit = null;
+  scanDisplay = null;
+  yearsRSSCurve = null;
+  hitsRSSCurve = null;
+  setDesc(0);
+  drawAll();
+}
+
+document.getElementById('next').addEventListener('click', nextPhase);
+document.getElementById('reset').addEventListener('click', reset);
+
+drawAll();
+</script>
+</body>
+</html>

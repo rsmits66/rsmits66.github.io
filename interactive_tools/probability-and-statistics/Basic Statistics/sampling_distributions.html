@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sampling Distributions: An Interactive Exploration</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/r.min.js"></script>
+<style>
+  :root {
+    --crimson: #9E1B32;
+    --crimson-dark: #7a1525;
+    --crimson-light: #c44a63;
+    --gray: #4a4a4a;
+    --light-gray: #f4f4f4;
+    --border: #ddd;
+    --text: #222;
+    --bg: #fafafa;
+    --bar: #a8c5e3;
+    --bar-edge: #4080b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 30px 24px 60px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+  }
+  h1, h2, h3 {
+    color: var(--crimson);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+  h1 {
+    border-bottom: 3px solid var(--crimson);
+    padding-bottom: 10px;
+    margin-top: 0;
+    font-size: 28px;
+  }
+  h1 .sub {
+    display: block;
+    color: var(--gray);
+    font-size: 16px;
+    font-weight: normal;
+    margin-top: 6px;
+    font-style: italic;
+  }
+  h2 {
+    margin-top: 0;
+    border-left: 5px solid var(--crimson);
+    padding-left: 12px;
+    font-size: 22px;
+  }
+  h3 {
+    color: var(--gray);
+    margin-top: 24px;
+    font-size: 17px;
+  }
+  .section {
+    background: white;
+    padding: 24px 28px;
+    margin: 25px 0;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 16px 0;
+    padding: 14px 16px;
+    background: var(--light-gray);
+    border-radius: 6px;
+  }
+  .controls span { font-weight: 600; color: var(--gray); }
+  button {
+    background: var(--crimson);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+    font-family: inherit;
+  }
+  button:hover { background: var(--crimson-dark); }
+  button:active { transform: translateY(1px); }
+  button:disabled { background: #aaa; cursor: not-allowed; }
+  button.secondary {
+    background: white;
+    color: var(--gray);
+    border: 1px solid var(--border);
+  }
+  button.secondary:hover { background: #eee; color: var(--text); }
+
+  .dice-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 18px 0;
+    min-height: 80px;
+  }
+  .die {
+    width: 64px; height: 64px;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 10px;
+    display: grid;
+    grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+    padding: 8px;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+  }
+  .die.rolling { animation: shake 0.3s; }
+  @keyframes shake {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  .die .dot {
+    width: 12px; height: 12px;
+    background: #222;
+    border-radius: 50%;
+    align-self: center;
+    justify-self: center;
+  }
+  .die .dot.invisible { visibility: hidden; }
+  .arrow { font-size: 24px; color: var(--gray); }
+
+  .stat-display {
+    background: var(--light-gray);
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 12px 0;
+    border-left: 4px solid var(--crimson);
+  }
+  .stat-display .label {
+    color: var(--crimson);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .stat-display code {
+    font-family: "SF Mono", "Courier New", monospace;
+    font-size: 14px;
+    background: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .roll-log {
+    max-height: 160px;
+    overflow-y: auto;
+    background: var(--light-gray);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: "SF Mono", "Courier New", monospace;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+  .roll-log .entry { margin: 3px 0; }
+  .roll-log .entry .u { color: var(--crimson); font-weight: bold; }
+  .roll-log .empty { color: #888; font-style: italic; }
+
+  canvas {
+    display: block;
+    width: 100%;
+    max-width: 860px;
+    height: auto;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin: 14px 0 8px;
+  }
+
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .stats-table th, .stats-table td {
+    padding: 9px 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stats-table th {
+    background: var(--crimson);
+    color: white;
+    font-weight: 600;
+  }
+  .stats-table td:first-child { text-align: left; font-weight: 600; }
+  .stats-table tr:nth-child(even) td { background: var(--light-gray); }
+
+  .question {
+    background: #fff8e1;
+    border-left: 4px solid #f5a623;
+    padding: 14px 20px;
+    margin: 18px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .question strong { color: #b07000; }
+
+  details {
+    margin: 12px 0;
+    background: var(--light-gray);
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  details[open] { padding-bottom: 14px; }
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--crimson);
+    padding: 4px 0;
+  }
+  summary:hover { color: var(--crimson-dark); }
+
+  .legend {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 13px;
+    margin: 6px 0 14px;
+    color: var(--gray);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-color {
+    width: 18px; height: 14px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+  .legend-line {
+    width: 22px; height: 3px;
+    border-radius: 2px;
+  }
+
+  .n-selector {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .n-selector button {
+    background: white;
+    color: var(--text);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 0;
+    border-right: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .n-selector button:last-child { border-right: none; }
+  .n-selector button.active {
+    background: var(--crimson);
+    color: white;
+  }
+
+  p { margin: 12px 0; }
+  .intro {
+    font-size: 16px;
+    color: var(--gray);
+  }
+  hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+  .footer {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-top: 40px;
+    font-style: italic;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--crimson);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: 600;
+  }
+
+  .r-code-block {
+    margin: 18px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fafafa;
+  }
+  .r-code-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 8px 14px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .r-badge {
+    display: inline-block;
+    background: #1f6feb;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .r-code-block pre {
+    margin: 0;
+    padding: 14px 16px;
+    background: #f6f8fa;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .r-code-block code {
+    font-family: "SF Mono", "Menlo", "Consolas", "Courier New", monospace;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>
+  Sampling Distributions
+  <span class="sub">An interactive exploration of $U = h(Y_1, Y_2, \ldots, Y_n)$</span>
+</h1>
+
+<div class="section">
+<p class="intro">
+We often want the one-dimensional distribution of a function of random variables.
+Let $Y_1, Y_2, \ldots, Y_n$ be a random sample, and define
+$$U = h(Y_1, Y_2, \ldots, Y_n).$$
+Such a function is called a <em>statistic</em>. We start with $n$ unknowns
+together with a lot of symmetry, and we reduce the problem to a single random
+quantity $U$ — whose distribution (the <strong>sampling distribution</strong>)
+has properties we can study and exploit.
+</p>
+<p class="intro">
+Below we explore four of the most important sampling distributions through
+simulation: the distribution of the sample mean, the chi-squared, the
+Student's $t$, and the $F$ distribution.
+</p>
+</div>
+
+<!-- ======================================================== -->
+<!-- SECTION 1: SAMPLE MEAN OF DICE -->
+<!-- ======================================================== -->
+<div class="section">
+<h2>1. The Sample Mean: Rolling Dice</h2>
+
+<p>
+Roll a fair six-sided die $n$ times to get $Y_1, Y_2, \ldots, Y_n$, and form
+the statistic
+$$U_n \;=\; \bar{Y} \;=\; \frac{Y_1 + Y_2 + \cdots + Y_n}{n}.$$
+Each $Y_i$ has $\mu = 3.5$ and $\sigma^2 = 35/12 \approx 2.9167$. So
+$$E(\bar{Y}) = \mu = 3.5, \qquad
+  \mathrm{Var}(\bar{Y}) = \frac{\sigma^2}{n} = \frac{2.9167}{n}.$$
+</p>
+
+<h3>A. Roll $n=4$ dice, once at a time</h3>
+<p>
+Click the button below and watch the four outcomes $Y_1, Y_2, Y_3, Y_4$ and the
+resulting sample mean $U_4$. Click it several times — the dice are random, so
+$U_4$ is also random.
+</p>
+
+<div class="controls">
+  <button onclick="rollDiceOnce()">🎲 Roll 4 dice</button>
+  <button class="secondary" onclick="clearRollLog()">Clear log</button>
+</div>
+
+<div id="dice-display" class="dice-row"></div>
+<div id="dice-result" class="stat-display" style="display:none;"></div>
+
+<p style="margin-top:18px;"><strong>History of rolls</strong> (so you can see $U_4$ wander):</p>
+<div id="roll-log" class="roll-log">
+  <div class="empty">No rolls yet — click "Roll 4 dice" above.</div>
+</div>
+
+<h3>B. Simulate $U_n$ many times — what is its sampling distribution?</h3>
+<p>
+A single value of $U_n$ is just one realization. To see the
+<em>distribution</em> of $U_n$, repeat the experiment $1000$ times and
+make a histogram. Try different sample sizes:
+</p>
+
+<div class="controls">
+  <span>Sample size:</span>
+  <div class="n-selector" id="n-selector-dice">
+    <button data-n="4" class="active">$n = 4$</button>
+    <button data-n="25">$n = 25$</button>
+    <button data-n="100">$n = 100$</button>
+  </div>
+  <button onclick="simulateDice()">Run 1000 simulations</button>
+</div>
+
+<canvas id="dice-hist" width="860" height="340"></canvas>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background: var(--bar); border-color: var(--bar-edge);"></div>
+    Empirical density of $U_n$ (1000 simulations)
+  </div>
+</div>
+
+<div id="dice-stats"></div>
+
+<div class="question">
+  <strong>Think about it.</strong> What do you notice as $n$ grows? Where is
+  the histogram centered? How does its width change? What about its shape?
+</div>
+
+<details>
+  <summary>Discussion</summary>
+  <p>
+  Three things should jump out:
+  </p>
+  <ol>
+    <li>The histogram is always <strong>centered near 3.5</strong>, regardless
+        of $n$. This matches $E(\bar{Y}) = \mu = 3.5$.</li>
+    <li>The histogram gets <strong>narrower</strong> as $n$ grows. The standard
+        deviation is $\sigma/\sqrt{n}$:
+        <ul>
+          <li>$n = 4$: SD $\approx 0.854$</li>
+          <li>$n = 25$: SD $\approx 0.342$</li>
+          <li>$n = 100$: SD $\approx 0.171$</li>
+        </ul>
+        Each fourfold increase in $n$ halves the standard deviation.</li>
+    <li>The histogram becomes <strong>more bell-shaped</strong> (more "normal") as
+        $n$ grows — even though the underlying die is uniform, not normal! This
+        is the <em>Central Limit Theorem</em> in action.</li>
+  </ol>
+</details>
+
+<h3>Reproduce this in R</h3>
+<div class="r-code-block">
+  <div class="r-code-header">
+    <span class="r-badge">R</span>
+    <span>Sampling distribution of the sample mean of n dice</span>
+  </div>
+<pre><code class="language-r"># --- One realization of U_4 ---
+n <- 4
+Y <- sample(1:6, size = n, replace = TRUE)
+U <- mean(Y)
+Y;  U
+
+# --- 1000 realizations: build the sampling distribution ---
+trials <- 1000
+n      <- 4
+U_vals <- replicate(trials, mean(sample(1:6, n, replace = TRUE)))
+
+hist(U_vals, breaks = 25, freq = FALSE, col = "lightblue",
+     main = bquote("Sampling distribution of " * bar(Y) * " for n = " * .(n)),
+     xlab = expression(bar(Y)))
+
+# Compare empirical to theoretical mean and SD
+sigma2 <- 35 / 12          # variance of one fair die
+cat("Empirical mean:  ", mean(U_vals), "\n",
+    "Theoretical mean:", 3.5,           "\n",
+    "Empirical SD:    ", sd(U_vals),    "\n",
+    "Theoretical SD:  ", sqrt(sigma2 / n), "\n", sep = "")
+
+# --- Try n = 25 and n = 100 to watch the CLT kick in ---
+par(mfrow = c(1, 3))
+for (n in c(4, 25, 100)) {
+  U_vals <- replicate(1000, mean(sample(1:6, n, replace = TRUE)))
+  hist(U_vals, breaks = 30, freq = FALSE, col = "lightblue",
+       main = paste("n =", n), xlab = expression(bar(Y)))
+}
+par(mfrow = c(1, 1))</code></pre>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- ASIDE: U IS ANY FUNCTION -->
+<!-- ======================================================== -->
+<div class="section">
+<h2>An important point</h2>
+<p>
+The sampling distribution can be defined for <em>any</em> function
+$U = h(Y_1, \ldots, Y_n)$ — not only the sample mean. The next three sections
+explore three classical statistics built from a normal sample:
+</p>
+<table class="stats-table">
+  <thead>
+    <tr><th>Statistic</th><th>Built from</th><th>Sampling distribution</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>$\sum_{i=1}^n Z_i^2$</td>
+      <td>$Z_i \sim N(0,1)$</td>
+      <td>$\chi^2_n$</td>
+    </tr>
+    <tr>
+      <td>$T = \dfrac{\sqrt{n}(\bar{Y} - \mu)}{S}$</td>
+      <td>$Y_i \sim N(\mu, \sigma^2)$</td>
+      <td>$t_{\,n-1}$</td>
+    </tr>
+    <tr>
+      <td>$F = \dfrac{S_1^2}{S_2^2}$</td>
+      <td>two normal samples (equal variance)</td>
+      <td>$F_{\nu_1,\,\nu_2}$</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ======================================================== -->
+<!-- SECTION 2: CHI-SQUARE -->
+<!-- ======================================================== -->
+<div class="section">
+<h2>2. The Chi-Squared Distribution</h2>
+
+<p>
+<strong>Theorem 7.2.</strong> If $Z_1, Z_2, \ldots, Z_n$ are independent standard
+normal, then
+$$W = \sum_{i=1}^{n} Z_i^2 \sim \chi^2_n.$$
+A $\chi^2_n$ random variable has mean $n$ and variance $2n$.
+</p>
+
+<p>
+Let's check this empirically. Take a sample of size $n = 4$ from $N(0,1)$,
+compute $U = Z_1^2 + Z_2^2 + Z_3^2 + Z_4^2$, and repeat. The histogram should
+match the $\chi^2_4$ density.
+</p>
+
+<div class="controls">
+  <span>Number of trials:</span>
+  <div class="n-selector" id="trials-selector-chi">
+    <button data-trials="100">100</button>
+    <button data-trials="1000" class="active">1000</button>
+    <button data-trials="10000">10,000</button>
+  </div>
+  <button onclick="simulateChi()">Run simulation</button>
+</div>
+
+<canvas id="chi-hist" width="860" height="340"></canvas>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background: var(--bar); border-color: var(--bar-edge);"></div>
+    Empirical density of $U$
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="background: var(--crimson);"></div>
+    $\chi^2_4$ density (theoretical)
+  </div>
+</div>
+
+<div id="chi-stats"></div>
+
+<div class="question">
+  <strong>Check:</strong> Does the empirical mean approach $4$ and the empirical
+  variance approach $8$ as you increase the number of trials? How well does the
+  red curve overlap the bars?
+</div>
+
+<h3>Reproduce this in R</h3>
+<div class="r-code-block">
+  <div class="r-code-header">
+    <span class="r-badge">R</span>
+    <span>Sum of squared standard normals → chi-squared</span>
+  </div>
+<pre><code class="language-r"># Each trial: draw 4 standard normals, sum their squares
+trials <- 1000
+U_vals <- replicate(trials, sum(rnorm(4)^2))
+
+# Histogram with chi-squared(4) density overlay
+hist(U_vals, breaks = 40, freq = FALSE, col = "lightblue",
+     main = expression("Simulated " * Z[1]^2 + Z[2]^2 + Z[3]^2 + Z[4]^2 *
+                       " vs " * chi[4]^2),
+     xlab = "U", xlim = c(0, 18))
+curve(dchisq(x, df = 4), add = TRUE, col = "firebrick", lwd = 2)
+
+# Theory: mean = df = 4,  variance = 2 * df = 8
+cat("Empirical mean:    ", mean(U_vals),     " (theory: 4)\n",
+    "Empirical variance:", var(U_vals),      " (theory: 8)\n", sep = "")</code></pre>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- SECTION 3: T-DISTRIBUTION -->
+<!-- ======================================================== -->
+<div class="section">
+<h2>3. The Student's $t$ Distribution</h2>
+
+<p>
+<strong>Theorem 7.4.</strong> Let $Y_1, \ldots, Y_n$ be a random sample from
+$N(\mu, \sigma^2)$. Then
+$$T \;=\; \frac{\sqrt{n}\,(\bar{Y} - \mu)}{S} \;\sim\; t_{\,n-1}.$$
+</p>
+
+<p>
+Note we are <em>standardizing using $S$</em>, the sample standard deviation, not
+the population $\sigma$. That extra source of randomness gives $T$ heavier tails
+than the standard normal.
+</p>
+
+<p>
+We'll take a sample of size $n = 5$ from $N(\mu = 3, \sigma^2 = 16)$, compute
+$\bar{Y}$ and $S$, then form
+$$T = \frac{\sqrt{5}\,(\bar{Y} - 3)}{S}.$$
+Repeating this gives a histogram that should approach a $t$ distribution with
+$4$ degrees of freedom. (Note: the population $\sigma^2 = 16$ never appears in
+$T$ — that's the whole point.)
+</p>
+
+<div class="controls">
+  <span>Number of trials:</span>
+  <div class="n-selector" id="trials-selector-t">
+    <button data-trials="100">100</button>
+    <button data-trials="1000" class="active">1000</button>
+    <button data-trials="10000">10,000</button>
+  </div>
+  <button onclick="simulateT()">Run simulation</button>
+</div>
+
+<canvas id="t-hist" width="860" height="340"></canvas>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background: var(--bar); border-color: var(--bar-edge);"></div>
+    Empirical density of $T$
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="background: var(--crimson);"></div>
+    $t_4$ density
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="background: #555; border-top: 2px dashed #555; height: 0;"></div>
+    $N(0,1)$ for comparison
+  </div>
+</div>
+
+<div id="t-stats"></div>
+
+<div class="question">
+  <strong>Compare:</strong> The $t_4$ density and the $N(0,1)$ density are both
+  centered at zero and symmetric. How are they different? Look at the tails and
+  at the height near $0$.
+</div>
+
+<details>
+  <summary>Discussion</summary>
+  <p>
+  The $t_4$ density is shorter at the peak and fatter in the tails than the
+  standard normal. Because we estimate $\sigma$ by $S$, occasional small
+  values of $S$ can produce extreme values of $T$ — that's why the tails are
+  heavier. As $n \to \infty$, $S \to \sigma$ and $t_{n-1} \to N(0,1)$.
+  </p>
+</details>
+
+<h3>Reproduce this in R</h3>
+<div class="r-code-block">
+  <div class="r-code-header">
+    <span class="r-badge">R</span>
+    <span>T-statistic from a normal sample → t-distribution</span>
+  </div>
+<pre><code class="language-r"># Population: N(mu = 3, sigma^2 = 16), sample size n = 5
+trials <- 1000
+n     <- 5
+mu    <- 3
+sigma <- 4          # since sigma^2 = 16
+
+# Each trial: draw a sample, compute Ybar and S, form T
+T_vals <- replicate(trials, {
+  Y <- rnorm(n, mean = mu, sd = sigma)
+  sqrt(n) * (mean(Y) - mu) / sd(Y)
+})
+
+# Histogram with t_4 and N(0,1) overlays
+hist(T_vals, breaks = 50, freq = FALSE, xlim = c(-6, 6),
+     col = "lightblue", xlab = "T",
+     main = expression("Simulated T = " * sqrt(5) *
+                       (bar(Y) - 3) / S * " vs " * t[4]))
+curve(dt(x, df = n - 1), add = TRUE, col = "firebrick",   lwd = 2)
+curve(dnorm(x),          add = TRUE, col = "darkgray",    lwd = 2, lty = 2)
+legend("topright",
+       legend = c(expression(t[4]), expression(N(0, 1))),
+       col = c("firebrick", "darkgray"),
+       lwd = 2, lty = c(1, 2), bty = "n")
+
+# Theory: P(|T| > 2.776) = 0.05  for t_4
+cat("Empirical P(|T| > 2.776):", mean(abs(T_vals) > 2.776),
+    " (theory: 0.05)\n")</code></pre>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- SECTION 4: F-DISTRIBUTION -->
+<!-- ======================================================== -->
+<div class="section">
+<h2>4. The $F$ Distribution</h2>
+
+<p>
+<strong>Theorem 7.5.</strong> If $W_1 \sim \chi^2_{\nu_1}$ and $W_2 \sim
+\chi^2_{\nu_2}$ are independent, then
+$$F \;=\; \frac{W_1 / \nu_1}{W_2 / \nu_2} \;\sim\; F_{\nu_1,\,\nu_2}.$$
+A useful corollary: if we have two independent samples (sizes $n_1$ and $n_2$)
+from normal populations with the same variance, then
+$$\frac{S_1^2}{S_2^2} \;\sim\; F_{n_1 - 1,\, n_2 - 1}.$$
+</p>
+
+<p>
+We'll generate two independent samples from $N(0, 1)$:
+size $n_1 = 6$ and size $n_2 = 10$. Compute $S_1^2$ and $S_2^2$, and form
+$F = S_1^2 / S_2^2$. The resulting histogram should match $F_{5,9}$.
+</p>
+
+<div class="controls">
+  <span>Number of trials:</span>
+  <div class="n-selector" id="trials-selector-f">
+    <button data-trials="100">100</button>
+    <button data-trials="1000" class="active">1000</button>
+    <button data-trials="10000">10,000</button>
+  </div>
+  <button onclick="simulateF()">Run simulation</button>
+</div>
+
+<canvas id="f-hist" width="860" height="340"></canvas>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background: var(--bar); border-color: var(--bar-edge);"></div>
+    Empirical density of $F$
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="background: var(--crimson);"></div>
+    $F_{5,9}$ density
+  </div>
+</div>
+
+<div id="f-stats"></div>
+
+<div class="question">
+  <strong>Notice:</strong> The $F$ distribution is right-skewed and lives on
+  $(0, \infty)$. Because both samples come from populations with the same
+  variance, $F$ tends to cluster near $1$, but with a long right tail. From
+  tables, $P(F_{5,9} \le 3.48) = 0.95$. About what fraction of your simulated
+  $F$ values fell at or below $3.48$?
+</div>
+
+<h3>Reproduce this in R</h3>
+<div class="r-code-block">
+  <div class="r-code-header">
+    <span class="r-badge">R</span>
+    <span>Ratio of sample variances → F-distribution</span>
+  </div>
+<pre><code class="language-r"># Two independent samples from the same N(0, 1).
+# (Any common variance would do — sigma^2 cancels in the ratio.)
+trials <- 1000
+n1 <- 6                 # df1 = 5
+n2 <- 10                # df2 = 9
+
+F_vals <- replicate(trials, {
+  S1sq <- var(rnorm(n1))
+  S2sq <- var(rnorm(n2))
+  S1sq / S2sq
+})
+
+# Histogram with F(5, 9) density overlay
+hist(F_vals, breaks = 80, freq = FALSE, xlim = c(0, 6),
+     col = "lightblue", xlab = "F",
+     main = expression("Simulated " * S[1]^2 / S[2]^2 * " vs " * F[5*","*9]))
+curve(df(x, df1 = n1 - 1, df2 = n2 - 1),
+      add = TRUE, col = "firebrick", lwd = 2, n = 400)
+
+# Verify the 95th percentile from tables
+cat("Empirical P(F <= 3.48):", mean(F_vals <= 3.48),
+    " (theory:", round(pf(3.48, 5, 9), 4), ")\n")
+cat("Empirical 95th pct:    ", quantile(F_vals, 0.95),
+    " (theory:", round(qf(0.95, 5, 9), 4), ")\n")</code></pre>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- SUMMARY -->
+<!-- ======================================================== -->
+<div class="section">
+<h2>Summary</h2>
+<table class="stats-table">
+  <thead>
+    <tr>
+      <th>Distribution</th>
+      <th>Statistic</th>
+      <th>Mean</th>
+      <th>Variance</th>
+      <th>Used for</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Normal</td>
+      <td>$\bar{Y}$</td>
+      <td>$\mu$</td>
+      <td>$\sigma^2/n$</td>
+      <td>CIs / tests for $\mu$ when $\sigma$ known</td>
+    </tr>
+    <tr>
+      <td>$\chi^2_n$</td>
+      <td>$\sum Z_i^2$</td>
+      <td>$n$</td>
+      <td>$2n$</td>
+      <td>Inference about $\sigma^2$</td>
+    </tr>
+    <tr>
+      <td>$t_{n-1}$</td>
+      <td>$\sqrt{n}(\bar{Y}-\mu)/S$</td>
+      <td>$0$ (for $n>2$)</td>
+      <td>$\frac{n-1}{n-3}$</td>
+      <td>CIs / tests for $\mu$ when $\sigma$ unknown</td>
+    </tr>
+    <tr>
+      <td>$F_{\nu_1,\nu_2}$</td>
+      <td>$\dfrac{S_1^2}{S_2^2}$</td>
+      <td>$\frac{\nu_2}{\nu_2-2}$</td>
+      <td>$\frac{2\nu_2^2(\nu_1+\nu_2-2)}{\nu_1(\nu_2-2)^2(\nu_2-4)}$</td>
+      <td>Comparing variances</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>R distribution functions (a cheat sheet)</h3>
+<p>
+R follows a uniform naming convention for distributions: <code>d</code>ensity,
+<code>p</code>robability (CDF), <code>q</code>uantile, and <code>r</code>andom
+sample.
+</p>
+<table class="stats-table">
+  <thead>
+    <tr>
+      <th>Distribution</th>
+      <th>Density</th>
+      <th>CDF</th>
+      <th>Quantile</th>
+      <th>Random sample</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Normal $(\mu, \sigma)$</td>
+      <td><code>dnorm(x, mean, sd)</code></td>
+      <td><code>pnorm</code></td>
+      <td><code>qnorm</code></td>
+      <td><code>rnorm(n, mean, sd)</code></td>
+    </tr>
+    <tr>
+      <td>Chi-squared $(\nu)$</td>
+      <td><code>dchisq(x, df)</code></td>
+      <td><code>pchisq</code></td>
+      <td><code>qchisq</code></td>
+      <td><code>rchisq(n, df)</code></td>
+    </tr>
+    <tr>
+      <td>Student's $t$ $(\nu)$</td>
+      <td><code>dt(x, df)</code></td>
+      <td><code>pt</code></td>
+      <td><code>qt</code></td>
+      <td><code>rt(n, df)</code></td>
+    </tr>
+    <tr>
+      <td>$F$ $(\nu_1, \nu_2)$</td>
+      <td><code>df(x, df1, df2)</code></td>
+      <td><code>pf</code></td>
+      <td><code>qf</code></td>
+      <td><code>rf(n, df1, df2)</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+For example, $\chi^2_{0.95,\,9} = 16.919$ comes from <code>qchisq(0.95, df = 9)</code>
+and $P(F_{5,9} \le 3.48) = 0.95$ from <code>pf(3.48, 5, 9)</code>.
+</p>
+</div>
+
+<div class="footer">
+  Sampling distributions interactive — built for MATH probability/statistics.
+  Click "Run simulation" buttons above to explore.
+</div>
+
+<script>
+// ============================================================
+// PRNG and helpers
+// ============================================================
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function rollDie() { return randInt(1, 6); }
+
+// Box-Muller standard normal
+function randNormal() {
+  let u1 = Math.random();
+  while (u1 === 0) u1 = Math.random();
+  const u2 = Math.random();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+function mean(arr) {
+  let s = 0;
+  for (const x of arr) s += x;
+  return s / arr.length;
+}
+function variance(arr) {
+  const m = mean(arr);
+  let s = 0;
+  for (const x of arr) s += (x - m) * (x - m);
+  return s / (arr.length - 1);
+}
+function sd(arr) { return Math.sqrt(variance(arr)); }
+
+// ============================================================
+// Special functions: Gamma (Lanczos), Beta, and densities
+// ============================================================
+function gammaFn(z) {
+  if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gammaFn(1 - z));
+  z -= 1;
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  let x = c[0];
+  for (let i = 1; i < 9; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+}
+function betaFn(a, b) { return gammaFn(a) * gammaFn(b) / gammaFn(a + b); }
+
+function chi2pdf(x, k) {
+  if (x <= 0) return 0;
+  const k2 = k / 2;
+  return Math.pow(x, k2 - 1) * Math.exp(-x / 2) / (Math.pow(2, k2) * gammaFn(k2));
+}
+function tpdf(x, v) {
+  const num = gammaFn((v + 1) / 2);
+  const den = Math.sqrt(v * Math.PI) * gammaFn(v / 2);
+  return (num / den) * Math.pow(1 + x * x / v, -(v + 1) / 2);
+}
+function fpdf(x, d1, d2) {
+  if (x <= 0) return 0;
+  const num = Math.sqrt(
+    Math.pow(d1 * x, d1) * Math.pow(d2, d2) /
+    Math.pow(d1 * x + d2, d1 + d2)
+  );
+  const den = x * betaFn(d1 / 2, d2 / 2);
+  return num / den;
+}
+function normalpdf(x) {
+  return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+}
+
+// ============================================================
+// Histogram drawing
+// ============================================================
+function drawHistogram(canvas, data, opts) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 56, padR = 18, padT = 24, padB = 44;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const xmin = opts.xmin;
+  const xmax = opts.xmax;
+  const nbins = opts.nbins || 40;
+  const binW = (xmax - xmin) / nbins;
+
+  // Build histogram
+  const counts = new Array(nbins).fill(0);
+  let inRange = 0;
+  for (const v of data) {
+    let i = Math.floor((v - xmin) / binW);
+    if (i === nbins) i = nbins - 1;
+    if (i >= 0 && i < nbins) {
+      counts[i]++;
+      inRange++;
+    }
+  }
+  const total = data.length;
+  const densities = counts.map(c => c / (total * binW));
+
+  let ymax = Math.max(...densities, 0.01);
+  if (opts.densities) {
+    for (const d of opts.densities) {
+      const N = 300;
+      for (let i = 0; i <= N; i++) {
+        const x = xmin + (xmax - xmin) * i / N;
+        const y = d.fn(x);
+        if (isFinite(y) && y > ymax) ymax = y;
+      }
+    }
+  }
+  ymax *= 1.12;
+
+  const sx = (x) => padL + (x - xmin) / (xmax - xmin) * plotW;
+  const sy = (y) => padT + plotH - y / ymax * plotH;
+
+  // Bars
+  ctx.fillStyle = opts.barColor || '#a8c5e3';
+  ctx.strokeStyle = opts.barEdge || '#4080b8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < nbins; i++) {
+    if (counts[i] === 0) continue;
+    const x0 = sx(xmin + i * binW);
+    const x1 = sx(xmin + (i + 1) * binW);
+    const y0 = sy(densities[i]);
+    const y1 = sy(0);
+    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  }
+
+  // Density curves
+  if (opts.densities) {
+    for (const d of opts.densities) {
+      ctx.strokeStyle = d.color || '#9E1B32';
+      ctx.lineWidth = d.width || 2.5;
+      if (d.dash) ctx.setLineDash(d.dash); else ctx.setLineDash([]);
+      ctx.beginPath();
+      const N = 400;
+      let started = false;
+      for (let i = 0; i <= N; i++) {
+        const x = xmin + (xmax - xmin) * i / N;
+        const y = d.fn(x);
+        if (!isFinite(y)) { started = false; continue; }
+        const px = sx(x), py = sy(y);
+        if (!started) { ctx.moveTo(px, py); started = true; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // Axes
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + plotH);
+  ctx.lineTo(padL + plotW, padT + plotH);
+  ctx.stroke();
+
+  // Ticks and labels
+  ctx.fillStyle = '#333';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+
+  const xPrec = opts.xPrecision != null ? opts.xPrecision : 1;
+  const nXTicks = opts.nXTicks || 8;
+  for (let i = 0; i <= nXTicks; i++) {
+    const t = xmin + (xmax - xmin) * i / nXTicks;
+    const px = sx(t);
+    ctx.beginPath();
+    ctx.moveTo(px, padT + plotH);
+    ctx.lineTo(px, padT + plotH + 4);
+    ctx.stroke();
+    ctx.fillText(t.toFixed(xPrec), px, padT + plotH + 18);
+  }
+
+  ctx.textAlign = 'right';
+  const nYTicks = 5;
+  for (let i = 0; i <= nYTicks; i++) {
+    const t = ymax * i / nYTicks;
+    const py = sy(t);
+    ctx.beginPath();
+    ctx.moveTo(padL - 4, py);
+    ctx.lineTo(padL, py);
+    ctx.stroke();
+    ctx.fillText(t.toFixed(2), padL - 7, py + 4);
+  }
+
+  if (opts.xlabel) {
+    ctx.textAlign = 'center';
+    ctx.font = 'italic 13px Georgia, serif';
+    ctx.fillText(opts.xlabel, padL + plotW / 2, H - 10);
+  }
+  if (opts.ylabel) {
+    ctx.save();
+    ctx.translate(14, padT + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.font = 'italic 13px Georgia, serif';
+    ctx.fillText(opts.ylabel, 0, 0);
+    ctx.restore();
+  }
+  if (opts.title) {
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillStyle = '#9E1B32';
+    ctx.fillText(opts.title, padL + plotW / 2, 16);
+  }
+}
+
+// ============================================================
+// Dice rendering
+// ============================================================
+const DOT_POSITIONS = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8]
+};
+function dieHTML(value) {
+  const dots = DOT_POSITIONS[value];
+  let h = '<div class="die rolling">';
+  for (let i = 0; i < 9; i++) {
+    if (dots.indexOf(i) >= 0) h += '<div class="dot"></div>';
+    else h += '<div class="dot invisible"></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+// ============================================================
+// Section 1: dice rolling
+// ============================================================
+let rollLog = [];
+let rollCount = 0;
+
+function rollDiceOnce() {
+  const ys = [rollDie(), rollDie(), rollDie(), rollDie()];
+  const u = (ys[0] + ys[1] + ys[2] + ys[3]) / 4;
+  rollCount++;
+
+  // Display the dice
+  const display = document.getElementById('dice-display');
+  let html = '';
+  for (let i = 0; i < 4; i++) html += dieHTML(ys[i]);
+  html += '<span class="arrow">→</span>';
+  html += '<div class="stat-display" style="margin:0; padding: 10px 14px;">' +
+          '<span class="label">$U_4$ =</span> <code>(' +
+          ys.join(' + ') + ') / 4 = <strong>' + u.toFixed(3) + '</strong></code>' +
+          '</div>';
+  display.innerHTML = html;
+
+  // Log
+  rollLog.unshift({n: rollCount, ys: ys, u: u});
+  if (rollLog.length > 100) rollLog.pop();
+  renderLog();
+
+  // Re-typeset MathJax in the result
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([display]);
+  }
+}
+function clearRollLog() {
+  rollLog = [];
+  rollCount = 0;
+  document.getElementById('roll-log').innerHTML =
+    '<div class="empty">No rolls yet — click "Roll 4 dice" above.</div>';
+  document.getElementById('dice-display').innerHTML = '';
+}
+function renderLog() {
+  const div = document.getElementById('roll-log');
+  if (rollLog.length === 0) {
+    div.innerHTML = '<div class="empty">No rolls yet.</div>';
+    return;
+  }
+  let html = '';
+  for (const r of rollLog) {
+    html += '<div class="entry">#' + r.n + ': &nbsp;Y = (' +
+            r.ys.join(', ') + ') &nbsp;→ &nbsp;<span class="u">U₄ = ' +
+            r.u.toFixed(3) + '</span></div>';
+  }
+  div.innerHTML = html;
+}
+
+// n-selector wiring
+function setupNSelector(id, callback) {
+  const sel = document.getElementById(id);
+  sel.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    sel.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (callback) callback(btn);
+  });
+}
+setupNSelector('n-selector-dice');
+setupNSelector('trials-selector-chi');
+setupNSelector('trials-selector-t');
+setupNSelector('trials-selector-f');
+
+function getActive(selectorId, attr) {
+  const sel = document.getElementById(selectorId);
+  return parseInt(sel.querySelector('button.active').getAttribute(attr));
+}
+
+function simulateDice() {
+  const n = getActive('n-selector-dice', 'data-n');
+  const trials = 1000;
+  const results = new Array(trials);
+  for (let t = 0; t < trials; t++) {
+    let s = 0;
+    for (let i = 0; i < n; i++) s += rollDie();
+    results[t] = s / n;
+  }
+  // Histogram window: depend on n
+  let xmin, xmax, nbins, prec;
+  if (n === 4) {
+    xmin = 1; xmax = 6; nbins = 21; prec = 1;
+  } else if (n === 25) {
+    xmin = 2.5; xmax = 4.5; nbins = 35; prec = 1;
+  } else { // 100
+    xmin = 3.0; xmax = 4.0; nbins = 30; prec = 2;
+  }
+  drawHistogram(document.getElementById('dice-hist'), results, {
+    xmin, xmax, nbins,
+    xPrecision: prec,
+    xlabel: 'Sample mean U_n',
+    ylabel: 'Density',
+    title: '1000 simulated values of U_' + n
+  });
+
+  const m = mean(results), s = sd(results);
+  const theoSD = Math.sqrt(2.9167 / n);
+  document.getElementById('dice-stats').innerHTML =
+    '<table class="stats-table">' +
+    '<thead><tr><th></th><th>Empirical (1000 sims)</th><th>Theoretical</th></tr></thead>' +
+    '<tbody>' +
+    '<tr><td>Mean of U_' + n + '</td><td>' + m.toFixed(4) +
+    '</td><td>3.5000</td></tr>' +
+    '<tr><td>SD of U_' + n + '</td><td>' + s.toFixed(4) +
+    '</td><td>' + theoSD.toFixed(4) + '</td></tr>' +
+    '</tbody></table>';
+}
+
+// ============================================================
+// Section 2: chi-square (n=4)
+// ============================================================
+function simulateChi() {
+  const trials = getActive('trials-selector-chi', 'data-trials');
+  const results = new Array(trials);
+  for (let t = 0; t < trials; t++) {
+    let s = 0;
+    for (let i = 0; i < 4; i++) {
+      const z = randNormal();
+      s += z * z;
+    }
+    results[t] = s;
+  }
+  drawHistogram(document.getElementById('chi-hist'), results, {
+    xmin: 0, xmax: 18, nbins: 45,
+    xPrecision: 0,
+    xlabel: 'U = Z₁² + Z₂² + Z₃² + Z₄²',
+    ylabel: 'Density',
+    title: trials.toLocaleString() + ' simulated values vs χ²₄ density',
+    densities: [
+      { fn: x => chi2pdf(x, 4), color: '#9E1B32', width: 2.5 }
+    ]
+  });
+  const m = mean(results), v = variance(results);
+  document.getElementById('chi-stats').innerHTML =
+    '<table class="stats-table">' +
+    '<thead><tr><th></th><th>Empirical</th><th>Theoretical (χ²₄)</th></tr></thead>' +
+    '<tbody>' +
+    '<tr><td>Mean</td><td>' + m.toFixed(4) +
+    '</td><td>4.0000</td></tr>' +
+    '<tr><td>Variance</td><td>' + v.toFixed(4) +
+    '</td><td>8.0000</td></tr>' +
+    '</tbody></table>';
+}
+
+// ============================================================
+// Section 3: t-distribution (n=5 from N(3, 16))
+// ============================================================
+function simulateT() {
+  const trials = getActive('trials-selector-t', 'data-trials');
+  const n = 5, mu = 3, sigma = 4;  // sigma^2 = 16
+  const results = new Array(trials);
+  for (let t = 0; t < trials; t++) {
+    const sample = new Array(n);
+    for (let i = 0; i < n; i++) sample[i] = mu + sigma * randNormal();
+    const ybar = mean(sample);
+    const s = sd(sample);
+    results[t] = Math.sqrt(n) * (ybar - mu) / s;
+  }
+  drawHistogram(document.getElementById('t-hist'), results, {
+    xmin: -6, xmax: 6, nbins: 50,
+    xPrecision: 0,
+    xlabel: 'T = √5 (Ȳ - 3) / S',
+    ylabel: 'Density',
+    title: trials.toLocaleString() + ' simulated T values vs t₄ density',
+    densities: [
+      { fn: x => tpdf(x, 4), color: '#9E1B32', width: 2.5 },
+      { fn: x => normalpdf(x), color: '#555', width: 1.8, dash: [6, 5] }
+    ]
+  });
+  // Count fraction extreme
+  let extreme = 0;
+  for (const v of results) if (Math.abs(v) > 2.776) extreme++;  // t_{4,0.025} = 2.776
+  const m = mean(results), s = sd(results);
+  document.getElementById('t-stats').innerHTML =
+    '<table class="stats-table">' +
+    '<thead><tr><th></th><th>Empirical</th><th>Theoretical (t₄)</th></tr></thead>' +
+    '<tbody>' +
+    '<tr><td>Mean</td><td>' + m.toFixed(4) +
+    '</td><td>0.0000</td></tr>' +
+    '<tr><td>SD</td><td>' + s.toFixed(4) +
+    '</td><td>√(4/2) ≈ 1.4142</td></tr>' +
+    '<tr><td>P(|T| > 2.776)</td><td>' +
+    (extreme / trials).toFixed(4) +
+    '</td><td>0.0500</td></tr>' +
+    '</tbody></table>';
+}
+
+// ============================================================
+// Section 4: F-distribution (n1=6, n2=10)
+// ============================================================
+function simulateF() {
+  const trials = getActive('trials-selector-f', 'data-trials');
+  const n1 = 6, n2 = 10;
+  const df1 = n1 - 1, df2 = n2 - 1;  // (5, 9)
+  const results = new Array(trials);
+  for (let t = 0; t < trials; t++) {
+    const s1 = new Array(n1);
+    const s2 = new Array(n2);
+    for (let i = 0; i < n1; i++) s1[i] = randNormal();
+    for (let i = 0; i < n2; i++) s2[i] = randNormal();
+    results[t] = variance(s1) / variance(s2);
+  }
+  drawHistogram(document.getElementById('f-hist'), results, {
+    xmin: 0, xmax: 6, nbins: 60,
+    xPrecision: 1,
+    xlabel: 'F = S₁² / S₂²',
+    ylabel: 'Density',
+    title: trials.toLocaleString() + ' simulated F values vs F(5,9) density',
+    densities: [
+      { fn: x => fpdf(x, df1, df2), color: '#9E1B32', width: 2.5 }
+    ]
+  });
+  // Fraction <= 3.48
+  let leq = 0;
+  for (const v of results) if (v <= 3.48) leq++;
+  const m = mean(results), v = variance(results);
+  // Theoretical: mean = df2/(df2-2), variance more complex
+  const theoMean = df2 / (df2 - 2);
+  const theoVar = (2 * df2 * df2 * (df1 + df2 - 2)) /
+                  (df1 * (df2 - 2) * (df2 - 2) * (df2 - 4));
+  document.getElementById('f-stats').innerHTML =
+    '<table class="stats-table">' +
+    '<thead><tr><th></th><th>Empirical</th><th>Theoretical (F₅,₉)</th></tr></thead>' +
+    '<tbody>' +
+    '<tr><td>Mean</td><td>' + m.toFixed(4) +
+    '</td><td>' + theoMean.toFixed(4) + '</td></tr>' +
+    '<tr><td>Variance</td><td>' + v.toFixed(4) +
+    '</td><td>' + theoVar.toFixed(4) + '</td></tr>' +
+    '<tr><td>P(F ≤ 3.48)</td><td>' +
+    (leq / trials).toFixed(4) +
+    '</td><td>0.9500</td></tr>' +
+    '</tbody></table>';
+}
+
+// ============================================================
+// On load: pre-render the histograms with default sims
+// ============================================================
+window.addEventListener('load', () => {
+  simulateDice();
+  simulateChi();
+  simulateT();
+  simulateF();
+  // Highlight R code blocks
+  if (window.hljs) {
+    document.querySelectorAll('pre code.language-r').forEach((el) => {
+      hljs.highlightElement(el);
+    });
+  }
+});
+</script>
+
+</body>
+</html>

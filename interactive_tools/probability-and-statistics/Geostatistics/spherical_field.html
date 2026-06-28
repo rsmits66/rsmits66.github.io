@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spherical Variogram — Synthetic Realizations &amp; Sample Snapshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;
+    --crimson-deep: #7a1024;
+    --ochre: #b8923d;
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    font-feature-settings: "ss01", "ss02";
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+    line-height: 1.5;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.30;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    z-index: 0;
+  }
+  .container { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 18px;
+    align-items: end;
+  }
+  .doc-id {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border-left: 1px solid var(--line);
+    padding: 6px 0 6px 6px;
+  }
+  h1 {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .meta strong { color: var(--ink); font-weight: 500; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    padding: 20px 18px;
+    border: 1px solid var(--line);
+    box-shadow: 4px 4px 0 var(--line);
+    position: relative;
+  }
+  .panel-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .panel h2 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+    line-height: 1.15;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .panel h2 .num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--rust);
+    font-weight: 400;
+  }
+  .panel-caption {
+    font-style: italic;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+
+  .field-canvas-wrap {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  .field-canvas-wrap.mode-3d { cursor: grab; }
+  .field-canvas-wrap.mode-3d.dragging { cursor: grabbing; }
+  canvas.field, canvas.field-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  canvas.field-3d {
+    position: absolute;
+    inset: 0;
+    display: none;
+    image-rendering: auto;
+  }
+  .field-canvas-wrap.mode-3d canvas.field { display: none; }
+  .field-canvas-wrap.mode-3d canvas.field-3d { display: block; }
+
+  /* Sample location overlay (only in 2D mode) */
+  .sample-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: none;
+  }
+  .field-canvas-wrap:not(.mode-3d) .sample-overlay.visible { display: block; }
+  .sample-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--ink);
+    background: rgba(255, 255, 255, 0.92);
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: var(--ink);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.6);
+  }
+  .sample-marker.high { background: rgba(158, 27, 50, 0.88); color: #fff; border-color: var(--crimson-deep); }
+  .sample-marker.mid { background: rgba(245, 220, 180, 0.92); }
+
+  .ctrl-row-line {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .view-toggle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 10px;
+    border: 1px solid var(--line-strong);
+  }
+  .view-toggle, .overlay-toggle {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    padding: 8px 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--ink);
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  .view-toggle { border-right: 1px solid var(--line-strong); }
+  .view-toggle:last-child { border-right: none; }
+  .view-toggle:hover:not(.active) { background: var(--line); }
+  .view-toggle.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .view-toggle .vt-icon {
+    font-family: var(--mono);
+    margin-right: 4px;
+    color: var(--rust);
+    font-weight: 700;
+  }
+  .view-toggle.active .vt-icon { color: var(--ochre); }
+
+  .overlay-toggle-row {
+    margin-top: 8px;
+  }
+  .overlay-toggle {
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    padding: 7px 0;
+  }
+  .overlay-toggle.active {
+    background: var(--rust);
+    color: #fff;
+    border-color: var(--rust);
+  }
+  .overlay-toggle:hover:not(.active) { background: var(--line); }
+
+  .hint-3d {
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--rust);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    min-height: 1em;
+  }
+
+  /* Variogram model display */
+  .variogram-display {
+    background: rgba(158, 27, 50, 0.05);
+    border-left: 3px solid var(--rust);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+  .variogram-display .label {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .variogram-display .params {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .variogram-display .params .pp {
+    text-align: center;
+    padding: 6px 4px;
+    background: rgba(255, 255, 255, 0.6);
+  }
+  .variogram-display .params .pp .pn {
+    font-size: 0.58rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .variogram-display .params .pp .pv {
+    color: var(--rust);
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-top: 2px;
+  }
+
+  /* Variogram plot */
+  .vario-canvas-wrap {
+    aspect-ratio: 1.7;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  canvas.vario {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  button.go {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 11px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    transition: all 0.12s;
+    margin-top: 8px;
+  }
+  button.go:hover { background: var(--rust); border-color: var(--rust); }
+  button.go:disabled { opacity: 0.5; cursor: wait; }
+
+  .stats-grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+  }
+  .stat-cell { text-align: center; padding: 4px 0; }
+  .stat-cell .k {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.56rem;
+  }
+  .stat-cell .v {
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .colorbar-mini {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .colorbar-mini-grad {
+    height: 9px;
+    margin: 4px 0 3px;
+    background: linear-gradient(to right,
+      rgb(26, 58, 92),
+      rgb(123, 163, 196),
+      rgb(245, 239, 219),
+      rgb(200, 98, 62),
+      rgb(122, 16, 36));
+    border: 1px solid var(--line-strong);
+  }
+  .colorbar-mini-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 0.6rem;
+  }
+
+  .notes {
+    margin-top: 22px;
+    padding: 16px 18px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+  .notes h3 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+  .notes p {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .notes p:last-child { margin-bottom: 0; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    background: rgba(158, 27, 50, 0.08);
+    padding: 1px 4px;
+    color: var(--crimson-deep);
+  }
+  footer {
+    margin-top: 24px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="doc-id">Spherical Variogram · v1</div>
+    <div>
+      <h1>Synthetic <em>Realizations</em></h1>
+      <div class="subtitle">Spherical variogram · range 5.75 · sill 38000 · nugget 10000</div>
+    </div>
+    <div class="meta">
+      <strong>method</strong> = circulant FFT<br>
+      <strong>mean</strong> = 224.4<br>
+      <strong>grid</strong> = 128 × 128
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-tag">Realization</div>
+      <h2><span class="num">§1</span>Synthetic deposit</h2>
+      <div class="panel-caption">
+        One draw from the ensemble of fields with the chosen variogram. Toggle the overlay to see this realization's average value within each of 16 1×1 sample cells laid on a 4×4 grid.
+      </div>
+      <div class="field-canvas-wrap" id="field-wrap">
+        <canvas class="field" id="canvas-field"></canvas>
+        <canvas class="field-3d" id="canvas-field-3d"></canvas>
+        <div class="sample-overlay" id="sample-overlay"></div>
+      </div>
+
+      <div class="view-toggle-row">
+        <button class="view-toggle active" data-view="2d"><span class="vt-icon">▦</span>2D heatmap</button>
+        <button class="view-toggle" data-view="3d"><span class="vt-icon">⬢</span>3D surface</button>
+      </div>
+      <div class="overlay-toggle-row">
+        <button class="overlay-toggle" id="overlay-btn">Show sample snapshot ▸</button>
+      </div>
+      <div class="hint-3d" id="hint-3d"></div>
+
+      <div class="colorbar-mini">
+        Grade · g/t (or whatever unit)
+        <div class="colorbar-mini-grad"></div>
+        <div class="colorbar-mini-labels">
+          <span id="cbar-min">0</span>
+          <span id="cbar-mid">225</span>
+          <span id="cbar-max">600</span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-mean">—</div></div>
+        <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-var">—</div></div>
+        <div class="stat-cell"><div class="k">range</div><div class="v" id="stat-range">—</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-tag">Model</div>
+      <h2><span class="num">§2</span>Spherical + nugget</h2>
+      <div class="panel-caption">
+        Spherical model with nugget — a standard mining variogram.
+      </div>
+
+      <div class="variogram-display">
+        <div class="label">Model</div>
+        γ(h) = c₀·𝟙{h&gt;0} + C·[1.5(h/a) − 0.5(h/a)³]<br>
+        for 0 &lt; h &lt; a, then γ(h) = c₀ + C for h ≥ a.
+        <div class="params">
+          <div class="pp"><div class="pn">nugget c₀</div><div class="pv">10000</div></div>
+          <div class="pp"><div class="pn">sill C</div><div class="pv">28000</div></div>
+          <div class="pp"><div class="pn">range a</div><div class="pv">5.75</div></div>
+        </div>
+      </div>
+
+      <div style="font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">
+        Variogram γ(h) — theoretical (curve) vs realization (points)
+      </div>
+      <div class="vario-canvas-wrap">
+        <canvas class="vario" id="canvas-vario"></canvas>
+      </div>
+
+      <button class="go" id="regen-btn">New realization ▸</button>
+
+      <div style="margin-top: 16px; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; color: var(--ink-soft);">
+        Each "new realization" is a different draw from the same ensemble — same variogram, same mean, different specific deposit. This is exactly the kind of variability that conditional simulation (with the 16 known samples held fixed) would constrain.
+      </div>
+    </div>
+  </div>
+
+  <section class="notes">
+    <h3>What you're seeing</h3>
+    <p>
+      Each realization is a synthetic deposit drawn from the same probability distribution. The field is Gaussian, has constant mean ≈ 225, and has the variogram shown on the right. The "sample snapshot" overlay shows what a 4×4 grid of 1×1 sampling cells would yield on <em>this particular</em> realization — i.e., the average of the field over each 1×1 cell. Click "New realization" and the snapshots change because you're seeing a different deposit.
+    </p>
+    <p>
+      The variogram has a substantial nugget (c₀=10000, about a third of the structured sill C=28000), which shows up as cell-to-cell jitter on top of the smooth spherical structure. The range a=5.75 sample-spacings means features extend roughly 5–6 sample-widths before becoming uncorrelated — visible as patches of similar grade about that size. The total sill of 38000 corresponds to a field standard deviation of about 195 around the mean of 225.
+    </p>
+    <p>
+      <strong>The pedagogical loop:</strong> each realization gives you a fresh "synthetic dataset" of 16 sample values. You could feed those 16 values into kriging, recover an estimated variogram, compute block estimates, and compare against the truth (which you have, because you generated the field). This is exactly how geostatistical algorithms are validated in practice — generate ground truth from a known model, run your method on samples drawn from it, see how well it recovers the truth. <strong>Conditional simulation</strong> is the same idea but with the 16 values held fixed: every realization passes through the data points exactly while still respecting the variogram, giving a posterior ensemble of plausible deposits.
+    </p>
+  </section>
+
+  <footer>
+    Spherical-variogram FFT simulator with sample snapshot overlay
+  </footer>
+</div>
+
+<script>
+// ============================================================
+//  FFT (Cooley-Tukey, radix-2)
+// ============================================================
+function fft1d(re, im, inverse) {
+  const n = re.length;
+  if ((n & (n - 1)) !== 0) throw new Error('fft1d requires power-of-2 length');
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const ang = (inverse ? 2 : -2) * Math.PI / len;
+    const wRe0 = Math.cos(ang);
+    const wIm0 = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < half; k++) {
+        const aRe = re[i + k];
+        const aIm = im[i + k];
+        const bR = re[i + k + half];
+        const bI = im[i + k + half];
+        const oddRe = bR * curRe - bI * curIm;
+        const oddIm = bR * curIm + bI * curRe;
+        re[i + k] = aRe + oddRe;
+        im[i + k] = aIm + oddIm;
+        re[i + k + half] = aRe - oddRe;
+        im[i + k + half] = aIm - oddIm;
+        const newCurRe = curRe * wRe0 - curIm * wIm0;
+        curIm = curRe * wIm0 + curIm * wRe0;
+        curRe = newCurRe;
+      }
+    }
+  }
+  if (inverse) {
+    const inv = 1 / n;
+    for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+  }
+}
+function fft2d(re, im, M, inverse) {
+  const rowRe = new Float64Array(M);
+  const rowIm = new Float64Array(M);
+  for (let j = 0; j < M; j++) {
+    const off = j * M;
+    for (let i = 0; i < M; i++) { rowRe[i] = re[off + i]; rowIm[i] = im[off + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let i = 0; i < M; i++) { re[off + i] = rowRe[i]; im[off + i] = rowIm[i]; }
+  }
+  for (let i = 0; i < M; i++) {
+    for (let j = 0; j < M; j++) { rowRe[j] = re[j * M + i]; rowIm[j] = im[j * M + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let j = 0; j < M; j++) { re[j * M + i] = rowRe[j]; im[j * M + i] = rowIm[j]; }
+  }
+}
+
+// ============================================================
+//  RNG + Box-Muller
+// ============================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fillNormal(arr, rng) {
+  const n = arr.length;
+  for (let i = 0; i < n; i += 2) {
+    let u1 = rng(); if (u1 < 1e-300) u1 = 1e-300;
+    const u2 = rng();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    const ang = 2 * Math.PI * u2;
+    arr[i] = r * Math.cos(ang);
+    if (i + 1 < n) arr[i + 1] = r * Math.sin(ang);
+  }
+}
+
+// ============================================================
+//  Spherical variogram and covariance
+//  γ(h) = c0 if h>0 else 0; structured part: C·[1.5(h/a) - 0.5(h/a)³]
+//  C(h) for the structured part = C - γ_struct(h) = C·[1 - 1.5(h/a) + 0.5(h/a)³] for h<a, else 0
+//  Total covariance (excluding nugget): same shape; nugget contributes only at h=0 in C, but is iid.
+// ============================================================
+const NUGGET = 10000;
+const SILL_STRUCT = 28000;
+const RANGE = 5.75;
+const MEAN_GRADE = 224.4; // sample mean
+
+// Structured covariance (no nugget)
+function covSpherical(h) {
+  if (h >= RANGE) return 0;
+  const r = h / RANGE;
+  return SILL_STRUCT * (1 - 1.5 * r + 0.5 * r * r * r);
+}
+
+// Variogram for plotting (with nugget)
+function gammaSphericalWithNugget(h) {
+  if (h <= 0) return 0;
+  if (h >= RANGE) return NUGGET + SILL_STRUCT;
+  const r = h / RANGE;
+  return NUGGET + SILL_STRUCT * (1.5 * r - 0.5 * r * r * r);
+}
+
+// ============================================================
+//  Simulator
+// ============================================================
+// Grid setup: 128x128 cells, where 1 cell = 1/16 of one sample-spacing.
+// The 8x8 deposit (16 samples on a 4x4 sample grid with spacing 2 cells in
+// the original grid) maps to the simulation as follows:
+// We'll use sample spacing = 1 in the simulation grid units, so the deposit
+// is 8 wide and the grid (128 cells) covers ~8 sample-spacings. That is,
+// 16 grid cells per sample-spacing, so the variogram range 5.75 = 5.75
+// sample-spacings = 92 cells. Actually that's too long for a 128 grid.
+//
+// Better: choose grid resolution so the total area is ~12 sample-spacings
+// across (i.e., the 8-wide deposit plus margin). Say 16 cells per sample
+// unit, 128 cells total = 8 sample-spacings exactly.
+const N = 128;
+const CELLS_PER_SAMPLE_UNIT = 16;
+// In simulation, dx (cell physical size in sample-spacing units):
+const DX = 1.0 / CELLS_PER_SAMPLE_UNIT;
+const EMBED = 2;
+const M = N * EMBED;
+
+let cachedSqrtS = null;
+
+function buildSpectrum() {
+  const C = new Float64Array(M * M);
+  const half = M >> 1;
+  for (let j = 0; j < M; j++) {
+    const ky = j < half ? j : j - M;
+    for (let i = 0; i < M; i++) {
+      const kx = i < half ? i : i - M;
+      // Toroidal lag in sample-spacing units
+      const h = Math.sqrt(kx * kx + ky * ky) * DX;
+      C[j * M + i] = covSpherical(h);
+    }
+  }
+  const re = new Float64Array(C);
+  const im = new Float64Array(M * M);
+  fft2d(re, im, M, false);
+  let peak = 0;
+  for (let i = 0; i < M * M; i++) if (re[i] > peak) peak = re[i];
+  const noiseFloor = peak * 1e-9;
+  const sqrtS = new Float64Array(M * M);
+  for (let i = 0; i < M * M; i++) {
+    const v = re[i];
+    sqrtS[i] = v > noiseFloor ? Math.sqrt(v) : 0;
+  }
+  return sqrtS;
+}
+
+function sampleField(seed) {
+  if (!cachedSqrtS) cachedSqrtS = buildSpectrum();
+  const rng = mulberry32(seed);
+  const re = new Float64Array(M * M);
+  const im = new Float64Array(M * M);
+  const buf = new Float64Array(M * M);
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) re[i] = cachedSqrtS[i] * buf[i];
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) im[i] = cachedSqrtS[i] * buf[i];
+  fft2d(re, im, M, true);
+  // Take real part, scale, crop to N×N
+  const Z = new Float64Array(N * N);
+  const scale = M;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      Z[j * N + i] = re[j * M + i] * scale;
+    }
+  }
+  // Add iid Gaussian nugget with variance c0
+  if (NUGGET > 0) {
+    const sd = Math.sqrt(NUGGET);
+    fillNormal(buf, rng);
+    for (let i = 0; i < N * N; i++) Z[i] += sd * buf[i];
+  }
+  // Add the mean
+  for (let i = 0; i < N * N; i++) Z[i] += MEAN_GRADE;
+  // Clamp at zero (grades can't be negative — physical reality, although the
+  // Gaussian model technically allows it). Ore-grade fields are commonly
+  // clipped or transformed to enforce positivity.
+  for (let i = 0; i < N * N; i++) if (Z[i] < 0) Z[i] = 0;
+  return Z;
+}
+
+// ============================================================
+//  Diverging colormap (low → high grade)
+// ============================================================
+const CMAP_STOPS = [
+  [ 26,  58,  92],
+  [123, 163, 196],
+  [245, 239, 219],
+  [200,  98,  62],
+  [122,  16,  36],
+];
+function valueToRGB(t) {
+  t = Math.max(0, Math.min(1, t));
+  const seg = t * (CMAP_STOPS.length - 1);
+  const i = Math.min(Math.floor(seg), CMAP_STOPS.length - 2);
+  const f = seg - i;
+  const a = CMAP_STOPS[i], b = CMAP_STOPS[i + 1];
+  return [
+    Math.round(a[0] + f * (b[0] - a[0])),
+    Math.round(a[1] + f * (b[1] - a[1])),
+    Math.round(a[2] + f * (b[2] - a[2])),
+  ];
+}
+
+function renderField2D(canvas, Z, N, vmin, vmax) {
+  canvas.width = N;
+  canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(N, N);
+  const span = vmax - vmin;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = Z[j * N + i];
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      const idx = (j * N + i) * 4;
+      img.data[idx]     = rgb[0];
+      img.data[idx + 1] = rgb[1];
+      img.data[idx + 2] = rgb[2];
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ============================================================
+//  Variogram plot
+// ============================================================
+function empiricalVariogram(Z, N, nBins, maxLag) {
+  const sums = new Float64Array(nBins);
+  const counts = new Int32Array(nBins);
+  const nPairs = 30000;
+  const rng = mulberry32(12345);
+  const binWidth = maxLag / nBins;
+  for (let p = 0; p < nPairs; p++) {
+    const i1 = Math.floor(rng() * N);
+    const j1 = Math.floor(rng() * N);
+    const i2 = Math.floor(rng() * N);
+    const j2 = Math.floor(rng() * N);
+    const dx = (i2 - i1) * DX;
+    const dy = (j2 - j1) * DX;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d <= 0 || d >= maxLag) continue;
+    const bin = Math.min(nBins - 1, Math.floor(d / binWidth));
+    const diff = Z[j1 * N + i1] - Z[j2 * N + i2];
+    sums[bin] += 0.5 * diff * diff;
+    counts[bin]++;
+  }
+  const lags = []; const gammas = [];
+  for (let b = 0; b < nBins; b++) {
+    if (counts[b] > 5) {
+      lags.push((b + 0.5) * binWidth);
+      gammas.push(sums[b] / counts[b]);
+    }
+  }
+  return { lags, gammas };
+}
+
+function drawVariogram(canvas, empirical) {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
+
+  const ML = 44, MR = 14, MT = 14, MB = 30;
+  const plotW = W - ML - MR;
+  const plotH = H - MT - MB;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  const totalSill = NUGGET + SILL_STRUCT;
+  const xMax = RANGE * 1.6;
+  const yMax = totalSill * 1.18;
+
+  const sx = (h) => ML + (h / xMax) * plotW;
+  const sy = (g) => MT + plotH - (g / yMax) * plotH;
+
+  // Grid
+  ctx.strokeStyle = '#e8e2d2';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) {
+    const yPx = sy((k / 4) * yMax);
+    ctx.beginPath();
+    ctx.moveTo(ML, yPx); ctx.lineTo(ML + plotW, yPx);
+    ctx.stroke();
+  }
+
+  // Sill reference
+  ctx.strokeStyle = '#b8923d';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(ML, sy(totalSill)); ctx.lineTo(ML + plotW, sy(totalSill));
+  ctx.stroke();
+
+  // Range vertical reference
+  ctx.beginPath();
+  ctx.moveTo(sx(RANGE), MT); ctx.lineTo(sx(RANGE), MT + plotH);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axes
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(ML, MT); ctx.lineTo(ML, MT + plotH);
+  ctx.lineTo(ML + plotW, MT + plotH);
+  ctx.stroke();
+
+  // Empirical
+  if (empirical && empirical.lags.length > 0) {
+    ctx.fillStyle = '#1a1a1a';
+    for (let i = 0; i < empirical.lags.length; i++) {
+      const x = sx(empirical.lags[i]);
+      const y = sy(empirical.gammas[i]);
+      if (x > ML - 1 && x < ML + plotW + 1 && y > MT - 1 && y < MT + plotH + 1) {
+        ctx.beginPath();
+        ctx.arc(x, y, 2.4, 0, 2*Math.PI);
+        ctx.fill();
+      }
+    }
+  }
+
+  // Theoretical curve (with nugget jump)
+  ctx.strokeStyle = '#9e1b32';
+  ctx.lineWidth = 2;
+  // Origin point γ(0)=0
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(0));
+  ctx.lineTo(sx(0), sy(0));
+  ctx.stroke();
+  // Then jump up to the nugget level, then draw the spherical curve
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(NUGGET));
+  const NP = 200;
+  for (let i = 1; i <= NP; i++) {
+    const h = (i / NP) * xMax;
+    const g = gammaSphericalWithNugget(h);
+    ctx.lineTo(sx(h), sy(g));
+  }
+  ctx.stroke();
+
+  // Nugget jump indicator
+  ctx.strokeStyle = '#9e1b32';
+  ctx.setLineDash([2, 2]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(0));
+  ctx.lineTo(sx(0), sy(NUGGET));
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#9e1b32';
+  ctx.font = "10px 'JetBrains Mono', monospace";
+  ctx.fillText('c₀', sx(0) + 4, sy(NUGGET * 0.5) + 3);
+
+  // Tick labels
+  ctx.fillStyle = '#6e6863';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 4; k++) {
+    const yVal = (k / 4) * yMax;
+    ctx.fillText(yVal.toFixed(0), ML - 4, sy(yVal) + 3);
+  }
+  ctx.textAlign = 'center';
+  for (let k = 0; k <= 5; k++) {
+    const xVal = (k / 5) * xMax;
+    ctx.fillText(xVal.toFixed(1), sx(xVal), MT + plotH + 13);
+  }
+
+  // Axis titles
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = "italic 11px 'Fraunces', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('h (sample-spacings)', ML + plotW / 2, MT + plotH + 25);
+  ctx.save();
+  ctx.translate(11, MT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('γ(h)', 0, 0);
+  ctx.restore();
+
+  // Sill / range annotations
+  ctx.fillStyle = '#b8923d';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  ctx.fillText('sill 38000', ML + plotW - 4, sy(totalSill) - 3);
+  ctx.textAlign = 'center';
+  ctx.fillText('a=5.75', sx(RANGE), MT + 11);
+}
+
+// ============================================================
+//  3D surface (Three.js)
+// ============================================================
+let scene3d = null;
+function ensureScene3D() {
+  if (scene3d) return scene3d;
+  const canvas = document.getElementById('canvas-field-3d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  canvas.width = size;
+  canvas.height = size;
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true, preserveDrawingBuffer: false
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(size, size, false);
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+  camera.up.set(0, 0, 1);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+  dir.position.set(2, -3, 4);
+  scene.add(dir);
+  const dir2 = new THREE.DirectionalLight(0xffe4c4, 0.25);
+  dir2.position.set(-3, 2, 1);
+  scene.add(dir2);
+  scene3d = { renderer, scene, camera, mesh: null, size };
+  return scene3d;
+}
+function buildSurface3D(Z, N, vmin, vmax) {
+  const s = ensureScene3D();
+  if (s.mesh) {
+    s.scene.remove(s.mesh);
+    s.mesh.geometry.dispose();
+    s.mesh.material.dispose();
+    s.mesh = null;
+  }
+  const planeSize = 2.0;
+  const geom = new THREE.PlaneGeometry(planeSize, planeSize, N - 1, N - 1);
+  const positions = geom.attributes.position.array;
+  const colors = new Float32Array(N * N * 3);
+  const span = vmax - vmin;
+  // Use actual data extent for height scaling
+  let actualMin = Infinity, actualMax = -Infinity;
+  for (let i = 0; i < Z.length; i++) {
+    if (Z[i] < actualMin) actualMin = Z[i];
+    if (Z[i] > actualMax) actualMax = Z[i];
+  }
+  const actualSpan = Math.max(actualMax - actualMin, 1e-6);
+  const heightScale = 0.30 / actualSpan;
+  const midY = (actualMin + actualMax) / 2;
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const vIdx = iy * N + ix;
+      const v = Z[iy * N + ix];
+      positions[vIdx * 3 + 2] = (v - midY) * heightScale;
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      colors[vIdx * 3]     = rgb[0] / 255;
+      colors[vIdx * 3 + 1] = rgb[1] / 255;
+      colors[vIdx * 3 + 2] = rgb[2] / 255;
+    }
+  }
+  geom.attributes.position.needsUpdate = true;
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  const mat = new THREE.MeshLambertMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  s.scene.add(mesh);
+  s.mesh = mesh;
+}
+function update3DCamera() {
+  if (!scene3d) return;
+  const r = 2.8;
+  const theta = state3d.elev;
+  const phi = state3d.azim;
+  const cx = r * Math.cos(theta) * Math.sin(phi);
+  const cy = -r * Math.cos(theta) * Math.cos(phi);
+  const cz = r * Math.sin(theta);
+  scene3d.camera.position.set(cx, cy, cz);
+  scene3d.camera.lookAt(0, 0, 0);
+}
+function render3D() {
+  if (!scene3d) return;
+  scene3d.renderer.render(scene3d.scene, scene3d.camera);
+}
+function resize3DCanvas() {
+  if (!scene3d) return;
+  const canvas = document.getElementById('canvas-field-3d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  if (size !== scene3d.size) {
+    scene3d.size = size;
+    scene3d.renderer.setSize(size, size, false);
+    scene3d.camera.aspect = 1;
+    scene3d.camera.updateProjectionMatrix();
+  }
+}
+
+// ============================================================
+//  Sample location overlay — values computed FROM the current
+//  realization as the 1×1 cell average around each sample point.
+// ============================================================
+// Sample (I, J) is centered at (2I+0.5, 2J+0.5) in sample-spacing units.
+// In the simulation grid (CELLS_PER_SAMPLE_UNIT = 16 cells per sample-
+// spacing, N=128 cells total), the sample center is at cell
+// (16(2I+0.5), 16(2J+0.5)) = (32I+8, 32J+8).
+// The 1×1 cell extends ±0.5 sample-spacings = ±8 cells around that center.
+function computeSampleAverages(Z, N) {
+  const out = []; // [{I, J, value, frac_x, frac_y}, ...]
+  const halfWidth = CELLS_PER_SAMPLE_UNIT / 2; // 8 cells = 0.5 sample-spacings
+  for (let J = 0; J < 4; J++) {
+    for (let I = 0; I < 4; I++) {
+      const cx = 32 * I + 8; // center cell (i)
+      const cy = 32 * J + 8; // center cell (j)
+      let sum = 0, count = 0;
+      const i0 = Math.max(0, cx - halfWidth);
+      const i1 = Math.min(N, cx + halfWidth);
+      const j0 = Math.max(0, cy - halfWidth);
+      const j1 = Math.min(N, cy + halfWidth);
+      for (let j = j0; j < j1; j++) {
+        for (let i = i0; i < i1; i++) {
+          sum += Z[j * N + i];
+          count++;
+        }
+      }
+      const value = count > 0 ? sum / count : 0;
+      // Normalized [0,1] coordinates for placement on the canvas
+      const fracX = (cx + 0.5) / N;
+      const fracY = (cy + 0.5) / N;
+      out.push({ I, J, value, fracX, fracY });
+    }
+  }
+  return out;
+}
+
+function renderOverlay(samples) {
+  const overlay = document.getElementById('sample-overlay');
+  overlay.innerHTML = '';
+  for (const s of samples) {
+    const m = document.createElement('div');
+    m.className = 'sample-marker';
+    if (s.value > 400) m.classList.add('high');
+    else if (s.value > 150) m.classList.add('mid');
+    m.style.left = (100 * s.fracX) + '%';
+    m.style.top = (100 * s.fracY) + '%';
+    m.textContent = Math.round(s.value);
+    overlay.appendChild(m);
+  }
+}
+
+// ============================================================
+//  Stats
+// ============================================================
+function fieldStats(Z) {
+  let s = 0, n = Z.length, mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const v = Z[i];
+    s += v;
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+  }
+  const mean = s / n;
+  let s2 = 0;
+  for (let i = 0; i < n; i++) { const d = Z[i] - mean; s2 += d * d; }
+  return { mean, variance: s2 / n, min: mn, max: mx };
+}
+
+// ============================================================
+//  State + main pipeline
+// ============================================================
+const state = {
+  view: '2d',
+  showOverlay: false,
+  seed: Math.floor(Math.random() * 0xFFFFFFFF),
+};
+const state3d = { elev: 0.85, azim: 0.55 };
+let currentField = null;
+
+function regenerate() {
+  const btn = document.getElementById('regen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  requestAnimationFrame(() => {
+    const Z = sampleField(state.seed);
+    currentField = { Z, N };
+    // Color range fixed for visual continuity across realizations
+    const vmin = 0;
+    const vmax = 600;
+    document.getElementById('cbar-min').textContent = vmin.toFixed(0);
+    document.getElementById('cbar-mid').textContent = ((vmin+vmax)/2).toFixed(0);
+    document.getElementById('cbar-max').textContent = vmax.toFixed(0);
+
+    renderField2D(document.getElementById('canvas-field'), Z, N, vmin, vmax);
+    if (state.view === '3d') {
+      buildSurface3D(Z, N, vmin, vmax);
+      resize3DCanvas();
+      update3DCamera();
+      render3D();
+    }
+
+    // Compute and render sample averages from this realization
+    const samples = computeSampleAverages(Z, N);
+    renderOverlay(samples);
+
+    const s = fieldStats(Z);
+    document.getElementById('stat-mean').textContent = s.mean.toFixed(1);
+    document.getElementById('stat-var').textContent = s.variance.toFixed(0);
+    document.getElementById('stat-range').textContent = s.min.toFixed(0) + '..' + s.max.toFixed(0);
+
+    // Empirical variogram in the same units as theoretical (sample-spacings)
+    const empirical = empiricalVariogram(Z, N, 18, RANGE * 1.5);
+    drawVariogram(document.getElementById('canvas-vario'), empirical);
+
+    btn.disabled = false;
+    btn.textContent = 'New realization ▸';
+    state.seed = (state.seed * 1664525 + 1013904223) >>> 0;
+  });
+}
+
+// ============================================================
+//  View toggle + drag rotation
+// ============================================================
+const fieldWrap = document.getElementById('field-wrap');
+const hint3D = document.getElementById('hint-3d');
+const sampleOverlay = document.getElementById('sample-overlay');
+
+function setView(view) {
+  state.view = view;
+  document.querySelectorAll('.view-toggle').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if (view === '3d') {
+    fieldWrap.classList.add('mode-3d');
+    hint3D.textContent = 'drag to rotate';
+    if (currentField) {
+      buildSurface3D(currentField.Z, currentField.N, 0, 600);
+      resize3DCanvas();
+      update3DCamera();
+      render3D();
+    }
+  } else {
+    fieldWrap.classList.remove('mode-3d');
+    hint3D.textContent = '';
+  }
+}
+document.querySelectorAll('.view-toggle').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+
+const overlayBtn = document.getElementById('overlay-btn');
+overlayBtn.addEventListener('click', () => {
+  state.showOverlay = !state.showOverlay;
+  overlayBtn.classList.toggle('active', state.showOverlay);
+  overlayBtn.textContent = state.showOverlay ? 'Hide sample snapshot' : 'Show sample snapshot ▸';
+  sampleOverlay.classList.toggle('visible', state.showOverlay);
+});
+
+let dragging = false, lastX = 0, lastY = 0;
+fieldWrap.addEventListener('mousedown', (e) => {
+  if (state.view !== '3d') return;
+  e.preventDefault();
+  dragging = true;
+  lastX = e.clientX; lastY = e.clientY;
+  fieldWrap.classList.add('dragging');
+});
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  state3d.azim += dx * 0.008;
+  state3d.elev = Math.max(0.06, Math.min(Math.PI / 2 - 0.05, state3d.elev - dy * 0.006));
+  update3DCamera();
+  render3D();
+});
+window.addEventListener('mouseup', () => { dragging = false; fieldWrap.classList.remove('dragging'); });
+window.addEventListener('mouseleave', () => { dragging = false; fieldWrap.classList.remove('dragging'); });
+
+document.getElementById('regen-btn').addEventListener('click', regenerate);
+
+// Initial
+regenerate();
+</script>
+</body>
+</html>

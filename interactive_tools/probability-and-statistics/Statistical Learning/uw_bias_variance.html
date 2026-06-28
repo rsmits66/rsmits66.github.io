@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bias–Variance Tradeoff for Variance Estimators</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$']], displayMath: [['$$','$$']] },
+    chtml: { displayAlign: 'left' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+  :root {
+    --purple:       #4B2E83;
+    --purple-dark:  #32145A;
+    --purple-soft:  #E8E3F2;
+    --purple-line:  #C5B4E3;
+    --gold:         #B7A57A;
+    --gold-dark:    #85754D;
+    --ink:          #1A1A1A;
+    --ink-mid:      #4A4A4A;
+    --ink-soft:     #6B6B6B;
+    --bg:           #FAFAF8;
+    --card:         #FFFFFF;
+    --line:         #E5E2DC;
+    --line-strong:  #B5B0A7;
+    --good:         #2E7D5B;
+    --bad:          #B94A48;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Sans 3', -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--bg);
+    padding: 0;
+  }
+
+  /* Top accent bar */
+  .top-bar {
+    height: 6px;
+    background: linear-gradient(90deg, var(--purple) 0%, var(--purple) 60%, var(--gold) 60%, var(--gold) 100%);
+  }
+
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 40px 0 32px;
+  }
+
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  .kicker {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-family: 'Source Serif 4', serif;
+    font-size: 18px;
+    color: var(--ink-mid);
+    font-weight: 400;
+    max-width: 720px;
+  }
+
+  main { padding: 40px 0 80px; }
+
+  section { margin-bottom: 48px; }
+
+  h2 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+    margin-bottom: 6px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--purple);
+    display: inline-block;
+  }
+  .section-intro {
+    color: var(--ink-mid);
+    margin: 14px 0 18px;
+    max-width: 760px;
+  }
+
+  h3 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    margin: 20px 0 8px;
+  }
+
+  p { margin-bottom: 12px; }
+
+  /* Equation panels */
+  .eq {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--purple);
+    padding: 16px 22px;
+    margin: 14px 0;
+    border-radius: 2px;
+  }
+  .eq .eq-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    margin-bottom: 6px;
+  }
+
+  /* Interactive panel */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px 26px 28px;
+    margin: 20px 0;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .control-row label {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 14px;
+    min-width: 88px;
+  }
+  .slider-wrap {
+    flex: 1;
+    min-width: 240px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--purple-line);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--purple);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px var(--purple-dark);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--purple);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px var(--purple-dark);
+  }
+  input[type="range"].gold::-webkit-slider-thumb { background: var(--gold-dark); box-shadow: 0 0 0 1px var(--gold-dark); }
+  input[type="range"].gold::-moz-range-thumb { background: var(--gold-dark); box-shadow: 0 0 0 1px var(--gold-dark); }
+  input[type="range"].gold { background: #DDD3B8; }
+
+  .value-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--purple);
+    background: var(--purple-soft);
+    padding: 4px 12px;
+    border-radius: 12px;
+    min-width: 60px;
+    text-align: center;
+  }
+  .value-pill.gold {
+    color: var(--gold-dark);
+    background: #F2EDDD;
+  }
+
+  /* Estimator cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 20px 0 4px;
+  }
+  .card-est {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    border-radius: 3px;
+    border-top: 3px solid var(--ink-soft);
+  }
+  .card-est.unbiased { border-top-color: var(--purple); }
+  .card-est.mle      { border-top-color: var(--gold-dark); }
+  .card-est.minmse   { border-top-color: var(--ink); background: var(--purple-soft); }
+
+  .card-est .tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .card-est.unbiased .tag { color: var(--purple); }
+  .card-est.mle .tag      { color: var(--gold-dark); }
+  .card-est.minmse .tag   { color: var(--ink); }
+
+  .card-est .name {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .card-est .stats { display: grid; gap: 4px; }
+  .card-est .stat {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .card-est .stat-label { color: var(--ink-soft); }
+  .card-est .stat-val   { font-weight: 600; color: var(--ink); }
+  .card-est .stat.mse {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--line-strong);
+    font-size: 14px;
+  }
+  .card-est .stat.mse .stat-val { color: var(--purple); }
+
+  /* Custom estimator card */
+  .card-custom {
+    background: #F8F5EC;
+    border: 1px solid var(--gold);
+    border-left: 3px solid var(--gold-dark);
+    padding: 16px 20px;
+    margin-top: 14px;
+    border-radius: 3px;
+  }
+  .card-custom .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .card-custom .title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .card-custom .vals {
+    display: flex;
+    gap: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .card-custom .vals span b {
+    color: var(--gold-dark);
+    margin-left: 6px;
+  }
+
+  /* Chart */
+  .chart {
+    margin-top: 22px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 16px;
+    border-radius: 3px;
+  }
+  .chart-title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .chart-sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+
+  /* Comparison */
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .verdict {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 18px 20px;
+    border-radius: 3px;
+  }
+  .verdict h4 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .verdict .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .verdict ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  .verdict li {
+    padding: 4px 0 4px 22px;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--ink-mid);
+  }
+  .verdict li::before {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .verdict li.pro::before { content: '+'; color: var(--good); }
+  .verdict li.con::before { content: '−'; color: var(--bad); }
+  .verdict .sub-h {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 12px;
+    margin-bottom: 2px;
+  }
+
+  /* Use-when summary */
+  .use-when {
+    background: var(--purple);
+    color: white;
+    padding: 22px 26px;
+    border-radius: 3px;
+    margin-top: 8px;
+  }
+  .use-when h3 {
+    color: white;
+    font-size: 16px;
+    margin-bottom: 12px;
+    margin-top: 0;
+  }
+  .use-when .row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    align-items: baseline;
+  }
+  .use-when .row:first-of-type { border-top: none; }
+  .use-when .when {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .use-when .pick {
+    font-family: 'Source Serif 4', serif;
+    font-size: 16px;
+  }
+  .use-when .pick code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(255,255,255,0.12);
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 14px;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+    font-family: 'Source Sans 3', sans-serif;
+  }
+
+  @media (max-width: 720px) {
+    .cards, .verdict-grid { grid-template-columns: 1fr; }
+    .use-when .row { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+
+<header>
+  <div class="container">
+    <div class="kicker">Stat 421 · Mathematical Statistics</div>
+    <h1>The Bias–Variance Tradeoff for Variance Estimators</h1>
+    <p class="subtitle">An interactive comparison of three estimators of $\sigma^2$ for a normal sample, by mean squared error.</p>
+  </div>
+</header>
+
+<main class="container">
+
+<section>
+  <h2>1. The Decomposition</h2>
+  <p class="section-intro">For any estimator $\hat{\theta}$ of a parameter $\theta$, the mean squared error decomposes into variance plus squared bias:</p>
+  <div class="eq">
+    <div class="eq-label">MSE Decomposition</div>
+    $$\operatorname{MSE}(\hat{\theta}) = V(\hat{\theta}) + [B(\hat{\theta})]^2, \qquad B(\hat{\theta}) = E[\hat{\theta}] - \theta$$
+  </div>
+  <p>An unbiased estimator has zero bias, so its MSE equals its variance. A biased estimator pays a price ($B^2$) but can buy a larger reduction in $V$. The question is whether the trade is worth it.</p>
+</section>
+
+<section>
+  <h2>2. The Setup</h2>
+  <p class="section-intro">Let $Y_1, \ldots, Y_n$ be iid from $\mathcal{N}(\mu, \sigma^2)$. Define the sum of squared deviations:</p>
+  <div class="eq">
+    <div class="eq-label">Sum of Squares</div>
+    $$W = \sum_{i=1}^n (Y_i - \bar{Y})^2, \qquad \frac{W}{\sigma^2} \sim \chi^2_{n-1}$$
+  </div>
+  <p>So $E[W] = (n-1)\sigma^2$ and $V(W) = 2(n-1)\sigma^4$. We consider the family $S^2_m = W/m$ for $m > 0$:</p>
+  <div class="eq">
+    $$E[S^2_m] = \frac{(n-1)\sigma^2}{m}, \quad V(S^2_m) = \frac{2(n-1)\sigma^4}{m^2}, \quad \operatorname{MSE}(S^2_m) = \frac{\sigma^4}{m^2}\bigl[2(n-1) + (n-1-m)^2\bigr]$$
+  </div>
+  <p>Three choices of $m$ are standard: $m = n-1$ (unbiased $S^2$), $m = n$ (MLE $S'^2$), and $m = n+1$ (minimum MSE). Minimizing the MSE expression over $m$ gives $m^\ast = n+1$.</p>
+</section>
+
+<section>
+  <h2>3. Interactive Comparison</h2>
+  <p class="section-intro">Drag the sliders to change the sample size $n$ and to compare a custom divisor $m$ against the three benchmarks. All MSE values are in units of $\sigma^4$.</p>
+
+  <div class="panel">
+    <div class="control-row">
+      <label for="nSlider">Sample size</label>
+      <div class="slider-wrap">
+        <input type="range" id="nSlider" min="3" max="60" value="16" step="1">
+        <span class="value-pill">n = <span id="nVal">16</span></span>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card-est unbiased">
+        <div class="tag">Unbiased</div>
+        <div class="name">$S^2 = W / (n-1)$</div>
+        <div class="stats">
+          <div class="stat"><span class="stat-label">m</span><span class="stat-val" id="u-m">15</span></div>
+          <div class="stat"><span class="stat-label">E[·] / σ²</span><span class="stat-val" id="u-e">1.0000</span></div>
+          <div class="stat"><span class="stat-label">Bias² / σ⁴</span><span class="stat-val" id="u-b2">0.0000</span></div>
+          <div class="stat"><span class="stat-label">Var / σ⁴</span><span class="stat-val" id="u-v">0.1333</span></div>
+          <div class="stat mse"><span class="stat-label">MSE / σ⁴</span><span class="stat-val" id="u-mse">0.1333</span></div>
+        </div>
+      </div>
+
+      <div class="card-est mle">
+        <div class="tag">MLE</div>
+        <div class="name">$S'^2 = W / n$</div>
+        <div class="stats">
+          <div class="stat"><span class="stat-label">m</span><span class="stat-val" id="m-m">16</span></div>
+          <div class="stat"><span class="stat-label">E[·] / σ²</span><span class="stat-val" id="m-e">0.9375</span></div>
+          <div class="stat"><span class="stat-label">Bias² / σ⁴</span><span class="stat-val" id="m-b2">0.0039</span></div>
+          <div class="stat"><span class="stat-label">Var / σ⁴</span><span class="stat-val" id="m-v">0.1172</span></div>
+          <div class="stat mse"><span class="stat-label">MSE / σ⁴</span><span class="stat-val" id="m-mse">0.1211</span></div>
+        </div>
+      </div>
+
+      <div class="card-est minmse">
+        <div class="tag">Min MSE</div>
+        <div class="name">$S^2_{n+1} = W / (n+1)$</div>
+        <div class="stats">
+          <div class="stat"><span class="stat-label">m</span><span class="stat-val" id="x-m">17</span></div>
+          <div class="stat"><span class="stat-label">E[·] / σ²</span><span class="stat-val" id="x-e">0.8824</span></div>
+          <div class="stat"><span class="stat-label">Bias² / σ⁴</span><span class="stat-val" id="x-b2">0.0138</span></div>
+          <div class="stat"><span class="stat-label">Var / σ⁴</span><span class="stat-val" id="x-v">0.1038</span></div>
+          <div class="stat mse"><span class="stat-label">MSE / σ⁴</span><span class="stat-val" id="x-mse">0.1176</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-row" style="margin-top: 18px;">
+      <label for="mSlider">Custom m</label>
+      <div class="slider-wrap">
+        <input type="range" id="mSlider" min="1" max="100" value="17" step="1" class="gold">
+        <span class="value-pill gold">m = <span id="mVal">17</span></span>
+      </div>
+    </div>
+
+    <div class="card-custom">
+      <div class="row">
+        <div class="title">Your estimator: $S^2_m = W / m$</div>
+        <div class="vals">
+          <span>E[·]/σ²<b id="c-e">0.8824</b></span>
+          <span>Bias²/σ⁴<b id="c-b2">0.0138</b></span>
+          <span>Var/σ⁴<b id="c-v">0.1038</b></span>
+          <span>MSE/σ⁴<b id="c-mse">0.1176</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart">
+      <div class="chart-title">MSE($S^2_m$) / σ⁴ as a function of divisor $m$</div>
+      <div class="chart-sub">Purple, gold, and black dots mark the unbiased, MLE, and min-MSE choices. The orange line shows your custom $m$.</div>
+      <svg id="mseChart" viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto; display:block;"></svg>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>4. Pros &amp; Cons</h2>
+  <div class="verdict-grid">
+
+    <div class="verdict">
+      <h4>$S^2 = W/(n-1)$ — Unbiased</h4>
+      <div class="formula">divisor: degrees of freedom</div>
+      <div class="sub-h">Pros</div>
+      <ul>
+        <li class="pro">$E[S^2] = \sigma^2$ exactly, for every $n$.</li>
+        <li class="pro">Required for standard $\chi^2$ and $t$ confidence intervals.</li>
+        <li class="pro">UMVUE under normality; sufficient statistic.</li>
+        <li class="pro">Software default; reproducibility cost is zero.</li>
+      </ul>
+      <div class="sub-h">Cons</div>
+      <ul>
+        <li class="con">Largest MSE of the three.</li>
+        <li class="con">Unbiasedness is paid for in variance.</li>
+      </ul>
+    </div>
+
+    <div class="verdict">
+      <h4>$S'^2 = W/n$ — MLE</h4>
+      <div class="formula">divisor: sample size</div>
+      <div class="sub-h">Pros</div>
+      <ul>
+        <li class="pro">Maximum likelihood: asymptotically efficient.</li>
+        <li class="pro">Invariant under reparameterization.</li>
+        <li class="pro">Lower MSE than $S^2$.</li>
+        <li class="pro">Drops out of EM, Bayesian modes, profile likelihood.</li>
+      </ul>
+      <div class="sub-h">Cons</div>
+      <ul>
+        <li class="con">Biased downward by factor $(n-1)/n$.</li>
+        <li class="con">Underestimates $\sigma^2$ systematically, more so at small $n$.</li>
+        <li class="con">Not the MSE minimizer.</li>
+      </ul>
+    </div>
+
+    <div class="verdict">
+      <h4>$S^2_{n+1} = W/(n+1)$ — Min MSE</h4>
+      <div class="formula">divisor: one past the MLE</div>
+      <div class="sub-h">Pros</div>
+      <ul>
+        <li class="pro">Smallest MSE in the $W/m$ family — provably optimal.</li>
+        <li class="pro">Closer to $\sigma^2$ on average in squared-error terms.</li>
+      </ul>
+      <div class="sub-h">Cons</div>
+      <ul>
+        <li class="con">Larger bias than the MLE.</li>
+        <li class="con">Does not combine with $\chi^2$ intervals without rescaling.</li>
+        <li class="con">Optimal only under squared-error loss and normality.</li>
+        <li class="con">Uncommon in practice; needs justification when used.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>5. Which to Use</h2>
+  <div class="use-when">
+    <div class="row">
+      <div class="when">Inference</div>
+      <div class="pick">Confidence intervals, hypothesis tests, reported standard errors → <code>S² = W/(n−1)</code></div>
+    </div>
+    <div class="row">
+      <div class="when">Likelihood</div>
+      <div class="pick">MLE-based methods, EM, Bayesian posteriors → <code>S'² = W/n</code></div>
+    </div>
+    <div class="row">
+      <div class="when">Point Accuracy</div>
+      <div class="pick">Minimizing expected squared error in a point estimate → <code>S²ₙ₊₁ = W/(n+1)</code></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Interactive demo · normal model · all values shown in units of $\sigma^4$
+</footer>
+
+<script>
+// ---- core math ----
+function computeStats(n, m) {
+  const a = n - 1;                              // degrees of freedom
+  const E_over_sigma2 = a / m;                  // E[S²m] / σ²
+  const bias_over_sigma2 = (a - m) / m;         // Bias / σ²
+  const bias2 = bias_over_sigma2 * bias_over_sigma2;
+  const variance = 2 * a / (m * m);             // Var / σ⁴
+  const mse = (2 * a + (a - m) * (a - m)) / (m * m);
+  return { E: E_over_sigma2, bias2, variance, mse };
+}
+
+// ---- DOM refs ----
+const nSlider = document.getElementById('nSlider');
+const mSlider = document.getElementById('mSlider');
+const nVal = document.getElementById('nVal');
+const mVal = document.getElementById('mVal');
+
+const fmt = (x, d=4) => x.toFixed(d);
+
+function updateCards(n) {
+  const u = computeStats(n, n - 1);
+  const M = computeStats(n, n);
+  const x = computeStats(n, n + 1);
+
+  document.getElementById('u-m').textContent = n - 1;
+  document.getElementById('u-e').textContent  = fmt(u.E);
+  document.getElementById('u-b2').textContent = fmt(u.bias2);
+  document.getElementById('u-v').textContent  = fmt(u.variance);
+  document.getElementById('u-mse').textContent= fmt(u.mse);
+
+  document.getElementById('m-m').textContent = n;
+  document.getElementById('m-e').textContent  = fmt(M.E);
+  document.getElementById('m-b2').textContent = fmt(M.bias2);
+  document.getElementById('m-v').textContent  = fmt(M.variance);
+  document.getElementById('m-mse').textContent= fmt(M.mse);
+
+  document.getElementById('x-m').textContent = n + 1;
+  document.getElementById('x-e').textContent  = fmt(x.E);
+  document.getElementById('x-b2').textContent = fmt(x.bias2);
+  document.getElementById('x-v').textContent  = fmt(x.variance);
+  document.getElementById('x-mse').textContent= fmt(x.mse);
+}
+
+function updateCustom(n, m) {
+  const c = computeStats(n, m);
+  document.getElementById('c-e').textContent  = fmt(c.E);
+  document.getElementById('c-b2').textContent = fmt(c.bias2);
+  document.getElementById('c-v').textContent  = fmt(c.variance);
+  document.getElementById('c-mse').textContent= fmt(c.mse);
+}
+
+// ---- chart ----
+const svg = document.getElementById('mseChart');
+
+function drawChart(n, mCustom) {
+  // domain for m: from max(1, n-8) to about n+ 15, but clip so curve is interesting
+  const mMin = Math.max(1, Math.floor((n - 1) * 0.6));
+  const mMax = Math.ceil((n + 1) * 2.5);
+
+  // compute curve
+  const pts = [];
+  for (let m = mMin; m <= mMax; m += 0.25) {
+    pts.push({ m, mse: computeStats(n, m).mse });
+  }
+
+  // y range: from 0 to maybe 2x the unbiased MSE for clarity (but clip)
+  const baselineMSE = computeStats(n, n - 1).mse;
+  const yMax = baselineMSE * 2.5;
+  const yMin = 0;
+
+  const W = 800, H = 360;
+  const ml = 60, mr = 24, mt = 22, mb = 50;
+  const plotW = W - ml - mr;
+  const plotH = H - mt - mb;
+
+  const xScale = (m) => ml + ((m - mMin) / (mMax - mMin)) * plotW;
+  const yScale = (y) => mt + (1 - (Math.min(y, yMax) - yMin) / (yMax - yMin)) * plotH;
+
+  // build path
+  let pathD = '';
+  pts.forEach((p, i) => {
+    if (p.mse > yMax) return;          // clip points off the top
+    const cmd = pathD === '' ? 'M' : 'L';
+    pathD += `${cmd} ${xScale(p.m).toFixed(1)} ${yScale(p.mse).toFixed(1)} `;
+  });
+
+  // y-axis ticks (5 of them)
+  const yTicks = [];
+  for (let i = 0; i <= 4; i++) {
+    const yv = yMin + (i / 4) * (yMax - yMin);
+    yTicks.push(yv);
+  }
+
+  // x-axis ticks (integer m at reasonable intervals)
+  const xTickStep = Math.max(1, Math.ceil((mMax - mMin) / 10));
+  const xTicks = [];
+  for (let m = mMin; m <= mMax; m += xTickStep) {
+    xTicks.push(m);
+  }
+  // ensure we include n-1, n, n+1 visually as ticks
+  [n - 1, n, n + 1].forEach(v => { if (!xTicks.includes(v) && v >= mMin && v <= mMax) xTicks.push(v); });
+
+  // assemble svg
+  let html = '';
+
+  // grid
+  html += '<defs><pattern id="gridP" width="60" height="40" patternUnits="userSpaceOnUse">';
+  html += '<path d="M 60 0 L 0 0 0 40" fill="none" stroke="#EFEDE6" stroke-width="1"/></pattern></defs>';
+  html += `<rect x="${ml}" y="${mt}" width="${plotW}" height="${plotH}" fill="url(#gridP)"/>`;
+  html += `<rect x="${ml}" y="${mt}" width="${plotW}" height="${plotH}" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>`;
+
+  // y-axis ticks and grid lines
+  yTicks.forEach(yv => {
+    const y = yScale(yv);
+    html += `<line x1="${ml - 4}" y1="${y}" x2="${ml}" y2="${y}" stroke="#1A1A1A" stroke-width="1"/>`;
+    html += `<text x="${ml - 8}" y="${y + 4}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A4A4A">${yv.toFixed(3)}</text>`;
+  });
+
+  // x-axis ticks
+  xTicks.forEach(mv => {
+    const x = xScale(mv);
+    html += `<line x1="${x}" y1="${mt + plotH}" x2="${x}" y2="${mt + plotH + 4}" stroke="#1A1A1A" stroke-width="1"/>`;
+    html += `<text x="${x}" y="${mt + plotH + 18}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A4A4A">${mv}</text>`;
+  });
+
+  // axis labels
+  html += `<text x="${ml + plotW / 2}" y="${H - 8}" text-anchor="middle" font-family="Source Serif 4, serif" font-style="italic" font-size="13" fill="#1A1A1A">divisor m</text>`;
+  html += `<text x="14" y="${mt + plotH / 2}" text-anchor="middle" font-family="Source Serif 4, serif" font-style="italic" font-size="13" fill="#1A1A1A" transform="rotate(-90, 14, ${mt + plotH / 2})">MSE / σ⁴</text>`;
+
+  // curve
+  html += `<path d="${pathD}" fill="none" stroke="#4B2E83" stroke-width="2.25" stroke-linejoin="round"/>`;
+
+  // custom m vertical line
+  if (mCustom >= mMin && mCustom <= mMax) {
+    const cx = xScale(mCustom);
+    const cMSE = computeStats(n, mCustom).mse;
+    const cy = yScale(cMSE);
+    html += `<line x1="${cx}" y1="${mt}" x2="${cx}" y2="${mt + plotH}" stroke="#B7A57A" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+    if (cMSE <= yMax) {
+      html += `<circle cx="${cx}" cy="${cy}" r="6" fill="#B7A57A" stroke="#1A1A1A" stroke-width="1.5"/>`;
+    }
+  }
+
+  // three benchmark dots
+  const benchmarks = [
+    { m: n - 1, color: '#4B2E83', label: 'S²', dx: -8,  dy: -14, align: 'end'    },
+    { m: n,     color: '#B7A57A', label: "S'²", dx: 0,   dy: -14, align: 'middle' },
+    { m: n + 1, color: '#1A1A1A', label: 'S²ₙ₊₁', dx: 8, dy: -14, align: 'start' }
+  ];
+  benchmarks.forEach(b => {
+    if (b.m < mMin || b.m > mMax) return;
+    const stats = computeStats(n, b.m);
+    if (stats.mse > yMax) return;
+    const x = xScale(b.m);
+    const y = yScale(stats.mse);
+    html += `<circle cx="${x}" cy="${y}" r="5" fill="${b.color}" stroke="white" stroke-width="2"/>`;
+    html += `<text x="${x + b.dx}" y="${y + b.dy}" text-anchor="${b.align}" font-family="Source Serif 4, serif" font-size="12" font-weight="600" fill="${b.color}">${b.label}</text>`;
+  });
+
+  // mark minimum with a small marker
+  const xMin = xScale(n + 1);
+  const yMinPlot = yScale(computeStats(n, n + 1).mse);
+  html += `<line x1="${xMin}" y1="${yMinPlot}" x2="${xMin}" y2="${mt + plotH}" stroke="#1A1A1A" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>`;
+
+  svg.innerHTML = html;
+}
+
+// ---- wire up ----
+function refresh() {
+  const n = parseInt(nSlider.value);
+  const m = parseInt(mSlider.value);
+
+  nVal.textContent = n;
+  mVal.textContent = m;
+
+  // keep m slider range sensible w.r.t. n (allow generous range)
+  mSlider.min = 1;
+  mSlider.max = Math.max(60, n * 2 + 10);
+
+  updateCards(n);
+  updateCustom(n, m);
+  drawChart(n, m);
+}
+
+nSlider.addEventListener('input', () => {
+  // when n changes, nudge m to follow if it was at the default (n+1)
+  refresh();
+});
+mSlider.addEventListener('input', refresh);
+
+// initial
+refresh();
+</script>
+
+</body>
+</html>

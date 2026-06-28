@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Method of Moments — A Guided Treatment</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']]
+  },
+  chtml: { scale: 1.05 }
+};
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+  :root {
+    --paper:        #f4ede0;
+    --paper-deep:   #ebe1cf;
+    --ink:          #1d1815;
+    --ink-soft:     #3c342d;
+    --rule:         #c9b89a;
+    --rule-soft:    #ddd0b4;
+    --crimson:      #9e1b32;
+    --crimson-deep: #6e1224;
+    --gold:         #a07a2c;
+    --sage:         #5d6b4a;
+  }
+
+  *,*::before,*::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.65;
+    font-size: 17.5px;
+  }
+
+  /* paper grain */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(rgba(60,40,20,0.045) 1px, transparent 1.2px),
+      radial-gradient(rgba(60,40,20,0.03) 1px, transparent 1.2px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 1px;
+    mix-blend-mode: multiply;
+    z-index: 1;
+  }
+
+  .page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 70px 56px 120px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ==== MASTHEAD ==== */
+  .masthead {
+    border-top: 3px double var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 22px 0 14px;
+    margin-bottom: 60px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+    font-family: 'Fraunces', serif;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .masthead .left  { justify-self: start; }
+  .masthead .right { justify-self: end; text-align: right; }
+  .masthead .seal {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    color: var(--crimson);
+  }
+
+  /* ==== TITLE ==== */
+  .title-block {
+    text-align: center;
+    margin-bottom: 70px;
+    position: relative;
+  }
+  .title-eyebrow {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 18px;
+    color: var(--crimson);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  h1.title {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-optical-sizing: auto;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(54px, 9vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  h1.title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--crimson);
+  }
+  .subtitle {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 22px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .ornament {
+    margin: 28px auto 0;
+    width: 140px;
+    text-align: center;
+    color: var(--gold);
+    font-size: 18px;
+    letter-spacing: 0.5em;
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+
+  /* ==== BODY TYPOGRAPHY ==== */
+  h2.section {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 60px 0 6px;
+    color: var(--ink);
+  }
+  h2.section .num {
+    display: inline-block;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 0.6em;
+    color: var(--crimson);
+    margin-right: 12px;
+    vertical-align: 4px;
+  }
+  .section-rule {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 0 0 22px;
+  }
+
+  h3.sub {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 20px;
+    color: var(--crimson-deep);
+    margin: 28px 0 8px;
+  }
+
+  p { margin: 0 0 14px; }
+  p.lede::first-letter {
+    font-family: 'Fraunces', serif;
+    float: left;
+    font-size: 64px;
+    line-height: 0.85;
+    padding: 6px 10px 0 0;
+    color: var(--crimson);
+    font-weight: 400;
+  }
+
+  /* ==== PROCEDURE BLOCK ==== */
+  .procedure {
+    background: var(--paper-deep);
+    border-left: 4px solid var(--crimson);
+    padding: 26px 32px 22px;
+    margin: 34px 0;
+    position: relative;
+  }
+  .procedure::before {
+    content: "Procedure";
+    position: absolute;
+    top: -11px; left: 24px;
+    background: var(--paper-deep);
+    padding: 0 10px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--crimson);
+    letter-spacing: 0.04em;
+  }
+  .procedure ol {
+    margin: 0; padding-left: 22px;
+    counter-reset: step;
+    list-style: none;
+  }
+  .procedure ol li {
+    counter-increment: step;
+    margin: 10px 0;
+    padding-left: 20px;
+    position: relative;
+  }
+  .procedure ol li::before {
+    content: counter(step, lower-roman) ".";
+    position: absolute; left: -8px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--crimson);
+    font-weight: 500;
+  }
+
+  /* ==== EXAMPLE CARD ==== */
+  .example {
+    margin: 48px 0;
+    padding: 0;
+    position: relative;
+  }
+  .example-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+  }
+  .example-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 4px 9px 3px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+  .example-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 24px;
+    margin: 0;
+    color: var(--ink);
+  }
+  .example-title em {
+    font-style: italic;
+    color: var(--crimson);
+  }
+  .setup {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
+
+  /* equation styling tweaks */
+  mjx-container[display="true"] {
+    margin: 14px 0 !important;
+  }
+  .boxed-result {
+    display: block;
+    margin: 18px 0;
+    padding: 14px 22px;
+    border-top: 1px solid var(--gold);
+    border-bottom: 1px solid var(--gold);
+    background: rgba(160, 122, 44, 0.06);
+    text-align: center;
+    font-size: 0.98em;
+  }
+  .boxed-result .label {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* ==== LAB / NUMERICAL DEMONSTRATION ==== */
+  .lab {
+    margin: 22px 0 8px;
+    padding: 18px 24px 20px;
+    background:
+      linear-gradient(0deg, rgba(160,122,44,0.05), rgba(160,122,44,0.05)),
+      var(--paper);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--gold);
+    position: relative;
+  }
+  .lab-label {
+    position: absolute;
+    top: -10px; left: 18px;
+    background: var(--paper);
+    padding: 0 10px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+  }
+  .lab-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 18px;
+    margin: 6px 0 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .lab-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .lab-controls input {
+    width: 78px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 6px 8px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 1px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .lab-controls input:focus {
+    border-color: var(--crimson);
+  }
+  .lab-btn {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    padding: 8px 18px 7px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 1px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .lab-btn:hover { background: var(--crimson); }
+  .lab-btn:active { transform: translateY(1px); }
+
+  .lab-output { font-size: 15px; }
+  .lab-peek {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .lab-peek .key {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-right: 8px;
+  }
+  .lab-peek .vals {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    word-spacing: 2px;
+  }
+  .lab-stats {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .lab-stats td {
+    padding: 5px 0;
+    border: none;
+    vertical-align: middle;
+  }
+  .lab-stats td.k {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    width: 55%;
+  }
+  .lab-stats td.v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14.5px;
+    color: var(--ink);
+    text-align: right;
+    padding-right: 4px;
+  }
+  .lab-stats tr.estimate td.k { color: var(--crimson); font-weight: 500; }
+  .lab-stats tr.estimate td.v { color: var(--crimson); font-size: 16px; font-weight: 500; }
+  .lab-stats tr.truth td.k { color: var(--sage); }
+  .lab-stats tr.truth td.v { color: var(--sage); }
+  .lab-stats tr.error td.k { color: var(--ink-soft); font-style: italic; font-size: 13px; }
+  .lab-stats tr.error td.v { color: var(--ink-soft); font-size: 13px; }
+  .lab-stats tr.divider td {
+    padding: 0;
+    border-top: 1px dotted var(--rule);
+    height: 4px;
+  }
+  .lab-warn {
+    margin-top: 10px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13.5px;
+    color: var(--crimson);
+    display: none;
+  }
+  .lab-warn.show { display: block; }
+
+  /* ==== ASIDE / MARGIN NOTE ==== */
+  .marginalia {
+    background: transparent;
+    border-left: 2px solid var(--sage);
+    padding: 6px 0 6px 16px;
+    margin: 22px 0;
+    font-style: italic;
+    font-size: 15.5px;
+    color: var(--ink-soft);
+  }
+  .marginalia b {
+    font-style: normal;
+    font-family: 'Fraunces', serif;
+    color: var(--sage);
+    letter-spacing: 0.04em;
+  }
+
+  /* ==== SUMMARY TABLE ==== */
+  .summary-table {
+    margin: 30px 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15.5px;
+  }
+  .summary-table th {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--crimson);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--ink);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+  .summary-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: middle;
+  }
+  .summary-table tr:hover td {
+    background: var(--paper-deep);
+  }
+  .summary-table td:first-child {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* ==== FOOTER ==== */
+  .colophon {
+    margin-top: 100px;
+    border-top: 3px double var(--ink);
+    padding-top: 22px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .colophon .crimson { color: var(--crimson); }
+
+  /* responsive */
+  @media (max-width: 700px) {
+    .page { padding: 40px 22px 80px; }
+    .masthead { grid-template-columns: 1fr; gap: 6px; text-align: center; }
+    .masthead .left, .masthead .right { justify-self: center; text-align: center; }
+    h1.title { font-size: 56px; }
+    .example-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+
+  /* small floating folio numbers in margins on big screens */
+  @media (min-width: 1100px) {
+    .folio {
+      position: absolute;
+      left: -64px;
+      top: 6px;
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--gold);
+      letter-spacing: 0.12em;
+    }
+  }
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <span class="left">Math&nbsp;Stat&nbsp;I &nbsp;·&nbsp; Estimation</span>
+    <span class="seal">— Roll Tide —</span>
+    <span class="right">Folio I &nbsp;·&nbsp; mmxxvi</span>
+  </header>
+
+  <!-- TITLE -->
+  <section class="title-block">
+    <div class="title-eyebrow">An Essay on Point Estimation</div>
+    <h1 class="title">The Method<br>of <em>Moments</em></h1>
+    <div class="subtitle">a guided treatment, with seven worked examples</div>
+    <div class="ornament">❦ ❦ ❦</div>
+  </section>
+
+  <!-- INTRODUCTION -->
+  <h2 class="section"><span class="num">I.</span> Preface</h2>
+  <hr class="section-rule" />
+
+  <p class="lede">
+    The <strong>method of moments</strong> is among the oldest and most intuitive
+    techniques for constructing point estimators. Conceived by Karl Pearson in
+    1894, the procedure rests on a single, almost philosophical principle:
+    <em>the sample, in expectation, ought to look like the population.</em>
+    If one equates as many sample moments as there are unknown parameters, the
+    resulting system, when invertible, yields estimators in closed form.
+  </p>
+
+  <p>
+    For a random variable \(Y\) with distribution depending on parameters
+    \(\theta_1,\ldots,\theta_t\), the \(k\)th population moment about the origin is
+  </p>
+  \[
+    \mu_k' \;=\; E(Y^k),
+  \]
+  <p>and its sample counterpart, computed from \(Y_1,\ldots,Y_n\), is</p>
+  \[
+    m_k' \;=\; \frac{1}{n}\sum_{i=1}^{n} Y_i^{\,k}.
+  \]
+
+  <div class="marginalia">
+    <b>Note.</b> &nbsp; The Weak Law of Large Numbers ensures
+    \(m_k' \xrightarrow{\,P\,} \mu_k'\) whenever the moment exists; method-of-moments
+    estimators are therefore <em>consistent</em> under mild regularity conditions.
+  </div>
+
+  <!-- PROCEDURE -->
+  <h2 class="section"><span class="num">II.</span> The Procedure</h2>
+  <hr class="section-rule" />
+
+  <div class="procedure">
+    <ol>
+      <li>For a population indexed by \(\theta_1,\ldots,\theta_t\), choose the first \(t\) population moments \(\mu_1',\ldots,\mu_t'\).</li>
+      <li>Equate each population moment to the corresponding sample moment: \(\mu_k' = m_k'\), \(k=1,\ldots,t\).</li>
+      <li>Solve the resulting system for \(\hat\theta_1,\ldots,\hat\theta_t\). These are the method-of-moments estimators.</li>
+    </ol>
+  </div>
+
+  <p>
+    One could, in principle, use any \(t\) moments — but custom and convenience
+    favour the lowest \(t\) available. Higher moments are noisier, and exotic
+    moments are seldom interpretable.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 class="section"><span class="num">III.</span> Examples</h2>
+  <hr class="section-rule" />
+
+  <!-- EXAMPLE 1: UNIFORM -->
+  <article class="example">
+    <div class="folio">Ex. 1</div>
+    <div class="example-head">
+      <span class="example-tag">Example 1</span>
+      <h3 class="example-title">The <em>Uniform</em> Distribution on \((0,\theta)\)</h3>
+    </div>
+
+    <p class="setup">
+      Suppose \(Y_1,\ldots,Y_n\) is a random sample from \(\text{Uniform}(0,\theta)\),
+      with density \(f(y;\theta) = 1/\theta\) for \(0 \le y \le \theta\).
+    </p>
+
+    <p>The first population moment is</p>
+    \[
+      \mu_1' \;=\; E(Y) \;=\; \frac{\theta}{2},
+    \]
+    <p>and equating with the sample mean \(m_1' = \bar Y\) gives</p>
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimator</span>
+      \(\displaystyle \hat\theta \;=\; 2\bar Y.\)
+    </div>
+
+    <p>
+      One readily verifies \(E(\hat\theta) = \theta\) and
+      \(V(\hat\theta) = \theta^2 / (3n)\), so the variance vanishes as \(n\to\infty\).
+      By Chebyshev's inequality, \(\hat\theta\) is a <em>consistent</em> estimator of \(\theta\).
+    </p>
+
+    <div class="marginalia">
+      <b>A curiosity.</b> &nbsp; The maximum likelihood estimator here is
+      \(\hat\theta_{\text{MLE}} = Y_{(n)}\), the sample maximum — a quite different
+      creature, biased downward but with smaller variance for large \(n\). MoM
+      and MLE need not agree.
+    </div>
+
+    <div class="lab" data-lab="uniform">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>θ <input type="number" data-p="theta" value="10" step="0.5" min="0.1"></label>
+        <label>n <input type="number" data-p="n" value="50" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 10):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; <span style="font-style:normal">Ȳ</span></td><td class="v" data-o="ybar">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; θ̂ = 2Ȳ</td><td class="v" data-o="theta_hat">—</td></tr>
+          <tr class="truth"><td class="k">True value &nbsp; θ</td><td class="v" data-o="theta_true">—</td></tr>
+          <tr class="error"><td class="k">Absolute error</td><td class="v" data-o="err">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 2: GAMMA -->
+  <article class="example">
+    <div class="folio">Ex. 2</div>
+    <div class="example-head">
+      <span class="example-tag">Example 2</span>
+      <h3 class="example-title">The <em>Gamma</em> Distribution</h3>
+    </div>
+
+    <p class="setup">
+      Let \(Y_1,\ldots,Y_n \stackrel{\text{iid}}{\sim} \text{Gamma}(\alpha,\beta)\), with density
+      \(f(y;\alpha,\beta) = y^{\alpha-1}e^{-y/\beta} / [\beta^{\alpha}\Gamma(\alpha)]\), \(y\ge 0\).
+    </p>
+
+    <p>Two parameters demand two moments. We have</p>
+    \[
+      \mu_1' = \alpha\beta, \qquad \mu_2' = \alpha\beta^2 + (\alpha\beta)^2.
+    \]
+    <p>Equating to \(\bar Y\) and \(m_2' = \tfrac{1}{n}\sum Y_i^2\):</p>
+    \[
+      \alpha\beta = \bar Y, \qquad \alpha\beta^2 + \bar Y^{\,2} = m_2'.
+    \]
+
+    <p>From the first, \(\beta = \bar Y/\alpha\). Substituting into the second,</p>
+    \[
+      \frac{\bar Y^{\,2}}{\alpha} + \bar Y^{\,2} \;=\; m_2'
+      \;\;\Longrightarrow\;\;
+      \hat\alpha \;=\; \frac{\bar Y^{\,2}}{m_2' - \bar Y^{\,2}},
+    \]
+    <p>and consequently</p>
+
+    <div class="boxed-result">
+      <span class="label">Joint MoM Estimators</span>
+      \(\displaystyle \hat\alpha \;=\; \frac{\bar Y^{\,2}}{m_2' - \bar Y^{\,2}},
+      \qquad
+      \hat\beta \;=\; \frac{m_2' - \bar Y^{\,2}}{\bar Y}.\)
+    </div>
+
+    <p>
+      The denominator \(m_2' - \bar Y^{\,2}\) is, of course, the (uncorrected)
+      sample variance — a quantity to which we shall return repeatedly.
+    </p>
+
+    <div class="lab" data-lab="gamma">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>α <input type="number" data-p="alpha" value="3" step="0.5" min="0.2"></label>
+        <label>β <input type="number" data-p="beta" value="2" step="0.5" min="0.1"></label>
+        <label>n <input type="number" data-p="n" value="100" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 10):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr><td class="k">Second moment &nbsp; m₂′</td><td class="v" data-o="m2">—</td></tr>
+          <tr><td class="k">Sample variance &nbsp; m₂′ − Ȳ²</td><td class="v" data-o="svar">—</td></tr>
+          <tr class="divider"><td colspan="2"></td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; α̂ = Ȳ² ⁄ (m₂′ − Ȳ²)</td><td class="v" data-o="a_hat">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; β̂ = (m₂′ − Ȳ²) ⁄ Ȳ</td><td class="v" data-o="b_hat">—</td></tr>
+          <tr class="truth"><td class="k">True &nbsp; α, β</td><td class="v" data-o="ab_true">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 3: NORMAL -->
+  <article class="example">
+    <div class="folio">Ex. 3</div>
+    <div class="example-head">
+      <span class="example-tag">Example 3</span>
+      <h3 class="example-title">The <em>Normal</em> Distribution</h3>
+    </div>
+
+    <p class="setup">
+      Let \(Y_1,\ldots,Y_n \stackrel{\text{iid}}{\sim} \mathcal{N}(\mu,\sigma^2)\),
+      with \(\mu \in \mathbb{R}\) and \(\sigma^2 > 0\) both unknown.
+    </p>
+
+    <p>The first two moments are well known:</p>
+    \[
+      \mu_1' = \mu, \qquad \mu_2' = \sigma^2 + \mu^2.
+    \]
+
+    <p>Equating with the sample moments \(\bar Y\) and \(m_2'\):</p>
+    \[
+      \hat\mu = \bar Y, \qquad \hat\sigma^2 + \bar Y^{\,2} = m_2'.
+    \]
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimators</span>
+      \(\displaystyle \hat\mu \;=\; \bar Y,
+      \qquad
+      \hat\sigma^2 \;=\; m_2' - \bar Y^{\,2} \;=\; \frac{1}{n}\sum_{i=1}^n (Y_i - \bar Y)^2.\)
+    </div>
+
+    <p>
+      Notice that \(\hat\sigma^2\) is the <em>uncorrected</em> sample variance —
+      divided by \(n\), not \(n-1\). It is therefore biased:
+      \(E(\hat\sigma^2) = \tfrac{n-1}{n}\sigma^2\). The bias vanishes as
+      \(n\to\infty\), and consistency is preserved.
+    </p>
+
+    <div class="marginalia">
+      <b>Aside.</b> &nbsp; In this case the MoM and MLE estimators
+      <em>coincide exactly</em>. This is a happy accident, not a general rule.
+    </div>
+
+    <div class="lab" data-lab="normal">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>μ <input type="number" data-p="mu" value="5" step="0.5"></label>
+        <label>σ <input type="number" data-p="sigma" value="2" step="0.25" min="0.05"></label>
+        <label>n <input type="number" data-p="n" value="100" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 10):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr><td class="k">Second moment &nbsp; m₂′</td><td class="v" data-o="m2">—</td></tr>
+          <tr class="divider"><td colspan="2"></td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; μ̂ = Ȳ</td><td class="v" data-o="mu_hat">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; σ̂² = m₂′ − Ȳ²</td><td class="v" data-o="s2_hat">—</td></tr>
+          <tr class="truth"><td class="k">True &nbsp; μ, σ²</td><td class="v" data-o="ms_true">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 4: EXPONENTIAL -->
+  <article class="example">
+    <div class="folio">Ex. 4</div>
+    <div class="example-head">
+      <span class="example-tag">Example 4</span>
+      <h3 class="example-title">The <em>Exponential</em> Distribution</h3>
+    </div>
+
+    <p class="setup">
+      Suppose \(Y_1,\ldots,Y_n\) are iid \(\text{Exp}(\beta)\), with density
+      \(f(y;\beta) = (1/\beta)\,e^{-y/\beta}\) for \(y \ge 0\).
+    </p>
+
+    <p>A single parameter requires only the first moment:</p>
+    \[
+      \mu_1' \;=\; E(Y) \;=\; \beta.
+    \]
+
+    <p>Equating to \(\bar Y\) gives the trivially simple estimator</p>
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimator</span>
+      \(\displaystyle \hat\beta \;=\; \bar Y.\)
+    </div>
+
+    <p>
+      Since \(E(\bar Y) = \beta\) and \(V(\bar Y) = \beta^2/n\), the estimator is
+      unbiased and consistent. If one prefers the <em>rate</em> parameter
+      \(\lambda = 1/\beta\), then \(\hat\lambda = 1/\bar Y\); this estimator is no
+      longer unbiased (Jensen's inequality), but remains consistent.
+    </p>
+
+    <div class="lab" data-lab="exponential">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>β <input type="number" data-p="beta" value="3" step="0.5" min="0.1"></label>
+        <label>n <input type="number" data-p="n" value="50" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 10):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; β̂ = Ȳ</td><td class="v" data-o="b_hat">—</td></tr>
+          <tr class="estimate"><td class="k">Rate estimate &nbsp; λ̂ = 1 ⁄ Ȳ</td><td class="v" data-o="l_hat">—</td></tr>
+          <tr class="truth"><td class="k">True value &nbsp; β &nbsp;(λ = 1/β)</td><td class="v" data-o="b_true">—</td></tr>
+          <tr class="error"><td class="k">Absolute error in β̂</td><td class="v" data-o="err">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 5: BERNOULLI / BINOMIAL -->
+  <article class="example">
+    <div class="folio">Ex. 5</div>
+    <div class="example-head">
+      <span class="example-tag">Example 5</span>
+      <h3 class="example-title">The <em>Bernoulli</em> &amp; <em>Binomial</em> Distributions</h3>
+    </div>
+
+    <p class="setup">
+      Let \(Y_1,\ldots,Y_n \stackrel{\text{iid}}{\sim} \text{Bernoulli}(p)\),
+      so that each \(Y_i \in \{0,1\}\) with \(P(Y_i = 1) = p\).
+    </p>
+
+    <p>Here \(\mu_1' = E(Y) = p\), and equating to \(\bar Y\) gives</p>
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimator</span>
+      \(\displaystyle \hat p \;=\; \bar Y \;=\; \frac{1}{n}\sum_{i=1}^n Y_i.\)
+    </div>
+
+    <p>
+      That is, the proportion of successes. Unbiased, consistent, with
+      \(V(\hat p) = p(1-p)/n\).
+    </p>
+
+    <h3 class="sub">Binomial extension.</h3>
+
+    <p>
+      If instead \(Y_1,\ldots,Y_n \stackrel{\text{iid}}{\sim} \text{Binomial}(m, p)\)
+      with \(m\) trials per observation <em>known</em> and \(p\) unknown, then
+      \(\mu_1' = mp\) and
+    </p>
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimator</span>
+      \(\displaystyle \hat p \;=\; \frac{\bar Y}{m}.\)
+    </div>
+
+    <p>
+      A more interesting case arises when <em>both</em> \(m\) and \(p\) are unknown
+      — a problem famously studied by Olkin, Petkau, and Zidek (1981). One then
+      uses the first two moments and obtains a coupled system whose solution
+      is unstable for moderate \(n\); the method of moments illustrates here both
+      its reach and its limits.
+    </p>
+
+    <div class="lab" data-lab="bernoulli">
+      <span class="lab-label">Numerical Demonstration &nbsp;·&nbsp; Bernoulli</span>
+      <div class="lab-controls">
+        <label>p <input type="number" data-p="p" value="0.4" step="0.05" min="0.01" max="0.99"></label>
+        <label>n <input type="number" data-p="n" value="200" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 30):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Successes ⁄ trials</td><td class="v" data-o="counts">—</td></tr>
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; p̂ = Ȳ</td><td class="v" data-o="p_hat">—</td></tr>
+          <tr class="truth"><td class="k">True value &nbsp; p</td><td class="v" data-o="p_true">—</td></tr>
+          <tr class="error"><td class="k">Absolute error</td><td class="v" data-o="err">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 6: POISSON -->
+  <article class="example">
+    <div class="folio">Ex. 6</div>
+    <div class="example-head">
+      <span class="example-tag">Example 6</span>
+      <h3 class="example-title">The <em>Poisson</em> Distribution</h3>
+    </div>
+
+    <p class="setup">
+      Let \(Y_1,\ldots,Y_n \stackrel{\text{iid}}{\sim} \text{Poisson}(\lambda)\),
+      with \(P(Y = y) = \lambda^{y} e^{-\lambda}/y!\) for \(y = 0,1,2,\ldots\).
+    </p>
+
+    <p>One parameter, one moment:</p>
+    \[
+      \mu_1' \;=\; E(Y) \;=\; \lambda.
+    \]
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimator</span>
+      \(\displaystyle \hat\lambda \;=\; \bar Y.\)
+    </div>
+
+    <p>
+      Note an arresting curiosity of the Poisson: \(E(Y) = V(Y) = \lambda\).
+      One could equally well estimate \(\lambda\) by the sample variance
+      \(S^2\); the result would be a different — and generally inferior —
+      method-of-moments estimator built from the <em>second</em> central moment.
+      The choice to use \(\mu_1'\) is a choice, and a wise one.
+    </p>
+
+    <div class="marginalia">
+      <b>Diagnostic.</b> &nbsp; A large discrepancy between \(\bar Y\) and \(S^2\)
+      is itself evidence <em>against</em> the Poisson model — a phenomenon called
+      <em>overdispersion</em>, and a frequent gateway to negative-binomial alternatives.
+    </div>
+
+    <div class="lab" data-lab="poisson">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>λ <input type="number" data-p="lambda" value="4" step="0.5" min="0.1"></label>
+        <label>n <input type="number" data-p="n" value="100" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 25):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr><td class="k">Sample variance &nbsp; Sₙ²</td><td class="v" data-o="svar">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; λ̂ = Ȳ</td><td class="v" data-o="l_hat">—</td></tr>
+          <tr class="truth"><td class="k">True value &nbsp; λ</td><td class="v" data-o="l_true">—</td></tr>
+          <tr class="error"><td class="k">Absolute error</td><td class="v" data-o="err">—</td></tr>
+          <tr class="error"><td class="k">|Ȳ − Sₙ²| &nbsp; <em>(should be small under Poisson)</em></td><td class="v" data-o="disp">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 7: GEOMETRIC -->
+  <article class="example">
+    <div class="folio">Ex. 7</div>
+    <div class="example-head">
+      <span class="example-tag">Example 7</span>
+      <h3 class="example-title">The <em>Geometric</em> Distribution</h3>
+    </div>
+
+    <p class="setup">
+      Let \(Y_1,\ldots,Y_n\) be iid \(\text{Geometric}(p)\), counting trials until the
+      first success: \(P(Y = y) = (1-p)^{y-1} p\) for \(y = 1, 2, \ldots\).
+    </p>
+
+    <p>The first moment is</p>
+    \[
+      \mu_1' \;=\; E(Y) \;=\; \frac{1}{p}.
+    \]
+
+    <p>Setting \(1/p = \bar Y\) and solving:</p>
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimator</span>
+      \(\displaystyle \hat p \;=\; \frac{1}{\bar Y}.\)
+    </div>
+
+    <p>
+      The estimator is <em>not</em> unbiased — \(E(1/\bar Y) \ne 1/E(\bar Y)\) by
+      Jensen's inequality — but it is consistent, since \(\bar Y \xrightarrow{P} 1/p\)
+      and the function \(g(x) = 1/x\) is continuous on \((0,\infty)\). A clean
+      illustration of <em>continuous-mapping consistency</em>.
+    </p>
+
+    <div class="lab" data-lab="geometric">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>p <input type="number" data-p="p" value="0.3" step="0.05" min="0.01" max="0.99"></label>
+        <label>n <input type="number" data-p="n" value="100" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 15):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; p̂ = 1 ⁄ Ȳ</td><td class="v" data-o="p_hat">—</td></tr>
+          <tr class="truth"><td class="k">True value &nbsp; p &nbsp;(1/p shown for comparison)</td><td class="v" data-o="p_true">—</td></tr>
+          <tr class="error"><td class="k">Absolute error in p̂</td><td class="v" data-o="err">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <!-- EXAMPLE 8: BETA -->
+  <article class="example">
+    <div class="folio">Ex. 8</div>
+    <div class="example-head">
+      <span class="example-tag">Example 8</span>
+      <h3 class="example-title">The <em>Beta</em> Distribution</h3>
+    </div>
+
+    <p class="setup">
+      Suppose \(Y_1,\ldots,Y_n \stackrel{\text{iid}}{\sim} \text{Beta}(\alpha,\beta)\)
+      on \((0,1)\) — a setting in which MLE has no closed form, so the method of
+      moments is genuinely useful.
+    </p>
+
+    <p>Recall</p>
+    \[
+      E(Y) = \frac{\alpha}{\alpha + \beta}, \qquad
+      V(Y) = \frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)}.
+    \]
+
+    <p>Let \(\bar Y\) and \(S_n^2 = m_2' - \bar Y^{\,2}\) denote the first sample
+    moment and the (uncorrected) sample variance. Setting \(E(Y) = \bar Y\) and
+    \(V(Y) = S_n^2\), some patient algebra yields</p>
+
+    \[
+      \frac{\alpha}{\alpha + \beta} = \bar Y
+      \quad\Longrightarrow\quad
+      \beta = \alpha\left(\frac{1 - \bar Y}{\bar Y}\right).
+    \]
+
+    <p>Substituting into the variance equation and simplifying:</p>
+
+    \[
+      \alpha + \beta + 1 \;=\; \frac{\bar Y(1 - \bar Y)}{S_n^2}.
+    \]
+
+    <p>The right-hand side is a single number computable from the data. Combining,</p>
+
+    <div class="boxed-result">
+      <span class="label">Method-of-Moments Estimators</span>
+      \(\displaystyle
+      \hat\alpha \;=\; \bar Y\!\left[\frac{\bar Y(1-\bar Y)}{S_n^2} - 1\right],
+      \quad
+      \hat\beta \;=\; (1-\bar Y)\!\left[\frac{\bar Y(1-\bar Y)}{S_n^2} - 1\right].\)
+    </div>
+
+    <p>
+      Both estimators are positive precisely when \(S_n^2 < \bar Y(1-\bar Y)\) —
+      a condition that, agreeably, holds with probability one for any genuine
+      Beta sample of size \(n\ge 2\).
+    </p>
+
+    <div class="lab" data-lab="beta">
+      <span class="lab-label">Numerical Demonstration</span>
+      <div class="lab-controls">
+        <label>α <input type="number" data-p="alpha" value="2" step="0.5" min="0.2"></label>
+        <label>β <input type="number" data-p="beta" value="5" step="0.5" min="0.2"></label>
+        <label>n <input type="number" data-p="n" value="200" step="1" min="2" max="10000"></label>
+        <button class="lab-btn">Draw a sample</button>
+      </div>
+      <div class="lab-output">
+        <div class="lab-peek">
+          <span class="key">Sample (first 10):</span>
+          <span class="vals" data-o="peek">—</span>
+        </div>
+        <table class="lab-stats">
+          <tr><td class="k">Sample mean &nbsp; Ȳ</td><td class="v" data-o="ybar">—</td></tr>
+          <tr><td class="k">Sample variance &nbsp; Sₙ²</td><td class="v" data-o="svar">—</td></tr>
+          <tr><td class="k">Common factor &nbsp; Ȳ(1−Ȳ)/Sₙ² − 1</td><td class="v" data-o="kfac">—</td></tr>
+          <tr class="divider"><td colspan="2"></td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; α̂</td><td class="v" data-o="a_hat">—</td></tr>
+          <tr class="estimate"><td class="k">Estimate &nbsp; β̂</td><td class="v" data-o="b_hat">—</td></tr>
+          <tr class="truth"><td class="k">True &nbsp; α, β</td><td class="v" data-o="ab_true">—</td></tr>
+        </table>
+        <div class="lab-warn" data-o="warn">⚠ Sₙ² ≥ Ȳ(1−Ȳ): MoM estimates would be non-positive. Re-sample or increase n.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============================================================ -->
+  <h2 class="section"><span class="num">IV.</span> A Compendium</h2>
+  <hr class="section-rule" />
+
+  <p>
+    For ease of reference, the eight examples above are gathered below. Each
+    estimator is consistent under the moment conditions assumed; biases vary.
+  </p>
+
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>Distribution</th>
+        <th>Parameter(s)</th>
+        <th>MoM Estimator(s)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Uniform\((0,\theta)\)</td>
+        <td>\(\theta\)</td>
+        <td>\(\hat\theta = 2\bar Y\)</td>
+      </tr>
+      <tr>
+        <td>Gamma\((\alpha,\beta)\)</td>
+        <td>\(\alpha,\beta\)</td>
+        <td>\(\hat\alpha = \bar Y^{\,2}/S_n^2,\;\;\hat\beta = S_n^2/\bar Y\)</td>
+      </tr>
+      <tr>
+        <td>Normal\((\mu,\sigma^2)\)</td>
+        <td>\(\mu,\sigma^2\)</td>
+        <td>\(\hat\mu = \bar Y,\;\;\hat\sigma^2 = S_n^2\)</td>
+      </tr>
+      <tr>
+        <td>Exponential\((\beta)\)</td>
+        <td>\(\beta\)</td>
+        <td>\(\hat\beta = \bar Y\)</td>
+      </tr>
+      <tr>
+        <td>Bernoulli\((p)\)</td>
+        <td>\(p\)</td>
+        <td>\(\hat p = \bar Y\)</td>
+      </tr>
+      <tr>
+        <td>Poisson\((\lambda)\)</td>
+        <td>\(\lambda\)</td>
+        <td>\(\hat\lambda = \bar Y\)</td>
+      </tr>
+      <tr>
+        <td>Geometric\((p)\)</td>
+        <td>\(p\)</td>
+        <td>\(\hat p = 1/\bar Y\)</td>
+      </tr>
+      <tr>
+        <td>Beta\((\alpha,\beta)\)</td>
+        <td>\(\alpha,\beta\)</td>
+        <td>\(\hat\alpha,\hat\beta\) given above</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    (Here \(S_n^2 = \frac{1}{n}\sum (Y_i - \bar Y)^2\) is the uncorrected sample
+    variance.)
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 class="section"><span class="num">V.</span> Closing Remarks</h2>
+  <hr class="section-rule" />
+
+  <p>
+    The method of moments is, in modern statistical parlance, a workhorse of
+    first resort. It gives closed-form estimators that are typically consistent
+    and asymptotically normal; it requires only that the relevant moments
+    exist; and it serves admirably as a starting value for iterative procedures
+    such as Newton-Raphson when MLE has no analytical solution — the Beta
+    distribution being the canonical example.
+  </p>
+
+  <p>
+    Yet the method has limitations. Its estimators may be biased,
+    occasionally inadmissible, and rarely efficient. They depend on which
+    moments one chooses; a pathological example is the Cauchy distribution,
+    whose mean fails to exist and for which the method of moments is silent
+    altogether.
+  </p>
+
+  <p>
+    These caveats are the very reason we shall, in the next chapter, turn to
+    <em>maximum likelihood</em> — a method born of a different intuition, but
+    sharing with the method of moments a common destination: estimators that
+    let the data speak in the parameter's stead.
+  </p>
+
+  <!-- COLOPHON -->
+  <footer class="colophon">
+    <span class="crimson">❦</span>
+    &nbsp;&nbsp;Set in Fraunces &amp; Spectral.&nbsp;&nbsp;
+    <span class="crimson">❦</span>
+    &nbsp;&nbsp;The University of Alabama, Math Stat I.&nbsp;&nbsp;
+    <span class="crimson">❦</span>
+  </footer>
+
+</div>
+<script>
+/* =========================================================
+   Random samplers
+   ========================================================= */
+let _spareNormal = null;
+function randn() {
+  if (_spareNormal !== null) {
+    const v = _spareNormal; _spareNormal = null; return v;
+  }
+  let u, v, s;
+  do {
+    u = 2 * Math.random() - 1;
+    v = 2 * Math.random() - 1;
+    s = u*u + v*v;
+  } while (s >= 1 || s === 0);
+  const f = Math.sqrt(-2 * Math.log(s) / s);
+  _spareNormal = v * f;
+  return u * f;
+}
+
+function randNormal(mu, sigma) { return mu + sigma * randn(); }
+
+function randUniform(theta) { return Math.random() * theta; }
+
+function randExp(beta) { return -beta * Math.log(1 - Math.random()); }
+
+// Marsaglia–Tsang gamma sampler (shape α > 0, scale β)
+function randGamma(alpha, beta) {
+  if (alpha < 1) {
+    return randGamma(alpha + 1, beta) * Math.pow(Math.random(), 1 / alpha);
+  }
+  const d = alpha - 1/3;
+  const c = 1 / Math.sqrt(9 * d);
+  for (;;) {
+    let x, v;
+    do {
+      x = randn();
+      v = 1 + c * x;
+    } while (v <= 0);
+    v = v * v * v;
+    const u = Math.random();
+    if (u < 1 - 0.0331 * x * x * x * x) return d * v * beta;
+    if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v * beta;
+  }
+}
+
+function randBeta(a, b) {
+  const x = randGamma(a, 1);
+  const y = randGamma(b, 1);
+  return x / (x + y);
+}
+
+function randBernoulli(p) { return Math.random() < p ? 1 : 0; }
+
+function randPoisson(lambda) {
+  if (lambda < 30) {
+    const L = Math.exp(-lambda);
+    let k = 0, p = 1;
+    do { k++; p *= Math.random(); } while (p > L);
+    return k - 1;
+  }
+  // Normal approximation for large lambda
+  const v = Math.round(lambda + Math.sqrt(lambda) * randn());
+  return Math.max(0, v);
+}
+
+function randGeometric(p) {
+  // # of trials until first success: Y ∈ {1, 2, ...}
+  return Math.floor(Math.log(1 - Math.random()) / Math.log(1 - p)) + 1;
+}
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+function mean(arr) {
+  let s = 0; for (const x of arr) s += x;
+  return s / arr.length;
+}
+function moment2(arr) {
+  let s = 0; for (const x of arr) s += x * x;
+  return s / arr.length;
+}
+function sampleVar(arr) {
+  return moment2(arr) - mean(arr) ** 2; // uncorrected, /n
+}
+function fmt(x, d = 4) {
+  if (!isFinite(x)) return "—";
+  return Number(x).toFixed(d);
+}
+function fmtInt(x) { return String(Math.round(x)); }
+function peekArr(arr, k = 10, d = 3, asInt = false) {
+  return arr.slice(0, k).map(v => asInt ? fmtInt(v) : fmt(v, d)).join(", ")
+       + (arr.length > k ? ", …" : "");
+}
+function getParams(lab) {
+  const out = {};
+  lab.querySelectorAll('input[data-p]').forEach(inp => {
+    out[inp.dataset.p] = parseFloat(inp.value);
+  });
+  out.n = Math.max(2, Math.min(10000, Math.round(out.n || 50)));
+  return out;
+}
+function setOut(lab, key, val) {
+  const el = lab.querySelector(`[data-o="${key}"]`);
+  if (el) el.textContent = val;
+}
+function showWarn(lab, on) {
+  const el = lab.querySelector('[data-o="warn"]');
+  if (el) el.classList.toggle('show', !!on);
+}
+
+/* =========================================================
+   Per-example handlers
+   ========================================================= */
+const handlers = {
+  uniform(lab) {
+    const { theta, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randUniform(theta));
+    const ybar = mean(Y);
+    const theta_hat = 2 * ybar;
+    setOut(lab, 'peek', peekArr(Y, 10, 3));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'theta_hat', fmt(theta_hat));
+    setOut(lab, 'theta_true', fmt(theta));
+    setOut(lab, 'err', fmt(Math.abs(theta_hat - theta)));
+  },
+
+  gamma(lab) {
+    const { alpha, beta, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randGamma(alpha, beta));
+    const ybar = mean(Y);
+    const m2 = moment2(Y);
+    const svar = m2 - ybar * ybar;
+    const a_hat = (ybar * ybar) / svar;
+    const b_hat = svar / ybar;
+    setOut(lab, 'peek', peekArr(Y, 10, 3));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'm2', fmt(m2));
+    setOut(lab, 'svar', fmt(svar));
+    setOut(lab, 'a_hat', fmt(a_hat));
+    setOut(lab, 'b_hat', fmt(b_hat));
+    setOut(lab, 'ab_true', `${fmt(alpha,3)}, ${fmt(beta,3)}`);
+  },
+
+  normal(lab) {
+    const { mu, sigma, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randNormal(mu, sigma));
+    const ybar = mean(Y);
+    const m2 = moment2(Y);
+    const s2_hat = m2 - ybar * ybar;
+    setOut(lab, 'peek', peekArr(Y, 10, 3));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'm2', fmt(m2));
+    setOut(lab, 'mu_hat', fmt(ybar));
+    setOut(lab, 's2_hat', fmt(s2_hat));
+    setOut(lab, 'ms_true', `${fmt(mu,3)}, ${fmt(sigma * sigma,3)}`);
+  },
+
+  exponential(lab) {
+    const { beta, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randExp(beta));
+    const ybar = mean(Y);
+    setOut(lab, 'peek', peekArr(Y, 10, 3));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'b_hat', fmt(ybar));
+    setOut(lab, 'l_hat', fmt(1 / ybar));
+    setOut(lab, 'b_true', `${fmt(beta,3)}  (λ = ${fmt(1/beta,3)})`);
+    setOut(lab, 'err', fmt(Math.abs(ybar - beta)));
+  },
+
+  bernoulli(lab) {
+    const { p, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randBernoulli(p));
+    const successes = Y.reduce((a,b) => a+b, 0);
+    const ybar = successes / n;
+    setOut(lab, 'peek', Y.slice(0, 30).join(" "));
+    setOut(lab, 'counts', `${successes} ⁄ ${n}`);
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'p_hat', fmt(ybar));
+    setOut(lab, 'p_true', fmt(p));
+    setOut(lab, 'err', fmt(Math.abs(ybar - p)));
+  },
+
+  poisson(lab) {
+    const { lambda, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randPoisson(lambda));
+    const ybar = mean(Y);
+    const svar = sampleVar(Y);
+    setOut(lab, 'peek', peekArr(Y, 25, 0, true));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'svar', fmt(svar));
+    setOut(lab, 'l_hat', fmt(ybar));
+    setOut(lab, 'l_true', fmt(lambda));
+    setOut(lab, 'err', fmt(Math.abs(ybar - lambda)));
+    setOut(lab, 'disp', fmt(Math.abs(ybar - svar)));
+  },
+
+  geometric(lab) {
+    const { p, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randGeometric(p));
+    const ybar = mean(Y);
+    const p_hat = 1 / ybar;
+    setOut(lab, 'peek', peekArr(Y, 15, 0, true));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'p_hat', fmt(p_hat));
+    setOut(lab, 'p_true', `${fmt(p,3)}   (1/p = ${fmt(1/p,3)})`);
+    setOut(lab, 'err', fmt(Math.abs(p_hat - p)));
+  },
+
+  beta(lab) {
+    const { alpha, beta, n } = getParams(lab);
+    const Y = Array.from({length: n}, () => randBeta(alpha, beta));
+    const ybar = mean(Y);
+    const svar = sampleVar(Y);
+    const numer = ybar * (1 - ybar);
+    const kfac = numer / svar - 1;
+    const a_hat = ybar * kfac;
+    const b_hat = (1 - ybar) * kfac;
+    const valid = svar < numer;
+    setOut(lab, 'peek', peekArr(Y, 10, 4));
+    setOut(lab, 'ybar', fmt(ybar));
+    setOut(lab, 'svar', fmt(svar));
+    setOut(lab, 'kfac', fmt(kfac));
+    setOut(lab, 'a_hat', valid ? fmt(a_hat) : '—');
+    setOut(lab, 'b_hat', valid ? fmt(b_hat) : '—');
+    setOut(lab, 'ab_true', `${fmt(alpha,3)}, ${fmt(beta,3)}`);
+    showWarn(lab, !valid);
+  }
+};
+
+/* =========================================================
+   Wire up
+   ========================================================= */
+document.querySelectorAll('.lab').forEach(lab => {
+  const kind = lab.dataset.lab;
+  const handler = handlers[kind];
+  if (!handler) return;
+  const btn = lab.querySelector('.lab-btn');
+  btn.addEventListener('click', () => handler(lab));
+  // Run once on load so the user sees data immediately
+  handler(lab);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scatterplot Matrix — mtcars · UW Statistics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;600;700;800&family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple:#4b2e83;
+    --purple-deep:#3a2266;
+    --purple-mid:#6044a3;
+    --lav:#ece7f5;
+    --lav-2:#d9cfe9;
+    --gold:#b7a57a;
+    --gold-deep:#85754d;
+    --bg:#f4f2f7;
+    --surface:#ffffff;
+    --surface-2:#f7f5fb;
+    --border:#e4e0ec;
+    --border-soft:#edeaf3;
+    --ink:#2c2640;
+    --muted:#6b6480;
+    --faint:#a8a2b8;
+    --code-bg:#36205f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Open Sans",system-ui,sans-serif;
+    font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--purple);color:#fff;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 1.3rem;}
+
+  /* ---------- top band ---------- */
+  .goldrule{height:5px;background:var(--gold);}
+  .band{
+    background:var(--purple);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1.4px, transparent 0),
+      linear-gradient(170deg,var(--purple-mid),var(--purple-deep));
+    background-size:22px 22px, 100% 100%;
+    color:#fff;
+  }
+  .band-inner{max-width:1080px;margin:0 auto;padding:2.9rem 1.3rem 3.1rem;}
+  .crest{
+    display:flex;align-items:center;gap:.7rem;
+    font-family:"Encode Sans",sans-serif;font-weight:700;
+    font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--gold);
+  }
+  .crest .w{
+    display:inline-grid;place-items:center;
+    width:30px;height:30px;background:var(--gold);color:var(--purple);
+    font-family:"Encode Sans",sans-serif;font-weight:800;font-size:1.1rem;
+    border-radius:4px;letter-spacing:0;
+  }
+  h1{
+    font-family:"Encode Sans",sans-serif;font-weight:800;
+    font-size:clamp(2.05rem,5vw,3.25rem);line-height:1.06;
+    letter-spacing:-.018em;margin:1.15rem 0 .6rem;color:#fff;
+  }
+  h1 .hl{color:var(--gold);}
+  .dek{color:#dcd3ec;font-size:1.07rem;max-width:62ch;}
+  .meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.6rem;}
+  .meta span{
+    font-family:"JetBrains Mono",monospace;font-size:.68rem;
+    border:1px solid rgba(183,165,122,.5);
+    background:rgba(255,255,255,.05);
+    padding:.34rem .64rem;border-radius:3px;color:#cfc6e2;letter-spacing:.03em;
+  }
+  .meta span b{color:#fff;font-weight:700;}
+
+  /* ---------- controls ---------- */
+  .controls{
+    display:flex;flex-wrap:wrap;align-items:center;gap:1.4rem;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:9px;padding:.9rem 1.1rem;
+    margin:1.8rem 0 1.1rem;
+    box-shadow:0 2px 12px -8px rgba(75,46,131,.25);
+  }
+  .ctl-label{
+    font-family:"Encode Sans",sans-serif;font-size:.66rem;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+    margin-right:-.6rem;
+  }
+  .seg{display:flex;background:var(--lav);border:1px solid var(--border);
+    border-radius:7px;padding:3px;gap:2px;}
+  .seg button{
+    font-family:"Encode Sans",sans-serif;font-size:.83rem;font-weight:600;
+    color:var(--purple);background:none;border:none;cursor:pointer;
+    padding:.42rem .85rem;border-radius:5px;transition:.16s;
+  }
+  .seg button:hover{background:rgba(75,46,131,.10);}
+  .seg button.on{background:var(--purple);color:#fff;}
+  .seg button.on:hover{background:var(--purple);}
+  .slider-box{display:flex;align-items:center;gap:.6rem;transition:opacity .2s;}
+  .slider-box.disabled{opacity:.35;pointer-events:none;}
+  .slider-box label{font-size:.82rem;color:var(--muted);}
+  .slider-box .val{font-family:"JetBrains Mono",monospace;font-size:.8rem;
+    color:var(--gold-deep);font-weight:700;min-width:2.6em;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;height:4px;width:118px;
+    background:var(--lav-2);border-radius:3px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--purple);cursor:pointer;border:3px solid #fff;
+    box-shadow:0 0 0 1px var(--purple);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:15px;height:15px;border-radius:50%;background:var(--purple);
+    cursor:pointer;border:3px solid #fff;}
+
+  /* ---------- figure ---------- */
+  .figure{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:11px;padding:1.1rem 1.1rem .8rem;
+    box-shadow:0 8px 30px -16px rgba(75,46,131,.3);
+    animation:rise .7s cubic-bezier(.2,.7,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  #splom{width:100%;height:auto;display:block;}
+
+  .cellbg{fill:#fbfafd;}
+  .cell:hover .cellbg{fill:#f1ecf8;}
+  .cellborder{fill:none;stroke:var(--border);stroke-width:1;}
+  .cell:hover .cellborder{stroke:var(--gold);stroke-width:1.4;}
+  .pt{fill:var(--purple);fill-opacity:.6;stroke:none;cursor:pointer;
+    transition:fill-opacity .12s;}
+  .pt:hover{fill:var(--gold-deep);fill-opacity:1;}
+  .glow{fill:none;stroke:var(--gold);stroke-opacity:.4;stroke-width:7;
+    stroke-linecap:round;stroke-linejoin:round;pointer-events:none;}
+  .fit-line{fill:none;stroke:var(--gold-deep);stroke-width:2.5;
+    stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
+    stroke-dasharray:1;stroke-dashoffset:1;animation:draw .9s ease .05s forwards;}
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  .hbar{fill:#cdc0e3;fill-opacity:.95;}
+  .axis-tick{stroke:#b8b1c6;stroke-width:1;}
+  .axis-num{fill:var(--muted);font-family:"JetBrains Mono",monospace;font-size:11px;}
+  .diag-name{fill:var(--purple);font-family:"Encode Sans",sans-serif;font-weight:800;}
+  .diag-unit{fill:var(--faint);font-family:"JetBrains Mono",monospace;font-size:10px;}
+  .r2tag{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;
+    fill:var(--gold-deep);}
+  .ptgroup{animation:fadein .65s ease both;}
+  @keyframes fadein{from{opacity:0;}to{opacity:1;}}
+
+  /* readout */
+  .readout{
+    display:flex;flex-wrap:wrap;align-items:center;gap:.55rem 1.4rem;
+    margin-top:.85rem;padding:.72rem .95rem;
+    background:var(--surface);border:1px solid var(--border);
+    border-left:4px solid var(--gold);border-radius:6px;
+    font-family:"JetBrains Mono",monospace;font-size:.78rem;min-height:2.7rem;
+  }
+  .readout .pair{color:var(--ink);font-weight:500;letter-spacing:.01em;}
+  .readout .pair .arrow{color:var(--purple);font-weight:700;}
+  .readout .stat{color:var(--muted);}
+  .readout .stat b{color:var(--gold-deep);font-weight:700;}
+  .readout .hint{color:var(--faint);}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:1.3rem;margin-top:.95rem;
+    font-size:.8rem;color:var(--muted);}
+  .legend div{display:flex;align-items:center;gap:.5rem;}
+  .lg-dot{width:10px;height:10px;border-radius:50%;background:var(--purple);opacity:.6;}
+  .lg-line{width:22px;height:3px;border-radius:2px;background:var(--gold-deep);}
+  .lg-bar{width:11px;height:11px;border-radius:2px;background:#cdc0e3;}
+
+  /* methods */
+  .methods{
+    margin-top:2.4rem;background:var(--surface);
+    border:1px solid var(--border);border-radius:11px;
+    padding:1.8rem 1.8rem 2rem;
+    box-shadow:0 8px 30px -18px rgba(75,46,131,.3);
+  }
+  .methods h2{
+    font-family:"Encode Sans",sans-serif;font-weight:800;color:var(--purple);
+    font-size:1.42rem;letter-spacing:-.01em;
+    display:flex;align-items:baseline;gap:.55rem;
+  }
+  .methods h2 .num{
+    font-family:"JetBrains Mono",monospace;font-size:.82rem;font-weight:700;
+    color:#fff;background:var(--purple);padding:.12rem .42rem;border-radius:4px;
+  }
+  .methods p{color:var(--muted);margin:.85rem 0;font-size:.97rem;}
+  .methods p strong{color:var(--ink);font-weight:700;}
+  .methods .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.7rem;margin-top:1.3rem;}
+  .mcard{border-top:3px solid var(--gold);padding-top:.9rem;}
+  .mcard h3{font-family:"Encode Sans",sans-serif;font-size:1.02rem;font-weight:700;
+    color:var(--ink);margin-bottom:.2rem;}
+  .mcard h3 .tag{font-family:"JetBrains Mono",monospace;font-size:.6rem;font-weight:500;
+    color:var(--purple);border:1px solid var(--lav-2);padding:.12rem .4rem;
+    border-radius:3px;margin-left:.45rem;vertical-align:middle;}
+  .icode{font-family:"JetBrains Mono",monospace;font-size:.86em;
+    color:var(--purple);background:var(--lav);padding:.06em .34em;border-radius:3px;}
+  .formula{
+    background:var(--surface-2);border:1px solid var(--border);
+    border-left:3px solid var(--gold);border-radius:5px;
+    padding:.85rem 1rem;margin:.85rem 0;text-align:center;
+    font-family:"JetBrains Mono",monospace;font-size:.85rem;color:var(--ink);
+    overflow-x:auto;
+  }
+  .formula .acc{color:var(--purple);font-weight:700;}
+  .code{margin:1.1rem 0 0;border-radius:8px;overflow:hidden;
+    border:1px solid var(--purple-deep);}
+  .code-bar{background:#2a1850;display:flex;align-items:center;gap:.5rem;
+    padding:.5rem .85rem;}
+  .code-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);opacity:.65;}
+  .code-bar .lang{font-family:"JetBrains Mono",monospace;font-size:.6rem;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-left:.25rem;}
+  pre{background:var(--code-bg);font-family:"JetBrains Mono",monospace;
+    font-size:.79rem;line-height:1.78;padding:1rem 1.15rem;overflow-x:auto;color:#e7e0f3;}
+  .t-com{color:#9b8ec2;font-style:italic;}
+  .t-str{color:#d8c794;}
+  .t-num{color:#e3cf98;}
+  .t-fn{color:#c7b6ee;}
+  .t-kw{color:#e6b48a;font-weight:500;}
+  .t-op{color:#ada3c6;}
+
+  footer{
+    max-width:1080px;margin:0 auto;padding:2.2rem 1.3rem 3rem;
+    font-size:.77rem;color:var(--faint);font-family:"JetBrains Mono",monospace;
+    letter-spacing:.02em;line-height:1.7;border-top:1px solid var(--border);
+    margin-top:2.4rem;
+  }
+  footer .pl{color:var(--purple);font-weight:700;}
+
+  /* tooltip */
+  #tip{
+    position:fixed;pointer-events:none;z-index:80;opacity:0;
+    transform:translate(-50%,-130%);transition:opacity .1s;
+    background:#fff;border:1px solid var(--gold);border-radius:6px;
+    padding:.45rem .68rem;font-size:.74rem;
+    box-shadow:0 10px 26px -8px rgba(44,38,64,.32);white-space:nowrap;
+  }
+  #tip .car{font-weight:700;color:var(--purple);font-family:"Encode Sans",sans-serif;}
+  #tip .vals{font-family:"JetBrains Mono",monospace;color:var(--gold-deep);font-size:.7rem;}
+
+  @media (max-width:720px){
+    .methods .grid2{grid-template-columns:1fr;}
+    .controls{gap:1rem;}
+    body{font-size:15px;}
+    .band-inner{padding:2.2rem 1.3rem 2.4rem;}
+  }
+</style>
+</head>
+<body>
+<div id="tip"><span class="car"></span><br><span class="vals"></span></div>
+
+<div class="goldrule"></div>
+<div class="band">
+  <div class="band-inner">
+    <div class="crest"><span class="w">W</span> University of Washington &nbsp;&middot;&nbsp; Statistics</div>
+    <h1>The scatterplot matrix,<br>panel by panel &mdash; <span class="hl">with curves</span></h1>
+    <p class="dek">A teaching figure for exploratory data analysis. The <em>mtcars</em> dataset holds 32 cars from a 1974 road-test; every off-diagonal cell scatters one variable against another, while the diagonal shows each variable's distribution. Choose a fit to lay a curve over all twelve panels at once.</p>
+    <div class="meta">
+      <span><b>32</b> observations</span>
+      <span><b>4</b> variables</span>
+      <span><b>1974</b> Motor Trend</span>
+      <span><b>16</b> panels</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="controls">
+    <span class="ctl-label">Fit</span>
+    <div class="seg" id="fitseg">
+      <button data-fit="none">None</button>
+      <button data-fit="linear" class="on">Linear</button>
+      <button data-fit="quad">Quadratic</button>
+      <button data-fit="cubic">Cubic</button>
+      <button data-fit="loess">LOESS</button>
+    </div>
+    <div class="slider-box disabled" id="spanbox">
+      <label>Smoothing span</label>
+      <input type="range" id="span" min="0.3" max="1" step="0.05" value="0.7">
+      <span class="val" id="spanval">0.70</span>
+    </div>
+  </div>
+
+  <div class="figure">
+    <svg id="splom" viewBox="0 0 980 980" aria-label="Scatterplot matrix"></svg>
+  </div>
+
+  <div class="readout" id="readout">
+    <span class="hint">Hover any panel for its fit statistics &mdash; hover a point for the car.</span>
+  </div>
+
+  <div class="legend">
+    <div><span class="lg-dot"></span> a car (one of 32)</div>
+    <div><span class="lg-line"></span> fitted curve</div>
+    <div><span class="lg-bar"></span> distribution (diagonal)</div>
+  </div>
+
+  <div class="methods">
+    <h2><span class="num">01</span> How the curves are fit</h2>
+    <p>Two families of curve are on offer, and they answer slightly different questions. A <strong>polynomial fit</strong> assumes a single global shape; a <strong>LOESS smoother</strong> makes no such assumption and simply lets the data bend the line locally.</p>
+    <div class="grid2">
+      <div class="mcard">
+        <h3>Least-squares polynomial<span class="tag">linear / quad / cubic</span></h3>
+        <p>Pick a degree <em>d</em> and choose the coefficients that minimise the total squared vertical distance between the points and the curve.</p>
+        <div class="formula">
+          y&#770; = <span class="acc">&beta;</span><sub>0</sub> + <span class="acc">&beta;</span><sub>1</sub>x + <span class="acc">&beta;</span><sub>2</sub>x<sup>2</sup> + &hellip; + <span class="acc">&beta;</span><sub>d</sub>x<sup>d</sup>
+        </div>
+        <p>The coefficients drop out of the <em>normal equations</em> &mdash; one tidy linear system. A straight line is just degree&nbsp;1; the U-shaped and S-shaped panels need degree&nbsp;2 or&nbsp;3.</p>
+      </div>
+      <div class="mcard">
+        <h3>LOESS<span class="tag">local regression</span></h3>
+        <p>For every point along the x-axis, fit a tiny weighted line using only the nearest fraction of the data &mdash; the <em>span</em>. Stitch those local fits together into one smooth curve.</p>
+        <div class="formula">
+          weight(x) = (1 &minus; |u|<sup>3</sup>)<sup>3</sup>, &nbsp; u = dist / <span class="acc">span</span>
+        </div>
+        <p>A small span hugs the data and wiggles; a large span is stiff and smooth. Drag the slider above to feel the trade-off.</p>
+      </div>
+    </div>
+    <p style="margin-top:1.4rem;">Each panel reports <strong>R&sup2;</strong> &mdash; the share of the y-variable's variance the curve accounts for. It rises as you add degrees, but a higher number is not automatically a better model: an over-flexible curve chases noise.</p>
+
+    <h2 style="margin-top:1.95rem;"><span class="num">02</span> The same thing in R</h2>
+    <p>This whole figure is a styled version of two base-R idioms &mdash; <span class="icode">pairs()</span> for the matrix and <span class="icode">lm()</span> / <span class="icode">loess()</span> for the curves.</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span><span class="lang">R</span></div>
+<pre><code># scatterplot matrix with a smoother drawn on every panel
+pairs(mtcars[, c("mpg", "hp", "wt", "disp")],
+      lower.panel = panel.smooth)
+
+# fit a curve to one pair -- quadratic least squares
+fit &lt;- lm(mpg ~ poly(hp, 2), data = mtcars)
+summary(fit)$r.squared        # the R-squared shown in each panel
+
+# a cubic is just one more degree
+fit3 &lt;- lm(mpg ~ poly(hp, 3), data = mtcars)
+
+# ...or a local smoother instead of a global polynomial
+lo &lt;- loess(mpg ~ hp, data = mtcars, span = 0.7)</code></pre>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Data &middot; mtcars (Henderson &amp; Velleman, 1981) from the 1974 Motor Trend US road-tests &middot; 32 cars<br>
+  <span class="pl">Styled with the University of Washington brand palette</span> &mdash; Husky Purple #4b2e83 &amp; Husky Gold &middot; an independent teaching visualization, not an official UW publication.
+</footer>
+
+<script>
+const DATA = [{"car":"Mazda RX4","mpg":21.0,"hp":110.0,"wt":2.62,"disp":160.0},{"car":"Mazda RX4 Wag","mpg":21.0,"hp":110.0,"wt":2.875,"disp":160.0},{"car":"Datsun 710","mpg":22.8,"hp":93.0,"wt":2.32,"disp":108.0},{"car":"Hornet 4 Drive","mpg":21.4,"hp":110.0,"wt":3.215,"disp":258.0},{"car":"Hornet Sportabout","mpg":18.7,"hp":175.0,"wt":3.44,"disp":360.0},{"car":"Valiant","mpg":18.1,"hp":105.0,"wt":3.46,"disp":225.0},{"car":"Duster 360","mpg":14.3,"hp":245.0,"wt":3.57,"disp":360.0},{"car":"Merc 240D","mpg":24.4,"hp":62.0,"wt":3.19,"disp":146.7},{"car":"Merc 230","mpg":22.8,"hp":95.0,"wt":3.15,"disp":140.8},{"car":"Merc 280","mpg":19.2,"hp":123.0,"wt":3.44,"disp":167.6},{"car":"Merc 280C","mpg":17.8,"hp":123.0,"wt":3.44,"disp":167.6},{"car":"Merc 450SE","mpg":16.4,"hp":180.0,"wt":4.07,"disp":275.8},{"car":"Merc 450SL","mpg":17.3,"hp":180.0,"wt":3.73,"disp":275.8},{"car":"Merc 450SLC","mpg":15.2,"hp":180.0,"wt":3.78,"disp":275.8},{"car":"Cadillac Fleetwood","mpg":10.4,"hp":205.0,"wt":5.25,"disp":472.0},{"car":"Lincoln Continental","mpg":10.4,"hp":215.0,"wt":5.424,"disp":460.0},{"car":"Chrysler Imperial","mpg":14.7,"hp":230.0,"wt":5.345,"disp":440.0},{"car":"Fiat 128","mpg":32.4,"hp":66.0,"wt":2.2,"disp":78.7},{"car":"Honda Civic","mpg":30.4,"hp":52.0,"wt":1.615,"disp":75.7},{"car":"Toyota Corolla","mpg":33.9,"hp":65.0,"wt":1.835,"disp":71.1},{"car":"Toyota Corona","mpg":21.5,"hp":97.0,"wt":2.465,"disp":120.1},{"car":"Dodge Challenger","mpg":15.5,"hp":150.0,"wt":3.52,"disp":318.0},{"car":"AMC Javelin","mpg":15.2,"hp":150.0,"wt":3.435,"disp":304.0},{"car":"Camaro Z28","mpg":13.3,"hp":245.0,"wt":3.84,"disp":350.0},{"car":"Pontiac Firebird","mpg":19.2,"hp":175.0,"wt":3.845,"disp":400.0},{"car":"Fiat X1-9","mpg":27.3,"hp":66.0,"wt":1.935,"disp":79.0},{"car":"Porsche 914-2","mpg":26.0,"hp":91.0,"wt":2.14,"disp":120.3},{"car":"Lotus Europa","mpg":30.4,"hp":113.0,"wt":1.513,"disp":95.1},{"car":"Ford Pantera L","mpg":15.8,"hp":264.0,"wt":3.17,"disp":351.0},{"car":"Ferrari Dino","mpg":19.7,"hp":175.0,"wt":2.77,"disp":145.0},{"car":"Maserati Bora","mpg":15.0,"hp":335.0,"wt":3.57,"disp":301.0},{"car":"Volvo 142E","mpg":21.4,"hp":109.0,"wt":2.78,"disp":121.0}];
+
+const VARS = [
+  {key:'mpg',  name:'Miles per gallon', short:'MPG',          unit:'mpg',     ticks:[15,20,25,30]},
+  {key:'hp',   name:'Gross horsepower', short:'Horsepower',   unit:'hp',      ticks:[100,200,300]},
+  {key:'wt',   name:'Weight',           short:'Weight',       unit:'1000 lbs',ticks:[2,3,4,5]},
+  {key:'disp', name:'Displacement',     short:'Displacement', unit:'cu. in.', ticks:[100,200,300,400]}
+];
+const N = VARS.length;
+
+/* ---- per-variable stats & padded domains ---- */
+VARS.forEach(v=>{
+  const a = DATA.map(d=>d[v.key]);
+  const lo = Math.min(...a), hi = Math.max(...a);
+  const pad = (hi-lo)*0.08;
+  v.dmin = lo; v.dmax = hi;
+  v.lo = lo-pad; v.hi = hi+pad;
+  v.mean = a.reduce((s,x)=>s+x,0)/a.length;
+});
+
+/* ---- math helpers ---- */
+function mean(a){return a.reduce((s,x)=>s+x,0)/a.length;}
+function std(a){const m=mean(a);return Math.sqrt(mean(a.map(x=>(x-m)*(x-m))));}
+
+function polyfit(xs, ys, deg){
+  const n=xs.length, m=deg+1;
+  const sp=new Array(2*deg+1).fill(0);
+  for(const x of xs){let p=1;for(let k=0;k<=2*deg;k++){sp[k]+=p;p*=x;}}
+  const sy=new Array(m).fill(0);
+  for(let i=0;i<n;i++){let p=1;for(let k=0;k<m;k++){sy[k]+=p*ys[i];p*=xs[i];}}
+  const A=[],B=[];
+  for(let r=0;r<m;r++){A.push([]);for(let c=0;c<m;c++)A[r].push(sp[r+c]);B.push(sy[r]);}
+  for(let p=0;p<m;p++){
+    let mx=p;
+    for(let r=p+1;r<m;r++) if(Math.abs(A[r][p])>Math.abs(A[mx][p])) mx=r;
+    [A[p],A[mx]]=[A[mx],A[p]];[B[p],B[mx]]=[B[mx],B[p]];
+    for(let r=p+1;r<m;r++){
+      const f=A[r][p]/A[p][p];
+      for(let c=p;c<m;c++) A[r][c]-=f*A[p][c];
+      B[r]-=f*B[p];
+    }
+  }
+  const co=new Array(m).fill(0);
+  for(let r=m-1;r>=0;r--){
+    let s=B[r];
+    for(let c=r+1;c<m;c++) s-=A[r][c]*co[c];
+    co[r]=s/A[r][r];
+  }
+  return co;
+}
+function polyval(co,x){let s=0,p=1;for(const c of co){s+=c*p;p*=x;}return s;}
+
+function loessCurve(xs, ys, span, M){
+  const n=xs.length;
+  const idx=[...xs.keys()].sort((a,b)=>xs[a]-xs[b]);
+  const sx=idx.map(i=>xs[i]), sy=idx.map(i=>ys[i]);
+  const k=Math.max(3,Math.floor(span*n));
+  const xmin=sx[0], xmax=sx[n-1], out=[];
+  for(let g=0;g<=M;g++){
+    const x0=xmin+(xmax-xmin)*g/M;
+    const dist=sx.map(x=>Math.abs(x-x0));
+    const order=[...dist.keys()].sort((a,b)=>dist[a]-dist[b]).slice(0,k);
+    const dmax=Math.max(...order.map(i=>dist[i]))||1e-9;
+    let sw=0,swx=0,swy=0,swxx=0,swxy=0;
+    for(const i of order){
+      const u=dist[i]/dmax, w=Math.pow(1-Math.pow(u,3),3);
+      sw+=w;swx+=w*sx[i];swy+=w*sy[i];swxx+=w*sx[i]*sx[i];swxy+=w*sx[i]*sy[i];
+    }
+    const den=sw*swxx-swx*swx;
+    let yh;
+    if(Math.abs(den)<1e-12){yh=swy/sw;}
+    else{const b=(sw*swxy-swx*swy)/den;yh=(swy-b*swx)/sw+b*x0;}
+    out.push({x:x0,y:yh});
+  }
+  return out;
+}
+function interp(samples,x){
+  if(x<=samples[0].x) return samples[0].y;
+  if(x>=samples[samples.length-1].x) return samples[samples.length-1].y;
+  for(let i=1;i<samples.length;i++){
+    if(x<=samples[i].x){
+      const a=samples[i-1],b=samples[i],t=(x-a.x)/(b.x-a.x);
+      return a.y+t*(b.y-a.y);
+    }
+  }
+  return samples[samples.length-1].y;
+}
+function pearson(xs,ys){
+  const mx=mean(xs),my=mean(ys);
+  let sxy=0,sxx=0,syy=0;
+  for(let i=0;i<xs.length;i++){
+    const dx=xs[i]-mx,dy=ys[i]-my;
+    sxy+=dx*dy;sxx+=dx*dx;syy+=dy*dy;
+  }
+  return sxy/Math.sqrt(sxx*syy);
+}
+
+/* xs -> col variable, ys -> row variable */
+function buildFit(xs, ys, type, span){
+  if(type==='none') return null;
+  const M=72;
+  const xmin=Math.min(...xs), xmax=Math.max(...xs);
+  let predict, samples;
+  if(type==='loess'){
+    samples=loessCurve(xs,ys,span,M);
+    predict=x=>interp(samples,x);
+  }else{
+    const deg={linear:1,quad:2,cubic:3}[type];
+    const xm=mean(xs), xsd=std(xs)||1;
+    const co=polyfit(xs.map(x=>(x-xm)/xsd),ys,deg);
+    predict=x=>polyval(co,(x-xm)/xsd);
+    samples=[];
+    for(let g=0;g<=M;g++){const x=xmin+(xmax-xmin)*g/M;samples.push({x,y:predict(x)});}
+  }
+  const ym=mean(ys);
+  let ssr=0,sst=0;
+  for(let i=0;i<xs.length;i++){
+    const e=ys[i]-predict(xs[i]); ssr+=e*e;
+    const t=ys[i]-ym; sst+=t*t;
+  }
+  const r2=Math.max(0,1-ssr/sst);
+  return {samples,r2,xmin,xmax};
+}
+
+/* ---- layout ---- */
+const VB=980, M={l:74,r:54,t:54,b:64}, GAP=7;
+const PW=VB-M.l-M.r, PH=VB-M.t-M.b;
+const CW=(PW-(N-1)*GAP)/N, CH=(PH-(N-1)*GAP)/N;
+const INSET=8;
+
+function sx(v,col,x){
+  const x0=M.l+col*(CW+GAP)+INSET, w=CW-2*INSET;
+  return x0+(x-v.lo)/(v.hi-v.lo)*w;
+}
+function sy(v,row,y){
+  const y0=M.t+row*(CH+GAP)+INSET, h=CH-2*INSET;
+  return y0+h-(y-v.lo)/(v.hi-v.lo)*h;
+}
+function fmt(v){
+  const a=Math.abs(v);
+  if(a>=100) return Math.round(v).toString();
+  if(a>=10) return v.toFixed(1);
+  return v.toFixed(2);
+}
+
+let panelInfo = {};   // "row_col" -> stats for the readout
+
+function render(){
+  const type = document.querySelector('#fitseg .on').dataset.fit;
+  const span = parseFloat(document.getElementById('span').value);
+  panelInfo = {};
+  let s = '';
+
+  /* clip paths, one per cell */
+  s += '<defs>';
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const cx=M.l+c*(CW+GAP), cy=M.t+r*(CH+GAP);
+    s += `<clipPath id="cl_${r}_${c}"><rect x="${cx}" y="${cy}" width="${CW}" height="${CH}"/></clipPath>`;
+  }
+  s += '</defs>';
+
+  /* perimeter axis ticks (R-style alternating sides) */
+  for(let i=0;i<N;i++){
+    const v=VARS[i];
+    /* y-axis for row i : left if even, right if odd */
+    const ySide = (i%2===0) ? 'left' : 'right';
+    const xAxisPos = ySide==='left' ? M.l : M.l+PW;
+    v.ticks.forEach(t=>{
+      const y=sy(v,i,t);
+      const x1 = ySide==='left' ? xAxisPos-6 : xAxisPos+6;
+      const tx = ySide==='left' ? xAxisPos-9 : xAxisPos+9;
+      const anch = ySide==='left' ? 'end' : 'start';
+      s += `<line class="axis-tick" x1="${xAxisPos}" y1="${y}" x2="${x1}" y2="${y}"/>`;
+      s += `<text class="axis-num" x="${tx}" y="${y+3.5}" text-anchor="${anch}">${t}</text>`;
+    });
+    /* x-axis for col i : top if even, bottom if odd */
+    const xSide = (i%2===0) ? 'top' : 'bottom';
+    const yAxisPos = xSide==='top' ? M.t : M.t+PH;
+    v.ticks.forEach(t=>{
+      const x=sx(v,i,t);
+      const y1 = xSide==='top' ? yAxisPos-6 : yAxisPos+6;
+      const ty = xSide==='top' ? yAxisPos-9 : yAxisPos+13;
+      s += `<line class="axis-tick" x1="${x}" y1="${yAxisPos}" x2="${x}" y2="${y1}"/>`;
+      s += `<text class="axis-num" x="${x}" y="${ty}" text-anchor="middle">${t}</text>`;
+    });
+  }
+
+  /* cells */
+  for(let r=0;r<N;r++){
+    for(let c=0;c<N;c++){
+      const cx=M.l+c*(CW+GAP), cy=M.t+r*(CH+GAP);
+      const vr=VARS[r], vc=VARS[c];
+      s += `<g class="cell" data-row="${r}" data-col="${c}">`;
+      s += `<rect class="cellbg" x="${cx}" y="${cy}" width="${CW}" height="${CH}" rx="3"/>`;
+
+      if(r===c){
+        /* diagonal : histogram + variable name */
+        const vals=DATA.map(d=>d[vr.key]);
+        const BINS=10, lo=vr.dmin, hi=vr.dmax, bw=(hi-lo)/BINS;
+        const counts=new Array(BINS).fill(0);
+        vals.forEach(x=>{let b=Math.floor((x-lo)/bw); b=Math.max(0,Math.min(BINS-1,b)); counts[b]++;});
+        const maxc=Math.max(...counts);
+        const baseY=cy+CH-INSET, maxH=CH*0.5;
+        s += '<g class="ptgroup">';
+        for(let b=0;b<BINS;b++){
+          const bx=sx(vr,c,lo+b*bw), bx2=sx(vr,c,lo+(b+1)*bw);
+          const h=counts[b]/maxc*maxH;
+          if(h>0) s += `<rect class="hbar" x="${(bx+0.8).toFixed(1)}" y="${(baseY-h).toFixed(1)}" width="${(bx2-bx-1.6).toFixed(1)}" height="${h.toFixed(1)}" rx="1"/>`;
+        }
+        s += '</g>';
+        s += `<text class="diag-name" x="${cx+CW/2}" y="${cy+CH*0.42}" text-anchor="middle" font-size="20">${vr.short}</text>`;
+        s += `<text class="diag-unit" x="${cx+CW/2}" y="${cy+CH*0.42+15}" text-anchor="middle">${vr.unit}</text>`;
+        panelInfo[`${r}_${c}`] = {diag:true, name:vr.name,
+          min:vr.dmin, max:vr.dmax, mean:vr.mean};
+      } else {
+        /* off-diagonal : x = column variable, y = row variable */
+        const xs=DATA.map(d=>d[vc.key]);
+        const ys=DATA.map(d=>d[vr.key]);
+        const corr=pearson(xs,ys);
+        const fit=buildFit(xs,ys,type,span);
+
+        /* fitted curve (drawn first, under the points) */
+        if(fit){
+          let d='';
+          fit.samples.forEach((p,i)=>{
+            d += (i?'L':'M') + sx(vc,c,p.x).toFixed(1) + ' ' + sy(vr,r,p.y).toFixed(1);
+          });
+          s += `<g clip-path="url(#cl_${r}_${c})">`;
+          s += `<path class="glow" d="${d}"/>`;
+          s += `<path class="fit-line" d="${d}" pathLength="1"/>`;
+          s += '</g>';
+        }
+
+        /* scatter points */
+        s += '<g class="ptgroup">';
+        DATA.forEach(d=>{
+          const px=sx(vc,c,d[vc.key]).toFixed(1);
+          const py=sy(vr,r,d[vr.key]).toFixed(1);
+          const vals=`${fmt(d[vc.key])} ${vc.unit}  ·  ${fmt(d[vr.key])} ${vr.unit}`;
+          s += `<circle class="pt" cx="${px}" cy="${py}" r="3" data-car="${d.car}" data-vals="${vals}"/>`;
+        });
+        s += '</g>';
+
+        /* R-squared tag */
+        if(fit){
+          s += `<text class="r2tag" x="${cx+9}" y="${cy+17}">R² ${fit.r2.toFixed(2)}</text>`;
+        }
+        panelInfo[`${r}_${c}`] = {diag:false, rowName:vr.name, colName:vc.name,
+          type, r2:fit?fit.r2:null, corr};
+      }
+      s += `<rect class="cellborder" x="${cx}" y="${cy}" width="${CW}" height="${CH}" rx="3"/>`;
+      s += '</g>';
+    }
+  }
+  document.getElementById('splom').innerHTML = s;
+}
+
+/* ---- readout ---- */
+const FITNAME = {none:'no fit', linear:'linear fit', quad:'quadratic fit',
+                 cubic:'cubic fit', loess:'LOESS smoother'};
+const readout = document.getElementById('readout');
+
+function showReadout(r,c){
+  const info = panelInfo[`${r}_${c}`];
+  if(!info) return;
+  if(info.diag){
+    readout.innerHTML =
+      `<span class="pair">${info.name}</span>` +
+      `<span class="stat">distribution &middot; <b>32</b> cars</span>` +
+      `<span class="stat">min <b>${fmt(info.min)}</b></span>` +
+      `<span class="stat">mean <b>${fmt(info.mean)}</b></span>` +
+      `<span class="stat">max <b>${fmt(info.max)}</b></span>`;
+  } else {
+    const cls = info.corr>=0 ? 'pos' : 'neg';
+    let html =
+      `<span class="pair">${info.colName} <span class="arrow">&rarr;</span> ${info.rowName}</span>` +
+      `<span class="stat">${FITNAME[info.type]}</span>` +
+      `<span class="stat ${cls}">Pearson r <b>${info.corr.toFixed(2)}</b></span>`;
+    if(info.r2!==null){
+      html += `<span class="stat">R² <b>${info.r2.toFixed(3)}</b> &mdash; ` +
+              `${(info.r2*100).toFixed(0)}% of variance explained</span>`;
+    }
+    readout.innerHTML = html;
+  }
+}
+function resetReadout(){
+  readout.innerHTML = '<span class="hint">Hover any panel for its fit statistics ' +
+    '&mdash; hover a point for the car.</span>';
+}
+
+/* ---- tooltip + panel hover (event delegation) ---- */
+const tip = document.getElementById('tip');
+const svg = document.getElementById('splom');
+
+svg.addEventListener('mouseover', e=>{
+  const cell = e.target.closest('.cell');
+  if(cell) showReadout(cell.dataset.row, cell.dataset.col);
+  const pt = e.target.closest('.pt');
+  if(pt){
+    tip.querySelector('.car').textContent = pt.dataset.car;
+    tip.querySelector('.vals').textContent = pt.dataset.vals;
+    tip.style.opacity = '1';
+  }
+});
+svg.addEventListener('mousemove', e=>{
+  if(tip.style.opacity==='1'){
+    tip.style.left = e.clientX + 'px';
+    tip.style.top  = e.clientY + 'px';
+  }
+});
+svg.addEventListener('mouseout', e=>{
+  if(e.target.closest('.pt')) tip.style.opacity = '0';
+});
+svg.addEventListener('mouseleave', ()=>{ tip.style.opacity='0'; resetReadout(); });
+
+/* ---- controls ---- */
+document.getElementById('fitseg').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#fitseg button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('spanbox').classList.toggle('disabled', btn.dataset.fit!=='loess');
+  resetReadout();
+  render();
+});
+const spanInput = document.getElementById('span');
+spanInput.addEventListener('input', ()=>{
+  document.getElementById('spanval').textContent = parseFloat(spanInput.value).toFixed(2);
+  if(document.querySelector('#fitseg .on').dataset.fit==='loess'){ resetReadout(); render(); }
+});
+
+/* ---- minimal R syntax highlighter ---- */
+(function(){
+  const kw = new Set(['library','if','else','for','while','function','TRUE','FALSE','NULL','NA']);
+  const re = /(#[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\b\d+\.?\d*\b)|([A-Za-z_.][A-Za-z0-9_.]*)|(<-|~|[-+*/^=<>!&|:$@]+)/g;
+  const esc = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function hl(src){
+    let out='',last=0,m;
+    while((m=re.exec(src))){
+      out += esc(src.slice(last,m.index)); last=re.lastIndex;
+      if(m[1]) out+='<span class="t-com">'+esc(m[1])+'</span>';
+      else if(m[2]) out+='<span class="t-str">'+esc(m[2])+'</span>';
+      else if(m[3]) out+='<span class="t-num">'+esc(m[3])+'</span>';
+      else if(m[4]){
+        let j=re.lastIndex; while(j<src.length && /\s/.test(src[j])) j++;
+        const cls = src[j]==='(' ? 't-fn' : (kw.has(m[4])?'t-kw':'');
+        out += cls ? '<span class="'+cls+'">'+esc(m[4])+'</span>' : esc(m[4]);
+      }
+      else if(m[5]) out+='<span class="t-op">'+esc(m[5])+'</span>';
+    }
+    return out+esc(src.slice(last));
+  }
+  document.querySelectorAll('pre code').forEach(c=>{ c.innerHTML = hl(c.textContent); });
+})();
+
+render();
+</script>
+</body>
+</html>

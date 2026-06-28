@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>2D Random Field Simulator — Stationary Gaussian Fields</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;
+    --crimson-deep: #7a1024;
+    --ochre: #b8923d;
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1240px; margin: 0 auto; }
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: end;
+  }
+  .doc-id {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border-left: 1px solid var(--line);
+    padding: 8px 0 8px 8px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 14px;
+    text-transform: uppercase;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.7;
+  }
+  .meta strong { color: var(--ink); font-weight: 500; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 30px;
+    align-items: start;
+  }
+  @media (max-width: 920px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--paper);
+    padding: 24px;
+    border: 1px solid var(--line);
+    box-shadow: 4px 4px 0 var(--line);
+    position: relative;
+  }
+  .panel-tag {
+    position: absolute;
+    top: -10px;
+    left: 18px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-variation-settings: "wght" 500, "opsz" 36;
+    font-size: 1.25rem;
+    margin-bottom: 14px;
+    line-height: 1.15;
+  }
+  h3 {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin: 20px 0 10px;
+  }
+
+  .control-group { margin-bottom: 18px; }
+  .control-group:last-child { margin-bottom: 0; }
+
+  .cov-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .cov-btn {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 9px 10px;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .cov-btn:hover { background: var(--line); }
+  .cov-btn.active {
+    background: var(--rust);
+    color: white;
+    border-color: var(--rust);
+  }
+
+  .param-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 50px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .param-row label {
+    font-family: var(--mono);
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .param-row .val {
+    font-family: var(--mono);
+    text-align: right;
+    color: var(--rust);
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2px;
+    background: var(--line-strong);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]:disabled { opacity: 0.3; }
+
+  .resample-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    background: var(--ink);
+    color: white;
+    border: none;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .resample-btn:hover { background: var(--rust); }
+  .resample-btn:disabled { background: var(--muted); cursor: wait; }
+
+  .output-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 980px) {
+    .output-grid { grid-template-columns: 1fr; }
+  }
+
+  canvas.field {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--ink);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: var(--paper);
+  }
+
+  .cov-plot {
+    background: var(--paper);
+    padding: 14px;
+    border: 1px solid var(--line);
+  }
+  canvas.covplot { width: 100%; height: 200px; display: block; }
+
+  .formula {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    background: rgba(158, 27, 50, 0.05);
+    padding: 10px 12px;
+    border-left: 3px solid var(--rust);
+    margin-top: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+  .formula em {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .stats-row {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+  .stat-cell {
+    padding: 8px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    text-align: center;
+  }
+  .stat-cell .label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .stat-cell .num {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--rust);
+  }
+
+  .description {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--ochre);
+    background: rgba(184, 146, 61, 0.08);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .description strong { color: var(--ink); }
+
+  .timing {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+  footer em {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="doc-id">Stationary Random Fields · Lab</div>
+    <div>
+      <h1>Random <em>Field</em> Simulator</h1>
+      <div class="subtitle">2D stationary Gaussian fields · FFT spectral method</div>
+    </div>
+    <div class="meta">
+      <strong>grid</strong> = 64 × 64<br>
+      <strong>method</strong> = FFT<br>
+      <strong>n_pts</strong> = 4,096
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-tag">Controls</div>
+      <h2>Covariance model</h2>
+
+      <div class="control-group">
+        <div class="cov-buttons" id="cov-buttons"></div>
+      </div>
+
+      <h3>Parameters</h3>
+
+      <div class="control-group">
+        <div class="param-row">
+          <label>σ²  (sill)</label>
+          <input type="range" id="sigma2" min="0.1" max="3" step="0.05" value="1">
+          <div class="val" id="sigma2-val">1.00</div>
+        </div>
+        <div class="param-row">
+          <label>ℓ  (range)</label>
+          <input type="range" id="ell" min="2" max="30" step="0.5" value="8">
+          <div class="val" id="ell-val">8.0</div>
+        </div>
+        <div class="param-row">
+          <label>ν  (Matérn)</label>
+          <input type="range" id="nu" min="0.5" max="5" step="0.1" value="1.5">
+          <div class="val" id="nu-val">1.5</div>
+        </div>
+      </div>
+
+      <h3>Random seed</h3>
+      <div class="control-group">
+        <button class="resample-btn" id="resample">↻ New realization</button>
+      </div>
+
+      <div class="formula" id="formula"></div>
+      <div class="timing" id="timing"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-tag">Output</div>
+      <h2 id="model-name">Realization · Exponential covariance</h2>
+
+      <div class="output-grid">
+        <div>
+          <canvas class="field" id="field" width="64" height="64"></canvas>
+          <div class="stats-row">
+            <div class="stat-cell"><span class="label">mean</span><span class="num" id="stat-mean">—</span></div>
+            <div class="stat-cell"><span class="label">var</span><span class="num" id="stat-var">—</span></div>
+            <div class="stat-cell"><span class="label">min</span><span class="num" id="stat-min">—</span></div>
+            <div class="stat-cell"><span class="label">max</span><span class="num" id="stat-max">—</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="cov-plot">
+            <h3 style="margin-top:0;">C(h) vs ‖h‖</h3>
+            <canvas class="covplot" id="covplot" width="280" height="180"></canvas>
+          </div>
+          <div class="description" id="description"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <em>FFT simulation of stationary Gaussian random fields · σ² = sill, ℓ = range, ν = smoothness</em>
+  </footer>
+</div>
+
+<script>
+// =================================================================
+// COVARIANCE FUNCTIONS FOR DISPLAY AND SPHERICAL CIRCULANT EMBEDDING
+// =================================================================
+// The field is generated by FFT. For exponential/Gaussian/Matern we use
+// spectral densities directly. For spherical we build a periodic covariance
+// array, FFT it, clip tiny negative eigenvalues, and use those eigenvalues.
+
+function covExponential(h, s2, ell) {
+  return s2 * Math.exp(-h / ell);
+}
+
+function covGaussian(h, s2, ell) {
+  return s2 * Math.exp(-(h * h) / (ell * ell));
+}
+
+function covSpherical(h, s2, ell) {
+  if (h >= ell) return 0;
+  const r = h / ell;
+  return s2 * (1 - 1.5 * r + 0.5 * r * r * r);
+}
+
+// Modified Bessel function K_nu(x), used only for the covariance plot.
+// Half-integers use closed forms; other values use numerical quadrature.
+function besselK(nu, x) {
+  if (x <= 0) return Infinity;
+  if (Math.abs(nu - 0.5) < 1e-9) {
+    return Math.sqrt(Math.PI / (2 * x)) * Math.exp(-x);
+  }
+  if (Math.abs(nu - 1.5) < 1e-9) {
+    return Math.sqrt(Math.PI / (2 * x)) * Math.exp(-x) * (1 + 1 / x);
+  }
+  if (Math.abs(nu - 2.5) < 1e-9) {
+    return Math.sqrt(Math.PI / (2 * x)) * Math.exp(-x) * (1 + 3/x + 3/(x*x));
+  }
+  if (Math.abs(nu - 3.5) < 1e-9) {
+    return Math.sqrt(Math.PI / (2 * x)) * Math.exp(-x) * (1 + 6/x + 15/(x*x) + 15/(x*x*x));
+  }
+  if (Math.abs(nu - 4.5) < 1e-9) {
+    return Math.sqrt(Math.PI / (2 * x)) * Math.exp(-x) * (1 + 10/x + 45/(x*x) + 105/(x*x*x) + 105/Math.pow(x,4));
+  }
+  let sum = 0;
+  const N = 240;
+  const tmax = 16;
+  const dt = tmax / N;
+  for (let k = 0; k < N; k++) {
+    const t = (k + 0.5) * dt;
+    const term = Math.exp(-x * Math.cosh(t)) * Math.cosh(nu * t);
+    if (isFinite(term)) sum += term;
+  }
+  return sum * dt;
+}
+
+// log-Gamma via Lanczos
+function lgamma(x) {
+  const g = 7;
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+             771.32342877765313, -176.61502916214059, 12.507343278686905,
+             -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) {
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  }
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+function covMatern(h, s2, ell, nu) {
+  if (h < 1e-12) return s2;
+  const x = Math.sqrt(2 * nu) * h / ell;
+  const logCoef = (1 - nu) * Math.log(2) - lgamma(nu);
+  const logTerm = nu * Math.log(x);
+  const K = besselK(nu, x);
+  if (K <= 0 || !isFinite(K)) return 0;
+  return s2 * Math.exp(logCoef + logTerm) * K;
+}
+
+const MODELS = {
+  exponential: {
+    name: 'Exponential',
+    formula: 'C(h) = σ²·exp(−‖h‖/ℓ)',
+    needsNu: false,
+    fn: (h, p) => covExponential(h, p.sigma2, p.ell),
+    spectrum: 'matern',
+    description: '<strong>Exponential.</strong> Generated spectrally as the Matérn case ν = 1/2. It is the 2D analog of the Ornstein–Uhlenbeck covariance: rough, highly textured, and non-differentiable in the mean-square sense.',
+  },
+  gaussian: {
+    name: 'Gaussian (squared exp)',
+    formula: 'C(h) = σ²·exp(−‖h‖²/ℓ²)',
+    needsNu: false,
+    fn: (h, p) => covGaussian(h, p.sigma2, p.ell),
+    spectrum: 'gaussian',
+    description: '<strong>Squared exponential.</strong> Generated with a Gaussian spectral density. High frequencies are strongly suppressed, so the field is extremely smooth — visually like rolling hills.',
+  },
+  matern: {
+    name: 'Matérn',
+    formula: 'C(h) = σ²·2^(1−ν)/Γ(ν)·(√(2ν)‖h‖/ℓ)^ν · K_ν(√(2ν)‖h‖/ℓ)',
+    needsNu: true,
+    fn: (h, p) => covMatern(h, p.sigma2, p.ell, p.nu),
+    spectrum: 'matern',
+    description: '<strong>Matérn.</strong> Generated with spectral density proportional to (κ² + ‖k‖²)<sup>−(ν+1)</sup> in two dimensions, where κ = √(2ν)/ℓ. The parameter ν tunes roughness: ν = 0.5 is exponential; large ν approaches Gaussian-like smoothness.',
+  },
+  spherical: {
+    name: 'Spherical',
+    formula: 'C(h) = σ²·(1 − 1.5(h/ℓ) + 0.5(h/ℓ)³) for h ≤ ℓ, else 0',
+    needsNu: false,
+    fn: (h, p) => covSpherical(h, p.sigma2, p.ell),
+    spectrum: 'spherical',
+    description: '<strong>Spherical.</strong> Generated by FFT from the periodic covariance array. Because finite periodic embeddings can produce tiny negative eigenvalues, negative spectral values are clipped to zero and the spectrum is renormalized.',
+  }
+};
+
+// =================================================================
+// FFT CORE
+// =================================================================
+// In-place radix-2 Cooley-Tukey FFT. inverse=true divides by n.
+
+function fft1d(re, im, inverse = false) {
+  const n = re.length;
+  let j = 0;
+  for (let i = 1; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      [re[i], re[j]] = [re[j], re[i]];
+      [im[i], im[j]] = [im[j], im[i]];
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = 2 * Math.PI / len * (inverse ? 1 : -1);
+    const wlenRe = Math.cos(ang);
+    const wlenIm = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let wRe = 1, wIm = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const uRe = re[i + k], uIm = im[i + k];
+        const vRe = re[i + k + len/2] * wRe - im[i + k + len/2] * wIm;
+        const vIm = re[i + k + len/2] * wIm + im[i + k + len/2] * wRe;
+        re[i + k] = uRe + vRe;
+        im[i + k] = uIm + vIm;
+        re[i + k + len/2] = uRe - vRe;
+        im[i + k + len/2] = uIm - vIm;
+        const nextRe = wRe * wlenRe - wIm * wlenIm;
+        const nextIm = wRe * wlenIm + wIm * wlenRe;
+        wRe = nextRe;
+        wIm = nextIm;
+      }
+    }
+  }
+  if (inverse) {
+    for (let i = 0; i < n; i++) {
+      re[i] /= n;
+      im[i] /= n;
+    }
+  }
+}
+
+function fft2d(re, im, n, inverse = false) {
+  const rowRe = new Float64Array(n);
+  const rowIm = new Float64Array(n);
+  for (let y = 0; y < n; y++) {
+    const off = y * n;
+    for (let x = 0; x < n; x++) {
+      rowRe[x] = re[off + x];
+      rowIm[x] = im[off + x];
+    }
+    fft1d(rowRe, rowIm, inverse);
+    for (let x = 0; x < n; x++) {
+      re[off + x] = rowRe[x];
+      im[off + x] = rowIm[x];
+    }
+  }
+
+  const colRe = new Float64Array(n);
+  const colIm = new Float64Array(n);
+  for (let x = 0; x < n; x++) {
+    for (let y = 0; y < n; y++) {
+      colRe[y] = re[y * n + x];
+      colIm[y] = im[y * n + x];
+    }
+    fft1d(colRe, colIm, inverse);
+    for (let y = 0; y < n; y++) {
+      re[y * n + x] = colRe[y];
+      im[y * n + x] = colIm[y];
+    }
+  }
+}
+
+// =================================================================
+// FIELD SIMULATION BY FFT
+// =================================================================
+
+const GRID_N = 64;
+const N_TOTAL = GRID_N * GRID_N;
+const TWO_PI = 2 * Math.PI;
+
+let cachedSpectrum = null;
+let cacheKey = '';
+let currentNoise = null;
+let spectralWarning = '';
+
+function gaussianSample(n) {
+  const z = new Float64Array(n);
+  for (let i = 0; i < n; i += 2) {
+    const u1 = Math.random() || 1e-12;
+    const u2 = Math.random();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    const t = 2 * Math.PI * u2;
+    z[i] = r * Math.cos(t);
+    if (i + 1 < n) z[i + 1] = r * Math.sin(t);
+  }
+  return z;
+}
+
+function buildSpectralDensity(modelKey, params) {
+  const spec = new Float64Array(N_TOTAL);
+  const model = MODELS[modelKey];
+
+  if (model.spectrum === 'spherical') {
+    // Periodic covariance array on the torus. Its FFT gives the eigenvalues
+    // of the corresponding block-circulant covariance matrix.
+    const re = new Float64Array(N_TOTAL);
+    const im = new Float64Array(N_TOTAL);
+    for (let y = 0; y < GRID_N; y++) {
+      const dy = Math.min(y, GRID_N - y);
+      for (let x = 0; x < GRID_N; x++) {
+        const dx = Math.min(x, GRID_N - x);
+        const h = Math.sqrt(dx * dx + dy * dy);
+        re[y * GRID_N + x] = covSpherical(h, params.sigma2, params.ell);
+      }
+    }
+    fft2d(re, im, GRID_N, false);
+
+    let neg = 0, minLam = Infinity, sum = 0;
+    for (let i = 0; i < N_TOTAL; i++) {
+      const lam = re[i];
+      if (lam < minLam) minLam = lam;
+      if (lam < 0) neg++;
+      spec[i] = Math.max(0, lam);
+      sum += spec[i];
+    }
+    const target = params.sigma2 * N_TOTAL;
+    const scale = sum > 0 ? target / sum : 1;
+    for (let i = 0; i < N_TOTAL; i++) spec[i] *= scale;
+
+    spectralWarning = neg > 0
+      ? ` · ${neg} clipped spectral values`
+      : '';
+    return spec;
+  }
+
+  let sum = 0;
+  for (let y = 0; y < GRID_N; y++) {
+    const kyIndex = y <= GRID_N / 2 ? y : y - GRID_N;
+    const ky = TWO_PI * kyIndex / GRID_N;
+    for (let x = 0; x < GRID_N; x++) {
+      const kxIndex = x <= GRID_N / 2 ? x : x - GRID_N;
+      const kx = TWO_PI * kxIndex / GRID_N;
+      const k2 = kx * kx + ky * ky;
+      let s;
+
+      if (model.spectrum === 'gaussian') {
+        // Fourier transform shape of exp(-|h|^2/ell^2) in 2D.
+        s = Math.exp(-(params.ell * params.ell * k2) / 4);
+      } else {
+        // Matérn spectral density in d=2:
+        // S(k) proportional to (kappa^2 + |k|^2)^(-(nu + d/2)) = (... )^(-(nu+1)).
+        const nu = modelKey === 'exponential' ? 0.5 : params.nu;
+        const kappa = Math.sqrt(2 * nu) / params.ell;
+        s = Math.pow(kappa * kappa + k2, -(nu + 1));
+      }
+
+      // Remove an enormous zero-frequency offset for very smooth/long-range fields.
+      // This keeps the visual centered while the displayed covariance remains the chosen model.
+      if (x === 0 && y === 0) s = 0;
+      spec[y * GRID_N + x] = s;
+      sum += s;
+    }
+  }
+
+  // Normalize so the point variance is sigma^2 in the discrete periodic field.
+  const target = params.sigma2 * N_TOTAL;
+  const scale = sum > 0 ? target / sum : 1;
+  for (let i = 0; i < N_TOTAL; i++) spec[i] *= scale;
+  spectralWarning = '';
+  return spec;
+}
+
+function simulate(modelKey, params, newNoise) {
+  const model = MODELS[modelKey];
+  const key = modelKey + '|' + params.sigma2 + '|' + params.ell + '|' + (model.needsNu ? params.nu : '');
+  const t0 = performance.now();
+  let specTime = 0;
+
+  if (key !== cacheKey) {
+    const tS = performance.now();
+    cachedSpectrum = buildSpectralDensity(modelKey, params);
+    specTime = performance.now() - tS;
+    cacheKey = key;
+  }
+
+  if (newNoise || !currentNoise) currentNoise = gaussianSample(N_TOTAL);
+
+  const re = new Float64Array(currentNoise);
+  const im = new Float64Array(N_TOTAL);
+
+  // Forward FFT of white noise, spectral filtering, inverse FFT.
+  fft2d(re, im, GRID_N, false);
+  for (let i = 0; i < N_TOTAL; i++) {
+    const a = Math.sqrt(Math.max(0, cachedSpectrum[i]));
+    re[i] *= a;
+    im[i] *= a;
+  }
+  fft2d(re, im, GRID_N, true);
+
+  const totalTime = performance.now() - t0;
+  return { field: re, totalTime, specTime, cached: specTime === 0, warning: spectralWarning };
+}
+
+// =================================================================
+// RENDERING
+// =================================================================
+
+const fieldCanvas = document.getElementById('field');
+const fieldCtx = fieldCanvas.getContext('2d');
+
+function colorFor(t) {
+  t = Math.max(0, Math.min(1, t));
+  const stops = [
+    [250, 246, 232],
+    [228, 188, 110],
+    [180,  72,  60],
+    [158,  27,  50]
+  ];
+  const seg = t * (stops.length - 1);
+  const i = Math.min(Math.floor(seg), stops.length - 2);
+  const f = seg - i;
+  const a = stops[i], b = stops[i + 1];
+  return [
+    Math.round(a[0] + f * (b[0] - a[0])),
+    Math.round(a[1] + f * (b[1] - a[1])),
+    Math.round(a[2] + f * (b[2] - a[2]))
+  ];
+}
+
+function renderField(field) {
+  let mn = Infinity, mx = -Infinity, sum = 0, sumSq = 0;
+  for (let i = 0; i < N_TOTAL; i++) {
+    const v = field[i];
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+    sum += v;
+    sumSq += v * v;
+  }
+  const mean = sum / N_TOTAL;
+  const variance = sumSq / N_TOTAL - mean * mean;
+  const range = mx - mn || 1;
+
+  const img = fieldCtx.createImageData(GRID_N, GRID_N);
+  for (let i = 0; i < N_TOTAL; i++) {
+    const t = (field[i] - mn) / range;
+    const [r, g, b] = colorFor(t);
+    img.data[4 * i] = r;
+    img.data[4 * i + 1] = g;
+    img.data[4 * i + 2] = b;
+    img.data[4 * i + 3] = 255;
+  }
+  fieldCtx.putImageData(img, 0, 0);
+
+  document.getElementById('stat-mean').textContent = mean.toFixed(2);
+  document.getElementById('stat-var').textContent = variance.toFixed(2);
+  document.getElementById('stat-min').textContent = mn.toFixed(2);
+  document.getElementById('stat-max').textContent = mx.toFixed(2);
+}
+
+const covCanvas = document.getElementById('covplot');
+const covCtx = covCanvas.getContext('2d');
+
+function renderCovPlot(model, params) {
+  const W = covCanvas.width, H = covCanvas.height;
+  covCtx.clearRect(0, 0, W, H);
+
+  const padL = 32, padB = 22, padT = 8, padR = 8;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const hMax = 30;
+  const cAtZero = model.fn(0, params);
+  const yMax = Math.max(cAtZero, 1) * 1.05;
+
+  covCtx.strokeStyle = '#4a4a4a';
+  covCtx.lineWidth = 1;
+  covCtx.beginPath();
+  covCtx.moveTo(padL, padT);
+  covCtx.lineTo(padL, padT + plotH);
+  covCtx.lineTo(padL + plotW, padT + plotH);
+  covCtx.stroke();
+
+  covCtx.strokeStyle = '#d8d2c4';
+  covCtx.lineWidth = 0.5;
+  for (let g = 0.25; g < 1; g += 0.25) {
+    const y = padT + plotH * (1 - g);
+    covCtx.beginPath();
+    covCtx.moveTo(padL, y);
+    covCtx.lineTo(padL + plotW, y);
+    covCtx.stroke();
+  }
+
+  covCtx.strokeStyle = '#9e1b32';
+  covCtx.lineWidth = 2;
+  covCtx.beginPath();
+  for (let p = 0; p < plotW; p++) {
+    const h = (p / plotW) * hMax;
+    const c = model.fn(h, params);
+    const x = padL + p;
+    const y = padT + plotH * (1 - c / yMax);
+    if (p === 0) covCtx.moveTo(x, y);
+    else covCtx.lineTo(x, y);
+  }
+  covCtx.stroke();
+
+  covCtx.fillStyle = '#6e6863';
+  covCtx.font = '10px "JetBrains Mono", monospace';
+  covCtx.textAlign = 'right';
+  covCtx.fillText(yMax.toFixed(1), padL - 4, padT + 8);
+  covCtx.fillText('0', padL - 4, padT + plotH);
+  covCtx.textAlign = 'center';
+  covCtx.fillText('0', padL, padT + plotH + 14);
+  covCtx.fillText(String(hMax), padL + plotW, padT + plotH + 14);
+  covCtx.fillText('‖h‖', padL + plotW / 2, padT + plotH + 14);
+
+  if (params.ell <= hMax) {
+    const ex = padL + plotW * (params.ell / hMax);
+    covCtx.strokeStyle = '#b8923d';
+    covCtx.setLineDash([3, 3]);
+    covCtx.beginPath();
+    covCtx.moveTo(ex, padT);
+    covCtx.lineTo(ex, padT + plotH);
+    covCtx.stroke();
+    covCtx.setLineDash([]);
+    covCtx.fillStyle = '#b8923d';
+    covCtx.fillText('ℓ', ex, padT + 8);
+  }
+}
+
+// =================================================================
+// UI WIRING
+// =================================================================
+
+let currentModel = 'exponential';
+
+function getParams() {
+  return {
+    sigma2: parseFloat(document.getElementById('sigma2').value),
+    ell: parseFloat(document.getElementById('ell').value),
+    nu: parseFloat(document.getElementById('nu').value),
+  };
+}
+
+function update(newNoise = false) {
+  const params = getParams();
+  const model = MODELS[currentModel];
+
+  document.getElementById('sigma2-val').textContent = params.sigma2.toFixed(2);
+  document.getElementById('ell-val').textContent = params.ell.toFixed(1);
+  document.getElementById('nu-val').textContent = params.nu.toFixed(1);
+  document.getElementById('nu').disabled = !model.needsNu;
+
+  document.getElementById('model-name').textContent = 'Realization · ' + model.name + ' covariance';
+  document.getElementById('formula').innerHTML = model.formula;
+  document.getElementById('description').innerHTML = model.description;
+
+  document.getElementById('resample').disabled = true;
+  document.getElementById('timing').textContent = 'Computing…';
+
+  setTimeout(() => {
+    const t0 = performance.now();
+    const result = simulate(currentModel, params, newNoise);
+    renderField(result.field);
+    renderCovPlot(model, params);
+    const elapsed = performance.now() - t0;
+    document.getElementById('timing').textContent =
+      result.cached
+        ? `FFT sample ${elapsed.toFixed(0)} ms (spectrum cached)${result.warning}`
+        : `spectrum ${result.specTime.toFixed(0)} ms · FFT total ${elapsed.toFixed(0)} ms${result.warning}`;
+    document.getElementById('resample').disabled = false;
+  }, 30);
+}
+
+const covButtonsContainer = document.getElementById('cov-buttons');
+for (const [key, m] of Object.entries(MODELS)) {
+  const btn = document.createElement('button');
+  btn.className = 'cov-btn' + (key === currentModel ? ' active' : '');
+  btn.textContent = m.name;
+  btn.dataset.key = key;
+  btn.addEventListener('click', () => {
+    currentModel = key;
+    document.querySelectorAll('.cov-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.key === key));
+    update(false);
+  });
+  covButtonsContainer.appendChild(btn);
+}
+
+document.getElementById('sigma2').addEventListener('input', () => update(false));
+document.getElementById('ell').addEventListener('input', () => update(false));
+document.getElementById('nu').addEventListener('input', () => update(false));
+document.getElementById('resample').addEventListener('click', () => update(true));
+
+update(true);
+</script>
+</body>
+</html>

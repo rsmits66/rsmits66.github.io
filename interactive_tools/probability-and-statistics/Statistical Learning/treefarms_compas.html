@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TreeFARMS on COMPAS &mdash; Exploring the Rashomon Set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#C79900; --goldDk:#8E632A;
+  --crimson:#39275B; --crimson2:#2a1d44; --crimsonLt:#e8e3f0;
+  --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+  --recid:#39275B; --norecid:#C79900;
+  --selected:#18284a; --shadow:rgba(57,39,91,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:30px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#c4bdd0;
+         letter-spacing:.07em;text-transform:uppercase;text-align:center;}
+.hdr-main{padding:.55rem 1.6rem .55rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.4rem;font-weight:700;}
+header .subtitle{color:#c4bdd0;font-style:italic;margin-top:.18rem;font-size:.84rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px 6px;
+          max-width:1180px;width:100%;}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:5px 14px;font-size:.88rem;border-radius:3px;
+       transition:all .15s;}
+button:hover:not(:disabled){background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover:not(:disabled){background:var(--crimson2);}
+button:disabled{opacity:.4;cursor:not-allowed;}
+.phase-num{display:inline-block;background:var(--crimson);color:#fff;border-radius:50%;
+           width:24px;height:24px;font-size:.85rem;text-align:center;line-height:24px;
+           font-weight:600;margin-right:8px;font-family:'Playfair Display',Georgia,serif;}
+#desc{font-size:.88rem;color:var(--navy);font-style:italic;flex:1;min-width:280px;line-height:1.4;}
+
+.wrap{max-width:1180px;width:100%;padding:6px 16px 0;}
+.grid-top{display:grid;grid-template-columns:660px 1fr;gap:14px;margin-bottom:12px;}
+.grid-bot{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;}
+.full{margin-bottom:12px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.card.dim{opacity:.42;transition:opacity .4s;}
+.card.live{opacity:1;transition:opacity .4s;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.65rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:5px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.phdr .meta{font-family:'Crimson Pro',Georgia,serif;letter-spacing:0;text-transform:none;
+            font-size:.78rem;color:var(--navy);font-style:italic;}
+canvas{display:block;background:#fff;}
+.legend{font-size:.78rem;color:var(--muted);text-align:center;padding:3px 0 6px;
+        font-style:italic;}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;
+        vertical-align:middle;margin:0 4px 2px 10px;}
+.swatch.r{background:var(--recid);}
+.swatch.n{background:var(--norecid);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Interpretable ML</div>
+  <div class="hdr-main">
+    <h1>TreeFARMS on COMPAS &middot; Exploring the Rashomon Set</h1>
+    <div class="subtitle">
+      Many equally-good decision trees on synthetic recidivism data &ensp;&middot;&ensp;
+      following the idea behind Figure 4 of Rudin et&nbsp;al.&nbsp;(2024)
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <button id="reset">Reset</button>
+  <button id="next" class="primary">Next step &#9654;</button>
+  <span id="desc"><span class="phase-num">0</span>300 synthetic defendants modelled on the Broward&nbsp;County COMPAS data. Each dot is one person; <span class="swatch r"></span>purple = re-offended within 2 years, <span class="swatch n"></span>gold = did not. Click <b>Next step</b> to begin.</span>
+</div>
+
+<div class="wrap">
+
+  <!-- TOP ROW: dataset + selected tree -->
+  <div class="grid-top">
+    <div class="card" id="card-data">
+      <div class="phdr">
+        <span>COMPAS dataset &ensp;&middot;&ensp; n = 300 &ensp;&middot;&ensp; 6 binary features</span>
+        <span class="meta" id="data-meta">recid rate: 50.3%</span>
+      </div>
+      <canvas id="dataCanvas" width="660" height="350"></canvas>
+    </div>
+    <div class="card dim" id="card-tree">
+      <div class="phdr">
+        <span>Currently displayed tree</span>
+        <span class="meta" id="tree-meta">&mdash;</span>
+      </div>
+      <canvas id="treeCanvas" width="504" height="350"></canvas>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Rashomon set grid -->
+  <div class="full card dim" id="card-grid">
+    <div class="phdr">
+      <span>Rashomon set &ensp;&middot;&ensp; trees within &epsilon; = 0.025 of the optimum &ensp;&middot;&ensp; click any tree</span>
+      <span class="meta" id="grid-meta">&mdash;</span>
+    </div>
+    <canvas id="gridCanvas" width="1160" height="380"></canvas>
+  </div>
+
+  <!-- BOTTOM ROW: variable importance + predictive multiplicity -->
+  <div class="grid-bot">
+    <div class="card dim" id="card-vi">
+      <div class="phdr">
+        <span>Feature usage across the Rashomon set</span>
+        <span class="meta">share of good trees that split on this feature</span>
+      </div>
+      <canvas id="viCanvas" width="582" height="240"></canvas>
+    </div>
+    <div class="card dim" id="card-mp">
+      <div class="phdr">
+        <span>Predictive multiplicity &ensp;&middot;&ensp; per defendant</span>
+        <span class="meta">fraction of good trees predicting recidivism</span>
+      </div>
+      <canvas id="mpCanvas" width="582" height="240"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===========================================================================
+   The synthetic COMPAS-like dataset.  Generated in Python (seed=7) so the
+   numbers are stable across runs.  See export.py for the generator.
+   =========================================================================== */
+const FEATURES = ['age_lt_21','age_lt_26','priors_gt_0','priors_gt_3','juv_felony','juv_misd'];
+const FEATURE_LABEL = {
+  'age_lt_21':   'Age < 21',
+  'age_lt_26':   'Age < 26',
+  'priors_gt_0': 'Priors > 0',
+  'priors_gt_3': 'Priors > 3',
+  'juv_felony':  'Juv. felony',
+  'juv_misd':    'Juv. misd.',
+};
+
+/* Embedded dataset -- 300 rows.  Each row has all 6 binary features plus
+   `recid` (the label) and the raw `age`/`priors` for context. */
+const DATA = [{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":38,"priors":9},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":50,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":53,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":54,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":26,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":55,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":54,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":47,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":23,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":25,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":44,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":62,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":23,"priors":9},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":61,"priors":5},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":19,"priors":9},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":65,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":46,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":40,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":27,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":44,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":50,"priors":10},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":61,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":58,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":24,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":19,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":48,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":48,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":51,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":52,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":51,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":50,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":43,"priors":4},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":19,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":64,"priors":14},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":32,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":59,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":42,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":64,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":28,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":56,"priors":13},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":26,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":30,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":33,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":47,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":50,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":27,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":38,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":30,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":22,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":52,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":34,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":38,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":25,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":47,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":60,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":38,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":63,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":32,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":29,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":27,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":35,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":34,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":47,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":63,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":30,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":35,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":64,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":59,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":50,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":26,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":22,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":50,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":47,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":38,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":18,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":23,"priors":1},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":19,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":63,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":49,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":58,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":50,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":0,"age":62,"priors":3},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":24,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":34,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":52,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":33,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":49,"priors":6},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":30,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":37,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":31,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":47,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":36,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":35,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":34,"priors":10},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":25,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":49,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":42,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":30,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":43,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":35,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":33,"priors":11},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":19,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":53,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":36,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":44,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":37,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":22,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":46,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":53,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":44,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":21,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":31,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":45,"priors":10},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":0,"age":48,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":51,"priors":6},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":61,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":47,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":63,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":62,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":56,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":38,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":0,"age":63,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":59,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":39,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":36,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":32,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":57,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":1,"recid":1,"age":27,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":44,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":0,"age":23,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":65,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":24,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":25,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":23,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":30,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":0,"age":43,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":34,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":20,"priors":1},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":18,"priors":4},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":24,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":0,"age":34,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":37,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":38,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":44,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":45,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":1,"recid":1,"age":63,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":61,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":35,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":33,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":34,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":59,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":41,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":55,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":60,"priors":9},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":31,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":31,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":57,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":43,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":43,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":54,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":41,"priors":3},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":25,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":28,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":41,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":28,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":26,"priors":6},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":56,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":32,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":54,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":64,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":61,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":37,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":41,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":57,"priors":5},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":24,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":20,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":50,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":22,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":49,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":40,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":47,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":38,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":35,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":58,"priors":6},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":0,"age":62,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":34,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":23,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":58,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":0,"age":64,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":21,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":18,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":26,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":33,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":34,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":56,"priors":3},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":20,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":24,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":50,"priors":3},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":22,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":45,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":32,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":34,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":51,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":28,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":65,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":62,"priors":13},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":51,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":31,"priors":1},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":20,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":20,"priors":0},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":20,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":22,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":1,"age":33,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":58,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":59,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":63,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":0,"age":48,"priors":6},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":40,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":23,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":21,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":29,"priors":11},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":0,"age":31,"priors":9},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":23,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":43,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":41,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":32,"priors":9},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":56,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":65,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":32,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":63,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":64,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":64,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":27,"priors":13},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":24,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":45,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":43,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":55,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":62,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":45,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":58,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":44,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":49,"priors":7},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":63,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":63,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":39,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":25,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":42,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":34,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":32,"priors":15},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":58,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":27,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":53,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":32,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":64,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":49,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":21,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":1,"recid":1,"age":51,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":34,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":46,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":56,"priors":12},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":58,"priors":6},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":25,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":49,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":56,"priors":6},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":54,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":1,"age":29,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":61,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":27,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":60,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":45,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":49,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":25,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":58,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":1,"recid":0,"age":43,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":0,"recid":1,"age":56,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":61,"priors":3},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":1,"recid":0,"age":60,"priors":3},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":24,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":37,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":59,"priors":2},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":1,"age":25,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":56,"priors":2},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":44,"priors":2},{"age_lt_21":1,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":18,"priors":3},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":25,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":21,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":23,"priors":1},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":1,"recid":1,"age":21,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":57,"priors":0},{"age_lt_21":0,"age_lt_26":1,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":1,"age":21,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":28,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":42,"priors":5},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":1,"age":39,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":1,"juv_misd":1,"recid":0,"age":56,"priors":4},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":55,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":46,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":1,"juv_felony":0,"juv_misd":0,"recid":0,"age":55,"priors":8},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":0,"priors_gt_3":0,"juv_felony":0,"juv_misd":0,"recid":0,"age":54,"priors":0},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":49,"priors":1},{"age_lt_21":0,"age_lt_26":0,"priors_gt_0":1,"priors_gt_3":0,"juv_felony":1,"juv_misd":0,"recid":0,"age":32,"priors":1}];
+
+/* Algorithm hyper-parameters */
+const MAX_DEPTH = 2;
+const LAMBDA   = 0.005;   // leaf penalty
+const EPSILON  = 0.025;   // Rashomon tolerance
+
+/* ===========================================================================
+   Algorithm: enumerate all classification trees up to MAX_DEPTH, score them,
+   keep the Rashomon set.  This is a brute-force version of what TreeFARMS
+   does with branch-and-bound.
+   =========================================================================== */
+function predictTree(t, row) {
+  while (!('leaf' in t)) {
+    t = row[t.feature] ? t.right : t.left;
+  }
+  return t.leaf;
+}
+function numLeaves(t) {
+  if ('leaf' in t) return 1;
+  return numLeaves(t.left) + numLeaves(t.right);
+}
+function treeSig(t) {
+  if ('leaf' in t) return 'L' + t.leaf;
+  return 'N(' + t.feature + ',' + treeSig(t.left) + ',' + treeSig(t.right) + ')';
+}
+function* allTrees(features, depth, used) {
+  yield {leaf:0};
+  yield {leaf:1};
+  if (depth === 0) return;
+  for (const f of features) {
+    if (used.has(f)) continue;
+    const u2 = new Set(used); u2.add(f);
+    const Ls = [...allTrees(features, depth - 1, u2)];
+    const Rs = [...allTrees(features, depth - 1, u2)];
+    for (const L of Ls) for (const R of Rs) {
+      if ('leaf' in L && 'leaf' in R && L.leaf === R.leaf) continue;
+      yield {feature:f, left:L, right:R};
+    }
+  }
+}
+function computeRashomon() {
+  const out = [];
+  for (const t of allTrees(FEATURES, MAX_DEPTH, new Set())) {
+    let correct = 0;
+    for (const r of DATA) if (predictTree(t, r) === r.recid) correct++;
+    const err = 1 - correct / DATA.length;
+    const L = numLeaves(t);
+    const obj = err + LAMBDA * L;
+    out.push({tree: t, error: err, leaves: L, objective: obj});
+  }
+  out.sort((a,b) => a.objective - b.objective);
+  const best = out[0].objective;
+  const within = out.filter(x => x.objective <= best + EPSILON);
+  /* Deduplicate */
+  const seen = new Set();
+  const dedup = [];
+  for (const x of within) {
+    const s = treeSig(x.tree);
+    if (!seen.has(s)) { seen.add(s); dedup.push(x); }
+  }
+  return {all: out, rashomon: dedup, best};
+}
+
+/* ===========================================================================
+   Run the algorithm once at page load.
+   =========================================================================== */
+const RESULT = computeRashomon();
+const RASHOMON = RESULT.rashomon;
+const BEST = RESULT.best;
+const DATA_RECID_RATE = DATA.filter(r => r.recid).length / DATA.length;
+document.getElementById('data-meta').textContent =
+  'recid rate: ' + (DATA_RECID_RATE * 100).toFixed(1) + '%';
+document.getElementById('grid-meta').textContent =
+  RASHOMON.length + ' distinct trees within \u03B5 of optimum';
+
+/* For predictive multiplicity: count, for each defendant, how many Rashomon
+   trees predict recidivism. */
+const MP_FRACTION = DATA.map(r => {
+  let votes = 0;
+  for (const x of RASHOMON) if (predictTree(x.tree, r) === 1) votes++;
+  return votes / RASHOMON.length;
+});
+
+/* For variable usage: what fraction of Rashomon trees use each feature? */
+function treeUsesFeature(t, f) {
+  if ('leaf' in t) return false;
+  if (t.feature === f) return true;
+  return treeUsesFeature(t.left, f) || treeUsesFeature(t.right, f);
+}
+const VI_SHARE = {};
+for (const f of FEATURES) {
+  let n = 0;
+  for (const x of RASHOMON) if (treeUsesFeature(x.tree, f)) n++;
+  VI_SHARE[f] = n / RASHOMON.length;
+}
+
+/* ===========================================================================
+   State machine for the phased walkthrough.
+   =========================================================================== */
+let phase = 0;
+let selectedIdx = 0;   // which tree in RASHOMON is currently displayed
+
+const PHASES = [
+  '300 synthetic defendants modelled on the Broward&nbsp;County COMPAS data. Each dot is one person; <span class="swatch r"></span>purple = re-offended within 2 years, <span class="swatch n"></span>gold = did not. Click <b>Next step</b> to begin.',
+
+  'Step 1: solve for the <b>single best</b> sparse tree (depth &le; 2). Objective = misclassification error + 0.005 &times; (number of leaves). Out of 854 candidate trees, the optimum has objective <b>' + BEST.toFixed(3) + '</b> (error ' + (RASHOMON[0].error*100).toFixed(1) + '% on training). The standard ML paradigm hands us this tree and walks away.',
+
+  'Step 2: predictions of that one tree. Defendants the tree mis-classifies are ringed in <b style="color:#b22">red</b>. Notice the tree leans on <b>' + niceFeatureList(RASHOMON[0].tree) + '</b> &mdash; remember those features.',
+
+  'Step 3: but TreeFARMS asks a different question: how many <i>other</i> trees achieve nearly the same objective? Searching all 854 candidate trees and keeping those within &epsilon; = 0.025 of the optimum yields a <b>Rashomon set of ' + RASHOMON.length + ' distinct trees</b>. This is what the paper means by "the Rashomon Effect."',
+
+  'Step 4: explore the set. Click any tree below to see its predictions on the dataset above. They are all approximately equally good &mdash; yet they are visibly different, often relying on completely different features.',
+
+  'Step 5: across these ' + RASHOMON.length + ' good trees, which features are used? <b>Priors&nbsp;&gt;&nbsp;3</b> appears in every single one, but the rest vary widely. The standard "single tree" view of variable importance hides this entirely.',
+
+  'Step 6: per defendant, what fraction of good trees predict re-offence? The histogram is bimodal: most defendants are <i>clear</i> (every good tree agrees, fraction &asymp; 0 or 1). But the middle band &mdash; the <b>' + countAmbiguous() + '</b> defendants in [0.3, 0.7] &mdash; are genuinely ambiguous. Equally-good trees disagree about them. This is <b>predictive multiplicity</b>, and it is invisible in the standard ML paradigm.',
+];
+
+function countAmbiguous() {
+  return MP_FRACTION.filter(f => f >= 0.3 && f <= 0.7).length;
+}
+
+function niceFeatureList(t) {
+  const used = [];
+  function walk(n) {
+    if ('leaf' in n) return;
+    if (!used.includes(n.feature)) used.push(n.feature);
+    walk(n.left); walk(n.right);
+  }
+  walk(t);
+  return used.map(f => FEATURE_LABEL[f]).join(' and ');
+}
+
+function setDesc(i) {
+  document.getElementById('desc').innerHTML =
+    '<span class="phase-num">' + i + '</span>' + PHASES[i];
+}
+setDesc(0);
+
+/* ===========================================================================
+   ALL DRAWING FUNCTIONS BELOW.
+   =========================================================================== */
+
+const cD = document.getElementById('dataCanvas'), ctxD = cD.getContext('2d');
+const cT = document.getElementById('treeCanvas'), ctxT = cT.getContext('2d');
+const cG = document.getElementById('gridCanvas'), ctxG = cG.getContext('2d');
+const cV = document.getElementById('viCanvas'),   ctxV = cV.getContext('2d');
+const cM = document.getElementById('mpCanvas'),   ctxM = cM.getContext('2d');
+
+/* -------- Layout for dataset dots --------
+   We arrange the 300 defendants in a 30 x 10 grid, sorted by recidivism
+   then by age, so visually similar defendants cluster.  This makes the
+   "predictive multiplicity" view in the final phase legible. */
+const DOTS_COLS = 30, DOTS_ROWS = 10;
+const dataOrder = (() => {
+  const idx = DATA.map((_, i) => i);
+  idx.sort((a, b) => {
+    if (DATA[a].recid !== DATA[b].recid) return DATA[b].recid - DATA[a].recid;
+    return DATA[a].age - DATA[b].age;
+  });
+  return idx;
+})();
+const DOT_PAD = {l:24, r:24, t:18, b:30};
+const DOT_W = cD.width  - DOT_PAD.l - DOT_PAD.r;
+const DOT_H = cD.height - DOT_PAD.t - DOT_PAD.b;
+const DOT_DX = DOT_W / DOTS_COLS;
+const DOT_DY = DOT_H / DOTS_ROWS;
+function dotXY(rank) {
+  const col = rank % DOTS_COLS, row = Math.floor(rank / DOTS_COLS);
+  return {x: DOT_PAD.l + DOT_DX * (col + 0.5), y: DOT_PAD.t + DOT_DY * (row + 0.5)};
+}
+
+/* Color helper for predictive multiplicity (phase 6): blend gold->purple */
+function colorByFraction(f) {
+  /* gold (245,224,168) at 0  ->  purple (57,39,91) at 1 */
+  const r = Math.round(245 + f * (57 - 245));
+  const g = Math.round(224 + f * (39 - 224));
+  const b = Math.round(168 + f * (91 - 168));
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+function drawData() {
+  ctxD.clearRect(0,0,cD.width,cD.height);
+  ctxD.fillStyle = '#fff';
+  ctxD.fillRect(0,0,cD.width,cD.height);
+
+  const showPredictions = phase >= 2 && phase <= 5;
+  const showMultiplicity = phase >= 6;
+  const tree = RASHOMON[selectedIdx]?.tree;
+
+  for (let r = 0; r < DATA.length; r++) {
+    const idx = dataOrder[r];
+    const row = DATA[idx];
+    const {x, y} = dotXY(r);
+
+    let fill;
+    if (showMultiplicity) {
+      fill = colorByFraction(MP_FRACTION[idx]);
+    } else {
+      fill = row.recid ? '#39275B' : '#C79900';
+    }
+
+    ctxD.beginPath();
+    ctxD.arc(x, y, 6.5, 0, 2*Math.PI);
+    ctxD.fillStyle = fill;
+    ctxD.fill();
+    ctxD.strokeStyle = 'rgba(24,40,74,0.35)';
+    ctxD.lineWidth = 0.6;
+    ctxD.stroke();
+
+    if (showPredictions && tree) {
+      const pred = predictTree(tree, row);
+      if (pred !== row.recid) {
+        ctxD.beginPath();
+        ctxD.arc(x, y, 8.5, 0, 2*Math.PI);
+        ctxD.strokeStyle = '#b22222';
+        ctxD.lineWidth = 1.6;
+        ctxD.stroke();
+      }
+    }
+  }
+
+  /* Legend / footer */
+  ctxD.fillStyle = 'rgba(24,40,74,0.7)';
+  ctxD.font = 'italic 11px "Crimson Pro",Georgia,serif';
+  ctxD.textAlign = 'left';
+  if (showMultiplicity) {
+    ctxD.fillText('color: 0% (gold) \u2192 100% (purple) of Rashomon trees predicting recidivism',
+                  DOT_PAD.l, cD.height - 10);
+  } else if (showPredictions) {
+    ctxD.fillText('fill = ground truth recidivism;  red ring = tree mis-classifies this defendant',
+                  DOT_PAD.l, cD.height - 10);
+  } else {
+    ctxD.fillText('300 defendants, sorted by outcome then age (purple = recidivated, gold = did not)',
+                  DOT_PAD.l, cD.height - 10);
+  }
+}
+
+/* -------- Big tree drawing -------- */
+function treeLayout(node, x0, x1, opts) {
+  /* Returns flat list of {kind, x, y, ...} positioned in a canvas-friendly way. */
+  const yTop = opts.yTop;
+  const dy = opts.dy;
+  const nodes = [];
+  function walk(n, d, lo, hi) {
+    const x = (lo + hi) / 2;
+    const y = yTop + d * dy;
+    if ('leaf' in n) {
+      nodes.push({kind:'leaf', x, y, leaf:n.leaf});
+      return {x, y};
+    }
+    const lp = walk(n.left,  d+1, lo, (lo+hi)/2);
+    const rp = walk(n.right, d+1, (lo+hi)/2, hi);
+    nodes.push({kind:'node', x, y, feature:n.feature, lp, rp});
+    return {x, y};
+  }
+  walk(node, 0, x0, x1);
+  return nodes;
+}
+
+function drawTree(ctx, tree, w, h, opts={}) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, w, h);
+  if (!tree) return;
+  /* Auto-size: figure out the depth of the tree, then space rows so all
+     levels fit in h with a sensible margin top/bottom. */
+  function depth(n) { return 'leaf' in n ? 0 : 1 + Math.max(depth(n.left), depth(n.right)); }
+  const D = depth(tree);
+  const yTop = opts.small ? 16 : 30;
+  const yBot = opts.small ? 14 : 24;
+  const dy = D > 0 ? Math.max(28, (h - yTop - yBot) / D) : 0;
+  const nodes = treeLayout(tree, 14, w - 14, {yTop, dy});
+
+  /* Edges first */
+  ctx.strokeStyle = 'rgba(57,39,91,0.55)';
+  ctx.lineWidth = 1.4;
+  for (const n of nodes) {
+    if (n.kind === 'node') {
+      ctx.beginPath();
+      ctx.moveTo(n.x, n.y); ctx.lineTo(n.lp.x, n.lp.y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(n.x, n.y); ctx.lineTo(n.rp.x, n.rp.y); ctx.stroke();
+      /* edge labels */
+      ctx.fillStyle = '#7a7a8a';
+      ctx.font = (opts.small ? 'italic 9px' : 'italic 10px') + ' "Crimson Pro",Georgia,serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('no',  (n.x + n.lp.x)/2 - 8, (n.y + n.lp.y)/2);
+      ctx.fillText('yes', (n.x + n.rp.x)/2 + 8, (n.y + n.rp.y)/2);
+    }
+  }
+
+  /* Nodes */
+  for (const n of nodes) {
+    if (n.kind === 'node') {
+      const w2 = opts.small ? 64 : 110, h2 = opts.small ? 18 : 30;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#39275B';
+      ctx.lineWidth = 1.4;
+      roundRect(ctx, n.x - w2/2, n.y - h2/2, w2, h2, 4, true, true);
+      ctx.fillStyle = '#39275B';
+      ctx.font = (opts.small ? 'bold 9.5px' : 'bold 12px') + ' "Crimson Pro",Georgia,serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(FEATURE_LABEL[n.feature], n.x, n.y);
+    } else {
+      const w2 = opts.small ? 50 : 86, h2 = opts.small ? 16 : 30;
+      ctx.fillStyle = n.leaf ? '#39275B' : '#C79900';
+      ctx.strokeStyle = n.leaf ? '#2a1d44' : '#8E632A';
+      ctx.lineWidth = 1.2;
+      roundRect(ctx, n.x - w2/2, n.y - h2/2, w2, h2, 4, true, true);
+      ctx.fillStyle = '#fff';
+      ctx.font = (opts.small ? 'bold 8.5px' : 'bold 12px') + ' "Crimson Pro",Georgia,serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.leaf ? 'recid' : 'no recid', n.x, n.y);
+    }
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
+function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x,   y+h, r);
+  ctx.arcTo(x,   y+h, x,   y,   r);
+  ctx.arcTo(x,   y,   x+w, y,   r);
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
+}
+
+function drawSelectedTree() {
+  if (phase < 1) {
+    ctxT.clearRect(0,0,cT.width,cT.height);
+    ctxT.fillStyle = '#fff';
+    ctxT.fillRect(0,0,cT.width,cT.height);
+    ctxT.fillStyle = 'rgba(24,40,74,0.4)';
+    ctxT.font = 'italic 14px "Crimson Pro",Georgia,serif';
+    ctxT.textAlign = 'center';
+    ctxT.fillText('A tree will be displayed here once we run TreeFARMS.',
+                  cT.width / 2, cT.height / 2);
+    document.getElementById('tree-meta').textContent = '\u2014';
+    return;
+  }
+  const x = RASHOMON[selectedIdx];
+  drawTree(ctxT, x.tree, cT.width, cT.height, {small:false});
+  document.getElementById('tree-meta').textContent =
+    'tree #' + (selectedIdx + 1) + ' of ' + RASHOMON.length +
+    '  \u00B7  error ' + (x.error*100).toFixed(1) + '%  \u00B7  ' +
+    x.leaves + ' leaves  \u00B7  obj ' + x.objective.toFixed(3);
+}
+
+/* -------- Rashomon-set grid -------- */
+const GRID_COLS = 6;
+const gridCells = [];   // {x, y, w, h, idx}
+function layoutGrid() {
+  gridCells.length = 0;
+  const n = RASHOMON.length;
+  const cols = GRID_COLS;
+  const rows = Math.ceil(n / cols);
+  const padX = 14, padY = 14;
+  /* Fix the cell height so depth-2 trees fit comfortably; compute width from cols. */
+  const cellH = 142;
+  const cellW = (cG.width - padX * (cols + 1)) / cols;
+  cG.height = padY + rows * (cellH + padY);
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    gridCells.push({
+      x: padX + c * (cellW + padX),
+      y: padY + r * (cellH + padY),
+      w: cellW, h: cellH, idx: i
+    });
+  }
+}
+layoutGrid();
+
+function drawGrid() {
+  ctxG.clearRect(0,0,cG.width,cG.height);
+  ctxG.fillStyle = '#fff';
+  ctxG.fillRect(0,0,cG.width,cG.height);
+  if (phase < 3) return;
+
+  for (const cell of gridCells) {
+    const x = RASHOMON[cell.idx];
+    const sel = (cell.idx === selectedIdx);
+    /* Cell background */
+    ctxG.fillStyle = sel ? '#f3eef7' : '#fff';
+    ctxG.strokeStyle = sel ? '#39275B' : 'rgba(57,39,91,0.18)';
+    ctxG.lineWidth = sel ? 2 : 1;
+    roundRect(ctxG, cell.x, cell.y, cell.w, cell.h, 5, true, true);
+
+    /* Tree label */
+    ctxG.fillStyle = sel ? '#39275B' : 'rgba(57,39,91,0.7)';
+    ctxG.font = (sel ? 'bold ' : '') + '11px "Playfair Display",Georgia,serif';
+    ctxG.textAlign = 'left';
+    ctxG.fillText('Tree ' + (cell.idx + 1), cell.x + 8, cell.y + 14);
+    ctxG.font = 'italic 10px "Crimson Pro",Georgia,serif';
+    ctxG.textAlign = 'right';
+    ctxG.fillText('err ' + (x.error*100).toFixed(1) + '%  \u00B7  ' + x.leaves + 'L',
+                  cell.x + cell.w - 8, cell.y + 14);
+
+    /* Tree drawing inside cell */
+    const subCanvas = document.createElement('canvas');
+    subCanvas.width  = Math.floor(cell.w);
+    subCanvas.height = Math.floor(cell.h - 22);
+    drawTree(subCanvas.getContext('2d'), x.tree, subCanvas.width, subCanvas.height, {small:true});
+    ctxG.drawImage(subCanvas, cell.x, cell.y + 22);
+  }
+}
+
+/* Click handling on the grid */
+cG.addEventListener('click', (ev) => {
+  if (phase < 3) return;
+  const rect = cG.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) * (cG.width / rect.width);
+  const y = (ev.clientY - rect.top)  * (cG.height / rect.height);
+  for (const cell of gridCells) {
+    if (x >= cell.x && x <= cell.x + cell.w &&
+        y >= cell.y && y <= cell.y + cell.h) {
+      selectedIdx = cell.idx;
+      drawAll();
+      return;
+    }
+  }
+});
+
+/* -------- Variable importance bars -------- */
+function drawVI() {
+  ctxV.clearRect(0,0,cV.width,cV.height);
+  ctxV.fillStyle = '#fff';
+  ctxV.fillRect(0,0,cV.width,cV.height);
+  if (phase < 5) return;
+
+  const left = 100, right = cV.width - 50, top = 18, rowH = 28;
+  /* Bars */
+  for (let i = 0; i < FEATURES.length; i++) {
+    const f = FEATURES[i];
+    const y = top + i * rowH;
+    const share = VI_SHARE[f];
+    const barLen = (right - left) * share;
+    /* Label */
+    ctxV.fillStyle = '#18284a';
+    ctxV.font = '12px "Crimson Pro",Georgia,serif';
+    ctxV.textAlign = 'right';
+    ctxV.textBaseline = 'middle';
+    ctxV.fillText(FEATURE_LABEL[f], left - 8, y + 11);
+    /* Empty bar */
+    ctxV.fillStyle = '#f3eef7';
+    ctxV.fillRect(left, y + 4, right - left, 15);
+    /* Filled bar */
+    ctxV.fillStyle = '#39275B';
+    ctxV.fillRect(left, y + 4, barLen, 15);
+    /* Number */
+    ctxV.fillStyle = barLen > 36 ? '#fff' : '#39275B';
+    ctxV.font = 'bold 11px "Crimson Pro",Georgia,serif';
+    ctxV.textAlign = barLen > 36 ? 'right' : 'left';
+    const pct = (share * 100).toFixed(0) + '%';
+    ctxV.fillText(pct, barLen > 36 ? left + barLen - 6 : left + barLen + 4, y + 12);
+
+    /* Marker for the single optimal tree */
+    if (treeUsesFeature(RASHOMON[0].tree, f)) {
+      ctxV.fillStyle = '#C79900';
+      ctxV.beginPath();
+      ctxV.moveTo(right + 6, y + 4);
+      ctxV.lineTo(right + 14, y + 11);
+      ctxV.lineTo(right + 6, y + 18);
+      ctxV.closePath();
+      ctxV.fill();
+    }
+  }
+  /* Vertical gridlines */
+  ctxV.strokeStyle = 'rgba(57,39,91,0.18)';
+  ctxV.lineWidth = 0.7;
+  for (let p = 0; p <= 1; p += 0.25) {
+    const x = left + (right - left) * p;
+    ctxV.beginPath();
+    ctxV.moveTo(x, top - 2); ctxV.lineTo(x, top + FEATURES.length * rowH);
+    ctxV.stroke();
+    ctxV.fillStyle = 'rgba(24,40,74,0.55)';
+    ctxV.font = '9.5px "Crimson Pro",Georgia,serif';
+    ctxV.textAlign = 'center';
+    ctxV.textBaseline = 'top';
+    ctxV.fillText((p*100).toFixed(0) + '%', x, top + FEATURES.length * rowH + 3);
+  }
+  ctxV.textBaseline = 'alphabetic';
+  /* Legend, on its own row, gold triangle inline */
+  const legY = top + FEATURES.length * rowH + 26;
+  ctxV.fillStyle = '#C79900';
+  ctxV.beginPath();
+  ctxV.moveTo(left, legY - 4);
+  ctxV.lineTo(left + 8, legY);
+  ctxV.lineTo(left, legY + 4);
+  ctxV.closePath();
+  ctxV.fill();
+  ctxV.fillStyle = 'rgba(24,40,74,0.7)';
+  ctxV.font = 'italic 10.5px "Crimson Pro",Georgia,serif';
+  ctxV.textAlign = 'left';
+  ctxV.textBaseline = 'middle';
+  ctxV.fillText('  features the single optimal tree splits on', left + 10, legY);
+  ctxV.textBaseline = 'alphabetic';
+}
+
+/* -------- Predictive multiplicity histogram -------- */
+function drawMP() {
+  ctxM.clearRect(0,0,cM.width,cM.height);
+  ctxM.fillStyle = '#fff';
+  ctxM.fillRect(0,0,cM.width,cM.height);
+  if (phase < 6) return;
+
+  const NB = 11;  // 0.0-0.1, ..., 1.0
+  const counts = new Array(NB).fill(0);
+  for (const f of MP_FRACTION) {
+    const b = Math.min(NB - 1, Math.floor(f * 10));
+    counts[b]++;
+  }
+  const maxC = Math.max(...counts);
+
+  const left = 38, right = cM.width - 16, top = 18, bottom = cM.height - 36;
+  const W = right - left, H = bottom - top;
+  const barW = W / NB;
+
+  /* Bars */
+  for (let i = 0; i < NB; i++) {
+    const x = left + i * barW;
+    const h = (counts[i] / maxC) * H;
+    /* Color by ambiguity: middle bars highlighted */
+    const center = (i + 0.5) / NB;
+    const ambig = (center >= 0.3 && center <= 0.7);
+    ctxM.fillStyle = ambig ? '#C79900' : '#39275B';
+    ctxM.fillRect(x + 2, bottom - h, barW - 4, h);
+    /* Count label */
+    if (counts[i] > 0) {
+      ctxM.fillStyle = '#18284a';
+      ctxM.font = '10px "Crimson Pro",Georgia,serif';
+      ctxM.textAlign = 'center';
+      ctxM.fillText(counts[i], x + barW/2, bottom - h - 4);
+    }
+    /* Bin label */
+    ctxM.fillStyle = 'rgba(24,40,74,0.55)';
+    ctxM.font = '9.5px "Crimson Pro",Georgia,serif';
+    ctxM.textAlign = 'center';
+    ctxM.fillText((i / 10).toFixed(1), x + barW/2, bottom + 11);
+  }
+  /* Axis line */
+  ctxM.strokeStyle = 'rgba(24,40,74,0.5)';
+  ctxM.lineWidth = 1;
+  ctxM.beginPath();
+  ctxM.moveTo(left, bottom); ctxM.lineTo(right, bottom);
+  ctxM.stroke();
+  /* Axis labels */
+  ctxM.fillStyle = '#18284a';
+  ctxM.font = 'italic 11px "Crimson Pro",Georgia,serif';
+  ctxM.textAlign = 'center';
+  ctxM.fillText('fraction of Rashomon trees predicting recidivism', (left+right)/2, cM.height - 8);
+  ctxM.save();
+  ctxM.translate(13, (top+bottom)/2);
+  ctxM.rotate(-Math.PI/2);
+  ctxM.fillText('# of defendants', 0, 0);
+  ctxM.restore();
+
+  /* Annotate the ambiguous band */
+  const ambigCount = MP_FRACTION.filter(f => f >= 0.3 && f <= 0.7).length;
+  ctxM.fillStyle = '#8E632A';
+  ctxM.font = 'italic 10.5px "Crimson Pro",Georgia,serif';
+  ctxM.textAlign = 'center';
+  ctxM.fillText('ambiguous: ' + ambigCount + ' defendants',
+                left + W * 0.5, top + 12);
+}
+
+/* -------- Master draw -------- */
+function drawAll() {
+  /* Show/hide cards by phase */
+  document.getElementById('card-tree').classList.toggle('dim', phase < 1);
+  document.getElementById('card-tree').classList.toggle('live', phase >= 1);
+  document.getElementById('card-grid').classList.toggle('dim', phase < 3);
+  document.getElementById('card-grid').classList.toggle('live', phase >= 3);
+  document.getElementById('card-vi').classList.toggle('dim', phase < 5);
+  document.getElementById('card-vi').classList.toggle('live', phase >= 5);
+  document.getElementById('card-mp').classList.toggle('dim', phase < 6);
+  document.getElementById('card-mp').classList.toggle('live', phase >= 6);
+
+  drawData();
+  drawSelectedTree();
+  drawGrid();
+  drawVI();
+  drawMP();
+}
+
+/* ===========================================================================
+   Buttons
+   =========================================================================== */
+function nextPhase() {
+  if (phase >= PHASES.length - 1) return;
+  phase++;
+  setDesc(phase);
+  /* Make sure selectedIdx is the optimum at first reveal */
+  if (phase === 1 || phase === 2) selectedIdx = 0;
+  drawAll();
+}
+function reset() {
+  phase = 0;
+  selectedIdx = 0;
+  setDesc(0);
+  drawAll();
+}
+document.getElementById('next').addEventListener('click', nextPhase);
+document.getElementById('reset').addEventListener('click', reset);
+
+drawAll();
+</script>
+</body>
+</html>

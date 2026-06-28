@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Central Tendency — Mean & Median as Loss Minimizers — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#C79900; --goldDk:#8E632A;
+  --crimson:#39275B; --crimson2:#2a1d44; --crimsonLt:#e8e3f0;
+  --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:30px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#c4bdd0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.4rem;font-weight:700;}
+header .subtitle{color:#c4bdd0;font-style:italic;margin-top:.15rem;font-size:.82rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px 4px;
+          max-width:1200px;width:100%;}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:4px 11px;font-size:.84rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+.entry{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 16px 6px;
+       max-width:1200px;width:100%;font-size:.83rem;}
+.entry label{color:var(--muted);font-style:italic;}
+.entry input[type=text]{font-family:'Crimson Pro',Georgia,serif;font-size:.85rem;
+       padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:#fff;
+       color:var(--navy);width:340px;}
+.entry input[type=text]:focus{outline:none;border-color:var(--crimson);}
+.hint{color:var(--muted);font-size:.78rem;font-style:italic;}
+
+.wrap{max-width:1200px;width:100%;padding:8px 16px 0;}
+.section{background:#fff;border:1px solid var(--border);border-radius:5px;
+         box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;margin-bottom:14px;}
+.sec-hdr{font-family:'Playfair Display',Georgia,serif;font-size:.78rem;text-transform:uppercase;
+         letter-spacing:.1em;color:#fff;background:var(--crimson);padding:7px 14px;
+         display:flex;justify-content:space-between;align-items:center;}
+.sec-hdr .formula{font-family:'Crimson Pro',Georgia,serif;font-style:italic;text-transform:none;
+                  letter-spacing:0;font-size:.85rem;color:#d8d2e5;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.col-l, .col-r{background:#fff;}
+.col-l{border-right:1px solid var(--border);}
+.col-hdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+         letter-spacing:.1em;color:var(--muted);padding:5px 12px;background:var(--panel);
+         border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;}
+.slider-row{padding:8px 14px;display:flex;align-items:center;gap:10px;
+            background:var(--panel);border-top:1px solid var(--border);}
+.slider-row label{color:var(--muted);font-style:italic;font-size:.83rem;}
+.slider-row input[type=range]{flex:1;accent-color:var(--crimson);cursor:pointer;}
+.slider-row .xv{color:var(--crimson);font-weight:700;font-size:1rem;
+                font-variant-numeric:tabular-nums;min-width:4em;text-align:right;}
+.lossv{padding:7px 14px;font-size:.83rem;color:var(--navy);background:var(--panel);
+       border-top:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;}
+.lossv .k{color:var(--muted);}
+.lossv .v{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;}
+.lossv .gld{color:var(--goldDk);font-weight:600;}
+.empty{color:var(--muted);font-style:italic;text-align:center;padding:60px 14px;font-size:.95rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Central Tendency</div>
+  <div class="hdr-main">
+    <h1>Mean &amp; Median as Loss Minimizers</h1>
+    <div class="subtitle">
+      The mean minimizes L<sub>2</sub>(x) = &Sigma;(x &minus; x<sub>i</sub>)&sup2; &ensp;&middot;&ensp;
+      The median minimizes L<sub>1</sub>(x) = &Sigma;|x &minus; x<sub>i</sub>|
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="entry">
+  <label>data D =</label>
+  <input type="text" id="dataInput" placeholder="e.g. 1, 3, 4, 7, 9">
+  <button id="btnLoad" class="primary">Load</button>
+  <button id="btnEx1">Example: 5 points</button>
+  <button id="btnEx2">Example: even (no unique median)</button>
+  <button id="btnClear">Clear</button>
+  <span class="hint">comma or space separated</span>
+</div>
+
+<div class="wrap">
+
+  <!-- ── L2 / MEAN ── -->
+  <div class="section">
+    <div class="sec-hdr">
+      <span>L<sub>2</sub> &ensp;&middot;&ensp; the mean as the minimizer of squared distances</span>
+      <span class="formula">L<sub>2</sub>(x) = &Sigma; (x &minus; x<sub>i</sub>)&sup2;</span>
+    </div>
+    <div class="row">
+      <div class="col-l">
+        <div class="col-hdr">Data on the number line &middot; squares with side (x &minus; x<sub>i</sub>)</div>
+        <canvas id="data2" width="585" height="300"></canvas>
+      </div>
+      <div class="col-r">
+        <div class="col-hdr">Loss curve L<sub>2</sub>(x) &middot; minimum at x&#772;</div>
+        <canvas id="loss2" width="585" height="300"></canvas>
+      </div>
+    </div>
+    <div class="slider-row">
+      <label>x =</label>
+      <input type="range" id="sl2" min="0" max="10" step="0.05" value="5">
+      <span class="xv" id="xv2">5.00</span>
+    </div>
+    <div class="lossv" id="info2"></div>
+  </div>
+
+  <!-- ── L1 / MEDIAN ── -->
+  <div class="section">
+    <div class="sec-hdr">
+      <span>L<sub>1</sub> &ensp;&middot;&ensp; the median as the minimizer of absolute distances</span>
+      <span class="formula">L<sub>1</sub>(x) = &Sigma; |x &minus; x<sub>i</sub>|</span>
+    </div>
+    <div class="row">
+      <div class="col-l">
+        <div class="col-hdr">Data on the number line &middot; segments from x to each x<sub>i</sub></div>
+        <canvas id="data1" width="585" height="300"></canvas>
+      </div>
+      <div class="col-r">
+        <div class="col-hdr">Loss curve L<sub>1</sub>(x) &middot; piecewise linear &middot; minimum at the median</div>
+        <canvas id="loss1" width="585" height="300"></canvas>
+      </div>
+    </div>
+    <div class="slider-row">
+      <label>x =</label>
+      <input type="range" id="sl1" min="0" max="10" step="0.05" value="5">
+      <span class="xv" id="xv1">5.00</span>
+    </div>
+    <div class="lossv" id="info1"></div>
+  </div>
+
+</div>
+
+<script>
+let data=[];
+let xLo=0, xHi=10;  // visible x-range, padded around data
+let x2=5, x1=5;
+
+const cD2=document.getElementById('data2'), ctxD2=cD2.getContext('2d');
+const cL2=document.getElementById('loss2'), ctxL2=cL2.getContext('2d');
+const cD1=document.getElementById('data1'), ctxD1=cD1.getContext('2d');
+const cL1=document.getElementById('loss1'), ctxL1=cL1.getContext('2d');
+
+function fitRange(){
+  if(data.length===0){xLo=0; xHi=10; return;}
+  const dmin=Math.min(...data), dmax=Math.max(...data);
+  const span=Math.max(dmax-dmin,1);
+  xLo=dmin-0.20*span;
+  xHi=dmax+0.20*span;
+}
+
+function L2(x){
+  let s=0;
+  for(const xi of data){const d=x-xi; s+=d*d;}
+  return s;
+}
+function L1(x){
+  let s=0;
+  for(const xi of data) s+=Math.abs(x-xi);
+  return s;
+}
+
+function meanD(){
+  if(data.length===0) return 0;
+  return data.reduce((a,b)=>a+b,0)/data.length;
+}
+function medianD(){
+  if(data.length===0) return 0;
+  const s=[...data].sort((a,b)=>a-b);
+  const m=s.length;
+  if(m%2===1) return s[(m-1)/2];
+  return (s[m/2-1]+s[m/2])/2;
+}
+
+function niceStep(range,divs){
+  const raw=range/divs;
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  return [0.1,0.2,0.25,0.5,1,2,2.5,5,10].map(f=>f*mag).find(s=>s>=raw*0.7)||mag;
+}
+
+// ── DATA NUMBER LINE WITH SQUARES (L2) ──
+function drawData2(){
+  const W=cD2.width, H=cD2.height;
+  ctxD2.clearRect(0,0,W,H);
+  ctxD2.fillStyle='#fff'; ctxD2.fillRect(0,0,W,H);
+  if(data.length===0){
+    ctxD2.fillStyle='rgba(122,122,138,0.7)';
+    ctxD2.font='italic 14px "Crimson Pro",Georgia,serif';
+    ctxD2.textAlign='center';
+    ctxD2.fillText('load data above to begin',W/2,H/2);
+    return;
+  }
+  const pad={l:24,r:24,t:18,b:36};
+  const gW=W-pad.l-pad.r;
+  const yAxis=H-pad.b;  // number line baseline
+  function px(x){return pad.l+(x-xLo)/(xHi-xLo)*gW;}
+  
+  // Compute scale: we draw squares with side |x - x_i| in DATA UNITS
+  // mapped through the x-axis pixel scale, but we cap heights so they fit.
+  const dataPxPerUnit=gW/(xHi-xLo);
+  // Maximum side length we can show without exceeding H-pad-baseline
+  const maxPxHeight=yAxis-pad.t-4;
+  // Find the largest residual at current x2
+  let maxResid=0;
+  for(const xi of data){const d=Math.abs(x2-xi); if(d>maxResid) maxResid=d;}
+  // The biggest square would have side maxResid in data units = maxResid*dataPxPerUnit pixels
+  // If that exceeds maxPxHeight we shrink uniformly via a scale factor.
+  let sqScale=1;
+  if(maxResid*dataPxPerUnit>maxPxHeight){
+    sqScale=maxPxHeight/(maxResid*dataPxPerUnit);
+  }
+  
+  // Sort residuals so smaller squares go on top (drawn last)
+  const order=data.map((xi,i)=>({xi,i,d:Math.abs(x2-xi)}))
+                  .sort((a,b)=>b.d-a.d);  // largest first
+  
+  // Draw squares — corner at (x_i, baseline), with the square going UP
+  // Side length in pixels (not data units, due to potential scaling).
+  // The horizontal extent is also drawn in matching pixel size so it's a real square.
+  for(const {xi,d} of order){
+    const sidePx=d*dataPxPerUnit*sqScale;
+    if(sidePx<0.5) continue;
+    const x0=px(xi);
+    // Direction: square goes toward x (so if x>xi square extends to the right, else left)
+    // Actually pedagogically simpler: square always extends to the right and upward,
+    // with one corner at (xi, baseline).
+    const left=x0;
+    const top=yAxis-sidePx;
+    ctxD2.fillStyle='rgba(57,39,91,0.20)';
+    ctxD2.fillRect(left,top,sidePx,sidePx);
+    ctxD2.strokeStyle='rgba(57,39,91,0.70)';
+    ctxD2.lineWidth=1.0;
+    ctxD2.strokeRect(left,top,sidePx,sidePx);
+  }
+  
+  // Number line
+  ctxD2.strokeStyle='rgba(24,40,74,0.6)';
+  ctxD2.lineWidth=1.4;
+  ctxD2.beginPath();
+  ctxD2.moveTo(pad.l,yAxis);
+  ctxD2.lineTo(pad.l+gW,yAxis);
+  ctxD2.stroke();
+  
+  // Ticks
+  const step=niceStep(xHi-xLo,8);
+  const dec=Math.max(0,-Math.floor(Math.log10(step))+(step<1?1:0));
+  ctxD2.strokeStyle='rgba(24,40,74,0.4)';
+  ctxD2.fillStyle='rgba(24,40,74,0.65)';
+  ctxD2.font='10px "Crimson Pro",Georgia,serif';
+  ctxD2.textAlign='center';
+  for(let xt=Math.ceil(xLo/step)*step;xt<=xHi+1e-9;xt+=step){
+    ctxD2.beginPath();
+    ctxD2.moveTo(px(xt),yAxis);
+    ctxD2.lineTo(px(xt),yAxis+4);
+    ctxD2.stroke();
+    ctxD2.fillText(xt.toFixed(dec),px(xt),yAxis+15);
+  }
+  
+  // Data points (gold dots on the line)
+  for(const xi of data){
+    ctxD2.beginPath();
+    ctxD2.arc(px(xi),yAxis,5,0,2*Math.PI);
+    ctxD2.fillStyle='#C79900';
+    ctxD2.fill();
+    ctxD2.strokeStyle='#8E632A';
+    ctxD2.lineWidth=1.3;
+    ctxD2.stroke();
+  }
+  
+  // x slider position (vertical line)
+  const xpx=px(x2);
+  ctxD2.strokeStyle='#18284a';
+  ctxD2.lineWidth=2;
+  ctxD2.setLineDash([5,3]);
+  ctxD2.beginPath();
+  ctxD2.moveTo(xpx,pad.t);
+  ctxD2.lineTo(xpx,yAxis+10);
+  ctxD2.stroke();
+  ctxD2.setLineDash([]);
+  // x triangle marker
+  ctxD2.beginPath();
+  ctxD2.moveTo(xpx,yAxis-2);
+  ctxD2.lineTo(xpx-5,yAxis-12);
+  ctxD2.lineTo(xpx+5,yAxis-12);
+  ctxD2.closePath();
+  ctxD2.fillStyle='#18284a';
+  ctxD2.fill();
+  ctxD2.fillStyle='#18284a';
+  ctxD2.font='bold italic 11px "Crimson Pro",Georgia,serif';
+  ctxD2.textAlign='center';
+  ctxD2.fillText('x',xpx,pad.t-2);
+  
+  // mean marker (gold) — small triangle below the line
+  const mu=meanD();
+  const mpx=px(mu);
+  ctxD2.beginPath();
+  ctxD2.moveTo(mpx,yAxis+1);
+  ctxD2.lineTo(mpx-5,yAxis+11);
+  ctxD2.lineTo(mpx+5,yAxis+11);
+  ctxD2.closePath();
+  ctxD2.fillStyle='#C79900';
+  ctxD2.strokeStyle='#8E632A';
+  ctxD2.lineWidth=1;
+  ctxD2.fill();ctxD2.stroke();
+  // x̄ label below tick labels
+  ctxD2.fillStyle='#8E632A';
+  ctxD2.font='italic 10px "Crimson Pro",Georgia,serif';
+  ctxD2.textAlign='center';
+  ctxD2.fillText('x̄ = '+mu.toFixed(3),mpx,yAxis+30);
+  
+  // sqScale notice
+  if(sqScale<0.999){
+    ctxD2.fillStyle='rgba(122,122,138,0.85)';
+    ctxD2.font='italic 9px "Crimson Pro",Georgia,serif';
+    ctxD2.textAlign='right';
+    ctxD2.fillText('squares scaled ×'+sqScale.toFixed(2)+' to fit',W-pad.r,pad.t+8);
+  }
+}
+
+// ── DATA NUMBER LINE WITH SEGMENTS (L1) ──
+function drawData1(){
+  const W=cD1.width, H=cD1.height;
+  ctxD1.clearRect(0,0,W,H);
+  ctxD1.fillStyle='#fff'; ctxD1.fillRect(0,0,W,H);
+  if(data.length===0){
+    ctxD1.fillStyle='rgba(122,122,138,0.7)';
+    ctxD1.font='italic 14px "Crimson Pro",Georgia,serif';
+    ctxD1.textAlign='center';
+    ctxD1.fillText('load data above to begin',W/2,H/2);
+    return;
+  }
+  const pad={l:24,r:24,t:18,b:36};
+  const gW=W-pad.l-pad.r;
+  const yAxis=H-pad.b;
+  function px(x){return pad.l+(x-xLo)/(xHi-xLo)*gW;}
+  
+  // Sort residuals: closest segments drawn at lower vertical positions (=below others)
+  const order=data.map((xi,i)=>({xi,i,d:Math.abs(x1-xi)}))
+                  .sort((a,b)=>a.d-b.d);  // smallest first (closest)
+  
+  // Available vertical space above the number line
+  const topY=pad.t+4;
+  const bottomY=yAxis-12;  // leave a gap above the line
+  const nLines=order.length;
+  // Stack: closest goes lowest (just above the line), farthest goes highest
+  const xtri=px(x1);
+  const lineGap=Math.min(16,(bottomY-topY)/Math.max(nLines,1));
+  
+  // Draw each segment as a horizontal line from x_i to x at its assigned vertical level
+  for(let k=0;k<order.length;k++){
+    const {xi,d}=order[k];
+    // closest (k=0) at the bottom (y near number line); farthest at the top
+    const y=bottomY-k*lineGap;
+    const xa=px(xi), xb=xtri;
+    ctxD1.strokeStyle='rgba(57,39,91,0.85)';
+    ctxD1.lineWidth=2;
+    ctxD1.beginPath();
+    ctxD1.moveTo(xa,y);
+    ctxD1.lineTo(xb,y);
+    ctxD1.stroke();
+    // tiny tick at xi end
+    ctxD1.beginPath();
+    ctxD1.moveTo(xa,y-3);
+    ctxD1.lineTo(xa,y+3);
+    ctxD1.stroke();
+    // label the residual length midway above the segment
+    if(d>1e-9){
+      const mid=(xa+xb)/2;
+      ctxD1.fillStyle='rgba(57,39,91,0.8)';
+      ctxD1.font='9px "Crimson Pro",Georgia,serif';
+      ctxD1.textAlign='center';
+      ctxD1.fillText(d.toFixed(2),mid,y-4);
+    }
+  }
+  
+  // Number line
+  ctxD1.strokeStyle='rgba(24,40,74,0.6)';
+  ctxD1.lineWidth=1.4;
+  ctxD1.beginPath();
+  ctxD1.moveTo(pad.l,yAxis);
+  ctxD1.lineTo(pad.l+gW,yAxis);
+  ctxD1.stroke();
+  
+  // Ticks
+  const step=niceStep(xHi-xLo,8);
+  const dec=Math.max(0,-Math.floor(Math.log10(step))+(step<1?1:0));
+  ctxD1.strokeStyle='rgba(24,40,74,0.4)';
+  ctxD1.fillStyle='rgba(24,40,74,0.65)';
+  ctxD1.font='10px "Crimson Pro",Georgia,serif';
+  ctxD1.textAlign='center';
+  for(let xt=Math.ceil(xLo/step)*step;xt<=xHi+1e-9;xt+=step){
+    ctxD1.beginPath();
+    ctxD1.moveTo(px(xt),yAxis);
+    ctxD1.lineTo(px(xt),yAxis+4);
+    ctxD1.stroke();
+    ctxD1.fillText(xt.toFixed(dec),px(xt),yAxis+15);
+  }
+  
+  // Data points
+  for(const xi of data){
+    ctxD1.beginPath();
+    ctxD1.arc(px(xi),yAxis,5,0,2*Math.PI);
+    ctxD1.fillStyle='#C79900';
+    ctxD1.fill();
+    ctxD1.strokeStyle='#8E632A';
+    ctxD1.lineWidth=1.3;
+    ctxD1.stroke();
+  }
+  
+  // x slider marker
+  ctxD1.strokeStyle='#18284a';
+  ctxD1.lineWidth=2;
+  ctxD1.setLineDash([5,3]);
+  ctxD1.beginPath();
+  ctxD1.moveTo(xtri,pad.t);
+  ctxD1.lineTo(xtri,yAxis+10);
+  ctxD1.stroke();
+  ctxD1.setLineDash([]);
+  ctxD1.beginPath();
+  ctxD1.moveTo(xtri,yAxis-2);
+  ctxD1.lineTo(xtri-5,yAxis-12);
+  ctxD1.lineTo(xtri+5,yAxis-12);
+  ctxD1.closePath();
+  ctxD1.fillStyle='#18284a';
+  ctxD1.fill();
+  ctxD1.fillStyle='#18284a';
+  ctxD1.font='bold italic 11px "Crimson Pro",Georgia,serif';
+  ctxD1.textAlign='center';
+  ctxD1.fillText('x',xtri,pad.t-2);
+  
+  // median marker (gold)
+  const med=medianD();
+  const sorted=[...data].sort((a,b)=>a-b);
+  const evenCase=(sorted.length%2===0 && sorted.length>0 && sorted[sorted.length/2-1]!==sorted[sorted.length/2]);
+  if(evenCase){
+    // shade the interval [s_{n/2-1}, s_{n/2}] in soft gold
+    const lo=sorted[sorted.length/2-1], hi=sorted[sorted.length/2];
+    ctxD1.fillStyle='rgba(199,153,0,0.30)';
+    ctxD1.fillRect(px(lo),yAxis+1,px(hi)-px(lo),11);
+    ctxD1.strokeStyle='#8E632A';
+    ctxD1.lineWidth=1;
+    ctxD1.strokeRect(px(lo),yAxis+1,px(hi)-px(lo),11);
+    ctxD1.fillStyle='#8E632A';
+    ctxD1.font='italic 10px "Crimson Pro",Georgia,serif';
+    ctxD1.textAlign='center';
+    ctxD1.fillText('median: any x in ['+lo+', '+hi+']',(px(lo)+px(hi))/2,yAxis+30);
+  } else {
+    const mpx=px(med);
+    ctxD1.beginPath();
+    ctxD1.moveTo(mpx,yAxis+1);
+    ctxD1.lineTo(mpx-5,yAxis+11);
+    ctxD1.lineTo(mpx+5,yAxis+11);
+    ctxD1.closePath();
+    ctxD1.fillStyle='#C79900';
+    ctxD1.strokeStyle='#8E632A';
+    ctxD1.lineWidth=1;
+    ctxD1.fill();ctxD1.stroke();
+    ctxD1.fillStyle='#8E632A';
+    ctxD1.font='italic 10px "Crimson Pro",Georgia,serif';
+    ctxD1.textAlign='center';
+    ctxD1.fillText('median = '+med.toFixed(3),mpx,yAxis+30);
+  }
+}
+
+// ── LOSS CURVE PLOTTER (shared) ──
+function drawLoss(ctx,canvas,Lfunc,xCurr,minPt,minLabel,curveColor){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  if(data.length===0){
+    ctx.fillStyle='rgba(122,122,138,0.7)';
+    ctx.font='italic 14px "Crimson Pro",Georgia,serif';
+    ctx.textAlign='center';
+    ctx.fillText('—',W/2,H/2);
+    return;
+  }
+  const pad={l:46,r:14,t:16,b:36};
+  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  
+  // Sample curve
+  const NS=400;
+  const xs=[], ys=[];
+  for(let i=0;i<=NS;i++){
+    const xv=xLo+(xHi-xLo)*i/NS;
+    xs.push(xv);
+    ys.push(Lfunc(xv));
+  }
+  const yMax=Math.max(...ys);
+  const yMin=Math.min(...ys);
+  // Add 5% headroom
+  const yPad=Math.max((yMax-yMin)*0.08,1e-6);
+  const yLo=Math.max(0,yMin-yPad);
+  const yHi=yMax+yPad;
+  
+  function px(x){return pad.l+(x-xLo)/(xHi-xLo)*gW;}
+  function py(y){return pad.t+(yHi-y)/(yHi-yLo)*gH;}
+  
+  // Grid
+  ctx.strokeStyle='rgba(57,39,91,0.06)';
+  ctx.lineWidth=1;
+  const xStep=niceStep(xHi-xLo,7);
+  for(let xt=Math.ceil(xLo/xStep)*xStep;xt<=xHi+1e-9;xt+=xStep){
+    ctx.beginPath();ctx.moveTo(px(xt),pad.t);ctx.lineTo(px(xt),pad.t+gH);ctx.stroke();
+  }
+  const yStep=niceStep(yHi-yLo,5);
+  for(let yt=Math.ceil(yLo/yStep)*yStep;yt<=yHi+1e-9;yt+=yStep){
+    ctx.beginPath();ctx.moveTo(pad.l,py(yt));ctx.lineTo(pad.l+gW,py(yt));ctx.stroke();
+  }
+  
+  // Box
+  ctx.strokeStyle='rgba(24,40,74,0.5)';
+  ctx.lineWidth=1.2;
+  ctx.strokeRect(pad.l,pad.t,gW,gH);
+  
+  // Curve
+  ctx.strokeStyle=curveColor;
+  ctx.lineWidth=2.6;
+  ctx.beginPath();
+  for(let i=0;i<=NS;i++){
+    const X=px(xs[i]), Y=py(ys[i]);
+    if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+  }
+  ctx.stroke();
+  
+  // Min marker (gold dot or interval)
+  if(Array.isArray(minPt)){
+    // even-median case: gold band along x-axis at the minimum y level
+    const yMinV=Math.min(Lfunc(minPt[0]),Lfunc(minPt[1]));
+    const xL=px(minPt[0]), xR=px(minPt[1]), yY=py(yMinV);
+    ctx.strokeStyle='#C79900';
+    ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(xL,yY);ctx.lineTo(xR,yY);ctx.stroke();
+  } else {
+    const mx=px(minPt), my=py(Lfunc(minPt));
+    ctx.beginPath();
+    ctx.arc(mx,my,5,0,2*Math.PI);
+    ctx.fillStyle='#C79900';
+    ctx.strokeStyle='#8E632A';
+    ctx.lineWidth=1.5;
+    ctx.fill();ctx.stroke();
+    ctx.fillStyle='#8E632A';
+    ctx.font='bold italic 10px "Crimson Pro",Georgia,serif';
+    ctx.textAlign='left';
+    ctx.fillText(minLabel,mx+8,my+4);
+  }
+  
+  // Vertical at xCurr & dot at (xCurr, L(xCurr))
+  const xv=Math.max(xLo,Math.min(xHi,xCurr));
+  const lv=Lfunc(xv);
+  const xpx=px(xv), ypx=py(lv);
+  ctx.strokeStyle='rgba(24,40,74,0.5)';
+  ctx.lineWidth=1.2;
+  ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  ctx.moveTo(xpx,pad.t);
+  ctx.lineTo(xpx,pad.t+gH);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pad.l,ypx);
+  ctx.lineTo(xpx,ypx);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // dot
+  ctx.beginPath();
+  ctx.arc(xpx,ypx,6,0,2*Math.PI);
+  ctx.fillStyle=curveColor;
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=2;
+  ctx.fill();ctx.stroke();
+  
+  // L(x) value annotation
+  ctx.fillStyle='#18284a';
+  ctx.font='bold 11px "Crimson Pro",Georgia,serif';
+  ctx.textAlign='left';
+  const tx=Math.min(xpx+10,W-100);
+  ctx.fillText('L('+xv.toFixed(2)+') = '+lv.toFixed(3),tx,ypx-8);
+  
+  // Axes labels
+  ctx.fillStyle='rgba(24,40,74,0.65)';
+  ctx.font='10px "Crimson Pro",Georgia,serif';
+  ctx.textAlign='center';
+  const xDec=Math.max(0,-Math.floor(Math.log10(xStep))+(xStep<1?1:0));
+  for(let xt=Math.ceil(xLo/xStep)*xStep;xt<=xHi+1e-9;xt+=xStep){
+    ctx.fillText(xt.toFixed(xDec),px(xt),pad.t+gH+12);
+  }
+  ctx.textAlign='right';
+  const yDec=Math.max(0,-Math.floor(Math.log10(yStep))+(yStep<1?1:0));
+  for(let yt=Math.ceil(yLo/yStep)*yStep;yt<=yHi+1e-9;yt+=yStep){
+    ctx.fillText(yt.toFixed(yDec),pad.l-4,py(yt)+3);
+  }
+  ctx.fillStyle='#18284a';
+  ctx.font='italic 11px "Crimson Pro",Georgia,serif';
+  ctx.textAlign='center';
+  ctx.fillText('x',pad.l+gW/2,pad.t+gH+26);
+  ctx.save();
+  ctx.translate(12,pad.t+gH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('L(x)',0,0);
+  ctx.restore();
+}
+
+function update2(){
+  drawData2();
+  drawLoss(ctxL2,cL2,L2,x2,meanD(),'x̄','#39275B');
+  // info row
+  const lv=L2(x2), m=meanD(), lmin=L2(m);
+  let h='<span class="k">x =</span> <span class="v">'+x2.toFixed(2)+'</span>';
+  h+='&ensp;|&ensp; <span class="k">L₂(x) =</span> <span class="v">'+lv.toFixed(4)+'</span>';
+  h+='&ensp;|&ensp; <span class="k">x̄ =</span> <span class="gld">'+m.toFixed(4)+'</span>';
+  h+='&ensp;|&ensp; <span class="k">L₂(x̄) =</span> <span class="gld">'+lmin.toFixed(4)+'</span>';
+  h+='&ensp;|&ensp; <span class="k">excess:</span> <span class="v">+'+(lv-lmin).toFixed(4)+'</span>';
+  document.getElementById('info2').innerHTML=h;
+}
+
+function update1(){
+  drawData1();
+  const sorted=[...data].sort((a,b)=>a-b);
+  const m=sorted.length;
+  const evenCase=(m>0 && m%2===0 && sorted[m/2-1]!==sorted[m/2]);
+  let minMarker;
+  if(evenCase) minMarker=[sorted[m/2-1],sorted[m/2]];
+  else minMarker=medianD();
+  drawLoss(ctxL1,cL1,L1,x1,minMarker,'med','#39275B');
+  const lv=L1(x1), med=medianD(), lmin=L1(med);
+  let h='<span class="k">x =</span> <span class="v">'+x1.toFixed(2)+'</span>';
+  h+='&ensp;|&ensp; <span class="k">L₁(x) =</span> <span class="v">'+lv.toFixed(4)+'</span>';
+  if(evenCase){
+    h+='&ensp;|&ensp; <span class="k">median:</span> <span class="gld">any x ∈ ['+sorted[m/2-1]+', '+sorted[m/2]+']</span>';
+    h+='&ensp;|&ensp; <span class="k">L₁(min) =</span> <span class="gld">'+lmin.toFixed(4)+'</span>';
+  } else if(m>0) {
+    h+='&ensp;|&ensp; <span class="k">median =</span> <span class="gld">'+med.toFixed(4)+'</span>';
+    h+='&ensp;|&ensp; <span class="k">L₁(med) =</span> <span class="gld">'+lmin.toFixed(4)+'</span>';
+  }
+  h+='&ensp;|&ensp; <span class="k">excess:</span> <span class="v">+'+(lv-lmin).toFixed(4)+'</span>';
+  document.getElementById('info1').innerHTML=h;
+}
+
+function updateAll(){update2();update1();}
+
+function setSliderRanges(){
+  const sl2=document.getElementById('sl2');
+  const sl1=document.getElementById('sl1');
+  for(const sl of [sl2,sl1]){
+    sl.min=xLo;
+    sl.max=xHi;
+    const span=xHi-xLo;
+    sl.step=span/400;
+  }
+}
+
+function loadData(arr){
+  data=arr.filter(v=>!isNaN(v));
+  fitRange();
+  setSliderRanges();
+  // Center sliders at the middle of the range
+  const mid=(xLo+xHi)/2;
+  x2=mid; x1=mid;
+  document.getElementById('sl2').value=mid;
+  document.getElementById('sl1').value=mid;
+  document.getElementById('xv2').textContent=x2.toFixed(2);
+  document.getElementById('xv1').textContent=x1.toFixed(2);
+  updateAll();
+}
+
+function parseVec(s){
+  if(!s) return [];
+  return s.split(/[\s,;]+/).filter(t=>t.length>0).map(t=>{
+    if(t.indexOf('/')>-1){const p=t.split('/');return parseFloat(p[0])/parseFloat(p[1]);}
+    return parseFloat(t);
+  }).filter(v=>!isNaN(v));
+}
+
+document.getElementById('btnLoad').addEventListener('click',function(){
+  const arr=parseVec(document.getElementById('dataInput').value);
+  if(arr.length===0){alert('Please enter at least one numeric value.');return;}
+  loadData(arr);
+});
+
+document.getElementById('btnEx1').addEventListener('click',function(){
+  const arr=[1,3,4,7,9];
+  document.getElementById('dataInput').value=arr.join(', ');
+  loadData(arr);
+});
+
+document.getElementById('btnEx2').addEventListener('click',function(){
+  const arr=[2,4,7,9];  // even count, distinct middle pair → median ambiguous
+  document.getElementById('dataInput').value=arr.join(', ');
+  loadData(arr);
+});
+
+document.getElementById('btnClear').addEventListener('click',function(){
+  data=[];
+  document.getElementById('dataInput').value='';
+  fitRange();
+  setSliderRanges();
+  updateAll();
+});
+
+document.getElementById('dataInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter') document.getElementById('btnLoad').click();
+});
+
+document.getElementById('sl2').addEventListener('input',function(){
+  x2=parseFloat(this.value);
+  document.getElementById('xv2').textContent=x2.toFixed(2);
+  update2();
+});
+document.getElementById('sl1').addEventListener('input',function(){
+  x1=parseFloat(this.value);
+  document.getElementById('xv1').textContent=x1.toFixed(2);
+  update1();
+});
+
+// Init with example
+(function init(){
+  const arr=[1,3,4,7,9];
+  document.getElementById('dataInput').value=arr.join(', ');
+  loadData(arr);
+})();
+</script>
+</body>
+</html>

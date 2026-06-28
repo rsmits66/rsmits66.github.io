@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Transformation Visualization</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500;600&display=swap');
+
+  :root {
+    --bg: #0f1318;
+    --surface: #181d24;
+    --text: #c8cdd5;
+    --text-dim: #6b7280;
+    --accent: #4a9eff;
+    --accent-glow: rgba(74, 158, 255, 0.15);
+    --axis: #3a3f4a;
+    --highlight: #ff9e4a;
+    --highlight-glow: rgba(255, 158, 74, 0.2);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container { width: 100%; max-width: 1000px; }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header h1 {
+    font-weight: 300;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+  }
+
+  .stats-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card { display: flex; flex-direction: column; gap: 0.3rem; }
+  
+  .stat-card label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .stat-card span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--highlight);
+  }
+
+  .stat-card.theoretical span { color: var(--accent); }
+
+  .formula-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(74, 158, 255, 0.05);
+    border: 1px solid rgba(74, 158, 255, 0.12);
+    border-radius: 6px;
+  }
+
+  .formula-bar .katex { font-size: 1.05rem; color: var(--text); }
+
+  .canvas-wrap {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 2rem 0;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+    position: relative;
+  }
+
+  canvas { display: block; width: 100%; height: auto; }
+
+  .controls {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    align-items: center;
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .control-group label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 200px;
+    height: 4px;
+    background: var(--axis);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--highlight);
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--highlight-glow);
+  }
+
+  .value-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 4ch;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Transforming Probability Mass</h1>
+  </div>
+
+  <div class="formula-bar">
+    <span id="formulaY"></span>
+    <span id="formulaTransform"></span>
+    <span id="formulaDeriv"></span>
+  </div>
+
+  <div class="stats-board">
+    <div class="stat-card">
+      <label>Window Δu</label>
+      <span id="valDu">0.200</span>
+    </div>
+    <div class="stat-card">
+      <label>Preimage Δy</label>
+      <span id="valDy">0.000</span>
+    </div>
+    <div class="stat-card">
+      <label>Geom Ratio (Δy/Δu)</label>
+      <span id="valRatio">0.000</span>
+    </div>
+    <div class="stat-card theoretical">
+      <label>Theoretical |dy/du|</label>
+      <span id="valDeriv">0.000</span>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="plot" width="1000" height="600"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Center (u)</label>
+      <input type="range" id="uSlider" min="0.05" max="1.95" step="0.01" value="0.5">
+      <span class="value-display" id="uVal">0.50</span>
+    </div>
+    <div class="control-group">
+      <label>Width (Δu)</label>
+      <input type="range" id="duSlider" min="0.02" max="0.4" step="0.01" value="0.1">
+      <span class="value-display" id="duVal">0.10</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+
+// --- Math State & Constants ---
+const N = 4000;
+let particles = [];
+let uCenter = 0.5;
+let deltaU = 0.1;
+
+// Render Constants
+const PAD_X = 60;
+const Y_AXIS_Y = 150;
+const U_AXIS_Y = 450;
+const W = canvas.width - PAD_X * 2;
+
+// Domains
+const Y_MIN = -0.1, Y_MAX = 1.2;
+const U_MIN = -0.2, U_MAX = 2.4;
+
+// --- Helper Functions ---
+function mapY(y) { return PAD_X + ((y - Y_MIN) / (Y_MAX - Y_MIN)) * W; }
+function mapU(u) { return PAD_X + ((u - U_MIN) / (U_MAX - U_MIN)) * W; }
+
+function randNorm(mu, sigma) {
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return (Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v)) * sigma + mu;
+}
+
+// Generate the original sample space
+function generateParticles() {
+  particles = [];
+  for (let i = 0; i < N; i++) {
+    // Inverse transform sampling for f(y) = 2y on [0,1]
+    // F(y) = y^2 => y = sqrt(u)
+    let y = Math.sqrt(Math.random());
+    
+    // The transformation U = 2Y^3
+    let u = 2 * Math.pow(y, 3);
+    
+    // Apply a standard normal spread strictly for the vertical visual layout
+    let verticalOffset = randNorm(0, 0.04); 
+    
+    particles.push({ y, u, verticalOffset });
+  }
+}
+
+// --- Drawing Loop ---
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. Calculate boundaries
+  const uMin = Math.max(0, uCenter - deltaU / 2);
+  const uMax = Math.min(2, uCenter + deltaU / 2);
+  const actualDeltaU = uMax - uMin;
+
+  // Inverse: y = (u/2)^(1/3)
+  const yMin = Math.pow(uMin / 2, 1/3);
+  const yMax = Math.pow(uMax / 2, 1/3);
+  const deltaY = yMax - yMin;
+
+  // 2. Draw the mapping projection (The stretching polygon)
+  ctx.fillStyle = 'rgba(255, 158, 74, 0.08)'; // Faint orange polygon
+  ctx.beginPath();
+  ctx.moveTo(mapY(yMin), Y_AXIS_Y);
+  ctx.lineTo(mapY(yMax), Y_AXIS_Y);
+  ctx.lineTo(mapU(uMax), U_AXIS_Y);
+  ctx.lineTo(mapU(uMin), U_AXIS_Y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Draw projection dashed lines
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(255, 158, 74, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(mapY(yMin), Y_AXIS_Y); ctx.lineTo(mapU(uMin), U_AXIS_Y);
+  ctx.moveTo(mapY(yMax), Y_AXIS_Y); ctx.lineTo(mapU(uMax), U_AXIS_Y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 3. Draw Axes
+  drawAxis(Y_AXIS_Y, Y_MIN, Y_MAX, 'y', 0.2);
+  drawAxis(U_AXIS_Y, U_MIN, U_MAX, 'u', 0.4);
+
+  // 4. Draw Highlight Boxes on axes
+  // Y Box
+  ctx.fillStyle = 'rgba(255, 158, 74, 0.2)';
+  ctx.fillRect(mapY(yMin), Y_AXIS_Y - 40, mapY(yMax) - mapY(yMin), 80);
+  ctx.strokeStyle = 'rgba(255, 158, 74, 0.8)';
+  ctx.strokeRect(mapY(yMin), Y_AXIS_Y - 40, mapY(yMax) - mapY(yMin), 80);
+
+  // U Box
+  ctx.fillRect(mapU(uMin), U_AXIS_Y - 40, mapU(uMax) - mapU(uMin), 80);
+  ctx.strokeRect(mapU(uMin), U_AXIS_Y - 40, mapU(uMax) - mapU(uMin), 80);
+
+  // 5. Draw Particles
+  const rBase = 1.5;
+  const rHigh = 2.5;
+  const alphaBase = 0.15;
+  const alphaHigh = 0.6;
+
+  ctx.globalCompositeOperation = 'lighter';
+
+  for (let p of particles) {
+    const isInside = (p.u >= uMin && p.u <= uMax);
+    
+    // Y-Axis particle
+    ctx.beginPath();
+    ctx.arc(mapY(p.y), Y_AXIS_Y + (p.verticalOffset * 350), isInside ? rHigh : rBase, 0, Math.PI * 2);
+    ctx.fillStyle = isInside ? `rgba(255, 158, 74, ${alphaHigh})` : `rgba(160, 175, 195, ${alphaBase})`;
+    ctx.fill();
+
+    // U-Axis particle
+    ctx.beginPath();
+    ctx.arc(mapU(p.u), U_AXIS_Y + (p.verticalOffset * 350), isInside ? rHigh : rBase, 0, Math.PI * 2);
+    ctx.fillStyle = isInside ? `rgba(255, 158, 74, ${alphaHigh})` : `rgba(160, 175, 195, ${alphaBase})`;
+    ctx.fill();
+  }
+
+  ctx.globalCompositeOperation = 'source-over';
+
+  // 6. Update HTML Readouts
+  updateStats(actualDeltaU, deltaY, uCenter);
+}
+
+function drawAxis(yPos, minVal, maxVal, label, step) {
+  // Line
+  ctx.strokeStyle = '#3a3f4a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(PAD_X, yPos);
+  ctx.lineTo(PAD_X + W, yPos);
+  ctx.stroke();
+
+  // Ticks
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '500 14px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  
+  // Find nice round numbers for ticks
+  let start = Math.ceil(minVal / step) * step;
+  for (let v = start; v <= maxVal; v += step) {
+    if (Math.abs(v) < 0.001) v = 0; // Fix floating point -0.0
+    const tx = PAD_X + ((v - minVal) / (maxVal - minVal)) * W;
+    
+    ctx.beginPath();
+    ctx.moveTo(tx, yPos - 5);
+    ctx.lineTo(tx, yPos + 5);
+    ctx.stroke();
+    
+    ctx.fillText(v.toFixed(1), tx, yPos + 12);
+  }
+
+  // Label
+  ctx.fillStyle = '#c8cdd5';
+  ctx.font = '600 20px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label.toUpperCase(), PAD_X - 20, yPos);
+}
+
+function updateStats(actualDu, dy, u) {
+  document.getElementById('valDu').textContent = actualDu.toFixed(3);
+  document.getElementById('valDy').textContent = dy.toFixed(3);
+  
+  // Ratio
+  const ratio = actualDu > 0 ? (dy / actualDu) : 0;
+  document.getElementById('valRatio').textContent = ratio.toFixed(3);
+
+  // Theoretical Derivative |dy/du|
+  // Formula: 1 / (3 * 2^(1/3) * u^(2/3))
+  let deriv = 0;
+  if (u > 0) {
+    deriv = 1 / (3 * Math.pow(2, 1/3) * Math.pow(u, 2/3));
+  }
+  document.getElementById('valDeriv').textContent = deriv.toFixed(3);
+}
+
+// --- Interaction Events ---
+const uSlider = document.getElementById('uSlider');
+const duSlider = document.getElementById('duSlider');
+const uVal = document.getElementById('uVal');
+const duVal = document.getElementById('duVal');
+
+function handleUpdate() {
+  uCenter = parseFloat(uSlider.value);
+  deltaU = parseFloat(duSlider.value);
+  uVal.textContent = uCenter.toFixed(2);
+  duVal.textContent = deltaU.toFixed(2);
+  draw();
+}
+
+uSlider.addEventListener('input', handleUpdate);
+duSlider.addEventListener('input', handleUpdate);
+
+// --- Math Formulas ---
+function renderFormulas() {
+  katex.render(String.raw`f_Y(y) = 2y \quad (0 \le y \le 1)`, document.getElementById('formulaY'));
+  katex.render(String.raw`U = h(Y) = 2Y^3`, document.getElementById('formulaTransform'));
+  katex.render(String.raw`f_U(u) = f_Y(h^{-1}(u)) \left| \frac{dy}{du} \right|`, document.getElementById('formulaDeriv'));
+}
+
+// Init
+renderFormulas();
+generateParticles();
+handleUpdate(); // Triggers the first draw
+
+</script>
+</body>
+</html>

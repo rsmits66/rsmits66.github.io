@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hypothesis testing — small-sample and variance tests</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f4ef;
+    --surface-2: #ebeae4;
+    --text: #1a1915;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.15);
+    --border-strong: rgba(0,0,0,0.3);
+    --accent: #9E1B32;
+    --accent-dark: #6B0F23;
+    --accent-soft: #f2dde2;
+    --accent-shade: #d5a3af;
+    --bar: #828A8F;
+    --bar-hit: #9E1B32;
+    --btn-hover: #ededea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #ffffff;
+      --surface: #f5f4ef;
+      --surface-2: #ebeae4;
+      --text: #1a1915;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #888780;
+      --border: rgba(0,0,0,0.15);
+      --border-strong: rgba(0,0,0,0.3);
+      --accent: #9E1B32;
+      --accent-dark: #6B0F23;
+      --accent-soft: #f2dde2;
+      --accent-shade: #d5a3af;
+      --bar: #828A8F;
+      --bar-hit: #9E1B32;
+      --btn-hover: #ededea;
+    }
+    html, body { color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 960px; margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    border-top: 3px solid var(--accent);
+  }
+  h1 { font-size: 26px; font-weight: 500; margin: 0 0 0.25rem; color: var(--accent); letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 1.5rem; }
+  .toc { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 2rem; }
+  .toc a {
+    padding: 6px 12px;
+    background: var(--surface); color: var(--text);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .toc a:hover { background: var(--surface-2); }
+  .example { margin-bottom: 3rem; padding-top: 1rem; border-top: 0.5px solid var(--border); }
+  .example:first-of-type { border-top: none; padding-top: 0; }
+  h2 { font-size: 20px; font-weight: 500; margin: 0 0 0.5rem; color: var(--accent); }
+  h3 { font-size: 15px; font-weight: 500; margin: 0 0 0.5rem; color: var(--text); }
+  h3 .tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    color: white;
+    vertical-align: middle;
+  }
+  h3 .tag.classical { background: var(--text-secondary); }
+  h3 .tag.simulation { background: var(--accent); }
+  .scenario { margin: 0 0 1rem; color: var(--text-secondary); }
+  .inputs-panel {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+  .inputs-panel-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  .input-group { display: flex; flex-direction: column; gap: 3px; }
+  .input-group label { font-size: 12px; color: var(--text-secondary); }
+  .input-group input, .input-group select {
+    padding: 5px 8px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 5px;
+    background: white;
+    font-family: inherit; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .input-group input:focus, .input-group select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hyp-box {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    display: flex; flex-wrap: wrap; gap: 14px;
+  }
+  .hyp-box .h-item { color: var(--accent-dark); }
+  .hyp-box .h-item strong { font-weight: 500; }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 0.75rem;
+  }
+  @media (max-width: 780px) { .grid-2 { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column;
+  }
+  .method-type { font-size: 12px; color: var(--text-tertiary); margin: 0 0 8px; }
+  .calc {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    line-height: 1.7;
+  }
+  pre.code {
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin: 0 0 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+  }
+  pre.code .key { color: var(--accent-dark); }
+  .plot-wrap {
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 4px;
+    margin-bottom: 8px;
+  }
+  .plot-wrap svg { width: 100%; height: auto; display: block; }
+  .p-box {
+    margin-top: auto;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .p-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .p-value {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .p-value.pending { color: var(--text-tertiary); }
+  .p-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  button.run {
+    background: var(--accent); color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background 0.12s, transform 0.08s;
+    align-self: flex-start;
+  }
+  button.run:hover:not(:disabled) { background: var(--accent-dark); }
+  button.run:active:not(:disabled) { transform: scale(0.98); }
+  button.run:disabled { opacity: 0.45; cursor: not-allowed; }
+  .verdict {
+    margin-top: 0.5rem;
+    padding: 9px 14px;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+  }
+  .verdict strong { color: var(--accent); font-weight: 500; }
+  .verdict.notreject { border-left-color: var(--text-secondary); }
+  .verdict.notreject strong { color: var(--text); }
+  .note {
+    margin-top: 0.5rem;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  var { font-style: italic; font-family: "Times New Roman", serif; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Hypothesis testing — small-sample and variance tests</h1>
+  <p class="subtitle">
+    Tests where the relevant null distribution is t, χ², or F. Edit any input to recompute the
+    classical p-value live and see the theoretical null distribution with the observed statistic
+    marked. Click "Run simulation" to draw 100,000 fresh samples under H<sub>0</sub> and overlay
+    the empirical histogram. Each example also lets you flip the alternative direction.
+  </p>
+
+  <nav class="toc">
+    <a href="#tone">1. One-sample t</a>
+    <a href="#ttwo">2. Two-sample pooled t</a>
+    <a href="#chivar">3. χ² test for σ²</a>
+    <a href="#fratio">4. F test for σ₁²/σ₂²</a>
+  </nav>
+
+  <!-- Example 1: One-sample t -->
+  <section class="example" id="tone">
+    <h2>1. One-sample t-test  —  small-sample mean</h2>
+    <p class="scenario">
+      Test a population mean against a target value using the t-statistic when n is small.
+      The default values illustrate a small-sample lower-tail test.
+    </p>
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n</label><input type="number" id="t1-n" value="8" min="2" /></div>
+        <div class="input-group"><label>ȳ</label><input type="number" id="t1-ybar" value="2959" step="0.1" /></div>
+        <div class="input-group"><label>s</label><input type="number" id="t1-s" value="39.1" min="0.001" step="0.1" /></div>
+        <div class="input-group"><label>μ₀</label><input type="number" id="t1-mu0" value="3000" step="0.1" /></div>
+        <div class="input-group"><label>Hₐ</label>
+          <select id="t1-alt"><option value="less" selected>μ &lt; μ₀</option><option value="greater">μ &gt; μ₀</option><option value="two">μ ≠ μ₀</option></select>
+        </div>
+        <div class="input-group"><label>α</label>
+          <select id="t1-alpha"><option>0.01</option><option selected>0.025</option><option>0.05</option><option>0.10</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="hyp-box" id="t1-hyp"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">one-sample t-test, df = n − 1</p>
+        <div class="calc" id="t1-calc"></div>
+        <div class="plot-wrap"><svg id="t1-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="t1-theory-p">—</div>
+          <div class="p-sub" id="t1-theory-sub">from t<sub>df</sub> distribution</div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">draw n samples from Normal(μ₀, s²), compute t each time</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+t_obs &lt;- (ybar - mu0) / (s / <span class="key">sqrt</span>(n))
+t_sim &lt;- <span class="key">replicate</span>(100000, {
+  d &lt;- <span class="key">rnorm</span>(n, mean = mu0, sd = s)
+  (<span class="key">mean</span>(d) - mu0) / (<span class="key">sd</span>(d)/<span class="key">sqrt</span>(n))
+})
+<span class="key">mean</span>(t_sim &lt;= t_obs)   <span class="key">#</span> for "less"</pre>
+        <button class="run" data-ex="t1">Run simulation</button>
+        <div class="plot-wrap"><svg id="t1-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="t1-sim-p">—</div>
+          <div class="p-sub" id="t1-sim-sub">fraction in tail</div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict" id="t1-verdict"></div>
+    <p class="note">
+      The simulation uses s as the population SD when generating null samples, then recomputes
+      sample SDs in each draw. The histogram reproduces the t<sub>n−1</sub> shape — slightly
+      heavier tails than the standard normal — so the simulated and theoretical p-values agree
+      whenever the population is exactly normal.
+    </p>
+  </section>
+
+  <!-- Example 2: Two-sample t -->
+  <section class="example" id="ttwo">
+    <h2>2. Two-sample pooled t-test  —  small samples, equal variances</h2>
+    <p class="scenario">
+      Compare two means with small, independent samples assumed to share a common variance.
+      The pooled t-statistic uses df = n₁ + n₂ − 2.
+    </p>
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n₁</label><input type="number" id="t2-n1" value="9" min="2" /></div>
+        <div class="input-group"><label>ȳ₁</label><input type="number" id="t2-y1" value="35.22" step="0.01" /></div>
+        <div class="input-group"><label>s₁²</label><input type="number" id="t2-v1" value="24.4444" min="0.0001" step="0.01" /></div>
+        <div class="input-group"><label>n₂</label><input type="number" id="t2-n2" value="9" min="2" /></div>
+        <div class="input-group"><label>ȳ₂</label><input type="number" id="t2-y2" value="31.56" step="0.01" /></div>
+        <div class="input-group"><label>s₂²</label><input type="number" id="t2-v2" value="20.0278" min="0.0001" step="0.01" /></div>
+        <div class="input-group"><label>D₀</label><input type="number" id="t2-d0" value="0" step="0.1" /></div>
+        <div class="input-group"><label>Hₐ</label>
+          <select id="t2-alt"><option value="two" selected>μ₁ − μ₂ ≠ D₀</option><option value="greater">μ₁ − μ₂ &gt; D₀</option><option value="less">μ₁ − μ₂ &lt; D₀</option></select>
+        </div>
+        <div class="input-group"><label>α</label>
+          <select id="t2-alpha"><option>0.01</option><option>0.025</option><option selected>0.05</option><option>0.10</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="hyp-box" id="t2-hyp"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">pooled-variance two-sample t, df = n₁ + n₂ − 2</p>
+        <div class="calc" id="t2-calc"></div>
+        <div class="plot-wrap"><svg id="t2-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="t2-theory-p">—</div>
+          <div class="p-sub" id="t2-theory-sub">from t<sub>df</sub> distribution</div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">draw both groups from Normal(μ̄, S<sub>p</sub>) under H<sub>0</sub></p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+mu0  &lt;- (n1*y1 + n2*y2)/(n1+n2)
+sp   &lt;- <span class="key">sqrt</span>(((n1-1)*v1+(n2-1)*v2)
+            /(n1+n2-2))
+t_obs &lt;- (y1-y2-D0)/(sp*<span class="key">sqrt</span>(1/n1+1/n2))
+t_sim &lt;- <span class="key">replicate</span>(100000, {
+  a &lt;- <span class="key">rnorm</span>(n1, mu0, sp)
+  b &lt;- <span class="key">rnorm</span>(n2, mu0, sp)
+  spk &lt;- <span class="key">sqrt</span>(((n1-1)*<span class="key">var</span>(a)+
+              (n2-1)*<span class="key">var</span>(b))/(n1+n2-2))
+  (<span class="key">mean</span>(a)-<span class="key">mean</span>(b))/
+    (spk*<span class="key">sqrt</span>(1/n1+1/n2))
+})
+<span class="key">mean</span>(<span class="key">abs</span>(t_sim) &gt;= <span class="key">abs</span>(t_obs))</pre>
+        <button class="run" data-ex="t2">Run simulation</button>
+        <div class="plot-wrap"><svg id="t2-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="t2-sim-p">—</div>
+          <div class="p-sub" id="t2-sim-sub">fraction in tail</div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict" id="t2-verdict"></div>
+  </section>
+
+  <!-- Example 3: Chi-square for variance -->
+  <section class="example" id="chivar">
+    <h2>3. χ² test for a single variance</h2>
+    <p class="scenario">
+      Test whether a population variance equals a claimed value. The pivot is (n−1)S²/σ₀² ~
+      χ²<sub>n−1</sub> under H<sub>0</sub>, with strong dependence on the normality assumption.
+    </p>
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n</label><input type="number" id="cv-n" value="10" min="2" /></div>
+        <div class="input-group"><label>S²</label><input type="number" id="cv-s2" value="0.0003" min="0.0000001" step="0.0001" /></div>
+        <div class="input-group"><label>σ₀²</label><input type="number" id="cv-sig02" value="0.0002" min="0.0000001" step="0.0001" /></div>
+        <div class="input-group"><label>Hₐ</label>
+          <select id="cv-alt"><option value="greater" selected>σ² &gt; σ₀²</option><option value="less">σ² &lt; σ₀²</option><option value="two">σ² ≠ σ₀²</option></select>
+        </div>
+        <div class="input-group"><label>α</label>
+          <select id="cv-alpha"><option>0.01</option><option>0.025</option><option selected>0.05</option><option>0.10</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="hyp-box" id="cv-hyp"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">χ² = (n−1)S²/σ₀², df = n − 1</p>
+        <div class="calc" id="cv-calc"></div>
+        <div class="plot-wrap"><svg id="cv-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="cv-theory-p">—</div>
+          <div class="p-sub" id="cv-theory-sub">from χ²<sub>df</sub> distribution</div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">draw n from Normal(0, σ₀²), compute (n−1)·var/σ₀²</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+chi_obs &lt;- (n - 1) * S2 / sig02
+chi_sim &lt;- <span class="key">replicate</span>(100000, {
+  d &lt;- <span class="key">rnorm</span>(n, mean = 0,
+              sd = <span class="key">sqrt</span>(sig02))
+  (n - 1) * <span class="key">var</span>(d) / sig02
+})
+<span class="key">mean</span>(chi_sim &gt;= chi_obs) <span class="key">#</span> upper tail</pre>
+        <button class="run" data-ex="cv">Run simulation</button>
+        <div class="plot-wrap"><svg id="cv-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="cv-sim-p">—</div>
+          <div class="p-sub" id="cv-sim-sub">fraction in tail</div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict" id="cv-verdict"></div>
+    <p class="note">
+      Two-sided p-values follow the textbook convention p = 2 · min(P(χ² ≤ χ²_obs), P(χ² ≥ χ²_obs)),
+      capped at 1. The χ² distribution is skewed, so the histogram is decidedly asymmetric — a key
+      visual reminder that not every null distribution is bell-shaped.
+    </p>
+  </section>
+
+  <!-- Example 4: F test -->
+  <section class="example" id="fratio">
+    <h2>4. F test for the ratio σ₁²/σ₂²</h2>
+    <p class="scenario">
+      Compare two population variances. Numerator df = n₁ − 1, denominator df = n₂ − 1
+      under H<sub>0</sub>: σ₁² = σ₂².
+    </p>
+    <div class="inputs-panel">
+      <div class="inputs-panel-label">Editable data</div>
+      <div class="inputs-grid">
+        <div class="input-group"><label>n₁</label><input type="number" id="f-n1" value="10" min="2" /></div>
+        <div class="input-group"><label>S₁²</label><input type="number" id="f-v1" value="0.0003" min="0.0000001" step="0.0001" /></div>
+        <div class="input-group"><label>n₂</label><input type="number" id="f-n2" value="20" min="2" /></div>
+        <div class="input-group"><label>S₂²</label><input type="number" id="f-v2" value="0.0001" min="0.0000001" step="0.0001" /></div>
+        <div class="input-group"><label>Hₐ</label>
+          <select id="f-alt"><option value="greater" selected>σ₁² &gt; σ₂²</option><option value="less">σ₁² &lt; σ₂²</option><option value="two">σ₁² ≠ σ₂²</option></select>
+        </div>
+        <div class="input-group"><label>α</label>
+          <select id="f-alpha"><option>0.01</option><option>0.025</option><option selected>0.05</option><option>0.10</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="hyp-box" id="f-hyp"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Classical <span class="tag classical">formula</span></h3>
+        <p class="method-type">F = S₁²/S₂², df = (n₁−1, n₂−1)</p>
+        <div class="calc" id="f-calc"></div>
+        <div class="plot-wrap"><svg id="f-classical-svg" viewBox="0 0 340 180"></svg></div>
+        <div class="p-box">
+          <div class="p-label">theoretical p-value</div>
+          <div class="p-value" id="f-theory-p">—</div>
+          <div class="p-sub" id="f-theory-sub">from F distribution</div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Simulation <span class="tag simulation">R</span></h3>
+        <p class="method-type">draw two normal samples, compute F = S₁²/S₂²</p>
+<pre class="code"><span class="key">set.seed</span>(2025)
+F_obs &lt;- v1 / v2
+F_sim &lt;- <span class="key">replicate</span>(100000, {
+  a &lt;- <span class="key">rnorm</span>(n1)
+  b &lt;- <span class="key">rnorm</span>(n2)
+  <span class="key">var</span>(a) / <span class="key">var</span>(b)
+})
+<span class="key">mean</span>(F_sim &gt;= F_obs)  <span class="key">#</span> upper tail</pre>
+        <button class="run" data-ex="f">Run simulation</button>
+        <div class="plot-wrap"><svg id="f-sim-svg" viewBox="0 0 340 180"><text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Click Run to build the histogram</text></svg></div>
+        <div class="p-box">
+          <div class="p-label">simulated p-value</div>
+          <div class="p-value pending" id="f-sim-p">—</div>
+          <div class="p-sub" id="f-sim-sub">fraction in tail</div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict" id="f-verdict"></div>
+    <p class="note">
+      Two-sided F p-values use p = 2 · min(P(F ≤ F_obs), P(F ≥ F_obs)). Because the F
+      distribution is asymmetric, the test is not symmetric around 1 — a value like F = 3 and
+      its reciprocal F = 1/3 are not equidistant from the rejection thresholds.
+    </p>
+  </section>
+</div>
+
+<script>
+(function() {
+  const NSIM = 100000;
+
+  function randn() {
+    const u1 = Math.random(), u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function gammaHalf(n) {
+    if (n === 1) return Math.sqrt(Math.PI);
+    if (n === 2) return 1;
+    return (n / 2 - 1) * gammaHalf(n - 2);
+  }
+
+  function logGamma(x) {
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+               -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, t = x + 5.5;
+    t -= (x + 0.5) * Math.log(t);
+    let s = 1.000000000190015;
+    for (let j = 0; j < 6; j++) s += c[j] / ++y;
+    return -t + Math.log(2.5066282746310005 * s / x);
+  }
+
+  function chi2pdf(x, df) {
+    if (x <= 0) return df === 2 ? 0.5 : (df < 2 ? Infinity : 0);
+    return Math.exp((df/2 - 1) * Math.log(x) - x/2 - (df/2) * Math.log(2) - logGamma(df/2));
+  }
+
+  function chi2cdf(x, df) {
+    if (x <= 0) return 0;
+    const steps = 4000;
+    const h = x / steps;
+    let sum = 0.5 * (chi2pdf(1e-6, df) + chi2pdf(x, df));
+    for (let i = 1; i < steps; i++) sum += chi2pdf(i * h, df);
+    return Math.min(1, Math.max(0, sum * h));
+  }
+
+  function tpdf(x, df) {
+    return Math.exp(logGamma((df+1)/2) - logGamma(df/2) - 0.5*Math.log(df*Math.PI) - ((df+1)/2)*Math.log(1 + x*x/df));
+  }
+
+  function tcdf(x, df) {
+    if (x === 0) return 0.5;
+    const sign = x < 0 ? -1 : 1;
+    const xa = Math.abs(x);
+    const steps = 2000;
+    const h = xa / steps;
+    let sum = 0.5 * (tpdf(0, df) + tpdf(xa, df));
+    for (let i = 1; i < steps; i++) sum += tpdf(i * h, df);
+    return 0.5 + sign * Math.min(0.5, sum * h);
+  }
+
+  function fpdf(x, d1, d2) {
+    if (x <= 0) return 0;
+    const lognum = (d1/2)*Math.log(d1) + (d2/2)*Math.log(d2) + (d1/2 - 1)*Math.log(x);
+    const logdenom = ((d1+d2)/2) * Math.log(d2 + d1*x) + logGamma(d1/2) + logGamma(d2/2) - logGamma((d1+d2)/2);
+    return Math.exp(lognum - logdenom);
+  }
+
+  function fcdf(x, d1, d2) {
+    if (x <= 0) return 0;
+    const steps = 3000;
+    const h = x / steps;
+    let sum = 0.5 * (fpdf(1e-6, d1, d2) + fpdf(x, d1, d2));
+    for (let i = 1; i < steps; i++) sum += fpdf(i * h, d1, d2);
+    return Math.min(1, Math.max(0, sum * h));
+  }
+
+  function fmtP(p) {
+    if (p === 0) return '< 1e-5';
+    if (p === 1) return '> 0.9999';
+    if (p < 0.0001) return p.toExponential(2);
+    return p.toFixed(4);
+  }
+  function fmt(x, d) { return Number(x).toFixed(d); }
+
+  function niceTicks(xMin, xMax, target) {
+    target = target || 5;
+    const range = xMax - xMin;
+    if (range <= 0) return [xMin];
+    const step0 = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const norm = step0 / mag;
+    let step;
+    if (norm < 1.5) step = 1*mag;
+    else if (norm < 3) step = 2*mag;
+    else if (norm < 7) step = 5*mag;
+    else step = 10*mag;
+    const first = Math.ceil(xMin/step)*step;
+    const ticks = [];
+    for (let t = first; t <= xMax + step*1e-9; t += step) ticks.push(+t.toFixed(12));
+    return ticks;
+  }
+
+  function formatTick(v) {
+    const a = Math.abs(v);
+    if (a === 0) return '0';
+    if (a < 0.001) return v.toExponential(0);
+    if (a < 1) return v.toFixed(2);
+    if (a < 10) return v.toFixed(a < 3 ? 2 : 1);
+    if (a < 1000) return v.toFixed(0);
+    return v.toFixed(0);
+  }
+
+  function buildDensityPlot(svg, opts) {
+    const W = 340, H = 180;
+    const mL = 34, mR = 8, mT = 14, mB = 30;
+    const pW = W - mL - mR, pH = H - mT - mB;
+    const nPts = 240;
+    const xs = [], ys = [];
+    let yMax = 0;
+    for (let i = 0; i <= nPts; i++) {
+      const x = opts.xMin + i*(opts.xMax-opts.xMin)/nPts;
+      const y = opts.density(x);
+      xs.push(x); ys.push(y);
+      if (isFinite(y) && y > yMax) yMax = y;
+    }
+    yMax = Math.max(yMax * 1.15, 1e-6);
+    const sx = x => mL + (x - opts.xMin)/(opts.xMax - opts.xMin) * pW;
+    const sy = y => mT + pH - Math.min(y, yMax)/yMax * pH;
+
+    const parts = [];
+    if (opts.tail) {
+      const inTail = (x) => {
+        if (opts.tail === 'upper') return x >= opts.observed;
+        if (opts.tail === 'lower') return x <= opts.observed;
+        if (opts.tail === 'two-sym') return Math.abs(x - opts.center) >= Math.abs(opts.observed - opts.center);
+        if (opts.tail === 'two-min') {
+          if (opts.observed < opts.center) return x <= opts.observed || x >= (opts.mirror !== undefined ? opts.mirror : opts.observed);
+          return x >= opts.observed || x <= (opts.mirror !== undefined ? opts.mirror : opts.observed);
+        }
+        return false;
+      };
+      let seg = [];
+      for (let i = 0; i <= nPts; i++) {
+        if (inTail(xs[i])) seg.push([sx(xs[i]), sy(ys[i])]);
+        else if (seg.length > 0) { flushShade(parts, seg, sy(0)); seg = []; }
+      }
+      if (seg.length > 0) flushShade(parts, seg, sy(0));
+    }
+
+    let curveD = '';
+    let started = false;
+    for (let i = 0; i <= nPts; i++) {
+      if (!isFinite(ys[i])) continue;
+      curveD += (started ? 'L' : 'M') + sx(xs[i]).toFixed(1) + ',' + sy(ys[i]).toFixed(1) + ' ';
+      started = true;
+    }
+    parts.push('<path d="' + curveD + '" fill="none" stroke="var(--accent)" stroke-width="2"/>');
+
+    parts.push('<line x1="' + mL + '" y1="' + (mT+pH) + '" x2="' + (mL+pW) + '" y2="' + (mT+pH) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+
+    const ticks = niceTicks(opts.xMin, opts.xMax, 5);
+    for (const tv of ticks) {
+      const x = sx(tv);
+      if (x < mL-1 || x > mL+pW+1) continue;
+      parts.push('<line x1="' + x.toFixed(1) + '" y1="' + (mT+pH) + '" x2="' + x.toFixed(1) + '" y2="' + (mT+pH+3) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+      parts.push('<text x="' + x.toFixed(1) + '" y="' + (mT+pH+14) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + formatTick(tv) + '</text>');
+    }
+    if (opts.xLabel) parts.push('<text x="' + (mL+pW/2) + '" y="' + (H-4) + '" text-anchor="middle" font-size="11" fill="var(--text-tertiary)">' + opts.xLabel + '</text>');
+
+    const obsX = sx(opts.observed);
+    if (obsX >= mL-30 && obsX <= mL+pW+30) {
+      const cl = Math.max(mL, Math.min(mL+pW, obsX));
+      parts.push('<line x1="' + cl + '" y1="' + mT + '" x2="' + cl + '" y2="' + (mT+pH) + '" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="4 3"/>');
+      parts.push('<text x="' + cl + '" y="' + (mT-3) + '" text-anchor="middle" font-size="10" fill="var(--text)" font-weight="500">obs = ' + formatTick(opts.observed) + '</text>');
+    }
+    if (opts.mirror !== undefined && opts.tail && (opts.tail === 'two-sym' || opts.tail === 'two-min')) {
+      const mx = sx(opts.mirror);
+      if (mx >= mL-5 && mx <= mL+pW+5) {
+        parts.push('<line x1="' + mx + '" y1="' + mT + '" x2="' + mx + '" y2="' + (mT+pH) + '" stroke="var(--text)" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>');
+      }
+    }
+    svg.innerHTML = parts.join('');
+  }
+
+  function flushShade(parts, seg, baselineY) {
+    if (seg.length === 0) return;
+    let d = 'M' + seg[0][0].toFixed(1) + ',' + baselineY.toFixed(1);
+    for (const pt of seg) d += ' L' + pt[0].toFixed(1) + ',' + pt[1].toFixed(1);
+    d += ' L' + seg[seg.length-1][0].toFixed(1) + ',' + baselineY.toFixed(1) + ' Z';
+    parts.push('<path d="' + d + '" fill="var(--accent-shade)" opacity="0.7"/>');
+  }
+
+  function buildHistogram(svg, samples, observed, opts) {
+    const W = 340, H = 180;
+    const mL = 34, mR = 8, mT = 14, mB = 30;
+    const pW = W - mL - mR, pH = H - mT - mB;
+
+    let xMin = opts.xMin, xMax = opts.xMax;
+    if (xMin === undefined || xMax === undefined) {
+      const sorted = Array.from(samples).sort((a,b) => a-b);
+      const lo = sorted[Math.floor(0.005 * sorted.length)];
+      const hi = sorted[Math.floor(0.995 * sorted.length)];
+      xMin = Math.min(lo, observed);
+      xMax = Math.max(hi, observed);
+      if (opts.mirror !== undefined) {
+        xMin = Math.min(xMin, opts.mirror);
+        xMax = Math.max(xMax, opts.mirror);
+      }
+      const pad = (xMax - xMin) * 0.05 || 0.01;
+      xMin -= pad; xMax += pad;
+      if (opts.nonNegative) xMin = Math.max(0, xMin);
+    }
+
+    const numBins = 50;
+    const binWidth = (xMax - xMin) / numBins;
+    const counts = new Array(numBins).fill(0);
+    for (let i = 0; i < samples.length; i++) {
+      const s = samples[i];
+      let b = Math.floor((s - xMin) / binWidth);
+      if (b < 0) b = 0;
+      if (b >= numBins) b = numBins - 1;
+      counts[b]++;
+    }
+    const densities = counts.map(c => c / (samples.length * binWidth));
+    const yMax = Math.max.apply(null, densities) * 1.15 || 1;
+
+    const sx = x => mL + (x - xMin)/(xMax - xMin) * pW;
+    const sy = y => mT + pH - y/yMax * pH;
+
+    const parts = [];
+
+    for (let i = 0; i < numBins; i++) {
+      if (counts[i] === 0) continue;
+      const binL = xMin + i * binWidth;
+      const binR = binL + binWidth;
+      const center = binL + binWidth/2;
+      const x1 = sx(binL), x2 = sx(binR);
+      const y1 = sy(densities[i]);
+      const h = sy(0) - y1;
+      const w = Math.max(x2 - x1 - 0.5, 0.8);
+      let inTail = false;
+      if (opts.tail === 'upper') inTail = binL >= observed - 1e-9;
+      else if (opts.tail === 'lower') inTail = binR <= observed + 1e-9;
+      else if (opts.tail === 'two-sym' && opts.center !== undefined) {
+        inTail = Math.abs(center - opts.center) >= Math.abs(observed - opts.center) - 1e-9;
+      } else if (opts.tail === 'two-min' && opts.mirror !== undefined) {
+        if (observed < (opts.center !== undefined ? opts.center : 1)) {
+          inTail = binR <= observed + 1e-9 || binL >= opts.mirror - 1e-9;
+        } else {
+          inTail = binL >= observed - 1e-9 || binR <= opts.mirror + 1e-9;
+        }
+      }
+      const color = inTail ? 'var(--bar-hit)' : 'var(--bar)';
+      parts.push('<rect x="' + x1.toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + color + '" opacity="' + (inTail ? '0.85' : '0.75') + '"/>');
+    }
+
+    parts.push('<line x1="' + mL + '" y1="' + (mT+pH) + '" x2="' + (mL+pW) + '" y2="' + (mT+pH) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+
+    const ticks = niceTicks(xMin, xMax, 5);
+    for (const tv of ticks) {
+      const x = sx(tv);
+      if (x < mL-1 || x > mL+pW+1) continue;
+      parts.push('<line x1="' + x.toFixed(1) + '" y1="' + (mT+pH) + '" x2="' + x.toFixed(1) + '" y2="' + (mT+pH+3) + '" stroke="var(--border-strong)" stroke-width="0.5"/>');
+      parts.push('<text x="' + x.toFixed(1) + '" y="' + (mT+pH+14) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + formatTick(tv) + '</text>');
+    }
+    if (opts.xLabel) parts.push('<text x="' + (mL+pW/2) + '" y="' + (H-4) + '" text-anchor="middle" font-size="11" fill="var(--text-tertiary)">' + opts.xLabel + '</text>');
+
+    const obsX = sx(observed);
+    if (obsX >= mL-5 && obsX <= mL+pW+5) {
+      const cl = Math.max(mL, Math.min(mL+pW, obsX));
+      parts.push('<line x1="' + cl + '" y1="' + mT + '" x2="' + cl + '" y2="' + (mT+pH) + '" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="4 3"/>');
+      parts.push('<text x="' + cl + '" y="' + (mT-3) + '" text-anchor="middle" font-size="10" fill="var(--text)" font-weight="500">obs = ' + formatTick(observed) + '</text>');
+    }
+    if (opts.mirror !== undefined) {
+      const mx = sx(opts.mirror);
+      if (mx >= mL-5 && mx <= mL+pW+5) {
+        parts.push('<line x1="' + mx + '" y1="' + mT + '" x2="' + mx + '" y2="' + (mT+pH) + '" stroke="var(--text)" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>');
+      }
+    }
+    svg.innerHTML = parts.join('');
+  }
+
+  function setVerdict(el, pVal, alpha, rejectText, notRejectText) {
+    if (pVal < alpha) {
+      el.className = 'verdict';
+      el.innerHTML = '<strong>Decision:</strong> p-value = ' + fmtP(pVal) + ' &lt; α = ' + alpha + '  →  <strong>reject H<sub>0</sub></strong>. ' + rejectText;
+    } else {
+      el.className = 'verdict notreject';
+      el.innerHTML = '<strong>Decision:</strong> p-value = ' + fmtP(pVal) + ' ≥ α = ' + alpha + '  →  <strong>fail to reject H<sub>0</sub></strong>. ' + notRejectText;
+    }
+  }
+
+  function altSym(alt, lhs, rhs) {
+    if (alt === 'greater') return lhs + ' &gt; ' + rhs;
+    if (alt === 'less') return lhs + ' &lt; ' + rhs;
+    return lhs + ' ≠ ' + rhs;
+  }
+
+  function pTwoSidedSym(tcdfVal) {
+    return 2 * Math.min(tcdfVal, 1 - tcdfVal);
+  }
+
+  // ===== Example 1: One-sample t =====
+  const t1 = {
+    inputs: ['t1-n','t1-ybar','t1-s','t1-mu0','t1-alt','t1-alpha'],
+    get: () => ({
+      n: Math.max(2, parseInt(document.getElementById('t1-n').value) || 0),
+      ybar: parseFloat(document.getElementById('t1-ybar').value) || 0,
+      s: Math.max(0.001, parseFloat(document.getElementById('t1-s').value) || 0),
+      mu0: parseFloat(document.getElementById('t1-mu0').value) || 0,
+      alt: document.getElementById('t1-alt').value,
+      alpha: parseFloat(document.getElementById('t1-alpha').value) || 0.05
+    }),
+    compute: (i) => {
+      const SE = i.s / Math.sqrt(i.n);
+      const t = (i.ybar - i.mu0) / SE;
+      const df = i.n - 1;
+      const cdf = tcdf(t, df);
+      let p;
+      if (i.alt === 'greater') p = 1 - cdf;
+      else if (i.alt === 'less') p = cdf;
+      else p = pTwoSidedSym(cdf);
+      return { SE, t, df, p };
+    },
+    render: function(i, c) {
+      document.getElementById('t1-hyp').innerHTML =
+        '<span class="h-item"><strong>H<sub>0</sub>:</strong> μ = ' + fmt(i.mu0, 2) + '</span>' +
+        '<span class="h-item"><strong>H<sub>a</sub>:</strong> ' + altSym(i.alt, 'μ', fmt(i.mu0,2)) + '</span>' +
+        '<span class="h-item"><strong>α:</strong> ' + i.alpha + '</span>';
+      document.getElementById('t1-calc').innerHTML =
+        'SE = s/√n = ' + fmt(i.s, 3) + '/√' + i.n + ' = ' + fmt(c.SE, 4) + '<br>' +
+        't = (' + fmt(i.ybar, 2) + ' − ' + fmt(i.mu0, 2) + ')/' + fmt(c.SE, 4) + ' = <strong>' + fmt(c.t, 3) + '</strong>,  df = ' + c.df;
+      document.getElementById('t1-theory-p').textContent = fmtP(c.p);
+      document.getElementById('t1-theory-sub').innerHTML = 'from t<sub>' + c.df + '</sub> distribution';
+
+      const span = Math.max(4, Math.abs(c.t) * 1.4 + 1);
+      buildDensityPlot(document.getElementById('t1-classical-svg'), {
+        xMin: -span, xMax: span,
+        density: x => tpdf(x, c.df),
+        observed: c.t, center: 0,
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-sym'),
+        mirror: i.alt === 'two' ? -c.t : undefined,
+        xLabel: 't statistic'
+      });
+      setVerdict(document.getElementById('t1-verdict'), c.p, i.alpha,
+        'Evidence that ' + altSym(i.alt, 'μ', 'μ₀') + '.',
+        'Insufficient evidence that ' + altSym(i.alt, 'μ', 'μ₀') + '.');
+
+      document.getElementById('t1-sim-sub').innerHTML =
+        i.alt === 'greater' ? 'fraction with t ≥ t<sub>obs</sub>' :
+        i.alt === 'less' ? 'fraction with t ≤ t<sub>obs</sub>' :
+        'fraction with |t| ≥ |t<sub>obs</sub>|';
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      for (let s = 0; s < NSIM; s++) {
+        let sum = 0, sumsq = 0;
+        for (let j = 0; j < i.n; j++) {
+          const x = randn();
+          sum += x;
+          sumsq += x * x;
+        }
+        const mean = sum / i.n;
+        const sd = Math.sqrt((sumsq - i.n * mean * mean) / (i.n - 1));
+        const tval = sd > 0 ? mean / (sd / Math.sqrt(i.n)) : 0;
+        samples[s] = tval;
+        if (i.alt === 'greater') { if (tval >= c.t - 1e-12) hits++; }
+        else if (i.alt === 'less') { if (tval <= c.t + 1e-12) hits++; }
+        else { if (Math.abs(tval) >= Math.abs(c.t) - 1e-12) hits++; }
+      }
+      document.getElementById('t1-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('t1-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('t1-sim-svg'), samples, c.t, {
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-sym'),
+        center: 0, mirror: i.alt === 'two' ? -c.t : undefined,
+        xLabel: 'simulated t'
+      });
+    }
+  };
+
+  // ===== Example 2: Two-sample pooled t =====
+  const t2 = {
+    inputs: ['t2-n1','t2-y1','t2-v1','t2-n2','t2-y2','t2-v2','t2-d0','t2-alt','t2-alpha'],
+    get: () => ({
+      n1: Math.max(2, parseInt(document.getElementById('t2-n1').value) || 0),
+      y1: parseFloat(document.getElementById('t2-y1').value) || 0,
+      v1: Math.max(1e-8, parseFloat(document.getElementById('t2-v1').value) || 0),
+      n2: Math.max(2, parseInt(document.getElementById('t2-n2').value) || 0),
+      y2: parseFloat(document.getElementById('t2-y2').value) || 0,
+      v2: Math.max(1e-8, parseFloat(document.getElementById('t2-v2').value) || 0),
+      d0: parseFloat(document.getElementById('t2-d0').value) || 0,
+      alt: document.getElementById('t2-alt').value,
+      alpha: parseFloat(document.getElementById('t2-alpha').value) || 0.05
+    }),
+    compute: (i) => {
+      const sp2 = ((i.n1 - 1) * i.v1 + (i.n2 - 1) * i.v2) / (i.n1 + i.n2 - 2);
+      const sp = Math.sqrt(sp2);
+      const SE = sp * Math.sqrt(1/i.n1 + 1/i.n2);
+      const t = (i.y1 - i.y2 - i.d0) / SE;
+      const df = i.n1 + i.n2 - 2;
+      const cdf = tcdf(t, df);
+      let p;
+      if (i.alt === 'greater') p = 1 - cdf;
+      else if (i.alt === 'less') p = cdf;
+      else p = pTwoSidedSym(cdf);
+      return { sp2, sp, SE, t, df, p };
+    },
+    render: function(i, c) {
+      document.getElementById('t2-hyp').innerHTML =
+        '<span class="h-item"><strong>H<sub>0</sub>:</strong> μ₁ − μ₂ = ' + fmt(i.d0, 2) + '</span>' +
+        '<span class="h-item"><strong>H<sub>a</sub>:</strong> ' + altSym(i.alt, 'μ₁ − μ₂', fmt(i.d0,2)) + '</span>' +
+        '<span class="h-item"><strong>α:</strong> ' + i.alpha + '</span>';
+      document.getElementById('t2-calc').innerHTML =
+        'S<sub>p</sub>² = ' + fmt(c.sp2, 4) + ',  S<sub>p</sub> = ' + fmt(c.sp, 4) + '<br>' +
+        'SE = ' + fmt(c.SE, 4) + ',  t = <strong>' + fmt(c.t, 3) + '</strong>,  df = ' + c.df;
+      document.getElementById('t2-theory-p').textContent = fmtP(c.p);
+      document.getElementById('t2-theory-sub').innerHTML = 'from t<sub>' + c.df + '</sub> distribution';
+
+      const span = Math.max(4, Math.abs(c.t) * 1.4 + 1);
+      buildDensityPlot(document.getElementById('t2-classical-svg'), {
+        xMin: -span, xMax: span,
+        density: x => tpdf(x, c.df),
+        observed: c.t, center: 0,
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-sym'),
+        mirror: i.alt === 'two' ? -c.t : undefined,
+        xLabel: 't statistic'
+      });
+      setVerdict(document.getElementById('t2-verdict'), c.p, i.alpha,
+        'Evidence of a difference in means.',
+        'Insufficient evidence of a difference.');
+
+      document.getElementById('t2-sim-sub').innerHTML =
+        i.alt === 'greater' ? 'fraction with t ≥ t<sub>obs</sub>' :
+        i.alt === 'less' ? 'fraction with t ≤ t<sub>obs</sub>' :
+        'fraction with |t| ≥ |t<sub>obs</sub>|';
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      const tobs = c.t;
+      for (let s = 0; s < NSIM; s++) {
+        let s1 = 0, ss1 = 0;
+        for (let j = 0; j < i.n1; j++) { const x = randn(); s1 += x; ss1 += x*x; }
+        const m1 = s1 / i.n1;
+        const v1k = (ss1 - i.n1 * m1 * m1) / (i.n1 - 1);
+        let s2 = 0, ss2 = 0;
+        for (let j = 0; j < i.n2; j++) { const x = randn(); s2 += x; ss2 += x*x; }
+        const m2 = s2 / i.n2;
+        const v2k = (ss2 - i.n2 * m2 * m2) / (i.n2 - 1);
+        const sp2k = ((i.n1-1)*v1k + (i.n2-1)*v2k) / (i.n1+i.n2-2);
+        const SEk = Math.sqrt(sp2k * (1/i.n1 + 1/i.n2));
+        const tval = SEk > 0 ? (m1 - m2) / SEk : 0;
+        samples[s] = tval;
+        if (i.alt === 'greater') { if (tval >= tobs - 1e-12) hits++; }
+        else if (i.alt === 'less') { if (tval <= tobs + 1e-12) hits++; }
+        else { if (Math.abs(tval) >= Math.abs(tobs) - 1e-12) hits++; }
+      }
+      document.getElementById('t2-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('t2-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('t2-sim-svg'), samples, tobs, {
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-sym'),
+        center: 0, mirror: i.alt === 'two' ? -tobs : undefined,
+        xLabel: 'simulated t'
+      });
+    }
+  };
+
+  // ===== Example 3: Chi-square for variance =====
+  const cv = {
+    inputs: ['cv-n','cv-s2','cv-sig02','cv-alt','cv-alpha'],
+    get: () => ({
+      n: Math.max(2, parseInt(document.getElementById('cv-n').value) || 0),
+      s2: Math.max(1e-12, parseFloat(document.getElementById('cv-s2').value) || 0),
+      sig02: Math.max(1e-12, parseFloat(document.getElementById('cv-sig02').value) || 0),
+      alt: document.getElementById('cv-alt').value,
+      alpha: parseFloat(document.getElementById('cv-alpha').value) || 0.05
+    }),
+    compute: (i) => {
+      const df = i.n - 1;
+      const chi = df * i.s2 / i.sig02;
+      const cdf = chi2cdf(chi, df);
+      let p;
+      if (i.alt === 'greater') p = 1 - cdf;
+      else if (i.alt === 'less') p = cdf;
+      else p = Math.min(1, 2 * Math.min(cdf, 1 - cdf));
+      let mirror;
+      if (i.alt === 'two') {
+        let lo = 0.0001, hi = chi * 10 + 1000;
+        const target = (cdf < 0.5) ? (1 - cdf) : cdf;
+        for (let k = 0; k < 60; k++) {
+          const mid = (lo + hi) / 2;
+          if (chi2cdf(mid, df) < target) lo = mid; else hi = mid;
+        }
+        mirror = (lo + hi) / 2;
+      }
+      return { df, chi, p, mirror };
+    },
+    render: function(i, c) {
+      document.getElementById('cv-hyp').innerHTML =
+        '<span class="h-item"><strong>H<sub>0</sub>:</strong> σ² = ' + fmt(i.sig02, 6) + '</span>' +
+        '<span class="h-item"><strong>H<sub>a</sub>:</strong> ' + altSym(i.alt, 'σ²', fmt(i.sig02,6)) + '</span>' +
+        '<span class="h-item"><strong>α:</strong> ' + i.alpha + '</span>';
+      document.getElementById('cv-calc').innerHTML =
+        'χ² = (n − 1)·S²/σ₀² = ' + c.df + '·' + fmt(i.s2, 6) + '/' + fmt(i.sig02, 6) + ' = <strong>' + fmt(c.chi, 3) + '</strong>,  df = ' + c.df;
+      document.getElementById('cv-theory-p').textContent = fmtP(c.p);
+      document.getElementById('cv-theory-sub').innerHTML = 'from χ²<sub>' + c.df + '</sub> distribution';
+
+      const xMax = Math.max(c.chi * 1.4, c.df + 4 * Math.sqrt(2 * c.df));
+      buildDensityPlot(document.getElementById('cv-classical-svg'), {
+        xMin: 0, xMax: xMax,
+        density: x => chi2pdf(x, c.df),
+        observed: c.chi, center: c.df,
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-min'),
+        mirror: c.mirror,
+        xLabel: 'χ² statistic'
+      });
+      setVerdict(document.getElementById('cv-verdict'), c.p, i.alpha,
+        'Evidence about σ².',
+        'Insufficient evidence to conclude σ² differs.');
+
+      document.getElementById('cv-sim-sub').innerHTML =
+        i.alt === 'greater' ? 'fraction with χ² ≥ χ²<sub>obs</sub>' :
+        i.alt === 'less' ? 'fraction with χ² ≤ χ²<sub>obs</sub>' :
+        'fraction in two tails';
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      const chiObs = c.chi;
+      const df = c.df;
+      for (let s = 0; s < NSIM; s++) {
+        let sum = 0, sumsq = 0;
+        for (let j = 0; j < i.n; j++) {
+          const x = randn();
+          sum += x; sumsq += x * x;
+        }
+        const mean = sum / i.n;
+        const ss = sumsq - i.n * mean * mean;
+        samples[s] = ss;
+        if (i.alt === 'greater') { if (ss >= chiObs - 1e-12) hits++; }
+        else if (i.alt === 'less') { if (ss <= chiObs + 1e-12) hits++; }
+        else {
+          if (chiObs < df) { if (ss <= chiObs + 1e-12 || ss >= c.mirror - 1e-12) hits++; }
+          else { if (ss >= chiObs - 1e-12 || ss <= c.mirror + 1e-12) hits++; }
+        }
+      }
+      document.getElementById('cv-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('cv-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('cv-sim-svg'), samples, chiObs, {
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-min'),
+        center: df, mirror: c.mirror, nonNegative: true,
+        xLabel: 'simulated χ²'
+      });
+    }
+  };
+
+  // ===== Example 4: F test =====
+  const f = {
+    inputs: ['f-n1','f-v1','f-n2','f-v2','f-alt','f-alpha'],
+    get: () => ({
+      n1: Math.max(2, parseInt(document.getElementById('f-n1').value) || 0),
+      v1: Math.max(1e-12, parseFloat(document.getElementById('f-v1').value) || 0),
+      n2: Math.max(2, parseInt(document.getElementById('f-n2').value) || 0),
+      v2: Math.max(1e-12, parseFloat(document.getElementById('f-v2').value) || 0),
+      alt: document.getElementById('f-alt').value,
+      alpha: parseFloat(document.getElementById('f-alpha').value) || 0.05
+    }),
+    compute: (i) => {
+      const F = i.v1 / i.v2;
+      const d1 = i.n1 - 1, d2 = i.n2 - 1;
+      const cdf = fcdf(F, d1, d2);
+      let p;
+      if (i.alt === 'greater') p = 1 - cdf;
+      else if (i.alt === 'less') p = cdf;
+      else p = Math.min(1, 2 * Math.min(cdf, 1 - cdf));
+      let mirror;
+      if (i.alt === 'two') {
+        let lo = 1e-6, hi = F * 20 + 50;
+        const target = (cdf < 0.5) ? (1 - cdf) : cdf;
+        for (let k = 0; k < 60; k++) {
+          const mid = (lo + hi) / 2;
+          if (fcdf(mid, d1, d2) < target) lo = mid; else hi = mid;
+        }
+        mirror = (lo + hi) / 2;
+      }
+      return { F, d1, d2, p, mirror };
+    },
+    render: function(i, c) {
+      document.getElementById('f-hyp').innerHTML =
+        '<span class="h-item"><strong>H<sub>0</sub>:</strong> σ₁² = σ₂²</span>' +
+        '<span class="h-item"><strong>H<sub>a</sub>:</strong> ' + altSym(i.alt, 'σ₁²', 'σ₂²') + '</span>' +
+        '<span class="h-item"><strong>α:</strong> ' + i.alpha + '</span>';
+      document.getElementById('f-calc').innerHTML =
+        'F = S₁²/S₂² = ' + fmt(i.v1, 6) + '/' + fmt(i.v2, 6) + ' = <strong>' + fmt(c.F, 3) + '</strong><br>' +
+        'df = (' + c.d1 + ', ' + c.d2 + ')';
+      document.getElementById('f-theory-p').textContent = fmtP(c.p);
+      document.getElementById('f-theory-sub').innerHTML = 'from F(' + c.d1 + ', ' + c.d2 + ') distribution';
+
+      const xMax = Math.max(c.F * 1.5, 4);
+      buildDensityPlot(document.getElementById('f-classical-svg'), {
+        xMin: 0, xMax: xMax,
+        density: x => fpdf(x, c.d1, c.d2),
+        observed: c.F, center: 1,
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-min'),
+        mirror: c.mirror,
+        xLabel: 'F statistic'
+      });
+      setVerdict(document.getElementById('f-verdict'), c.p, i.alpha,
+        'Evidence that the variances differ in the alternative direction.',
+        'Insufficient evidence about the variance ratio.');
+
+      document.getElementById('f-sim-sub').innerHTML =
+        i.alt === 'greater' ? 'fraction with F ≥ F<sub>obs</sub>' :
+        i.alt === 'less' ? 'fraction with F ≤ F<sub>obs</sub>' :
+        'fraction in two tails';
+    },
+    runSim: function(i, c) {
+      const samples = new Float64Array(NSIM);
+      let hits = 0;
+      const Fobs = c.F;
+      for (let s = 0; s < NSIM; s++) {
+        let s1 = 0, ss1 = 0;
+        for (let j = 0; j < i.n1; j++) { const x = randn(); s1 += x; ss1 += x*x; }
+        const m1 = s1 / i.n1;
+        const var1 = (ss1 - i.n1 * m1 * m1) / (i.n1 - 1);
+        let s2 = 0, ss2 = 0;
+        for (let j = 0; j < i.n2; j++) { const x = randn(); s2 += x; ss2 += x*x; }
+        const m2 = s2 / i.n2;
+        const var2 = (ss2 - i.n2 * m2 * m2) / (i.n2 - 1);
+        const Fk = var2 > 0 ? var1 / var2 : 0;
+        samples[s] = Fk;
+        if (i.alt === 'greater') { if (Fk >= Fobs - 1e-12) hits++; }
+        else if (i.alt === 'less') { if (Fk <= Fobs + 1e-12) hits++; }
+        else {
+          if (Fobs < 1) { if (Fk <= Fobs + 1e-12 || Fk >= c.mirror - 1e-12) hits++; }
+          else { if (Fk >= Fobs - 1e-12 || Fk <= c.mirror + 1e-12) hits++; }
+        }
+      }
+      document.getElementById('f-sim-p').textContent = fmtP(hits / NSIM);
+      document.getElementById('f-sim-p').classList.remove('pending');
+      buildHistogram(document.getElementById('f-sim-svg'), samples, Fobs, {
+        tail: i.alt === 'greater' ? 'upper' : (i.alt === 'less' ? 'lower' : 'two-min'),
+        center: 1, mirror: c.mirror, nonNegative: true,
+        xLabel: 'simulated F'
+      });
+    }
+  };
+
+  const examples = { t1, t2, cv, f };
+  const simSvgMap = { t1: 't1-sim-svg', t2: 't2-sim-svg', cv: 'cv-sim-svg', f: 'f-sim-svg' };
+  const simPMap = { t1: 't1-sim-p', t2: 't2-sim-p', cv: 'cv-sim-p', f: 'f-sim-p' };
+
+  function refreshExample(key) {
+    const ex = examples[key];
+    const inp = ex.get();
+    const comp = ex.compute(inp);
+    ex.render(inp, comp);
+    document.getElementById(simSvgMap[key]).innerHTML =
+      '<text x="170" y="95" text-anchor="middle" font-size="12" fill="var(--text-tertiary)" font-style="italic">Inputs changed — click Run to update</text>';
+    const pEl = document.getElementById(simPMap[key]);
+    pEl.textContent = '—';
+    pEl.classList.add('pending');
+  }
+
+  Object.entries(examples).forEach(([key, ex]) => {
+    ex.inputs.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => refreshExample(key));
+      el.addEventListener('change', () => refreshExample(key));
+    });
+  });
+
+  document.querySelectorAll('button.run').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.ex;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Running…';
+      setTimeout(() => {
+        const ex = examples[key];
+        const inp = ex.get();
+        const comp = ex.compute(inp);
+        ex.runSim(inp, comp);
+        btn.disabled = false;
+        btn.textContent = orig;
+      }, 30);
+    });
+  });
+
+  Object.keys(examples).forEach(refreshExample);
+})();
+</script>
+</body>
+</html>

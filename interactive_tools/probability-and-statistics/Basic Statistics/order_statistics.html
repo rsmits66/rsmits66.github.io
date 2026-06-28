@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Statistics, via the Multinomial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300;9..144,400;9..144,600;9..144,700;9..144,800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --paper:        #f1e9d2;
+    --paper-soft:   #ece2c5;
+    --ink:          #1a1410;
+    --ink-soft:     #4a3f33;
+    --rule:         #8a7b5e;
+    --rule-soft:    #c9bd9e;
+    --A:            #9a1a1a;   /* deep crimson */
+    --B:            #c08a2c;   /* warm ochre */
+    --AB:           #5a2456;   /* plum */
+    --O:            #2d6363;   /* deep teal */
+    --code-bg:      #1f1a14;
+    --code-fg:      #e8dfc9;
+    --code-comment: #9a8c70;
+    --code-key:     #d4a857;
+    --code-str:     #b58a6a;
+    --code-num:     #c98a8a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.55;
+    font-feature-settings: "liga" 1, "kern" 1, "onum" 1;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,0,0,0.03), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(0,0,0,0.025), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 70px 56px 120px;
+    position: relative;
+  }
+
+  .masthead {
+    border-top: 3px double var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 14px 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 50, "WONK" 0;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .masthead .vol { font-style: italic; letter-spacing: 0.1em; text-transform: none; }
+
+  h1.title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+    font-weight: 800;
+    font-size: clamp(48px, 7vw, 84px);
+    line-height: 0.95;
+    margin: 36px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  h1.title .ital {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--A);
+  }
+
+  .deck {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    max-width: 660px;
+    margin: 0 0 8px;
+  }
+
+  .byline {
+    font-family: 'Fraunces', serif;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--rule-soft);
+    padding-top: 14px;
+    margin-top: 36px;
+  }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 30, "opsz" 60;
+    font-weight: 600;
+    font-size: 34px;
+    line-height: 1.1;
+    margin: 64px 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h2 .num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--A);
+    font-size: 0.7em;
+    margin-right: 0.4em;
+    vertical-align: 0.05em;
+  }
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 36px 0 6px;
+    letter-spacing: -0.005em;
+  }
+
+  p { margin: 0 0 16px; }
+  p + p { text-indent: 1.6em; margin-top: -10px; }
+
+  .lead::first-letter {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 4.6em;
+    float: left;
+    line-height: 0.85;
+    padding: 6px 10px 0 0;
+    color: var(--A);
+  }
+
+  .source-line {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-align: right;
+    margin: 6px 0 0;
+  }
+
+  /* ------ Buckets figure ------ */
+  .buckets-fig {
+    background: var(--paper-soft);
+    border: 1px solid var(--rule);
+    padding: 14px 16px 10px;
+    margin: 24px 0 6px;
+  }
+  .buckets-fig svg { display: block; width: 100%; height: auto; }
+
+  /* Inside SVG diagrams, use lining numerals — Fraunces' old-style "1" looks like a capital "I" */
+  .page svg text {
+    font-feature-settings: "lnum" 1, "onum" 0, "kern" 1;
+    font-variant-numeric: lining-nums;
+  }
+
+  /* ------ Bucket count list ------ */
+  .bucket-list {
+    margin: 18px 0 18px;
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 4px 0;
+  }
+  .bucket-row {
+    display: grid;
+    grid-template-columns: 28px 130px 1fr 1fr;
+    align-items: baseline;
+    padding: 10px 6px;
+    border-bottom: 1px solid var(--rule-soft);
+    gap: 12px;
+  }
+  .bucket-row:last-child { border-bottom: none; }
+  .bucket-row .swatch {
+    width: 18px; height: 18px;
+    border: 1px solid var(--rule);
+  }
+  .bucket-row .which {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .bucket-row .count {
+    font-family: 'EB Garamond', serif;
+    font-size: 17px;
+  }
+  .bucket-row .prob {
+    font-family: 'EB Garamond', serif;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+
+  /* ------ Code block ------ */
+  pre.code {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 22px 26px;
+    margin: 24px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.65;
+    border-left: 4px solid var(--A);
+    position: relative;
+  }
+  pre.code::before {
+    content: "R";
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--code-comment);
+    letter-spacing: 0.1em;
+  }
+  pre.code .c  { color: var(--code-comment); font-style: italic; }
+  pre.code .k  { color: var(--code-key); }
+  pre.code .s  { color: var(--code-str); }
+  pre.code .n  { color: var(--code-num); }
+  pre.code .f  { color: #e8dfc9; }
+
+  /* ------ Math ------ */
+  .display-math {
+    margin: 24px 0;
+    padding: 18px 0;
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    text-align: center;
+    font-size: 1.05em;
+  }
+
+  .answer-box {
+    margin: 28px 0;
+    padding: 22px 26px;
+    background: var(--paper-soft);
+    border-left: 4px solid var(--A);
+  }
+  .answer-box .label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--A);
+    margin-bottom: 4px;
+  }
+  .answer-box .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+
+  /* ------ Aside ------ */
+  .aside {
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    margin: 24px 0;
+    padding: 16px 0;
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+
+  /* ------ Density widget ------ */
+  .density-widget {
+    border: 1px solid var(--rule);
+    background: var(--paper-soft);
+    padding: 22px 24px 18px;
+    margin: 24px 0 12px;
+  }
+  .density-controls {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+  .slider-label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .slider-label .k-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--A);
+    background: var(--paper);
+    padding: 2px 10px;
+    border: 1px solid var(--rule-soft);
+    margin-left: 2px;
+    display: inline-block;
+    min-width: 38px;
+    text-align: center;
+  }
+  .slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    background: var(--rule);
+    outline: none;
+    cursor: pointer;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--A);
+    cursor: pointer;
+    border: 2px solid var(--paper);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .slider::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--A);
+    cursor: pointer;
+    border: 2px solid var(--paper);
+  }
+  .density-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 6px 0 14px;
+    padding: 8px 12px;
+    background: var(--paper);
+    border-left: 3px solid var(--O);
+    line-height: 1.7;
+  }
+  .density-readout .hl { color: var(--A); font-weight: 500; }
+  .density-resample {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .density-resample:hover { background: var(--A); }
+  .density-plot svg { display: block; width: 100%; height: auto; }
+
+  hr.flourish {
+    border: none;
+    text-align: center;
+    margin: 60px 0 20px;
+    color: var(--rule);
+  }
+  hr.flourish::before {
+    content: "❦";
+    font-size: 22px;
+  }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 18px;
+    border-top: 3px double var(--ink);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  @media (max-width: 700px) {
+    .page { padding: 40px 22px 80px; }
+    h1.title { font-size: 50px; }
+    .bucket-row { grid-template-columns: 24px 100px 1fr; }
+    .bucket-row .prob { grid-column: 2 / 4; padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<article class="page">
+
+  <header class="masthead">
+    <span>Notes on Probability</span>
+    <span class="vol">No. 2 — Order Statistics, via the Multinomial</span>
+    <span>2026</span>
+  </header>
+
+  <h1 class="title">Order statistics, by way of <span class="ital">three buckets</span>.</h1>
+
+  <p class="deck">A continuous-distribution use of the multinomial coefficient: by partitioning the real line at a single point and counting how many of the $n$ samples fall in each piece, we read off the density of any order statistic — first one at a time, then two at a time.</p>
+
+  <div class="byline">A worked derivation · The $k$th order statistic · Joint density of $X_{(j)}$ and $X_{(k)}$</div>
+
+  <!-- ============ I. SETUP ============ -->
+  <h2><span class="num">I.</span>The setting</h2>
+  <p class="lead">Let $X_1, X_2, \ldots, X_n$ be independent draws from a continuous distribution with probability density $f$ and cumulative distribution function $F$. Sort them and write $X_{(1)} \le X_{(2)} \le \cdots \le X_{(n)}$ for the resulting <em>order statistics</em>: $X_{(1)}$ is the smallest of the $n$ values, $X_{(n)}$ the largest, and $X_{(k)}$ the $k$th smallest.</p>
+  <p>The question we want to answer is: what is the probability density of $X_{(k)}$ at a point $y$? The standard textbook derivation differentiates the cdf of $X_{(k)}$. The multinomial argument we give below is more direct, and reads off the density formula by counting alone.</p>
+
+  <!-- ============ II. THREE BUCKETS ============ -->
+  <h2><span class="num">II.</span>Three buckets</h2>
+
+  <p>Fix a point $y$ on the real line and a small width $dy$. By definition, the density satisfies</p>
+
+  <div class="display-math">
+    $$f_{X_{(k)}}(y)\, dy \;\approx\; P\!\left(y \le X_{(k)} < y + dy\right).$$
+  </div>
+
+  <p>Now ask: what does it take for the $k$th smallest sample to land in that small slab $[y, y+dy)$? Exactly three things must happen, all at once. <em>Some</em> $k - 1$ of the $n$ samples must fall to the left of $y$. <em>Exactly one</em> of them must fall in the slab $[y, y+dy)$ — that one will be $X_{(k)}$. And the remaining $n - k$ must fall to the right of $y + dy$. Three buckets, three counts.</p>
+
+  <div class="buckets-fig">
+    <svg id="bucketsThree" viewBox="0 0 820 340" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="Three-bucket diagram for the kth order statistic"></svg>
+  </div>
+  <p class="source-line">A generic density $f$ on the real line, partitioned by the value $y$.</p>
+
+  <p>The probabilities for a single sample, read straight off the cdf, are</p>
+
+  <div class="bucket-list">
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(154,26,26,0.22)"></div>
+      <div class="which">left bucket</div>
+      <div class="count">$k - 1$ of the $n$ samples</div>
+      <div class="prob">probability $F(y)$</div>
+    </div>
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(192,138,44,0.55)"></div>
+      <div class="which">slab at $y$</div>
+      <div class="count">exactly $1$ sample</div>
+      <div class="prob">probability $\approx f(y)\,dy$</div>
+    </div>
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(45,99,99,0.22)"></div>
+      <div class="which">right bucket</div>
+      <div class="count">$n - k$ of the $n$ samples</div>
+      <div class="prob">probability $\approx 1 - F(y)$</div>
+    </div>
+  </div>
+
+  <p>Because the $n$ samples are independent and each one independently lands in one of the three buckets, the count vector $(N_1, N_2, N_3) = (k-1,\, 1,\, n-k)$ is multinomial with probabilities $\bigl(F(y),\, f(y)\,dy,\, 1 - F(y)\bigr)$ — and the multinomial PMF gives the probability of this particular allocation directly:</p>
+
+  <div class="display-math">
+    $$P(\text{counts} = (k-1, 1, n-k)) \;=\; \frac{n!}{(k-1)!\,1!\,(n-k)!}\; F(y)^{k-1}\,\bigl[f(y)\,dy\bigr]^{1}\,\bigl[1 - F(y)\bigr]^{n-k}.$$
+  </div>
+
+  <p>This probability is exactly $f_{X_{(k)}}(y)\, dy$. Dividing both sides by $dy$ gives the result.</p>
+
+  <div class="display-math">
+    $$\boxed{\quad f_{X_{(k)}}(y) \;=\; \frac{n!}{(k-1)!\,(n-k)!}\, F(y)^{k-1}\,\bigl[1 - F(y)\bigr]^{n-k}\, f(y).\quad}$$
+  </div>
+
+  <p>The terms partition cleanly. The polynomial $F(y)^{k-1}\,[1-F(y)]^{n-k}$ is the chance of getting the right split of how many fall on each side of $y$; the factor $f(y)$ is the density of placing a sample exactly at $y$; and the multinomial coefficient counts the number of ways the labels can be assigned — which of the $n$ samples is the one at $y$, which $k-1$ are below it, and which $n-k$ are above.</p>
+
+  <p class="aside">A subtle but important point: the rigorous version of this argument needs to handle the $o(dy)$ corrections — the chance of getting $\ge 2$ samples in the slab $[y, y+dy)$ shrinks like $dy^2$ and so vanishes in the limit. But the bookkeeping with one-sample-in-slab is exactly what survives, and the multinomial coefficient is the right counting object. The argument is an honest derivation, not just a mnemonic.</p>
+
+  <hr class="flourish">
+
+  <!-- ============ III. THE UNIFORM CASE ============ -->
+  <h2><span class="num">III.</span>The result, looked at</h2>
+
+  <p>For the uniform distribution on $[0,1]$, where $F(y) = y$ and $f(y) = 1$ on the unit interval, the density formula above collapses to</p>
+
+  <div class="display-math">
+    $$f_{X_{(k)}}(y) \;=\; \frac{n!}{(k-1)!\,(n-k)!}\, y^{k-1}\,(1-y)^{n-k} \;=\; \mathrm{Beta}(k,\, n-k+1).$$
+  </div>
+
+  <p>So the $k$th order statistic of $n$ uniforms is a Beta random variable with shape parameters $k$ and $n - k + 1$. The mean is $k/(n+1)$ and the mode is $(k-1)/(n-1)$, both of which give exactly the intuition the picture should give: the $k$th smallest of $n$ uniforms lives, on average, near the $k/(n+1)$ marker on the unit interval.</p>
+
+  <p>The widget below shows this for $n = 17$. Drag the slider to choose $k$. The curve is the theoretical Beta density; the bars are a histogram of $1500$ simulated samples — each obtained by drawing $17$ uniforms, sorting them, and recording the $k$th smallest.</p>
+
+  <div class="density-widget">
+    <div class="density-controls">
+      <label class="slider-label">Order index <span class="k-eq">$k = $</span> <span class="k-val" id="kVal">9</span> &nbsp;<span style="color:var(--ink-soft); font-style:italic;">(of $n = 17$)</span></label>
+      <input type="range" min="1" max="17" value="9" id="kSlider" class="slider">
+      <button class="density-resample" id="densityResampleBtn">↻ Resample</button>
+    </div>
+    <div class="density-readout" id="densityReadout"></div>
+    <div class="density-plot" id="densityPlot"></div>
+  </div>
+  <p class="source-line">$X_{(k)} \sim \mathrm{Beta}(k,\, n-k+1)$ for $X_i \sim U(0,1)$. Bars: $1500$ Monte Carlo replicates. Curve: theoretical density. Dashed line: mean $k/(n+1)$.</p>
+
+<pre class="code"><span class="c"># Density of the kth order statistic: the multinomial-coefficient formula</span>
+order_stat_density <span class="k">&lt;-</span> <span class="k">function</span>(y, k, n, f, F) {
+  <span class="f">factorial</span>(n) / (<span class="f">factorial</span>(k - <span class="n">1</span>) * <span class="f">factorial</span>(n - k)) *
+    F(y)^(k - <span class="n">1</span>) * (<span class="n">1</span> - F(y))^(n - k) * f(y)
+}
+
+<span class="c"># For uniform draws this is exactly Beta(k, n - k + 1)</span>
+n <span class="k">&lt;-</span> <span class="n">17</span>; k <span class="k">&lt;-</span> <span class="n">9</span>
+y <span class="k">&lt;-</span> <span class="f">seq</span>(<span class="n">0</span>, <span class="n">1</span>, length = <span class="n">400</span>)
+<span class="f">plot</span>(y, <span class="f">dbeta</span>(y, k, n - k + <span class="n">1</span>), type = <span class="s">"l"</span>, lwd = <span class="n">2</span>, col = <span class="s">"#9a1a1a"</span>,
+     xlab = <span class="s">"y"</span>, ylab = <span class="s">"density"</span>,
+     main = <span class="f">sprintf</span>(<span class="s">"Density of X_(%d) for n = %d uniforms"</span>, k, n))
+
+<span class="c"># Verify by Monte Carlo</span>
+sims <span class="k">&lt;-</span> <span class="f">replicate</span>(<span class="n">5000</span>, <span class="f">sort</span>(<span class="f">runif</span>(n))[k])
+<span class="f">hist</span>(sims, breaks = <span class="n">40</span>, freq = <span class="k">FALSE</span>, add = <span class="k">TRUE</span>,
+     col = <span class="f">rgb</span>(<span class="n">0.18</span>, <span class="n">0.39</span>, <span class="n">0.39</span>, <span class="n">0.4</span>), border = <span class="k">NA</span>)
+</pre>
+
+  <hr class="flourish">
+
+  <!-- ============ IV. FIVE BUCKETS ============ -->
+  <h2><span class="num">IV.</span>Five buckets — two order statistics at once</h2>
+
+  <p>The same reasoning generalizes immediately. Suppose we want the joint density of two order statistics $X_{(j)}$ and $X_{(k)}$ at points $y_j < y_k$, where $j < k$. Pick small widths $dy_j$ and $dy_k$. The event $\{y_j \le X_{(j)} < y_j + dy_j,\, y_k \le X_{(k)} < y_k + dy_k\}$ is exactly the event that the $n$ samples partition themselves into <em>five</em> intervals with the right counts:</p>
+
+  <div class="buckets-fig">
+    <svg id="bucketsFive" viewBox="0 0 820 340" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="Five-bucket diagram for the joint of two order statistics"></svg>
+  </div>
+  <p class="source-line">The same density $f$, partitioned now at the two values $y_j$ and $y_k$.</p>
+
+  <div class="bucket-list">
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(154,26,26,0.22)"></div>
+      <div class="which">far left</div>
+      <div class="count">$j - 1$ samples</div>
+      <div class="prob">probability $F(y_j)$</div>
+    </div>
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(192,138,44,0.55)"></div>
+      <div class="which">slab at $y_j$</div>
+      <div class="count">exactly $1$</div>
+      <div class="prob">probability $\approx f(y_j)\,dy_j$</div>
+    </div>
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(90,36,86,0.22)"></div>
+      <div class="which">middle</div>
+      <div class="count">$k - j - 1$ samples</div>
+      <div class="prob">probability $F(y_k) - F(y_j)$</div>
+    </div>
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(192,138,44,0.55)"></div>
+      <div class="which">slab at $y_k$</div>
+      <div class="count">exactly $1$</div>
+      <div class="prob">probability $\approx f(y_k)\,dy_k$</div>
+    </div>
+    <div class="bucket-row">
+      <div class="swatch" style="background:rgba(45,99,99,0.22)"></div>
+      <div class="which">far right</div>
+      <div class="count">$n - k$ samples</div>
+      <div class="prob">probability $1 - F(y_k)$</div>
+    </div>
+  </div>
+
+  <p>Multinomial bookkeeping with five categories gives</p>
+
+  <div class="display-math">
+    $$\frac{n!}{(j-1)!\,(k - j - 1)!\,(n - k)!}\; F(y_j)^{j-1}\,\bigl[F(y_k) - F(y_j)\bigr]^{k - j - 1}\,\bigl[1 - F(y_k)\bigr]^{n - k}\; f(y_j)\, f(y_k)\, dy_j\, dy_k,$$
+  </div>
+
+  <p>where the two factorials of $1$ in the denominator have been suppressed. This is $f_{X_{(j)},\, X_{(k)}}(y_j, y_k)\, dy_j\, dy_k$, so dividing through:</p>
+
+  <div class="display-math">
+    $$\boxed{\quad f_{X_{(j)},\,X_{(k)}}(y_j, y_k) \;=\; \frac{n!}{(j-1)!\,(k-j-1)!\,(n-k)!}\, F(y_j)^{j-1}\bigl[F(y_k) - F(y_j)\bigr]^{k-j-1}\bigl[1-F(y_k)\bigr]^{n-k}\, f(y_j)\,f(y_k)\quad}$$
+  </div>
+
+  <p>valid for $y_j < y_k$ (and zero otherwise, since $X_{(j)} \le X_{(k)}$ by construction). The general pattern is now visible: for any subset $X_{(k_1)}, \ldots, X_{(k_r)}$ of order statistics, the joint density at compatible points is read off a multinomial with $2r + 1$ buckets — the gaps between the points and the slabs at the points themselves.</p>
+
+  <hr class="flourish">
+
+  <!-- ============ V. WORKED EXAMPLE ============ -->
+  <h2><span class="num">V.</span>Seventeen uniforms, the ninth and the thirteenth</h2>
+
+  <p>Take $17$ independent draws from $U(0,1)$, sort them, and ask for the joint density of $X_{(9)}$ and $X_{(13)}$ at the point $(y_j, y_k) = (0.3,\, 0.7)$ — which is the question raised at the end of the dice-and-intervals lecture. With $F(y) = y$ and $f(y) = 1$, the formula simplifies. The probability factors are</p>
+
+  <div class="display-math">
+    $$F(y_j) = 0.30, \qquad F(y_k) - F(y_j) = 0.40, \qquad 1 - F(y_k) = 0.30,$$
+  </div>
+
+  <p>and the multinomial coefficient is</p>
+
+  <div class="display-math">
+    $$\frac{17!}{8!\,3!\,4!} \;=\; 61{,}261{,}200.$$
+  </div>
+
+  <p>Putting it together:</p>
+
+  <div class="display-math">
+    $$f_{X_{(9)},\,X_{(13)}}(0.3, 0.7) \;=\; 61{,}261{,}200 \times (0.3)^{8} \times (0.4)^{3} \times (0.3)^{4} \;\approx\; 2.0836.$$
+  </div>
+
+  <div class="answer-box">
+    <div class="label">Joint density</div>
+    <div class="val">f<sub>(9, 13)</sub>(0.3, 0.7)  ≈  2.0836</div>
+  </div>
+
+  <p>For comparison, the marginal densities at the same points are $f_{X_{(9)}}(0.3) \approx 0.828$ and $f_{X_{(13)}}(0.7) \approx 3.469$. Their product is $2.871$ — strictly greater than the joint $2.084$, which is the signature of the (positive) dependence between the two order statistics being examined at <em>discordant</em> values: $0.3$ sits below the mean $0.500$ of $X_{(9)}$, while $0.7$ sits very near the mean $0.722$ of $X_{(13)}$, so the two events together are less likely than independence would suggest.</p>
+
+<pre class="code"><span class="c"># Joint density of X_(j) and X_(k) for n iid samples from a uniform</span>
+joint_uniform <span class="k">&lt;-</span> <span class="k">function</span>(yj, yk, j, k, n) {
+  <span class="k">if</span> (yj &gt;= yk) <span class="k">return</span>(<span class="n">0</span>)
+  <span class="f">factorial</span>(n) / (<span class="f">factorial</span>(j - <span class="n">1</span>) *
+                  <span class="f">factorial</span>(k - j - <span class="n">1</span>) *
+                  <span class="f">factorial</span>(n - k)) *
+    yj^(j - <span class="n">1</span>) * (yk - yj)^(k - j - <span class="n">1</span>) * (<span class="n">1</span> - yk)^(n - k)
+}
+
+<span class="f">joint_uniform</span>(yj = <span class="n">0.3</span>, yk = <span class="n">0.7</span>, j = <span class="n">9</span>, k = <span class="n">13</span>, n = <span class="n">17</span>)
+<span class="c">#&gt; [1] 2.083622</span>
+
+<span class="c"># Sanity-check by Monte Carlo: count how often (X_(9), X_(13)) lands</span>
+<span class="c"># in a small box around (0.3, 0.7), divide by box area and N</span>
+<span class="f">set.seed</span>(<span class="n">3</span>)
+N <span class="k">&lt;-</span> <span class="n">5e6</span>; eps <span class="k">&lt;-</span> <span class="n">0.02</span>
+hits <span class="k">&lt;-</span> <span class="f">replicate</span>(N, {
+  s <span class="k">&lt;-</span> <span class="f">sort</span>(<span class="f">runif</span>(<span class="n">17</span>))
+  <span class="f">abs</span>(s[<span class="n">9</span>] - <span class="n">0.3</span>) &lt; eps/<span class="n">2</span> &amp;&amp; <span class="f">abs</span>(s[<span class="n">13</span>] - <span class="n">0.7</span>) &lt; eps/<span class="n">2</span>
+})
+<span class="f">mean</span>(hits) / eps^<span class="n">2</span>      <span class="c"># Monte Carlo estimate of the joint density</span>
+<span class="c">#&gt; [1] 2.087   (close to 2.0836)</span>
+</pre>
+
+  <hr class="flourish">
+
+  <!-- ============ VI. CLOSE ============ -->
+  <h2><span class="num">VI.</span>What we have</h2>
+  <p>The multinomial gives the entire order-statistics theory in one move. The density of $X_{(k)}$ comes from a three-bucket partition with counts $(k-1,\, 1,\, n-k)$; the joint density of $X_{(j)}$ and $X_{(k)}$ comes from a five-bucket partition with counts $(j-1,\, 1,\, k - j - 1,\, 1,\, n - k)$; and an $r$-fold joint comes from a $(2r+1)$-bucket partition by the same logic. The multinomial coefficient counts the ways to assign the $n$ sample labels to those buckets, the powers of the cdf differences supply the probability of getting the right split, and the factors of $f$ at the chosen points fill in the slabs. The dice picture, the interval picture, and the order-statistic picture are all the same picture.</p>
+
+  <footer>
+    Notes on Probability · No. 2 · Order Statistics, via the Multinomial
+  </footer>
+
+</article>
+
+<script>
+  // ============================================================
+  // Numerical helpers
+  // ============================================================
+  function lgamma(x) {
+    const g = 7;
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+               771.32342877765313, -176.61502916214059, 12.507343278686905,
+               -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+    x -= 1;
+    let a = c[0];
+    const t = x + g + 0.5;
+    for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+
+  // ============================================================
+  // Generic bell-shaped pdf used in the buckets diagrams
+  // f(x) on x in [0, 10], smoothly rising-then-falling, zero at the ends
+  // ============================================================
+  function pdf(x) {
+    if (x <= 0 || x >= 10) return 0;
+    const u = x / 10;
+    return 12 * u * Math.pow(1 - u, 3);    // Beta(2,4) shape, scaled
+  }
+  // CDF by simple trapezoidal rule, cached
+  const _cdfCache = new Map();
+  function cdf(x) {
+    if (x <= 0) return 0;
+    if (x >= 10) return 1;
+    const key = Math.round(x * 1000);
+    if (_cdfCache.has(key)) return _cdfCache.get(key);
+    const N = 400;
+    const h = x / N;
+    let s = 0.5 * (pdf(0) + pdf(x));
+    for (let i = 1; i < N; i++) s += pdf(i * h);
+    s *= h;
+    // The Beta(2,4) shape we wrote isn't normalized to 1, but for the diagram
+    // it doesn't have to be — we only need the *picture* of "F(y)".
+    // Normalize by dividing by total integral.
+    if (!_cdfCache.has('total')) {
+      let st = 0.5 * (pdf(0) + pdf(10));
+      for (let i = 1; i < 800; i++) st += pdf(i * 10 / 800);
+      st *= 10 / 800;
+      _cdfCache.set('total', st);
+    }
+    const total = _cdfCache.get('total');
+    const v = s / total;
+    _cdfCache.set(key, v);
+    return v;
+  }
+
+  // ============================================================
+  // Bucket diagrams: a unified renderer
+  // ============================================================
+  // marker positions in domain coords; each marker gets a thin "slab"
+  function renderBuckets(svgId, markers, regionLabels, markerLabels) {
+    const svg = document.getElementById(svgId);
+    const W = 820, H = 340;
+    const padL = 60, padR = 60, padT = 60, padB = 50;
+    const plotW = W - padL - padR;        // 700
+    const plotH = H - padT - padB;        // 230
+    const xDomain = [0, 10];
+    const yMax = 1.4;                      // headroom above pdf peak ~1.27
+    const xS = x => padL + (x - xDomain[0]) / (xDomain[1] - xDomain[0]) * plotW;
+    const yS = y => padT + plotH - (y / yMax) * plotH;
+    const baseline = padT + plotH;
+
+    // Sample the curve
+    const Nsamp = 200;
+    const curvePts = [];
+    for (let i = 0; i <= Nsamp; i++) {
+      const x = xDomain[0] + (xDomain[1] - xDomain[0]) * i / Nsamp;
+      curvePts.push([xS(x), yS(pdf(x))]);
+    }
+
+    // Region colors: derived from the slab list
+    const regionColors = [
+      'rgba(154, 26, 26, 0.20)',   // far left
+      'rgba(90, 36, 86, 0.18)',    // middle (used only with 2+ markers)
+      'rgba(45, 99, 99, 0.20)'     // far right
+    ];
+    // For >2 markers we'd repeat / cycle, but here we have at most 2.
+
+    // Convert markers (sorted) to vertical x-positions in svg coords
+    const markersSvg = markers.map(m => xS(m));
+
+    // Build region polygons. With m markers there are m+1 regions.
+    // For each region, take the curve segment between consecutive marker x's,
+    // close down to baseline, and fill.
+    const m = markers.length;
+    const xLeft = xS(xDomain[0]);
+    const xRight = xS(xDomain[1]);
+    const allCutsX = [xLeft, ...markersSvg, xRight];
+    const regionPaths = [];
+    for (let r = 0; r < m + 1; r++) {
+      const x0 = allCutsX[r], x1 = allCutsX[r + 1];
+      let d = `M ${x0.toFixed(1)},${baseline.toFixed(1)} `;
+      // walk along the curve from x0 to x1
+      for (let i = 0; i < curvePts.length; i++) {
+        const [px, py] = curvePts[i];
+        if (px >= x0 - 0.5 && px <= x1 + 0.5) {
+          d += `L ${px.toFixed(1)},${py.toFixed(1)} `;
+        }
+      }
+      d += `L ${x1.toFixed(1)},${baseline.toFixed(1)} Z`;
+      regionPaths.push(d);
+    }
+
+    // Pick region colors: first, last, then middle for any remaining
+    let regionFills;
+    if (m === 1) {
+      regionFills = [regionColors[0], regionColors[2]];
+    } else if (m === 2) {
+      regionFills = [regionColors[0], regionColors[1], regionColors[2]];
+    } else {
+      regionFills = [regionColors[0]];
+      for (let i = 1; i < m; i++) regionFills.push(regionColors[1]);
+      regionFills.push(regionColors[2]);
+    }
+
+    // Slab strips at each marker (gold)
+    const slabW = 6;
+    const slabRects = markersSvg.map(mx => {
+      // height: from baseline up to curve at x = mx
+      const xVal = (mx - padL) / plotW * (xDomain[1] - xDomain[0]);
+      const yHere = yS(pdf(xVal));
+      return { x: mx - slabW / 2, y: yHere, w: slabW, h: baseline - yHere };
+    });
+
+    // Curve as a polyline
+    const curvePath = 'M ' + curvePts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L ');
+
+    // ----- Compose SVG -----
+    let s = '';
+
+    // Region fills
+    for (let r = 0; r < regionPaths.length; r++) {
+      s += `<path d="${regionPaths[r]}" fill="${regionFills[r]}" stroke="none"/>`;
+    }
+    // Slab strips
+    for (const r of slabRects) {
+      s += `<rect x="${r.x.toFixed(1)}" y="${r.y.toFixed(1)}" width="${r.w}" height="${r.h.toFixed(1)}" fill="rgba(192,138,44,0.65)" stroke="rgba(192,138,44,0.9)" stroke-width="0.7"/>`;
+    }
+
+    // Vertical dashed lines at markers (extending above curve to the top)
+    for (let i = 0; i < markersSvg.length; i++) {
+      const mx = markersSvg[i];
+      s += `<line x1="${mx}" y1="${padT - 6}" x2="${mx}" y2="${baseline + 4}" stroke="#1a1410" stroke-width="0.8" stroke-dasharray="4 3"/>`;
+    }
+
+    // Baseline (x-axis)
+    s += `<line x1="${xLeft}" y1="${baseline}" x2="${xRight}" y2="${baseline}" stroke="#1a1410" stroke-width="1.2"/>`;
+    // Tiny end-arrows on the baseline to indicate the real line
+    s += `<path d="M ${xLeft - 8},${baseline} L ${xLeft},${baseline - 4} L ${xLeft},${baseline + 4} Z" fill="#1a1410"/>`;
+    s += `<path d="M ${xRight + 8},${baseline} L ${xRight},${baseline - 4} L ${xRight},${baseline + 4} Z" fill="#1a1410"/>`;
+
+    // Curve
+    s += `<path d="${curvePath}" fill="none" stroke="#1a1410" stroke-width="1.6"/>`;
+
+    // Marker x-axis labels (e.g., "y", "y_j", "y_k")
+    for (let i = 0; i < markersSvg.length; i++) {
+      const mx = markersSvg[i];
+      s += `<text x="${mx}" y="${baseline + 22}" text-anchor="middle" font-family="EB Garamond, serif" font-style="italic" font-size="18" fill="#1a1410">${markerLabels[i]}</text>`;
+    }
+
+    // Region labels (above the curve, centered above each region's x-midpoint)
+    for (let r = 0; r < regionLabels.length; r++) {
+      const xMid = 0.5 * (allCutsX[r] + allCutsX[r + 1]);
+      const lab = regionLabels[r];
+      s += `<text x="${xMid}" y="${padT - 32}" text-anchor="middle" font-family="Fraunces, serif" font-weight="600" font-size="13" fill="#1a1410" letter-spacing="0.04em">${lab.count}</text>`;
+      s += `<text x="${xMid}" y="${padT - 16}" text-anchor="middle" font-family="EB Garamond, serif" font-style="italic" font-size="14" fill="#4a3f33">${lab.prob}</text>`;
+    }
+
+    // Slab labels: leader line up to a small annotation
+    for (let i = 0; i < markersSvg.length; i++) {
+      const mx = markersSvg[i];
+      const r = slabRects[i];
+      // leader from top of slab up to ~y=14 below top, then to the side
+      const leaderTop = padT - 4;
+      const annoY = leaderTop - 0;
+      // For multiple slabs, push labels apart slightly
+      // Single marker: anchor right next to slab top
+      const dir = (markersSvg.length === 2 && i === 0) ? -1 : 1;
+      const annoX = mx + dir * 70;
+      s += `<text x="${annoX}" y="${baseline + 44}" text-anchor="middle" font-family="Fraunces, serif" font-weight="600" font-size="12" fill="#9a1a1a">${markerLabels[i] === 'y' ? 'slab at y' : 'slab at ' + markerLabels[i]}</text>`;
+    }
+
+    // Title for the whole thing? Skip — caption below the SVG suffices.
+
+    svg.innerHTML = s;
+  }
+
+  // ----- Three-bucket diagram -----
+  renderBuckets(
+    'bucketsThree',
+    [5.0],
+    [
+      { count: 'k − 1 samples',  prob: 'probability F(y)' },
+      { count: 'n − k samples',  prob: 'probability 1 − F(y)' }
+    ],
+    ['y']
+  );
+
+  // ----- Five-bucket diagram -----
+  // Markers must be sorted ascending in domain
+  renderBuckets(
+    'bucketsFive',
+    [3.0, 7.0],
+    [
+      { count: 'j − 1 samples',           prob: 'probability F(y_j)' },
+      { count: 'k − j − 1 samples',       prob: 'probability F(y_k) − F(y_j)' },
+      { count: 'n − k samples',           prob: 'probability 1 − F(y_k)' }
+    ],
+    ['y_j', 'y_k']
+  );
+
+  // ============================================================
+  // Density of the kth order statistic, with simulation
+  // ============================================================
+  function betaDensity(y, alpha, beta) {
+    if (y <= 0 || y >= 1) {
+      // Handle endpoints for alpha=1 (left) or beta=1 (right) specially
+      if (y === 0) {
+        if (alpha < 1) return Infinity;
+        if (alpha === 1) {
+          const lb = lgamma(alpha) + lgamma(beta) - lgamma(alpha + beta);
+          return Math.exp(-lb);
+        }
+        return 0;
+      }
+      if (y === 1) {
+        if (beta < 1) return Infinity;
+        if (beta === 1) {
+          const lb = lgamma(alpha) + lgamma(beta) - lgamma(alpha + beta);
+          return Math.exp(-lb);
+        }
+        return 0;
+      }
+      return 0;
+    }
+    const lb = lgamma(alpha) + lgamma(beta) - lgamma(alpha + beta);
+    return Math.exp((alpha - 1) * Math.log(y) + (beta - 1) * Math.log(1 - y) - lb);
+  }
+
+  function simulateOrderStat(n, k, N) {
+    const out = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const u = new Array(n);
+      for (let j = 0; j < n; j++) u[j] = Math.random();
+      u.sort((a, b) => a - b);
+      out[i] = u[k - 1];
+    }
+    return out;
+  }
+
+  // Cache simulations so changing the slider doesn't redraw new randomness
+  let _lastSim = null;
+
+  function renderDensityPlot(k, resample) {
+    const n = 17;
+    const alpha = k, beta = n - k + 1;
+    const mean = k / (n + 1);
+
+    if (resample || _lastSim === null || _lastSim.k !== k || _lastSim.n !== n) {
+      _lastSim = { k, n, samples: simulateOrderStat(n, k, 1500) };
+    }
+    const samples = _lastSim.samples;
+
+    // Readout
+    const readout = document.getElementById('densityReadout');
+    readout.innerHTML =
+      `X_(${k}) ~ Beta(<span class="hl">${alpha}</span>, <span class="hl">${beta}</span>) ` +
+      `&nbsp;·&nbsp; mean k/(n+1) = <span class="hl">${mean.toFixed(4)}</span> ` +
+      `&nbsp;·&nbsp; mode (k−1)/(n−1) = <span class="hl">${k===1 ? '0' : (k===n ? '1' : ((k-1)/(n-1)).toFixed(4))}</span>`;
+
+    // Plot
+    const W = 760, H = 320;
+    const padL = 56, padR = 24, padT = 22, padB = 42;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    // Determine y-range from the density
+    const ys = [];
+    for (let i = 1; i < 200; i++) {
+      ys.push(betaDensity(i / 200, alpha, beta));
+    }
+    let yMaxD = Math.max(...ys.filter(v => isFinite(v)));
+    if (k === 1 || k === n) yMaxD = Math.max(yMaxD, n);  // extreme statistics
+    const yMax = yMaxD * 1.12;
+
+    const xS = v => padL + v * plotW;
+    const yS = v => padT + plotH - (v / yMax) * plotH;
+
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+    // y-grid
+    s += `<g font-family="JetBrains Mono, monospace" font-size="10" fill="#4a3f33">`;
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++) {
+      const v = (yMax * i) / yTicks;
+      const y = yS(v);
+      s += `<line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}" stroke="#c9bd9e" stroke-width="0.4" stroke-dasharray="${i===0?'0':'2 3'}"/>`;
+      s += `<text x="${padL - 8}" y="${y + 3}" text-anchor="end">${v.toFixed(2)}</text>`;
+    }
+    // x-grid
+    for (let t = 0; t <= 10; t++) {
+      const x = xS(t / 10);
+      s += `<line x1="${x}" y1="${padT + plotH}" x2="${x}" y2="${padT + plotH + 4}" stroke="#8a7b5e" stroke-width="0.6"/>`;
+      s += `<text x="${x}" y="${padT + plotH + 16}" text-anchor="middle">${(t / 10).toFixed(1)}</text>`;
+    }
+    s += `</g>`;
+
+    // Histogram (density-normalized) of the simulated order statistics
+    const nBins = 40;
+    const binW = 1 / nBins;
+    const counts = new Array(nBins).fill(0);
+    for (const v of samples) {
+      const idx = Math.min(nBins - 1, Math.max(0, Math.floor(v * nBins)));
+      counts[idx]++;
+    }
+    const dens = counts.map(c => c / (samples.length * binW));
+    for (let i = 0; i < nBins; i++) {
+      const x0 = xS(i * binW);
+      const x1 = xS((i + 1) * binW);
+      const y0 = yS(dens[i]);
+      const y1 = yS(0);
+      s += `<rect x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${(x1 - x0).toFixed(1)}" height="${(y1 - y0).toFixed(1)}" fill="rgba(45,99,99,0.30)" stroke="rgba(45,99,99,0.55)" stroke-width="0.5"/>`;
+    }
+
+    // Theoretical Beta density
+    let dpath = '';
+    let started = false;
+    for (let i = 0; i <= 400; i++) {
+      const v = i / 400;
+      let f = betaDensity(v, alpha, beta);
+      if (!isFinite(f) || f > yMax * 5) continue;  // clip extreme spikes
+      if (!started) { dpath += 'M '; started = true; }
+      else dpath += 'L ';
+      dpath += xS(v).toFixed(2) + ',' + yS(f).toFixed(2) + ' ';
+    }
+    s += `<path d="${dpath}" fill="none" stroke="#9a1a1a" stroke-width="2.2"/>`;
+
+    // Mean line
+    const xm = xS(mean);
+    s += `<line x1="${xm}" y1="${padT}" x2="${xm}" y2="${padT + plotH}" stroke="#1a1410" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+    s += `<text x="${xm + 6}" y="${padT + 14}" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#1a1410">mean ${mean.toFixed(3)}</text>`;
+
+    // Frame and axis labels
+    s += `<rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="none" stroke="#1a1410" stroke-width="1"/>`;
+    s += `<text x="${padL + plotW/2}" y="${H - 8}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#1a1410">y</text>`;
+    s += `<text x="14" y="${padT + plotH/2}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#1a1410" transform="rotate(-90 14 ${padT + plotH/2})">density</text>`;
+
+    s += `</svg>`;
+    document.getElementById('densityPlot').innerHTML = s;
+  }
+
+  const kSlider = document.getElementById('kSlider');
+  const kVal    = document.getElementById('kVal');
+  kSlider.addEventListener('input', e => {
+    const v = parseInt(e.target.value);
+    kVal.textContent = v;
+    renderDensityPlot(v, false);
+  });
+  document.getElementById('densityResampleBtn').addEventListener('click', () => {
+    renderDensityPlot(parseInt(kSlider.value), true);
+  });
+  renderDensityPlot(9, false);
+
+</script>
+
+</body>
+</html>

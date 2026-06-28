@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elementary Matrix Concepts — Foundations of Linear Algebra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --teal:#1a6a58;--teal-bg:#e8f5f2;
+  --indigo:#3a5aa8;--indigo-bg:#edf1fb;
+  --purple:#6a1a80;--purple-bg:#f5e8fb;
+  --amber:#8a5a00;--amber-bg:#fff8ea;
+  --mod-bg:#fff9f5;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+/* KaTeX fallback — hide MathML layer even if CDN CSS is slow/blocked */
+.katex-mathml{position:absolute!important;clip:rect(1px,1px,1px,1px)!important;width:1px!important;height:1px!important;overflow:hidden!important;padding:0!important;border:0!important;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+
+/* ── HEADER ───────────────────────────────── */
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+/* ── LAYOUT ───────────────────────────────── */
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+/* ── NAV ──────────────────────────────────── */
+.toc{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.2rem 1.6rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.toc h2{font-family:var(--font-head);font-size:1.1rem;font-weight:600;margin-bottom:.7rem;color:var(--navy);}
+.toc-grid{display:flex;flex-wrap:wrap;gap:.45rem .7rem;}
+.toc a{font-size:.88rem;color:var(--accent);text-decoration:none;padding:.18rem .6rem;border-radius:3px;background:var(--indigo-bg);border:1px solid #c0ccdd;transition:background .14s;}
+.toc a:hover{background:#c8daff;}
+
+/* ── CARDS ────────────────────────────────── */
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:var(--font-head);font-size:1.22rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+.card h3{font-family:var(--font-head);font-size:1.05rem;font-weight:600;color:var(--navy2);margin:1.2rem 0 .6rem;}
+
+/* ── MATH BLOCKS ──────────────────────────── */
+.math-block{overflow-x:auto;padding:.7rem 0;text-align:center;}
+.math-inline .katex{font-size:1em;}
+.math-block .katex{font-size:1.08em;}
+.eq-row{display:flex;flex-direction:column;align-items:center;gap:.3rem;margin:.6rem 0;}
+
+/* ── DEFINITION / EXAMPLE BOXES ───────────── */
+.def-box{background:var(--indigo-bg);border:1px solid #c0ccdd;border-left:4px solid var(--indigo);border-radius:6px;padding:1rem 1.3rem;margin:1rem 0;font-size:.95rem;line-height:1.6;}
+.def-box .def-label{font-weight:600;color:var(--indigo);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;}
+.ex-box{background:var(--amber-bg);border:1px solid #e0d0a8;border-left:4px solid var(--gold);border-radius:6px;padding:1rem 1.3rem;margin:1rem 0;font-size:.95rem;line-height:1.6;}
+.ex-box .ex-label{font-weight:600;color:var(--amber);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;}
+.thm-box{background:var(--teal-bg);border:1px solid #a0d4c8;border-left:4px solid var(--teal);border-radius:6px;padding:1rem 1.3rem;margin:1rem 0;font-size:.95rem;line-height:1.6;}
+.thm-box .thm-label{font-weight:600;color:var(--teal);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;}
+
+/* ── INTERACTIVE SECTIONS ─────────────────── */
+.calc-area{background:var(--paper);border:1px solid var(--border);border-radius:6px;padding:1.1rem 1.3rem;margin:1rem 0;}
+.calc-area h4{font-family:var(--font-head);font-size:.95rem;color:var(--navy2);margin-bottom:.6rem;}
+.ctrl-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.7rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.35rem;font-size:.9rem;color:var(--navy2);}
+.ctrl-row input[type=number]{width:54px;padding:.25rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+button:active{transform:scale(.97);}
+.btn-ghost{background:var(--indigo-bg);color:var(--navy2);border:1px solid #c0ccdd;}
+.btn-ghost:hover{background:#d8e4f8;}
+.btn-go{background:var(--red);color:#fff;padding:.45rem 1.6rem;font-size:.95rem;letter-spacing:.03em;}
+.btn-go:hover{background:#952e24;}
+.btn-sm{padding:.22rem .65rem;font-size:.84rem;}
+
+/* ── MATRIX INPUT / DISPLAY ───────────────── */
+.mx-grid{display:inline-grid;gap:5px 6px;align-items:center;}
+.mx-grid input{width:56px;padding:.25rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;color:var(--navy);}
+.mx-grid input:focus{outline:none;border-color:var(--accent);background:#fff;}
+.mx-disp{display:inline-grid;gap:2px 8px;padding:.4rem .6rem;border-left:2.5px solid var(--navy);border-right:2.5px solid var(--navy);border-radius:2px;margin:.3rem .3rem;}
+.mx-disp span{text-align:center;padding:.15rem .3rem;font-size:.95rem;}
+.mx-disp span.hl{background:var(--red-bg);border-radius:3px;font-weight:600;color:var(--red);}
+
+/* Canvas / SVG */
+.canvas-wrap{display:flex;justify-content:center;margin:.8rem 0;}
+canvas{border:1px solid var(--border);border-radius:6px;background:#fff;max-width:100%;}
+svg.inline-svg{max-width:100%;height:auto;display:block;margin:.5rem auto;}
+
+/* ── SOLUTION BOX ─────────────────────────── */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.2rem 1.8rem;margin:1rem 0;}
+.sol-card h4{font-family:var(--font-head);color:var(--gold);font-size:1.15rem;margin-bottom:.7rem;}
+.sol-list{display:flex;flex-wrap:wrap;gap:.7rem;}
+.sol-item{background:rgba(255,255,255,.1);border-radius:5px;padding:.35rem .9rem;font-size:1rem;}
+
+/* ── KEY / NOTE ───────────────────────────── */
+.key-box{background:var(--indigo-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:var(--navy2);line-height:1.6;margin:1rem 0;}
+.key-box strong{color:var(--navy);}
+
+/* ── STEP BLOCKS ──────────────────────────── */
+.step-block{border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);margin:.8rem 0;}
+.step-hd{background:var(--navy);color:#fff;padding:.5rem 1.1rem;display:flex;align-items:center;gap:.6rem;}
+.step-badge{background:var(--gold);color:var(--navy);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.step-txt{color:#b8cce8;font-style:italic;font-size:.9rem;}
+.step-body{padding:1rem 1.3rem;background:var(--paper);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;}
+
+/* ── RESULT TABLE ─────────────────────────── */
+.res-table{border-collapse:collapse;font-size:.9rem;margin:.6rem 0;width:100%;max-width:700px;}
+.res-table th,.res-table td{padding:.35rem .7rem;border:1px solid #e0dbd3;text-align:center;}
+.res-table thead th{background:var(--indigo-bg);color:var(--indigo);font-weight:400;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;}
+.res-table td.piv{background:var(--red-bg);color:var(--red);font-weight:600;}
+.res-table td.free{background:#f5f5f4;color:#aaa;}
+
+/* two-col layout */
+.two-col{display:flex;gap:1.4rem;flex-wrap:wrap;margin:.8rem 0;}
+.two-col>*{flex:1;min-width:280px;}
+
+p{margin:.5rem 0;}
+.spacer{height:1rem;}
+
+@media(max-width:600px){
+  header{padding:1.2rem 1rem;} header h1{font-size:1.5rem;}
+  main{padding:1rem .75rem;}
+  .card{padding:1.2rem 1rem;}
+  .two-col>*{min-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Elementary Matrix Concepts</h1>
+  <p>Foundations of linear algebra — notation, multiplication, determinants, rank, quadratic forms, and structure</p>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  TABLE OF CONTENTS                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="toc">
+  <h2>Contents</h2>
+  <div class="toc-grid">
+    <a href="#sec-notation">Notation</a>
+    <a href="#sec-mult">Matrix Multiplication</a>
+    <a href="#sec-common">Common Products</a>
+    <a href="#sec-det">Determinants</a>
+    <a href="#sec-rank">Linear Dependence &amp; Rank</a>
+    <a href="#sec-qf">Quadratic Forms</a>
+    <a href="#sec-ortho">Orthogonal Matrices</a>
+    <a href="#sec-part">Partitioned Matrices</a>
+    <a href="#sec-psd">Positive (Semi)Definite</a>
+    <a href="#sec-idemp">Idempotent Matrices</a>
+    <a href="#sec-kron">Kronecker Products</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §1  NOTATION                                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-notation">
+  <h2>§ 1 &ensp; Fundamental Notation</h2>
+  <p>
+    Throughout, vectors are <em>column vectors</em> by convention.
+    We write <span class="k">x'</span> (or <span class="k">x^\top</span>) for the transpose.
+    The following standard matrices arise constantly.
+  </p>
+
+  <div class="def-box">
+    <div class="def-label">Identity Matrix</div>
+    <span class="k">\mathbf{I}_n</span> is the <span class="k">n \times n</span> matrix with ones on the diagonal and zeros elsewhere.
+    <div class="math-block" id="kb-identity"></div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-label">Matrix of Ones</div>
+    <span class="k">\mathbf{J}_n = \mathbf{1}_n\mathbf{1}_n'</span> is the <span class="k">n \times n</span> matrix whose every entry is 1, where <span class="k">\mathbf{1}_n</span> is the <span class="k">n \times 1</span> vector of ones.
+    <div class="math-block" id="kb-ones"></div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-label">Zero Matrix</div>
+    <span class="k">\mathbf{0}_{m \times n}</span> is the <span class="k">m \times n</span> matrix of all zeros.
+    <div class="math-block" id="kb-zero"></div>
+  </div>
+
+  <!-- Interactive: show these for user-chosen n -->
+  <div class="calc-area">
+    <h4>Explore: choose <em>n</em> to see these matrices</h4>
+    <div class="ctrl-row">
+      <label><em>n</em> = <input type="number" id="notN" min="2" max="5" value="3"></label>
+      <button class="btn-ghost" onclick="renderNotation()">Show</button>
+    </div>
+    <div id="notationOut" style="display:flex;gap:1.8rem;flex-wrap:wrap;align-items:flex-start;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §2  MATRIX MULTIPLICATION                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-mult">
+  <h2>§ 2 &ensp; Matrix Multiplication via Inner Products</h2>
+  <p>
+    If <span class="k">\mathbf{A}</span> is <span class="k">m \times p</span> and <span class="k">\mathbf{B}</span> is <span class="k">p \times n</span>,
+    the product <span class="k">\mathbf{C} = \mathbf{A}\mathbf{B}</span> is the <span class="k">m \times n</span> matrix whose
+    <span class="k">(i,j)</span>-th entry is the <strong>inner product</strong> of row <span class="k">i</span> of <span class="k">\mathbf{A}</span>
+    with column <span class="k">j</span> of <span class="k">\mathbf{B}</span>:
+  </p>
+  <div class="math-block" id="kb-mult"></div>
+  <p>
+    Equivalently, if <span class="k">\mathbf{a}_i'</span> denotes the <span class="k">i</span>-th row of <span class="k">\mathbf{A}</span>
+    and <span class="k">\mathbf{b}_j</span> the <span class="k">j</span>-th column of <span class="k">\mathbf{B}</span>, then
+    <span class="k">c_{ij} = \mathbf{a}_i'\,\mathbf{b}_j</span>.
+  </p>
+
+  <!-- Interactive multiplier -->
+  <div class="calc-area">
+    <h4>Try it: enter two matrices and multiply</h4>
+    <div class="ctrl-row">
+      <label><b>A</b>: rows <input type="number" id="mA_r" min="1" max="4" value="2"></label>
+      <label>cols <input type="number" id="mA_c" min="1" max="4" value="3"></label>
+      <label><b>B</b>: cols <input type="number" id="mB_c" min="1" max="4" value="2"></label>
+      <button class="btn-ghost" onclick="rebuildMult()">Resize</button>
+      <button class="btn-go btn-sm" onclick="doMult()">Multiply →</button>
+    </div>
+    <div style="display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start;">
+      <div><div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">Matrix A</div><div id="multA"></div></div>
+      <div style="align-self:center;font-size:1.3rem;color:var(--navy2);padding-top:1rem;">×</div>
+      <div><div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">Matrix B</div><div id="multB"></div></div>
+      <div style="align-self:center;font-size:1.3rem;color:var(--navy2);padding-top:1rem;">=</div>
+      <div><div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">Result C</div><div id="multC"></div></div>
+    </div>
+    <div id="multSteps" style="margin-top:.6rem;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §3  COMMON PRODUCTS                             -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-common">
+  <h2>§ 3 &ensp; Common Matrix Products</h2>
+
+  <div class="ex-box">
+    <div class="ex-label">Example 1.1.1 &mdash; Identities involving 𝟏, J, and I</div>
+    <p>The following products arise constantly in statistical linear models. Each can be verified by expanding the definitions.</p>
+    <div class="math-block" id="kb-common"></div>
+  </div>
+
+  <div class="key-box">
+    <strong>Key insight:</strong> The matrix <span class="k">\mathbf{I}_n - \tfrac{1}{n}\mathbf{J}_n</span> is the
+    <em>centering matrix</em>. When applied to a data vector <span class="k">\mathbf{X}</span>, it subtracts the sample mean from every
+    entry. The identities above show that this centering matrix is <em>idempotent</em> and is annihilated by <span class="k">\mathbf{1}_n'</span>
+    and <span class="k">\mathbf{J}_n</span>.
+  </div>
+
+  <!-- Interactive verification -->
+  <div class="calc-area">
+    <h4>Verify: pick <em>n</em> to compute each product numerically</h4>
+    <div class="ctrl-row">
+      <label><em>n</em> = <input type="number" id="cpN" min="2" max="5" value="3"></label>
+      <button class="btn-go btn-sm" onclick="verifyCommon()">Verify All →</button>
+    </div>
+    <div id="commonOut"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §4  DETERMINANTS                                -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-det">
+  <h2>§ 4 &ensp; The 2×2 Determinant</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition — Determinant of a 2×2 Matrix</div>
+    For <span class="k">\mathbf{A} = \begin{bmatrix} a & b \\ c & d \end{bmatrix}</span>,
+    the determinant is <span class="k">\det(\mathbf{A}) = ad - bc</span>.
+  </div>
+
+  <p>
+    <strong>Geometric meaning:</strong> The columns of <span class="k">\mathbf{A}</span> define a parallelogram in
+    <span class="k">\mathbb{R}^2</span>. The <em>signed area</em> of that parallelogram equals <span class="k">\det(\mathbf{A})</span>.
+    A positive determinant means the columns form a right-handed (counter-clockwise) frame; negative means left-handed;
+    zero means the columns are collinear (the matrix is singular).
+  </p>
+
+  <div class="calc-area">
+    <h4>Interactive: enter a 2×2 matrix</h4>
+    <div style="display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div class="mx-grid" style="grid-template-columns:56px 56px;">
+          <input id="d_a" type="text" value="2" oninput="drawDet()">
+          <input id="d_b" type="text" value="1" oninput="drawDet()">
+          <input id="d_c" type="text" value="-1" oninput="drawDet()">
+          <input id="d_d" type="text" value="3" oninput="drawDet()">
+        </div>
+        <div id="detResult" style="margin-top:.6rem;font-size:1.05rem;"></div>
+      </div>
+      <div>
+        <canvas id="detCanvas" width="340" height="340"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §5  LINEAR DEPENDENCE & RANK                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-rank">
+  <h2>§ 5 &ensp; Linear Dependence and Rank</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.12 — Linear Dependence and Rank</div>
+    Let <span class="k">\mathbf{A}</span> be an <span class="k">n \times s</span> matrix (<span class="k">s \leq n</span>)
+    with column vectors <span class="k">\mathbf{a}_1, \ldots, \mathbf{a}_s</span>.
+    The vectors are <strong>linearly dependent</strong> if there exist scalars
+    <span class="k">k_1, \ldots, k_s</span>, not all zero, such that
+    <span class="k">k_1\mathbf{a}_1 + \cdots + k_s\mathbf{a}_s = \mathbf{0}</span>.
+    Otherwise, they are <strong>linearly independent</strong>.
+    <br><br>
+    If exactly <span class="k">r \leq s</span> of these vectors are linearly independent and the remaining
+    <span class="k">s - r</span> can be expressed as linear combinations of those <span class="k">r</span> vectors, then
+    <span class="k">\operatorname{rank}(\mathbf{A}) = r</span>.
+  </div>
+
+  <p>
+    <strong>How to determine rank:</strong> Compute the <em>reduced row echelon form</em> (RREF) of <span class="k">\mathbf{A}</span>.
+    Columns that contain a leading 1 (pivot) correspond to <strong>linearly independent</strong> columns; the remaining
+    columns are <strong>dependent</strong> (free). The number of pivots equals the rank.
+  </p>
+
+  <div class="calc-area">
+    <h4>Rank finder: enter a matrix, then RREF to find independent columns</h4>
+    <div class="ctrl-row">
+      <label>rows <input type="number" id="rk_r" min="2" max="5" value="3"></label>
+      <label>cols <input type="number" id="rk_c" min="2" max="5" value="4"></label>
+      <button class="btn-ghost" onclick="rebuildRank()">Resize</button>
+      <button class="btn-ghost btn-sm" onclick="loadRankEx()">Example</button>
+      <button class="btn-go btn-sm" onclick="doRank()">Find Rank →</button>
+    </div>
+    <div id="rankInput"></div>
+    <div id="rankOut" style="margin-top:.6rem;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §6  QUADRATIC FORMS                             -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-qf">
+  <h2>§ 6 &ensp; Quadratic Forms</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.13 — Quadratic Form</div>
+    A function <span class="k">f(x_1, \ldots, x_n) = \sum_{i=1}^n\sum_{j=1}^n a_{ij}\,x_i x_j = \mathbf{X}'\mathbf{A}\mathbf{X}</span>
+    is a <strong>quadratic form</strong> where <span class="k">\mathbf{X} = (x_1,\ldots,x_n)'</span> and
+    <span class="k">\mathbf{A}</span> is an <span class="k">n \times n</span> symmetric matrix with
+    <span class="k">ij</span>-th element <span class="k">a_{ij}</span>.
+    <br><br>
+    The symmetric matrix <span class="k">\mathbf{A}</span> is constructed by setting
+    <span class="k">a_{ij}</span> and <span class="k">a_{ji}</span> equal to <em>one-half</em> the coefficient
+    on the <span class="k">x_i x_j</span> term for <span class="k">i \neq j</span>.
+  </div>
+
+  <div class="ex-box">
+    <div class="ex-label">Example 1.1.2</div>
+    Let <span class="k">f(x_1, x_2, x_3) = x_1^2 + 3x_2^2 + 4x_3^2 + x_1 x_2 + 2x_2 x_3</span>.
+    Then <span class="k">f = \mathbf{X}'\mathbf{A}\mathbf{X}</span> with
+    <span class="k">\mathbf{X} = (x_1, x_2, x_3)'</span> and
+    <div class="math-block" id="kb-qfex"></div>
+    <p>The coefficient on <span class="k">x_1 x_2</span> is 1, so <span class="k">a_{12} = a_{21} = \tfrac{1}{2}</span>.
+    The coefficient on <span class="k">x_2 x_3</span> is 2, so <span class="k">a_{23} = a_{32} = 1</span>.
+    No <span class="k">x_1 x_3</span> term, so <span class="k">a_{13} = a_{31} = 0</span>.</p>
+  </div>
+
+  <h3>Quadratic Forms as Sums of Squares</h3>
+
+  <div class="ex-box">
+    <div class="ex-label">Example 1.1.3 — Sum of squares and the centering matrix</div>
+    <p>The sum of squares is the simplest quadratic form:</p>
+    <div class="math-block" id="kb-ss1"></div>
+    <p>The sum of squares <em>around the sample mean</em> gives the key identity:</p>
+    <div class="math-block" id="kb-ss2"></div>
+  </div>
+
+  <h3>2D Quadratic Form Visualizer</h3>
+  <p>For <span class="k">n = 2</span>, the quadratic form <span class="k">f(x_1, x_2) = \mathbf{x}'\mathbf{A}\mathbf{x}</span>
+  defines a surface over the plane. The <em>level curves</em> (contours where <span class="k">f = c</span>) are ellipses, hyperbolas,
+  or lines depending on the eigenvalues of <span class="k">\mathbf{A}</span>.</p>
+
+  <div class="calc-area">
+    <h4>Enter a 2×2 symmetric matrix A</h4>
+    <div style="display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div class="mx-grid" style="grid-template-columns:56px 56px;">
+          <input id="qf_a" type="text" value="2" oninput="drawQF()">
+          <input id="qf_b" type="text" value="1" oninput="drawQF()">
+          <input id="qf_c" type="text" value="1" oninput="drawQF()">
+          <input id="qf_d" type="text" value="3" oninput="drawQF()">
+        </div>
+        <div id="qfInfo" style="margin-top:.5rem;font-size:.92rem;"></div>
+      </div>
+      <div>
+        <canvas id="qfCanvas" width="340" height="340"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §7  ORTHOGONAL MATRICES                         -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-ortho">
+  <h2>§ 7 &ensp; Orthogonal Matrices</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.14 — Orthogonal Matrix</div>
+    An <span class="k">n \times n</span> matrix <span class="k">\mathbf{P}</span> is <strong>orthogonal</strong> if and only if
+    <span class="k">\mathbf{P}^{-1} = \mathbf{P}'</span>, so that
+    <span class="k">\mathbf{P}\mathbf{P}' = \mathbf{P}'\mathbf{P} = \mathbf{I}_n</span>.
+    <br><br>
+    Writing <span class="k">\mathbf{P} = (\mathbf{p}_1, \mathbf{p}_2, \ldots, \mathbf{p}_n)</span>, the necessary and
+    sufficient conditions are:<br>
+    &emsp;(i) &ensp; <span class="k">\mathbf{p}_i'\mathbf{p}_i = 1</span> for each <span class="k">i</span> &emsp;
+    (ii) &ensp; <span class="k">\mathbf{p}_i'\mathbf{p}_j = 0</span> for <span class="k">i \neq j</span>.
+    <br><br>
+    That is, the columns form an <em>orthonormal set</em>.
+  </div>
+
+  <div class="ex-box">
+    <div class="ex-label">Example 1.1.4 — Helmert-type orthogonal matrix</div>
+    <p>For <span class="k">n = 3</span>, the matrix</p>
+    <div class="math-block" id="kb-helmert"></div>
+    <p>satisfies <span class="k">\mathbf{P}\mathbf{P}' = \mathbf{P}'\mathbf{P} = \mathbf{I}_3</span>.
+    The first column is <span class="k">\tfrac{1}{\sqrt{3}}\mathbf{1}_3</span> (the "mean direction"); the remaining
+    columns span the orthogonal complement — the <em>contrast space</em>.</p>
+  </div>
+
+  <h3>Geometric View (n = 3)</h3>
+  <p>An orthogonal matrix preserves lengths and angles — it is a <strong>rigid rotation</strong> (possibly with a reflection).
+  Below, the standard basis vectors <span class="k">\mathbf{e}_1, \mathbf{e}_2, \mathbf{e}_3</span> are mapped to the columns
+  of <span class="k">\mathbf{P}</span>.</p>
+
+  <div class="two-col">
+    <div>
+      <div style="text-align:center;font-size:.85rem;color:var(--gray);margin-bottom:.3rem;">Pre-image: standard basis</div>
+      <canvas id="orthoCanvasPre" width="300" height="280"></canvas>
+    </div>
+    <div>
+      <div style="text-align:center;font-size:.85rem;color:var(--gray);margin-bottom:.3rem;">Image: columns of P</div>
+      <canvas id="orthoCanvasPost" width="300" height="280"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §8  PARTITIONED MATRICES                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-part">
+  <h2>§ 8 &ensp; Partitioned Matrices</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.16 — Partitioning a Matrix</div>
+    If <span class="k">\mathbf{A}</span> is <span class="k">m \times n</span>, then <span class="k">\mathbf{A}</span> can
+    be partitioned as
+    <div class="math-block" id="kb-part"></div>
+    where <span class="k">\mathbf{A}_{ij}</span> is <span class="k">m_i \times n_j</span> for
+    <span class="k">i, j = 1, 2</span>, with <span class="k">m = m_1 + m_2</span> and <span class="k">n = n_1 + n_2</span>.
+  </div>
+
+  <p>
+    Partitioned (block) multiplication follows the same row-by-column rule as scalar multiplication, provided the
+    inner block dimensions are compatible:
+  </p>
+  <div class="math-block" id="kb-partmult"></div>
+  <p>
+    This is especially useful in linear models where the design matrix is naturally partitioned by groups of predictors
+    or by treatment vs. control.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §9  POSITIVE (SEMI)DEFINITE                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-psd">
+  <h2>§ 9 &ensp; Positive Semidefinite and Positive Definite Matrices</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.17 — Positive Semidefinite (PSD)</div>
+    An <span class="k">n \times n</span> matrix <span class="k">\mathbf{A}</span> is <strong>positive semidefinite</strong> if<br>
+    &emsp;(i) &ensp; <span class="k">\mathbf{A} = \mathbf{A}'</span><br>
+    &emsp;(ii) &ensp; <span class="k">\mathbf{Y}'\mathbf{A}\mathbf{Y} \geq 0</span> for all real <span class="k">\mathbf{Y}</span><br>
+    &emsp;(iii) &ensp; <span class="k">\mathbf{Y}'\mathbf{A}\mathbf{Y} = 0</span> for at least one nonzero <span class="k">\mathbf{Y}</span>.
+  </div>
+
+  <div class="ex-box">
+    <div class="ex-label">Example 1.1.9 — J<sub>n</sub> is PSD</div>
+    <p>
+      <span class="k">\mathbf{J}_n</span> is positive semidefinite:
+      <span class="k">\mathbf{J}_n = \mathbf{J}_n'</span> (symmetric);
+      <span class="k">\mathbf{Y}'\mathbf{J}_n\mathbf{Y} = (\mathbf{1}_n'\mathbf{Y})^2 = \left(\sum y_i\right)^2 \geq 0</span>;
+      and equality holds for <span class="k">\mathbf{Y} = (1, -1, 0, \ldots, 0)'</span>.
+    </p>
+  </div>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.18 — Positive Definite (PD)</div>
+    An <span class="k">n \times n</span> matrix <span class="k">\mathbf{A}</span> is <strong>positive definite</strong> if<br>
+    &emsp;(i) &ensp; <span class="k">\mathbf{A} = \mathbf{A}'</span><br>
+    &emsp;(ii) &ensp; <span class="k">\mathbf{Y}'\mathbf{A}\mathbf{Y} > 0</span> for all <em>nonzero</em> real <span class="k">\mathbf{Y}</span>.
+  </div>
+
+  <div class="key-box">
+    <strong>Connection to quadratic forms:</strong>
+    If <span class="k">\mathbf{A}</span> is PD, then the quadratic form <span class="k">\mathbf{X}'\mathbf{A}\mathbf{X}</span>
+    is a bowl opening upward — all eigenvalues are positive and the contours are ellipses.
+    If PSD but not PD, the bowl has a flat direction (at least one zero eigenvalue).
+    Try different matrices in the <a href="#sec-qf">quadratic form visualizer</a> above to see these geometries.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §10  IDEMPOTENT MATRICES                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-idemp">
+  <h2>§ 10 &ensp; Idempotent Matrices</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.1.19 — Idempotent Matrix</div>
+    An <span class="k">n \times n</span> matrix <span class="k">\mathbf{A}</span> is <strong>idempotent</strong> if
+    <span class="k">\mathbf{A}^2 = \mathbf{A}</span>.<br>
+    It is <strong>symmetric idempotent</strong> if additionally <span class="k">\mathbf{A} = \mathbf{A}'</span>.
+    <br><br>
+    If <span class="k">\mathbf{A}</span> is idempotent of rank <span class="k">n</span>, then
+    <span class="k">\mathbf{A} = \mathbf{I}_n</span>.
+  </div>
+
+  <div class="ex-box">
+    <div class="ex-label">Example — The centering matrix is idempotent</div>
+    <p>Let <span class="k">\mathbf{A} = \mathbf{I}_n - \tfrac{1}{n}\mathbf{J}_n</span>. Then:</p>
+    <div class="math-block" id="kb-idemp"></div>
+    <p>using <span class="k">\mathbf{J}_n^2 = n\mathbf{J}_n</span>.</p>
+  </div>
+
+  <p>
+    In linear model applications, symmetric idempotent matrices arise as <strong>projection matrices</strong>.
+    Applying <span class="k">\mathbf{A}</span> once projects the vector onto a subspace; applying it again changes nothing — you
+    are already in the subspace. The rank of an idempotent matrix equals its trace.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  §11  KRONECKER PRODUCTS                         -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="card" id="sec-kron">
+  <h2>§ 11 &ensp; Kronecker Products</h2>
+
+  <div class="def-box">
+    <div class="def-label">Definition 1.2.1 — Kronecker Product</div>
+    If <span class="k">\mathbf{A}</span> is <span class="k">r \times s</span> with entries <span class="k">a_{ij}</span> and
+    <span class="k">\mathbf{B}</span> is <span class="k">t \times v</span>, then
+    <span class="k">\mathbf{A} \otimes \mathbf{B}</span> is the <span class="k">rt \times sv</span> matrix
+    <div class="math-block" id="kb-kron"></div>
+  </div>
+
+  <div class="calc-area">
+    <h4>Kronecker calculator</h4>
+    <div class="ctrl-row">
+      <button class="btn-ghost btn-sm" onclick="loadKronEx(0)">I₂ ⊗ J₂</button>
+      <button class="btn-ghost btn-sm" onclick="loadKronEx(1)">(1/t)J₂ ⊗ (1/r)J₃</button>
+      <button class="btn-ghost btn-sm" onclick="loadKronEx(2)">I₂ ⊗ (1/3)J₃</button>
+      <button class="btn-go btn-sm" onclick="doKron()">Compute ⊗ →</button>
+    </div>
+    <div style="display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start;">
+      <div><div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">A (2×2)</div><div id="kronA"></div></div>
+      <div style="align-self:center;font-size:1.3rem;color:var(--navy2);padding-top:1rem;">⊗</div>
+      <div><div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">B (arbitrary)</div><div id="kronB"></div></div>
+      <div style="align-self:center;font-size:1.3rem;color:var(--navy2);padding-top:1rem;">=</div>
+      <div><div style="font-size:.82rem;color:var(--gray);margin-bottom:.2rem;">A ⊗ B</div><div id="kronOut"></div></div>
+    </div>
+  </div>
+
+  <h3>Application: One-Way ANOVA</h3>
+
+  <div class="ex-box">
+    <div class="ex-label">Example 1.2.10 — Sums of squares as Kronecker products</div>
+    <p>Consider a one-way layout with <span class="k">t</span> levels and <span class="k">r</span> replicates per level.
+    Let <span class="k">\mathbf{Y} = (y_{11}, \ldots, y_{1r}, \ldots, y_{t1}, \ldots, y_{tr})'</span>.</p>
+
+    <div class="math-block" id="kb-anova-layout"></div>
+
+    <p>The ANOVA sums of squares are quadratic forms <span class="k">\mathbf{Y}'\mathbf{A}_m\mathbf{Y}</span> where each
+    <span class="k">\mathbf{A}_m</span> factors as a Kronecker product:</p>
+
+    <div class="math-block" id="kb-anova-table"></div>
+  </div>
+
+  <div class="key-box">
+    <strong>Why Kronecker products matter:</strong>
+    The Kronecker factorization reveals the <em>structure</em> of the experimental design.
+    The first factor (involving <span class="k">\mathbf{I}_t</span> or <span class="k">\mathbf{J}_t</span>)
+    operates <em>between</em> treatment levels; the second factor (involving <span class="k">\mathbf{I}_r</span> or <span class="k">\mathbf{J}_r</span>)
+    operates <em>within</em> replicates. The four <span class="k">\mathbf{A}_m</span> matrices are symmetric, idempotent (or sum
+    to the identity), and mutually orthogonal.
+  </div>
+</div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--                    JAVASCRIPT                       -->
+<!-- ═══════════════════════════════════════════════════ -->
+<script>
+// ── KaTeX helpers ────────────────────────────────────
+function texSan(t){return t.replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[\u2000-\u200A]/g,' ').replace(/\u2032/g,"'");}
+function rk(tex){
+  try{ return katex.renderToString(texSan(tex),{throwOnError:false,strict:false,displayMode:false}); }
+  catch(e){ return tex; }
+}
+function rkd(tex){
+  try{ return katex.renderToString(texSan(tex),{throwOnError:false,strict:false,displayMode:true}); }
+  catch(e){ return tex; }
+}
+// render all .k spans (once only)
+function renderInlineK(){
+  document.querySelectorAll('span.k:not([data-rendered])').forEach(el=>{
+    const tex=texSan(el.textContent);
+    el.setAttribute('data-rendered','1');
+    try{ katex.render(tex,el,{throwOnError:false,strict:false,displayMode:false}); }
+    catch(e){}
+  });
+}
+
+// ── Matrix utilities ─────────────────────────────────
+function matTex(M,name){
+  const rows=M.map(r=>r.map(v=>fmtNum(v)).join(' & ')).join(' \\\\ ');
+  if(name) return `${name} = \\begin{bmatrix} ${rows} \\end{bmatrix}`;
+  return `\\begin{bmatrix} ${rows} \\end{bmatrix}`;
+}
+function fmtNum(v){
+  if(Math.abs(v-Math.round(v))<1e-9) return String(Math.round(v));
+  // check simple fractions
+  for(let d=2;d<=12;d++){
+    const n=v*d;
+    if(Math.abs(n-Math.round(n))<1e-9){
+      const nn=Math.round(n);
+      const sg=nn<0?'-':'';
+      return `${sg}\\tfrac{${Math.abs(nn)}}{${d}}`;
+    }
+  }
+  return v.toFixed(4);
+}
+function eye(n){ return Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0)); }
+function ones(r,c){ return Array.from({length:r},()=>Array.from({length:c},()=>1)); }
+function zeros(r,c){ return Array.from({length:r},()=>Array.from({length:c},()=>0)); }
+function J(n){ return ones(n,n); }
+function matMul(A,B){
+  const m=A.length,p=A[0].length,n=B[0].length;
+  const C=zeros(m,n);
+  for(let i=0;i<m;i++) for(let j=0;j<n;j++) for(let k=0;k<p;k++) C[i][j]+=A[i][k]*B[k][j];
+  return C;
+}
+function matScale(A,s){ return A.map(r=>r.map(v=>v*s)); }
+function matAdd(A,B){ return A.map((r,i)=>r.map((v,j)=>v+B[i][j])); }
+function matSub(A,B){ return A.map((r,i)=>r.map((v,j)=>v-B[i][j])); }
+function matT(A){ return A[0].map((_,j)=>A.map(r=>r[j])); }
+
+// ── §1: Notation ─────────────────────────────────────
+function renderNotation(){
+  const n=Math.min(Math.max(parseInt(document.getElementById('notN').value)||3,2),5);
+  const out=document.getElementById('notationOut');
+  out.innerHTML='';
+
+  const I=eye(n), Jn=J(n), one=Array.from({length:n},()=>[1]);
+  const items=[
+    {label:`\\mathbf{I}_{${n}}`,mat:I},
+    {label:`\\mathbf{1}_{${n}}`,mat:one},
+    {label:`\\mathbf{J}_{${n}}`,mat:Jn}
+  ];
+  items.forEach(it=>{
+    const d=document.createElement('div');
+    d.innerHTML=rkd(matTex(it.mat, it.label));
+    out.appendChild(d);
+  });
+}
+
+// ── Static KaTeX blocks ──────────────────────────────
+function renderStaticBlocks(){
+  // Identity example
+  document.getElementById('kb-identity').innerHTML=rkd(
+    `\\mathbf{I}_3 = \\begin{bmatrix} 1 & 0 & 0 \\\\ 0 & 1 & 0 \\\\ 0 & 0 & 1 \\end{bmatrix}`
+  );
+  document.getElementById('kb-ones').innerHTML=rkd(
+    `\\mathbf{1}_3 = \\begin{bmatrix} 1 \\\\ 1 \\\\ 1 \\end{bmatrix}, \\qquad \\mathbf{J}_3 = \\begin{bmatrix} 1 & 1 & 1 \\\\ 1 & 1 & 1 \\\\ 1 & 1 & 1 \\end{bmatrix}`
+  );
+  document.getElementById('kb-zero').innerHTML=rkd(
+    `\\mathbf{0}_{2 \\times 3} = \\begin{bmatrix} 0 & 0 & 0 \\\\ 0 & 0 & 0 \\end{bmatrix}`
+  );
+
+  // Multiplication
+  document.getElementById('kb-mult').innerHTML=rkd(
+    `c_{ij} = \\sum_{k=1}^{p} a_{ik}\\, b_{kj} = \\mathbf{a}_i'\\,\\mathbf{b}_j`
+  );
+
+  // Common products
+  document.getElementById('kb-common').innerHTML=rkd(`\\begin{aligned}
+\\mathbf{1}_n'\\mathbf{1}_n &= n \\\\[4pt]
+\\mathbf{1}_n\\mathbf{1}_n' &= \\mathbf{J}_n \\\\[4pt]
+\\mathbf{J}_n\\mathbf{J}_n &= n\\mathbf{J}_n \\\\[4pt]
+\\mathbf{1}_n'\\!\\left(\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n\\right) &= \\mathbf{0}_{1 \\times n} \\\\[4pt]
+\\mathbf{J}_n\\!\\left(\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n\\right) &= \\mathbf{0}_{n \\times n} \\\\[4pt]
+\\left(\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n\\right)\\!\\left(\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n\\right) &= \\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n
+\\end{aligned}`);
+
+  // QF example matrix
+  document.getElementById('kb-qfex').innerHTML=rkd(
+    `\\mathbf{A} = \\begin{bmatrix} 1 & 0.5 & 0 \\\\ 0.5 & 3 & 1 \\\\ 0 & 1 & 4 \\end{bmatrix}`
+  );
+
+  // Sum of squares
+  document.getElementById('kb-ss1').innerHTML=rkd(
+    `f(x_1, \\ldots, x_n) = \\sum_{i=1}^n x_i^2 = \\mathbf{X}'\\mathbf{X} = \\mathbf{X}'\\mathbf{I}_n\\mathbf{X}`
+  );
+  document.getElementById('kb-ss2').innerHTML=rkd(`\\begin{aligned}
+\\sum_{i=1}^n (x_i - \\bar{x})^2 &= \\sum_{i=1}^n x_i^2 - n\\bar{x}^2 \\\\[4pt]
+&= \\mathbf{X}'\\mathbf{X} - \\tfrac{1}{n}(\\mathbf{X}'\\mathbf{1}_n)(\\mathbf{1}_n'\\mathbf{X}) \\\\[4pt]
+&= \\mathbf{X}'\\!\\left[\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{1}_n\\mathbf{1}_n'\\right]\\mathbf{X} \\\\[4pt]
+&= \\mathbf{X}'\\!\\left[\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n\\right]\\mathbf{X}
+\\end{aligned}`);
+
+  // Helmert n=3
+  document.getElementById('kb-helmert').innerHTML=rkd(
+    `\\mathbf{P} = \\begin{bmatrix} 1/\\sqrt{3} & 1/\\sqrt{2} & 1/\\sqrt{6} \\\\ 1/\\sqrt{3} & -1/\\sqrt{2} & 1/\\sqrt{6} \\\\ 1/\\sqrt{3} & 0 & -2/\\sqrt{6} \\end{bmatrix}`
+  );
+
+  // Partitioned
+  document.getElementById('kb-part').innerHTML=rkd(
+    `\\mathbf{A} = \\begin{bmatrix} \\mathbf{A}_{11} & \\mathbf{A}_{12} \\\\ \\mathbf{A}_{21} & \\mathbf{A}_{22} \\end{bmatrix}`
+  );
+  document.getElementById('kb-partmult').innerHTML=rkd(`\\begin{bmatrix} \\mathbf{A}_{11} & \\mathbf{A}_{12} \\\\ \\mathbf{A}_{21} & \\mathbf{A}_{22} \\end{bmatrix} \\begin{bmatrix} \\mathbf{B}_{11} & \\mathbf{B}_{12} \\\\ \\mathbf{B}_{21} & \\mathbf{B}_{22} \\end{bmatrix} = \\begin{bmatrix} \\mathbf{A}_{11}\\mathbf{B}_{11} + \\mathbf{A}_{12}\\mathbf{B}_{21} & \\mathbf{A}_{11}\\mathbf{B}_{12} + \\mathbf{A}_{12}\\mathbf{B}_{22} \\\\ \\mathbf{A}_{21}\\mathbf{B}_{11} + \\mathbf{A}_{22}\\mathbf{B}_{21} & \\mathbf{A}_{21}\\mathbf{B}_{12} + \\mathbf{A}_{22}\\mathbf{B}_{22} \\end{bmatrix}`);
+
+  // Idempotent
+  document.getElementById('kb-idemp').innerHTML=rkd(`\\begin{aligned}
+\\mathbf{A}^2 &= \\left(\\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n\\right)^{\\!2} \\\\[3pt]
+&= \\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n - \\tfrac{1}{n}\\mathbf{J}_n + \\tfrac{1}{n^2}\\mathbf{J}_n^2 \\\\[3pt]
+&= \\mathbf{I}_n - \\tfrac{2}{n}\\mathbf{J}_n + \\tfrac{1}{n^2}\\cdot n\\mathbf{J}_n \\\\[3pt]
+&= \\mathbf{I}_n - \\tfrac{1}{n}\\mathbf{J}_n = \\mathbf{A}
+\\end{aligned}`);
+
+  // Kronecker definition
+  document.getElementById('kb-kron').innerHTML=rkd(
+    `\\mathbf{A} \\otimes \\mathbf{B} = \\begin{bmatrix} a_{11}\\mathbf{B} & a_{12}\\mathbf{B} & \\cdots & a_{1s}\\mathbf{B} \\\\ a_{21}\\mathbf{B} & a_{22}\\mathbf{B} & \\cdots & a_{2s}\\mathbf{B} \\\\ \\vdots & \\vdots & \\ddots & \\vdots \\\\ a_{r1}\\mathbf{B} & a_{r2}\\mathbf{B} & \\cdots & a_{rs}\\mathbf{B} \\end{bmatrix}`
+  );
+
+  // ANOVA layout
+  document.getElementById('kb-anova-layout').innerHTML=rkd(
+    `\\bar{y}_{\\cdot\\cdot} = \\frac{1}{rt}\\,\\mathbf{1}_{tr}'\\mathbf{Y} = \\frac{1}{rt}(\\mathbf{1}_t \\otimes \\mathbf{1}_r)'\\mathbf{Y}, \\qquad (\\bar{y}_1, \\ldots, \\bar{y}_t)' = \\left(\\mathbf{I}_t \\otimes \\tfrac{1}{r}\\mathbf{1}_r'\\right)\\mathbf{Y}`
+  );
+
+  // ANOVA table
+  document.getElementById('kb-anova-table').innerHTML=rkd(`\\begin{array}{lcl}
+\\textbf{Source} & \\textbf{df} & \\mathbf{A}_m \\\\[3pt] \\hline \\\\[-6pt]
+\\text{Mean} & 1 & \\mathbf{A}_1 = \\tfrac{1}{t}\\mathbf{J}_t \\otimes \\tfrac{1}{r}\\mathbf{J}_r \\\\[6pt]
+\\text{Fixed factor} & t-1 & \\mathbf{A}_2 = \\left(\\mathbf{I}_t - \\tfrac{1}{t}\\mathbf{J}_t\\right) \\otimes \\tfrac{1}{r}\\mathbf{J}_r \\\\[6pt]
+\\text{Nested replicates} & t(r-1) & \\mathbf{A}_3 = \\mathbf{I}_t \\otimes \\left(\\mathbf{I}_r - \\tfrac{1}{r}\\mathbf{J}_r\\right) \\\\[6pt] \\hline \\\\[-6pt]
+\\text{Total} & tr & \\mathbf{A}_4 = \\mathbf{I}_t \\otimes \\mathbf{I}_r = \\mathbf{I}_{tr}
+\\end{array}`);
+}
+
+// ── §2: Matrix Multiplication interactive ────────────
+let mult_r=2, mult_p=3, mult_c=2;
+
+function buildMxGrid(containerId, rows, cols, prefix, vals){
+  const cont=document.getElementById(containerId);
+  cont.innerHTML='';
+  const g=document.createElement('div');
+  g.className='mx-grid';
+  g.style.gridTemplateColumns=`repeat(${cols},56px)`;
+  for(let i=0;i<rows;i++) for(let j=0;j<cols;j++){
+    const inp=document.createElement('input');
+    inp.type='text'; inp.id=`${prefix}_${i}_${j}`; inp.value=vals?fmtVal(vals[i][j]):'0';
+    inp.autocomplete='off';
+    g.appendChild(inp);
+  }
+  cont.appendChild(g);
+}
+function fmtVal(v){ return Math.abs(v-Math.round(v))<1e-9?String(Math.round(v)):v.toFixed(2); }
+
+function rebuildMult(){
+  mult_r=Math.min(Math.max(parseInt(document.getElementById('mA_r').value)||2,1),4);
+  mult_p=Math.min(Math.max(parseInt(document.getElementById('mA_c').value)||3,1),4);
+  mult_c=Math.min(Math.max(parseInt(document.getElementById('mB_c').value)||2,1),4);
+  buildMxGrid('multA',mult_r,mult_p,'ma',null);
+  buildMxGrid('multB',mult_p,mult_c,'mb',null);
+  document.getElementById('multC').innerHTML='';
+  document.getElementById('multSteps').innerHTML='';
+}
+function readGrid(prefix,rows,cols){
+  return Array.from({length:rows},(_,i)=>Array.from({length:cols},(_,j)=>{
+    const v=parseFloat(document.getElementById(`${prefix}_${i}_${j}`)?.value);
+    return isNaN(v)?0:v;
+  }));
+}
+function doMult(){
+  const A=readGrid('ma',mult_r,mult_p);
+  const B=readGrid('mb',mult_p,mult_c);
+  const C=matMul(A,B);
+  // display result
+  const cont=document.getElementById('multC');
+  cont.innerHTML='';
+  const g=document.createElement('div');
+  g.className='mx-disp';
+  g.style.gridTemplateColumns=`repeat(${mult_c},auto)`;
+  C.forEach(row=>row.forEach(v=>{
+    const s=document.createElement('span');
+    s.textContent=fmtVal(v);
+    g.appendChild(s);
+  }));
+  cont.appendChild(g);
+  // show one step detail
+  const steps=document.getElementById('multSteps');
+  let html='<div class="key-box" style="margin-top:.5rem;"><strong>Inner product detail (first entry):</strong><br>';
+  let terms=[];
+  for(let k=0;k<mult_p;k++) terms.push(`(${fmtVal(A[0][k])})(${fmtVal(B[k][0])})`);
+  html+=rk(`c_{11} = ${terms.join(' + ')} = ${fmtVal(C[0][0])}`);
+  html+='</div>';
+  steps.innerHTML=html;
+}
+
+// ── §3: Common products verification ─────────────────
+function verifyCommon(){
+  const n=Math.min(Math.max(parseInt(document.getElementById('cpN').value)||3,2),5);
+  const out=document.getElementById('commonOut');
+  const I=eye(n), Jn=J(n), oneVec=ones(n,1), oneT=ones(1,n);
+  const C=matSub(I, matScale(Jn, 1/n)); // centering
+
+  const checks=[
+    {label:`\\mathbf{1}_${n}'\\mathbf{1}_${n}`, result:matMul(oneT,oneVec), expect:`${n}`},
+    {label:`\\mathbf{1}_${n}\\mathbf{1}_${n}'`, result:matMul(oneVec,oneT), expect:`\\mathbf{J}_{${n}}`},
+    {label:`\\mathbf{J}_${n}\\mathbf{J}_${n}`, result:matMul(Jn,Jn), expect:`${n}\\mathbf{J}_{${n}}`},
+    {label:`\\mathbf{1}_${n}'(\\mathbf{I}-\\tfrac{1}{${n}}\\mathbf{J})`, result:matMul(oneT,C), expect:`\\mathbf{0}_{1\\times${n}}`},
+    {label:`\\mathbf{J}_${n}(\\mathbf{I}-\\tfrac{1}{${n}}\\mathbf{J})`, result:matMul(Jn,C), expect:`\\mathbf{0}_{${n}\\times${n}}`},
+    {label:`(\\mathbf{I}-\\tfrac{1}{${n}}\\mathbf{J})^2`, result:matMul(C,C), expect:`\\mathbf{I}-\\tfrac{1}{${n}}\\mathbf{J}`}
+  ];
+
+  let html='<div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">';
+  checks.forEach(ch=>{
+    const tex=matTex(ch.result);
+    html+=`<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.3rem .5rem;background:var(--teal-bg);border-radius:4px;">
+      <span>${rk(ch.label)}</span>
+      <span style="color:var(--gray);">=</span>
+      <span>${rk(tex)}</span>
+      <span style="font-size:.82rem;color:var(--teal);margin-left:auto;">✓ equals ${rk(ch.expect)}</span>
+    </div>`;
+  });
+  html+='</div>';
+  out.innerHTML=html;
+}
+
+// ── §4: Determinant ──────────────────────────────────
+function drawDet(){
+  const a=parseFloat(document.getElementById('d_a').value)||0;
+  const b=parseFloat(document.getElementById('d_b').value)||0;
+  const c=parseFloat(document.getElementById('d_c').value)||0;
+  const d=parseFloat(document.getElementById('d_d').value)||0;
+  const det=a*d-b*c;
+
+  const res=document.getElementById('detResult');
+  res.innerHTML=rk(`\\det = (${fmtVal(a)})(${fmtVal(d)}) - (${fmtVal(b)})(${fmtVal(c)}) = ${fmtVal(det)}`);
+
+  // Draw parallelogram
+  const cv=document.getElementById('detCanvas');
+  const ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  const cx=W/2, cy=H/2;
+  // auto-scale
+  const pts=[[0,0],[a,c],[a+b,c+d],[b,d]];
+  const maxVal=Math.max(...pts.flat().map(Math.abs),1)*1.3;
+  const sc=Math.min(W,H)/(2*maxVal);
+
+  function tx(x){ return cx+x*sc; }
+  function ty(y){ return cy-y*sc; }
+
+  // Grid
+  ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.5;
+  for(let i=-10;i<=10;i++){
+    ctx.beginPath();ctx.moveTo(tx(i),0);ctx.lineTo(tx(i),H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,ty(i));ctx.lineTo(W,ty(i));ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle='#bbb';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+
+  // Parallelogram fill
+  ctx.fillStyle=det>=0?'rgba(58,110,181,0.15)':'rgba(179,58,47,0.15)';
+  ctx.beginPath();
+  ctx.moveTo(tx(0),ty(0));ctx.lineTo(tx(a),ty(c));ctx.lineTo(tx(a+b),ty(c+d));ctx.lineTo(tx(b),ty(d));
+  ctx.closePath();ctx.fill();
+
+  // Parallelogram outline
+  ctx.strokeStyle=det>=0?'#3a6eb5':'#b33a2f';ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(tx(0),ty(0));ctx.lineTo(tx(a),ty(c));ctx.lineTo(tx(a+b),ty(c+d));ctx.lineTo(tx(b),ty(d));
+  ctx.closePath();ctx.stroke();
+
+  // Column vectors
+  function drawArrow(x,y,color,label){
+    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(tx(0),ty(0));ctx.lineTo(tx(x),ty(y));ctx.stroke();
+    // arrowhead
+    const ang=Math.atan2(-y*sc,-x*sc);
+    const hx=tx(x),hy=ty(y);
+    ctx.beginPath();
+    ctx.moveTo(hx,hy);
+    ctx.lineTo(hx+10*Math.cos(ang+.35),hy+10*Math.sin(ang+.35));
+    ctx.lineTo(hx+10*Math.cos(ang-.35),hy+10*Math.sin(ang-.35));
+    ctx.closePath();ctx.fill();
+    // label
+    ctx.font='bold 14px Crimson Pro';ctx.fillStyle=color;
+    ctx.fillText(label,tx(x)+8,ty(y)-8);
+  }
+  drawArrow(a,c,'#c8a430','col₁');
+  drawArrow(b,d,'#1a6a58','col₂');
+
+  // Area label
+  ctx.font='italic 15px Crimson Pro';
+  ctx.fillStyle=det>=0?'#3a6eb5':'#b33a2f';
+  ctx.fillText(`area = |det| = ${Math.abs(det).toFixed(2)}`,12,22);
+  if(det<0) ctx.fillText('(negative orientation)',12,40);
+}
+
+// ── §5: Rank finder ──────────────────────────────────
+let rk_r=3, rk_c=4;
+function rebuildRank(){
+  rk_r=Math.min(Math.max(parseInt(document.getElementById('rk_r').value)||3,2),5);
+  rk_c=Math.min(Math.max(parseInt(document.getElementById('rk_c').value)||4,2),5);
+  buildMxGrid('rankInput',rk_r,rk_c,'rk',null);
+  document.getElementById('rankOut').innerHTML='';
+}
+function loadRankEx(){
+  rk_r=3;rk_c=4;
+  document.getElementById('rk_r').value=3;
+  document.getElementById('rk_c').value=4;
+  const vals=[[1,2,3,4],[2,4,6,8],[1,3,5,7]];
+  buildMxGrid('rankInput',3,4,'rk',vals);
+}
+function doRank(){
+  const A=readGrid('rk',rk_r,rk_c);
+  // RREF
+  const M=A.map(r=>[...r]);
+  const pivots=[];
+  let pr=0;
+  for(let col=0;col<rk_c && pr<rk_r;col++){
+    // find pivot
+    let mx=pr;
+    for(let r=pr+1;r<rk_r;r++) if(Math.abs(M[r][col])>Math.abs(M[mx][col])) mx=r;
+    if(Math.abs(M[mx][col])<1e-12) continue;
+    [M[pr],M[mx]]=[M[mx],M[pr]];
+    // scale
+    const s=M[pr][col];
+    for(let j=0;j<rk_c;j++) M[pr][j]/=s;
+    // eliminate
+    for(let r=0;r<rk_r;r++){
+      if(r===pr) continue;
+      const f=M[r][col];
+      for(let j=0;j<rk_c;j++) M[r][j]-=f*M[pr][j];
+    }
+    pivots.push({row:pr,col});
+    pr++;
+  }
+  const pivCols=new Set(pivots.map(p=>p.col));
+  const rank=pivots.length;
+
+  // Display
+  let html=`<div class="step-block"><div class="step-hd"><span class="step-badge">R</span><span class="step-txt">RREF result — rank = ${rank}</span></div><div class="step-body">`;
+  html+='<table class="res-table"><thead><tr>';
+  for(let j=0;j<rk_c;j++) html+=`<th>col ${j+1}</th>`;
+  html+='</tr></thead><tbody>';
+  for(let i=0;i<rk_r;i++){
+    html+='<tr>';
+    for(let j=0;j<rk_c;j++){
+      const isPiv=pivots.some(p=>p.row===i&&p.col===j);
+      const cls=isPiv?'piv':(!pivCols.has(j)?'free':'');
+      html+=`<td class="${cls}">${fmtVal(M[i][j])}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+
+  html+=`<div style="margin-top:.5rem;font-size:.92rem;">`;
+  html+=`<strong>Pivot columns</strong> (independent): ${[...pivCols].map(c=>`col ${c+1}`).join(', ')}<br>`;
+  const freeCols=[];for(let j=0;j<rk_c;j++) if(!pivCols.has(j)) freeCols.push(j);
+  if(freeCols.length>0) html+=`<strong>Free columns</strong> (dependent): ${freeCols.map(c=>`col ${c+1}`).join(', ')}`;
+  else html+=`All columns are independent.`;
+  html+=`</div></div></div>`;
+  document.getElementById('rankOut').innerHTML=html;
+}
+
+// ── §6: Quadratic form visualizer ────────────────────
+function drawQF(){
+  const a=parseFloat(document.getElementById('qf_a').value)||0;
+  const b=parseFloat(document.getElementById('qf_b').value)||0;
+  const c=parseFloat(document.getElementById('qf_c').value)||0; // should equal b for symmetric
+  const d=parseFloat(document.getElementById('qf_d').value)||0;
+
+  // Eigenvalues of symmetric [[a,b],[b,d]] (force symmetric: use average of b,c)
+  const offdiag=(b+c)/2;
+  const tr=a+d;
+  const det2=a*d-offdiag*offdiag;
+  const disc=tr*tr-4*det2;
+  let lam1,lam2;
+  if(disc>=0){lam1=(tr+Math.sqrt(disc))/2;lam2=(tr-Math.sqrt(disc))/2;}
+  else{lam1=NaN;lam2=NaN;}
+
+  const info=document.getElementById('qfInfo');
+  let type='Indefinite';
+  if(!isNaN(lam1)){
+    if(lam1>1e-9&&lam2>1e-9) type='Positive definite';
+    else if(lam1>=-1e-9&&lam2>=-1e-9) type='Positive semidefinite';
+    else if(lam1<-1e-9&&lam2<-1e-9) type='Negative definite';
+    else type='Indefinite';
+  }
+  info.innerHTML=`${rk(`\\lambda_1 \\approx ${lam1.toFixed(3)},\\; \\lambda_2 \\approx ${lam2.toFixed(3)}`)}<br><em>${type}</em>`;
+
+  // Draw contour plot
+  const cv=document.getElementById('qfCanvas');
+  const ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  const range=3;
+  const img=ctx.createImageData(W,H);
+  // find value range for coloring
+  let vmin=Infinity,vmax=-Infinity;
+  for(let py=0;py<H;py++) for(let px=0;px<W;px++){
+    const x1=(px/W)*2*range-range;
+    const x2=range-(py/H)*2*range;
+    const v=a*x1*x1+offdiag*x1*x2+offdiag*x2*x1+d*x2*x2;
+    if(v<vmin) vmin=v;if(v>vmax) vmax=v;
+  }
+  const vr=Math.max(Math.abs(vmin),Math.abs(vmax),1);
+
+  for(let py=0;py<H;py++) for(let px=0;px<W;px++){
+    const x1=(px/W)*2*range-range;
+    const x2=range-(py/H)*2*range;
+    const v=a*x1*x1+offdiag*x1*x2+offdiag*x2*x1+d*x2*x2;
+    const idx=(py*W+px)*4;
+    const t=v/vr;
+    if(t>=0){ img.data[idx]=240-Math.floor(t*200);img.data[idx+1]=240-Math.floor(t*100);img.data[idx+2]=255;img.data[idx+3]=200; }
+    else{ img.data[idx]=255;img.data[idx+1]=240+Math.floor(t*100);img.data[idx+2]=240+Math.floor(t*200);img.data[idx+3]=200; }
+  }
+  ctx.putImageData(img,0,0);
+
+  // Contour lines
+  const levels=[-8,-4,-2,-1,0,1,2,4,8];
+  ctx.lineWidth=1;
+  levels.forEach(lev=>{
+    ctx.strokeStyle=lev===0?'#18284a':'rgba(24,40,74,0.3)';
+    ctx.lineWidth=lev===0?2:0.8;
+    ctx.beginPath();
+    // march through grid
+    for(let py=0;py<H-1;py+=2) for(let px=0;px<W-1;px+=2){
+      const x1=(px/W)*2*range-range,x2=range-(py/H)*2*range;
+      const x1b=((px+2)/W)*2*range-range,x2b=range-((py+2)/H)*2*range;
+      const v00=a*x1*x1+offdiag*x1*x2+offdiag*x2*x1+d*x2*x2;
+      const v10=a*x1b*x1b+offdiag*x1b*x2+offdiag*x2*x1b+d*x2*x2;
+      const v01=a*x1*x1+offdiag*x1*x2b+offdiag*x2b*x1+d*x2b*x2b;
+      // simple threshold crossing
+      if((v00-lev)*(v10-lev)<0){
+        const frac=(lev-v00)/(v10-v00);
+        ctx.moveTo(px+frac*2,py);ctx.lineTo(px+frac*2,py+1);
+      }
+      if((v00-lev)*(v01-lev)<0){
+        const frac=(lev-v00)/(v01-v00);
+        ctx.moveTo(px,py+frac*2);ctx.lineTo(px+1,py+frac*2);
+      }
+    }
+    ctx.stroke();
+  });
+
+  // Axes
+  ctx.strokeStyle='rgba(24,40,74,0.5)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  ctx.font='italic 13px Crimson Pro';ctx.fillStyle='#18284a';
+  ctx.fillText('x₁',W-20,H/2-6);ctx.fillText('x₂',W/2+6,14);
+}
+
+// ── §7: Orthogonal matrix 3D view ────────────────────
+function draw3DAxes(cvId, vectors, colors, labels){
+  const cv=document.getElementById(cvId);
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H*0.55;
+
+  // isometric projection
+  const angle=Math.PI/6;
+  function proj(x,y,z){
+    return [cx+90*(x*Math.cos(angle)-y*Math.cos(angle)), cy-90*(x*Math.sin(angle)+y*Math.sin(angle))+90*0.5*z*-1+45];
+  }
+  // actually let's do a simple oblique projection
+  function project(x,y,z){
+    const px=cx+x*80-y*40;
+    const py=cy-z*80+y*25;
+    return [px,py];
+  }
+
+  // draw light grid
+  ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.5;
+  // just axes
+  ctx.strokeStyle='#ccc';ctx.lineWidth=1;
+  const o=project(0,0,0);
+  const ax=project(1.3,0,0),ay=project(0,1.3,0),az=project(0,0,1.3);
+  ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(ax[0],ax[1]);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(ay[0],ay[1]);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(az[0],az[1]);ctx.stroke();
+  ctx.font='12px Crimson Pro';ctx.fillStyle='#999';
+  ctx.fillText('x',ax[0]+4,ax[1]);ctx.fillText('y',ay[0]+4,ay[1]);ctx.fillText('z',az[0]+4,az[1]-4);
+
+  // vectors
+  vectors.forEach((v,i)=>{
+    const p=project(v[0],v[1],v[2]);
+    ctx.strokeStyle=colors[i];ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(p[0],p[1]);ctx.stroke();
+    // arrowhead
+    const dx=p[0]-o[0],dy=p[1]-o[1];
+    const len=Math.sqrt(dx*dx+dy*dy);
+    const ux=dx/len,uy=dy/len;
+    ctx.fillStyle=colors[i];
+    ctx.beginPath();
+    ctx.moveTo(p[0],p[1]);
+    ctx.lineTo(p[0]-8*ux+4*uy,p[1]-8*uy-4*ux);
+    ctx.lineTo(p[0]-8*ux-4*uy,p[1]-8*uy+4*ux);
+    ctx.closePath();ctx.fill();
+    // label
+    ctx.font='bold 13px Crimson Pro';
+    ctx.fillText(labels[i],p[0]+8,p[1]-4);
+  });
+}
+function drawOrtho(){
+  // Pre-image: standard basis
+  draw3DAxes('orthoCanvasPre',
+    [[1,0,0],[0,1,0],[0,0,1]],
+    ['#c8a430','#1a6a58','#3a6eb5'],
+    ['e₁','e₂','e₃']
+  );
+  // Image: Helmert columns
+  const s3=1/Math.sqrt(3),s2=1/Math.sqrt(2),s6=1/Math.sqrt(6);
+  draw3DAxes('orthoCanvasPost',
+    [[s3,s3,s3],[s2,-s2,0],[s6,s6,-2*s6]],
+    ['#c8a430','#1a6a58','#3a6eb5'],
+    ['p₁','p₂','p₃']
+  );
+}
+
+// ── §11: Kronecker calculator ────────────────────────
+let kA_r=2,kA_c=2,kB_r=2,kB_c=2;
+function buildKronGrids(Av,Bv){
+  kA_r=Av.length;kA_c=Av[0].length;kB_r=Bv.length;kB_c=Bv[0].length;
+  buildMxGrid('kronA',kA_r,kA_c,'ka',Av);
+  buildMxGrid('kronB',kB_r,kB_c,'kb',Bv);
+  document.getElementById('kronOut').innerHTML='';
+}
+function loadKronEx(idx){
+  if(idx===0) buildKronGrids([[1,0],[0,1]],[[1,1],[1,1]]);
+  if(idx===1) buildKronGrids([[0.5,0.5],[0.5,0.5]],[[1/3,1/3,1/3],[1/3,1/3,1/3],[1/3,1/3,1/3]]);
+  if(idx===2) buildKronGrids([[1,0],[0,1]],[[1/3,1/3,1/3],[1/3,1/3,1/3],[1/3,1/3,1/3]]);
+}
+function doKron(){
+  const A=readGrid('ka',kA_r,kA_c);
+  const B=readGrid('kb',kB_r,kB_c);
+  // Kronecker product
+  const rr=kA_r*kB_r,cc=kA_c*kB_c;
+  const K=zeros(rr,cc);
+  for(let i=0;i<kA_r;i++) for(let j=0;j<kA_c;j++)
+    for(let p=0;p<kB_r;p++) for(let q=0;q<kB_c;q++)
+      K[i*kB_r+p][j*kB_c+q]=A[i][j]*B[p][q];
+  // display
+  const cont=document.getElementById('kronOut');
+  cont.innerHTML='';
+  const g=document.createElement('div');
+  g.className='mx-disp';
+  g.style.gridTemplateColumns=`repeat(${cc},auto)`;
+  g.style.fontSize=cc>6?'.78rem':'.92rem';
+  K.forEach(row=>row.forEach(v=>{
+    const s=document.createElement('span');
+    s.textContent=fmtVal(v);
+    // highlight block boundaries
+    g.appendChild(s);
+  }));
+  cont.appendChild(g);
+}
+
+// ── INIT ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  renderInlineK();
+  renderStaticBlocks();
+  renderNotation();
+  rebuildMult();
+  // set some example values for mult
+  const exA=[[1,2,3],[4,5,6]];
+  const exB=[[7,8],[9,10],[11,12]];
+  exA.forEach((r,i)=>r.forEach((v,j)=>{const el=document.getElementById(`ma_${i}_${j}`);if(el)el.value=v;}));
+  exB.forEach((r,i)=>r.forEach((v,j)=>{const el=document.getElementById(`mb_${i}_${j}`);if(el)el.value=v;}));
+
+  rebuildRank();
+  loadRankEx();
+  drawDet();
+  drawQF();
+  drawOrtho();
+  loadKronEx(0);
+});
+</script>
+</body>
+</html>

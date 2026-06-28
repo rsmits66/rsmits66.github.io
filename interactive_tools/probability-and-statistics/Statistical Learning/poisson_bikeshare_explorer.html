@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Poisson Regression — Capital Bikeshare Counts — University of Washington</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf8f5; --navy:#1c2d42; --gold:#d97706; --goldDk:#9a3412;
+  --crimson:#1e3a8a; --crimson2:#1e1b4b; --crimsonLt:#e0e7ff;
+  --muted:#6b7280; --border:#e5e7eb; --panel:#f9fafb;
+  --low:#10b981; --mid:#f59e0b; --high:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:32px;}
+
+header{width:100%;background:var(--crimson2);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:#0f172a;padding:.3rem 1.6rem;font-size:.74rem;color:#94a3b8;
+         letter-spacing:.08em;text-transform:uppercase;}
+.hdr-main{padding:.7rem 1.6rem .6rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.45rem;font-weight:700;}
+header .subtitle{color:#cbd5e1;font-style:italic;margin-top:.2rem;font-size:.82rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+/* datastrip summary */
+.datastrip{width:100%;max-width:1200px;display:flex;justify-content:center;gap:45px;
+  padding:12px 16px 4px;flex-wrap:wrap;}
+.item{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.item .iname{font-family:'Playfair Display',Georgia,serif;font-size:.9rem;font-weight:700;}
+.item .imeta{font-size:.72rem;color:var(--muted);font-style:italic;}
+
+details.bg{max-width:1200px;width:100%;padding:4px 16px 0;}
+details.bg>summary{font-family:'Playfair Display',Georgia,serif;font-size:.88rem;
+  color:var(--crimson);cursor:pointer;padding:6px 0;list-style:none;}
+details.bg>summary::-webkit-details-marker{display:none;}
+details.bg>summary::before{content:"▸ ";color:var(--gold);}
+details.bg[open]>summary::before{content:"▾ ";}
+.bg-body{background:#fff;border:1px solid var(--border);border-radius:6px;
+  box-shadow:0 2px 14px rgba(0,0,0,.04);padding:14px 20px;font-size:.86rem;line-height:1.65;}
+.bg-body p{margin:6px 0;}
+.bg-body h4{font-family:'Playfair Display',Georgia,serif;font-size:.88rem;color:var(--crimson);
+  margin:12px 0 4px;}
+.bg-body h4:first-child{margin-top:0;}
+.eq{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);
+  border-radius:0 4px 4px 0;padding:8px 16px;margin:8px 0;font-style:italic;
+  text-align:center;font-size:.94rem;color:var(--navy);}
+
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px 4px;
+          max-width:1200px;width:100%;}
+.controls label.fld{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);
+  font-style:italic;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.84rem;padding:4px 8px;
+  border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--navy);cursor:pointer;}
+select:focus{outline:none;border-color:var(--crimson);}
+.toggle{display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--muted);cursor:pointer;}
+.toggle input{accent-color:var(--crimson);cursor:pointer;}
+.hint{color:var(--muted);font-size:.8rem;font-style:italic;}
+.sep{color:var(--border);}
+
+.wrap{max-width:1200px;width:100%;padding:6px 16px 0;}
+.grid{display:grid;grid-template-columns:550px 1fr;gap:16px;align-items:start;}
+.col{display:flex;flex-direction:column;gap:16px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:6px;
+      box-shadow:0 2px 14px rgba(0,0,0,.04);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.7rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:6px 14px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;}
+
+.stats{padding:12px 16px;font-size:.84rem;line-height:1.55;}
+.stats h3{font-family:'Playfair Display',Georgia,serif;font-size:.88rem;color:var(--crimson);
+          margin-top:10px;margin-bottom:3px;border-bottom:1px solid var(--border);padding-bottom:2px;}
+.stats h3:first-child{margin-top:0;}
+.stat-row{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;}
+.stat-key{color:var(--muted);}
+.stat-val{color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums;}
+.note{font-size:.74rem;color:var(--muted);font-style:italic;margin-top:3px;}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:4px;}
+.tbl th{font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:.7rem;
+  text-transform:uppercase;letter-spacing:.03em;color:var(--muted);text-align:right;
+  padding:3px 6px;border-bottom:1px solid var(--border);}
+.tbl th:first-child{text-align:left;}
+.tbl td{text-align:right;padding:3px 6px;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #f1f5f9;}
+.tbl td:first-child{text-align:left;color:var(--muted);}
+.tbl td.v{color:var(--crimson);font-weight:600;}
+
+.qry{padding:10px 16px 6px;}
+.qry .slabel{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);
+  font-style:italic;margin-top:6px;}
+.qry .slabel b{color:var(--crimson);font-style:normal;font-variant-numeric:tabular-nums;}
+.qry input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;margin-top:2px;}
+.barwrap{padding:8px 0 4px;}
+.barrow{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:.8rem;}
+.barlbl{width:50px;color:var(--navy);font-variant-numeric:tabular-nums;text-align:right;}
+.bartrack{flex:1;height:16px;background:var(--panel);border:1px solid var(--border);
+  border-radius:4px;overflow:hidden;}
+.barfill{height:100%;transition:width .15s;}
+.barpct{width:45px;text-align:right;font-variant-numeric:tabular-nums;color:var(--crimson);
+  font-weight:600;}
+.predbox{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);
+  border-top:1px solid var(--border);}
+.predtext{font-size:.84rem;line-height:1.4;}
+.predtext .big{font-family:'Playfair Display',Georgia,serif;font-size:1.15rem;font-weight:700;}
+
+footer{max-width:1200px;width:100%;padding:18px 16px 0;display:flex;align-items:center;
+  gap:10px;justify-content:center;color:var(--muted);font-size:.76rem;font-style:italic;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Washington &ensp;&mdash;&ensp; Statistics Department &ensp;&middot;&ensp; Poisson GLM Count Modeling</div>
+  <div class="hdr-main">
+    <h1>Poisson Regression &thinsp;&mdash;&thinsp; Modeling Capital Bikeshare Demand</h1>
+    <div class="subtitle">
+      Pr(Y = k | x) = e<sup>&minus;&lambda;</sup> &lambda;<sup>k</sup> &frasl; k! &ensp;&middot;&ensp;
+      variance equals mean &ensp;&middot;&ensp;
+      log-linear link function &ensp;&middot;&ensp;
+      fit by Maximum Likelihood (IRLS) &ensp;&middot;&ensp; click the chart to forecast custom conditions
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="datastrip" id="summaryStrip"></div>
+
+<details class="bg" open>
+  <summary>Background &mdash; overcoming linear model limitations with Poisson GLMs</summary>
+  <div class="bg-body">
+    <h4>When the answer has to be a non-negative count</h4>
+    <p>To overcome the inadequacies of linear regression for analyzing the Bikeshare data set, we will make use of an alternative approach, called Poisson regression. Before we can talk about Poisson regression, we must first introduce the Poisson distribution. Suppose that a random variable <em>Y</em> takes on nonnegative integer values, i.e. <em>Y</em> &in; {0, 1, 2, ...}. If <em>Y</em> follows the Poisson distribution, then</p>
+    
+    <div class="eq">Pr(Y = k) = (e<sup>&minus;&lambda;</sup> &lambda;<sup>k</sup>) &frasl; k! &ensp; for k = 0, 1, 2, ...</div>
+
+    <p>Here, &lambda; &gt; 0 is the expected value of <em>Y</em>, i.e. E(<em>Y</em>). It turns out that &lambda; also equals the variance of <em>Y</em>, i.e. &lambda; = E(<em>Y</em>) = Var(<em>Y</em>). This means that if <em>Y</em> follows the Poisson distribution, then the larger the mean of <em>Y</em>, the larger its variance. (The notation <em>k!</em>, pronounced "k factorial", is defined as <em>k &times; (k&minus;1) &times; (k&minus;2) &times; ... &times; 3 &times; 2 &times; 1</em>, with 0! = 1 by convention).</p>
+
+    <h4>Modeling Varying Customer Intensities</h4>
+    <p>The Poisson distribution is typically used to model counts; this is a natural choice for a number of reasons, including the fact that counts, like the Poisson distribution, take on nonnegative integer values. To see how we might use the Poisson distribution in practice, let <em>Y</em> denote the number of users of the bike sharing program during a particular hour of the day, under a particular set of weather conditions, and during a particular month of the year. We might model <em>Y</em> as a Poisson distribution with mean E(<em>Y</em>) = &lambda; = 5. This means that the probability of no users during this particular hour is Pr(Y=0) = (e<sup>&minus;5</sup> 5<sup>0</sup>) &frasl; 0! = e<sup>&minus;5</sup> = 0.0067. The probability that there is exactly one user is Pr(Y=1) = (e<sup>&minus;5</sup> 5<sup>1</sup>) &frasl; 1! = 5e<sup>&minus;5</sup> = 0.034, the probability of two users is Pr(Y=2) = (e<sup>&minus;5</sup> 5<sup>2</sup>) &frasl; 2! = 0.084, and so on.</p>
+
+    <h4>The Log-Linear Covariate Link</h4>
+    <p>Of course, in reality, we expect the mean number of users of the bike sharing program, &lambda; = E(<em>Y</em>), to vary as a function of the hour of the day, the month of the year, the weather conditions, and so forth. So rather than modeling the number of bikers, <em>Y</em>, as a Poisson distribution with a fixed mean value like &lambda; = 5, we would like to allow the mean to vary as a function of the covariates. In particular, we consider the following model for the mean &lambda; = E(<em>Y</em>), which we now write as &lambda;(X<sub>1</sub>, ..., X<sub>p</sub>) to emphasize that it is a function of the covariates X<sub>1</sub>, ..., X<sub>p</sub>:</p>
+
+    <div class="eq">log(&lambda;(X<sub>1</sub>, ..., X<sub>p</sub>)) = &beta;<sub>0</sub> + &beta;<sub>1</sub>X<sub>1</sub> + &beta;<sub>2</sub>X<sub>2</sub> + ... + &beta;<sub>p</sub>X<sub>p</sub></div>
+
+    <p>By using a logarithmic link function, we guarantee that the expected bike count &lambda; remains strictly positive for any combination of weather or temporal variables since &lambda; = exp(&beta;<sup>T</sup>X). The coefficients are estimated via iteratively reweighted least squares (IRLS) maximizing the Poisson likelihood function across all 17,379 hourly observations.</p>
+  </div>
+</details>
+
+<div class="controls">
+  <label class="fld">X-Axis Predictor: <select id="selX"></select></label>
+  <label class="fld">Y-Axis Predictor: <select id="selY"></select></label>
+  <span class="sep">|</span>
+  <label class="toggle"><input type="checkbox" id="tgPoints" checked> show observations</label>
+  <label class="toggle"><input type="checkbox" id="tgTrend" checked> show lambda trendline</label>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <div class="phdr" id="hdrMain">Predictor Space &ensp;&middot;&ensp; Observed Counts vs Log-Linear Trend</div>
+        <canvas id="main" width="550" height="380"></canvas>
+      </div>
+      <div class="card">
+        <div class="phdr">Poisson Distribution PMF &ensp;&middot;&ensp; Pr(Y = k | &lambda;) for your test condition</div>
+        <canvas id="panelB" width="550" height="220"></canvas>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <div class="phdr">Fitted Poisson GLM Summary &amp; Inference</div>
+        <div class="stats" id="statsPanel"></div>
+      </div>
+      <div class="card">
+        <div class="phdr">Interactive Conditional Forecast</div>
+        <div class="qry">
+          <div class="slabel"><span id="lblX">X</span><b id="valX"></b></div>
+          <input type="range" id="sldX" min="0" max="1" step="0.01">
+          
+          <div class="slabel"><span id="lblY">Y</span><b id="valY"></b></div>
+          <input type="range" id="sldY" min="0" max="1" step="0.01">
+
+          <div class="slabel"><span>Working Day Scenario</span><b id="valWork">Yes</b></div>
+          <input type="range" id="sldWork" min="0" max="1" step="1" value="1">
+        </div>
+        <div class="predbox">
+          <div class="predtext">
+            Forecasted Expected Count (&lambda;):<br>
+            <span class="big" id="predCount" style="color:var(--gold); font-size:1.45rem; font-weight:700;">0</span> bikers/hr<br>
+            <span class="hint" id="predVariance">Variance = 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Capital Bikeshare Dataset &mdash; Hourly counts matched with localized weather observations, 2011-2012.</span>
+</footer>
+
+<script>
+// Real coefficients fitted using statsmodels on full 17,379 rows:
+// Model log(lambda) = const + beta_temp*temp + beta_hum*hum + beta_wind*windspeed + beta_work*workingday
+const COEFS = {
+  const: 5.0197,
+  temp: 1.8293,
+  hum: -1.3576,
+  windspeed: 0.1967,
+  workingday: 0.0305
+};
+
+const FEATURES = [
+  {name: 'Normalized Temperature', abbr: 'temp', min: 0, max: 1, def: 0.46, unit: 'scaled'},
+  {name: 'Normalized Humidity', abbr: 'hum', min: 0, max: 1, def: 0.62, unit: 'scaled'},
+  {name: 'Normalized Windspeed', abbr: 'windspeed', min: 0, max: 1, def: 0.19, unit: 'scaled'}
+];
+
+// Sample rows from dataset to populate realistic scatter plot
+const dataSample = [[0.04, 0.45, 0.1343, 1.0, 180.0], [0.08, 0.38, 0.2836, 1.0, 41.0], [0.1, 0.42, 0.0, 1.0, 199.0], [0.12, 0.5, 0.2836, 1.0, 188.0], [0.16, 0.74, 0.2239, 0.0, 4.0], [0.16, 0.47, 0.3881, 0.0, 6.0], [0.16, 0.4, 0.1642, 0.0, 72.0], [0.16, 0.93, 0.1045, 0.0, 15.0], [0.16, 0.47, 0.2239, 0.0, 76.0], [0.18, 0.55, 0.194, 1.0, 34.0], [0.18, 0.51, 0.0, 1.0, 122.0], [0.2, 0.8, 0.1343, 1.0, 22.0], [0.2, 0.51, 0.2239, 0.0, 49.0], [0.2, 0.69, 0.2537, 1.0, 267.0], [0.2, 0.75, 0.0896, 1.0, 10.0], [0.2, 0.44, 0.1045, 1.0, 32.0], [0.2, 0.59, 0.3582, 0.0, 120.0], [0.2, 0.4, 0.0, 1.0, 51.0], [0.2, 0.64, 0.1343, 0.0, 8.0], [0.22, 0.44, 0.2537, 1.0, 40.0], [0.22, 0.69, 0.1343, 0.0, 68.0], [0.22, 0.87, 0.0896, 1.0, 49.0], [0.22, 0.37, 0.3284, 1.0, 57.0], [0.22, 0.8, 0.0, 1.0, 17.0], [0.22, 0.69, 0.1045, 1.0, 105.0], [0.22, 0.69, 0.1343, 0.0, 4.0], [0.22, 0.37, 0.194, 1.0, 286.0], [0.22, 0.41, 0.194, 0.0, 143.0], [0.24, 0.65, 0.0, 0.0, 30.0], [0.24, 0.41, 0.2836, 1.0, 102.0], [0.24, 0.93, 0.1642, 1.0, 26.0], [0.24, 0.41, 0.2537, 0.0, 144.0], [0.24, 0.41, 0.2239, 0.0, 88.0], [0.26, 0.7, 0.1045, 0.0, 86.0], [0.26, 0.7, 0.1642, 0.0, 66.0], [0.26, 0.3, 0.2836, 1.0, 77.0], [0.26, 0.6, 0.2537, 1.0, 29.0], [0.26, 0.56, 0.3881, 1.0, 13.0], [0.26, 0.87, 0.0, 0.0, 26.0], [0.28, 0.93, 0.1642, 1.0, 16.0], [0.28, 0.7, 0.2537, 1.0, 259.0], [0.3, 0.81, 0.1045, 1.0, 3.0], [0.3, 0.24, 0.2239, 1.0, 83.0], [0.3, 0.45, 0.2239, 1.0, 217.0], [0.3, 0.39, 0.1642, 1.0, 181.0], [0.3, 0.49, 0.4627, 1.0, 118.0], [0.3, 0.65, 0.0, 1.0, 169.0], [0.3, 0.7, 0.0, 1.0, 2.0], [0.3, 0.52, 0.1642, 1.0, 177.0], [0.3, 0.7, 0.1045, 0.0, 55.0], [0.3, 0.7, 0.2836, 1.0, 8.0], [0.3, 0.65, 0.2239, 1.0, 3.0], [0.32, 0.93, 0.1642, 1.0, 57.0], [0.32, 0.76, 0.194, 1.0, 89.0], [0.32, 0.57, 0.0, 1.0, 22.0], [0.32, 0.81, 0.0896, 1.0, 162.0], [0.32, 0.53, 0.2985, 1.0, 164.0], [0.32, 0.66, 0.2836, 1.0, 4.0], [0.32, 0.57, 0.0, 1.0, 4.0], [0.32, 0.87, 0.0, 1.0, 472.0], [0.32, 0.39, 0.194, 1.0, 224.0], [0.32, 0.93, 0.1343, 1.0, 154.0], [0.34, 0.25, 0.2985, 1.0, 104.0], [0.34, 0.87, 0.0, 0.0, 11.0], [0.34, 0.87, 0.0896, 1.0, 79.0], [0.34, 0.46, 0.5224, 1.0, 89.0], [0.34, 0.61, 0.0896, 0.0, 393.0], [0.34, 0.61, 0.2985, 1.0, 195.0], [0.34, 0.49, 0.2836, 1.0, 559.0], [0.36, 0.66, 0.2537, 1.0, 73.0], [0.36, 0.87, 0.194, 1.0, 174.0], [0.36, 0.76, 0.0896, 1.0, 144.0], [0.36, 0.0, 0.194, 1.0, 3.0], [0.36, 0.81, 0.0, 0.0, 142.0], [0.36, 0.57, 0.3284, 1.0, 197.0], [0.36, 0.71, 0.0, 0.0, 479.0], [0.36, 0.93, 0.1343, 0.0, 80.0], [0.38, 0.82, 0.0, 1.0, 16.0], [0.38, 0.94, 0.2537, 1.0, 294.0], [0.38, 0.58, 0.3881, 1.0, 122.0], [0.4, 0.4, 0.1642, 1.0, 374.0], [0.4, 0.62, 0.194, 0.0, 321.0], [0.4, 1.0, 0.2985, 0.0, 29.0], [0.4, 0.82, 0.1343, 1.0, 13.0], [0.4, 0.87, 0.1642, 1.0, 99.0], [0.4, 0.71, 0.0896, 1.0, 224.0], [0.4, 0.58, 0.2985, 1.0, 336.0], [0.42, 0.5, 0.2239, 1.0, 9.0], [0.42, 0.71, 0.2239, 1.0, 21.0], [0.42, 0.44, 0.4627, 0.0, 76.0], [0.42, 0.44, 0.3881, 0.0, 290.0], [0.42, 0.88, 0.2537, 0.0, 37.0], [0.42, 0.82, 0.0896, 0.0, 52.0], [0.42, 0.58, 0.0896, 0.0, 320.0], [0.44, 0.72, 0.2836, 1.0, 32.0], [0.44, 0.94, 0.0896, 1.0, 15.0], [0.44, 0.41, 0.2836, 1.0, 4.0], [0.44, 1.0, 0.2239, 0.0, 39.0], [0.44, 0.67, 0.2239, 0.0, 171.0], [0.44, 0.62, 0.2537, 0.0, 16.0], [0.44, 0.33, 0.2985, 1.0, 82.0], [0.44, 0.88, 0.0, 0.0, 26.0], [0.44, 0.54, 0.1343, 1.0, 175.0], [0.44, 0.72, 0.2239, 1.0, 8.0], [0.44, 0.44, 0.194, 1.0, 3.0], [0.44, 0.72, 0.1343, 1.0, 188.0], [0.44, 0.47, 0.0896, 0.0, 282.0], [0.46, 0.82, 0.1045, 0.0, 250.0], [0.46, 0.44, 0.0896, 1.0, 153.0], [0.46, 0.94, 0.1045, 1.0, 13.0], [0.46, 0.94, 0.2836, 1.0, 50.0], [0.48, 0.72, 0.1045, 1.0, 9.0], [0.48, 1.0, 0.0896, 1.0, 361.0], [0.48, 0.77, 0.0, 1.0, 172.0], [0.48, 1.0, 0.4179, 1.0, 18.0], [0.48, 0.82, 0.1045, 1.0, 67.0], [0.5, 0.59, 0.1045, 0.0, 100.0], [0.5, 0.77, 0.3582, 1.0, 98.0], [0.5, 0.68, 0.194, 1.0, 2.0], [0.5, 0.63, 0.3582, 0.0, 20.0], [0.5, 0.59, 0.0, 1.0, 126.0], [0.5, 0.77, 0.1343, 1.0, 162.0], [0.52, 0.36, 0.3284, 1.0, 175.0], [0.52, 0.52, 0.194, 1.0, 328.0], [0.52, 0.32, 0.3881, 1.0, 529.0], [0.52, 0.72, 0.2985, 1.0, 2.0], [0.52, 0.77, 0.2239, 1.0, 239.0], [0.52, 0.52, 0.2985, 0.0, 432.0], [0.52, 0.63, 0.3284, 1.0, 124.0], [0.52, 0.4, 0.3284, 1.0, 374.0], [0.52, 0.83, 0.0, 1.0, 11.0], [0.54, 0.73, 0.1343, 1.0, 757.0], [0.54, 0.68, 0.1045, 1.0, 109.0], [0.54, 0.88, 0.1642, 0.0, 131.0], [0.54, 1.0, 0.0, 1.0, 27.0], [0.54, 0.45, 0.2985, 1.0, 106.0], [0.54, 0.77, 0.0, 1.0, 105.0], [0.54, 0.77, 0.194, 1.0, 9.0], [0.54, 0.77, 0.194, 1.0, 103.0], [0.56, 0.32, 0.0896, 0.0, 243.0], [0.56, 0.88, 0.1045, 1.0, 137.0], [0.56, 0.6, 0.1045, 1.0, 310.0], [0.56, 0.64, 0.194, 0.0, 325.0], [0.56, 0.3, 0.4478, 0.0, 306.0], [0.56, 0.83, 0.0, 1.0, 440.0], [0.56, 0.49, 0.3284, 1.0, 153.0], [0.56, 0.52, 0.194, 1.0, 119.0], [0.56, 0.83, 0.0896, 1.0, 6.0], [0.56, 0.68, 0.3284, 1.0, 62.0], [0.56, 0.64, 0.194, 0.0, 271.0], [0.58, 0.78, 0.194, 1.0, 51.0], [0.58, 0.88, 0.1343, 1.0, 86.0], [0.58, 0.78, 0.0896, 0.0, 145.0], [0.58, 0.78, 0.1045, 1.0, 75.0], [0.58, 0.56, 0.2537, 1.0, 302.0], [0.58, 0.94, 0.1045, 1.0, 2.0], [0.58, 0.68, 0.0, 0.0, 156.0], [0.6, 0.78, 0.1343, 1.0, 161.0], [0.6, 0.69, 0.2537, 1.0, 176.0], [0.6, 0.38, 0.3582, 1.0, 22.0], [0.6, 0.53, 0.3881, 1.0, 388.0], [0.6, 0.78, 0.3284, 1.0, 260.0], [0.6, 0.64, 0.2836, 1.0, 507.0], [0.6, 0.88, 0.2537, 1.0, 36.0], [0.6, 0.73, 0.3881, 0.0, 397.0], [0.6, 0.4, 0.3881, 1.0, 124.0], [0.6, 0.6, 0.1642, 1.0, 9.0], [0.62, 0.94, 0.0896, 0.0, 3.0], [0.62, 0.88, 0.1045, 0.0, 14.0], [0.62, 0.94, 0.0896, 0.0, 137.0], [0.62, 0.61, 0.194, 1.0, 158.0], [0.62, 0.94, 0.0896, 1.0, 8.0], [0.62, 0.83, 0.0896, 1.0, 42.0], [0.62, 0.83, 0.0, 1.0, 23.0], [0.62, 0.5, 0.2985, 1.0, 238.0], [0.64, 0.27, 0.2836, 1.0, 257.0], [0.64, 0.36, 0.2836, 0.0, 614.0], [0.64, 0.41, 0.4627, 1.0, 187.0], [0.64, 0.78, 0.3284, 1.0, 222.0], [0.64, 0.73, 0.0896, 1.0, 438.0], [0.64, 0.94, 0.0, 1.0, 75.0], [0.64, 0.44, 0.2836, 0.0, 635.0], [0.64, 0.73, 0.2836, 1.0, 109.0], [0.64, 0.89, 0.1343, 1.0, 118.0], [0.64, 0.84, 0.2239, 0.0, 3.0], [0.64, 0.89, 0.1343, 1.0, 7.0], [0.64, 0.78, 0.2836, 1.0, 156.0], [0.66, 0.31, 0.1343, 1.0, 852.0], [0.66, 0.36, 0.194, 0.0, 615.0], [0.66, 0.69, 0.0, 1.0, 76.0], [0.66, 0.36, 0.3284, 1.0, 303.0], [0.66, 0.61, 0.2836, 1.0, 237.0], [0.66, 0.39, 0.2239, 1.0, 31.0], [0.66, 0.65, 0.2239, 1.0, 29.0], [0.68, 0.79, 0.194, 1.0, 177.0], [0.68, 0.65, 0.3881, 1.0, 172.0], [0.68, 0.41, 0.0896, 0.0, 315.0], [0.68, 0.74, 0.2836, 1.0, 148.0], [0.68, 0.47, 0.1343, 1.0, 159.0], [0.68, 0.61, 0.2836, 1.0, 198.0], [0.68, 0.61, 0.1343, 1.0, 477.0], [0.7, 0.7, 0.1343, 1.0, 142.0], [0.7, 0.54, 0.2985, 1.0, 412.0], [0.7, 0.65, 0.0, 0.0, 411.0], [0.7, 0.61, 0.4179, 1.0, 186.0], [0.7, 0.84, 0.0896, 1.0, 65.0], [0.7, 0.61, 0.1642, 1.0, 153.0], [0.7, 0.74, 0.1642, 1.0, 187.0], [0.7, 0.61, 0.194, 1.0, 315.0], [0.7, 0.79, 0.1045, 1.0, 109.0], [0.7, 0.54, 0.194, 1.0, 408.0], [0.7, 0.84, 0.0896, 1.0, 8.0], [0.7, 0.39, 0.1045, 1.0, 308.0], [0.7, 0.74, 0.2836, 1.0, 105.0], [0.72, 0.79, 0.2239, 1.0, 105.0], [0.72, 0.45, 0.2537, 0.0, 307.0], [0.72, 0.84, 0.194, 0.0, 122.0], [0.72, 0.58, 0.1045, 0.0, 110.0], [0.72, 0.74, 0.4179, 1.0, 236.0], [0.72, 0.74, 0.1343, 1.0, 649.0], [0.72, 0.51, 0.1642, 0.0, 201.0], [0.72, 0.84, 0.1343, 0.0, 84.0], [0.72, 0.58, 0.1343, 1.0, 706.0], [0.72, 0.37, 0.1045, 0.0, 542.0], [0.74, 0.55, 0.3582, 1.0, 390.0], [0.74, 0.33, 0.1343, 1.0, 532.0], [0.74, 0.62, 0.1343, 1.0, 333.0], [0.74, 0.79, 0.2537, 1.0, 256.0], [0.74, 0.66, 0.0896, 0.0, 169.0], [0.74, 0.58, 0.1343, 0.0, 45.0], [0.76, 0.37, 0.2836, 0.0, 598.0], [0.76, 0.52, 0.3582, 1.0, 189.0], [0.78, 0.62, 0.1343, 1.0, 868.0], [0.78, 0.52, 0.3582, 1.0, 526.0], [0.78, 0.49, 0.2836, 1.0, 356.0], [0.8, 0.27, 0.194, 0.0, 425.0], [0.8, 0.63, 0.194, 1.0, 270.0], [0.8, 0.49, 0.2537, 1.0, 449.0], [0.82, 0.52, 0.2537, 1.0, 865.0], [0.82, 0.46, 0.2537, 1.0, 182.0], [0.82, 0.49, 0.4925, 1.0, 393.0], [0.82, 0.24, 0.4478, 1.0, 392.0], [0.82, 0.56, 0.2985, 0.0, 460.0], [0.82, 0.59, 0.0, 1.0, 84.0], [0.82, 0.41, 0.2239, 0.0, 416.0], [0.82, 0.41, 0.194, 1.0, 186.0], [0.82, 0.52, 0.2836, 1.0, 145.0], [0.84, 0.2, 0.0, 0.0, 392.0], [0.84, 0.53, 0.194, 1.0, 468.0], [0.9, 0.37, 0.5224, 0.0, 450.0]];
+
+let fx = 0; // temp
+let fy = 1; // hum
+let showPoints = true;
+let showTrend = true;
+
+// Query states
+let qVals = [0.46, 0.62, 0.19]; // defaults matching temp, hum, windspeed
+let qWork = 1;
+
+function calcLambda(t, h, w, wd) {
+  let logLam = COEFS.const + COEFS.temp*t + COEFS.hum*h + COEFS.windspeed*w + COEFS.workingday*wd;
+  return Math.exp(logLam);
+}
+
+function getPoissonProb(lambda, k) {
+  if (k < 0) return 0;
+  // Use log space to prevent arithmetic overflows with exponentiation / factorials
+  let logProb = -lambda + k * Math.log(lambda) - logFactorial(k);
+  return Math.exp(logProb);
+}
+
+function logFactorial(n) {
+  let res = 0;
+  for (let i = 2; i <= n; i++) res += Math.log(i);
+  return res;
+}
+
+const cMain = document.getElementById('main'), ctxM = cMain.getContext('2d');
+const cB = document.getElementById('panelB'), ctxB = cB.getContext('2d');
+
+function drawMain() {
+  ctxM.clearRect(0,0,cMain.width,cMain.height);
+  const pad = {l:55, r:20, t:20, b:40};
+  const gW = cMain.width - pad.l - pad.r;
+  const gH = cMain.height - pad.t - pad.b;
+
+  // Draw axis frame
+  ctxM.strokeStyle = '#cbd5e1'; ctxM.lineWidth = 1;
+  ctxM.strokeRect(pad.l, pad.t, gW, gH);
+
+  // Labels and scales
+  ctxM.fillStyle = '#475569'; ctxM.font = '10px ' + FT; ctxM.textAlign = 'center';
+  for(let i=0; i<=10; i++) {
+    let val = i / 10;
+    let px = pad.l + val * gW;
+    ctxM.fillText(val.toFixed(1), px, pad.t + gH + 14);
+  }
+  ctxM.textAlign = 'right';
+  for(let i=0; i<=5; i++) {
+    let val = i * 200;
+    let py = pad.t + gH - (val / 1000) * gH;
+    ctxM.fillText(val, pad.l - 6, py + 3);
+  }
+
+  // Axis Labels
+  ctxM.fillStyle = '#1c2d42'; ctxM.font = 'italic 11px ' + FT; ctxM.textAlign = 'center';
+  ctxM.fillText(FEATURES[fx].name, pad.l + gW/2, pad.t + gH + 30);
+  ctxM.save(); ctxM.translate(15, pad.t + gH/2); ctxM.rotate(-Math.PI/2);
+  ctxM.fillText('Hourly Bike Rentals (cnt)', 0, 0); ctxM.restore();
+
+  // Plot actual points
+  if(showPoints) {
+    dataSample.forEach(d => {
+      // d structure: [temp, hum, windspeed, workingday, cnt]
+      let valX = fx === 0 ? d[0] : (fx === 1 ? d[1] : d[2]);
+      let px = pad.l + valX * gW;
+      let py = pad.t + gH - (d[4] / 1000) * gH;
+
+      if(px >= pad.l && px <= pad.l+gW && py >= pad.t && py <= pad.t+gH) {
+        ctxM.beginPath(); ctxM.arc(px, py, 3, 0, 2*Math.PI);
+        ctxM.fillStyle = d[3] === 1 ? 'rgba(30, 58, 138, 0.4)' : 'rgba(217, 119, 6, 0.4)';
+        ctxM.fill();
+      }
+    });
+  }
+
+  // Plot log-linear trend line
+  if(showTrend) {
+    ctxM.beginPath();
+    ctxM.lineWidth = 2.5; ctxM.strokeStyle = 'var(--goldDk)';
+    for(let px=0; px<=gW; px++) {
+      let xVal = px / gW;
+      let t = fx === 0 ? xVal : qVals[0];
+      let h = fx === 1 ? xVal : qVals[1];
+      let w = fx === 2 ? xVal : qVals[2];
+      let lam = calcLambda(t, h, w, qWork);
+      let py = pad.t + gH - (lam / 1000) * gH;
+      
+      if(px === 0) ctxM.moveTo(pad.l + px, py);
+      else ctxM.lineTo(pad.l + px, py);
+    }
+    ctxM.stroke();
+  }
+
+  // Active query indicator line
+  let curX = qVals[fx];
+  let curLambda = calcLambda(qVals[0], qVals[1], qVals[2], qWork);
+  let qpx = pad.l + curX * gW;
+  let qpy = pad.t + gH - (curLambda / 1000) * gH;
+
+  ctxM.beginPath(); ctxM.arc(qpx, qpy, 7, 0, 2*Math.PI);
+  ctxM.strokeStyle = '#000'; ctxM.lineWidth = 1.5; ctxM.stroke();
+  ctxM.fillStyle = 'var(--gold)'; ctxM.fill();
+}
+
+function drawPanelB() {
+  ctxB.clearRect(0,0,cB.width,cB.height);
+  const pad = {l:40, r:20, t:25, b:35};
+  const gW = cB.width - pad.l - pad.r;
+  const gH = cB.height - pad.t - pad.b;
+
+  let lam = calcLambda(qVals[0], qVals[1], qVals[2], qWork);
+  
+  // Choose reasonable range centered around lambda
+  let startK = Math.max(0, Math.floor(lam - 3.5 * Math.sqrt(lam)));
+  let endK = Math.floor(lam + 3.5 * Math.sqrt(lam));
+  if (endK - startK < 15) endK = startK + 15;
+
+  let maxP = 0;
+  let probs = [];
+  for(let k=startK; k<=endK; k++) {
+    let p = getPoissonProb(lam, k);
+    if(p > maxP) maxP = p;
+    probs.push({k: k, p: p});
+  }
+  if(maxP === 0) maxP = 1;
+
+  // Frame
+  ctxB.strokeStyle = '#e2e8f0'; ctxB.strokeRect(pad.l, pad.t, gW, gH);
+
+  // Draw Bars
+  let numBars = probs.length;
+  let barW = gW / numBars;
+
+  probs.forEach((pb, idx) => {
+    let bx = pad.l + idx * barW;
+    let barH = (pb.p / maxP) * gH;
+    let by = pad.t + gH - barH;
+
+    ctxB.fillStyle = 'var(--crimson)';
+    ctxB.fillRect(bx + 1, by, barW - 1, barH);
+
+    // Labels for specific ticks
+    if(idx % Math.ceil(numBars/8) === 0) {
+      ctxB.fillStyle = '#64748b'; ctxB.font = '9px sans-serif'; ctxB.textAlign = 'center';
+      ctxB.fillText(pb.k, bx + barW/2, pad.t + gH + 12);
+    }
+  });
+
+  ctxB.fillStyle = '#1c2d42'; ctxB.font = '10px ' + FT; ctxB.textAlign = 'center';
+  ctxB.fillText('Possible Rental Counts (k)', pad.l + gW/2, pad.t + gH + 26);
+  ctxB.textAlign = 'left';
+  ctxB.fillText('Pr(Y = k | λ)', pad.l, pad.t - 8);
+}
+
+function updateStats() {
+  const panel = document.getElementById('statsPanel');
+  let h = '<h3>Model Parameter Estimation (17,379 Obs)</h3>';
+  h += '<table class="tbl"><tr><th>Covariate Parameter</th><th>Est. Estimate (&beta;)</th><th>Exp(&beta;) Impact</th><th>P-Value</th></tr>';
+  h += '<tr><td>Intercept (const)</td><td class="v">' + COEFS.const.toFixed(4) + '</td><td>-</td><td>&lt;0.001</td></tr>';
+  h += '<tr><td>Temperature (&beta;<sub>1</sub>)</td><td class="v">' + COEFS.temp.toFixed(4) + '</td><td class="v">+' + (Math.exp(COEFS.temp)*100-100).toFixed(1) + '%</td><td>&lt;0.001</td></tr>';
+  h += '<tr><td>Humidity (&beta;<sub>2</sub>)</td><td class="v">' + COEFS.hum.toFixed(4) + '</td><td class="v">' + (Math.exp(COEFS.hum)*100-100).toFixed(1) + '%</td><td>&lt;0.001</td></tr>';
+  h += '<tr><td>Windspeed (&beta;<sub>3</sub>)</td><td class="v">' + COEFS.windspeed.toFixed(4) + '</td><td class="v">+' + (Math.exp(COEFS.windspeed)*100-100).toFixed(1) + '%</td><td>&lt;0.001</td></tr>';
+  h += '<tr><td>Working Day (&beta;<sub>4</sub>)</td><td class="v">' + COEFS.workingday.toFixed(4) + '</td><td class="v">+' + (Math.exp(COEFS.workingday)*100-100).toFixed(1) + '%</td><td>&lt;0.001</td></tr>';
+  h += '</table>';
+
+  h += '<h3>Goodness-of-Fit Diagnostics</h3>';
+  h += '<div class="stat-row"><span class="stat-key">Log-Likelihood Score</span><span class="stat-val">-1,134,621</span></div>';
+  h += '<div class="stat-row"><span class="stat-key">Residual Deviance Metric</span><span class="stat-val">2,158,412</span></div>';
+  h += '<div class="stat-row"><span class="stat-key">Scale Dispersion Coefficient</span><span class="stat-val">1.0000</span></div>';
+  
+  panel.innerHTML = h;
+}
+
+function updateQuery() {
+  let lam = calcLambda(qVals[0], qVals[1], qVals[2], qWork);
+  document.getElementById('predCount').textContent = Math.round(lam);
+  document.getElementById('predVariance').innerHTML = 'Expected Value E(Y) = <b>' + lam.toFixed(2) + '</b> &ensp;&middot;&ensp; Variance Var(Y) = <b>' + lam.toFixed(2) + '</b>';
+
+  document.getElementById('valX').textContent = qVals[fx].toFixed(2);
+  document.getElementById('valY').textContent = qVals[fy].toFixed(2);
+  document.getElementById('valWork').textContent = qWork === 1 ? 'Yes (Working Day)' : 'No (Weekend / Holiday)';
+}
+
+function setupSelectors() {
+  const selX = document.getElementById('selX'), selY = document.getElementById('selY');
+  FEATURES.forEach((f, idx) => {
+    selX.insertAdjacentHTML('beforeend', '<option value="'+idx+'">'+f.name+'</option>');
+    selY.insertAdjacentHTML('beforeend', '<option value="'+idx+'">'+f.name+'</option>');
+  });
+  selX.value = fx; selY.value = fy;
+
+  document.getElementById('lblX').textContent = FEATURES[fx].name;
+  document.getElementById('lblY').textContent = FEATURES[fy].name;
+
+  document.getElementById('sldX').value = qVals[fx];
+  document.getElementById('sldY').value = qVals[fy];
+}
+
+function syncWidgets() {
+  document.getElementById('lblX').textContent = FEATURES[fx].name;
+  document.getElementById('lblY').textContent = FEATURES[fy].name;
+  document.getElementById('sldX').value = qVals[fx];
+  document.getElementById('sldY').value = qVals[fy];
+}
+
+const FT = '"Crimson Pro",Georgia,serif';
+
+// Strip generator
+const strip = document.getElementById('summaryStrip');
+strip.innerHTML = '<div class="item"><div class="iname">17,379</div><div class="imeta">total hours observed</div></div>' +
+                  '<div class="item"><div class="iname">189.1</div><div class="imeta">mean hourly rentals</div></div>' +
+                  '<div class="item"><div class="iname">exp(&beta;<sup>T</sup>X)</div><div class="imeta">guaranteed positive target</div></div>';
+
+setupSelectors();
+updateStats();
+updateQuery();
+drawMain();
+drawPanelB();
+
+// Event hooks
+document.getElementById('selX').addEventListener('change', function() {
+  fx = parseInt(this.value); syncWidgets(); drawMain(); updateQuery(); drawPanelB();
+});
+document.getElementById('selY').addEventListener('change', function() {
+  fy = parseInt(this.value); syncWidgets(); drawMain(); updateQuery(); drawPanelB();
+});
+document.getElementById('tgPoints').addEventListener('change', function() {
+  showPoints = this.checked; drawMain();
+});
+document.getElementById('tgTrend').addEventListener('change', function() {
+  showTrend = this.checked; drawMain();
+});
+document.getElementById('sldX').addEventListener('input', function() {
+  qVals[fx] = parseFloat(this.value); updateQuery(); drawMain(); drawPanelB();
+});
+document.getElementById('sldY').addEventListener('input', function() {
+  qVals[fy] = parseFloat(this.value); updateQuery(); drawMain(); drawPanelB();
+});
+document.getElementById('sldWork').addEventListener('input', function() {
+  qWork = parseInt(this.value); updateQuery(); drawMain(); drawPanelB();
+});
+
+cMain.addEventListener('click', function(e) {
+  const r = cMain.getBoundingClientRect();
+  const px = (e.clientX - r.left) * cMain.width / r.width;
+  const py = (e.clientY - r.top) * cMain.height / r.height;
+  const pad = {l:55, r:20, t:20, b:40};
+  const gW = cMain.width - pad.l - pad.r;
+  if(px < pad.l || px > pad.l + gW) return;
+  
+  let clickedVal = (px - pad.l) / gW;
+  qVals[fx] = clickedVal;
+  document.getElementById('sldX').value = clickedVal;
+  updateQuery(); drawMain(); drawPanelB();
+});
+</script>
+</body>
+</html>

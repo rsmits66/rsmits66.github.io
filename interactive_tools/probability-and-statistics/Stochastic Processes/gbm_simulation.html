@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometric Brownian Motion Simulator</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@700;900&display=swap');
+
+  :root {
+    --cream: #FAF7F0;
+    --cream-dark: #F0EBE0;
+    --navy: #1B2A4A;
+    --navy-light: #2C4170;
+    --gold: #C49B2C;
+    --gold-light: #D4AF37;
+    --crimson: #9E1B32;
+    --crimson-light: #C43149;
+    --gray-path: rgba(27, 42, 74, 0.18);
+    --highlight-path: #9E1B32;
+    --mean-path: #C49B2C;
+    --grid-line: rgba(27, 42, 74, 0.08);
+    --text-secondary: #5A6B8A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--cream);
+    color: var(--navy);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 2px solid var(--navy);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 2.2rem;
+    letter-spacing: 0.02em;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  .sde-box {
+    background: var(--navy);
+    color: var(--cream);
+    border-radius: 6px;
+    padding: 1.2rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(27, 42, 74, 0.2);
+  }
+
+  .sde-box .sde-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-light);
+    font-weight: 600;
+  }
+
+  .sde-box .katex { font-size: 1.35rem; }
+
+  .sde-box .solution-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(250, 247, 240, 0.5);
+    font-weight: 600;
+  }
+
+  .sde-box .katex-solution { font-size: 1.1rem; }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .controls-panel {
+    background: white;
+    border: 1px solid var(--cream-dark);
+    border-radius: 6px;
+    padding: 1.2rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+
+  .controls-panel h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--cream-dark);
+    color: var(--navy);
+  }
+
+  .control-group {
+    margin-bottom: 1rem;
+  }
+
+  .control-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+  }
+
+  .control-group label .val {
+    font-weight: 600;
+    color: var(--navy);
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .control-group .katex { font-size: 0.95rem; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 5px;
+    background: var(--cream-dark);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--navy);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--navy-light);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.2rem;
+  }
+
+  button {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 1;
+  }
+
+  .btn-primary {
+    background: var(--crimson);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--crimson-light); }
+
+  .btn-secondary {
+    background: var(--cream-dark);
+    color: var(--navy);
+    border: 1px solid rgba(27, 42, 74, 0.15);
+  }
+  .btn-secondary:hover { background: #e8e3d8; }
+
+  .legend {
+    margin-top: 1.2rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--cream-dark);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .legend-swatch {
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .chart-area {
+    background: white;
+    border: 1px solid var(--cream-dark);
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    cursor: crosshair;
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1.2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border: 1px solid var(--cream-dark);
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+
+  .stat-card .stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-card .stat-value {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  .stat-card .stat-note {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.15rem;
+  }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  @media (max-width: 800px) {
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+    .stats-bar {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .sde-box {
+      flex-direction: column;
+      gap: 0.8rem;
+      text-align: center;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Geometric Brownian Motion</h1>
+    <div class="subtitle">Simulation of sample paths via exact discretization</div>
+  </header>
+
+  <div class="sde-box">
+    <div>
+      <div class="sde-label">SDE</div>
+      <div id="sde-formula"></div>
+    </div>
+    <div>
+      <div class="solution-label">Exact Solution</div>
+      <div id="sde-solution"></div>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="controls-panel">
+      <h2>Parameters</h2>
+
+      <div class="control-group">
+        <label>
+          <span id="lambda-label"></span>
+          <span class="val" id="lambda-val">1.00</span>
+        </label>
+        <input type="range" id="lambda-slider" min="-2" max="4" step="0.1" value="1">
+      </div>
+
+      <div class="control-group">
+        <label>
+          <span id="sigma-label"></span>
+          <span class="val" id="sigma-val">1.00</span>
+        </label>
+        <input type="range" id="sigma-slider" min="0.1" max="3" step="0.1" value="1">
+      </div>
+
+      <div class="control-group">
+        <label>
+          <span id="x0-label"></span>
+          <span class="val" id="x0-val">1.00</span>
+        </label>
+        <input type="range" id="x0-slider" min="0.1" max="5" step="0.1" value="1">
+      </div>
+
+      <div class="control-group">
+        <label>
+          <span>Realizations</span>
+          <span class="val" id="paths-val">21</span>
+        </label>
+        <input type="range" id="paths-slider" min="1" max="100" step="1" value="21">
+      </div>
+
+      <div class="control-group">
+        <label>
+          <span>Steps <i>N</i> (fine grid)</span>
+          <span class="val" id="steps-val">1000</span>
+        </label>
+        <input type="range" id="steps-slider" min="100" max="5000" step="100" value="1000">
+      </div>
+
+      <div class="control-group">
+        <label>
+          <span>EM Steps <i>M</i></span>
+          <span class="val" id="em-steps-val">20</span>
+        </label>
+        <input type="range" id="em-steps-slider" min="4" max="200" step="1" value="20">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-simulate">Simulate</button>
+        <button class="btn-secondary" id="btn-clear">Clear</button>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: #1A5FAF; height: 2.5px;"></div>
+          <span>Exact solution (shared <i>W<sub>t</sub></i>)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: #5DADE2; height: 2.5px; border-top: 1.5px dashed #5DADE2;"></div>
+          <span>Euler–Maruyama (<i>M</i> steps)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: #9E1B32; height: 2.5px;"></div>
+          <span>Highlighted sample path</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: #C49B2C; height: 2.5px; border-top: 1.5px dashed #C49B2C;"></div>
+          <span id="mean-legend-text"></span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background: rgba(27,42,74,0.18);"></div>
+          <span>Other realizations</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <canvas id="canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Theoretical Mean</div>
+      <div class="stat-value" id="stat-theory-mean">—</div>
+      <div class="stat-note" id="stat-theory-note"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Exact Solution at <i>T</i></div>
+      <div class="stat-value" id="stat-exact-final">—</div>
+      <div class="stat-note">closed-form, fine grid</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Euler–Maruyama at <i>T</i></div>
+      <div class="stat-value" id="stat-em-final">—</div>
+      <div class="stat-note" id="stat-em-note">M-step approximation</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">|Exact − EM| Error</div>
+      <div class="stat-value" id="stat-error">—</div>
+      <div class="stat-note">absolute terminal error</div>
+    </div>
+  </div>
+
+  <div class="footer-note" id="footer-note"></div>
+</div>
+
+<script>
+// ── KaTeX Rendering ──
+function renderKaTeX() {
+  katex.render(String.raw`dX_t = \lambda\, X_t\, dt + \sigma\, X_t\, dW_t`, document.getElementById('sde-formula'), { displayMode: false });
+  katex.render(String.raw`X_t = X_0 \exp\!\Big[\Big(\lambda - \tfrac{\sigma^2}{2}\Big)t + \sigma\, W_t\Big]`, document.getElementById('sde-solution'), { displayMode: false });
+  katex.render(String.raw`\lambda`, document.getElementById('lambda-label'), { displayMode: false });
+  katex.render(String.raw`\sigma`, document.getElementById('sigma-label'), { displayMode: false });
+  katex.render(String.raw`X_0`, document.getElementById('x0-label'), { displayMode: false });
+
+  document.getElementById('mean-legend-text').innerHTML = '';
+  katex.render(String.raw`\mathbb{E}[X_t] = X_0 e^{\lambda t}`, document.getElementById('mean-legend-text'), { displayMode: false });
+
+  katex.render(String.raw`X_0 e^{\lambda}`, document.getElementById('stat-theory-note'), { displayMode: false });
+
+  katex.render(String.raw`\text{Exact: } X_t = X_0 e^{(\lambda - \sigma^2/2)t + \sigma W_t} \qquad \text{EM: } \hat X_{k+1} = \hat X_k + \lambda\,\hat X_k\,\Delta t + \sigma\,\hat X_k\,\Delta W_k`, document.getElementById('footer-note'), { displayMode: false });
+}
+
+// ── Simulation ──
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let paths = [];
+let exactPath = null;
+let emPath = null;
+let animFrame = null;
+
+function getParams() {
+  return {
+    lambda: parseFloat(document.getElementById('lambda-slider').value),
+    sigma: parseFloat(document.getElementById('sigma-slider').value),
+    x0: parseFloat(document.getElementById('x0-slider').value),
+    numPaths: parseInt(document.getElementById('paths-slider').value),
+    N: parseInt(document.getElementById('steps-slider').value),
+    M: parseInt(document.getElementById('em-steps-slider').value)
+  };
+}
+
+function boxMullerRandom() {
+  let u1, u2;
+  do { u1 = Math.random(); } while (u1 === 0);
+  u2 = Math.random();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+function simulate() {
+  const { lambda, sigma, x0, numPaths, N, M } = getParams();
+  const dt = 1 / N;
+  const drift = (lambda - 0.5 * sigma * sigma) * dt;
+  const vol = sigma * Math.sqrt(dt);
+
+  // Generate ensemble paths (using exact discretization)
+  paths = [];
+  for (let j = 0; j < numPaths; j++) {
+    const path = new Float64Array(N);
+    path[0] = x0;
+    for (let i = 1; i < N; i++) {
+      path[i] = path[i - 1] * Math.exp(drift + vol * boxMullerRandom());
+    }
+    paths.push(path);
+  }
+
+  // ── Shared Brownian motion for Exact vs EM comparison ──
+  // Generate N fine-grid increments dW_i = sqrt(dt) * Z_i
+  const dW = new Float64Array(N);
+  for (let i = 1; i < N; i++) {
+    dW[i] = Math.sqrt(dt) * boxMullerRandom();
+  }
+
+  // Exact solution: X_t = X_0 exp((λ - σ²/2)t + σ W_t)
+  exactPath = new Float64Array(N);
+  let cumW = 0;
+  exactPath[0] = x0;
+  for (let i = 1; i < N; i++) {
+    cumW += dW[i];
+    const t = i * dt;
+    exactPath[i] = x0 * Math.exp((lambda - 0.5 * sigma * sigma) * t + sigma * cumW);
+  }
+
+  // Euler–Maruyama on coarse grid of M steps, same BM
+  const dtEM = 1 / M;
+  const finePerCoarse = Math.floor(N / M);
+  const emCoarse = new Float64Array(M + 1);
+  emCoarse[0] = x0;
+
+  for (let k = 0; k < M; k++) {
+    // Accumulate fine dW increments into one coarse ΔW_k
+    let deltaW = 0;
+    const iStart = k * finePerCoarse + 1;
+    const iEnd = (k + 1) * finePerCoarse;
+    for (let i = iStart; i <= iEnd && i < N; i++) {
+      deltaW += dW[i];
+    }
+    // EM step: X_{k+1} = X_k + λ X_k Δt + σ X_k ΔW_k
+    emCoarse[k + 1] = emCoarse[k] + lambda * emCoarse[k] * dtEM + sigma * emCoarse[k] * deltaW;
+  }
+
+  // Interpolate EM to fine grid (piecewise linear)
+  emPath = new Float64Array(N);
+  for (let i = 0; i < N; i++) {
+    const tFine = i / (N - 1);
+    const kFloat = tFine * M;
+    const kLo = Math.min(Math.floor(kFloat), M - 1);
+    const kHi = kLo + 1;
+    const alpha = kFloat - kLo;
+    emPath[i] = (1 - alpha) * emCoarse[kLo] + alpha * emCoarse[Math.min(kHi, M)];
+  }
+
+  updateStats();
+  drawAnimated();
+}
+
+// ── Drawing ──
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = rect.width;
+  const h = Math.min(w * 0.55, 520);
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w, h };
+}
+
+function draw(progress) {
+  if (paths.length === 0) return;
+
+  const { w, h } = resizeCanvas();
+  const { lambda, sigma, x0, N } = getParams();
+
+  const pad = { top: 30, right: 30, bottom: 40, left: 60 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  // Determine y range
+  let yMin = Infinity, yMax = -Infinity;
+  const visibleN = Math.floor(paths[0].length * progress);
+  for (const p of paths) {
+    for (let i = 0; i < visibleN; i++) {
+      if (p[i] < yMin) yMin = p[i];
+      if (p[i] > yMax) yMax = p[i];
+    }
+  }
+  // Include exact and EM paths
+  if (exactPath) {
+    for (let i = 0; i < visibleN; i++) {
+      if (exactPath[i] < yMin) yMin = exactPath[i];
+      if (exactPath[i] > yMax) yMax = exactPath[i];
+    }
+  }
+  if (emPath) {
+    for (let i = 0; i < visibleN; i++) {
+      if (emPath[i] < yMin) yMin = emPath[i];
+      if (emPath[i] > yMax) yMax = emPath[i];
+    }
+  }
+  // Also include the mean curve
+  for (let i = 0; i < visibleN; i++) {
+    const t = i / (N - 1);
+    const meanVal = x0 * Math.exp(lambda * t);
+    if (meanVal < yMin) yMin = meanVal;
+    if (meanVal > yMax) yMax = meanVal;
+  }
+
+  const yPad = (yMax - yMin) * 0.1 || 0.5;
+  yMin = Math.max(0, yMin - yPad);
+  yMax = yMax + yPad;
+
+  function toX(i) { return pad.left + (i / (paths[0].length - 1)) * plotW; }
+  function toY(v) { return pad.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH; }
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(27, 42, 74, 0.08)';
+  ctx.lineWidth = 1;
+  const numYTicks = 6;
+  for (let k = 0; k <= numYTicks; k++) {
+    const v = yMin + (yMax - yMin) * k / numYTicks;
+    const y = toY(v);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+
+    ctx.fillStyle = '#5A6B8A';
+    ctx.font = '11px "Crimson Pro", Georgia, serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(v.toFixed(v >= 10 ? 1 : 2), pad.left - 8, y);
+  }
+
+  // x-axis ticks
+  for (let k = 0; k <= 5; k++) {
+    const tVal = k / 5;
+    const x = pad.left + tVal * plotW;
+    ctx.beginPath();
+    ctx.moveTo(x, pad.top);
+    ctx.lineTo(x, pad.top + plotH);
+    ctx.stroke();
+
+    ctx.fillStyle = '#5A6B8A';
+    ctx.font = '11px "Crimson Pro", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(tVal.toFixed(1), x, pad.top + plotH + 6);
+  }
+
+  // Axis labels
+  ctx.fillStyle = var_navy();
+  ctx.font = 'italic 13px "Crimson Pro", Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('t', pad.left + plotW / 2, h - 5);
+
+  ctx.save();
+  ctx.translate(14, pad.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Xₜ', 0, 0);
+  ctx.restore();
+
+  // Draw ensemble paths (gray)
+  ctx.lineWidth = 1;
+  for (let j = 0; j < paths.length - 1; j++) {
+    ctx.strokeStyle = 'rgba(27, 42, 74, 0.15)';
+    ctx.beginPath();
+    const step = Math.max(1, Math.floor(paths[j].length / plotW));
+    for (let i = 0; i < visibleN; i += step) {
+      const x = toX(i), y = toY(paths[j][i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // Draw mean curve E[X_t] = x0 * exp(lambda * t)
+  ctx.strokeStyle = '#C49B2C';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  for (let i = 0; i < visibleN; i += Math.max(1, Math.floor(N / plotW))) {
+    const t = i / (N - 1);
+    const meanVal = x0 * Math.exp(lambda * t);
+    const x = toX(i), y = toY(meanVal);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Draw highlighted path (last ensemble path, in crimson)
+  if (paths.length > 0) {
+    const hlPath = paths[paths.length - 1];
+    ctx.strokeStyle = '#9E1B32';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const step = Math.max(1, Math.floor(hlPath.length / plotW));
+    for (let i = 0; i < visibleN; i += step) {
+      const x = toX(i), y = toY(hlPath[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // Draw exact solution (dark blue, solid, thick)
+  if (exactPath) {
+    ctx.strokeStyle = '#1A5FAF';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    const step = Math.max(1, Math.floor(exactPath.length / plotW));
+    for (let i = 0; i < visibleN; i += step) {
+      const x = toX(i), y = toY(exactPath[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // Draw Euler–Maruyama approximation (light blue, dashed)
+  if (emPath) {
+    ctx.strokeStyle = '#5DADE2';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([8, 5]);
+    ctx.beginPath();
+    const step = Math.max(1, Math.floor(emPath.length / plotW));
+    for (let i = 0; i < visibleN; i += step) {
+      const x = toX(i), y = toY(emPath[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Axes
+  ctx.strokeStyle = var_navy();
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + plotH);
+  ctx.lineTo(w - pad.right, pad.top + plotH);
+  ctx.stroke();
+}
+
+function var_navy() { return '#1B2A4A'; }
+
+function drawAnimated() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  const duration = 800;
+  const start = performance.now();
+  function step(ts) {
+    const progress = Math.min(1, (ts - start) / duration);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    draw(ease);
+    if (progress < 1) animFrame = requestAnimationFrame(step);
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+function updateStats() {
+  if (paths.length === 0) return;
+  const { lambda, x0, M } = getParams();
+  const theoryMean = x0 * Math.exp(lambda);
+
+  document.getElementById('stat-theory-mean').textContent = theoryMean.toFixed(3);
+
+  if (exactPath) {
+    const exactFinal = exactPath[exactPath.length - 1];
+    document.getElementById('stat-exact-final').textContent = exactFinal.toFixed(4);
+  }
+  if (emPath) {
+    const emFinal = emPath[emPath.length - 1];
+    document.getElementById('stat-em-final').textContent = emFinal.toFixed(4);
+    document.getElementById('stat-em-note').textContent = M + '-step approximation';
+  }
+  if (exactPath && emPath) {
+    const err = Math.abs(exactPath[exactPath.length - 1] - emPath[emPath.length - 1]);
+    document.getElementById('stat-error').textContent = err.toFixed(6);
+  }
+}
+
+// ── Event Listeners ──
+const sliders = ['lambda', 'sigma', 'x0', 'paths', 'steps', 'em-steps'];
+const valIds = ['lambda-val', 'sigma-val', 'x0-val', 'paths-val', 'steps-val', 'em-steps-val'];
+
+sliders.forEach((name, idx) => {
+  const slider = document.getElementById(name + '-slider');
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    document.getElementById(valIds[idx]).textContent =
+      (name === 'paths' || name === 'steps' || name === 'em-steps') ? v.toString() : v.toFixed(2);
+  });
+});
+
+document.getElementById('btn-simulate').addEventListener('click', simulate);
+document.getElementById('btn-clear').addEventListener('click', () => {
+  paths = [];
+  exactPath = null;
+  emPath = null;
+  const { w, h } = resizeCanvas();
+  ctx.clearRect(0, 0, w, h);
+  ['stat-theory-mean', 'stat-exact-final', 'stat-em-final', 'stat-error'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+});
+
+window.addEventListener('resize', () => { if (paths.length) draw(1); });
+
+// ── Initialize ──
+renderKaTeX();
+resizeCanvas();
+simulate();
+</script>
+</body>
+</html>

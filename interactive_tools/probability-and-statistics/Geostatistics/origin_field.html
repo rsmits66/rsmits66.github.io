@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Variogram Behaviour Near the Origin — Random Field Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;
+    --crimson-deep: #7a1024;
+    --ochre: #b8923d;
+    --copper: #b54235;
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    font-feature-settings: "ss01", "ss02";
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+    line-height: 1.5;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.30;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    z-index: 0;
+  }
+  .container { max-width: 920px; margin: 0 auto; position: relative; z-index: 1; }
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 18px;
+    align-items: end;
+  }
+  .doc-id {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border-left: 1px solid var(--line);
+    padding: 6px 0 6px 6px;
+  }
+  h1 {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .meta strong { color: var(--ink); font-weight: 500; }
+
+  .mode-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 22px;
+    border: 1px solid var(--line-strong);
+  }
+  .mode-btn {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 14px 10px 12px;
+    background: var(--paper);
+    border: none;
+    border-right: 1px solid var(--line-strong);
+    cursor: pointer;
+    color: var(--ink);
+    text-transform: uppercase;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .mode-btn:last-child { border-right: none; }
+  .mode-btn .mb-num {
+    display: block;
+    color: var(--rust);
+    font-weight: 700;
+    font-size: 0.62rem;
+    margin-bottom: 4px;
+    letter-spacing: 0.1em;
+  }
+  .mode-btn .mb-label {
+    display: block;
+    font-weight: 600;
+  }
+  .mode-btn .mb-sub {
+    display: block;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 3px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .mode-btn:hover { background: var(--line); }
+  .mode-btn.active {
+    background: var(--rust);
+    color: #ffffff;
+  }
+  .mode-btn.active .mb-num { color: var(--ochre); }
+  .mode-btn.active .mb-sub { color: rgba(255,255,255,0.78); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    padding: 20px 18px;
+    border: 1px solid var(--line);
+    box-shadow: 4px 4px 0 var(--line);
+    position: relative;
+  }
+  .panel-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .panel h2 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+    line-height: 1.15;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .panel h2 em {
+    font-style: italic;
+    color: var(--rust);
+    font-variation-settings: "wght" 400;
+  }
+  .panel-caption {
+    font-style: italic;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+
+  .field-canvas-wrap {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  .field-canvas-wrap.mode-3d { cursor: grab; }
+  .field-canvas-wrap.mode-3d.dragging { cursor: grabbing; }
+  canvas.field, canvas.field-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  canvas.field-3d {
+    position: absolute;
+    inset: 0;
+    display: none;
+    image-rendering: auto;
+  }
+  .field-canvas-wrap.mode-3d canvas.field { display: none; }
+  .field-canvas-wrap.mode-3d canvas.field-3d { display: block; }
+  .view-toggle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 12px;
+    border: 1px solid var(--line-strong);
+  }
+  .view-toggle {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    padding: 8px 0;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--line-strong);
+    cursor: pointer;
+    color: var(--ink);
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  .view-toggle:last-child { border-right: none; }
+  .view-toggle:hover:not(.active) { background: var(--line); }
+  .view-toggle.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .view-toggle .vt-icon {
+    font-family: var(--mono);
+    margin-right: 4px;
+    color: var(--rust);
+    font-weight: 700;
+  }
+  .view-toggle.active .vt-icon { color: var(--ochre); }
+  .hint-3d {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--rust);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    min-height: 1em;
+  }
+  .colorbar-mini {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .colorbar-mini-grad {
+    height: 9px;
+    margin: 4px 0 3px;
+    background: linear-gradient(to right,
+      rgb(26, 58, 92),
+      rgb(123, 163, 196),
+      rgb(245, 239, 219),
+      rgb(200, 98, 62),
+      rgb(122, 16, 36));
+    border: 1px solid var(--line-strong);
+  }
+  .colorbar-mini-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 0.6rem;
+  }
+
+  .ctrl-group { margin-bottom: 14px; }
+  .ctrl-row {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .ctrl-row label {
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+  }
+  .ctrl-row .value {
+    font-family: var(--mono);
+    text-align: right;
+    color: var(--rust);
+    font-weight: 600;
+    font-size: 0.78rem;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    height: 2px;
+    background: var(--line-strong);
+    outline: none;
+    width: 100%;
+    margin-top: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    background: var(--rust);
+    cursor: pointer;
+    border-radius: 0;
+    border: 1px solid var(--ink);
+  }
+  input[type="range"]:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  button.go {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 10px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    transition: all 0.12s;
+    margin-top: 8px;
+  }
+  button.go:hover { background: var(--rust); border-color: var(--rust); }
+  button.go:disabled { opacity: 0.5; cursor: wait; }
+
+  .formula-box {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(158, 27, 50, 0.05);
+    border-left: 3px solid var(--rust);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .formula-box .formula-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .formula-box code {
+    font-family: var(--mono);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .vario-canvas-wrap {
+    aspect-ratio: 1.6;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  canvas.vario {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .vario-legend {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .vario-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .vario-swatch-line {
+    display: inline-block;
+    width: 18px;
+    height: 2px;
+    background: var(--rust);
+  }
+  .vario-swatch-dots {
+    display: inline-block;
+    width: 18px;
+    height: 8px;
+    background-image: radial-gradient(circle, var(--ink) 30%, transparent 30%);
+    background-size: 4px 4px;
+    background-repeat: repeat-x;
+    background-position: 0 50%;
+  }
+
+  .stats-grid {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+  }
+  .stat-cell { text-align: center; }
+  .stat-cell .k {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.58rem;
+  }
+  .stat-cell .v {
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .notes {
+    margin-top: 22px;
+    padding: 16px 18px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+  .notes h3 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 0.96rem;
+    margin-bottom: 8px;
+  }
+  .notes p {
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .notes p:last-child { margin-bottom: 0; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    background: rgba(158, 27, 50, 0.08);
+    padding: 1px 4px;
+    color: var(--crimson-deep);
+  }
+  footer {
+    margin-top: 26px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="doc-id">Origin Behaviour · Fig 3.3</div>
+    <div>
+      <h1>Variogram <em>Origin</em></h1>
+      <div class="subtitle">Continuity, regularity, and the nugget effect</div>
+    </div>
+    <div class="meta">
+      <strong>Fig 3.3</strong> a, b, c, d<br>
+      <strong>γ(h)</strong> as h→0<br>
+      <strong>method</strong> = spectral
+    </div>
+  </header>
+
+  <div class="mode-buttons" id="mode-buttons">
+    <button class="mode-btn active" data-mode="quadratic">
+      <span class="mb-num">A · 3.3a</span>
+      <span class="mb-label">Quadratic</span>
+      <span class="mb-sub">differentiable</span>
+    </button>
+    <button class="mode-btn" data-mode="linear">
+      <span class="mb-num">B · 3.3b</span>
+      <span class="mb-label">Linear</span>
+      <span class="mb-sub">continuous, rough</span>
+    </button>
+    <button class="mode-btn" data-mode="nugget">
+      <span class="mb-num">C · 3.3c</span>
+      <span class="mb-label">Nugget + structure</span>
+      <span class="mb-sub">discontinuous</span>
+    </button>
+    <button class="mode-btn" data-mode="pure-nugget">
+      <span class="mb-num">D · 3.3d</span>
+      <span class="mb-label">Pure nugget</span>
+      <span class="mb-sub">white noise</span>
+    </button>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-tag">Realization</div>
+      <h2 id="field-title">Quadratic — <em>highly continuous</em></h2>
+      <div class="panel-caption" id="field-caption">
+        Smooth, differentiable surface — every point gradually flows into its neighbors.
+      </div>
+      <div class="field-canvas-wrap" id="field-wrap">
+        <canvas class="field" id="canvas-field"></canvas>
+        <canvas class="field-3d" id="canvas-field-3d"></canvas>
+      </div>
+      <div class="view-toggle-row">
+        <button class="view-toggle active" data-view="2d"><span class="vt-icon">▦</span>2D heatmap</button>
+        <button class="view-toggle" data-view="3d"><span class="vt-icon">⬢</span>3D surface</button>
+      </div>
+      <div class="hint-3d" id="hint-3d"></div>
+      <div class="colorbar-mini">
+        Field value · low → high
+        <div class="colorbar-mini-grad"></div>
+        <div class="colorbar-mini-labels">
+          <span id="cbar-min">−3σ</span>
+          <span>0</span>
+          <span id="cbar-max">+3σ</span>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-cell"><div class="k">mean</div><div class="v" id="stat-mean">—</div></div>
+        <div class="stat-cell"><div class="k">var</div><div class="v" id="stat-var">—</div></div>
+        <div class="stat-cell"><div class="k">range</div><div class="v" id="stat-range">—</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-tag">Controls + γ(h)</div>
+      <h2><em>§</em> Parameters</h2>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Sill σ²</label>
+          <span class="value" id="sigma2-val">1.00</span>
+        </div>
+        <input type="range" id="sigma2" min="0.2" max="2.5" step="0.05" value="1.0">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Range ℓ</label>
+          <span class="value" id="ell-val">22</span>
+        </div>
+        <input type="range" id="ell" min="3" max="50" step="1" value="22">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-row">
+          <label>Nugget c₀</label>
+          <span class="value" id="nugget-val">0.00</span>
+        </div>
+        <input type="range" id="nugget" min="0" max="1" step="0.02" value="0.0">
+      </div>
+
+      <button class="go" id="regen-btn">Regenerate ▸</button>
+
+      <div class="formula-box" id="formula-box">
+        <div class="formula-label">Variogram model</div>
+        <div id="formula-text">γ(h) = σ²(1 − exp(−(h/ℓ)²))</div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <div class="formula-label" style="font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">
+          Variogram γ(h) — theoretical vs experimental
+        </div>
+        <div class="vario-canvas-wrap">
+          <canvas class="vario" id="canvas-vario"></canvas>
+        </div>
+        <div class="vario-legend">
+          <span><span class="vario-swatch-line"></span> theoretical</span>
+          <span><span class="vario-swatch-dots"></span> experimental</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="notes">
+    <h3>Reading the four behaviours</h3>
+    <p>
+      The shape of γ(h) as h→0 reveals how the field changes at small scales. <strong>Quadratic origin</strong> (Gaussian/squared-exponential covariance) means the field is mean-square differentiable — realizations look like smooth terrain with well-defined gradients. <strong>Linear origin</strong> (exponential covariance) means continuous but nowhere differentiable — like Brownian motion's roughness preserved everywhere. <strong>Nugget effect</strong> means γ(h) jumps to c₀ &gt; 0 at any positive lag, so even arbitrarily-close samples are partially uncorrelated; the field shows random salt-and-pepper texture on top of any underlying structure. <strong>Pure nugget</strong> is the limiting case of total decorrelation — spatial white noise.
+    </p>
+    <p>
+      Slide the <strong>Nugget c₀</strong> control to add a measurement-error or microvariation component on top of any of the structured models. In modes A and B, the nugget reveals itself as a discontinuity at the origin in the variogram plot. In mode D the nugget controls the entire variance, and the structural sliders are inactive. In real geostatistical practice, the nugget is fitted from the <em>experimental variogram</em>: you extrapolate the curve back to h=0 and the height of its intercept above zero is c₀. Causes include true short-scale variability below your sampling resolution, plus measurement error in the assays themselves.
+    </p>
+    <p>
+      <strong>Choosing the right model is the heart of variogram fitting.</strong> A geologist seeing a quadratic-origin variogram on a deposit would expect smooth, gradual mineralization — perhaps a disseminated porphyry. A linear origin suggests something rougher — alluvial gold, fracture-controlled mineralization. Nugget-dominated variograms are common in nugget gold deposits (literally — the term comes from there) where coarse gold particles produce wildly different assays in adjacent samples. Each behaviour points to different geology, and getting the origin right is essential for kriging to give honest standard errors.
+    </p>
+  </section>
+
+  <footer>
+    Spectral Gaussian random field simulator · Fig 3.3 origin behaviours · circulant embedding
+  </footer>
+</div>
+
+<script>
+// ============================================================
+//  FFT (Cooley-Tukey, in-place, complex)
+// ============================================================
+function fft1d(re, im, inverse) {
+  const n = re.length;
+  // This radix-2 Cooley-Tukey requires power-of-2 length.
+  if ((n & (n - 1)) !== 0) {
+    throw new Error('fft1d requires power-of-2 length, got ' + n);
+  }
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const ang = (inverse ? 2 : -2) * Math.PI / len;
+    const wRe0 = Math.cos(ang);
+    const wIm0 = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < half; k++) {
+        const aRe = re[i + k];
+        const aIm = im[i + k];
+        const bR = re[i + k + half];
+        const bI = im[i + k + half];
+        const oddRe = bR * curRe - bI * curIm;
+        const oddIm = bR * curIm + bI * curRe;
+        re[i + k] = aRe + oddRe;
+        im[i + k] = aIm + oddIm;
+        re[i + k + half] = aRe - oddRe;
+        im[i + k + half] = aIm - oddIm;
+        const newCurRe = curRe * wRe0 - curIm * wIm0;
+        curIm = curRe * wIm0 + curIm * wRe0;
+        curRe = newCurRe;
+      }
+    }
+  }
+  if (inverse) {
+    const inv = 1 / n;
+    for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+  }
+}
+function fft2d(re, im, M, inverse) {
+  const rowRe = new Float64Array(M);
+  const rowIm = new Float64Array(M);
+  for (let j = 0; j < M; j++) {
+    const off = j * M;
+    for (let i = 0; i < M; i++) { rowRe[i] = re[off + i]; rowIm[i] = im[off + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let i = 0; i < M; i++) { re[off + i] = rowRe[i]; im[off + i] = rowIm[i]; }
+  }
+  for (let i = 0; i < M; i++) {
+    for (let j = 0; j < M; j++) { rowRe[j] = re[j * M + i]; rowIm[j] = im[j * M + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let j = 0; j < M; j++) { re[j * M + i] = rowRe[j]; im[j * M + i] = rowIm[j]; }
+  }
+}
+
+// ============================================================
+//  Mulberry32 RNG + Box-Muller normals
+// ============================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fillNormal(arr, rng) {
+  const n = arr.length;
+  for (let i = 0; i < n; i += 2) {
+    let u1 = rng(); if (u1 < 1e-300) u1 = 1e-300;
+    const u2 = rng();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    const ang = 2 * Math.PI * u2;
+    arr[i] = r * Math.cos(ang);
+    if (i + 1 < n) arr[i + 1] = r * Math.sin(ang);
+  }
+}
+
+// ============================================================
+//  Covariance functions for the four origin behaviours.
+//  We use a structured component (sill = sigma2_struct) and an
+//  optional nugget c0; total sill = sigma2_struct + c0.
+//  The structured cov is C_struct(h); total C(h) = C_struct(h)
+//  for h>0 plus c0*delta(h=0) (delta added directly to S(k) below).
+// ============================================================
+const SQRT3 = Math.sqrt(3);
+
+// Quadratic origin: squared-exponential / Gaussian covariance
+function covQuadratic(h, sigma2, ell) {
+  const r = h / ell;
+  return sigma2 * Math.exp(-r * r);
+}
+// Linear origin: exponential covariance (Matérn nu=1/2)
+function covLinear(h, sigma2, ell) {
+  return sigma2 * Math.exp(-h / ell);
+}
+// Variogram forms (for plotting)
+function gammaQuadratic(h, sigma2, ell) {
+  return sigma2 * (1 - Math.exp(-(h/ell)*(h/ell)));
+}
+function gammaLinear(h, sigma2, ell) {
+  return sigma2 * (1 - Math.exp(-h/ell));
+}
+function gammaPureNugget(h, c0) {
+  return h === 0 ? 0 : c0;
+}
+
+// ============================================================
+//  Circulant-embedding sampler
+// ============================================================
+function buildCovGrid(M, dx, covFn) {
+  const C = new Float64Array(M * M);
+  const half = M >> 1;
+  for (let j = 0; j < M; j++) {
+    const ky = j < half ? j : j - M;
+    for (let i = 0; i < M; i++) {
+      const kx = i < half ? i : i - M;
+      const h = Math.sqrt(kx * kx + ky * ky) * dx;
+      C[j * M + i] = covFn(h);
+    }
+  }
+  return C;
+}
+function computeSqrtSpectrum(C, M) {
+  const re = new Float64Array(C);
+  const im = new Float64Array(M * M);
+  fft2d(re, im, M, false);
+  // Find the peak spectrum value to set a noise threshold.
+  // Hand-rolled FFTs at large M accumulate ~1e-7 relative error per coefficient,
+  // so high-frequency entries that should be exactly 0 may show up as ±peak*1e-7.
+  // We treat anything below peak*1e-9 as numerical noise and clip silently.
+  let peak = 0;
+  let worstNeg = 0; // most-negative single eigenvalue (smallest value)
+  for (let i = 0; i < M * M; i++) {
+    const v = re[i];
+    if (v > peak) peak = v;
+    if (v < worstNeg) worstNeg = v;
+  }
+  const noiseFloor = peak * 1e-9;
+  const sqrtS = new Float64Array(M * M);
+  for (let i = 0; i < M * M; i++) {
+    const v = re[i];
+    sqrtS[i] = v > noiseFloor ? Math.sqrt(v) : 0;
+  }
+  // worstNegRel: how negative is the worst eigenvalue, relative to peak?
+  // For pure FFT round-off this is ~1e-7. For real positive-definiteness
+  // failures (insufficient embedding) it can be 0.01 or larger.
+  const worstNegRel = peak > 0 ? -worstNeg / peak : 0;
+  return { sqrtS, peak, worstNegRel };
+}
+// Sample a structured field via FFT given √S; output is N×N
+function sampleStructured(sqrtS, M, N, rng) {
+  const re = new Float64Array(M * M);
+  const im = new Float64Array(M * M);
+  const buf = new Float64Array(M * M);
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) re[i] = sqrtS[i] * buf[i];
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) im[i] = sqrtS[i] * buf[i];
+  fft2d(re, im, M, true);
+  const Z = new Float64Array(N * N);
+  const scale = M;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      Z[j * N + i] = re[j * M + i] * scale;
+    }
+  }
+  return Z;
+}
+// Add iid Gaussian nugget with variance c0 to an N×N field
+function addNugget(Z, N, c0, rng) {
+  if (c0 <= 0) return;
+  const s = Math.sqrt(c0);
+  const buf = new Float64Array(N * N);
+  fillNormal(buf, rng);
+  for (let i = 0; i < N * N; i++) Z[i] += s * buf[i];
+}
+
+// ============================================================
+//  Diverging colormap
+// ============================================================
+const CMAP_STOPS = [
+  [ 26,  58,  92],
+  [123, 163, 196],
+  [245, 239, 219],
+  [200,  98,  62],
+  [122,  16,  36],
+];
+function valueToRGB(t) {
+  t = Math.max(0, Math.min(1, t));
+  const seg = t * (CMAP_STOPS.length - 1);
+  const i = Math.min(Math.floor(seg), CMAP_STOPS.length - 2);
+  const f = seg - i;
+  const a = CMAP_STOPS[i], b = CMAP_STOPS[i + 1];
+  return [
+    Math.round(a[0] + f * (b[0] - a[0])),
+    Math.round(a[1] + f * (b[1] - a[1])),
+    Math.round(a[2] + f * (b[2] - a[2])),
+  ];
+}
+function renderField2D(canvas, Z, N, vmin, vmax) {
+  canvas.width = N;
+  canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(N, N);
+  const span = vmax - vmin;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = Z[j * N + i];
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      const idx = (j * N + i) * 4;
+      img.data[idx]     = rgb[0];
+      img.data[idx + 1] = rgb[1];
+      img.data[idx + 2] = rgb[2];
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ============================================================
+//  3D surface rendering (Three.js)
+// ============================================================
+let scene3d = null;
+
+function ensureScene3D() {
+  if (scene3d) return scene3d;
+  const canvas = document.getElementById('canvas-field-3d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  canvas.width = size;
+  canvas.height = size;
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true, preserveDrawingBuffer: false
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(size, size, false);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+  camera.up.set(0, 0, 1);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambient);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+  dir.position.set(2, -3, 4);
+  scene.add(dir);
+  const dir2 = new THREE.DirectionalLight(0xffe4c4, 0.25);
+  dir2.position.set(-3, 2, 1);
+  scene.add(dir2);
+
+  scene3d = { renderer, scene, camera, mesh: null, size };
+  return scene3d;
+}
+
+function buildSurface3D(Z, N, vmin, vmax) {
+  const s = ensureScene3D();
+  if (s.mesh) {
+    s.scene.remove(s.mesh);
+    s.mesh.geometry.dispose();
+    s.mesh.material.dispose();
+    s.mesh = null;
+  }
+  const planeSize = 2.0;
+  const geom = new THREE.PlaneGeometry(planeSize, planeSize, N - 1, N - 1);
+  const positions = geom.attributes.position.array;
+  const colors = new Float32Array(N * N * 3);
+  const span = vmax - vmin;
+  // Height scale: keep total height ~15% of plane size (so ±0.15) regardless
+  // of σ². Use the actual max(|vmin|, |vmax|) so spikey nugget fields don't
+  // explode the height range. Also use the *actual* data extent rather than
+  // the +/- 3σ envelope, which can be exceeded by rare large draws.
+  let actualMin = Infinity, actualMax = -Infinity;
+  for (let i = 0; i < Z.length; i++) {
+    if (Z[i] < actualMin) actualMin = Z[i];
+    if (Z[i] > actualMax) actualMax = Z[i];
+  }
+  const actualSpan = Math.max(actualMax - actualMin, 1e-6);
+  const targetTotalHeight = 0.30; // ±0.15 of planeSize=2.0
+  const heightScale = targetTotalHeight / actualSpan;
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const vIdx = iy * N + ix;
+      const v = Z[iy * N + ix];
+      positions[vIdx * 3 + 2] = v * heightScale;
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      colors[vIdx * 3]     = rgb[0] / 255;
+      colors[vIdx * 3 + 1] = rgb[1] / 255;
+      colors[vIdx * 3 + 2] = rgb[2] / 255;
+    }
+  }
+  geom.attributes.position.needsUpdate = true;
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+
+  const mat = new THREE.MeshLambertMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  s.scene.add(mesh);
+  s.mesh = mesh;
+}
+
+function update3DCamera() {
+  if (!scene3d) return;
+  const r = 2.8;
+  const theta = state3d.elev;
+  const phi   = state3d.azim;
+  const cx = r * Math.cos(theta) * Math.sin(phi);
+  const cy = -r * Math.cos(theta) * Math.cos(phi);
+  const cz = r * Math.sin(theta);
+  scene3d.camera.position.set(cx, cy, cz);
+  scene3d.camera.lookAt(0, 0, 0);
+}
+
+function render3D() {
+  if (!scene3d) return;
+  scene3d.renderer.render(scene3d.scene, scene3d.camera);
+}
+
+function resize3DCanvas() {
+  if (!scene3d) return;
+  const canvas = document.getElementById('canvas-field-3d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.max(64, Math.floor(rect.width));
+  if (size !== scene3d.size) {
+    scene3d.size = size;
+    scene3d.renderer.setSize(size, size, false);
+    scene3d.camera.aspect = 1;
+    scene3d.camera.updateProjectionMatrix();
+  }
+}
+
+// ============================================================
+//  Empirical variogram (isotropic, binned)
+// ============================================================
+function empiricalVariogram(Z, N, nBins, maxLag) {
+  // Use random pair sampling to keep cost manageable
+  const sums = new Float64Array(nBins);
+  const counts = new Int32Array(nBins);
+  const nPairs = 30000;
+  const rng = mulberry32(12345);
+  const binWidth = maxLag / nBins;
+  for (let p = 0; p < nPairs; p++) {
+    const i1 = Math.floor(rng() * N);
+    const j1 = Math.floor(rng() * N);
+    const i2 = Math.floor(rng() * N);
+    const j2 = Math.floor(rng() * N);
+    const dx = i2 - i1;
+    const dy = j2 - j1;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d <= 0 || d >= maxLag) continue;
+    const bin = Math.min(nBins - 1, Math.floor(d / binWidth));
+    const diff = Z[j1 * N + i1] - Z[j2 * N + i2];
+    sums[bin] += 0.5 * diff * diff;
+    counts[bin]++;
+  }
+  const lags = [];
+  const gammas = [];
+  for (let b = 0; b < nBins; b++) {
+    if (counts[b] > 5) {
+      lags.push((b + 0.5) * binWidth);
+      gammas.push(sums[b] / counts[b]);
+    }
+  }
+  return { lags, gammas };
+}
+
+// ============================================================
+//  Variogram plot
+// ============================================================
+function drawVariogram(canvas, mode, params, empirical) {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
+
+  // Margins
+  const ML = 38, MR = 12, MT = 14, MB = 30;
+  const plotW = W - ML - MR;
+  const plotH = H - MT - MB;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Axis ranges
+  const { sigma2, ell, nugget } = params;
+  const sillTotal = sigma2 + nugget;
+  const xMax = (mode === 'pure-nugget') ? 50 : Math.max(50, ell * 4);
+  const yMax = sillTotal * 1.25;
+
+  // Theoretical curve points
+  const NP = 200;
+  const pts = [];
+  for (let i = 0; i <= NP; i++) {
+    const h = (i / NP) * xMax;
+    let g;
+    if (mode === 'quadratic')        g = nugget + gammaQuadratic(h, sigma2, ell);
+    else if (mode === 'linear')      g = nugget + gammaLinear(h, sigma2, ell);
+    else if (mode === 'nugget')      g = nugget + gammaLinear(h, sigma2, ell); // structured = linear-origin
+    else /* pure-nugget */           g = nugget;
+    if (h === 0) g = 0; // γ(0) = 0 by definition
+    pts.push({ h, g });
+  }
+
+  // Coordinate transforms
+  const sx = (h) => ML + (h / xMax) * plotW;
+  const sy = (g) => MT + plotH - (g / yMax) * plotH;
+
+  // Grid lines
+  ctx.strokeStyle = '#e8e2d2';
+  ctx.lineWidth = 1;
+  const yTicks = 4;
+  for (let k = 0; k <= yTicks; k++) {
+    const yVal = (k / yTicks) * yMax;
+    const yPx = sy(yVal);
+    ctx.beginPath();
+    ctx.moveTo(ML, yPx); ctx.lineTo(ML + plotW, yPx);
+    ctx.stroke();
+  }
+
+  // Sill reference line
+  ctx.strokeStyle = '#b8923d';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(ML, sy(sillTotal)); ctx.lineTo(ML + plotW, sy(sillTotal));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axes
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(ML, MT); ctx.lineTo(ML, MT + plotH);
+  ctx.lineTo(ML + plotW, MT + plotH);
+  ctx.stroke();
+
+  // Empirical points
+  if (empirical && empirical.lags.length > 0) {
+    ctx.fillStyle = '#1a1a1a';
+    for (let i = 0; i < empirical.lags.length; i++) {
+      const x = sx(empirical.lags[i]);
+      const y = sy(empirical.gammas[i]);
+      if (x > ML - 1 && x < ML + plotW + 1 && y > MT - 1 && y < MT + plotH + 1) {
+        ctx.beginPath();
+        ctx.arc(x, y, 2.2, 0, 2*Math.PI);
+        ctx.fill();
+      }
+    }
+  }
+
+  // Theoretical curve. For modes with nugget jump, draw with a discontinuity.
+  ctx.strokeStyle = '#9e1b32';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  // Origin point: γ(0)=0
+  ctx.moveTo(sx(0), sy(0));
+  // For nugget modes, lift to nugget level for h>0
+  const hasNuggetJump = (nugget > 0);
+  if (hasNuggetJump) {
+    // Move pen to (0+, c0) without drawing the vertical jump
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(sx(0), sy(nugget));
+  }
+  // Plot curve from h>0 onward
+  for (let i = 1; i <= NP; i++) {
+    const x = sx(pts[i].h);
+    const y = sy(pts[i].g);
+    if (i === 1 && !hasNuggetJump) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Nugget jump indicator (a tiny vertical dashed line at h≈0)
+  if (hasNuggetJump) {
+    ctx.strokeStyle = '#9e1b32';
+    ctx.setLineDash([2, 2]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx(0), sy(0));
+    ctx.lineTo(sx(0), sy(nugget));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // c0 label
+    ctx.fillStyle = '#9e1b32';
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillText('c₀', sx(0) + 4, sy(nugget * 0.5) + 3);
+  }
+
+  // Tick labels
+  ctx.fillStyle = '#6e6863';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= yTicks; k++) {
+    const yVal = (k / yTicks) * yMax;
+    const yPx = sy(yVal);
+    ctx.fillText(yVal.toFixed(2), ML - 4, yPx + 3);
+  }
+  ctx.textAlign = 'center';
+  const xTicks = 5;
+  for (let k = 0; k <= xTicks; k++) {
+    const xVal = (k / xTicks) * xMax;
+    ctx.fillText(xVal.toFixed(0), sx(xVal), MT + plotH + 13);
+  }
+
+  // Axis titles
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = "italic 11px 'Fraunces', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('h', ML + plotW / 2, MT + plotH + 25);
+  ctx.save();
+  ctx.translate(10, MT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('γ(h)', 0, 0);
+  ctx.restore();
+
+  // Sill annotation
+  ctx.fillStyle = '#b8923d';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  ctx.fillText('sill', ML + plotW - 4, sy(sillTotal) - 3);
+}
+
+// ============================================================
+//  Stats helper
+// ============================================================
+function fieldStats(Z) {
+  let s = 0, n = Z.length, mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const v = Z[i];
+    s += v;
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+  }
+  const mean = s / n;
+  let s2 = 0;
+  for (let i = 0; i < n; i++) { const d = Z[i] - mean; s2 += d * d; }
+  return { mean, variance: s2 / n, min: mn, max: mx };
+}
+
+// ============================================================
+//  Application state
+// ============================================================
+const state = {
+  mode: 'quadratic',  // 'quadratic' | 'linear' | 'nugget' | 'pure-nugget'
+  sigma2: 1.0,
+  ell: 22,
+  nugget: 0.0,
+  N: 128,
+  embed: 2,
+  seed: Math.floor(Math.random() * 0xFFFFFFFF),
+  view: '2d',         // '2d' | '3d'
+};
+const state3d = {
+  elev: 0.85,         // initial elevation ≈ 49° (more aerial, less spiky-looking)
+  azim: 0.55,         // initial azimuth
+};
+
+const MODE_INFO = {
+  'quadratic': {
+    title: 'Quadratic — <em>highly continuous</em>',
+    caption: 'Smooth, differentiable surface. γ(h) ∼ A|h|² near origin.',
+    formula: 'γ(h) = c₀ + σ²(1 − exp(−(h/ℓ)²))',
+    structuredCov: covQuadratic,
+    structuredGamma: gammaQuadratic,
+    hasStructure: true,
+  },
+  'linear': {
+    title: 'Linear — <em>continuous, non-differentiable</em>',
+    caption: 'Continuous everywhere but rough at every scale. γ(h) ∼ A|h| near origin.',
+    formula: 'γ(h) = c₀ + σ²(1 − exp(−h/ℓ))',
+    structuredCov: covLinear,
+    structuredGamma: gammaLinear,
+    hasStructure: true,
+  },
+  'nugget': {
+    title: 'Nugget + structure — <em>discontinuous at origin</em>',
+    caption: 'Underlying smooth structure with random salt-and-pepper noise on top. γ(h) → c₀ as h → 0⁺.',
+    formula: 'γ(h) = c₀·𝟙{h>0} + σ²(1 − exp(−h/ℓ))',
+    structuredCov: covLinear,
+    structuredGamma: gammaLinear,
+    hasStructure: true,
+  },
+  'pure-nugget': {
+    title: 'Pure nugget — <em>spatial white noise</em>',
+    caption: 'No spatial correlation at any lag. Each cell is iid Gaussian.',
+    formula: 'γ(h) = c₀·𝟙{h>0}    (no structure)',
+    structuredCov: null,
+    structuredGamma: null,
+    hasStructure: false,
+  },
+};
+
+// ============================================================
+//  Spectrum cache (keyed per mode + parameters)
+// ============================================================
+const spectrumCache = new Map();
+function cacheKey(mode, sigma2, ell, M) {
+  return mode + '|' + sigma2 + '|' + ell + '|' + M;
+}
+function getOrComputeStructuredSpectrum(mode, M, dx) {
+  const info = MODE_INFO[mode];
+  if (!info.hasStructure) return null;
+  const { sigma2, ell } = state;
+  const key = cacheKey(mode, sigma2, ell, M);
+  if (spectrumCache.has(key)) return spectrumCache.get(key);
+  const covFn = (h) => info.structuredCov(h, sigma2, ell);
+  const C = buildCovGrid(M, dx, covFn);
+  const result = computeSqrtSpectrum(C, M);
+  // Only warn if there's a real positive-definiteness failure: a single
+  // eigenvalue that's significantly negative relative to the spectrum peak.
+  // FFT round-off produces many tiny negative values, but each is bounded by
+  // ~peak * 1e-7. Anything worse than 1e-4 is a real embedding problem.
+  if (result.worstNegRel > 1e-4) {
+    console.warn(`Embedding has worst negative eigenvalue at ${(100*result.worstNegRel).toFixed(3)}% of peak (mode=${mode}, ell=${ell}, M=${M}); may need more padding.`);
+  }
+  spectrumCache.set(key, result.sqrtS);
+  return result.sqrtS;
+}
+
+// ============================================================
+//  Main pipeline
+// ============================================================
+let currentField = null;
+
+function regenerate() {
+  const btn = document.getElementById('regen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+
+  requestAnimationFrame(() => {
+    const N = state.N;
+    const M = N * 2;
+    const dx = 1.0;
+    const info = MODE_INFO[state.mode];
+
+    // Build the field
+    const rng = mulberry32(state.seed);
+    let Z;
+    if (info.hasStructure) {
+      const sqrtS = getOrComputeStructuredSpectrum(state.mode, M, dx);
+      Z = sampleStructured(sqrtS, M, N, rng);
+    } else {
+      // Pure nugget: just iid Gaussian
+      Z = new Float64Array(N * N);
+    }
+    // Add nugget on top (or as the entire field if pure nugget)
+    const c0 = (state.mode === 'pure-nugget') ? state.nugget : state.nugget;
+    if (state.mode === 'pure-nugget' && c0 === 0) {
+      // No noise at all — leave Z as zeros
+    } else {
+      addNugget(Z, N, c0, rng);
+    }
+    currentField = { Z, N };
+
+    // Color range
+    const sillTotal = (info.hasStructure ? state.sigma2 : 0) + state.nugget;
+    const rangeCap = 3 * Math.sqrt(Math.max(sillTotal, 0.01));
+    const vmin = -rangeCap, vmax = rangeCap;
+    document.getElementById('cbar-min').textContent = vmin.toFixed(2);
+    document.getElementById('cbar-max').textContent = '+' + vmax.toFixed(2);
+
+    // Render field
+    // Render field (2D always; 3D when active)
+    renderField2D(document.getElementById('canvas-field'), Z, N, vmin, vmax);
+    if (state.view === '3d') {
+      buildSurface3D(Z, N, vmin, vmax);
+      resize3DCanvas();
+      update3DCamera();
+      render3D();
+    }
+
+    // Stats
+    const s = fieldStats(Z);
+    document.getElementById('stat-mean').textContent = s.mean.toFixed(3);
+    document.getElementById('stat-var').textContent = s.variance.toFixed(3);
+    document.getElementById('stat-range').textContent = s.min.toFixed(2) + ' .. ' + s.max.toFixed(2);
+
+    // Empirical variogram
+    const xMax = (state.mode === 'pure-nugget') ? 50 : Math.max(50, state.ell * 4);
+    const empirical = empiricalVariogram(Z, N, 18, Math.min(xMax * 0.95, N * 0.7));
+
+    // Theoretical variogram plot
+    const params = {
+      sigma2: info.hasStructure ? state.sigma2 : 0,
+      ell: state.ell,
+      nugget: state.nugget,
+    };
+    drawVariogram(document.getElementById('canvas-vario'), state.mode, params, empirical);
+
+    btn.disabled = false;
+    btn.textContent = 'Regenerate ▸';
+    state.seed = (state.seed * 1664525 + 1013904223) >>> 0;
+  });
+}
+
+// ============================================================
+//  Mode switching
+// ============================================================
+function setMode(mode) {
+  state.mode = mode;
+  const info = MODE_INFO[mode];
+  document.getElementById('field-title').innerHTML = info.title;
+  document.getElementById('field-caption').textContent = info.caption;
+  document.getElementById('formula-text').textContent = info.formula;
+
+  // Update button states
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+
+  // Disable structured-field controls in pure-nugget mode
+  const disableStruct = !info.hasStructure;
+  document.getElementById('sigma2').disabled = disableStruct;
+  document.getElementById('ell').disabled = disableStruct;
+
+  // Sensible defaults for nugget control per mode
+  if (mode === 'quadratic' || mode === 'linear') {
+    if (state.nugget > 0.4) {
+      state.nugget = 0;
+      document.getElementById('nugget').value = 0;
+      document.getElementById('nugget-val').textContent = '0.00';
+    }
+  } else if (mode === 'nugget') {
+    if (state.nugget < 0.05) {
+      state.nugget = 0.3;
+      document.getElementById('nugget').value = 0.3;
+      document.getElementById('nugget-val').textContent = '0.30';
+    }
+  } else if (mode === 'pure-nugget') {
+    if (state.nugget < 0.05) {
+      state.nugget = 1.0;
+      document.getElementById('nugget').value = 1.0;
+      document.getElementById('nugget-val').textContent = '1.00';
+    }
+  }
+
+  regenerate();
+}
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
+
+// ============================================================
+//  Slider wiring
+// ============================================================
+function invalidateCache() { spectrumCache.clear(); }
+
+document.getElementById('sigma2').addEventListener('input', (e) => {
+  state.sigma2 = parseFloat(e.target.value);
+  document.getElementById('sigma2-val').textContent = state.sigma2.toFixed(2);
+  invalidateCache();
+});
+document.getElementById('ell').addEventListener('input', (e) => {
+  state.ell = parseInt(e.target.value);
+  document.getElementById('ell-val').textContent = state.ell;
+  invalidateCache();
+});
+document.getElementById('nugget').addEventListener('input', (e) => {
+  state.nugget = parseFloat(e.target.value);
+  document.getElementById('nugget-val').textContent = state.nugget.toFixed(2);
+  // No spectrum cache invalidation needed — nugget added separately
+});
+document.getElementById('regen-btn').addEventListener('click', regenerate);
+
+// ============================================================
+//  View toggle (2D / 3D) + drag-to-rotate
+// ============================================================
+const fieldWrap = document.getElementById('field-wrap');
+const hint3D = document.getElementById('hint-3d');
+const lastFieldCache = { Z: null, N: 0, vmin: 0, vmax: 0 };
+
+function setView(view) {
+  state.view = view;
+  document.querySelectorAll('.view-toggle').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if (view === '3d') {
+    fieldWrap.classList.add('mode-3d');
+    hint3D.textContent = 'drag to rotate';
+    // Build the surface from the current field if we already have one
+    if (currentField) {
+      const info = MODE_INFO[state.mode];
+      const sillTotal = (info.hasStructure ? state.sigma2 : 0) + state.nugget;
+      const rangeCap = 3 * Math.sqrt(Math.max(sillTotal, 0.01));
+      buildSurface3D(currentField.Z, currentField.N, -rangeCap, rangeCap);
+      resize3DCanvas();
+      update3DCamera();
+      render3D();
+    }
+  } else {
+    fieldWrap.classList.remove('mode-3d');
+    hint3D.textContent = '';
+  }
+}
+document.querySelectorAll('.view-toggle').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+
+// Drag rotation
+let dragging = false, lastX = 0, lastY = 0;
+function startDrag(clientX, clientY) {
+  if (state.view !== '3d') return;
+  dragging = true;
+  lastX = clientX; lastY = clientY;
+  fieldWrap.classList.add('dragging');
+}
+function moveDrag(clientX, clientY) {
+  if (!dragging) return;
+  const dx = clientX - lastX;
+  const dy = clientY - lastY;
+  lastX = clientX; lastY = clientY;
+  state3d.azim += dx * 0.008;
+  state3d.elev = Math.max(0.06, Math.min(Math.PI / 2 - 0.05, state3d.elev - dy * 0.006));
+  update3DCamera();
+  render3D();
+}
+function endDrag() {
+  dragging = false;
+  fieldWrap.classList.remove('dragging');
+}
+
+fieldWrap.addEventListener('mousedown', (e) => {
+  if (state.view !== '3d') return;
+  e.preventDefault();
+  startDrag(e.clientX, e.clientY);
+});
+window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('mouseleave', endDrag);
+
+fieldWrap.addEventListener('touchstart', (e) => {
+  if (state.view !== '3d' || e.touches.length !== 1) return;
+  e.preventDefault();
+  startDrag(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+window.addEventListener('touchmove', (e) => {
+  if (!dragging || e.touches.length !== 1) return;
+  e.preventDefault();
+  moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+window.addEventListener('touchend', endDrag);
+
+window.addEventListener('resize', () => {
+  if (state.view === '3d') {
+    resize3DCanvas();
+    render3D();
+  }
+});
+
+// Initial
+regenerate();
+</script>
+</body>
+</html>

@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive Kriging — Spherical Variogram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --rust: #9e1b32;
+    --crimson-deep: #7a1024;
+    --ochre: #b8923d;
+    --muted: #6e6863;
+    --line: #d8d2c4;
+    --line-strong: #4a4a4a;
+    --sample-red: #c41a3b;
+    --predict-blue: #1e5fa8;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    font-feature-settings: "ss01", "ss02";
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 18% 8%, rgba(184, 146, 61, 0.10), transparent 50%),
+      radial-gradient(ellipse at 82% 60%, rgba(158, 27, 50, 0.07), transparent 50%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1240px; margin: 0 auto; }
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 30;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  h1 em {
+    font-variation-settings: "wght" 400, "opsz" 144, "SOFT" 100;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    padding: 20px 18px;
+    border: 1px solid var(--line);
+    box-shadow: 4px 4px 0 var(--line);
+    position: relative;
+  }
+  .panel-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .panel h2 {
+    font-variation-settings: "wght" 500, "opsz" 30;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+    line-height: 1.15;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .panel h2 .num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--rust);
+    font-weight: 400;
+  }
+  .panel-caption {
+    font-style: italic;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas.field {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    opacity: 0.4;
+  }
+  canvas.overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  button.go {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 11px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    transition: all 0.12s;
+    margin-top: 10px;
+  }
+  button.go:hover { background: var(--rust); border-color: var(--rust); }
+  button.go.regen { background: transparent; color: var(--ink); }
+  button.go.regen:hover { background: var(--ink); color: var(--paper); }
+  button.go:disabled { opacity: 0.5; cursor: wait; }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hint {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(30, 95, 168, 0.06);
+    border-left: 3px solid var(--predict-blue);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* Math display */
+  .math-block {
+    background: var(--paper);
+    padding: 16px 14px;
+    border: 1px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .math-block-title {
+    font-variation-settings: "wght" 500, "opsz" 28;
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .math-block-title .num {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--rust);
+    margin-right: 6px;
+    font-weight: 400;
+  }
+  .math-block-caption {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .matrix-display {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .matrix-display .matrix {
+    display: inline-grid;
+    border-left: 1.5px solid var(--ink);
+    border-right: 1.5px solid var(--ink);
+    padding: 4px 6px;
+    grid-auto-flow: row;
+  }
+  .matrix-display .matrix.A { grid-template-columns: repeat(17, auto); gap: 0 4px; }
+  .matrix-display .matrix.lambda, .matrix-display .matrix.b { grid-template-columns: 1fr; gap: 0; }
+  .matrix-display .matrix .cell {
+    text-align: right;
+    padding: 1px 3px;
+    color: var(--ink);
+    min-width: 28px;
+  }
+  .matrix-display .matrix .cell.muted { color: var(--muted); }
+  .matrix-display .matrix .cell.constraint { color: var(--rust); font-weight: 700; }
+  .matrix-display .matrix .cell.diag { color: var(--ochre); }
+  .matrix-display .equals { font-family: var(--serif); font-size: 1.5rem; padding: 0 4px; }
+  .matrix-display .matrix-label {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    align-self: center;
+    margin-right: -3px;
+  }
+
+  /* Solution display */
+  .solution-list {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    line-height: 1.7;
+  }
+  .solution-list .row {
+    display: grid;
+    grid-template-columns: 60px 1fr 70px 70px;
+    gap: 8px;
+    padding: 2px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+  .solution-list .row.header {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .solution-list .row.mu-row {
+    color: var(--rust);
+    font-weight: 600;
+    margin-top: 4px;
+    border-top: 1px solid var(--line-strong);
+    padding-top: 4px;
+  }
+  .solution-list .label-cell { color: var(--rust); }
+  .solution-list .neg { color: var(--predict-blue); }
+
+  /* Prediction equation */
+  .prediction-box {
+    margin-top: 10px;
+    padding: 14px;
+    background: linear-gradient(to right, rgba(30, 95, 168, 0.05), rgba(196, 26, 59, 0.05));
+    border-left: 3px solid var(--predict-blue);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+  .prediction-box .header {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .prediction-box .equation {
+    font-size: 0.8rem;
+    margin: 6px 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  .prediction-box .result {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--predict-blue);
+    margin-top: 8px;
+  }
+  .prediction-box .result .label {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-right: 8px;
+    font-weight: 400;
+  }
+  .prediction-box .truth {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .prediction-box .truth .truth-val {
+    color: var(--rust);
+    font-family: var(--mono);
+    font-style: normal;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  .empty-state {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.92rem;
+  }
+
+  .colorbar-mini {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Variogram canvas */
+  .vario-canvas-wrap {
+    aspect-ratio: 1.7;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  canvas.vario {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .right-column {
+    display: flex;
+    flex-direction: column;
+  }
+  .colorbar-mini-grad {
+    height: 9px;
+    margin: 4px 0 3px;
+    background: linear-gradient(to right,
+      rgb(26, 58, 92),
+      rgb(123, 163, 196),
+      rgb(245, 239, 219),
+      rgb(200, 98, 62),
+      rgb(122, 16, 36));
+    border: 1px solid var(--line-strong);
+    opacity: 0.6;
+  }
+  .colorbar-mini-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 0.6rem;
+  }
+
+  footer {
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Kriging <em>Walk-through</em></h1>
+    <div class="subtitle">Pick any point · solve the kriging system · predict z(x_new)</div>
+  </header>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-tag">Field</div>
+      <h2><span class="num">§1</span>Synthetic deposit + samples</h2>
+      <div class="panel-caption">
+        Translucent field for context. Red dots are the 16 sampled values. Click anywhere to choose a prediction point (blue).
+      </div>
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas class="field" id="field-canvas"></canvas>
+        <canvas class="overlay" id="overlay-canvas"></canvas>
+      </div>
+
+      <div class="colorbar-mini">
+        Field value · low → high (translucent)
+        <div class="colorbar-mini-grad"></div>
+        <div class="colorbar-mini-labels">
+          <span>0</span><span>225</span><span>600</span>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button class="go regen" id="regen-btn">▸ New realization</button>
+        <button class="go" id="krige-btn" disabled>Krige z(x_new)</button>
+      </div>
+      <div class="hint" id="hint">
+        Click a point in the field to set <strong>x<sub>new</sub></strong>, then press <strong>Krige</strong>.
+      </div>
+    </div>
+
+    <div class="right-column">
+      <div class="panel">
+        <div class="panel-tag">Variogram</div>
+        <h2><span class="num">§2</span>γ(h) with sample distances marked</h2>
+        <div class="panel-caption" id="vario-caption">
+          The spherical variogram. After selecting <strong>x<sub>new</sub></strong>, distances |x<sub>i</sub> − x<sub>new</sub>| appear as red ticks on the x-axis with γ values shown on the curve.
+        </div>
+        <div class="vario-canvas-wrap">
+          <canvas class="vario" id="vario-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 22px;">
+        <div class="panel-tag">Solver</div>
+        <h2><span class="num">§3</span>Ordinary kriging system</h2>
+        <div class="panel-caption" id="solver-caption">
+          Pick a point in the field on the left to begin.
+        </div>
+        <div id="solver-content">
+          <div class="empty-state">
+            The kriging matrix and solution will appear here once you choose <strong>x<sub>new</sub></strong> and press Krige.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Spherical variogram · c₀=10000, C=28000, a=5.75 · ordinary kriging
+  </footer>
+</div>
+
+<script>
+// ============================================================
+//  FFT (Cooley-Tukey, radix-2)
+// ============================================================
+function fft1d(re, im, inverse) {
+  const n = re.length;
+  if ((n & (n - 1)) !== 0) throw new Error('fft1d requires power-of-2 length');
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const ang = (inverse ? 2 : -2) * Math.PI / len;
+    const wRe0 = Math.cos(ang);
+    const wIm0 = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < half; k++) {
+        const aRe = re[i + k];
+        const aIm = im[i + k];
+        const bR = re[i + k + half];
+        const bI = im[i + k + half];
+        const oddRe = bR * curRe - bI * curIm;
+        const oddIm = bR * curIm + bI * curRe;
+        re[i + k] = aRe + oddRe;
+        im[i + k] = aIm + oddIm;
+        re[i + k + half] = aRe - oddRe;
+        im[i + k + half] = aIm - oddIm;
+        const newCurRe = curRe * wRe0 - curIm * wIm0;
+        curIm = curRe * wIm0 + curIm * wRe0;
+        curRe = newCurRe;
+      }
+    }
+  }
+  if (inverse) {
+    const inv = 1 / n;
+    for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+  }
+}
+function fft2d(re, im, M, inverse) {
+  const rowRe = new Float64Array(M);
+  const rowIm = new Float64Array(M);
+  for (let j = 0; j < M; j++) {
+    const off = j * M;
+    for (let i = 0; i < M; i++) { rowRe[i] = re[off + i]; rowIm[i] = im[off + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let i = 0; i < M; i++) { re[off + i] = rowRe[i]; im[off + i] = rowIm[i]; }
+  }
+  for (let i = 0; i < M; i++) {
+    for (let j = 0; j < M; j++) { rowRe[j] = re[j * M + i]; rowIm[j] = im[j * M + i]; }
+    fft1d(rowRe, rowIm, inverse);
+    for (let j = 0; j < M; j++) { re[j * M + i] = rowRe[j]; im[j * M + i] = rowIm[j]; }
+  }
+}
+
+// ============================================================
+//  RNG + Box-Muller
+// ============================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fillNormal(arr, rng) {
+  const n = arr.length;
+  for (let i = 0; i < n; i += 2) {
+    let u1 = rng(); if (u1 < 1e-300) u1 = 1e-300;
+    const u2 = rng();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    const ang = 2 * Math.PI * u2;
+    arr[i] = r * Math.cos(ang);
+    if (i + 1 < n) arr[i + 1] = r * Math.sin(ang);
+  }
+}
+
+// ============================================================
+//  Variogram parameters and functions
+// ============================================================
+const NUGGET = 10000;
+const SILL_STRUCT = 28000;
+const RANGE = 5.75;
+const MEAN_GRADE = 224.4;
+
+// Spherical structured covariance
+function covSpherical(h) {
+  if (h >= RANGE) return 0;
+  const r = h / RANGE;
+  return SILL_STRUCT * (1 - 1.5 * r + 0.5 * r * r * r);
+}
+// Spherical variogram (with nugget) — for kriging
+function gammaSpherical(h) {
+  if (h <= 1e-9) return 0;
+  if (h >= RANGE) return NUGGET + SILL_STRUCT;
+  const r = h / RANGE;
+  return NUGGET + SILL_STRUCT * (1.5 * r - 0.5 * r * r * r);
+}
+
+// ============================================================
+//  Field simulator
+// ============================================================
+const N = 128;
+const CELLS_PER_SAMPLE_UNIT = 16;
+const DX = 1.0 / CELLS_PER_SAMPLE_UNIT;
+const M = N * 2;
+
+let cachedSqrtS = null;
+
+function buildSpectrum() {
+  const C = new Float64Array(M * M);
+  const half = M >> 1;
+  for (let j = 0; j < M; j++) {
+    const ky = j < half ? j : j - M;
+    for (let i = 0; i < M; i++) {
+      const kx = i < half ? i : i - M;
+      const h = Math.sqrt(kx * kx + ky * ky) * DX;
+      C[j * M + i] = covSpherical(h);
+    }
+  }
+  const re = new Float64Array(C);
+  const im = new Float64Array(M * M);
+  fft2d(re, im, M, false);
+  let peak = 0;
+  for (let i = 0; i < M * M; i++) if (re[i] > peak) peak = re[i];
+  const noiseFloor = peak * 1e-9;
+  const sqrtS = new Float64Array(M * M);
+  for (let i = 0; i < M * M; i++) {
+    const v = re[i];
+    sqrtS[i] = v > noiseFloor ? Math.sqrt(v) : 0;
+  }
+  return sqrtS;
+}
+
+function sampleField(seed) {
+  if (!cachedSqrtS) cachedSqrtS = buildSpectrum();
+  const rng = mulberry32(seed);
+  const re = new Float64Array(M * M);
+  const im = new Float64Array(M * M);
+  const buf = new Float64Array(M * M);
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) re[i] = cachedSqrtS[i] * buf[i];
+  fillNormal(buf, rng);
+  for (let i = 0; i < M * M; i++) im[i] = cachedSqrtS[i] * buf[i];
+  fft2d(re, im, M, true);
+  const Z = new Float64Array(N * N);
+  const scale = M;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      Z[j * N + i] = re[j * M + i] * scale;
+    }
+  }
+  if (NUGGET > 0) {
+    const sd = Math.sqrt(NUGGET);
+    fillNormal(buf, rng);
+    for (let i = 0; i < N * N; i++) Z[i] += sd * buf[i];
+  }
+  for (let i = 0; i < N * N; i++) Z[i] += MEAN_GRADE;
+  for (let i = 0; i < N * N; i++) if (Z[i] < 0) Z[i] = 0;
+  return Z;
+}
+
+// ============================================================
+//  Color and rendering
+// ============================================================
+const CMAP_STOPS = [
+  [ 26,  58,  92],
+  [123, 163, 196],
+  [245, 239, 219],
+  [200,  98,  62],
+  [122,  16,  36],
+];
+function valueToRGB(t) {
+  t = Math.max(0, Math.min(1, t));
+  const seg = t * (CMAP_STOPS.length - 1);
+  const i = Math.min(Math.floor(seg), CMAP_STOPS.length - 2);
+  const f = seg - i;
+  const a = CMAP_STOPS[i], b = CMAP_STOPS[i + 1];
+  return [
+    Math.round(a[0] + f * (b[0] - a[0])),
+    Math.round(a[1] + f * (b[1] - a[1])),
+    Math.round(a[2] + f * (b[2] - a[2])),
+  ];
+}
+
+function renderField2D(canvas, Z, N, vmin, vmax) {
+  canvas.width = N;
+  canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(N, N);
+  const span = vmax - vmin;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = Z[j * N + i];
+      const t = span > 0 ? (v - vmin) / span : 0.5;
+      const rgb = valueToRGB(t);
+      const idx = (j * N + i) * 4;
+      img.data[idx]     = rgb[0];
+      img.data[idx + 1] = rgb[1];
+      img.data[idx + 2] = rgb[2];
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ============================================================
+//  Sample geometry
+//  Sample (I, J) is centered at sample-spacing coords (2I+0.5, 2J+0.5).
+//  In the simulation grid (16 cells per sample-spacing), that's cell
+//  (32I+8, 32J+8). The 1×1 sample cell extends ±8 cells around there.
+//  The 16 samples are positioned at the upper-left of each 2×2 block.
+// ============================================================
+function sampleCenters() {
+  // Returns array of {I, J, gx, gy} in normalized [0,1] coords
+  const out = [];
+  for (let J = 0; J < 4; J++) {
+    for (let I = 0; I < 4; I++) {
+      const cx = 32 * I + 8;
+      const cy = 32 * J + 8;
+      out.push({ I, J, cx, cy, gx: (cx + 0.5) / N, gy: (cy + 0.5) / N });
+    }
+  }
+  return out;
+}
+
+function sampleAverage(Z, N, cx, cy) {
+  const half = CELLS_PER_SAMPLE_UNIT / 2;
+  let sum = 0, count = 0;
+  const i0 = Math.max(0, cx - half);
+  const i1 = Math.min(N, cx + half);
+  const j0 = Math.max(0, cy - half);
+  const j1 = Math.min(N, cy + half);
+  for (let j = j0; j < j1; j++) {
+    for (let i = i0; i < i1; i++) {
+      sum += Z[j * N + i]; count++;
+    }
+  }
+  return count > 0 ? sum / count : 0;
+}
+
+// Convert pixel (gx, gy in [0,1]) to sample-spacing coords. The deposit
+// is 8 sample-spacings wide. Sample at (32I+8, 32J+8) cell coords sits
+// at sample-spacing coord (2I+0.5, 2J+0.5). Same proportionally:
+// sample-coord = 8 * (cell+0.5)/N
+function gridFracToSampleCoord(gx, gy) {
+  return { x: 8 * gx, y: 8 * gy };
+}
+
+// ============================================================
+//  Linear algebra: solve Ax = b for small dense system
+// ============================================================
+function solveLinear(A, b) {
+  const n = b.length;
+  // Augmented matrix
+  const aug = new Array(n);
+  for (let i = 0; i < n; i++) {
+    aug[i] = new Float64Array(n + 1);
+    for (let j = 0; j < n; j++) aug[i][j] = A[i][j];
+    aug[i][n] = b[i];
+  }
+  // Forward elimination with partial pivoting
+  for (let k = 0; k < n; k++) {
+    let piv = k;
+    let pivVal = Math.abs(aug[k][k]);
+    for (let r = k + 1; r < n; r++) {
+      if (Math.abs(aug[r][k]) > pivVal) { piv = r; pivVal = Math.abs(aug[r][k]); }
+    }
+    if (piv !== k) { const tmp = aug[k]; aug[k] = aug[piv]; aug[piv] = tmp; }
+    if (Math.abs(aug[k][k]) < 1e-14) throw new Error('Singular matrix');
+    for (let r = k + 1; r < n; r++) {
+      const factor = aug[r][k] / aug[k][k];
+      for (let c = k; c <= n; c++) aug[r][c] -= factor * aug[k][c];
+    }
+  }
+  // Back-substitution
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let s = aug[i][n];
+    for (let j = i + 1; j < n; j++) s -= aug[i][j] * x[j];
+    x[i] = s / aug[i][i];
+  }
+  return x;
+}
+
+// ============================================================
+//  Ordinary kriging
+//  Given samples [{x, y, value}], variogram γ, and target (xn, yn),
+//  returns { weights, mu, prediction, krigingVariance, gammaToTarget }
+// ============================================================
+function ordinaryKriging(samples, gammaFn, xn, yn) {
+  const n = samples.length;
+  // Build (n+1) x (n+1) matrix
+  const A = new Array(n + 1);
+  for (let i = 0; i <= n; i++) A[i] = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const d = Math.hypot(samples[i].x - samples[j].x, samples[i].y - samples[j].y);
+      A[i][j] = gammaFn(d);
+    }
+    A[i][n] = 1;
+    A[n][i] = 1;
+  }
+  A[n][n] = 0;
+  // Right-hand side
+  const b = new Float64Array(n + 1);
+  const gammaToTarget = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const d = Math.hypot(samples[i].x - xn, samples[i].y - yn);
+    gammaToTarget[i] = gammaFn(d);
+    b[i] = gammaToTarget[i];
+  }
+  b[n] = 1;
+  // Solve
+  const sol = solveLinear(A, b);
+  const weights = new Float64Array(n);
+  for (let i = 0; i < n; i++) weights[i] = sol[i];
+  const mu = sol[n];
+  // Prediction
+  let prediction = 0;
+  for (let i = 0; i < n; i++) prediction += weights[i] * samples[i].value;
+  // Kriging variance: sum λ_i γ_{i0} + μ
+  let kvar = mu;
+  for (let i = 0; i < n; i++) kvar += weights[i] * gammaToTarget[i];
+  return { weights, mu, prediction, krigingVariance: kvar, gammaToTarget, gammaMatrix: A };
+}
+
+// ============================================================
+//  State
+// ============================================================
+const state = {
+  Z: null,
+  samples: [],         // [{I, J, x_grid, y_grid, x_sample, y_sample, value}, ...]
+  xNew: null,          // {gx, gy, sx, sy} in normalized [0,1] grid coords + sample-spacing coords
+  seed: Math.floor(Math.random() * 0xFFFFFFFF),
+};
+
+// ============================================================
+//  Overlay rendering on canvas
+// ============================================================
+function renderOverlay() {
+  const canvas = document.getElementById('overlay-canvas');
+  const wrap = canvas.parentElement;
+  const cssW = wrap.clientWidth;
+  const cssH = wrap.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const W = cssW, H = cssH;
+
+  // Draw 4×4 of 2×2 nested-block grid lines (light gray for inner cells, darker for blocks)
+  // Each 2×2 block is W/4 wide. Each 1×1 cell is W/8 wide.
+  ctx.strokeStyle = 'rgba(74, 74, 74, 0.35)';
+  ctx.lineWidth = 0.5;
+  for (let k = 1; k < 8; k++) {
+    if (k % 2 === 0) continue;  // skip block boundaries (drawn next)
+    const px = (k / 8) * W;
+    const py = (k / 8) * H;
+    ctx.beginPath();
+    ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    ctx.moveTo(0, py); ctx.lineTo(W, py);
+    ctx.stroke();
+  }
+  // Block boundaries
+  ctx.strokeStyle = 'rgba(26, 26, 26, 0.55)';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) {
+    const px = (k / 4) * W;
+    const py = (k / 4) * H;
+    ctx.beginPath();
+    ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    ctx.moveTo(0, py); ctx.lineTo(W, py);
+    ctx.stroke();
+  }
+
+  // Draw dashed lines from x_new to each sample (if x_new is set)
+  if (state.xNew && state.samples.length > 0) {
+    ctx.strokeStyle = 'rgba(30, 95, 168, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    const xnPx = state.xNew.gx * W;
+    const ynPx = state.xNew.gy * H;
+    for (const s of state.samples) {
+      const sxPx = s.gx * W;
+      const syPx = s.gy * H;
+      ctx.beginPath();
+      ctx.moveTo(sxPx, syPx);
+      ctx.lineTo(xnPx, ynPx);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Label γ values along each dashed line, near the sample side
+    ctx.fillStyle = 'rgba(30, 95, 168, 0.92)';
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const s of state.samples) {
+      const d = Math.hypot(s.x_sample - state.xNew.sx, s.y_sample - state.xNew.sy);
+      const g = gammaSpherical(d);
+      // Place label 30% of the way from sample toward x_new
+      const t = 0.32;
+      const lx = s.gx * W * (1 - t) + state.xNew.gx * W * t;
+      const ly = s.gy * H * (1 - t) + state.xNew.gy * H * t;
+      // Background pill for legibility
+      const txt = (g / 1000).toFixed(1) + 'k';
+      const padX = 3, padY = 1;
+      const w = ctx.measureText(txt).width + padX * 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillRect(lx - w/2, ly - 7, w, 13);
+      ctx.fillStyle = 'rgba(30, 95, 168, 0.95)';
+      ctx.fillText(txt, lx, ly);
+    }
+  }
+
+  // Draw sample points (red) with values written in upper-left of each cell.
+  // The sample sits at the center of the upper-left 1×1 of its 2×2 block
+  // — by our geometry, that center IS the sample location.
+  ctx.font = "11px 'JetBrains Mono', monospace";
+  ctx.fillStyle = 'rgba(196, 26, 59, 1)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.lineWidth = 3;
+  ctx.textBaseline = 'middle';
+  for (const s of state.samples) {
+    const px = s.gx * W;
+    const py = s.gy * H;
+    // Red dot at sample location
+    ctx.beginPath();
+    ctx.arc(px, py, 3.5, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fill();
+    ctx.fillStyle = 'rgba(196, 26, 59, 1)';
+    ctx.beginPath();
+    ctx.arc(px, py, 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Value label, slightly offset to upper-right of dot
+    const txt = Math.round(s.value).toString();
+    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'left';
+    // White stroke first for legibility
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(txt, px + 5, py - 1);
+    ctx.fillStyle = 'rgba(196, 26, 59, 1)';
+    ctx.fillText(txt, px + 5, py - 1);
+  }
+
+  // Draw x_new (blue cross + dot)
+  if (state.xNew) {
+    const px = state.xNew.gx * W;
+    const py = state.xNew.gy * H;
+    // White ring for legibility
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fill();
+    // Blue dot
+    ctx.beginPath();
+    ctx.arc(px, py, 4.5, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(30, 95, 168, 1)';
+    ctx.fill();
+    // Cross
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(px - 9, py); ctx.lineTo(px + 9, py);
+    ctx.moveTo(px, py - 9); ctx.lineTo(px, py + 9);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(30, 95, 168, 1)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(px - 9, py); ctx.lineTo(px + 9, py);
+    ctx.moveTo(px, py - 9); ctx.lineTo(px, py + 9);
+    ctx.stroke();
+
+    // Label: x_new
+    ctx.font = "italic bold 11px 'Fraunces', serif";
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeText('x_new', px + 11, py + 1);
+    ctx.fillStyle = 'rgba(30, 95, 168, 1)';
+    ctx.fillText('x_new', px + 11, py + 1);
+  }
+}
+
+// ============================================================
+//  Field regeneration & rendering
+// ============================================================
+function regenerate() {
+  const Z = sampleField(state.seed);
+  state.Z = Z;
+  state.xNew = null;
+
+  renderField2D(document.getElementById('field-canvas'), Z, N, 0, 600);
+
+  // Compute the 16 samples
+  state.samples = sampleCenters().map(s => ({
+    I: s.I, J: s.J,
+    cx: s.cx, cy: s.cy,
+    gx: s.gx, gy: s.gy,
+    // sample-spacing coordinates (for variogram distances)
+    x_sample: 2 * s.I + 0.5,
+    y_sample: 2 * s.J + 0.5,
+    // simple x, y aliases for kriging fn:
+    x: 2 * s.I + 0.5,
+    y: 2 * s.J + 0.5,
+    value: sampleAverage(Z, N, s.cx, s.cy),
+  }));
+
+  renderOverlay();
+  drawVariogram();
+
+  document.getElementById('krige-btn').disabled = true;
+  document.getElementById('hint').innerHTML =
+    'Click a point in the field to set <strong>x<sub>new</sub></strong>, then press <strong>Krige</strong>.';
+  document.getElementById('solver-content').innerHTML =
+    '<div class="empty-state">The kriging matrix and solution will appear here once you choose <strong>x<sub>new</sub></strong> and press Krige.</div>';
+
+  state.seed = (state.seed * 1664525 + 1013904223) >>> 0;
+}
+
+// ============================================================
+//  Click-to-pick x_new
+// ============================================================
+const wrap = document.getElementById('canvas-wrap');
+wrap.addEventListener('click', (e) => {
+  const rect = wrap.getBoundingClientRect();
+  const gx = (e.clientX - rect.left) / rect.width;
+  const gy = (e.clientY - rect.top) / rect.height;
+  if (gx < 0 || gx > 1 || gy < 0 || gy > 1) return;
+  const sc = gridFracToSampleCoord(gx, gy);
+  state.xNew = { gx, gy, sx: sc.x, sy: sc.y };
+  renderOverlay();
+  drawVariogram();
+  document.getElementById('krige-btn').disabled = false;
+  document.getElementById('hint').innerHTML =
+    'Selected <strong>x<sub>new</sub></strong> = (' + sc.x.toFixed(2) + ', ' + sc.y.toFixed(2) +
+    '). Press <strong>Krige</strong> to solve the system.';
+});
+
+// ============================================================
+//  Kriging button → render the system & solution
+// ============================================================
+function fmt(v, digits=1) {
+  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(digits) + 'k';
+  return v.toFixed(digits);
+}
+function fmtSigned(v, digits=3) {
+  if (v >= 0) return '+' + v.toFixed(digits);
+  return v.toFixed(digits);
+}
+
+// ============================================================
+//  Draw the variogram with sample distance markers
+// ============================================================
+function drawVariogram() {
+  const canvas = document.getElementById('vario-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  if (cssW === 0 || cssH === 0) return;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  const ML = 48, MR = 14, MT = 18, MB = 36;
+  const plotW = W - ML - MR;
+  const plotH = H - MT - MB;
+
+  const totalSill = NUGGET + SILL_STRUCT;
+  // X-axis range: cover at least up to RANGE * 1.5, but extend if any sample
+  // distance is larger
+  let maxDist = RANGE * 1.4;
+  if (state.xNew && state.samples.length > 0) {
+    for (const s of state.samples) {
+      const d = Math.hypot(s.x_sample - state.xNew.sx, s.y_sample - state.xNew.sy);
+      if (d > maxDist) maxDist = d;
+    }
+  }
+  const xMax = maxDist * 1.05;
+  const yMax = totalSill * 1.18;
+
+  const sx = (h) => ML + (h / xMax) * plotW;
+  const sy = (g) => MT + plotH - (g / yMax) * plotH;
+
+  // Background grid
+  ctx.strokeStyle = '#eee5cc';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) {
+    const yPx = sy((k / 4) * yMax);
+    ctx.beginPath();
+    ctx.moveTo(ML, yPx); ctx.lineTo(ML + plotW, yPx);
+    ctx.stroke();
+  }
+
+  // Sill reference line
+  ctx.strokeStyle = '#b8923d';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(ML, sy(totalSill));
+  ctx.lineTo(ML + plotW, sy(totalSill));
+  ctx.stroke();
+  // Range vertical reference
+  if (RANGE < xMax) {
+    ctx.beginPath();
+    ctx.moveTo(sx(RANGE), MT); ctx.lineTo(sx(RANGE), MT + plotH);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Axes
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(ML, MT); ctx.lineTo(ML, MT + plotH);
+  ctx.lineTo(ML + plotW, MT + plotH);
+  ctx.stroke();
+
+  // Theoretical curve (with nugget jump)
+  ctx.strokeStyle = '#9e1b32';
+  ctx.lineWidth = 2;
+  // Start from the nugget level just past 0
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(NUGGET));
+  const NP = 250;
+  for (let i = 1; i <= NP; i++) {
+    const h = (i / NP) * xMax;
+    const g = h <= 0 ? 0 : (h >= RANGE ? totalSill : NUGGET + SILL_STRUCT * (1.5 * (h/RANGE) - 0.5 * Math.pow(h/RANGE, 3)));
+    ctx.lineTo(sx(h), sy(g));
+  }
+  ctx.stroke();
+
+  // Nugget jump indicator
+  ctx.strokeStyle = '#9e1b32';
+  ctx.setLineDash([2, 2]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(0));
+  ctx.lineTo(sx(0), sy(NUGGET));
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#9e1b32';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.fillText('c₀', sx(0) + 4, sy(NUGGET * 0.5) + 3);
+
+  // If x_new is set, plot the 16 sample distances on the curve
+  if (state.xNew && state.samples.length > 0) {
+    // Compute distances
+    const distances = state.samples.map((s, i) => {
+      const d = Math.hypot(s.x_sample - state.xNew.sx, s.y_sample - state.xNew.sy);
+      return { i: i + 1, d, gamma: gammaSpherical(d) };
+    });
+
+    // Tick marks on x-axis with labels
+    ctx.strokeStyle = '#1e5fa8';
+    ctx.fillStyle = '#1e5fa8';
+    ctx.lineWidth = 1.5;
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.textAlign = 'center';
+
+    // To avoid label collisions, sort by distance and stagger labels
+    const sorted = distances.slice().sort((a, b) => a.d - b.d);
+    let lastLabelX = -Infinity;
+    let labelRow = 0;
+    for (const d of sorted) {
+      const x = sx(d.d);
+      // Tick on x-axis
+      ctx.strokeStyle = '#1e5fa8';
+      ctx.beginPath();
+      ctx.moveTo(x, MT + plotH);
+      ctx.lineTo(x, MT + plotH + 4);
+      ctx.stroke();
+      // Label below; stagger if too close to previous
+      if (x - lastLabelX < 16) {
+        labelRow = (labelRow + 1) % 2;
+      } else {
+        labelRow = 0;
+      }
+      lastLabelX = x;
+      const ly = MT + plotH + 14 + labelRow * 11;
+      ctx.fillStyle = '#1e5fa8';
+      ctx.fillText('x' + d.i, x, ly);
+    }
+
+    // Now also: draw the value γ(x_i, x_new) as a red dot ON the curve
+    // and a vertical guide line
+    for (const d of distances) {
+      const px = sx(d.d);
+      const py = sy(d.gamma);
+      // Vertical guide line (faint)
+      ctx.strokeStyle = 'rgba(196, 26, 59, 0.25)';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(px, MT + plotH);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Red dot on curve
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fill();
+      ctx.fillStyle = '#c41a3b';
+      ctx.beginPath();
+      ctx.arc(px, py, 2.2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  // Y-axis tick labels
+  ctx.fillStyle = '#6e6863';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 4; k++) {
+    const yVal = (k / 4) * yMax;
+    const txt = yVal >= 1000 ? (yVal / 1000).toFixed(0) + 'k' : yVal.toFixed(0);
+    ctx.fillText(txt, ML - 4, sy(yVal) + 3);
+  }
+  // X-axis tick labels (numeric, every 1 unit)
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#6e6863';
+  for (let k = 0; k <= Math.ceil(xMax); k++) {
+    if (k > xMax) break;
+    ctx.fillText(k.toFixed(0), sx(k), MT + plotH + 13);
+  }
+
+  // Axis titles
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = "italic 10px 'Fraunces', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('h  (sample-spacing units)', ML + plotW / 2, MT + plotH + 32);
+  ctx.save();
+  ctx.translate(13, MT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('γ(h)', 0, 0);
+  ctx.restore();
+
+  // Sill / range labels
+  ctx.fillStyle = '#b8923d';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.textAlign = 'right';
+  ctx.fillText('sill ' + (totalSill / 1000).toFixed(0) + 'k', ML + plotW - 4, sy(totalSill) - 3);
+  if (RANGE < xMax) {
+    ctx.textAlign = 'center';
+    ctx.fillText('a=5.75', sx(RANGE), MT + 11);
+  }
+}
+
+function buildMatrixHTML(result) {
+  const n = state.samples.length;
+  const A = result.gammaMatrix;
+  const lambdas = result.weights;
+  const mu = result.mu;
+  const b = result.gammaToTarget;
+
+  // Pretty-print the AX=B system. With 16 samples + Lagrange row, A is 17x17.
+  // Showing all of it would be unwieldy, so display compactly: we show
+  // the full matrix but use "k" notation for values ≥ 1000.
+
+  let html = '<div class="math-block">';
+  html += '<div class="math-block-title"><span class="num">§4a</span>The kriging system AX = B</div>';
+  html += '<div class="math-block-caption">17 × 17 system: 16 weights + Lagrange multiplier μ. Values in thousands (k = 1000).</div>';
+  html += '<div class="matrix-display">';
+
+  // A matrix
+  html += '<div class="matrix A">';
+  // 17 rows
+  for (let i = 0; i <= n; i++) {
+    for (let j = 0; j <= n; j++) {
+      let val = A[i][j];
+      let cls = 'cell';
+      let txt;
+      if (i === n && j === n) { txt = '0'; cls += ' constraint'; }
+      else if (i === n || j === n) { txt = '1'; cls += ' constraint'; }
+      else if (i === j) { txt = '0'; cls += ' diag'; }
+      else txt = fmt(val, 1);
+      html += `<div class="${cls}">${txt}</div>`;
+    }
+  }
+  html += '</div>';
+
+  // λ vector
+  html += '<div class="matrix-label">·</div>';
+  html += '<div class="matrix lambda">';
+  for (let i = 0; i < n; i++) {
+    html += `<div class="cell muted">λ<sub>${i+1}</sub></div>`;
+  }
+  html += `<div class="cell constraint">μ</div>`;
+  html += '</div>';
+
+  // = sign
+  html += '<div class="equals">=</div>';
+
+  // b vector
+  html += '<div class="matrix b">';
+  for (let i = 0; i < n; i++) {
+    html += `<div class="cell">${fmt(b[i], 1)}</div>`;
+  }
+  html += `<div class="cell constraint">1</div>`;
+  html += '</div>';
+
+  html += '</div></div>';
+
+  // Solution
+  html += '<div class="math-block">';
+  html += '<div class="math-block-title"><span class="num">§4b</span>Solution &mdash; the kriging weights</div>';
+  html += '<div class="math-block-caption">Solved by Gaussian elimination. Negative weights are normal in kriging (screen effect).</div>';
+  html += '<div class="solution-list">';
+  html += '<div class="row header"><div>i</div><div>sample x_i</div><div>z_i</div><div>λ_i</div></div>';
+  let sumLambda = 0;
+  for (let i = 0; i < n; i++) {
+    const s = state.samples[i];
+    const w = lambdas[i];
+    sumLambda += w;
+    const wClass = w < 0 ? 'neg' : '';
+    html += `<div class="row"><div class="label-cell">x<sub>${i+1}</sub></div>`;
+    html += `<div>(${s.x_sample.toFixed(1)}, ${s.y_sample.toFixed(1)})</div>`;
+    html += `<div>${Math.round(s.value)}</div>`;
+    html += `<div class="${wClass}">${fmtSigned(w, 4)}</div></div>`;
+  }
+  html += `<div class="row mu-row"><div>μ</div><div>(Lagrange)</div><div></div><div>${fmtSigned(mu, 1)}</div></div>`;
+  html += `<div class="row" style="margin-top: 4px; border-bottom: none; color: var(--muted); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;"><div>check</div><div>Σ λ_i must equal 1</div><div></div><div>${sumLambda.toFixed(4)}</div></div>`;
+  html += '</div></div>';
+
+  // Prediction equation
+  html += '<div class="prediction-box">';
+  html += '<div class="header">§4c · Prediction</div>';
+  html += '<div class="equation">z(x<sub>new</sub>) = ';
+  let parts = [];
+  for (let i = 0; i < n; i++) {
+    const w = lambdas[i];
+    const z = state.samples[i].value;
+    const sign = w >= 0 ? (i === 0 ? '' : ' + ') : ' − ';
+    parts.push(`${sign}${Math.abs(w).toFixed(3)}·${Math.round(z)}`);
+  }
+  html += parts.join('');
+  html += '</div>';
+  html += `<div class="result"><span class="label">ẑ(x<sub>new</sub>) =</span>${result.prediction.toFixed(1)}</div>`;
+
+  // Compare with truth
+  if (state.Z && state.xNew) {
+    // True point value at x_new (read field at corresponding pixel)
+    const ix = Math.min(N - 1, Math.max(0, Math.floor(state.xNew.gx * N)));
+    const iy = Math.min(N - 1, Math.max(0, Math.floor(state.xNew.gy * N)));
+    const truth = state.Z[iy * N + ix];
+    const err = result.prediction - truth;
+    const krigStd = Math.sqrt(Math.max(result.krigingVariance, 0));
+    html += `<div class="truth">true z(x<sub>new</sub>) at this pixel = <span class="truth-val">${truth.toFixed(1)}</span> · error ${fmtSigned(err, 1)} · kriging σ ≈ ${krigStd.toFixed(1)}</div>`;
+  }
+
+  html += '</div>';
+
+  return html;
+}
+
+document.getElementById('krige-btn').addEventListener('click', () => {
+  if (!state.xNew) return;
+  const result = ordinaryKriging(state.samples, gammaSpherical, state.xNew.sx, state.xNew.sy);
+  document.getElementById('solver-caption').textContent =
+    'Solving for the weights at x_new = (' + state.xNew.sx.toFixed(2) + ', ' + state.xNew.sy.toFixed(2) + ').';
+  document.getElementById('solver-content').innerHTML = buildMatrixHTML(result);
+});
+
+document.getElementById('regen-btn').addEventListener('click', regenerate);
+
+// Window resize redraws overlay (canvas dimensions need updating)
+window.addEventListener('resize', () => { renderOverlay(); drawVariogram(); });
+
+// Initial
+regenerate();
+</script>
+</body>
+</html>

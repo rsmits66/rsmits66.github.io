@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AR(2) Simulation — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf7f2; --navy:#18284a; --gold:#c8a430; --goldDk:#a07820;
+  --crimson:#9E1B32; --crimson2:#7a1426; --crimsonLt:#fce8eb;
+  --crimsonPale:#E8B4BD; --muted:#7a7a8a; --border:#ddd9d0; --panel:#f8f5f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);
+     display:flex;flex-direction:column;align-items:center;padding-bottom:24px;}
+
+header{width:100%;background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.25rem 1.6rem;font-size:.74rem;color:#f0c8d0;
+         letter-spacing:.07em;text-transform:uppercase;}
+.hdr-main{padding:.55rem 1.6rem .5rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;font-weight:700;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.15rem;font-size:.78rem;line-height:1.5;}
+.hdr-stripe{height:3px;background:linear-gradient(90deg,var(--gold),var(--goldDk));}
+
+.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 16px 6px;
+          max-width:960px;width:100%;}
+.ctrl-group{display:flex;align-items:center;gap:6px;}
+.ctrl-group label{font-style:italic;color:var(--navy);font-size:.95rem;}
+input[type="number"]{
+  font-family:'Crimson Pro',Georgia,serif;font-size:.9rem;color:var(--navy);
+  background:#fff;border:1px solid var(--border);border-radius:3px;
+  padding:4px 8px;width:72px;text-align:center;outline:none;
+  transition:border-color .15s;
+}
+input[type="number"]:focus{border-color:var(--crimson);}
+button{font-family:'Crimson Pro',Georgia,serif;cursor:pointer;border:1px solid var(--crimson);
+       background:#fff;color:var(--crimson);padding:5px 14px;font-size:.86rem;border-radius:3px;
+       transition:all .15s;}
+button:hover{background:var(--crimsonLt);}
+button.primary{background:var(--crimson);color:#fff;}
+button.primary:hover{background:var(--crimson2);}
+.hint{color:var(--muted);font-size:.77rem;font-style:italic;}
+
+.wrap{max-width:960px;width:100%;padding:6px 16px 0;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;}
+.phdr{font-family:'Playfair Display',Georgia,serif;font-size:.66rem;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--muted);padding:6px 12px;background:var(--panel);
+      border-bottom:1px solid var(--border);}
+canvas{display:block;background:#fff;width:100%;height:auto;}
+
+.caption{max-width:960px;width:100%;padding:12px 16px 0;font-style:italic;font-size:.9rem;
+         color:var(--muted);text-align:center;line-height:1.6;}
+.caption strong{font-style:normal;color:var(--navy);font-weight:600;}
+.caption .crimson-val{color:var(--crimson);font-weight:600;font-style:normal;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">The University of Alabama &ensp;&mdash;&ensp; Mathematics Department &ensp;&middot;&ensp; Stochastic Processes</div>
+  <div class="hdr-main">
+    <h1>Autoregressive Process AR(2)</h1>
+    <div class="subtitle">
+      x<sub>t</sub> = x<sub>t&minus;1</sub> &minus; 0.9 &middot; x<sub>t&minus;2</sub> + w<sub>t</sub>,&ensp;
+      w<sub>t</sub> &sim; N(0, 1) i.i.d. &ensp;&middot;&ensp;
+      stationary with complex roots inducing pseudo-cycles
+    </div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group"><label for="N">N</label><input type="number" id="N" value="200" min="10" max="5000" step="10"></div>
+  <div class="ctrl-group"><label for="M">M</label><input type="number" id="M" value="15" min="1" max="100" step="1"></div>
+  <button id="btnRedraw" class="primary">Redraw paths</button>
+  <span class="hint">&mdash; M paths in pale crimson, one highlighted in crimson; all start at x<sub>0</sub> = x<sub>1</sub> = 0</span>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="phdr">Sample paths &nbsp;&middot;&nbsp; M+1 realizations on t = 0, 1, &hellip;, N&minus;1</div>
+    <canvas id="c" width="920" height="480"></canvas>
+  </div>
+</div>
+
+<div class="caption">
+  Highlighted final x<sub>N&minus;1</sub>: <span class="crimson-val" id="statHighlight">&mdash;</span> &ensp;&middot;&ensp;
+  Mean of final values: <strong id="statMean">&mdash;</strong> &ensp;&middot;&ensp;
+  Empirical std at t = N&minus;1: <strong id="statStd">&mdash;</strong> &ensp;&middot;&ensp;
+  Stationary std (Yule&ndash;Walker): <strong>&radic;7.28 &asymp; 2.70</strong> &ensp;&middot;&ensp;
+  Pseudo-period: <strong>&asymp; 6.18</strong>
+</div>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const padL = 55, padR = 20, padT = 20, padB = 40;
+
+// AR(2) coefficients (kept as named constants for clarity)
+const PHI1 = 1.0;
+const PHI2 = -0.9;
+
+// Standard normal via Box-Muller
+function randn(){
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function simulate(N, M){
+  const series = [];
+  for (let j = 0; j <= M; j++){
+    const x = new Float64Array(N);
+    x[0] = 0;
+    x[1] = 0;
+    for (let i = 2; i < N; i++){
+      x[i] = PHI1 * x[i-1] + PHI2 * x[i-2] + randn();
+    }
+    series.push(x);
+  }
+  return series;
+}
+
+function draw(){
+  const N = parseInt(document.getElementById('N').value) || 200;
+  const M = parseInt(document.getElementById('M').value) || 15;
+  const series = simulate(N, M);
+
+  let mn = Infinity, mx = -Infinity;
+  for (const s of series){
+    for (let i = 0; i < N; i++){
+      if (s[i] < mn) mn = s[i];
+      if (s[i] > mx) mx = s[i];
+    }
+  }
+  const pad = 0.06 * (mx - mn) || 1;
+  mn -= pad; mx += pad;
+
+  const xs = i => padL + (W - padL - padR) * (i / (N - 1));
+  const ys = v => H - padB - (H - padT - padB) * (v - mn) / (mx - mn);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = '#ece8df'; ctx.lineWidth = 1;
+  for (let k = 0; k <= 10; k++){
+    const x = padL + (W - padL - padR) * k / 10;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+  }
+  const yTicks = 8;
+  for (let k = 0; k <= yTicks; k++){
+    const y = padT + (H - padT - padB) * k / yTicks;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+
+  // gold zero line
+  if (mn < 0 && mx > 0){
+    ctx.strokeStyle = '#c8a430'; ctx.lineWidth = 1;
+    const y0 = ys(0);
+    ctx.beginPath(); ctx.moveTo(padL, y0); ctx.lineTo(W - padR, y0); ctx.stroke();
+  }
+
+  // navy box
+  ctx.strokeStyle = '#18284a'; ctx.lineWidth = 1.2;
+  ctx.strokeRect(padL, padT, W - padL - padR, H - padT - padB);
+
+  // tick labels (x)
+  ctx.fillStyle = '#7a7a8a';
+  ctx.font = "12px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let k = 0; k <= 10; k++){
+    const tVal = (N - 1) * k / 10;
+    const x = padL + (W - padL - padR) * k / 10;
+    ctx.fillText(Math.round(tVal).toString(), x, H - padB + 6);
+  }
+  // tick labels (y)
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let k = 0; k <= yTicks; k++){
+    const v = mn + (mx - mn) * (1 - k / yTicks);
+    const y = padT + (H - padT - padB) * k / yTicks;
+    ctx.fillText(v.toFixed(1), padL - 7, y);
+  }
+
+  // axis titles
+  ctx.fillStyle = '#18284a';
+  ctx.font = "italic 13px 'Crimson Pro', Georgia, serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('t', W / 2, H - padB + 20);
+  ctx.save();
+  ctx.translate(14, H / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('x\u209C', 0, 0);
+  ctx.restore();
+
+  // adaptive alpha for many paths
+  const bgAlpha = Math.max(0.2, Math.min(0.85, 8 / Math.max(1, M)));
+  const bgColor = `rgba(232, 180, 189, ${bgAlpha})`;
+
+  function drawSeries(x, color, lw){
+    ctx.strokeStyle = color; ctx.lineWidth = lw;
+    ctx.beginPath();
+    for (let i = 0; i < x.length; i++){
+      const px = xs(i), py = ys(x[i]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  for (let j = 0; j < M; j++){
+    drawSeries(series[j], bgColor, 1);
+  }
+  drawSeries(series[M], '#9E1B32', 1.6);
+
+  // stats: empirical mean & std of final values across all paths
+  const finals = series.map(s => s[N - 1]);
+  const highlight = finals[finals.length - 1];
+  const mean = finals.reduce((a, b) => a + b, 0) / finals.length;
+  const std = Math.sqrt(finals.reduce((a, b) => a + (b - mean) ** 2, 0) / finals.length);
+
+  document.getElementById('statHighlight').textContent = highlight.toFixed(2);
+  document.getElementById('statMean').textContent = mean.toFixed(2);
+  document.getElementById('statStd').textContent = std.toFixed(2);
+}
+
+document.getElementById('btnRedraw').addEventListener('click', draw);
+['N','M'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') draw(); });
+});
+draw();
+</script>
+</body>
+</html>

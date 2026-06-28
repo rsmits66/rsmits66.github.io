@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Confidence Intervals — More Examples</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f4ef;
+    --text: #1a1915;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.15);
+    --border-strong: rgba(0,0,0,0.3);
+    --accent: #9E1B32;
+    --accent-dark: #6B0F23;
+    --accent-soft: #f2dde2;
+    --hit: #828A8F;
+    --miss: #E24B4A;
+    --btn-hover: #ededea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #ffffff;
+      --surface: #f5f4ef;
+      --text: #1a1915;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #888780;
+      --border: rgba(0,0,0,0.15);
+      --border-strong: rgba(0,0,0,0.3);
+      --accent: #9E1B32;
+      --accent-dark: #6B0F23;
+      --accent-soft: #f2dde2;
+      --hit: #828A8F;
+      --miss: #E24B4A;
+      --btn-hover: #ededea;
+    }
+    html, body { color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 820px; margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    border-top: 3px solid var(--accent);
+  }
+  h1 { font-size: 24px; font-weight: 500; margin: 0 0 0.25rem; color: var(--accent); letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 1.5rem; }
+  .ci-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .ci-row.hidden { display: none; }
+  .ci-label { font-size: 14px; color: var(--text-secondary); min-width: 130px; }
+  .ci-value { font-size: 14px; font-weight: 500; min-width: 60px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); height: 20px; }
+  select {
+    flex: 1; padding: 8px 12px;
+    border: 0.5px solid var(--border-strong); border-radius: 8px;
+    background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 14px; cursor: pointer;
+  }
+  button {
+    background: transparent; color: var(--text);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px; padding: 8px 16px;
+    font-size: 14px; font-family: inherit; cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+  }
+  button:hover:not(:disabled) { background: var(--btn-hover); }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button.primary {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  button.primary:hover:not(:disabled) {
+    background: var(--accent-dark); border-color: var(--accent-dark);
+  }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 1.25rem 0; }
+  .formula {
+    background: var(--surface); border-radius: 8px;
+    padding: 10px 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px; color: var(--text-secondary);
+    margin: 0 0 1.25rem; word-spacing: 2px;
+    line-height: 1.6;
+  }
+  .formula .accent-text { color: var(--accent-dark); font-weight: 500; }
+  .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 1.25rem 0; }
+  .ci-metric { background: var(--surface); border-radius: 8px; padding: 12px 14px; }
+  .ci-metric-label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+  .ci-metric-value { font-size: 22px; font-weight: 500; display: block; font-variant-numeric: tabular-nums; }
+  .ci-metric-sub { font-size: 11px; color: var(--text-tertiary); display: block; margin-top: 2px; }
+  .ci-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .ci-swatch { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 6px; }
+  svg { width: 100%; height: auto; }
+  .notes {
+    margin-top: 2rem; padding-top: 1.5rem;
+    border-top: 0.5px solid var(--border);
+    font-size: 14px; color: var(--text-secondary);
+  }
+  .notes h2 { font-size: 16px; font-weight: 500; color: var(--text); margin: 1rem 0 0.5rem; }
+  .notes code {
+    background: var(--surface); padding: 1px 6px; border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Confidence interval coverage simulator</h1>
+  <p class="subtitle">
+    Small-sample and chi-square based intervals: t-interval for μ, chi-square interval for σ²,
+    pooled-t interval for μ₁ − μ₂, and large-sample interval for p₁ − p₂. Each scenario simulates
+    fresh experiments under known parameters and tracks how often the resulting interval captures
+    the true value.
+  </p>
+
+  <div class="ci-row">
+    <label class="ci-label" for="ci-dist">Interval type</label>
+    <select id="ci-dist">
+      <option value="tmu">Small-sample t-interval for μ (normal population)</option>
+      <option value="chi2var">χ² interval for σ² (normal population)</option>
+      <option value="diffmu">Pooled t-interval for μ₁ − μ₂</option>
+      <option value="diffp">Large-sample z-interval for p₁ − p₂</option>
+    </select>
+  </div>
+
+  <div class="formula" id="ci-formula"></div>
+
+  <!-- One-population mean & variance controls -->
+  <div class="ci-row" id="row-mu">
+    <label class="ci-label" for="ci-mu">True μ</label>
+    <input type="range" id="ci-mu" min="-10" max="10" step="0.5" value="0" />
+    <span class="ci-value" id="ci-mu-out">0.0</span>
+  </div>
+  <div class="ci-row" id="row-sigma">
+    <label class="ci-label" for="ci-sigma">True σ</label>
+    <input type="range" id="ci-sigma" min="0.5" max="10" step="0.1" value="2" />
+    <span class="ci-value" id="ci-sigma-out">2.0</span>
+  </div>
+  <div class="ci-row" id="row-n">
+    <label class="ci-label" for="ci-n">Sample size n</label>
+    <input type="range" id="ci-n" min="3" max="100" step="1" value="10" />
+    <span class="ci-value" id="ci-n-out">10</span>
+  </div>
+
+  <!-- Two-population mean controls -->
+  <div class="ci-row hidden" id="row-mu1">
+    <label class="ci-label" for="ci-mu1">True μ₁</label>
+    <input type="range" id="ci-mu1" min="-10" max="10" step="0.5" value="0" />
+    <span class="ci-value" id="ci-mu1-out">0.0</span>
+  </div>
+  <div class="ci-row hidden" id="row-mu2">
+    <label class="ci-label" for="ci-mu2">True μ₂</label>
+    <input type="range" id="ci-mu2" min="-10" max="10" step="0.5" value="2" />
+    <span class="ci-value" id="ci-mu2-out">2.0</span>
+  </div>
+  <div class="ci-row hidden" id="row-sigma-shared">
+    <label class="ci-label" for="ci-sigma-shared">Shared σ</label>
+    <input type="range" id="ci-sigma-shared" min="0.5" max="10" step="0.1" value="2" />
+    <span class="ci-value" id="ci-sigma-shared-out">2.0</span>
+  </div>
+  <div class="ci-row hidden" id="row-n1">
+    <label class="ci-label" for="ci-n1">Sample size n₁</label>
+    <input type="range" id="ci-n1" min="3" max="100" step="1" value="15" />
+    <span class="ci-value" id="ci-n1-out">15</span>
+  </div>
+  <div class="ci-row hidden" id="row-n2">
+    <label class="ci-label" for="ci-n2">Sample size n₂</label>
+    <input type="range" id="ci-n2" min="3" max="100" step="1" value="15" />
+    <span class="ci-value" id="ci-n2-out">15</span>
+  </div>
+
+  <!-- Two-population proportion controls -->
+  <div class="ci-row hidden" id="row-p1">
+    <label class="ci-label" for="ci-p1">True p₁</label>
+    <input type="range" id="ci-p1" min="0.05" max="0.95" step="0.01" value="0.5" />
+    <span class="ci-value" id="ci-p1-out">0.50</span>
+  </div>
+  <div class="ci-row hidden" id="row-p2">
+    <label class="ci-label" for="ci-p2">True p₂</label>
+    <input type="range" id="ci-p2" min="0.05" max="0.95" step="0.01" value="0.4" />
+    <span class="ci-value" id="ci-p2-out">0.40</span>
+  </div>
+  <div class="ci-row hidden" id="row-np1">
+    <label class="ci-label" for="ci-np1">Sample size n₁</label>
+    <input type="range" id="ci-np1" min="10" max="500" step="5" value="100" />
+    <span class="ci-value" id="ci-np1-out">100</span>
+  </div>
+  <div class="ci-row hidden" id="row-np2">
+    <label class="ci-label" for="ci-np2">Sample size n₂</label>
+    <input type="range" id="ci-np2" min="10" max="500" step="5" value="100" />
+    <span class="ci-value" id="ci-np2-out">100</span>
+  </div>
+
+  <div class="ci-row">
+    <label class="ci-label" for="ci-conf">Confidence</label>
+    <input type="range" id="ci-conf" min="50" max="99" step="1" value="95" />
+    <span class="ci-value" id="ci-conf-out">95%</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="primary" id="btn-1">Draw 1</button>
+    <button id="btn-50">Draw 50</button>
+    <button id="btn-500">Draw 500</button>
+    <button id="btn-reset">Reset</button>
+  </div>
+
+  <div class="metrics">
+    <div class="ci-metric">
+      <span class="ci-metric-label">Intervals drawn</span>
+      <span class="ci-metric-value" id="ci-total">0</span>
+    </div>
+    <div class="ci-metric">
+      <span class="ci-metric-label">Contain target</span>
+      <span class="ci-metric-value" id="ci-hits">0</span>
+    </div>
+    <div class="ci-metric">
+      <span class="ci-metric-label">Coverage</span>
+      <span class="ci-metric-value" id="ci-cov">—</span>
+      <span class="ci-metric-sub" id="ci-cov-target">target: 95%</span>
+    </div>
+  </div>
+
+  <div class="ci-legend">
+    <span><span class="ci-swatch" style="background: var(--accent);"></span>true value</span>
+    <span><span class="ci-swatch" style="background: var(--hit);"></span>interval contains it</span>
+    <span><span class="ci-swatch" style="background: var(--miss);"></span>interval misses it</span>
+  </div>
+
+  <svg id="ci-viz" viewBox="0 0 680 470" role="img"
+       aria-label="Simulation plot showing horizontal lines for each confidence interval."></svg>
+
+  <div class="notes">
+    <h2>How it works</h2>
+    <p id="howtext"></p>
+    <h2>Try this</h2>
+    <p id="trytext"></p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const state = {
+    type: 'tmu',
+    confLevel: 0.95,
+    mu: 0, sigma: 2, n: 10,
+    mu1: 0, mu2: 2, sigmaShared: 2, n1: 15, n2: 15,
+    p1: 0.5, p2: 0.4, np1: 100, np2: 100,
+    total: 0, hits: 0, intervals: []
+  };
+  const MAX_VISIBLE = 50;
+
+  function getColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function randn() {
+    const u1 = Math.random(), u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function rchisq(df) {
+    let s = 0;
+    for (let i = 0; i < df; i++) { const z = randn(); s += z * z; }
+    return s;
+  }
+
+  function rbinomCount(n, p) {
+    let s = 0;
+    for (let i = 0; i < n; i++) if (Math.random() < p) s++;
+    return s;
+  }
+
+  function gammaHalf(n) {
+    if (n === 1) return Math.sqrt(Math.PI);
+    if (n === 2) return 1;
+    return (n / 2 - 1) * gammaHalf(n - 2);
+  }
+
+  function chi2pdf(x, df) {
+    if (x <= 0) return df === 2 ? 0.5 : (df < 2 ? Infinity : 0);
+    const norm = 1 / (Math.pow(2, df / 2) * gammaHalf(df));
+    return norm * Math.pow(x, df / 2 - 1) * Math.exp(-x / 2);
+  }
+
+  function chi2cdf(x, df) {
+    if (x <= 0) return 0;
+    const steps = 4000;
+    const h = x / steps;
+    let sum = 0.5 * (chi2pdf(0.0001, df) + chi2pdf(x, df));
+    for (let i = 1; i < steps; i++) sum += chi2pdf(i * h, df);
+    return Math.min(1, Math.max(0, sum * h));
+  }
+
+  function chi2quantile(p, df) {
+    let lo = 0.0001;
+    let hi = Math.max(50, df * 5);
+    while (chi2cdf(hi, df) < p) hi *= 2;
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      if (chi2cdf(mid, df) < p) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function invNormal(p) {
+    const a1=-3.969683028665376e+01, a2=2.209460984245205e+02, a3=-2.759285104469687e+02,
+          a4=1.383577518672690e+02, a5=-3.066479806614716e+01, a6=2.506628277459239e+00;
+    const b1=-5.447609879822406e+01, b2=1.615858368580409e+02, b3=-1.556989798598866e+02,
+          b4=6.680131188771972e+01, b5=-1.328068155288572e+01;
+    const c1=-7.784894002430293e-03, c2=-3.223964580411365e-01, c3=-2.400758277161838e+00,
+          c4=-2.549732539343734e+00, c5=4.374664141464968e+00, c6=2.938163982698783e+00;
+    const d1=7.784695709041462e-03, d2=3.224671290700398e-01, d3=2.445134137142996e+00,
+          d4=3.754408661907416e+00;
+    const plow = 0.02425, phigh = 1 - plow;
+    let q, r;
+    if (p < plow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
+    } else if (p <= phigh) {
+      q = p - 0.5; r = q * q;
+      return (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6) * q / (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
+    }
+  }
+
+  function tquantile(p, df) {
+    if (df > 1000) return invNormal(p);
+    if (Math.abs(p - 0.5) < 1e-12) return 0;
+    let lo = -50, hi = 50;
+    for (let i = 0; i < 80; i++) {
+      const mid = (lo + hi) / 2;
+      if (tcdf(mid, df) < p) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function tpdf(x, df) {
+    const c = gammaHalf(df + 1) / (Math.sqrt(df * Math.PI) * gammaHalf(df));
+    return c * Math.pow(1 + x * x / df, -(df + 1) / 2);
+  }
+
+  function tcdf(x, df) {
+    if (x === 0) return 0.5;
+    const sign = x < 0 ? -1 : 1;
+    const xa = Math.abs(x);
+    const steps = 2000;
+    const h = xa / steps;
+    let sum = 0.5 * (tpdf(0, df) + tpdf(xa, df));
+    for (let i = 1; i < steps; i++) sum += tpdf(i * h, df);
+    const half = sum * h;
+    return 0.5 + sign * Math.min(0.5, half);
+  }
+
+  function sampleStats(arr) {
+    const n = arr.length;
+    let s = 0;
+    for (let i = 0; i < n; i++) s += arr[i];
+    const mean = s / n;
+    let ss = 0;
+    for (let i = 0; i < n; i++) { const d = arr[i] - mean; ss += d * d; }
+    const variance = ss / (n - 1);
+    return { mean: mean, variance: variance, sd: Math.sqrt(variance) };
+  }
+
+  function drawSample(n, mu, sigma) {
+    const arr = new Array(n);
+    for (let i = 0; i < n; i++) arr[i] = mu + sigma * randn();
+    return arr;
+  }
+
+  function showRows(typeKey) {
+    const groups = {
+      tmu:     ['mu', 'sigma', 'n'],
+      chi2var: ['mu', 'sigma', 'n'],
+      diffmu:  ['mu1', 'mu2', 'sigma-shared', 'n1', 'n2'],
+      diffp:   ['p1', 'p2', 'np1', 'np2']
+    };
+    const all = ['mu', 'sigma', 'n', 'mu1', 'mu2', 'sigma-shared', 'n1', 'n2', 'p1', 'p2', 'np1', 'np2'];
+    const visible = new Set(groups[typeKey]);
+    for (const id of all) {
+      const el = document.getElementById('row-' + id);
+      if (el) el.classList.toggle('hidden', !visible.has(id));
+    }
+  }
+
+  function drawN(n) {
+    for (let i = 0; i < n; i++) {
+      let lower, upper, target, covers;
+      const alpha = 1 - state.confLevel;
+
+      if (state.type === 'tmu') {
+        const data = drawSample(state.n, state.mu, state.sigma);
+        const st = sampleStats(data);
+        const tcrit = tquantile(1 - alpha / 2, state.n - 1);
+        const SE = st.sd / Math.sqrt(state.n);
+        lower = st.mean - tcrit * SE;
+        upper = st.mean + tcrit * SE;
+        target = state.mu;
+      } else if (state.type === 'chi2var') {
+        const data = drawSample(state.n, state.mu, state.sigma);
+        const st = sampleStats(data);
+        const df = state.n - 1;
+        const chiL = chi2quantile(alpha / 2, df);
+        const chiU = chi2quantile(1 - alpha / 2, df);
+        lower = df * st.variance / chiU;
+        upper = df * st.variance / chiL;
+        target = state.sigma * state.sigma;
+      } else if (state.type === 'diffmu') {
+        const d1 = drawSample(state.n1, state.mu1, state.sigmaShared);
+        const d2 = drawSample(state.n2, state.mu2, state.sigmaShared);
+        const s1 = sampleStats(d1), s2 = sampleStats(d2);
+        const sp2 = ((state.n1 - 1) * s1.variance + (state.n2 - 1) * s2.variance) / (state.n1 + state.n2 - 2);
+        const sp = Math.sqrt(sp2);
+        const tcrit = tquantile(1 - alpha / 2, state.n1 + state.n2 - 2);
+        const SE = sp * Math.sqrt(1 / state.n1 + 1 / state.n2);
+        const diff = s1.mean - s2.mean;
+        lower = diff - tcrit * SE;
+        upper = diff + tcrit * SE;
+        target = state.mu1 - state.mu2;
+      } else {
+        const x1 = rbinomCount(state.np1, state.p1);
+        const x2 = rbinomCount(state.np2, state.p2);
+        const ph1 = x1 / state.np1, ph2 = x2 / state.np2;
+        const SE = Math.sqrt(ph1 * (1 - ph1) / state.np1 + ph2 * (1 - ph2) / state.np2);
+        const z = invNormal(1 - alpha / 2);
+        const diff = ph1 - ph2;
+        lower = diff - z * SE;
+        upper = diff + z * SE;
+        target = state.p1 - state.p2;
+      }
+
+      covers = target >= lower && target <= upper;
+      state.total++;
+      if (covers) state.hits++;
+      state.intervals.push({ lower: lower, upper: upper, covers: covers, target: target });
+      if (state.intervals.length > MAX_VISIBLE) state.intervals.shift();
+    }
+    render();
+  }
+
+  function reset() {
+    state.total = 0;
+    state.hits = 0;
+    state.intervals = [];
+    render();
+  }
+
+  function getTarget() {
+    if (state.type === 'tmu') return state.mu;
+    if (state.type === 'chi2var') return state.sigma * state.sigma;
+    if (state.type === 'diffmu') return state.mu1 - state.mu2;
+    return state.p1 - state.p2;
+  }
+
+  function getTargetLabel() {
+    if (state.type === 'tmu') return 'μ = ' + state.mu.toFixed(2);
+    if (state.type === 'chi2var') return 'σ² = ' + (state.sigma * state.sigma).toFixed(2);
+    if (state.type === 'diffmu') return 'μ₁ − μ₂ = ' + (state.mu1 - state.mu2).toFixed(2);
+    return 'p₁ − p₂ = ' + (state.p1 - state.p2).toFixed(2);
+  }
+
+  function getAxisLabel() {
+    if (state.type === 'tmu') return 'μ axis';
+    if (state.type === 'chi2var') return 'σ² axis';
+    if (state.type === 'diffmu') return 'μ₁ − μ₂ axis';
+    return 'p₁ − p₂ axis';
+  }
+
+  function updateFormula() {
+    const el = document.getElementById('ci-formula');
+    const pct = Math.round(state.confLevel * 100);
+    const alpha = 1 - state.confLevel;
+    if (state.type === 'tmu') {
+      const t = tquantile(1 - alpha / 2, state.n - 1);
+      el.innerHTML = 'pivot: T = (ȳ − μ) / (s/√n) ~ <span class="accent-text">t</span><sub>' + (state.n - 1) + '</sub>   ·   ' +
+                     'CI: ȳ ± ' + t.toFixed(3) + ' × (s/√n)';
+    } else if (state.type === 'chi2var') {
+      const df = state.n - 1;
+      const cL = chi2quantile(alpha / 2, df);
+      const cU = chi2quantile(1 - alpha / 2, df);
+      el.innerHTML = 'pivot: (n−1)S²/σ² ~ <span class="accent-text">χ²</span><sub>' + df + '</sub>   ·   ' +
+                     pct + '% CI: [ ' + df + '·S² / ' + cU.toFixed(3) + ',  ' + df + '·S² / ' + cL.toFixed(3) + ' ]';
+    } else if (state.type === 'diffmu') {
+      const dfp = state.n1 + state.n2 - 2;
+      const t = tquantile(1 - alpha / 2, dfp);
+      el.innerHTML = 'pooled S<sub>p</sub>², df = ' + dfp + '   ·   pivot ~ <span class="accent-text">t</span><sub>' + dfp + '</sub>   ·   ' +
+                     'CI: (ȳ₁ − ȳ₂) ± ' + t.toFixed(3) + ' × S<sub>p</sub>√(1/n₁ + 1/n₂)';
+    } else {
+      const z = invNormal(1 - alpha / 2);
+      el.innerHTML = 'pivot: ((p̂₁ − p̂₂) − (p₁ − p₂)) / SE ≈ <span class="accent-text">N(0, 1)</span>   ·   ' +
+                     'CI: (p̂₁ − p̂₂) ± ' + z.toFixed(3) + ' × √[p̂₁(1−p̂₁)/n₁ + p̂₂(1−p̂₂)/n₂]';
+    }
+  }
+
+  function updateNotes() {
+    const how = document.getElementById('howtext');
+    const tt = document.getElementById('trytext');
+    if (state.type === 'tmu') {
+      how.textContent = 'Each experiment draws n observations from Normal(μ, σ²) and forms the t-interval ȳ ± t_(α/2, n−1) × s/√n. Because the population is exactly normal, the pivot (ȳ − μ)/(s/√n) follows a t-distribution with n−1 degrees of freedom exactly, so coverage equals the nominal level for every n ≥ 2.';
+      tt.textContent = 'Drop n to 3 or 4 — the interval becomes very wide (the t critical value blows up at small df) but coverage stays near target. Push n up to 100 — the t critical value approaches the z value of 1.96 and intervals tighten dramatically.';
+    } else if (state.type === 'chi2var') {
+      how.textContent = 'Each experiment draws n observations from Normal(μ, σ²) and computes S². The pivot (n−1)S²/σ² follows χ²_(n−1), giving the asymmetric interval [(n−1)S²/χ²_upper, (n−1)S²/χ²_lower]. Notice the interval is generally not symmetric around S² because the chi-square distribution is skewed.';
+      tt.textContent = 'Set n = 3 (the textbook example) — intervals become extraordinarily wide because χ²_2 has very small lower quantile. Push n to 50 and intervals tighten substantially. Coverage holds at the nominal level only if the population really is normal — robustness fails badly under heavy tails.';
+    } else if (state.type === 'diffmu') {
+      how.textContent = 'Each experiment draws independent samples from two normal populations sharing variance σ², computes ȳ₁ − ȳ₂ and the pooled variance S_p², and forms (ȳ₁ − ȳ₂) ± t_(α/2, n₁+n₂−2) × S_p × √(1/n₁ + 1/n₂). The pivot is exactly t-distributed under the equal-variance assumption.';
+      tt.textContent = 'Vary μ₁ and μ₂ — coverage is unaffected (the pivot does not depend on the means). Make n₁ ≠ n₂ to see how unequal sample sizes affect interval width. The "pooled" assumption matters: if the two populations had different σ in reality, coverage would drift.';
+    } else {
+      how.textContent = 'Each experiment draws X₁ ~ Binomial(n₁, p₁) and X₂ ~ Binomial(n₂, p₂), forms p̂₁ − p̂₂, and constructs the Wald interval (p̂₁ − p̂₂) ± z_(α/2) × √[p̂₁q̂₁/n₁ + p̂₂q̂₂/n₂]. This is a large-sample approximation; coverage is approximate, not exact.';
+      tt.textContent = 'Default settings (p₁ = 0.5, p₂ = 0.4, n = 100 each) give coverage very close to 95%. Push the proportions toward the boundaries (p₁ = 0.95, p₂ = 0.05) — coverage may drop below the nominal level because the normal approximation degrades. Drop n to 10 — the Wald interval is notoriously inaccurate for small n.';
+    }
+  }
+
+  function render() {
+    updateFormula();
+    document.getElementById('ci-total').textContent = state.total.toLocaleString();
+    document.getElementById('ci-hits').textContent = state.hits.toLocaleString();
+    document.getElementById('ci-cov').textContent = state.total > 0
+      ? (state.hits / state.total * 100).toFixed(1) + '%' : '—';
+    document.getElementById('ci-cov-target').textContent = 'target: ' + Math.round(state.confLevel * 100) + '%';
+    renderPlot();
+  }
+
+  function renderPlot() {
+    const target = getTarget();
+    const targetLabel = getTargetLabel();
+    const axisLabel = getAxisLabel();
+
+    let xMin, xMax;
+    if (state.intervals.length > 0) {
+      let lo = Infinity, hi = -Infinity;
+      for (const iv of state.intervals) {
+        if (iv.lower < lo) lo = iv.lower;
+        if (iv.upper > hi) hi = iv.upper;
+      }
+      lo = Math.min(lo, target);
+      hi = Math.max(hi, target);
+      const pad = (hi - lo) * 0.07 || 1;
+      xMin = lo - pad;
+      xMax = hi + pad;
+    } else {
+      if (state.type === 'tmu') {
+        const halfSE = 4 * state.sigma / Math.sqrt(state.n);
+        xMin = state.mu - halfSE; xMax = state.mu + halfSE;
+      } else if (state.type === 'chi2var') {
+        const v = state.sigma * state.sigma;
+        xMin = v * 0.2; xMax = v * 3;
+      } else if (state.type === 'diffmu') {
+        const halfSE = 4 * state.sigmaShared * Math.sqrt(1 / state.n1 + 1 / state.n2);
+        const d = state.mu1 - state.mu2;
+        xMin = d - halfSE; xMax = d + halfSE;
+      } else {
+        const SE = Math.sqrt(state.p1*(1-state.p1)/state.np1 + state.p2*(1-state.p2)/state.np2);
+        const d = state.p1 - state.p2;
+        xMin = d - 4 * SE; xMax = d + 4 * SE;
+      }
+    }
+
+    const plotLeft = 50, plotRight = 665, plotTop = 34, plotBottom = 420;
+    const scale = x => {
+      const c = Math.min(Math.max(x, xMin), xMax);
+      return plotLeft + (c - xMin) / (xMax - xMin) * (plotRight - plotLeft);
+    };
+    const rowH = (plotBottom - plotTop) / MAX_VISIBLE;
+
+    const border = getColor('--border-strong');
+    const textSec = getColor('--text-secondary');
+    const accent = getColor('--accent');
+    const accentDark = getColor('--accent-dark');
+    const hitColor = getColor('--hit');
+    const missColor = getColor('--miss');
+
+    const parts = [];
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotBottom + '" x2="' + plotRight + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+
+    const ticks = [xMin, (xMin + target) / 2, target, (target + xMax) / 2, xMax];
+    for (const tv of ticks) {
+      const x = scale(tv);
+      parts.push('<line x1="' + x + '" y1="' + plotBottom + '" x2="' + x + '" y2="' + (plotBottom + 5) + '" stroke="' + border + '"/>');
+      const a = Math.abs(tv);
+      const lab = a < 0.01 ? tv.toFixed(3) : (a < 1 ? tv.toFixed(2) : (a < 100 ? tv.toFixed(1) : tv.toFixed(0)));
+      parts.push('<text x="' + x + '" y="' + (plotBottom + 20) + '" text-anchor="middle" font-size="12" fill="' + textSec + '">' + lab + '</text>');
+    }
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotBottom + 42) + '" text-anchor="middle" font-size="13" fill="' + textSec + '">' + axisLabel + '</text>');
+
+    const tX = scale(target);
+    parts.push('<line x1="' + tX + '" y1="' + (plotTop - 6) + '" x2="' + tX + '" y2="' + plotBottom + '" stroke="' + accent + '" stroke-width="2" stroke-dasharray="5 3"/>');
+    parts.push('<text x="' + tX + '" y="' + (plotTop - 12) + '" text-anchor="middle" font-size="12" font-weight="500" fill="' + accentDark + '">' + targetLabel + '</text>');
+
+    state.intervals.forEach((iv, i) => {
+      const y = plotTop + (i + 0.5) * rowH;
+      const lx = scale(iv.lower), ux = scale(iv.upper);
+      const color = iv.covers ? hitColor : missColor;
+      const sw = iv.covers ? 1 : 1.8, op = iv.covers ? 0.6 : 1;
+      parts.push('<line x1="' + lx + '" y1="' + y + '" x2="' + ux + '" y2="' + y + '" stroke="' + color + '" stroke-width="' + sw + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + lx + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+      parts.push('<circle cx="' + ux + '" cy="' + y + '" r="' + (iv.covers ? 1.2 : 2) + '" fill="' + color + '" opacity="' + op + '"/>');
+    });
+
+    document.getElementById('ci-viz').innerHTML = parts.join('');
+  }
+
+  function bindRange(id, key, formatter) {
+    const inp = document.getElementById('ci-' + id);
+    const out = document.getElementById('ci-' + id + '-out');
+    inp.addEventListener('input', e => {
+      const v = (id === 'n' || id === 'n1' || id === 'n2' || id === 'np1' || id === 'np2')
+        ? parseInt(e.target.value) : parseFloat(e.target.value);
+      state[key] = v;
+      out.textContent = formatter(v);
+      reset();
+    });
+  }
+
+  document.getElementById('ci-dist').addEventListener('change', e => {
+    state.type = e.target.value;
+    showRows(state.type);
+    updateNotes();
+    reset();
+  });
+
+  bindRange('mu', 'mu', v => v.toFixed(1));
+  bindRange('sigma', 'sigma', v => v.toFixed(1));
+  bindRange('n', 'n', v => v.toString());
+  bindRange('mu1', 'mu1', v => v.toFixed(1));
+  bindRange('mu2', 'mu2', v => v.toFixed(1));
+  bindRange('sigma-shared', 'sigmaShared', v => v.toFixed(1));
+  bindRange('n1', 'n1', v => v.toString());
+  bindRange('n2', 'n2', v => v.toString());
+  bindRange('p1', 'p1', v => v.toFixed(2));
+  bindRange('p2', 'p2', v => v.toFixed(2));
+  bindRange('np1', 'np1', v => v.toString());
+  bindRange('np2', 'np2', v => v.toString());
+
+  document.getElementById('ci-conf').addEventListener('input', e => {
+    state.confLevel = parseInt(e.target.value) / 100;
+    document.getElementById('ci-conf-out').textContent = e.target.value + '%';
+    reset();
+  });
+  document.getElementById('btn-1').onclick = () => drawN(1);
+  document.getElementById('btn-50').onclick = () => drawN(50);
+  document.getElementById('btn-500').onclick = () => drawN(500);
+  document.getElementById('btn-reset').onclick = reset;
+
+  showRows(state.type);
+  updateNotes();
+  render();
+})();
+</script>
+</body>
+</html>

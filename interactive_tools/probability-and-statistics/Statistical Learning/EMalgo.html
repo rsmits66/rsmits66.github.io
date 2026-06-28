@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EM Algorithm — Two Coins · UW</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;600;700&family=Encode+Sans+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* UW palette */
+    --uw-purple:        #4b2e83;
+    --uw-purple-dark:   #32205c;
+    --uw-purple-tint:   #eee7f8;
+    --uw-gold:          #b7a57a;
+    --uw-gold-dark:     #85754d;
+    --uw-gold-tint:     #f3eedd;
+    --uw-spirit:        #c79900;
+    --uw-light-gray:    #f4f1ec;
+    --uw-mid-gray:      #d8d2c4;
+    --uw-text:          #222222;
+    --uw-text-soft:     #4a4a4a;
+    --uw-text-mute:     #8b8675;
+    --paper:            #ffffff;
+    /* roles */
+    --A:        var(--uw-purple);
+    --A-deep:   var(--uw-purple-dark);
+    --A-tint:   var(--uw-purple-tint);
+    --B:        var(--uw-gold-dark);
+    --B-deep:   #5c4f30;
+    --B-tint:   var(--uw-gold-tint);
+    --shadow:   0 1px 0 rgba(75,46,131,.05), 0 6px 20px -10px rgba(75,46,131,.18);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    background: var(--uw-light-gray);
+    color: var(--uw-text);
+    font-family: 'Encode Sans', system-ui, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .ribbon {
+    background: var(--uw-purple);
+    color: #fff;
+    padding: 14px 32px;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 4px solid var(--uw-gold);
+  }
+  .ribbon .w-mark {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -.02em;
+    line-height: 1;
+    background: #fff;
+    color: var(--uw-purple);
+    padding: 6px 10px 5px;
+    border-radius: 2px;
+  }
+  .ribbon .ribbon-text {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 13px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .ribbon .ribbon-text strong { font-weight: 700; }
+  .ribbon .dot {
+    width: 4px; height: 4px; background: var(--uw-gold);
+    border-radius: 50%; display: inline-block;
+    vertical-align: middle; margin: 0 8px;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+  }
+  header { margin-bottom: 40px; padding-bottom: 28px; border-bottom: 1px solid var(--uw-mid-gray); }
+  .eyebrow {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 12px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--uw-gold-dark);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  h1 {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 50px);
+    line-height: 1.03;
+    letter-spacing: -.015em;
+    margin: 0 0 16px;
+    color: var(--uw-purple);
+  }
+  h1 .accent { color: var(--uw-text); }
+  .lede {
+    font-family: 'Encode Sans', sans-serif;
+    font-size: 17px;
+    color: var(--uw-text-soft);
+    max-width: 720px;
+    line-height: 1.6;
+  }
+  h2 {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -.005em;
+    margin: 56px 0 16px;
+    color: var(--uw-purple);
+    display: flex; align-items: baseline; gap: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--uw-gold);
+  }
+  h2 .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--uw-gold-dark);
+    letter-spacing: .15em;
+    font-weight: 500;
+    background: var(--uw-gold-tint);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+  h2 .sub { color: var(--uw-text-mute); font-weight: 500; font-size: 17px; letter-spacing: 0; font-family: 'Encode Sans', sans-serif;}
+  p { font-size: 15.5px; color: var(--uw-text-soft); max-width: 780px; line-height: 1.6; }
+  code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; }
+
+  .top-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 880px) { .top-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--uw-mid-gray);
+    border-top: 3px solid var(--uw-purple);
+    border-radius: 2px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  .card.gold-top { border-top: 3px solid var(--uw-gold-dark); }
+  .card-title {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 11.5px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--uw-purple);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .seq-list { display: flex; flex-direction: column; gap: 8px; }
+  .seq {
+    display: grid;
+    grid-template-columns: 32px 1fr 120px;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 12px;
+    border-radius: 2px;
+    background: var(--uw-light-gray);
+  }
+  .seq-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--uw-text-mute);
+  }
+  .flips {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15.5px;
+    letter-spacing: .14em;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .flips .h { color: var(--A); font-weight: 700; }
+  .flips .t { color: var(--B); font-weight: 700; }
+  .seq-counts {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--uw-text-soft);
+    text-align: right;
+  }
+  .seq-counts .h-c { color: var(--A); font-weight: 600; }
+  .seq-counts .t-c { color: var(--B); font-weight: 600; }
+
+  .params {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .param-box {
+    padding: 14px 16px;
+    border-radius: 2px;
+    background: var(--uw-light-gray);
+    border-left: 4px solid;
+  }
+  .param-box.a { border-left-color: var(--A); }
+  .param-box.b { border-left-color: var(--B); }
+  .param-name {
+    font-family: 'Encode Sans', sans-serif;
+    font-size: 13px;
+    color: var(--uw-text-soft);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .param-box.a .param-name { color: var(--A-deep); }
+  .param-box.b .param-name { color: var(--B-deep); }
+  .param-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--uw-text);
+    letter-spacing: -.01em;
+    line-height: 1.1;
+    padding: 4px 0;
+  }
+  .param-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--uw-text);
+    width: 100%;
+    background: #fff;
+    padding: 4px 8px;
+    border-radius: 2px;
+    border: 1px solid var(--uw-mid-gray);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .param-input:focus { border-color: var(--uw-purple); box-shadow: 0 0 0 2px var(--uw-purple-tint); }
+  .param-sub {
+    font-family: 'Encode Sans', sans-serif;
+    font-size: 12px;
+    color: var(--uw-text-mute);
+    margin-top: 6px;
+    letter-spacing: .02em;
+  }
+  .iter-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 2px;
+    background: var(--uw-purple);
+    color: #fff;
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 11px;
+    letter-spacing: .14em;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .iter-pill.editing { background: var(--uw-gold-dark); }
+
+  .input-hint {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--uw-text-mute);
+    font-family: 'Encode Sans', sans-serif;
+    line-height: 1.5;
+  }
+  .input-hint kbd {
+    background: var(--uw-gold-tint);
+    color: var(--uw-gold-dark);
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .presets {
+    display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .preset {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 9px;
+    border: 1px solid var(--uw-mid-gray);
+    background: #fff;
+    color: var(--uw-text-soft);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .12s ease;
+  }
+  .preset:hover { background: var(--uw-purple); color: #fff; border-color: var(--uw-purple); }
+  .preset-label {
+    font-size:11px; font-family:'Encode Sans Condensed', sans-serif;
+    letter-spacing:.14em; color:var(--uw-text-mute);
+    text-transform:uppercase; align-self:center; margin-right:6px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 28px 0 8px;
+    align-items: center;
+  }
+  button.primary, button.ghost {
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all .12s ease;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  button.primary {
+    border: 1px solid var(--uw-purple);
+    background: var(--uw-purple);
+    color: #fff;
+  }
+  button.primary:hover { background: var(--uw-purple-dark); border-color: var(--uw-purple-dark); transform: translateY(-1px); }
+  button.ghost {
+    background: transparent;
+    color: var(--uw-purple);
+    border: 1px solid var(--uw-purple);
+  }
+  button.ghost:hover { background: var(--uw-purple-tint); }
+  button:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+  .toggle-row {
+    display: flex; gap: 14px; align-items: center;
+    font-family: 'Encode Sans', sans-serif; font-size: 13px;
+    color: var(--uw-text-soft);
+    margin-left: auto;
+  }
+  .toggle-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggle-row input { accent-color: var(--uw-purple); }
+
+  .table-wrap {
+    margin-top: 18px;
+    background: var(--paper);
+    border: 1px solid var(--uw-mid-gray);
+    border-radius: 2px;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; }
+  th, td {
+    padding: 11px 13px;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    border-bottom: 1px solid var(--uw-light-gray);
+  }
+  th {
+    background: var(--uw-purple);
+    color: #fff;
+    font-weight: 500;
+    text-align: right;
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    vertical-align: bottom;
+    line-height: 1.3;
+    padding: 10px 13px 12px;
+  }
+  th .sub {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: rgba(255,255,255,.75);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+  th:first-child, td:first-child { text-align: center; padding-left: 16px;}
+  th.coinA { background: var(--A-deep); }
+  th.coinB { background: var(--B-deep); }
+  td.coinA { background: var(--A-tint); color: var(--A-deep); }
+  td.coinB { background: var(--B-tint); color: var(--B-deep); }
+  td.h-cell { color: var(--A); font-weight: 600; }
+  td.t-cell { color: var(--B); font-weight: 600; }
+  tr.totals td {
+    background: #2a2a2a;
+    color: #fff;
+    font-weight: 600;
+    border-bottom: none;
+  }
+  tr.totals td.coinA-tot { background: var(--A); color: #fff; }
+  tr.totals td.coinB-tot { background: var(--B); color: #fff; }
+  tr.totals td:first-child {
+    background: #2a2a2a;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .12em;
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-weight: 600;
+  }
+  td .stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+  td .stack .h-val { color: var(--A); font-weight: 600; }
+  td .stack .t-val { color: var(--B); font-weight: 600; }
+  tr.totals td.coinA-tot .stack .h-val { color: #fff; }
+  tr.totals td.coinA-tot .stack .t-val { color: #ddd0e8; }
+  tr.totals td.coinB-tot .stack .h-val { color: #fff; }
+  tr.totals td.coinB-tot .stack .t-val { color: #e7dcc1; }
+
+  .mstep {
+    margin-top: 22px;
+    background: var(--paper);
+    border: 1px solid var(--uw-mid-gray);
+    border-radius: 2px;
+    padding: 22px 26px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 720px) { .mstep { grid-template-columns: 1fr; } }
+  .update {
+    font-family: 'Encode Sans', sans-serif;
+    font-size: 15.5px;
+    line-height: 1.5;
+    color: var(--uw-text);
+  }
+  .update.a { border-left: 4px solid var(--A); padding-left: 16px; }
+  .update.b { border-left: 4px solid var(--B); padding-left: 16px; }
+  .update .formula {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    color: var(--uw-text-soft);
+    margin-top: 8px;
+  }
+  .update .frac {
+    display: inline-flex; flex-direction: column; align-items: center;
+    text-align: center;
+  }
+  .update .frac .num { border-bottom: 1.5px solid var(--uw-text-soft); padding: 0 6px 2px; }
+  .update .frac .den { padding: 2px 6px 0; }
+  .update .new-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    margin-top: 8px;
+    color: var(--uw-text);
+  }
+  .update.a .new-val { color: var(--A); }
+  .update.b .new-val { color: var(--B-deep); }
+  .update .arrow {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--uw-gold-dark);
+    margin: 0 4px;
+  }
+  .step-tag {
+    display: inline-block;
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 10.5px;
+    background: var(--uw-gold-dark);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: .14em;
+    margin-right: 8px;
+    vertical-align: middle;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .history {
+    margin-top: 20px;
+    padding: 22px 24px;
+    background: var(--paper);
+    border: 1px solid var(--uw-mid-gray);
+    border-radius: 2px;
+    box-shadow: var(--shadow);
+  }
+  .history-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 28px;
+  }
+  @media (max-width: 720px) { .history-grid { grid-template-columns: 1fr; } }
+  svg.conv { width: 100%; height: 220px; display: block; }
+  .legend {
+    display: flex; gap: 18px; margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--uw-text-soft);
+  }
+  .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 6px;}
+  .hist-table {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    max-height: 230px;
+    overflow-y: auto;
+  }
+  .hist-table table { min-width: 0; }
+  .hist-table td, .hist-table th {
+    border-bottom: 1px dashed var(--uw-mid-gray);
+    padding: 7px 10px;
+    background: transparent;
+    color: var(--uw-text-soft);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+  }
+  .hist-table tr.current td { background: var(--uw-purple-tint); font-weight: 600; color: var(--uw-text); }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--uw-mid-gray);
+    font-family: 'Encode Sans Condensed', sans-serif;
+    font-size: 11.5px;
+    color: var(--uw-text-mute);
+    text-align: center;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .hidden { display: none !important; }
+  .pulse { animation: pulse .9s ease; }
+  @keyframes pulse {
+    0% { background: var(--uw-gold-tint); }
+    100% { background: transparent; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ribbon">
+  <span class="w-mark">W</span>
+  <span class="ribbon-text"><strong>University of Washington</strong> <span class="dot"></span> Statistical Learning <span class="dot"></span> Expectation–Maximization</span>
+</div>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Worked Example · The Two-Coin Mixture</div>
+  <h1>Two coins, four sequences,<br>and the art of <span class="accent">guessing better.</span></h1>
+  <p class="lede">
+    Someone flipped one of two biased coins (A or B) ten times in a row, four times over.
+    We don't know which coin produced which sequence. EM lets us estimate
+    both coins' bias from the data — by alternating between
+    <em>soft-assigning</em> sequences to coins and <em>re-estimating</em> the biases.
+  </p>
+</header>
+
+<div class="top-grid">
+
+  <div class="card">
+    <div class="card-title">The Data — four sequences of 10 flips</div>
+    <div class="seq-list" id="seqList"></div>
+    <p style="margin-top:14px; color:var(--uw-text-mute); font-size:13px; line-height:1.55;">
+      Each row is one experiment. Only the H/T counts matter for the math, but showing the
+      flips reminds us these are observed coin tosses.
+    </p>
+  </div>
+
+  <div class="card gold-top">
+    <div class="card-title">Current Parameter Estimates</div>
+    <div class="iter-pill" id="iterPill">EDITABLE · INITIAL GUESS</div>
+    <div class="params">
+      <div class="param-box a">
+        <div class="param-name">θ̂<sub>A</sub> — P(heads | coin A)</div>
+        <input type="number" class="param-input" id="thetaAInput" min="0.01" max="0.99" step="0.01" value="0.60">
+        <div class="param-val hidden" id="thetaA">0.600</div>
+      </div>
+      <div class="param-box b">
+        <div class="param-name">θ̂<sub>B</sub> — P(heads | coin B)</div>
+        <input type="number" class="param-input" id="thetaBInput" min="0.01" max="0.99" step="0.01" value="0.50">
+        <div class="param-val hidden" id="thetaB">0.500</div>
+      </div>
+    </div>
+
+    <div class="presets">
+      <span class="preset-label">Try:</span>
+      <button class="preset" data-a="0.51" data-b="0.49">0.51 / 0.49</button>
+      <button class="preset" data-a="0.55" data-b="0.45">0.55 / 0.45</button>
+      <button class="preset" data-a="0.6" data-b="0.5">0.60 / 0.50</button>
+      <button class="preset" data-a="0.7" data-b="0.3">0.70 / 0.30</button>
+      <button class="preset" data-a="0.3" data-b="0.7">0.30 / 0.70</button>
+      <button class="preset" data-a="0.99" data-b="0.01">0.99 / 0.01</button>
+    </div>
+
+    <div class="input-hint">
+      Edit the boxes (or pick a preset) and press <kbd>RUN NEXT ITERATION</kbd> to start.
+      Initial guesses that are close together take many more iterations to separate the coins.
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button class="primary" id="stepBtn">Run next iteration ↻</button>
+  <button class="ghost" id="run5Btn">Run 5 iterations</button>
+  <button class="ghost" id="resetBtn">Reset</button>
+  <div class="toggle-row">
+    <label><input type="checkbox" id="showProbs" checked> show P(A), P(B) column</label>
+  </div>
+</div>
+
+<h2><span class="num">STEP 1</span> The E-step <span class="sub">— soft-assign each sequence to the coins</span></h2>
+<p>
+  For every sequence we ask: <em>given the current estimates of θ<sub>A</sub> and θ<sub>B</sub>, how likely was each coin to have produced this?</em>
+  We compute the likelihood under each coin, normalize them into probabilities, and then split that sequence's
+  heads and tails between the two coins in proportion to those probabilities.
+</p>
+
+<div class="table-wrap">
+  <table id="eTable">
+    <thead>
+      <tr>
+        <th rowspan="2">Seq</th>
+        <th rowspan="2">H</th>
+        <th rowspan="2">T</th>
+        <th rowspan="2">L(A)<span class="sub">θ<sub>A</sub><sup>H</sup>(1−θ<sub>A</sub>)<sup>T</sup></span></th>
+        <th rowspan="2">L(B)<span class="sub">θ<sub>B</sub><sup>H</sup>(1−θ<sub>B</sub>)<sup>T</sup></span></th>
+        <th class="prob-col" rowspan="2">P(A)<span class="sub">L(A) / (L(A)+L(B))</span></th>
+        <th class="prob-col" rowspan="2">P(B)<span class="sub">L(B) / (L(A)+L(B))</span></th>
+        <th class="coinA" colspan="1">attributed to A<span class="sub">H·P(A) &nbsp; T·P(A)</span></th>
+        <th class="coinB" colspan="1">attributed to B<span class="sub">H·P(B) &nbsp; T·P(B)</span></th>
+      </tr>
+    </thead>
+    <tbody id="eBody"></tbody>
+    <tfoot id="eFoot"></tfoot>
+  </table>
+</div>
+
+<h2><span class="num">STEP 2</span> The M-step <span class="sub">— update parameters from the totals</span></h2>
+<p>
+  Once we've added up the attributed heads and tails for each coin, the update is just the obvious thing:
+  the new estimate of P(heads) is <em>(total attributed heads)</em> divided by <em>(total attributed heads + total attributed tails)</em>.
+  Then we go back to Step 1 with the new values.
+</p>
+
+<div class="mstep" id="mstep"></div>
+
+<h2><span class="num">STEP 3</span> Track convergence <span class="sub">— repeat until the parameters stop moving</span></h2>
+
+<div class="history">
+  <div class="history-grid">
+    <div>
+      <div class="card-title" style="margin-bottom:12px;">Parameter Estimates Across Iterations</div>
+      <svg class="conv" id="convChart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--A);"></span>θ<sub>A</sub></span>
+        <span><span class="dot" style="background:var(--B);"></span>θ<sub>B</sub></span>
+      </div>
+    </div>
+    <div>
+      <div class="card-title" style="margin-bottom:12px;">History</div>
+      <div class="hist-table">
+        <table>
+          <thead><tr><th style="text-align:left;">iter</th><th style="text-align:right;">θ<sub>A</sub></th><th style="text-align:right;">θ<sub>B</sub></th></tr></thead>
+          <tbody id="histBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>UW · STATISTICAL LEARNING · EM ALGORITHM · TWO-COIN MIXTURE</footer>
+
+</div>
+
+<script>
+// =====================================================================
+//  DATA
+// =====================================================================
+const SEQUENCES = [
+  { flips: 'HTHTHHTHTT', H: 5, T: 5 },
+  { flips: 'HHHHTHHHHH', H: 9, T: 1 },
+  { flips: 'THHHHTHHTH', H: 7, T: 3 },
+  { flips: 'THTTHHTTTT', H: 3, T: 7 },
+];
+
+// =====================================================================
+//  STATE
+// =====================================================================
+let initA = 0.60;
+let initB = 0.50;
+let thetaA = initA;
+let thetaB = initB;
+let iteration = 0;
+let history = [{ iter: 0, a: thetaA, b: thetaB }];
+
+// =====================================================================
+//  SEQUENCES RENDER
+// =====================================================================
+function renderSequences() {
+  const el = document.getElementById('seqList');
+  el.innerHTML = '';
+  SEQUENCES.forEach((s, i) => {
+    const colored = s.flips.split('').map(c =>
+      c === 'H' ? '<span class="h">H</span>' : '<span class="t">T</span>'
+    ).join(' ');
+    el.insertAdjacentHTML('beforeend', `
+      <div class="seq">
+        <div class="seq-label">x<sub>${i+1}</sub></div>
+        <div class="flips">${colored}</div>
+        <div class="seq-counts"><span class="h-c">${s.H}H</span> &nbsp;<span class="t-c">${s.T}T</span></div>
+      </div>
+    `);
+  });
+}
+
+// =====================================================================
+//  E-STEP
+// =====================================================================
+function eStep(tA, tB) {
+  const rows = SEQUENCES.map((s) => {
+    const LA = Math.pow(tA, s.H) * Math.pow(1 - tA, s.T);
+    const LB = Math.pow(tB, s.H) * Math.pow(1 - tB, s.T);
+    const denom = LA + LB;
+    const pA = denom > 0 ? LA / denom : 0.5;
+    const pB = denom > 0 ? LB / denom : 0.5;
+    return {
+      H: s.H, T: s.T,
+      LA, LB, pA, pB,
+      hA: s.H * pA, tA_: s.T * pA,
+      hB: s.H * pB, tB_: s.T * pB,
+    };
+  });
+
+  const totals = rows.reduce((acc, r) => ({
+    hA: acc.hA + r.hA,
+    tA: acc.tA + r.tA_,
+    hB: acc.hB + r.hB,
+    tB: acc.tB + r.tB_,
+  }), { hA:0, tA:0, hB:0, tB:0 });
+
+  return { rows, totals };
+}
+
+// =====================================================================
+//  PARAM DISPLAY — toggle between input & readonly
+// =====================================================================
+function renderParams() {
+  const aIn = document.getElementById('thetaAInput');
+  const bIn = document.getElementById('thetaBInput');
+  const aV  = document.getElementById('thetaA');
+  const bV  = document.getElementById('thetaB');
+  const pill = document.getElementById('iterPill');
+
+  if (iteration === 0) {
+    aIn.classList.remove('hidden');
+    bIn.classList.remove('hidden');
+    aV.classList.add('hidden');
+    bV.classList.add('hidden');
+    pill.textContent = 'EDITABLE · INITIAL GUESS';
+    pill.classList.add('editing');
+  } else {
+    aIn.classList.add('hidden');
+    bIn.classList.add('hidden');
+    aV.classList.remove('hidden');
+    bV.classList.remove('hidden');
+    aV.textContent = thetaA.toFixed(3);
+    bV.textContent = thetaB.toFixed(3);
+    pill.textContent = `AFTER ITERATION ${iteration}`;
+    pill.classList.remove('editing');
+  }
+}
+
+// =====================================================================
+//  TABLE
+// =====================================================================
+function fmt(x, d=4) {
+  if (Math.abs(x) < 1e-6 && x !== 0) return x.toExponential(2);
+  return x.toFixed(d);
+}
+function fmt2(x) { return x.toFixed(3); }
+
+function renderTable(rows, totals) {
+  const tbody = document.getElementById('eBody');
+  const tfoot = document.getElementById('eFoot');
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
+
+  rows.forEach((r, i) => {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>x<sub>${i+1}</sub></td>
+        <td class="h-cell">${r.H}</td>
+        <td class="t-cell">${r.T}</td>
+        <td>${fmt(r.LA, 6)}</td>
+        <td>${fmt(r.LB, 6)}</td>
+        <td class="prob-col">${fmt2(r.pA)}</td>
+        <td class="prob-col">${fmt2(r.pB)}</td>
+        <td class="coinA">
+          <div class="stack">
+            <span class="h-val">${fmt2(r.hA)} H</span>
+            <span class="t-val">${fmt2(r.tA_)} T</span>
+          </div>
+        </td>
+        <td class="coinB">
+          <div class="stack">
+            <span class="h-val">${fmt2(r.hB)} H</span>
+            <span class="t-val">${fmt2(r.tB_)} T</span>
+          </div>
+        </td>
+      </tr>
+    `);
+  });
+
+  tfoot.insertAdjacentHTML('beforeend', `
+    <tr class="totals">
+      <td>Σ totals</td>
+      <td></td><td></td><td></td><td></td>
+      <td class="prob-col"></td><td class="prob-col"></td>
+      <td class="coinA-tot">
+        <div class="stack">
+          <span class="h-val">${fmt2(totals.hA)} H</span>
+          <span class="t-val">${fmt2(totals.tA)} T</span>
+        </div>
+      </td>
+      <td class="coinB-tot">
+        <div class="stack">
+          <span class="h-val">${fmt2(totals.hB)} H</span>
+          <span class="t-val">${fmt2(totals.tB)} T</span>
+        </div>
+      </td>
+    </tr>
+  `);
+  applyProbToggle();
+}
+
+// =====================================================================
+//  M-STEP
+// =====================================================================
+function renderMStep(totals, oldA, oldB, newA, newB) {
+  const el = document.getElementById('mstep');
+  el.innerHTML = `
+    <div class="update a">
+      <div><span class="step-tag">UPDATE</span> Coin A's bias</div>
+      <div class="formula">
+        θ̂<sub>A</sub><sup>(new)</sup> =
+        <span class="frac">
+          <span class="num">${fmt2(totals.hA)}</span>
+          <span class="den">${fmt2(totals.hA)} + ${fmt2(totals.tA)}</span>
+        </span>
+        = <strong>${fmt2(newA)}</strong>
+      </div>
+      <div class="new-val">${fmt2(oldA)} <span class="arrow">→</span> ${fmt2(newA)}</div>
+    </div>
+    <div class="update b">
+      <div><span class="step-tag">UPDATE</span> Coin B's bias</div>
+      <div class="formula">
+        θ̂<sub>B</sub><sup>(new)</sup> =
+        <span class="frac">
+          <span class="num">${fmt2(totals.hB)}</span>
+          <span class="den">${fmt2(totals.hB)} + ${fmt2(totals.tB)}</span>
+        </span>
+        = <strong>${fmt2(newB)}</strong>
+      </div>
+      <div class="new-val">${fmt2(oldB)} <span class="arrow">→</span> ${fmt2(newB)}</div>
+    </div>
+  `;
+}
+
+// =====================================================================
+//  HISTORY + CHART
+// =====================================================================
+function renderHistory() {
+  const tbody = document.getElementById('histBody');
+  tbody.innerHTML = '';
+  history.forEach((h, i) => {
+    const isLast = i === history.length - 1;
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr class="${isLast ? 'current' : ''}">
+        <td>${h.iter}</td>
+        <td style="text-align:right; color:var(--A);">${h.a.toFixed(4)}</td>
+        <td style="text-align:right; color:var(--B-deep);">${h.b.toFixed(4)}</td>
+      </tr>
+    `);
+  });
+
+  const svg = document.getElementById('convChart');
+  const W = 600, H = 220;
+  const padL = 36, padR = 12, padT = 14, padB = 28;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const maxIter = Math.max(history.length - 1, 6);
+
+  const x = i => padL + (i / maxIter) * innerW;
+  const y = v => padT + (1 - v) * innerH;
+
+  let html = '';
+  html += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+innerH}" stroke="#bcb29a" stroke-width="1"/>`;
+  html += `<line x1="${padL}" y1="${padT+innerH}" x2="${padL+innerW}" y2="${padT+innerH}" stroke="#bcb29a" stroke-width="1"/>`;
+
+  [0, 0.25, 0.5, 0.75, 1].forEach(v => {
+    html += `<line x1="${padL}" y1="${y(v)}" x2="${padL+innerW}" y2="${y(v)}" stroke="#e6dfcd" stroke-width="1" stroke-dasharray="2 3"/>`;
+    html += `<text x="${padL-6}" y="${y(v)+4}" font-family="JetBrains Mono" font-size="10" fill="#8b8675" text-anchor="end">${v.toFixed(2)}</text>`;
+  });
+  for (let i = 0; i <= maxIter; i++) {
+    html += `<text x="${x(i)}" y="${padT+innerH+18}" font-family="JetBrains Mono" font-size="10" fill="#8b8675" text-anchor="middle">${i}</text>`;
+  }
+
+  const polyA = history.map((h,i) => `${x(i)},${y(h.a)}`).join(' ');
+  const polyB = history.map((h,i) => `${x(i)},${y(h.b)}`).join(' ');
+  html += `<polyline points="${polyA}" fill="none" stroke="var(--A)" stroke-width="2.4"/>`;
+  html += `<polyline points="${polyB}" fill="none" stroke="var(--B)" stroke-width="2.4"/>`;
+
+  history.forEach((h, i) => {
+    html += `<circle cx="${x(i)}" cy="${y(h.a)}" r="3.5" fill="var(--A)" stroke="#fff" stroke-width="1.5"/>`;
+    html += `<circle cx="${x(i)}" cy="${y(h.b)}" r="3.5" fill="var(--B)" stroke="#fff" stroke-width="1.5"/>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+// =====================================================================
+//  PROB COLUMN TOGGLE
+// =====================================================================
+function applyProbToggle() {
+  const show = document.getElementById('showProbs').checked;
+  document.querySelectorAll('.prob-col').forEach(el => {
+    el.classList.toggle('hidden', !show);
+  });
+}
+
+// =====================================================================
+//  CONTROL
+// =====================================================================
+function readInitInputs() {
+  const a = parseFloat(document.getElementById('thetaAInput').value);
+  const b = parseFloat(document.getElementById('thetaBInput').value);
+  if (isNaN(a) || a <= 0 || a >= 1) return false;
+  if (isNaN(b) || b <= 0 || b >= 1) return false;
+  initA = a; initB = b;
+  return true;
+}
+
+function doOneIteration() {
+  if (iteration === 0) {
+    if (!readInitInputs()) {
+      alert('Initial guesses must be strictly between 0 and 1.');
+      return;
+    }
+    thetaA = initA;
+    thetaB = initB;
+    history = [{ iter: 0, a: thetaA, b: thetaB }];
+  }
+
+  const { rows, totals } = eStep(thetaA, thetaB);
+  const oldA = thetaA, oldB = thetaB;
+  const dA = totals.hA + totals.tA;
+  const dB = totals.hB + totals.tB;
+  const newA = dA > 0 ? totals.hA / dA : oldA;
+  const newB = dB > 0 ? totals.hB / dB : oldB;
+
+  renderTable(rows, totals);
+  renderMStep(totals, oldA, oldB, newA, newB);
+
+  thetaA = newA;
+  thetaB = newB;
+  iteration += 1;
+  history.push({ iter: iteration, a: thetaA, b: thetaB });
+
+  renderParams();
+  renderHistory();
+
+  document.querySelectorAll('.param-val').forEach(el => {
+    el.classList.remove('pulse');
+    void el.offsetWidth;
+    el.classList.add('pulse');
+  });
+}
+
+function resetAll() {
+  iteration = 0;
+  if (!readInitInputs()) { initA = 0.60; initB = 0.50; }
+  thetaA = initA;
+  thetaB = initB;
+  history = [{ iter: 0, a: thetaA, b: thetaB }];
+
+  const { rows, totals } = eStep(thetaA, thetaB);
+  const dA = totals.hA + totals.tA, dB = totals.hB + totals.tB;
+  const newA = dA > 0 ? totals.hA / dA : thetaA;
+  const newB = dB > 0 ? totals.hB / dB : thetaB;
+  renderTable(rows, totals);
+  renderMStep(totals, thetaA, thetaB, newA, newB);
+  renderParams();
+  renderHistory();
+}
+
+// =====================================================================
+//  WIRE UP
+// =====================================================================
+document.getElementById('stepBtn').addEventListener('click', doOneIteration);
+document.getElementById('run5Btn').addEventListener('click', () => {
+  for (let i = 0; i < 5; i++) doOneIteration();
+});
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('showProbs').addEventListener('change', applyProbToggle);
+
+document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('thetaAInput').value = btn.dataset.a;
+    document.getElementById('thetaBInput').value = btn.dataset.b;
+    resetAll();
+  });
+});
+
+['thetaAInput', 'thetaBInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (iteration === 0) resetAll();
+  });
+});
+
+renderSequences();
+resetAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singular Mass Visualization — Cantor Distribution</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f7f7;
+    --text: #2c2a26;
+    --text-dim: #6b6560;
+    --accent: #9E1B32;
+    --accent-glow: rgba(158, 27, 50, 0.15);
+    --axis: #a09888;
+    --scan: #cc3344;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container { width: 100%; max-width: 960px; }
+
+  .header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+
+  .header h1 { font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; font-size: 1.25rem; }
+
+  .stats { display: flex; gap: 2rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+  .stat-group label { color: var(--text-dim); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 0.2rem; }
+  .stat-group span { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+
+  .formula-bar {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+    padding: 0.75rem 1.25rem; background: rgba(158,27,50,0.06);
+    border: 1px solid rgba(158,27,50,0.15); border-radius: 6px; flex-wrap: wrap;
+  }
+  .formula-bar .katex { font-size: 0.88rem; color: var(--text); }
+
+  .canvas-wrap {
+    position: relative; background: var(--surface); border-radius: 8px;
+    padding: 2rem 2.5rem 3rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+
+  canvas { display: block; width: 100%; height: auto; cursor: crosshair; }
+
+  .controls { margin-top: 1.5rem; display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
+  .control-group { display: flex; align-items: center; gap: 0.5rem; }
+  .control-group label { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  input[type="range"] { -webkit-appearance: none; width: 90px; height: 4px; background: var(--axis); border-radius: 2px; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 8px var(--accent-glow); }
+
+  .value-display { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--accent); min-width: 3ch; text-align: right; }
+
+  .btn { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.5rem 1.2rem; background: transparent; border: 1px solid var(--axis); color: var(--text-dim); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .btn-scan { border-color: var(--scan); color: var(--scan); }
+  .btn-scan:hover { box-shadow: 0 0 12px rgba(204,51,68,0.2); }
+
+  .tooltip { position: absolute; pointer-events: none; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--accent); background: rgba(255,255,255,0.96); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--axis); opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Singular Mass Visualization — Cantor</h1>
+    <div class="stats">
+      <div class="stat-group"><label>Distribution</label><span>Cantor</span></div>
+      <div class="stat-group"><label>Support</label><span>Cantor Set</span></div>
+      <div class="stat-group"><label>E[X]</label><span>1/2</span></div>
+      <div class="stat-group"><label>Depth (K)</label><span id="depthLabel">6</span></div>
+    </div>
+  </div>
+
+  <div class="formula-bar">
+    <span id="formulaX"></span>
+    <span style="margin-left: 0.8rem;" id="formulaC"></span>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="plot" width="1800" height="850"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>N</label>
+      <input type="range" id="nSlider" min="50" max="20000" step="50" value="2000">
+      <span class="value-display" id="nVal">2k</span>
+    </div>
+    <div class="control-group">
+      <label>Depth</label>
+      <input type="range" id="depthSlider" min="3" max="12" step="1" value="6">
+      <span class="value-display" id="depthVal">6</span>
+    </div>
+    <button class="btn" id="redrawBtn">Redraw</button>
+    <button class="btn btn-scan" id="scanBtn">▶ Scan CDF</button>
+    <div class="control-group">
+      <label>Speed</label>
+      <input type="range" id="speedSlider" min="1" max="10" step="1" value="4">
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+let N = 2000, depth = 6;
+let particles = [], sortedX = [];
+let scanX = null, scanAnim = null;
+
+const PAD = { left: 50, right: 30, top: 510, bottom: 50 };
+
+function canvasX(x) { return PAD.left + x * (canvas.width - PAD.left - PAD.right); }
+function canvasY(y) {
+  const plotH = canvas.height - PAD.top - PAD.bottom;
+  return PAD.top + plotH / 2 - y * plotH;
+}
+
+function randCantor() {
+  let x = 0;
+  for (let k = 1; k <= depth; k++) x += (Math.random() < 0.5 ? 0 : 2) / Math.pow(3, k);
+  return x;
+}
+
+function generateParticles() {
+  particles = [];
+  for (let i = 0; i < N; i++) particles.push({ x: randCantor(), y: (Math.random() - 0.5) * 0.35 });
+  sortedX = particles.map(p => p.x).sort((a, b) => a - b);
+}
+
+function cantorCDF(x) {
+  if (x <= 0) return 0; if (x >= 1) return 1;
+  let result = 0, rem = x;
+  for (let k = 1; k <= 50; k++) {
+    rem *= 3; let d = Math.floor(rem); if (d > 2) d = 2; rem -= d;
+    if (d === 1) { result += 1 / Math.pow(2, k); return result; }
+    else if (d === 2) result += 1 / Math.pow(2, k);
+  }
+  return result;
+}
+
+// ─── Axis ───
+function drawAxis() {
+  const y0 = canvasY(0), x0 = canvasX(0), xEnd = canvasX(1);
+  ctx.setLineDash([12, 8]); ctx.strokeStyle = '#a0988c'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xEnd, y0); ctx.stroke(); ctx.setLineDash([]);
+
+  const axisY = canvas.height - PAD.bottom;
+  ctx.strokeStyle = '#a09888'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x0, axisY); ctx.lineTo(xEnd, axisY); ctx.stroke();
+
+  ctx.fillStyle = '#5a5248'; ctx.font = '600 22px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of [0, 1/3, 2/3, 1]) {
+    const tx = canvasX(v); ctx.strokeStyle = '#a09888';
+    ctx.beginPath(); ctx.moveTo(tx, axisY); ctx.lineTo(tx, axisY + 8); ctx.stroke();
+    ctx.fillText(v === 0 ? '0' : v === 1 ? '1' : v < 0.5 ? '¹⁄₃' : '²⁄₃', tx, axisY + 14);
+  }
+}
+
+// ─── Cloud ───
+function drawCloudWithScan() {
+  const rO = N < 200 ? 7 : N < 1000 ? 4.5 : 3.5;
+  const rI = N < 200 ? 4 : N < 1000 ? 2.5 : 2.0;
+  const aOOn = N < 200 ? 0.40 : N < 1000 ? 0.22 : 0.12;
+  const aOOff = N < 200 ? 0.22 : N < 1000 ? 0.10 : 0.05;
+  const aIOn = N < 200 ? 0.55 : N < 1000 ? 0.30 : 0.12;
+  const aIOff = N < 200 ? 0.30 : N < 1000 ? 0.15 : 0.05;
+
+  for (const p of particles) {
+    const cx = canvasX(p.x), cy = canvasY(p.y);
+    const on = scanX !== null && p.x <= scanX;
+    ctx.beginPath(); ctx.arc(cx, cy, rO, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(158, 27, 50, ${on ? aOOn : aOOff})`; ctx.fill();
+  }
+  for (const p of particles) {
+    const cx = canvasX(p.x), cy = canvasY(p.y);
+    const on = scanX !== null && p.x <= scanX;
+    ctx.beginPath(); ctx.arc(cx, cy, rI, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(130, 20, 42, ${on ? aIOn : aIOff})`; ctx.fill();
+  }
+}
+
+// ─── Scan line ───
+function drawScanLine() {
+  if (scanX === null) return;
+  const sx = canvasX(Math.min(Math.max(scanX, 0), 1));
+  const y0 = PAD.top, y1 = canvas.height - PAD.bottom;
+  ctx.save(); ctx.shadowColor = 'rgba(204,51,68,0.4)'; ctx.shadowBlur = 16;
+  ctx.strokeStyle = 'rgba(204,51,68,0.75)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(sx, y0); ctx.lineTo(sx, y1); ctx.stroke(); ctx.restore();
+  ctx.strokeStyle = 'rgba(204,51,68,0.9)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(sx, y0); ctx.lineTo(sx, y1); ctx.stroke();
+  ctx.fillStyle = 'rgba(204,51,68,0.9)'; ctx.font = '600 20px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('scan', sx, y0 - 4);
+}
+
+// ════════════════════════════════════════
+// Three panels
+// ════════════════════════════════════════
+const PANEL = { gap: 16, ih: 450, iy: 12,
+  ip: { left: 12, right: 12, top: 40, bottom: 30 },
+  get panelW() { return (canvas.width - 40 - this.gap * 2) / 3; }
+};
+
+function pox(idx) { return 20 + idx * (PANEL.panelW + PANEL.gap); }
+
+function drawPanelBg(ix, bc) {
+  ctx.save(); ctx.globalAlpha = 0.92; ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath(); ctx.roundRect(ix, PANEL.iy, PANEL.panelW, PANEL.ih, 8); ctx.fill();
+  ctx.restore(); ctx.strokeStyle = bc; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(ix, PANEL.iy, PANEL.panelW, PANEL.ih, 8); ctx.stroke();
+}
+
+function bnd(ix) {
+  const px0 = ix + PANEL.ip.left, px1 = ix + PANEL.panelW - PANEL.ip.right;
+  const py0 = PANEL.iy + PANEL.ip.top, py1 = PANEL.iy + PANEL.ih - PANEL.ip.bottom;
+  return { px0, px1, py0, py1, pw: px1 - px0, ph: py1 - py0 };
+}
+
+function pSL(b) {
+  if (scanX === null) return;
+  const sx = b.px0 + Math.min(Math.max(scanX, 0), 1) * b.pw;
+  if (sx >= b.px0 && sx <= b.px1) {
+    ctx.strokeStyle = 'rgba(204,51,68,0.4)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(sx, b.py0); ctx.lineTo(sx, b.py1); ctx.stroke();
+  }
+}
+
+// ─── PANEL 1: Cantor set construction / mass cartoon ───
+function drawMassInset() {
+  const ix = pox(0);
+  drawPanelBg(ix, 'rgba(158, 27, 50, 0.2)');
+  const b = bnd(ix);
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 16px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('Mass at level k', ix + 14, PANEL.iy + 10);
+
+  const levels = Math.min(depth, 7);
+  const rowH = Math.min(28, (b.ph - 10) / (levels + 1));
+
+  function getIntervals(level) {
+    if (level === 0) return [[0, 1]];
+    const prev = getIntervals(level - 1);
+    const result = [];
+    for (const [a, bend] of prev) {
+      const third = (bend - a) / 3;
+      result.push([a, a + third]);
+      result.push([bend - third, bend]);
+    }
+    return result;
+  }
+
+  for (let k = 0; k <= levels; k++) {
+    const intervals = getIntervals(k);
+    const y = b.py0 + 6 + k * rowH;
+
+    ctx.fillStyle = 'rgba(90, 80, 70, 0.4)';
+    ctx.font = '400 12px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(`k=${k}`, b.px0 + 28, y + (rowH - 3) / 2);
+
+    const barLeft = b.px0 + 32, barW = b.pw - 36;
+
+    for (const [a, bend] of intervals) {
+      const x0 = barLeft + a * barW, x1 = barLeft + bend * barW;
+      const mid = (a + bend) / 2;
+      const scanned = scanX !== null && scanX >= mid;
+      const alpha = scanned ? 0.5 + 0.2 * (k / levels) : 0.12 + 0.18 * (k / levels);
+
+      ctx.fillStyle = scanned
+        ? `rgba(158, 27, 50, ${alpha})`
+        : `rgba(158, 27, 50, ${alpha * 0.6})`;
+      ctx.fillRect(x0, y, Math.max(x1 - x0, 1), rowH - 3);
+
+      ctx.strokeStyle = `rgba(158, 27, 50, ${0.1 + 0.1 * (k / levels)})`;
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(x0, y, Math.max(x1 - x0, 1), rowH - 3);
+    }
+  }
+
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.45)';
+  ctx.font = 'italic 400 13px "IBM Plex Sans", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('singular continuous — no f(x), no point masses', ix + PANEL.panelW / 2, b.py1 - 2);
+  pSL(b);
+}
+
+// ─── PANEL 2: Devil's staircase — Pachyderm ───
+function drawCdfInset() {
+  const ix = pox(1);
+  drawPanelBg(ix, 'rgba(95, 106, 114, 0.2)');
+  const b = bnd(ix);
+  const yMax = 1.05;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 16px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText("F(x) — Devil's Staircase", ix + 14, PANEL.iy + 10);
+
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py1); ctx.lineTo(b.px1, b.py1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py0); ctx.lineTo(b.px0, b.py1); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)'; ctx.font = '400 12px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of [0, 1/3, 2/3, 1]) {
+    const tx = b.px0 + v * b.pw;
+    ctx.fillText(v === 0 ? '0' : v === 1 ? '1' : v < 0.5 ? '¹⁄₃' : '²⁄₃', tx, b.py1 + 4);
+  }
+
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(90, 80, 70, 0.5)';
+  for (const yt of [0.5, 1.0]) {
+    const yy = b.py0 + (1 - yt / yMax) * b.ph;
+    ctx.fillText(yt.toFixed(1), b.px0 - 5, yy);
+    ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(95,106,114,0.15)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  ctx.beginPath();
+  for (let i = 0; i <= 1200; i++) {
+    const xv = i / 1200, Fv = cantorCDF(xv);
+    const sx = b.px0 + xv * b.pw, sy = b.py0 + (1 - Fv / yMax) * b.ph;
+    i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+  }
+  ctx.strokeStyle = 'rgba(95, 106, 114, 0.85)'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  pSL(b);
+
+  if (scanX !== null && scanX >= 0 && scanX <= 1) {
+    const Fs = cantorCDF(scanX);
+    const dx = b.px0 + scanX * b.pw, dy = b.py0 + (1 - Fs / yMax) * b.ph;
+    ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(204,51,68,0.9)'; ctx.fill();
+    ctx.fillStyle = 'rgba(95,106,114,0.85)'; ctx.font = '600 15px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`F = ${Fs.toFixed(3)}`, b.px0 + b.pw * 0.55, b.py0 + 16);
+  }
+}
+
+// ─── PANEL 3: Empirical CDF — navy ───
+function drawEcdfInset() {
+  const ix = pox(2);
+  drawPanelBg(ix, 'rgba(30, 80, 160, 0.18)');
+  const b = bnd(ix);
+  const yMax = 1.05;
+
+  ctx.fillStyle = 'rgba(60, 55, 48, 0.7)';
+  ctx.font = '500 16px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('F̂(x)', ix + 14, PANEL.iy + 10);
+
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py1); ctx.lineTo(b.px1, b.py1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(b.px0, b.py0); ctx.lineTo(b.px0, b.py1); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(90, 80, 70, 0.6)'; ctx.font = '400 12px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of [0, 1/3, 2/3, 1]) {
+    const tx = b.px0 + v * b.pw;
+    ctx.fillText(v === 0 ? '0' : v === 1 ? '1' : v < 0.5 ? '¹⁄₃' : '²⁄₃', tx, b.py1 + 4);
+  }
+
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(90, 80, 70, 0.5)';
+  for (const yt of [0.5, 1.0]) {
+    const yy = b.py0 + (1 - yt / yMax) * b.ph;
+    ctx.fillText(yt.toFixed(1), b.px0 - 5, yy);
+    ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(30,80,160,0.12)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(b.px0, yy); ctx.lineTo(b.px1, yy); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Faint theoretical CDF (Pachyderm)
+  ctx.beginPath();
+  for (let i = 0; i <= 800; i++) {
+    const xv = i / 800, Fv = cantorCDF(xv);
+    const sx = b.px0 + xv * b.pw, sy = b.py0 + (1 - Fv / yMax) * b.ph;
+    i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+  }
+  ctx.strokeStyle = 'rgba(95,106,114,0.2)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  if (scanX === null) return;
+
+  const n = sortedX.length;
+  const drawUpTo = Math.min(Math.max(scanX, 0), 1);
+  let countBelow = 0;
+  for (let i = 0; i < n; i++) { if (sortedX[i] <= drawUpTo) countBelow = i + 1; else break; }
+
+  ctx.beginPath();
+  let prevPy = b.py0 + b.ph;
+  ctx.moveTo(b.px0, prevPy);
+  const maxSteps = 600, stepSize = Math.max(1, Math.floor(countBelow / maxSteps));
+  for (let i = 0; i < countBelow; i += stepSize) {
+    const xv = sortedX[i], Fhat = (i + 1) / n;
+    const sx = b.px0 + xv * b.pw, sy = b.py0 + (1 - Fhat / yMax) * b.ph;
+    ctx.lineTo(sx, prevPy); ctx.lineTo(sx, sy); prevPy = sy;
+  }
+  ctx.lineTo(b.px0 + drawUpTo * b.pw, prevPy);
+  ctx.strokeStyle = 'rgba(30, 80, 160, 0.85)'; ctx.lineWidth = 2; ctx.stroke();
+
+  const Fhat = countBelow / n;
+  ctx.beginPath(); ctx.arc(b.px0 + drawUpTo * b.pw, prevPy, 5.5, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(204,51,68,0.9)'; ctx.fill();
+
+  pSL(b);
+
+  ctx.fillStyle = 'rgba(204,51,68,0.9)'; ctx.font = '600 15px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`F̂ = ${Fhat.toFixed(3)}`, b.px0 + b.pw * 0.55, b.py0 + 16);
+}
+
+// ─── Full render ───
+function fullDraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawAxis(); drawCloudWithScan(); drawScanLine();
+  drawMassInset(); drawCdfInset(); drawEcdfInset();
+}
+
+// ─── Scan ───
+function startScan() {
+  if (scanAnim) cancelAnimationFrame(scanAnim);
+  const speed = parseInt(document.getElementById('speedSlider').value);
+  const totalFrames = Math.round(400 / speed);
+  let frame = 0;
+  function step() {
+    scanX = -0.05 + 1.1 * (frame / totalFrames);
+    fullDraw(); frame++;
+    if (frame <= totalFrames) scanAnim = requestAnimationFrame(step);
+    else { scanX = 1.05; fullDraw(); }
+  }
+  step();
+}
+
+// ─── Controls ───
+function updateLabels() {
+  const n = parseInt(document.getElementById('nSlider').value);
+  document.getElementById('nVal').textContent = n >= 1000 ? (n / 1000).toFixed(0) + 'k' : n;
+  document.getElementById('depthVal').textContent = parseInt(document.getElementById('depthSlider').value);
+  document.getElementById('depthLabel').textContent = parseInt(document.getElementById('depthSlider').value);
+}
+document.getElementById('nSlider').addEventListener('input', updateLabels);
+document.getElementById('depthSlider').addEventListener('input', updateLabels);
+
+document.getElementById('redrawBtn').addEventListener('click', () => {
+  if (scanAnim) cancelAnimationFrame(scanAnim); scanX = null;
+  N = parseInt(document.getElementById('nSlider').value);
+  depth = parseInt(document.getElementById('depthSlider').value);
+  generateParticles(); fullDraw();
+});
+document.getElementById('scanBtn').addEventListener('click', startScan);
+
+// Tooltip
+const wrap = document.querySelector('.canvas-wrap');
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const xVal = (mx - PAD.left) / (canvas.width - PAD.left - PAD.right);
+  if (xVal >= 0 && xVal <= 1) {
+    const Fx = cantorCDF(xVal);
+    tooltip.textContent = `x = ${xVal.toFixed(4)}   F(x) = ${Fx.toFixed(4)}`;
+    tooltip.style.left = (e.clientX - wrap.getBoundingClientRect().left + 12) + 'px';
+    tooltip.style.top = (e.clientY - wrap.getBoundingClientRect().top - 30) + 'px';
+    tooltip.style.opacity = 1;
+  } else tooltip.style.opacity = 0;
+});
+canvas.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
+
+// Formulas
+katex.render(
+  String.raw`X = \sum_{k=1}^{K} \frac{c_k}{3^k}, \quad c_k = \begin{cases} 0 & b_k=0 \\ 2 & b_k=1 \end{cases}`,
+  document.getElementById('formulaX'), { throwOnError: false }
+);
+katex.render(
+  String.raw`b_k \overset{\text{iid}}{\sim} \text{Bern}(\tfrac{1}{2})`,
+  document.getElementById('formulaC'), { throwOnError: false }
+);
+
+generateParticles(); fullDraw();
+</script>
+</body>
+</html>

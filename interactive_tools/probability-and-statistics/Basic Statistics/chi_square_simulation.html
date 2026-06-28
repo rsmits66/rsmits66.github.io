@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chi-square Goodness-of-Fit Simulator</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f4ef;
+    --text: #1a1915;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.15);
+    --border-strong: rgba(0,0,0,0.3);
+    --accent: #9E1B32;
+    --accent-dark: #6B0F23;
+    --bar: #828A8F;
+    --btn-hover: #ededea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #ffffff;
+      --surface: #f5f4ef;
+      --text: #1a1915;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #888780;
+      --border: rgba(0,0,0,0.15);
+      --border-strong: rgba(0,0,0,0.3);
+      --accent: #9E1B32;
+      --accent-dark: #6B0F23;
+      --bar: #828A8F;
+      --btn-hover: #ededea;
+    }
+    html, body { color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 780px; margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    border-top: 3px solid var(--accent);
+  }
+  h1 {
+    font-size: 24px; font-weight: 500; margin: 0 0 0.25rem;
+    color: var(--accent); letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 1.5rem; }
+  .panel {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .panel-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .k-selector { display: flex; gap: 6px; }
+  .k-btn {
+    flex: 1;
+    padding: 8px 0;
+    font-family: inherit; font-size: 14px;
+    background: white;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 6px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: background 0.12s;
+  }
+  .k-btn:hover { background: var(--btn-hover); }
+  .k-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .cells {
+    display: grid;
+    gap: 12px;
+  }
+  .cell { text-align: center; }
+  .cell-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 6px;
+    background: white;
+    font-family: inherit; font-size: 15px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="number"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+    text-align: center;
+  }
+  .stat-row {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 0.5px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .stat-row .big {
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 500;
+  }
+  button.action {
+    background: transparent; color: var(--text);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px; padding: 9px 18px;
+    font-size: 14px; font-family: inherit; cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+  }
+  button.action.primary {
+    background: var(--accent); color: white;
+    border-color: var(--accent);
+  }
+  button.action.primary:hover:not(:disabled) {
+    background: var(--accent-dark); border-color: var(--accent-dark);
+  }
+  button.action:hover:not(:disabled) { background: var(--btn-hover); }
+  button.action:active:not(:disabled) { transform: scale(0.98); }
+  button.action:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 8px; margin: 1.25rem 0; }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+  .metric {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .metric-label {
+    font-size: 12px; color: var(--text-secondary);
+    display: block; margin-bottom: 4px;
+  }
+  .metric-value {
+    font-size: 22px; font-weight: 500; display: block;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-value.small { font-size: 15px; }
+  .metric-sub {
+    font-size: 11px; color: var(--text-tertiary);
+    display: block; margin-top: 2px;
+  }
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+  .legend-bar {
+    display: inline-block; width: 14px; height: 10px;
+    background: var(--bar); vertical-align: middle;
+    margin-right: 6px; border-radius: 2px;
+  }
+  .legend-line {
+    display: inline-block; width: 18px; height: 2px;
+    vertical-align: middle; margin-right: 6px;
+  }
+  .legend-dashed {
+    display: inline-block; width: 18px; height: 0;
+    border-top: 2px dashed var(--text);
+    vertical-align: middle; margin-right: 6px;
+  }
+  svg { width: 100%; height: auto; }
+  .hidden { display: none !important; }
+  .notes {
+    margin-top: 2rem; padding-top: 1.5rem;
+    border-top: 0.5px solid var(--border);
+    font-size: 14px; color: var(--text-secondary);
+  }
+  .notes h2 { font-size: 16px; font-weight: 500; color: var(--text); margin: 1rem 0 0.5rem; }
+  .notes code {
+    background: var(--surface); padding: 1px 6px; border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Chi-square goodness-of-fit simulator</h1>
+  <p class="subtitle">
+    Choose the number of categories, set null probabilities, enter observed counts.
+    Simulate 100,000 null-world experiments and compare the empirical X² distribution
+    to the theoretical χ²<sub>k−1</sub> curve.
+  </p>
+
+  <div class="panel">
+    <p class="panel-label">Number of categories (k)</p>
+    <div class="k-selector" id="kSelector">
+      <button class="k-btn" data-k="2">2</button>
+      <button class="k-btn active" data-k="3">3</button>
+      <button class="k-btn" data-k="4">4</button>
+      <button class="k-btn" data-k="5">5</button>
+      <button class="k-btn" data-k="6">6</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-label">Null probabilities (any positive numbers; will be normalized)</p>
+    <div class="cells" id="probsContainer"></div>
+    <div class="stat-row" id="probsDisplay"></div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-label">Observed cell counts</p>
+    <div class="cells" id="countsContainer"></div>
+    <div class="stat-row" id="obsDisplay"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="action primary" id="run">Run 100,000 simulations</button>
+    <button class="action" id="reset">Reset</button>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">Simulated p-value</span>
+        <span class="metric-value" id="psim">—</span>
+        <span class="metric-sub">fraction with X² ≥ X²<sub>obs</sub></span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Theoretical p-value</span>
+        <span class="metric-value" id="ptheory">—</span>
+        <span class="metric-sub" id="ptheorySub">from χ² approximation</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Conclusion at α = 0.05</span>
+        <span class="metric-value small" id="concl">—</span>
+        <span class="metric-sub" id="conclSub">—</span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><span class="legend-bar"></span>simulated X² (100,000 null draws)</span>
+      <span><span class="legend-line" style="background: var(--accent);"></span><span id="legendDf">theoretical χ² density</span></span>
+      <span><span class="legend-dashed"></span>observed X²<sub>obs</sub></span>
+    </div>
+
+    <svg id="viz" viewBox="0 0 680 470" role="img"
+         aria-label="Histogram of simulated chi-square statistics overlaid with theoretical density and observed value."></svg>
+  </div>
+
+  <div class="notes">
+    <h2>What to notice</h2>
+    <p>
+      The crimson curve is the theoretical χ²<sub>k−1</sub> density from the formula
+      f(x) = x<sup>(k−1)/2 − 1</sup> · e<sup>−x/2</sup> / (2<sup>(k−1)/2</sup> · Γ((k−1)/2)).
+      The gray histogram is the empirical null distribution built by running 100,000 random
+      multinomial experiments and computing X² each time. When all expected counts are comfortably
+      above 5, the two match closely and the simulated p-value agrees with the theoretical one
+      within Monte Carlo error.
+    </p>
+    <h2>Try this</h2>
+    <p>
+      Switch k to 4 and enter <code>9, 3, 3, 1</code> for the null probabilities with observed
+      counts <code>315, 108, 101, 32</code> (Mendel's original pea data) — the simulated
+      and theoretical p-values should both land near 0.92, showing the famous near-perfect
+      agreement with Mendelian genetics. Try k = 6 with equal probabilities and counts
+      <code>10, 9, 11, 10, 8, 12</code> to simulate rolling a fair die 60 times. Use unequal
+      null probabilities like <code>0.5, 0.3, 0.2</code> with counts <code>48, 32, 20</code>
+      to test a specific composition hypothesis. Notice how the crimson curve's shape
+      changes with df — it peaks at the origin for df ≤ 2, but pulls away from zero and
+      becomes roughly bell-shaped for df ≥ 3.
+    </p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const NSIM = 100000;
+  const MIN_K = 2, MAX_K = 6;
+
+  const state = {
+    k: 3,
+    probs: [1, 1, 1],
+    counts: [23, 36, 31],
+    simResults: null
+  };
+
+  function getCSS(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function gammaHalf(n) {
+    if (n === 1) return Math.sqrt(Math.PI);
+    if (n === 2) return 1;
+    return (n / 2 - 1) * gammaHalf(n - 2);
+  }
+
+  function chi2pdf(x, df) {
+    if (x <= 0) return df === 2 ? 0.5 : (df < 2 ? Infinity : 0);
+    const norm = 1 / (Math.pow(2, df / 2) * gammaHalf(df));
+    return norm * Math.pow(x, df / 2 - 1) * Math.exp(-x / 2);
+  }
+
+  function chi2upper(x0, df) {
+    if (x0 <= 0) return 1;
+    if (df === 2) return Math.exp(-x0 / 2);
+    const upperBound = Math.max(100, x0 + 50);
+    const steps = 2000;
+    const h = (upperBound - x0) / steps;
+    let sum = 0.5 * (chi2pdf(x0, df) + chi2pdf(upperBound, df));
+    for (let i = 1; i < steps; i++) sum += chi2pdf(x0 + i * h, df);
+    return sum * h;
+  }
+
+  function normalize(vals) {
+    const s = vals.reduce((a, b) => a + b, 0);
+    if (s <= 0) return vals.map(() => 1 / vals.length);
+    return vals.map(v => v / s);
+  }
+
+  function buildInputs() {
+    const k = state.k;
+    const probsC = document.getElementById('probsContainer');
+    const countsC = document.getElementById('countsContainer');
+    probsC.style.gridTemplateColumns = 'repeat(' + k + ', minmax(0, 1fr))';
+    countsC.style.gridTemplateColumns = 'repeat(' + k + ', minmax(0, 1fr))';
+    probsC.innerHTML = '';
+    countsC.innerHTML = '';
+    for (let i = 0; i < k; i++) {
+      const pc = document.createElement('div');
+      pc.className = 'cell';
+      pc.innerHTML = '<label class="cell-label">Cell ' + (i + 1) + '</label>' +
+        '<input type="number" id="p' + i + '" value="' + state.probs[i] + '" min="0" step="any" />';
+      probsC.appendChild(pc);
+
+      const cc = document.createElement('div');
+      cc.className = 'cell';
+      cc.innerHTML = '<label class="cell-label">Cell ' + (i + 1) + '</label>' +
+        '<input type="number" id="c' + i + '" value="' + state.counts[i] + '" min="0" step="1" />';
+      countsC.appendChild(cc);
+    }
+    for (let i = 0; i < k; i++) {
+      document.getElementById('p' + i).addEventListener('input', e => {
+        state.probs[i] = parseFloat(e.target.value);
+        if (isNaN(state.probs[i])) state.probs[i] = 0;
+        invalidateAndUpdate();
+      });
+      document.getElementById('c' + i).addEventListener('input', e => {
+        state.counts[i] = parseInt(e.target.value);
+        if (isNaN(state.counts[i])) state.counts[i] = 0;
+        invalidateAndUpdate();
+      });
+    }
+  }
+
+  function invalidateAndUpdate() {
+    if (state.simResults) {
+      state.simResults = null;
+      document.getElementById('results').classList.add('hidden');
+    }
+    updateDisplays();
+  }
+
+  function computeObs() {
+    const k = state.k;
+    const probs = normalize(state.probs);
+    let n = 0;
+    for (const c of state.counts) n += c;
+    if (n === 0) return null;
+    const expected = probs.map(p => n * p);
+    let X2 = 0;
+    for (let i = 0; i < k; i++) {
+      const e = expected[i];
+      if (e > 0) {
+        const d = state.counts[i] - e;
+        X2 += d * d / e;
+      }
+    }
+    return { n: n, expected: expected, probs: probs, X2: X2, df: k - 1 };
+  }
+
+  function updateDisplays() {
+    const obs = computeObs();
+    const probs = normalize(state.probs);
+    document.getElementById('probsDisplay').innerHTML =
+      'normalized: (' + probs.map(p => p.toFixed(3)).join(', ') + ')';
+
+    if (obs) {
+      document.getElementById('obsDisplay').innerHTML =
+        'n = ' + obs.n + ',  E(n<sub>i</sub>) = (' +
+        obs.expected.map(e => e.toFixed(1)).join(', ') + ')  →  ' +
+        'X²<sub>obs</sub> = <span class="big">' + obs.X2.toFixed(3) + '</span>,  df = ' + obs.df;
+    } else {
+      document.getElementById('obsDisplay').innerHTML = 'enter observed counts to see X²';
+    }
+  }
+
+  function runSimulation() {
+    const obs = computeObs();
+    if (!obs) return;
+    const btn = document.getElementById('run');
+    btn.disabled = true;
+    btn.textContent = 'Simulating…';
+    setTimeout(() => {
+      const n = obs.n, probs = obs.probs, expected = obs.expected, k = state.k;
+      const cumP = new Array(k);
+      cumP[0] = probs[0];
+      for (let i = 1; i < k; i++) cumP[i] = cumP[i - 1] + probs[i];
+
+      const X2sim = new Float64Array(NSIM);
+      const counts = new Array(k);
+      for (let s = 0; s < NSIM; s++) {
+        for (let i = 0; i < k; i++) counts[i] = 0;
+        for (let j = 0; j < n; j++) {
+          const r = Math.random();
+          for (let i = 0; i < k; i++) {
+            if (r < cumP[i]) { counts[i]++; break; }
+          }
+        }
+        let X2 = 0;
+        for (let i = 0; i < k; i++) {
+          const d = counts[i] - expected[i];
+          X2 += d * d / expected[i];
+        }
+        X2sim[s] = X2;
+      }
+      let hits = 0;
+      for (let i = 0; i < NSIM; i++) if (X2sim[i] >= obs.X2) hits++;
+
+      state.simResults = {
+        X2sim: X2sim, X2obs: obs.X2,
+        simP: hits / NSIM,
+        theoryP: chi2upper(obs.X2, obs.df),
+        df: obs.df
+      };
+      btn.disabled = false;
+      btn.textContent = 'Run 100,000 simulations';
+      document.getElementById('results').classList.remove('hidden');
+      renderResults();
+    }, 40);
+  }
+
+  function renderResults() {
+    const r = state.simResults;
+    if (!r) return;
+    document.getElementById('psim').textContent = r.simP.toFixed(4);
+    document.getElementById('ptheory').textContent = r.theoryP.toFixed(4);
+    document.getElementById('ptheorySub').textContent = 'from χ²' + subscript(r.df) + ' distribution';
+    document.getElementById('legendDf').textContent = 'theoretical χ²' + subscript(r.df) + ' density';
+
+    const concl = document.getElementById('concl');
+    const sub = document.getElementById('conclSub');
+    if (r.theoryP < 0.05) {
+      concl.textContent = 'Reject H₀';
+      concl.style.color = 'var(--accent)';
+      sub.textContent = 'evidence against null probabilities';
+    } else {
+      concl.textContent = 'Fail to reject H₀';
+      concl.style.color = 'var(--text)';
+      sub.textContent = 'insufficient evidence';
+    }
+    renderHistogram();
+  }
+
+  function subscript(n) {
+    const map = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉' };
+    return String(n).split('').map(c => map[c] || c).join('');
+  }
+
+  function renderHistogram() {
+    const r = state.simResults;
+    const plotLeft = 55, plotRight = 660, plotTop = 30, plotBottom = 410;
+
+    const sorted = Array.from(r.X2sim).sort((a, b) => a - b);
+    const p995 = sorted[Math.floor(0.995 * sorted.length)];
+    const xMin = 0;
+    const xMax = Math.max(10, Math.ceil(Math.max(p995, r.X2obs + 1)));
+
+    const numBins = 60;
+    const binWidth = (xMax - xMin) / numBins;
+    const binCounts = new Array(numBins).fill(0);
+    for (let i = 0; i < r.X2sim.length; i++) {
+      const x = r.X2sim[i];
+      if (x < xMin || x >= xMax) continue;
+      let b = Math.floor((x - xMin) / binWidth);
+      if (b >= numBins) b = numBins - 1;
+      binCounts[b]++;
+    }
+    const densities = binCounts.map(c => c / (r.X2sim.length * binWidth));
+
+    let curvePeak = 0;
+    for (let i = 1; i <= 50; i++) {
+      const x = i * xMax / 50;
+      curvePeak = Math.max(curvePeak, chi2pdf(x, r.df));
+    }
+    if (r.df <= 2) curvePeak = Math.max(curvePeak, 0.55);
+
+    const yMax = Math.max(curvePeak, Math.max.apply(null, densities)) * 1.05;
+    const scaleX = x => plotLeft + (x - xMin) / (xMax - xMin) * (plotRight - plotLeft);
+    const scaleY = y => plotBottom - (y / yMax) * (plotBottom - plotTop);
+
+    const bar = getCSS('--bar');
+    const accent = getCSS('--accent');
+    const border = getCSS('--border-strong');
+    const textSec = getCSS('--text-secondary');
+    const textPri = getCSS('--text');
+
+    const parts = [];
+
+    for (let i = 0; i < numBins; i++) {
+      if (binCounts[i] === 0) continue;
+      const binL = xMin + i * binWidth;
+      const binR = binL + binWidth;
+      const x1 = scaleX(binL), x2 = scaleX(binR);
+      const y1 = scaleY(densities[i]);
+      const h = plotBottom - y1;
+      const w = Math.max(x2 - x1 - 0.5, 1);
+      parts.push('<rect x="' + x1 + '" y="' + y1 + '" width="' + w + '" height="' + h + '" fill="' + bar + '" opacity="0.72"/>');
+    }
+
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotBottom + '" x2="' + plotRight + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+    parts.push('<line x1="' + plotLeft + '" y1="' + plotTop + '" x2="' + plotLeft + '" y2="' + plotBottom + '" stroke="' + border + '"/>');
+
+    const nTicks = Math.min(8, xMax);
+    for (let i = 0; i <= nTicks; i++) {
+      const val = xMin + i * (xMax - xMin) / nTicks;
+      const x = scaleX(val);
+      parts.push('<line x1="' + x + '" y1="' + plotBottom + '" x2="' + x + '" y2="' + (plotBottom + 5) + '" stroke="' + border + '"/>');
+      parts.push('<text x="' + x + '" y="' + (plotBottom + 20) + '" text-anchor="middle" font-size="12" fill="' + textSec + '">' + val.toFixed(val < 1 ? 2 : 0) + '</text>');
+    }
+    parts.push('<text x="' + ((plotLeft + plotRight) / 2) + '" y="' + (plotBottom + 42) + '" text-anchor="middle" font-size="13" fill="' + textSec + '">X² statistic</text>');
+
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++) {
+      const val = i * yMax / yTicks;
+      const y = scaleY(val);
+      parts.push('<line x1="' + (plotLeft - 5) + '" y1="' + y + '" x2="' + plotLeft + '" y2="' + y + '" stroke="' + border + '"/>');
+      parts.push('<text x="' + (plotLeft - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="' + textSec + '">' + val.toFixed(2) + '</text>');
+    }
+    const yLabelY = (plotTop + plotBottom) / 2;
+    parts.push('<text x="18" y="' + yLabelY + '" text-anchor="middle" font-size="12" fill="' + textSec + '" transform="rotate(-90 18 ' + yLabelY + ')">density</text>');
+
+    const nPts = 400;
+    const segs = [];
+    let cur = [];
+    for (let i = 0; i <= nPts; i++) {
+      const x = xMin + i * (xMax - xMin) / nPts;
+      let y = chi2pdf(x, r.df);
+      if (!isFinite(y) || y > yMax * 1.5) { if (cur.length) { segs.push(cur); cur = []; } continue; }
+      cur.push(scaleX(x).toFixed(1) + ',' + scaleY(y).toFixed(1));
+    }
+    if (cur.length) segs.push(cur);
+    for (const s of segs) {
+      if (s.length > 1) parts.push('<polyline points="' + s.join(' ') + '" fill="none" stroke="' + accent + '" stroke-width="2.5"/>');
+    }
+
+    const obsX = scaleX(Math.min(r.X2obs, xMax));
+    parts.push('<line x1="' + obsX + '" y1="' + plotTop + '" x2="' + obsX + '" y2="' + plotBottom + '" stroke="' + textPri + '" stroke-width="2" stroke-dasharray="5 3"/>');
+    parts.push('<text x="' + obsX + '" y="' + (plotTop - 8) + '" text-anchor="middle" font-size="12" font-weight="500" fill="' + textPri + '">X²_obs = ' + r.X2obs.toFixed(3) + '</text>');
+
+    document.getElementById('viz').innerHTML = parts.join('');
+  }
+
+  function setK(newK) {
+    if (newK === state.k) return;
+    if (newK > state.k) {
+      for (let i = state.k; i < newK; i++) {
+        state.probs.push(1);
+        state.counts.push(0);
+      }
+    } else {
+      state.probs = state.probs.slice(0, newK);
+      state.counts = state.counts.slice(0, newK);
+    }
+    state.k = newK;
+    document.querySelectorAll('.k-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.k) === newK);
+    });
+    buildInputs();
+    invalidateAndUpdate();
+  }
+
+  function reset() {
+    state.k = 3;
+    state.probs = [1, 1, 1];
+    state.counts = [23, 36, 31];
+    state.simResults = null;
+    document.querySelectorAll('.k-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.k) === 3);
+    });
+    buildInputs();
+    document.getElementById('results').classList.add('hidden');
+    updateDisplays();
+  }
+
+  document.querySelectorAll('.k-btn').forEach(b => {
+    b.addEventListener('click', () => setK(parseInt(b.dataset.k)));
+  });
+  document.getElementById('run').addEventListener('click', runSimulation);
+  document.getElementById('reset').addEventListener('click', reset);
+
+  buildInputs();
+  updateDisplays();
+})();
+</script>
+</body>
+</html>

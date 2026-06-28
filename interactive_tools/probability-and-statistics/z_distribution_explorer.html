@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Z-Distribution — An Interactive Investigation</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+<style>
+  :root {
+    --paper:       #efe8d8;
+    --paper-2:     #f5efdf;
+    --paper-3:     #e6dec9;
+    --ink:         #1a1612;
+    --ink-2:       #4a4238;
+    --ink-3:       #8a8170;
+    --rule:        #c9bfa8;
+    --rule-soft:   #d8d1bf;
+    --accent:      #bd3f1c;
+    --accent-2:    #e8c4b5;
+    --forest:      #2a5040;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { width: 100%; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    font-weight: 400;
+    padding: 36px 32px 72px;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(189, 63, 28, 0.045), transparent 42%),
+      radial-gradient(circle at 82% 76%, rgba(42, 80, 64, 0.04), transparent 42%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.06 0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+  }
+
+  .container { max-width: 1240px; margin: 0 auto; }
+
+  /* ----- Masthead ----- */
+  .masthead {
+    border-top:    1.5px solid var(--ink);
+    border-bottom: 0.75px solid var(--ink);
+    padding: 14px 0 10px;
+    margin-bottom: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .masthead .brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+  }
+  .masthead .meta {
+    display: flex;
+    gap: 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .masthead .meta span.dot {
+    color: var(--accent);
+  }
+
+  /* ----- Title block ----- */
+  .title-block { margin-bottom: 52px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 28px; height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(44px, 7.4vw, 94px);
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    margin-bottom: 22px;
+    font-variation-settings: "opsz" 144;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  h1 .amp {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink-3);
+  }
+
+  .lede {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 19.5px;
+    line-height: 1.55;
+    max-width: 740px;
+    color: var(--ink-2);
+    font-variation-settings: "opsz" 24;
+  }
+
+  /* ----- Formula ----- */
+  .formula-box {
+    background: var(--paper-2);
+    border: 0.75px solid var(--rule);
+    padding: 30px 36px 32px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .formula-box::before {
+    content: '§ pdf';
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    position: absolute;
+    top: -14px;
+    left: 28px;
+    background: var(--paper);
+    padding: 0 12px;
+    font-size: 17px;
+    color: var(--accent);
+  }
+  .formula-box .caption {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-top: 14px;
+    text-align: center;
+  }
+  #formula {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 0;
+  }
+  .katex-display { margin: 0 !important; }
+  .katex { font-size: 1.12em; }
+
+  /* ----- Workspace ----- */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    margin-bottom: 48px;
+  }
+
+  .panel {
+    background: var(--paper-2);
+    border: 0.75px solid var(--rule);
+    position: relative;
+  }
+  .panel-head {
+    padding: 18px 22px 14px;
+    border-bottom: 0.75px dashed var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .panel-head h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 20px;
+    letter-spacing: -0.005em;
+  }
+  .panel-head .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .panel-body {
+    padding: 20px 22px 22px;
+  }
+
+  /* plot */
+  .plot-panel .panel-body { padding-top: 10px; }
+  .plot-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+  }
+  .toggles {
+    display: flex;
+    gap: 0;
+    border: 0.75px solid var(--rule);
+  }
+  .toggle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border: none;
+    border-right: 0.75px solid var(--rule);
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .toggle:last-child { border-right: none; }
+  .toggle.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  canvas { display: block; width: 100%; height: 440px; }
+
+  /* side */
+  .side { display: flex; flex-direction: column; gap: 22px; }
+
+  /* sliders */
+  .slider-group {
+    margin-bottom: 18px;
+  }
+  .slider-group:last-child { margin-bottom: 0; }
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+  }
+  .slider-header .name {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 19px;
+    font-weight: 500;
+  }
+  .slider-header .desc {
+    font-family: 'Manrope', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-left: 8px;
+    letter-spacing: 0.03em;
+  }
+  .slider-header .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--paper-3);
+    padding: 2px 7px;
+    border-radius: 2px;
+  }
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    background: transparent;
+    height: 18px;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--rule);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-top: -5.5px;
+    border: 2px solid var(--paper-2);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  input[type=range]::-moz-range-track {
+    height: 2px;
+    background: var(--rule);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 13px; height: 13px;
+    background: var(--accent);
+    border: 2px solid var(--paper-2);
+    box-shadow: 0 0 0 1px var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .slider-track-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--ink-3);
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  /* stats */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 0.75px dashed var(--rule-soft);
+  }
+  .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-row:first-child { padding-top: 0; }
+  .stat-row .lbl {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-2);
+    font-weight: 400;
+  }
+  .stat-row .lbl .closed {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-style: normal;
+    color: var(--ink-3);
+    margin-left: 6px;
+    letter-spacing: 0.12em;
+  }
+  .stat-row .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    tabular-nums: true;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-row .val.pos { color: var(--forest); }
+  .stat-row .val.neg { color: var(--accent); }
+
+  /* ----- Presets ----- */
+  .presets { margin-bottom: 52px; }
+  .presets-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .presets-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 9px 14px;
+    border: 0.75px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+  .chip .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    letter-spacing: 0.02em;
+  }
+  .chip:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .chip:hover .tag { color: var(--accent-2); }
+
+  /* ----- Notes ----- */
+  .notes {
+    border-top: 1.5px solid var(--ink);
+    padding-top: 36px;
+    columns: 2;
+    column-gap: 48px;
+  }
+  .notes-head {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 26px;
+    column-span: all;
+    margin-bottom: 22px;
+    color: var(--ink);
+  }
+  .notes-head::first-letter {
+    color: var(--accent);
+  }
+  .note {
+    break-inside: avoid;
+    margin-bottom: 22px;
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 15.5px;
+    line-height: 1.58;
+    color: var(--ink-2);
+    font-variation-settings: "opsz" 14;
+  }
+  .note h4 {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .note h4 .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+  .note code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.84em;
+    background: var(--paper-3);
+    padding: 1px 5px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .note em { font-style: italic; }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 0.75px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 980px) {
+    .workspace { grid-template-columns: 1fr; }
+    .notes { columns: 1; }
+    body { padding: 28px 20px 60px; }
+  }
+  @media (max-width: 560px) {
+    .masthead { font-size: 12px; }
+    .masthead .meta { gap: 10px; font-size: 9.5px; }
+    .formula-box { padding: 24px 18px 22px; }
+    .katex { font-size: 0.95em; }
+  }
+
+  .fade-in { animation: fade 0.6s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <header class="masthead fade-in">
+    <div class="brand">The Generalized Distributions Notebook</div>
+    <div class="meta">
+      <span>Vol. IV</span><span class="dot">·</span>
+      <span>No. 07</span><span class="dot">·</span>
+      <span>Four Parameters</span>
+    </div>
+  </header>
+
+  <section class="title-block fade-in" style="animation-delay:.05s">
+    <div class="eyebrow">Investigation № 7</div>
+    <h1>The <em>Z</em>-distribution,<br><span class="amp">with</span> four parameters.</h1>
+    <p class="lede">A continuous family on the real line, indexed by two shape parameters, a location, and a scale. Turn the dials to observe its character — from the familiar logistic, through pronounced skews, to the asymptotic bell.</p>
+  </section>
+
+  <section class="formula-box fade-in" style="animation-delay:.1s">
+    <div id="formula"></div>
+    <div class="caption">α, β, σ &gt; 0  ·  μ ∈ ℝ  ·  B(α, β) denotes the Beta function</div>
+  </section>
+
+  <section class="workspace fade-in" style="animation-delay:.15s">
+
+    <div class="panel plot-panel">
+      <div class="panel-head">
+        <h3>Density curve</h3>
+        <div class="sub" id="range-label">loading…</div>
+      </div>
+      <div class="plot-controls">
+        <div id="legend">
+          <span style="color:var(--accent);font-weight:600">— pdf</span>
+          &nbsp;&nbsp;<span style="color:var(--forest);font-weight:600">-- cdf</span>
+          &nbsp;&nbsp;<span style="color:var(--ink-2)">┆ mean</span>
+          &nbsp;&nbsp;<span style="color:var(--ink-3)">⋮ mode</span>
+        </div>
+        <div class="toggles">
+          <button class="toggle active" data-view="pdf">pdf</button>
+          <button class="toggle" data-view="both">both</button>
+          <button class="toggle" data-view="cdf">cdf</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <canvas id="plot"></canvas>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Parameters</h3>
+          <div class="sub">4 dials</div>
+        </div>
+        <div class="panel-body">
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <div class="name">α<span class="desc">— left shape / lower tail</span></div>
+              <div class="value" id="alpha-val">2.00</div>
+            </div>
+            <input type="range" id="alpha" min="0.1" max="20" step="0.01" value="2" />
+            <div class="slider-track-meta"><span>0.1</span><span>20</span></div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <div class="name">β<span class="desc">— right shape / upper tail</span></div>
+              <div class="value" id="beta-val">2.00</div>
+            </div>
+            <input type="range" id="beta" min="0.1" max="20" step="0.01" value="2" />
+            <div class="slider-track-meta"><span>0.1</span><span>20</span></div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <div class="name">μ<span class="desc">— location</span></div>
+              <div class="value" id="mu-val">0.00</div>
+            </div>
+            <input type="range" id="mu" min="-5" max="5" step="0.01" value="0" />
+            <div class="slider-track-meta"><span>−5</span><span>+5</span></div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <div class="name">σ<span class="desc">— scale</span></div>
+              <div class="value" id="sigma-val">1.00</div>
+            </div>
+            <input type="range" id="sigma" min="0.1" max="5" step="0.01" value="1" />
+            <div class="slider-track-meta"><span>0.1</span><span>5</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Moments &amp; landmarks</h3>
+          <div class="sub">derived</div>
+        </div>
+        <div class="panel-body">
+          <div class="stat-row"><span class="lbl">Mean, 𝔼[Z] <span class="closed">closed</span></span><span class="val" id="stat-mean">—</span></div>
+          <div class="stat-row"><span class="lbl">Variance <span class="closed">closed</span></span><span class="val" id="stat-var">—</span></div>
+          <div class="stat-row"><span class="lbl">Std. deviation</span><span class="val" id="stat-sd">—</span></div>
+          <div class="stat-row"><span class="lbl">Mode <span class="closed">closed</span></span><span class="val" id="stat-mode">—</span></div>
+          <div class="stat-row"><span class="lbl">Median <span class="closed">num.</span></span><span class="val" id="stat-med">—</span></div>
+          <div class="stat-row"><span class="lbl">Skewness <span class="closed">num.</span></span><span class="val" id="stat-skew">—</span></div>
+          <div class="stat-row"><span class="lbl">Ex. kurtosis <span class="closed">num.</span></span><span class="val" id="stat-kurt">—</span></div>
+          <div class="stat-row"><span class="lbl">Peak density</span><span class="val" id="stat-peak">—</span></div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="presets fade-in" style="animation-delay:.2s">
+    <div class="presets-label">Preset configurations</div>
+    <div class="chips" id="presets">
+      <button class="chip" data-p="logistic">Standard logistic <span class="tag">α=β=1, μ=0, σ=1</span></button>
+      <button class="chip" data-p="symmetric">Symmetric, bell-like <span class="tag">α=β=3</span></button>
+      <button class="chip" data-p="right-skew">Right-skewed <span class="tag">α=5, β=1</span></button>
+      <button class="chip" data-p="left-skew">Left-skewed <span class="tag">α=1, β=5</span></button>
+      <button class="chip" data-p="heavy">Heavy tails <span class="tag">α=β=0.5</span></button>
+      <button class="chip" data-p="normal">Near-normal <span class="tag">α=β=25</span></button>
+      <button class="chip" data-p="sharp">Sharply peaked <span class="tag">α=10, β=2</span></button>
+      <button class="chip" data-p="shifted">Shifted &amp; scaled <span class="tag">α=3, β=2, μ=1.5, σ=0.6</span></button>
+    </div>
+  </section>
+
+  <section class="fade-in" style="animation-delay:.25s">
+    <h2 class="notes-head">Notes from the margin.</h2>
+    <div class="notes">
+
+      <div class="note">
+        <h4><span class="num">§1</span> On the name</h4>
+        <p>The <em>Z-distribution</em> here refers to the generalized logistic family (sometimes <em>Prentice's distribution</em>, or Type IV of Johnson), supported on all of ℝ. It is unrelated to the standard normal, which also wears the letter Z.</p>
+      </div>
+
+      <div class="note">
+        <h4><span class="num">§2</span> Reductions</h4>
+        <p>At <em>α = β = 1</em> one recovers the standard <em>logistic</em>. At <em>α = β</em> the density is symmetric about μ. Sending <em>α = β → ∞</em> (with σ rescaled) yields the <em>Gaussian</em> limit.</p>
+      </div>
+
+      <div class="note">
+        <h4><span class="num">§3</span> Moments, in closed form</h4>
+        <p>With ψ the digamma and ψ₁ the trigamma,
+        <code>𝔼[Z] = μ + σ(ψ(α) − ψ(β))</code>
+        and
+        <code>Var(Z) = σ²(ψ₁(α) + ψ₁(β))</code>.
+        These are exact; no integration required.</p>
+      </div>
+
+      <div class="note">
+        <h4><span class="num">§4</span> Mode &amp; tails</h4>
+        <p>The unique mode sits at <code>μ + σ ln(α/β)</code>. For large <em>|z|</em> the lower tail decays like <em>e^{α(z−μ)/σ}</em>, the upper like <em>e^{−β(z−μ)/σ}</em>: the shape with the smaller index owns the heavier tail.</p>
+      </div>
+
+      <div class="note">
+        <h4><span class="num">§5</span> A hidden Beta</h4>
+        <p>Under the logistic transform <em>v = 1/(1 + e^{−(z−μ)/σ})</em>, the distribution pushes forward to <em>Beta(α, β)</em> on (0, 1). The CDF is consequently the regularised incomplete beta, <em>I<sub>v</sub>(α, β)</em>.</p>
+      </div>
+
+      <div class="note">
+        <h4><span class="num">§6</span> Numerical provenance</h4>
+        <p>Log-gamma is computed via Lanczos (g = 7); digamma and trigamma via asymptotic series with Bernoulli correction and upward recurrence. Skewness, kurtosis, and the median are evaluated by trapezoidal quadrature on the plotted window and may lose precision deep in the tails.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <span>Interactive note · pdf live-evaluated</span>
+    <span>render locally · canvas + KaTeX</span>
+  </footer>
+</div>
+
+<script>
+/* ======================================================================
+   MATHEMATICAL UTILITIES
+   ====================================================================== */
+
+// Log Gamma via Lanczos (g=7, 9 coefficients)
+function logGamma(x) {
+  if (x < 0.5) {
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+  }
+  const g = 7;
+  const c = [
+    0.99999999999980993,
+    676.5203681218851,   -1259.1392167224028,
+    771.32342877765313,  -176.61502916214059,
+    12.507343278686905,  -0.13857109526572012,
+    9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+// Digamma ψ(x): asymptotic series + upward recurrence
+function digamma(x) {
+  let result = 0;
+  while (x < 6) { result -= 1 / x; x += 1; }
+  const ix  = 1 / x;
+  const ix2 = ix * ix;
+  // ψ(x) ~ ln x - 1/(2x) - 1/(12x²) + 1/(120x⁴) - 1/(252x⁶)
+  result += Math.log(x) - 0.5 * ix - ix2 * (1/12 - ix2 * (1/120 - ix2/252));
+  return result;
+}
+
+// Trigamma ψ₁(x): asymptotic series + upward recurrence
+function trigamma(x) {
+  let result = 0;
+  while (x < 6) { result += 1 / (x * x); x += 1; }
+  const ix  = 1 / x;
+  const ix2 = ix * ix;
+  const ix3 = ix2 * ix;
+  const ix5 = ix3 * ix2;
+  const ix7 = ix5 * ix2;
+  // ψ₁(x) ~ 1/x + 1/(2x²) + 1/(6x³) - 1/(30x⁵) + 1/(42x⁷)
+  result += ix + 0.5 * ix2 + ix3/6 - ix5/30 + ix7/42;
+  return result;
+}
+
+function logBeta(a, b) { return logGamma(a) + logGamma(b) - logGamma(a + b); }
+
+// Density of the four-parameter Z-distribution, stably
+function pdfZ(z, alpha, beta, mu, sigma) {
+  const u = (z - mu) / sigma;
+  // stable softplus: log(1 + e^u)
+  const sp = u > 0
+    ? u + Math.log1p(Math.exp(-u))
+    : Math.log1p(Math.exp(u));
+  const logP = -Math.log(sigma) - logBeta(alpha, beta)
+               + alpha * u - (alpha + beta) * sp;
+  return Math.exp(logP);
+}
+
+/* ======================================================================
+   STATE + PLOT
+   ====================================================================== */
+
+const state = {
+  alpha: 2, beta: 2, mu: 0, sigma: 1,
+  view: 'pdf'
+};
+
+const COLORS = {
+  ink:    getCSS('--ink'),
+  ink2:   getCSS('--ink-2'),
+  ink3:   getCSS('--ink-3'),
+  accent: getCSS('--accent'),
+  forest: getCSS('--forest'),
+  paper:  getCSS('--paper'),
+  paper2: getCSS('--paper-2'),
+  rule:   getCSS('--rule'),
+};
+function getCSS(v) {
+  return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+}
+
+function niceTicks(min, max, n) {
+  const range = max - min;
+  if (range <= 0) return [min];
+  const rough = range / n;
+  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+  const norm = rough / pow10;
+  let step;
+  if      (norm < 1.5) step = 1;
+  else if (norm < 3.5) step = 2;
+  else if (norm < 7.5) step = 5;
+  else                 step = 10;
+  step *= pow10;
+  const ticks = [];
+  const start = Math.ceil(min / step) * step;
+  for (let v = start; v <= max + 1e-9; v += step) {
+    ticks.push(Math.round(v / step) * step);
+  }
+  return ticks;
+}
+
+function fmtShort(v, d = 2) {
+  if (v === 0) return '0';
+  if (Math.abs(v) < 1e-3 || Math.abs(v) >= 1e4) return v.toExponential(1);
+  return +v.toFixed(d) + '';
+}
+
+function determineRange(alpha, beta, mu, sigma) {
+  const mean = mu + sigma * (digamma(alpha) - digamma(beta));
+  const sd   = Math.sqrt(sigma * sigma * (trigamma(alpha) + trigamma(beta)));
+  const mode = mu + sigma * Math.log(alpha / beta);
+
+  let xMin = Math.min(mean - 3 * sd, mode - 1.5 * sd);
+  let xMax = Math.max(mean + 3 * sd, mode + 1.5 * sd);
+
+  const peak = pdfZ(mode, alpha, beta, mu, sigma);
+  const thr  = peak * 0.003;
+  const step = Math.max(0.25 * sd, 0.15);
+
+  // grow left
+  for (let i = 0; i < 40; i++) {
+    if (pdfZ(xMin, alpha, beta, mu, sigma) > thr) xMin -= step; else break;
+  }
+  // grow right
+  for (let i = 0; i < 40; i++) {
+    if (pdfZ(xMax, alpha, beta, mu, sigma) > thr) xMax += step; else break;
+  }
+
+  const pad = 0.04 * (xMax - xMin);
+  return { xMin: xMin - pad, xMax: xMax + pad, mean, sd, mode, peak };
+}
+
+function draw() {
+  const canvas = document.getElementById('plot');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = Math.floor(rect.width  * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = rect.width, H = rect.height;
+  const ml = 54, mr = 18, mt = 18, mb = 34;
+  const pw = W - ml - mr, ph = H - mt - mb;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const { alpha, beta, mu, sigma, view } = state;
+  const { xMin, xMax, mean, sd, mode, peak } = determineRange(alpha, beta, mu, sigma);
+
+  // sample
+  const N = 520;
+  const xs = new Array(N + 1);
+  const ys = new Array(N + 1);
+  let yMax = 0;
+  for (let i = 0; i <= N; i++) {
+    const x = xMin + (xMax - xMin) * i / N;
+    xs[i] = x;
+    ys[i] = pdfZ(x, alpha, beta, mu, sigma);
+    if (ys[i] > yMax) yMax = ys[i];
+  }
+
+  // cdf via trapezoid, then normalise (handles truncation at window)
+  const cdf = new Array(N + 1);
+  cdf[0] = 0;
+  for (let i = 1; i <= N; i++) {
+    cdf[i] = cdf[i - 1] + 0.5 * (ys[i] + ys[i - 1]) * (xs[i] - xs[i - 1]);
+  }
+  const total = cdf[N] || 1;
+  for (let i = 0; i <= N; i++) cdf[i] /= total;
+
+  const yScale = yMax * 1.14;
+  const xp = x => ml + (x - xMin) / (xMax - xMin) * pw;
+  const yp_pdf = y => mt + ph - y / yScale * ph;
+  const yp_cdf = y => mt + ph - y * ph;
+
+  // ----- background & grid -----
+  ctx.fillStyle = 'rgba(26,22,18,0.012)';
+  ctx.fillRect(ml, mt, pw, ph);
+
+  const xTicks = niceTicks(xMin, xMax, 7);
+  const yTicks_pdf = niceTicks(0, yScale, 5);
+  const yTicks_cdf = [0, 0.25, 0.5, 0.75, 1];
+
+  ctx.strokeStyle = 'rgba(26,22,18,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (const xt of xTicks) {
+    const x = xp(xt);
+    ctx.moveTo(x, mt); ctx.lineTo(x, mt + ph);
+  }
+  const yTicks = view === 'cdf' ? yTicks_cdf : yTicks_pdf;
+  const yfn    = view === 'cdf' ? yp_cdf     : yp_pdf;
+  for (const yt of yTicks) {
+    ctx.moveTo(ml, yfn(yt)); ctx.lineTo(ml + pw, yfn(yt));
+  }
+  ctx.stroke();
+
+  // zero vertical line
+  if (xMin < 0 && xMax > 0) {
+    ctx.strokeStyle = 'rgba(26,22,18,0.22)';
+    ctx.lineWidth = 0.75;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath();
+    ctx.moveTo(xp(0), mt); ctx.lineTo(xp(0), mt + ph);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ----- PDF fill + stroke -----
+  if (view !== 'cdf') {
+    ctx.beginPath();
+    ctx.moveTo(xp(xs[0]), yp_pdf(0));
+    for (let i = 0; i <= N; i++) ctx.lineTo(xp(xs[i]), yp_pdf(ys[i]));
+    ctx.lineTo(xp(xs[N]), yp_pdf(0));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, mt, 0, mt + ph);
+    grad.addColorStop(0, 'rgba(189,63,28,0.18)');
+    grad.addColorStop(1, 'rgba(189,63,28,0.02)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(xp(xs[0]), yp_pdf(ys[0]));
+    for (let i = 1; i <= N; i++) ctx.lineTo(xp(xs[i]), yp_pdf(ys[i]));
+    ctx.strokeStyle = COLORS.accent;
+    ctx.lineWidth = 2.25;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // mean marker
+    if (mean >= xMin && mean <= xMax) {
+      ctx.strokeStyle = 'rgba(42,80,64,0.85)';
+      ctx.lineWidth = 1.25;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(xp(mean), mt); ctx.lineTo(xp(mean), mt + ph);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = COLORS.forest;
+      ctx.font = '600 10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('𝔼[Z]', xp(mean) + 4, mt + 11);
+    }
+
+    // mode marker
+    if (isFinite(mode) && mode >= xMin && mode <= xMax
+        && Math.abs(mode - mean) > 0.015 * (xMax - xMin)) {
+      ctx.strokeStyle = 'rgba(26,22,18,0.5)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([1, 3]);
+      ctx.beginPath();
+      ctx.moveTo(xp(mode), mt); ctx.lineTo(xp(mode), mt + ph);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = COLORS.ink2;
+      ctx.font = '500 10px "JetBrains Mono", monospace';
+      ctx.fillText('mode', xp(mode) + 4, mt + 23);
+    }
+  }
+
+  // ----- CDF -----
+  if (view === 'both' || view === 'cdf') {
+    ctx.beginPath();
+    ctx.moveTo(xp(xs[0]), yp_cdf(cdf[0]));
+    for (let i = 1; i <= N; i++) ctx.lineTo(xp(xs[i]), yp_cdf(cdf[i]));
+    ctx.strokeStyle = COLORS.forest;
+    ctx.lineWidth = 2;
+    if (view === 'both') ctx.setLineDash([5, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 0.5 marker on CDF-only view
+    if (view === 'cdf') {
+      ctx.strokeStyle = 'rgba(26,22,18,0.25)';
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(ml, yp_cdf(0.5)); ctx.lineTo(ml + pw, yp_cdf(0.5));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ----- frame -----
+  ctx.strokeStyle = COLORS.ink;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ml, mt);
+  ctx.lineTo(ml, mt + ph);
+  ctx.lineTo(ml + pw, mt + ph);
+  ctx.stroke();
+
+  // ----- tick labels -----
+  ctx.fillStyle = COLORS.ink2;
+  ctx.font = '400 10.5px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (const xt of xTicks) {
+    ctx.fillText(fmtShort(xt), xp(xt), mt + ph + 18);
+  }
+  ctx.textAlign = 'right';
+  const yLabels = view === 'cdf' ? yTicks_cdf : yTicks_pdf;
+  const yFn     = view === 'cdf' ? yp_cdf     : yp_pdf;
+  for (const yt of yLabels) {
+    ctx.fillText(fmtShort(yt, view === 'cdf' ? 2 : 3), ml - 7, yFn(yt) + 3.5);
+  }
+
+  // axis labels
+  ctx.save();
+  ctx.fillStyle = COLORS.ink3;
+  ctx.font = 'italic 11px "Fraunces", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('z', ml + pw / 2, mt + ph + 32);
+  ctx.translate(ml - 40, mt + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(view === 'cdf' ? 'F(z)' : 'p(z)', 0, 0);
+  ctx.restore();
+
+  // range label in head
+  const rl = document.getElementById('range-label');
+  rl.textContent = `window [${xMin.toFixed(2)}, ${xMax.toFixed(2)}]  ·  peak ${peak.toExponential(2)}`;
+
+  // stash for stats
+  state._xs = xs;
+  state._ys = ys;
+  state._cdf = cdf;
+  state._mean = mean;
+  state._sd = sd;
+  state._mode = mode;
+  state._peak = peak;
+  state._variance = sd * sd;
+}
+
+function updateStats() {
+  const { _xs: xs, _ys: ys, _cdf: cdf, _mean, _sd, _mode, _variance, _peak } = state;
+
+  // central moments 3 and 4 via trapezoid
+  let m3 = 0, m4 = 0;
+  for (let i = 1; i < xs.length; i++) {
+    const dx   = xs[i] - xs[i - 1];
+    const xMid = 0.5 * (xs[i]  + xs[i - 1]);
+    const yMid = 0.5 * (ys[i]  + ys[i - 1]);
+    const d    = xMid - _mean;
+    m3 += d * d * d       * yMid * dx;
+    m4 += d * d * d * d   * yMid * dx;
+  }
+  const skew = m3 / Math.pow(_variance, 1.5);
+  const kurt = m4 / (_variance * _variance) - 3;
+
+  // median — inverse of CDF at 0.5
+  let medianX = _mean;
+  for (let i = 1; i < cdf.length; i++) {
+    if (cdf[i] >= 0.5) {
+      const t = (0.5 - cdf[i - 1]) / (cdf[i] - cdf[i - 1] || 1e-12);
+      medianX = xs[i - 1] + t * (xs[i] - xs[i - 1]);
+      break;
+    }
+  }
+
+  setVal('stat-mean', _mean);
+  setVal('stat-var',  _variance);
+  setVal('stat-sd',   _sd);
+  setVal('stat-mode', _mode);
+  setVal('stat-med',  medianX);
+  setSignedVal('stat-skew', skew);
+  setSignedVal('stat-kurt', kurt);
+  setVal('stat-peak', _peak, 5);
+}
+
+function setVal(id, v, d = 4) {
+  const el = document.getElementById(id);
+  el.textContent = (isFinite(v) ? v.toFixed(d) : '—');
+  el.className = 'val';
+}
+function setSignedVal(id, v, d = 4) {
+  const el = document.getElementById(id);
+  el.textContent = (isFinite(v) ? (v >= 0 ? '+' : '') + v.toFixed(d) : '—');
+  el.className = 'val ' + (isFinite(v) ? (v >= 0 ? 'pos' : 'neg') : '');
+}
+
+function update() {
+  draw();
+  updateStats();
+}
+
+/* ======================================================================
+   EVENTS
+   ====================================================================== */
+
+['alpha', 'beta', 'mu', 'sigma'].forEach(k => {
+  const el = document.getElementById(k);
+  el.addEventListener('input', () => {
+    state[k] = parseFloat(el.value);
+    document.getElementById(k + '-val').textContent = state[k].toFixed(2);
+    update();
+  });
+});
+
+document.querySelectorAll('.toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle').forEach(x => x.classList.remove('active'));
+    btn.classList.add('active');
+    state.view = btn.dataset.view;
+    draw();
+  });
+});
+
+const PRESETS = {
+  'logistic':   { alpha: 1,   beta: 1,   mu: 0,   sigma: 1   },
+  'symmetric':  { alpha: 3,   beta: 3,   mu: 0,   sigma: 1   },
+  'right-skew': { alpha: 5,   beta: 1,   mu: 0,   sigma: 1   },
+  'left-skew':  { alpha: 1,   beta: 5,   mu: 0,   sigma: 1   },
+  'heavy':      { alpha: 0.5, beta: 0.5, mu: 0,   sigma: 1   },
+  'normal':     { alpha: 25,  beta: 25,  mu: 0,   sigma: 1   },
+  'sharp':      { alpha: 10,  beta: 2,   mu: 0,   sigma: 1.2 },
+  'shifted':    { alpha: 3,   beta: 2,   mu: 1.5, sigma: 0.6 },
+};
+
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => {
+    const p = PRESETS[c.dataset.p];
+    Object.assign(state, p);
+    ['alpha', 'beta', 'mu', 'sigma'].forEach(k => {
+      document.getElementById(k).value = p[k];
+      document.getElementById(k + '-val').textContent = (+p[k]).toFixed(2);
+    });
+    update();
+  });
+});
+
+/* ======================================================================
+   BOOT
+   ====================================================================== */
+
+function renderFormula() {
+  if (typeof katex === 'undefined') return;
+  katex.render(
+    "p(z)\\;=\\;\\frac{1}{\\sigma\\,B(\\alpha,\\beta)}\\;\\cdot\\;\\frac{\\exp\\!\\left(\\alpha\\,\\dfrac{z-\\mu}{\\sigma}\\right)}{\\left[\\,1+\\exp\\!\\left(\\dfrac{z-\\mu}{\\sigma}\\right)\\right]^{\\alpha+\\beta}},\\qquad z\\in\\mathbb{R}",
+    document.getElementById('formula'),
+    { throwOnError: false, displayMode: true }
+  );
+}
+
+// wait a moment for fonts + KaTeX
+window.addEventListener('load', () => {
+  renderFormula();
+  // retry once in case KaTeX hadn't finished loading
+  setTimeout(renderFormula, 200);
+  update();
+});
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(draw, 80);
+});
+</script>
+
+</body>
+</html>

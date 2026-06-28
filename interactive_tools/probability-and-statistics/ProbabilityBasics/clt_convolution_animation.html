@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Limit Theorem — Convolution Animation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,700;1,400&display=swap');
+
+  :root {
+    --bg:#0a0d16; --panel:#101422; --border:#1c2340;
+    --text:#c5cbdf; --accent:#4a7cff; --accent-dim:#263f80;
+    --label:#6d7ca5; --orange:#ff9f43; --green:#26de81;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;min-height:100vh}
+
+  header{max-width:1200px;margin:0 auto;padding:22px 28px 0}
+  header .eyebrow{font-size:0.65rem;color:var(--label);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px}
+  header h1{font-family:'Source Serif 4',serif;font-weight:700;font-size:1.45rem;color:#edf0fa;letter-spacing:-0.01em}
+
+  /* --- Distribution Picker --- */
+  .dist-picker{max-width:1200px;margin:0 auto;padding:10px 28px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .dist-picker .pick-label{font-size:0.62rem;color:var(--label);text-transform:uppercase;letter-spacing:0.07em;margin-right:4px}
+  .dist-chip{
+    background:var(--panel);border:1px solid var(--border);color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:0.68rem;padding:6px 12px;
+    border-radius:20px;cursor:pointer;transition:all 0.18s;white-space:nowrap;
+  }
+  .dist-chip:hover{border-color:var(--accent);color:#fff}
+  .dist-chip.active{background:var(--accent-dim);border-color:var(--accent);color:#c8dcff;box-shadow:0 0 12px rgba(74,124,255,0.2)}
+  .dist-chip .swatch{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
+  .step-description{
+    max-width:1200px;margin:0 auto;padding:10px 28px 0;
+    font-size:0.78rem;color:var(--label);line-height:1.6;min-height:42px;
+  }
+  .step-description em{color:var(--orange);font-style:normal;font-weight:600}
+  .step-description strong{color:#dde3f5;font-weight:600}
+
+  .controls{max-width:1200px;margin:0 auto;padding:10px 28px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .btn{
+    background:var(--panel);border:1px solid var(--border);color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:0.72rem;padding:7px 14px;
+    border-radius:5px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;
+  }
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn.active{background:var(--accent-dim);border-color:var(--accent);color:#c8dcff}
+  .btn:disabled{opacity:0.35;cursor:default;border-color:var(--border);color:var(--text)}
+  .btn .icon{font-size:1rem;line-height:1}
+  .step-display{font-size:0.8rem;color:var(--orange);font-weight:600;min-width:100px;text-align:center}
+
+  .phase-indicator{
+    font-size:0.62rem;color:var(--label);text-transform:uppercase;letter-spacing:0.06em;
+    background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:4px 10px;
+  }
+  .phase-indicator .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .phase-indicator .dot.grid{background:#4a7cff}
+  .phase-indicator .dot.sweep{background:#ff9f43}
+  .phase-indicator .dot.done{background:#26de81}
+
+  .speed-label{font-size:0.65rem;color:var(--label);text-transform:uppercase;letter-spacing:0.05em;margin-left:10px}
+  .speed-label select{
+    background:var(--panel);border:1px solid var(--border);color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:0.7rem;padding:4px 6px;border-radius:4px;margin-left:4px;
+  }
+
+  .plot-area{max-width:1200px;margin:0 auto;padding:0 20px 14px;display:grid;gap:12px}
+  .plot-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative}
+  .plot-box .plot-label{
+    position:absolute;top:8px;left:12px;font-size:0.62rem;color:var(--label);
+    text-transform:uppercase;letter-spacing:0.06em;z-index:10;
+    background:rgba(16,20,34,0.88);padding:3px 8px;border-radius:3px;
+  }
+  #surface-plot{width:100%;height:500px}
+  #clt-plot,#marginal-plot{width:100%;height:250px}
+  .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  .progress-bar{max-width:1200px;margin:0 auto;padding:0 28px 6px;display:flex;gap:4px}
+  .progress-pip{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background 0.3s}
+  .progress-pip.done{background:var(--accent)} .progress-pip.current{background:var(--orange)}
+
+  @media(max-width:800px){
+    header{padding:14px 14px 0} .controls,.dist-picker{padding:10px 14px}
+    .plot-area{padding:0 10px 10px} #surface-plot{height:380px}
+    .bottom-row{grid-template-columns:1fr} #clt-plot,#marginal-plot{height:210px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Probability &middot; Central Limit Theorem</div>
+  <h1>Convolution Animation</h1>
+</header>
+
+<div class="dist-picker" id="distPicker">
+  <span class="pick-label">Distribution:</span>
+</div>
+
+<div class="step-description" id="stepDesc"></div>
+
+<div class="controls">
+  <button class="btn" id="btnReset" title="Reset"><span class="icon">&#x27F2;</span></button>
+  <button class="btn" id="btnPrev" title="Previous"><span class="icon">&#x25C2;</span></button>
+  <span class="step-display" id="stepLabel">n = 1</span>
+  <button class="btn" id="btnNext" title="Next"><span class="icon">&#x25B8;</span></button>
+  <button class="btn" id="btnPlay">
+    <span class="icon" id="playIcon">&#x25B6;</span> <span id="playText">Play</span>
+  </button>
+  <span class="phase-indicator" id="phaseInd"><span class="dot grid"></span>Grid lines</span>
+  <span class="speed-label">Speed
+    <select id="speedSel">
+      <option value="0.5">Slow</option>
+      <option value="1" selected>Medium</option>
+      <option value="2">Fast</option>
+    </select>
+  </span>
+</div>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="plot-area">
+  <div class="plot-box">
+    <div class="plot-label" id="surfaceLabel">Joint surface</div>
+    <div id="surface-plot"></div>
+  </div>
+  <div class="bottom-row">
+    <div class="plot-box">
+      <div class="plot-label" id="marginalLabel">Marginals</div>
+      <div id="marginal-plot"></div>
+    </div>
+    <div class="plot-box">
+      <div class="plot-label">Standardized S<sub>n</sub> vs N(0,1)</div>
+      <div id="clt-plot"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  DISTRIBUTION DEFINITIONS
+// ================================================================
+const DISTRIBUTIONS = [
+  {
+    id:'exp1', name:'Exp(1)', color:'#4a7cff',
+    label:'Exponential(1)',
+    tex:'e^{-x}', desc:'Exponential(\u03BB=1)',
+    mean:1, variance:1,
+    pdf: x => x >= 0 ? Math.exp(-x) : 0,
+    support:[0, Infinity], yPlotMax:7
+  },
+  {
+    id:'uniform', name:'Uniform(0,1)', color:'#26de81',
+    label:'Uniform(0,1)',
+    tex:'1_{[0,1]}', desc:'Uniform on [0,1]',
+    mean:0.5, variance:1/12,
+    pdf: x => (x >= 0 && x <= 1) ? 1 : 0,
+    support:[0, 1], yPlotMax:1.4
+  },
+  {
+    id:'chi2_1', name:'\u03C7\u00B2(1)', color:'#fc5c65',
+    label:'Chi-squared(1)',
+    tex:'\\chi^2(1)', desc:'Chi-squared with 1 d.f.',
+    mean:1, variance:2,
+    pdf: x => x > 0.001 ? Math.exp(-x/2) / (Math.sqrt(2 * Math.PI * x)) : 0,
+    support:[0, Infinity], yPlotMax:6
+  },
+  {
+    id:'beta_u', name:'Beta(\u00BD,\u00BD)', color:'#a55eea',
+    label:'Beta(0.5, 0.5)',
+    tex:'Beta(\\frac12,\\frac12)', desc:'Beta(\u00BD,\u00BD) \u2014 U-shaped',
+    mean:0.5, variance:0.125,
+    pdf: x => (x > 0.005 && x < 0.995) ? 1 / (Math.PI * Math.sqrt(x * (1-x))) : 0,
+    support:[0, 1], yPlotMax:1.4
+  },
+  {
+    id:'beta25', name:'Beta(2,5)', color:'#f7b731',
+    label:'Beta(2, 5)',
+    tex:'Beta(2,5)', desc:'Beta(2,5) \u2014 right-skewed',
+    mean:2/7, variance:10/343,
+    // B(2,5) = Gamma(2)Gamma(5)/Gamma(7) = 1*24/720 = 1/30
+    pdf: x => (x >= 0 && x <= 1) ? 30 * x * Math.pow(1-x, 4) : 0,
+    support:[0, 1], yPlotMax:1.4
+  },
+  {
+    id:'gamma05', name:'Gamma(\u00BD,1)', color:'#20bf6b',
+    label:'Gamma(0.5, 1)',
+    tex:'Gamma(\\frac12,1)', desc:'Gamma(\u00BD,1) \u2014 extreme skew',
+    mean:0.5, variance:0.5,
+    // pdf = x^{-1/2} e^{-x} / Gamma(1/2) = x^{-1/2} e^{-x} / sqrt(pi)
+    pdf: x => x > 0.001 ? Math.exp(-x) / (Math.sqrt(Math.PI * x)) : 0,
+    support:[0, Infinity], yPlotMax:6
+  },
+  {
+    id:'triangular', name:'Triangular(0,1)', color:'#fd9644',
+    label:'Triangular(0,1,0)',
+    tex:'2(1-x)', desc:'Triangular on [0,1], mode at 0',
+    mean:1/3, variance:1/18,
+    pdf: x => (x >= 0 && x <= 1) ? 2*(1-x) : 0,
+    support:[0, 1], yPlotMax:1.4
+  },
+  {
+    id:'pareto', name:'Pareto(3,1)', color:'#45aaf2',
+    label:'Pareto(\u03B1=3)',
+    tex:'3x^{-4}', desc:'Shifted Pareto(\u03B1=3) \u2014 heavy-tailed',
+    mean:0.5, variance:0.75,
+    // Pareto with xm=1, alpha=3: pdf = 3/x^4 for x>=1.  Shift so support starts at 0: X-1
+    // f(x) = 3/(x+1)^4 for x>=0, mean = 1/(alpha-1) = 0.5, var = alpha/((a-1)^2(a-2))=3/4
+    pdf: x => x >= 0 ? 3 / Math.pow(x+1, 4) : 0,
+    support:[0, Infinity], yPlotMax:6
+  }
+];
+
+
+// ================================================================
+//  NUMERICAL ENGINE
+// ================================================================
+const DX = 0.025, MAX_VAL = 60;
+const N_PTS = Math.ceil(MAX_VAL / DX) + 1;
+const xgrid = Float64Array.from({length: N_PTS}, (_, i) => i * DX);
+const MAX_STEPS = 14;
+
+function normalizeArr(a) {
+  let s=0; for(let i=0;i<a.length;i++) s+=a[i]; s*=DX;
+  const o=new Float64Array(a.length);
+  if(s>0) for(let i=0;i<a.length;i++) o[i]=a[i]/s;
+  return o;
+}
+function convolve(f,g) {
+  const n=f.length, o=new Float64Array(n);
+  for(let i=0;i<n;i++){let s=0; for(let j=0;j<=i;j++) s+=f[j]*g[i-j]; o[i]=s*DX;}
+  return normalizeArr(o);
+}
+function interp(pdf,x) {
+  if(x<0||x>=MAX_VAL) return 0;
+  const idx=x/DX, i0=Math.floor(idx);
+  return pdf[i0]*(1-(idx-i0))+pdf[Math.min(i0+1,pdf.length-1)]*(idx-i0);
+}
+function linspace(a,b,n){const arr=new Array(n),s=(b-a)/Math.max(n-1,1);for(let i=0;i<n;i++)arr[i]=a+i*s;return arr}
+function gaussPdf(x,mu,sig){const z=(x-mu)/sig;return Math.exp(-0.5*z*z)/(sig*Math.sqrt(2*Math.PI))}
+function sub(n){const s='\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089';return String(n).split('').map(d=>s[+d]).join('')}
+function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t}
+function lerpV(a,b,t){return{x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, z:a.z+(b.z-a.z)*t}}
+
+// Current distribution state
+let curDist = DISTRIBUTIONS[0];
+let basePdf = null;
+let allPdfs = [];
+
+function recomputePdfs() {
+  const raw = Float64Array.from(xgrid, x => curDist.pdf(x));
+  basePdf = normalizeArr(raw);
+  allPdfs = [basePdf];
+  for (let i = 1; i <= MAX_STEPS; i++) allPdfs.push(convolve(allPdfs[i-1], basePdf));
+}
+
+
+// ================================================================
+//  DISTRIBUTION PICKER UI
+// ================================================================
+const picker = document.getElementById('distPicker');
+DISTRIBUTIONS.forEach(d => {
+  const chip = document.createElement('button');
+  chip.className = 'dist-chip' + (d.id === curDist.id ? ' active' : '');
+  chip.dataset.id = d.id;
+  chip.innerHTML = '<span class="swatch" style="background:'+d.color+'"></span>' + d.name;
+  chip.addEventListener('click', () => selectDist(d.id));
+  picker.appendChild(chip);
+});
+
+function selectDist(id) {
+  const d = DISTRIBUTIONS.find(d => d.id === id);
+  if (!d) return;
+  stopPlay();
+  curDist = d;
+  recomputePdfs();
+  step = 0; phase = 'grid'; phaseT = 0;
+  picker.querySelectorAll('.dist-chip').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+  renderFrame();
+}
+
+
+// ================================================================
+//  GEOMETRY HELPERS
+// ================================================================
+function getRange(stepIdx) {
+  const n = stepIdx+1, mu = n*curDist.mean, sig = Math.sqrt(n*curDist.variance);
+  const xHi = Math.min(MAX_VAL-1, mu + 5.5*sig + 2);
+  const yHi = curDist.yPlotMax;
+  return { xHi, yHi };
+}
+
+function getZRange(stepIdx) {
+  const nNext = stepIdx+2;
+  const mu = nNext*curDist.mean, sig = Math.sqrt(nNext*curDist.variance);
+  return { zLo: Math.max(0.01, mu - 3.8*sig), zHi: mu + 3.8*sig };
+}
+
+const SNX=85, SNY=50;
+
+function buildSurface(stepIdx, opacity) {
+  const {xHi,yHi}=getRange(stepIdx);
+  const snPdf=allPdfs[stepIdx];
+  const xs=linspace(0,xHi,SNX), ys=linspace(0,yHi,SNY);
+  const zData=[];
+  for(let j=0;j<SNY;j++){
+    const row=new Array(SNX), fy=curDist.pdf(ys[j]);
+    for(let i=0;i<SNX;i++) row[i]=interp(snPdf,xs[i])*fy;
+    zData.push(row);
+  }
+  return {
+    type:'surface',x:xs,y:ys,z:zData,
+    colorscale:[[0,'rgb(8,12,28)'],[0.12,'rgb(18,35,100)'],[0.3,'rgb(38,75,195)'],
+                [0.5,'rgb(65,125,255)'],[0.7,'rgb(130,185,255)'],[1,'rgb(215,235,255)']],
+    showscale:false, opacity,
+    lighting:{ambient:0.5,diffuse:0.6,specular:0.25,roughness:0.4,fresnel:0.1},
+    lightposition:{x:800,y:800,z:2500},
+    contours:{x:{show:false},y:{show:false},z:{show:false}},
+    hovertemplate:'x=%{x:.2f}<br>y=%{y:.2f}<br>f=%{z:.4f}<extra></extra>'
+  };
+}
+
+
+// ================================================================
+//  PHASE 1: GRID LINES
+// ================================================================
+function buildGridTraces(stepIdx) {
+  const {xHi,yHi}=getRange(stepIdx);
+  const snPdf=allPdfs[stepIdx];
+  const traces=[buildSurface(stepIdx,0.78)];
+  const NG=9;
+
+  // Constant-x: shape is f_X(y) scaled by f_{S_n}(x_i)
+  const yFine=linspace(0,yHi,100);
+  const xPos=linspace(xHi*0.04,xHi*0.85,NG);
+  for(const xi of xPos){
+    const sc=interp(snPdf,xi);
+    if(sc<1e-6) continue;
+    traces.push({
+      type:'scatter3d',
+      x:yFine.map(()=>xi), y:yFine,
+      z:yFine.map(y=>sc*curDist.pdf(y)),
+      mode:'lines',line:{color:'rgba(120,180,255,0.7)',width:2.5},
+      showlegend:false,hoverinfo:'skip'
+    });
+  }
+
+  // Constant-y: shape is f_{S_n}(x) scaled by f_X(y_i)
+  const xFine=linspace(0,xHi,150);
+  const yPos=linspace(yHi*0.05,yHi*0.85,NG);
+  for(const yi of yPos){
+    const sc=curDist.pdf(yi);
+    if(sc<1e-6) continue;
+    traces.push({
+      type:'scatter3d',
+      x:xFine, y:xFine.map(()=>yi),
+      z:xFine.map(x=>interp(snPdf,x)*sc),
+      mode:'lines',line:{color:'rgba(120,255,180,0.7)',width:2.5},
+      showlegend:false,hoverinfo:'skip'
+    });
+  }
+  return traces;
+}
+
+
+// ================================================================
+//  PHASE 2–3: SWEEP
+// ================================================================
+function buildSweepTraces(stepIdx, t) {
+  const {xHi,yHi}=getRange(stepIdx);
+  const {zLo,zHi}=getZRange(stepIdx);
+  const snPdf=allPdfs[stepIdx];
+  const traces=[buildSurface(stepIdx,0.5)];
+  const zCurrent=zLo+t*(zHi-zLo);
+
+  // Ghost trails
+  const NG=7;
+  for(let g=NG;g>=1;g--){
+    const gt=t-g*0.055;
+    if(gt<0) continue;
+    const gz=zLo+gt*(zHi-zLo);
+    const gxLo=Math.max(0,gz-yHi), gxHi=Math.min(xHi,gz);
+    if(gxHi<=gxLo+0.05) continue;
+    const lx=linspace(gxLo,gxHi,60);
+    const alpha=0.06+0.06*(1-g/NG);
+    traces.push({
+      type:'scatter3d',
+      x:lx, y:lx.map(x=>gz-x),
+      z:lx.map(x=>{const y=gz-x;return y>=0&&y<=yHi?interp(snPdf,x)*curDist.pdf(y):0}),
+      mode:'lines',line:{color:`rgba(255,180,100,${alpha})`,width:1.5},
+      showlegend:false,hoverinfo:'skip'
+    });
+  }
+
+  // Current diagonal curtain
+  const cxLo=Math.max(0,zCurrent-yHi), cxHi=Math.min(xHi,zCurrent);
+  if(cxHi>cxLo+0.05){
+    const NC=70;
+    const cx=linspace(cxLo,cxHi,NC);
+    const cy=cx.map(x=>zCurrent-x);
+    const czTop=cx.map((x,i)=>{const y=cy[i];return y>=0&&y<=yHi?interp(snPdf,x)*curDist.pdf(y):0});
+    const czBot=cx.map(()=>0);
+
+    traces.push({
+      type:'surface',
+      x:[cx,cx],y:[cy,cy],z:[czBot,czTop],
+      surfacecolor:[czBot.map(()=>1),czTop.map(()=>1)],
+      colorscale:[[0,'rgba(255,159,67,0.45)'],[1,'rgba(255,159,67,0.45)']],
+      showscale:false,opacity:0.55,
+      lighting:{ambient:0.8,diffuse:0.3,specular:0,roughness:1},
+      hoverinfo:'skip'
+    });
+    traces.push({
+      type:'scatter3d',x:cx,y:cy,z:czTop,
+      mode:'lines',line:{color:'#ffb347',width:4},
+      showlegend:false,
+      hovertemplate:'x+y='+zCurrent.toFixed(1)+'<br>f=%{z:.4f}<extra></extra>'
+    });
+    traces.push({
+      type:'scatter3d',x:cx,y:cy,z:czBot,
+      mode:'lines',line:{color:'rgba(255,159,67,0.4)',width:1.5,dash:'dot'},
+      showlegend:false,hoverinfo:'skip'
+    });
+  }
+  return traces;
+}
+
+
+// ================================================================
+//  2D PLOTS
+// ================================================================
+const axF={family:'IBM Plex Mono',size:11,color:'#6d7ca5'};
+const tkF={family:'IBM Plex Mono',size:10,color:'#4a5678'};
+
+function buildMarginalTraces(stepIdx, showBuild, buildMaxZ) {
+  const n=stepIdx+1;
+  const snPdf=allPdfs[stepIdx];
+  const {xHi}=getRange(stepIdx);
+  const traces=[];
+
+  // f_{S_n}
+  const xA=[],yA=[];
+  for(let i=0;i<N_PTS;i++){if(xgrid[i]>xHi) break; xA.push(xgrid[i]); yA.push(snPdf[i]);}
+  traces.push({x:xA,y:yA,mode:'lines',name:'f(S'+sub(n)+')',
+    line:{color:'#4a7cff',width:2},fill:'tozeroy',fillcolor:'rgba(74,124,255,0.12)'});
+
+  // f_X (base distribution)
+  const exMax = curDist.support[1] === Infinity ? Math.min(8,xHi) : Math.min(curDist.support[1]*1.1,xHi);
+  const ex=linspace(0,exMax,200);
+  traces.push({x:ex,y:ex.map(x=>curDist.pdf(x)),mode:'lines',name:'f(X) '+curDist.name,
+    line:{color:curDist.color,width:2}});
+
+  // Building S_{n+1}
+  if(showBuild && (stepIdx+1)<allPdfs.length){
+    const rPdf=allPdfs[stepIdx+1];
+    const bx=[],by=[];
+    for(let i=0;i<N_PTS;i++){if(xgrid[i]>buildMaxZ) break; bx.push(xgrid[i]); by.push(rPdf[i]);}
+    traces.push({x:bx,y:by,mode:'lines',name:'f(S'+sub(n+1)+') building',
+      line:{color:'#ff9f43',width:2.5},fill:'tozeroy',fillcolor:'rgba(255,159,67,0.1)'});
+  }
+
+  // Gaussian overlay
+  const mu=n*curDist.mean, sig=Math.sqrt(n*curDist.variance);
+  if(sig>0.01){
+    const ga=linspace(Math.max(0.001,mu-4*sig),mu+4*sig,200);
+    traces.push({x:ga,y:ga.map(x=>gaussPdf(x,mu,sig)),mode:'lines',
+      name:'N('+mu.toFixed(1)+', '+( n*curDist.variance).toFixed(2)+')',
+      line:{color:'rgba(255,255,255,0.35)',width:1.5,dash:'dot'}});
+  }
+  return {traces, xHi:Math.max(xHi, showBuild?buildMaxZ*1.1:0)};
+}
+
+function buildCLTTraces(stepIdx) {
+  const nResult=stepIdx+2;
+  const traces=[];
+  const zG=linspace(-4.5,4.5,300);
+  traces.push({x:zG,y:zG.map(z=>gaussPdf(z,0,1)),mode:'lines',name:'N(0,1)',
+    line:{color:'rgba(255,255,255,0.5)',width:2,dash:'dash'},
+    fill:'tozeroy',fillcolor:'rgba(255,255,255,0.04)'});
+
+  // Ghost of n=2
+  if(nResult>3){
+    const mu2=2*curDist.mean,sig2=Math.sqrt(2*curDist.variance),sz=[],sp=[];
+    if(sig2>0.01){
+      for(let i=0;i<N_PTS;i++){const z=(xgrid[i]-mu2)/sig2;if(z<-4.5||z>4.5)continue;sz.push(z);sp.push(allPdfs[1][i]*sig2);}
+      traces.push({x:sz,y:sp,mode:'lines',name:'S'+sub(2)+' (n=2)',
+        line:{color:'rgba(74,124,255,0.2)',width:1.5}});
+    }
+  }
+
+  // Current
+  const mu=nResult*curDist.mean,sig=Math.sqrt(nResult*curDist.variance),sz=[],sp=[];
+  for(let i=0;i<N_PTS;i++){const z=(xgrid[i]-mu)/sig;if(z<-4.5||z>4.5)continue;sz.push(z);sp.push(allPdfs[nResult-1][i]*sig);}
+  traces.push({x:sz,y:sp,mode:'lines',name:'(S'+sub(nResult)+'\u2212\u03BC)/\u03C3',
+    line:{color:'#ff9f43',width:2.5},fill:'tozeroy',fillcolor:'rgba(255,159,67,0.12)'});
+  return traces;
+}
+
+
+// ================================================================
+//  LAYOUTS
+// ================================================================
+function get3DLayout(stepIdx,camEye){
+  const{xHi,yHi}=getRange(stepIdx);
+  return{
+    paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+    margin:{l:0,r:0,t:0,b:0},
+    scene:{
+      xaxis:{title:{text:'x  (S_n)',font:axF},range:[0,xHi],gridcolor:'#1a2040',zerolinecolor:'#252e50',backgroundcolor:'rgba(0,0,0,0)',color:'#4a5678',tickfont:tkF},
+      yaxis:{title:{text:'y  (X)',font:axF},range:[0,yHi],gridcolor:'#1a2040',zerolinecolor:'#252e50',backgroundcolor:'rgba(0,0,0,0)',color:'#4a5678',tickfont:tkF},
+      zaxis:{title:{text:'f(x)\u00B7f(y)',font:axF},gridcolor:'#1a2040',zerolinecolor:'#252e50',backgroundcolor:'rgba(0,0,0,0)',color:'#4a5678',tickfont:tkF},
+      bgcolor:'#10142a',camera:{eye:camEye},aspectratio:{x:1.5,y:0.65,z:0.65}
+    },
+    font:{family:'IBM Plex Mono',color:'#c5cbdf'},showlegend:false
+  };
+}
+
+const layout2D={
+  paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+  margin:{l:45,r:15,t:10,b:38},
+  xaxis:{title:{text:'z',font:axF},range:[-4.2,4.2],gridcolor:'#1a2040',zerolinecolor:'#252e50',color:'#4a5678',tickfont:tkF},
+  yaxis:{title:{text:'density',font:axF},gridcolor:'#1a2040',zerolinecolor:'#252e50',color:'#4a5678',tickfont:tkF,rangemode:'tozero'},
+  legend:{x:0.98,y:0.97,xanchor:'right',bgcolor:'rgba(16,20,42,0.85)',bordercolor:'#1c2340',borderwidth:1,font:{size:10,color:'#8090bb'}},
+  font:{family:'IBM Plex Mono'}
+};
+
+function getMargLayout(xHi){return{
+  paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+  margin:{l:45,r:15,t:10,b:38},
+  xaxis:{title:{text:'x',font:axF},range:[0,xHi],gridcolor:'#1a2040',zerolinecolor:'#252e50',color:'#4a5678',tickfont:tkF},
+  yaxis:{title:{text:'density',font:axF},gridcolor:'#1a2040',zerolinecolor:'#252e50',color:'#4a5678',tickfont:tkF,rangemode:'tozero'},
+  legend:{x:0.98,y:0.97,xanchor:'right',bgcolor:'rgba(16,20,42,0.85)',bordercolor:'#1c2340',borderwidth:1,font:{size:10,color:'#8090bb'}},
+  font:{family:'IBM Plex Mono'}
+};}
+
+const pCfg={displayModeBar:false,responsive:true};
+
+
+// ================================================================
+//  CAMERA
+// ================================================================
+const CAM_GRID={x:-0.3,y:-2.3,z:0.75};
+const CAM_DIAG={x:1.5,y:-1.9,z:0.8};
+
+
+// ================================================================
+//  ANIMATION STATE
+// ================================================================
+let step=0, phase='grid', phaseT=0, playing=false, animTimer=null;
+const PHASE_DUR={grid:2.5,rotate:1.5,sweep:5.0,complete:1.2};
+const FPS=18;
+
+// Progress bar
+const progressBar=document.getElementById('progressBar');
+for(let i=0;i<=MAX_STEPS;i++){const p=document.createElement('div');p.className='progress-pip';progressBar.appendChild(p);}
+function updateProgress(){
+  progressBar.querySelectorAll('.progress-pip').forEach((p,i)=>{
+    p.className='progress-pip'+(i<step?' done':'')+(i===step?' current':'');
+  });
+}
+
+
+// ================================================================
+//  RENDER
+// ================================================================
+function renderFrame(){
+  const n=step+1, nNext=step+2;
+  document.getElementById('stepLabel').textContent='n = '+n;
+  updateProgress();
+
+  const phInd=document.getElementById('phaseInd');
+  const descEl=document.getElementById('stepDesc');
+
+  if(phase==='grid'){
+    phInd.innerHTML='<span class="dot grid"></span>Independence grid lines';
+    descEl.innerHTML=
+      'Showing <strong>f<sub>S'+sub(n)+'</sub>(x) \u00B7 f<sub>X</sub>(y)</strong> where X<sub>i</sub> ~ <em>'+curDist.desc+'</em>. '+
+      '<em>Blue curves</em> (const x): each has the shape of f<sub>X</sub>, just scaled. '+
+      '<em>Green curves</em> (const y): each has the shape of f<sub>S'+sub(n)+'</sub>, just scaled \u2014 <strong>independence</strong>.';
+  } else if(phase==='rotate'){
+    phInd.innerHTML='<span class="dot grid"></span>Rotating view';
+    descEl.innerHTML='Rotating to see the <em>diagonal planes x + y = z</em> for computing the convolution.';
+  } else if(phase==='sweep'){
+    phInd.innerHTML='<span class="dot sweep"></span>Sweeping diagonals';
+    const{zLo,zHi}=getZRange(step);
+    const zCur=(zLo+phaseT*(zHi-zLo)).toFixed(1);
+    descEl.innerHTML=
+      'Plane <em>x + y = '+zCur+'</em> sweeps through the surface. '+
+      'The <em>orange area</em> = \u222B f<sub>S'+sub(n)+'</sub>(x) f<sub>X</sub>(z\u2212x) dx = <strong>f<sub>S'+sub(nNext)+'</sub>(z)</strong>.';
+  } else {
+    phInd.innerHTML='<span class="dot done"></span>Convolution complete';
+    descEl.innerHTML=
+      'Done: <strong>S'+sub(nNext)+' = S'+sub(n)+' + X'+sub(nNext)+'</strong>. '+
+      'Standardized (S'+sub(nNext)+'\u2212\u03BC)/\u03C3 \u2192 <em>N(0,1)</em> as n grows.';
+  }
+
+  document.getElementById('surfaceLabel').innerHTML=
+    phase==='grid'||phase==='rotate'
+      ?'Joint: f<sub>S'+sub(n)+'</sub>(x) \u00B7 f<sub>X</sub>(y) \u2014 '+curDist.name
+      :'Sweeping x+y=z through f<sub>S'+sub(n)+'</sub> \u00B7 f<sub>X</sub> \u2014 '+curDist.name;
+  document.getElementById('marginalLabel').innerHTML=
+    phase==='sweep'?'Building f<sub>S'+sub(nNext)+'</sub> via convolution':'Marginals (n='+n+')';
+
+  // 3D
+  let traces3D, camEye;
+  if(phase==='grid'){traces3D=buildGridTraces(step);camEye=CAM_GRID;}
+  else if(phase==='rotate'){traces3D=buildGridTraces(step);camEye=lerpV(CAM_GRID,CAM_DIAG,ease(phaseT));}
+  else if(phase==='sweep'){traces3D=buildSweepTraces(step,phaseT);camEye=CAM_DIAG;}
+  else{traces3D=buildSweepTraces(step,1.0);camEye=CAM_DIAG;}
+  Plotly.react('surface-plot',traces3D,get3DLayout(step,camEye),pCfg);
+
+  // Marginal
+  const showBuild=(phase==='sweep'||phase==='complete');
+  const{zLo,zHi}=getZRange(step);
+  const buildMaxZ=phase==='complete'?999:zLo+phaseT*(zHi-zLo);
+  const{traces:mT,xHi:mxHi}=buildMarginalTraces(step,showBuild,buildMaxZ);
+  Plotly.react('marginal-plot',mT,getMargLayout(mxHi),pCfg);
+
+  // CLT
+  if(phase==='complete') Plotly.react('clt-plot',buildCLTTraces(step),layout2D,pCfg);
+
+  document.getElementById('btnPrev').disabled=(step<=0&&phase==='grid');
+  document.getElementById('btnNext').disabled=(step>=MAX_STEPS&&phase==='complete');
+}
+
+
+// ================================================================
+//  ANIMATION LOOP
+// ================================================================
+function getSpeed(){return parseFloat(document.getElementById('speedSel').value)||1}
+
+function tick(){
+  if(!playing) return;
+  const dt=(1/FPS)*getSpeed()/PHASE_DUR[phase];
+  phaseT+=dt;
+  if(phaseT>=1){
+    phaseT=1; renderFrame();
+    if(phase==='grid'){phase='rotate';phaseT=0;}
+    else if(phase==='rotate'){phase='sweep';phaseT=0;}
+    else if(phase==='sweep'){phase='complete';phaseT=0;}
+    else{
+      if(step<MAX_STEPS){step++;phase='grid';phaseT=0;}
+      else stopPlay();
+    }
+  } else renderFrame();
+}
+
+function startPlay(){
+  if(step>=MAX_STEPS&&phase==='complete'){step=0;phase='grid';phaseT=0;}
+  playing=true;
+  document.getElementById('playIcon').innerHTML='&#x275A;&#x275A;';
+  document.getElementById('playText').textContent='Pause';
+  document.getElementById('btnPlay').classList.add('active');
+  animTimer=setInterval(tick,1000/FPS);
+}
+function stopPlay(){
+  playing=false;clearInterval(animTimer);animTimer=null;
+  document.getElementById('playIcon').innerHTML='&#x25B6;';
+  document.getElementById('playText').textContent='Play';
+  document.getElementById('btnPlay').classList.remove('active');
+}
+
+document.getElementById('btnPlay').addEventListener('click',()=>{playing?stopPlay():startPlay()});
+document.getElementById('btnNext').addEventListener('click',()=>{
+  stopPlay();
+  if(phase!=='complete'){phase='complete';phaseT=1;}
+  else if(step<MAX_STEPS){step++;phase='complete';phaseT=1;}
+  renderFrame();
+});
+document.getElementById('btnPrev').addEventListener('click',()=>{
+  stopPlay();
+  if(phase!=='grid'||phaseT>0.1){phase='grid';phaseT=0;}
+  else if(step>0){step--;phase='complete';phaseT=1;}
+  renderFrame();
+});
+document.getElementById('btnReset').addEventListener('click',()=>{
+  stopPlay();step=0;phase='grid';phaseT=0;renderFrame();
+});
+document.getElementById('speedSel').addEventListener('change',()=>{if(playing){stopPlay();startPlay();}});
+
+
+// ================================================================
+//  INIT
+// ================================================================
+recomputePdfs();
+renderFrame();
+</script>
+</body>
+</html>
