@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dual Vector Spaces — A Visual Tour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false});"></script>
+
+<style>
+:root {
+  --crimson: #9E1B32;
+  --crimson-light: #C2294A;
+  --crimson-dark: #6B1224;
+  --crimson-glaze: rgba(158, 27, 50, 0.10);
+  --cream: #F4EDDD;
+  --paper: #FAF5E9;
+  --ink: #1F1A17;
+  --gray: #5C544D;
+  --gray-light: #B8AFA3;
+  --gray-pale: #E5DDCB;
+  --gold: #C9A227;
+  --true-curve: #1F1A17;
+  --error-fill: rgba(158, 27, 50, 0.18);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Crimson Pro", Georgia, serif;
+  font-size: 19px;
+  line-height: 1.65;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 18% 6%, rgba(158, 27, 50, 0.05) 0%, transparent 35%),
+    radial-gradient(circle at 86% 92%, rgba(158, 27, 50, 0.04) 0%, transparent 45%);
+  background-attachment: fixed;
+}
+
+/* HEADER */
+.houndstooth-band {
+  height: 24px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><rect width='24' height='24' fill='%23F4EDDD'/><path fill='%231F1A17' d='M0,0 L12,0 L12,3 L15,3 L15,9 L9,9 L9,12 L0,12 Z M12,12 L21,12 L21,15 L24,15 L24,21 L18,21 L18,24 L12,24 Z M21,0 L24,0 L24,3 L21,3 Z M0,21 L3,21 L3,24 L0,24 Z'/></svg>");
+  background-size: 24px 24px;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+
+header.banner {
+  background: var(--crimson);
+  color: var(--cream);
+  padding: 4.5rem 2rem 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+header.banner::before {
+  content: "Σ";
+  position: absolute;
+  font-family: "Playfair Display", serif;
+  font-size: 28rem;
+  font-weight: 900;
+  right: -3rem;
+  top: -7rem;
+  color: rgba(244, 237, 221, 0.07);
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
+}
+
+header.banner::after {
+  content: "V*";
+  position: absolute;
+  font-family: "Playfair Display", serif;
+  font-size: 18rem;
+  font-weight: 900;
+  left: -1rem;
+  bottom: -6rem;
+  color: rgba(244, 237, 221, 0.06);
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
+}
+
+header.banner .container {
+  max-width: 940px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+header.banner .kicker {
+  font-family: "Crimson Pro", serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  margin: 0 0 1.1rem 0;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+header.banner .kicker .pipe { margin: 0 0.8em; opacity: 0.6; }
+
+header.banner h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 4.6rem;
+  line-height: 1.0;
+  font-weight: 900;
+  margin: 0 0 1.2rem 0;
+  letter-spacing: -0.025em;
+}
+
+header.banner h1 em {
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(244, 237, 221, 0.85);
+}
+
+header.banner .subtitle {
+  font-family: "Playfair Display", serif;
+  font-size: 1.35rem;
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.95;
+  max-width: 660px;
+  line-height: 1.45;
+}
+
+header.banner .byline {
+  margin-top: 2rem;
+  font-family: "Crimson Pro", serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* MAIN */
+main {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 4rem 2rem 2rem;
+}
+
+section {
+  margin-bottom: 5rem;
+  scroll-margin-top: 2rem;
+}
+
+.section-header { margin-bottom: 1.8rem; }
+
+.section-num {
+  font-family: "Playfair Display", serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.28em;
+  color: var(--crimson);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.section-num::before {
+  content: "";
+  width: 28px;
+  height: 2px;
+  background: var(--crimson);
+}
+
+section h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+section h2 em {
+  font-style: italic;
+  color: var(--crimson);
+  font-weight: 400;
+}
+
+section h3 {
+  font-family: "Playfair Display", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 2.2rem 0 0.6rem;
+  color: var(--ink);
+  font-style: italic;
+}
+
+section p { margin: 0 0 1.1rem 0; font-weight: 400; }
+
+.lede { font-size: 1.18rem; line-height: 1.55; }
+
+.lede::first-letter {
+  font-family: "Playfair Display", serif;
+  font-size: 4.8rem;
+  font-weight: 900;
+  float: left;
+  line-height: 0.85;
+  margin: 0.05em 0.12em -0.05em 0;
+  color: var(--crimson);
+}
+
+.katex-display { margin: 1.1rem 0 !important; }
+.katex { font-size: 1.05em; }
+
+/* Theorem boxes */
+.theorem, .definition {
+  background: linear-gradient(135deg, var(--crimson-glaze), transparent 75%);
+  border-left: 4px solid var(--crimson);
+  padding: 1.3rem 1.6rem;
+  margin: 1.6rem 0;
+  position: relative;
+}
+
+.theorem .label, .definition .label {
+  font-family: "Playfair Display", serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.theorem p:last-child, .definition p:last-child { margin-bottom: 0; }
+
+.proof {
+  margin: 1.2rem 0 1.6rem;
+  padding-left: 1.3rem;
+  border-left: 1px solid var(--gray-light);
+  font-size: 0.97rem;
+  color: var(--gray);
+}
+
+.proof .proof-label {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.proof p:last-child::after {
+  content: " ▮";
+  color: var(--crimson);
+  font-weight: bold;
+}
+
+/* Visualization frames */
+.viz-frame {
+  background: white;
+  border: 1px solid var(--gray-pale);
+  padding: 1.6rem 1.4rem 1.4rem;
+  margin: 1.8rem 0;
+  position: relative;
+  box-shadow: 0 1px 0 var(--cream), 0 4px 20px rgba(31, 26, 23, 0.06);
+}
+
+.viz-frame::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: -1px; right: -1px;
+  height: 5px;
+  background: var(--crimson);
+}
+
+.viz-frame::after {
+  content: "";
+  position: absolute;
+  bottom: -1px; left: -1px;
+  width: 5px; height: 40px;
+  background: var(--crimson);
+}
+
+.viz-frame svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.viz-caption {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: 0.96rem;
+  color: var(--gray);
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--gray-light);
+  line-height: 1.45;
+}
+
+.viz-caption strong {
+  color: var(--crimson);
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.viz-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.viz-controls .label {
+  font-family: "Crimson Pro", serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.viz-controls button {
+  background: var(--cream);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  padding: 0.42rem 0.9rem;
+  font-family: "Crimson Pro", serif;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border-radius: 0;
+}
+
+.viz-controls button:hover { background: var(--ink); color: var(--cream); }
+.viz-controls button.active {
+  background: var(--crimson);
+  color: var(--cream);
+  border-color: var(--crimson);
+}
+
+.viz-controls input[type=range] {
+  width: 200px;
+  accent-color: var(--crimson);
+}
+
+/* Function selector — pill row */
+.fn-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.2rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--cream);
+  border-left: 3px solid var(--crimson);
+}
+
+.fn-selector .fn-label {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--ink);
+  margin-right: 0.4rem;
+  font-weight: 600;
+}
+
+.fn-selector button {
+  background: white;
+  color: var(--ink);
+  border: 1.2px solid var(--gray-light);
+  padding: 0.32rem 0.8rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 0;
+}
+
+.fn-selector button:hover { border-color: var(--ink); background: var(--paper); }
+.fn-selector button.active {
+  background: var(--crimson);
+  color: var(--cream);
+  border-color: var(--crimson);
+}
+
+.fn-selector .formula {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--gray);
+  margin-left: 0.3rem;
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--gray-light);
+}
+
+.viz-readout {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--cream);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  border-left: 3px solid var(--crimson);
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.viz-readout .stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.viz-readout .stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gray);
+  font-weight: 500;
+}
+
+.viz-readout .stat-val {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 0.15rem;
+}
+
+.viz-readout .stat-val.crimson { color: var(--crimson); }
+.viz-readout .stat-val.gold { color: #9C7E1A; }
+
+.pull-quote {
+  font-family: "Playfair Display", serif;
+  font-size: 1.4rem;
+  font-style: italic;
+  color: var(--crimson-dark);
+  border-left: 3px solid var(--crimson);
+  padding: 0.5rem 0 0.5rem 1.4rem;
+  margin: 2.2rem 0;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+strong { font-weight: 700; color: var(--ink); }
+em { font-style: italic; }
+.crimson { color: var(--crimson); font-weight: 600; }
+
+footer {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 3rem 2rem 2.5rem;
+  margin-top: 4rem;
+  text-align: center;
+  border-top: 8px solid var(--crimson);
+  position: relative;
+}
+
+footer::before {
+  content: "";
+  display: block;
+  height: 24px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><rect width='24' height='24' fill='%231F1A17'/><path fill='%239E1B32' d='M0,0 L12,0 L12,3 L15,3 L15,9 L9,9 L9,12 L0,12 Z M12,12 L21,12 L21,15 L24,15 L24,21 L18,21 L18,24 L12,24 Z M21,0 L24,0 L24,3 L21,3 Z M0,21 L3,21 L3,24 L0,24 Z'/></svg>");
+  background-size: 24px 24px;
+  position: absolute;
+  top: 8px; left: 0; right: 0;
+}
+
+footer .roll-tide {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  color: var(--crimson-light);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+footer .small {
+  font-size: 0.88rem;
+  opacity: 0.65;
+  margin-top: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.note {
+  background: rgba(201, 162, 39, 0.10);
+  border-left: 3px solid var(--gold);
+  padding: 0.9rem 1.2rem;
+  margin: 1.4rem 0;
+  font-size: 0.96rem;
+}
+
+.note .label {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-weight: 700;
+  color: #8B6E0F;
+  margin-right: 0.4em;
+}
+
+::selection { background: var(--crimson); color: var(--cream); }
+
+.true-curve { fill: none; stroke: var(--ink); stroke-width: 2; }
+.approx-curve { fill: none; stroke: var(--crimson); stroke-width: 2.5; }
+.linear-curve { fill: none; stroke: #C9A227; stroke-width: 2; stroke-dasharray: 4 3; }
+.axis-label { font-size: 12px; fill: var(--gray); font-family: "JetBrains Mono", monospace; }
+.node-dot { fill: var(--crimson); stroke: white; stroke-width: 2.5; }
+.trap-fill { fill: var(--error-fill); stroke: var(--crimson); stroke-width: 1; }
+.simpson-fill { fill: rgba(158, 27, 50, 0.14); stroke: var(--crimson); stroke-width: 1.2; }
+.boole-fill { fill: rgba(158, 27, 50, 0.16); stroke: var(--crimson); stroke-width: 1.4; }
+.legend-text { font-family: "Crimson Pro", serif; font-size: 13px; fill: var(--ink); }
+.tick { stroke: var(--gray-light); stroke-width: 1; }
+
+@media (max-width: 700px) {
+  header.banner h1 { font-size: 3rem; }
+  header.banner .subtitle { font-size: 1.15rem; }
+  section h2 { font-size: 2rem; }
+  main { padding: 3rem 1.2rem; }
+  .viz-frame { padding: 1rem 0.6rem; }
+  body { font-size: 17px; }
+  .fn-selector .formula { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="houndstooth-band"></div>
+
+<header class="banner">
+  <div class="container">
+    <div class="kicker">A Visual Tour <span class="pipe">|</span> Linear Algebra <span class="pipe">|</span> University of Alabama</div>
+    <h1>Dual<br>Vector <em>Spaces</em></h1>
+    <div class="subtitle">From the abstract definition to Lagrange interpolation, Simpson's rule, and Hermite splines &mdash; the unreasonable usefulness of $V^*$.</div>
+    <div class="byline">An interactive companion for MA&nbsp;245</div>
+  </div>
+</header>
+
+<div class="houndstooth-band"></div>
+
+<main>
+
+<!-- §1 -->
+<section id="def">
+  <div class="section-header">
+    <div class="section-num">§ 1 &nbsp;&middot;&nbsp; The Idea</div>
+    <h2>What is a <em>dual</em> space?</h2>
+  </div>
+
+  <p class="lede">A vector space $V$ holds the things you build with &mdash; arrows, polynomials, functions. Its <em>dual space</em> $V^*$ holds the things you <em>measure</em> with: the linear ways of turning a vector into a single number. If $V$ is the space of polynomials of degree $\le 2$, then "evaluate at $x = 3$" is one such measurement. So is "integrate from $0$ to $1$." Both eat a polynomial and return a number, and both respect addition and scalar multiplication. They are elements of $V^*$.</p>
+
+  <div class="definition">
+    <span class="label">Definition</span>
+    <p>Let $V$ be a vector space over $\mathbb{R}$. A <strong>linear functional</strong> on $V$ is a linear map $L : V \to \mathbb{R}$. The set of all linear functionals on $V$, with pointwise addition and scalar multiplication, is itself a vector space, called the <strong>dual space</strong> $V^*$.</p>
+  </div>
+
+  <p>The first surprise is that $V^*$ has the same size as $V$.</p>
+
+  <div class="theorem">
+    <span class="label">Theorem &nbsp;&middot;&nbsp; The dimension theorem for duals</span>
+    <p>If $V$ is finite-dimensional, then $\dim V^* = \dim V$.</p>
+  </div>
+
+  <div class="proof">
+    <p><span class="proof-label">Proof.</span> Fix a basis $\{v_1, \ldots, v_n\}$ of $V$. Every $v \in V$ has unique coordinates $v = \sum c_i v_i$. Define $f_i \in V^*$ by</p>
+    $$f_i(v) = c_i \quad \text{i.e.} \quad f_i(v_j) = \delta_{ij}.$$
+    <p>Each $f_i$ is linear (coordinates depend linearly on $v$), so $f_i \in V^*$. We claim $\{f_1, \ldots, f_n\}$ is a basis of $V^*$.</p>
+    <p><em>Independence.</em> If $\sum a_i f_i = 0$, applying both sides to $v_j$ gives $a_j = 0$, for every $j$.</p>
+    <p><em>Spanning.</em> Take any $L \in V^*$. Set $a_i = L(v_i)$. Then for each basis vector $v_j$,</p>
+    $$\left(\sum_i a_i f_i\right)(v_j) = \sum_i a_i \delta_{ij} = a_j = L(v_j),$$
+    <p>so $L$ and $\sum a_i f_i$ agree on a basis, hence on all of $V$. Thus $\{f_i\}$ spans $V^*$, and $\dim V^* = n = \dim V$.</p>
+  </div>
+
+  <p>The basis $\{f_1, \ldots, f_n\}$ is called the <strong>dual basis</strong> to $\{v_1, \ldots, v_n\}$.</p>
+
+  <div class="pull-quote">
+    A basis of $V$ tells you how to build vectors. A dual basis of $V^*$ tells you how to measure them. Many famous "formulas" in mathematics are nothing more than the expansion of one functional in terms of another.
+  </div>
+</section>
+
+<!-- §2 LAGRANGE -->
+<section id="lagrange">
+  <div class="section-header">
+    <div class="section-num">§ 2 &nbsp;&middot;&nbsp; First Surprise</div>
+    <h2>Lagrange <em>interpolation</em>, <br>or: a dual basis you've already used</h2>
+  </div>
+
+  <p>Let $V = P_n$, polynomials of degree $\le n$. Pick distinct nodes $t_0, \ldots, t_n$ and define the <em>evaluation functionals</em></p>
+  $$L_i(p) = p(t_i).$$
+  <p>One can show (Vandermonde) that $\{L_0, \ldots, L_n\}$ is a basis of $V^*$. What is the basis $\{p_0, \ldots, p_n\}$ of $V$ dual to it? It must satisfy $L_i(p_j) = p_j(t_i) = \delta_{ij}$ &mdash; that is, $p_j$ vanishes at every node except $t_j$, where it equals $1$. The unique such polynomial is</p>
+  $$p_j(x) = \prod_{i \ne j} \frac{x - t_i}{t_j - t_i}.$$
+  <p>These are the <strong>Lagrange basis polynomials</strong>. Expanding any $p \in V$ in this dual basis yields the famous formula</p>
+  $$p(x) = \sum_{j=0}^{n} p(t_j)\, p_j(x),$$
+  <p>which says: the unique polynomial of degree $\le n$ taking prescribed values $c_0, \ldots, c_n$ at $t_0, \ldots, t_n$ is $\sum c_j p_j(x)$. The dual basis is the interpolation formula.</p>
+
+  <h3>What if $f$ is not a polynomial?</h3>
+
+  <p>Given any continuous $f$, sample it at $n+1$ nodes and form the polynomial through those samples:</p>
+  $$P_f(x) = \sum_j f(t_j)\, p_j(x).$$
+  <p>$P_f$ agrees with $f$ at the nodes and is the "best polynomial mimic of $f$ at the sample points." For smooth $f$ it is close to $f$ everywhere on the interval &mdash; <em>usually</em>. The Runge example below shows that for some $f$, increasing the number of evenly-spaced nodes can make things <em>worse</em>.</p>
+
+  <div class="viz-frame">
+    <svg id="viz-lagrange" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="viz-controls">
+      <span class="label">Number of nodes:</span>
+      <button data-n="2" class="lag-btn">2</button>
+      <button data-n="3" class="lag-btn active">3</button>
+      <button data-n="4" class="lag-btn">4</button>
+      <button data-n="5" class="lag-btn">5</button>
+      <button data-n="6" class="lag-btn">6</button>
+      <button data-n="8" class="lag-btn">8</button>
+      <button data-n="10" class="lag-btn">10</button>
+    </div>
+    <div class="fn-selector" id="lag-fn-selector">
+      <span class="fn-label">test $f(x):$</span>
+    </div>
+    <div class="viz-caption">
+      The <strong>crimson curve</strong> is $P_f$, the <strong>black curve</strong> is the true $f$. Try the Runge function with $\ge 8$ nodes &mdash; the polynomial wiggles wildly near the endpoints even though it agrees at every node.
+    </div>
+  </div>
+</section>
+
+<!-- §3 TRAPEZOID -->
+<section id="trap">
+  <div class="section-header">
+    <div class="section-num">§ 3 &nbsp;&middot;&nbsp; Quadrature, Part I</div>
+    <h2>The <em>trapezoidal</em> rule</h2>
+  </div>
+
+  <p>Now let the integration functional $I(p) = \int_a^b p(x)\, dx$ play the role of $L$. Since $\{L_0, \ldots, L_n\}$ is a basis of $V^* = (P_n)^*$, there are unique weights $w_j$ with</p>
+  $$\int_a^b p(x)\, dx \;=\; \sum_j w_j\, p(t_j) \quad \text{for every } p \in P_n.$$
+  <p>Plugging the dual basis polynomial $p_k$ into both sides yields the punchline:</p>
+
+  <div class="theorem">
+    <span class="label">The weight formula</span>
+    <p>$$w_k \;=\; \int_a^b p_k(x)\, dx.$$</p>
+    <p style="margin-top:0.5rem;">Quadrature weights are nothing but integrals of Lagrange basis polynomials.</p>
+  </div>
+
+  <p>For $n = 1$ with nodes at the endpoints $a$ and $b$, both basis polynomials integrate to $(b-a)/2$, giving the <strong>trapezoidal rule</strong>:</p>
+  $$\int_a^b f(x)\, dx \;\approx\; \frac{b-a}{2}\bigl[f(a) + f(b)\bigr].$$
+  <p>Applying it on each panel of an even partition of $[a,b]$ produces the <strong>composite trapezoidal rule</strong>: shared endpoints get weight $1$ counted twice (so $2$), and the two outermost endpoints get weight $1$.</p>
+
+  <div class="note">
+    <span class="label">Note &middot;</span> The next three visualizations all use the same test function. Switch the function below, and the plots in §3, §4, §5 (and the comparison plot in §5) all update together so you can compare the methods on the same target.
+  </div>
+
+  <div class="viz-frame">
+    <svg id="viz-trap" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="viz-controls">
+      <span class="label">Subintervals $N$:</span>
+      <input type="range" id="trap-slider" min="2" max="24" value="6" step="1">
+      <span id="trap-N-display" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--crimson); min-width: 24px;">6</span>
+    </div>
+    <div class="fn-selector" id="quad-fn-selector">
+      <span class="fn-label">test $f(x):$</span>
+    </div>
+    <div class="viz-readout" id="trap-readout"></div>
+    <div class="viz-caption">
+      Composite trapezoidal approximation. Each panel is a trapezoid; the gap between the crimson tops and the black curve is the error per panel. <strong>Error decreases like $1/N^2$</strong> for smooth $f$.
+    </div>
+  </div>
+</section>
+
+<!-- §4 SIMPSON -->
+<section id="simpson">
+  <div class="section-header">
+    <div class="section-num">§ 4 &nbsp;&middot;&nbsp; Quadrature, Part II</div>
+    <h2>Composite <em>Simpson's</em> rule</h2>
+  </div>
+
+  <p>For $n = 2$ with nodes $a$, $(a+b)/2$, $b$, integrating the three Lagrange polynomials yields weights $\tfrac{b-a}{6}, \tfrac{2(b-a)}{3}, \tfrac{b-a}{6}$ &mdash; the famous $1\!:\!4\!:\!1$ ratio. <strong>Simpson's rule</strong> is</p>
+  $$\int_a^b f(x)\,dx \;\approx\; \frac{b-a}{6}\!\left[\,f(a) + 4f\!\bigl(\tfrac{a+b}{2}\bigr) + f(b)\,\right].$$
+  <p>Apply it on each pair of subintervals of an even partition, and the shared inner endpoints add up: two adjacent $1$s become a $2$. The composite weight pattern is the iconic</p>
+  $$\frac{h}{3}\bigl[\,1,\, 4,\, 2,\, 4,\, 2,\, 4,\, \ldots,\, 4,\, 2,\, 4,\, 1\,\bigr].$$
+  <p>Geometrically, instead of a flat-topped trapezoid on each panel we get a parabolic arc &mdash; the unique parabola through three consecutive samples.</p>
+
+  <div class="viz-frame">
+    <svg id="viz-simpson" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="viz-controls">
+      <span class="label">Pairs of subintervals:</span>
+      <input type="range" id="simpson-slider" min="1" max="10" value="3" step="1">
+      <span id="simpson-N-display" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--crimson); min-width: 24px;">3</span>
+    </div>
+    <div class="viz-readout" id="simpson-readout"></div>
+    <div class="viz-caption">
+      Composite Simpson's rule. Each parabolic arc is the unique quadratic through three consecutive samples. <strong>Error decreases like $1/N^4$</strong> for smooth $f$.
+    </div>
+  </div>
+</section>
+
+<!-- §5 BOOLE -->
+<section id="boole">
+  <div class="section-header">
+    <div class="section-num">§ 5 &nbsp;&middot;&nbsp; One Step Higher</div>
+    <h2>Beyond Simpson: <em>Boole's</em> rule</h2>
+  </div>
+
+  <p>Nothing stops us from going to $n=4$. With five nodes per panel &mdash; $a$, $a+h$, $a+2h$, $a+3h$, $a+4h$ where $h = (b-a)/4$ &mdash; integrating the five Lagrange polynomials produces weights $\frac{2h}{45}\,[\,7,\,32,\,12,\,32,\,7\,]$. This is <strong>Boole's rule</strong>:</p>
+  $$\int_a^b f\,dx \;\approx\; \frac{2h}{45}\bigl[\,7f_0 + 32f_1 + 12f_2 + 32f_3 + 7f_4\,\bigr].$$
+  <p>It is exact for polynomials up to degree $5$ (one degree better than the cubic-exactness of Simpson's, due to a similar symmetry windfall). Composite Boole's rule fits a smooth quartic on every group of four subintervals, hugging $f$ tighter than parabolas can.</p>
+
+  <div class="viz-frame">
+    <svg id="viz-boole" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="viz-controls">
+      <span class="label">Panels (each = 4 subintervals):</span>
+      <input type="range" id="boole-slider" min="1" max="6" value="2" step="1">
+      <span id="boole-N-display" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--crimson); min-width: 24px;">2</span>
+    </div>
+    <div class="viz-readout" id="boole-readout"></div>
+    <div class="viz-caption">
+      Composite Boole's rule on the same integral. Each crimson arc is a quartic through five samples. <strong>Error decreases like $1/N^6$</strong> for smooth $f$.
+    </div>
+  </div>
+
+  <h3>Side-by-side, same node budget</h3>
+
+  <p>The fairest comparison fixes the number of function evaluations and asks: which rule wins? With a generous budget the answer is "Boole, by orders of magnitude" &mdash; <em>provided</em> $f$ is smooth enough to support the higher-order error term. Try the square-root function, whose derivative blows up at $x=0$, and watch all three methods slow to a crawl.</p>
+
+  <div class="viz-frame">
+    <svg id="viz-compare" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="viz-caption">
+      Absolute error vs. number of subintervals on a log&ndash;log scale. For smooth functions the slopes are $-2$ (trapezoid), $-4$ (Simpson), $-6$ (Boole). For non-smooth functions the slopes flatten, since the higher-order error formulas need higher-order derivatives that no longer exist.
+    </div>
+  </div>
+</section>
+
+<!-- §6 HERMITE -->
+<section id="hermite">
+  <div class="section-header">
+    <div class="section-num">§ 6 &nbsp;&middot;&nbsp; A Different Dual Basis</div>
+    <h2><em>Hermite</em> interpolation,<br>and the road to splines</h2>
+  </div>
+
+  <p>The Lagrange story used only point evaluations. But the dual basis machinery is indifferent to the type of functional involved &mdash; any independent collection that spans $V^*$ will do. Mix in <em>derivative</em> evaluations and you get Hermite interpolation.</p>
+
+  <p>Take $V = P_3$ (cubics) and consider the four functionals on two endpoints $a$ and $b$:</p>
+  $$E_a(p) = p(a), \quad D_a(p) = p'(a), \quad E_b(p) = p(b), \quad D_b(p) = p'(b).$$
+  <p>One checks they are independent and so form a basis of $V^* = (P_3)^*$. The dual basis is the four <strong>Hermite cubics</strong> $h_{00}, h_{10}, h_{01}, h_{11}$ on the unit interval, with $t = (x-a)/(b-a):$</p>
+  $$\begin{aligned}
+  h_{00}(t) &= 2t^3 - 3t^2 + 1, & h_{10}(t) &= t^3 - 2t^2 + t, \\
+  h_{01}(t) &= -2t^3 + 3t^2,    & h_{11}(t) &= t^3 - t^2.
+  \end{aligned}$$
+  <p>Expanding $f$ in the dual basis gives the Hermite formula</p>
+  $$P_f(x) \;=\; f(a)\,h_{00}(t) + (b-a)\,f'(a)\,h_{10}(t) + f(b)\,h_{01}(t) + (b-a)\,f'(b)\,h_{11}(t),$$
+  <p>which matches $f$ <em>and its derivative</em> at both endpoints.</p>
+
+  <h3>From two points to many: piecewise Hermite</h3>
+
+  <p>Nothing requires us to use only two endpoints. Pick $m+1$ nodes $x_0 &lt; x_1 &lt; \cdots &lt; x_m$. On <em>each</em> subinterval $[x_i, x_{i+1}]$ use the Hermite formula above with the four functionals $E_{x_i}, D_{x_i}, E_{x_{i+1}}, D_{x_{i+1}}$. The result is a piecewise cubic on $[x_0, x_m]$ that matches both $f$ and $f'$ at every node.</p>
+
+  <p>Because both pieces meeting at an interior node $x_i$ match the same value <em>and</em> the same slope there, the joined curve is automatically continuous and continuously differentiable &mdash; the join is invisible to the eye. This is a <strong>$C^1$ piecewise-cubic Hermite spline</strong>, the workhorse behind smooth animation paths, font outlines, and physics-based path planning.</p>
+
+  <div class="viz-frame">
+    <svg id="viz-hermite" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="viz-controls">
+      <span class="label">Number of intervals $m$:</span>
+      <input type="range" id="hermite-slider" min="1" max="6" value="1" step="1">
+      <span id="hermite-N-display" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--crimson); min-width: 24px;">1</span>
+    </div>
+    <div class="viz-controls">
+      <button id="hermite-toggle-linear" class="active">show piecewise linear</button>
+      <button id="hermite-toggle-hermite" class="active">show Hermite spline</button>
+      <button id="hermite-toggle-tangents">show tangents</button>
+    </div>
+    <div class="viz-readout" id="hermite-readout"></div>
+    <div class="viz-caption">
+      Approximating $f(x) = \sin(x) + 0.3\sin(3x)$ on $[0,\pi]$. With $m=1$ this is the classic two-endpoint Hermite cubic. Increase $m$ to add interior nodes &mdash; each piece is a cubic matching $f$ and $f'$ at both ends, so the joined curve is $C^1$. Tangent arrows at every node show the shared slope.
+    </div>
+  </div>
+
+  <h3>One more constraint: cubic splines</h3>
+
+  <p>Hermite splines need both $f(x_i)$ and $f'(x_i)$ at every node. What if you have only the values $f(x_i)$? Then you have $m+1$ value constraints and $4m$ coefficients to fix (four per cubic piece). Demanding $C^2$ continuity at the $m-1$ interior nodes &mdash; matching <em>second</em> derivatives, not just first &mdash; gives $3(m-1) + (m+1) = 4m - 2$ conditions, leaving two degrees of freedom usually fixed by boundary conditions (natural, clamped, periodic). The result is the <strong>cubic spline</strong>.</p>
+
+  <p>Cubic splines are the same idea as Hermite, with the missing slope information replaced by a smoothness demand. They are again expansions in a dual basis &mdash; the so-called B-spline basis &mdash; and they are the right tool when you have data values but no measured slopes.</p>
+</section>
+
+<!-- §7 -->
+<section id="closing">
+  <div class="section-header">
+    <div class="section-num">§ 7 &nbsp;&middot;&nbsp; Closing</div>
+    <h2>One <em>idea</em>, many disguises</h2>
+  </div>
+
+  <p>Lagrange interpolation, Newton&ndash;Cotes quadrature (trapezoid, Simpson, Boole, &hellip;), Hermite splines, and cubic splines are usually taught as separate "tricks." They are not. Each one is the expansion of some natural functional &mdash; "evaluate $f$ at $x$," "integrate $f$ over $[a,b]$," "match $f$ and $f'$ at the endpoints" &mdash; in a basis of $V^*$ chosen to make the answer concrete and computable.</p>
+
+  <p>Recognising the unifying structure does two things at once: it explains why these formulas work (existence and uniqueness of the dual basis), and it tells you how to invent new ones (pick a basis of $V^*$ aligned with the functional you actually care about). That is the practical payoff of taking $V^*$ seriously.</p>
+
+  <div class="pull-quote">
+    Existence and uniqueness of the dual basis is a one-line theorem. Almost every classical interpolation and quadrature formula is its corollary.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="roll-tide">Roll Tide &middot; Roll Linear Algebra</div>
+  <div class="small">An interactive companion &middot; Capstone of Sec. 3.5</div>
+</footer>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function el(name, attrs = {}, ...kids) {
+  const e = document.createElementNS(SVG_NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  for (const k of kids) {
+    if (typeof k === "string") e.appendChild(document.createTextNode(k));
+    else if (k) e.appendChild(k);
+  }
+  return e;
+}
+
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+class Plot {
+  constructor(svg, xMin, xMax, yMin, yMax, pad = {t:18, r:24, b:32, l:48}) {
+    this.svg = svg;
+    this.xMin = xMin; this.xMax = xMax;
+    this.yMin = yMin; this.yMax = yMax;
+    this.pad = pad;
+    const vb = svg.viewBox.baseVal;
+    this.w = vb.width; this.h = vb.height;
+    this.plotW = this.w - pad.l - pad.r;
+    this.plotH = this.h - pad.t - pad.b;
+  }
+  X(x) { return this.pad.l + (x - this.xMin) / (this.xMax - this.xMin) * this.plotW; }
+  Y(y) { return this.pad.t + (1 - (y - this.yMin) / (this.yMax - this.yMin)) * this.plotH; }
+  curvePath(fn, n = 240) {
+    let d = '';
+    let started = false;
+    for (let i = 0; i <= n; i++) {
+      const x = this.xMin + (this.xMax - this.xMin) * i / n;
+      const y = fn(x);
+      if (!isFinite(y)) { started = false; continue; }
+      d += (started ? 'L' : 'M') + this.X(x).toFixed(2) + ',' + this.Y(y).toFixed(2) + ' ';
+      started = true;
+    }
+    return d;
+  }
+  drawAxes(opts = {}) {
+    const xTicks = opts.xTicks || 6;
+    const yTicks = opts.yTicks || 4;
+    const g = el('g');
+    g.appendChild(el('rect', {
+      x: this.pad.l, y: this.pad.t,
+      width: this.plotW, height: this.plotH,
+      fill: 'white', stroke: '#B8AFA3', 'stroke-width': 1
+    }));
+    for (let i = 0; i <= xTicks; i++) {
+      const x = this.xMin + (this.xMax - this.xMin) * i / xTicks;
+      const px = this.X(x);
+      g.appendChild(el('line', { x1: px, y1: this.pad.t + this.plotH, x2: px, y2: this.pad.t + this.plotH + 5, class: 'tick' }));
+      const label = opts.xFormat ? opts.xFormat(x) : x.toFixed(1);
+      g.appendChild(el('text', { x: px, y: this.pad.t + this.plotH + 18, 'text-anchor': 'middle', class: 'axis-label' }, label));
+    }
+    for (let i = 0; i <= yTicks; i++) {
+      const y = this.yMin + (this.yMax - this.yMin) * i / yTicks;
+      const py = this.Y(y);
+      g.appendChild(el('line', { x1: this.pad.l - 5, y1: py, x2: this.pad.l, y2: py, class: 'tick' }));
+      g.appendChild(el('text', { x: this.pad.l - 8, y: py + 4, 'text-anchor': 'end', class: 'axis-label' }, y.toFixed(1)));
+    }
+    return g;
+  }
+  legend(items, x = null, y = null) {
+    const g = el('g');
+    const px = (x === null ? this.pad.l + 14 : x);
+    const py = (y === null ? this.pad.t + 16 : y);
+    let dy = 0;
+    for (const it of items) {
+      const row = el('g', { transform: `translate(${px}, ${py + dy})` });
+      const lineAttrs = { x1: 0, y1: 0, x2: 26, y2: 0, stroke: it.color, 'stroke-width': it.width || 2.5 };
+      if (it.dash) lineAttrs['stroke-dasharray'] = it.dash;
+      row.appendChild(el('line', lineAttrs));
+      row.appendChild(el('text', { x: 32, y: 4, class: 'legend-text' }, it.label));
+      g.appendChild(row);
+      dy += 18;
+    }
+    return g;
+  }
+}
+
+function lagrangeInterp(nodes, ys) {
+  return function(x) {
+    let s = 0;
+    for (let i = 0; i < nodes.length; i++) {
+      let term = ys[i];
+      for (let j = 0; j < nodes.length; j++) {
+        if (j !== i) term *= (x - nodes[j]) / (nodes[i] - nodes[j]);
+      }
+      s += term;
+    }
+    return s;
+  };
+}
+
+function compositeTrap(f, a, b, N) {
+  const h = (b - a) / N;
+  let s = 0.5 * (f(a) + f(b));
+  for (let i = 1; i < N; i++) s += f(a + i * h);
+  return s * h;
+}
+
+function compositeSimpson(f, a, b, N) {
+  if (N % 2 !== 0) N++;
+  const h = (b - a) / N;
+  let s = f(a) + f(b);
+  for (let i = 1; i < N; i++) s += (i % 2 === 0 ? 2 : 4) * f(a + i * h);
+  return s * h / 3;
+}
+
+function compositeBoole(f, a, b, N) {
+  if (N % 4 !== 0) N += 4 - (N % 4);
+  const h = (b - a) / N;
+  let s = 0;
+  for (let p = 0; p < N / 4; p++) {
+    const x0 = a + p * 4 * h;
+    s += 2 * h / 45 * (
+      7 * f(x0) +
+      32 * f(x0 + h) +
+      12 * f(x0 + 2 * h) +
+      32 * f(x0 + 3 * h) +
+      7 * f(x0 + 4 * h)
+    );
+  }
+  return s;
+}
+
+function trueIntegral(f, a, b) {
+  // Very fine composite Simpson; handles mildly singular endpoints reasonably well.
+  return compositeSimpson(f, a, b, 4000);
+}
+
+const PI = Math.PI;
+
+// ──── Lagrange test functions ────
+const LAG_FUNCTIONS = [
+  {
+    id: 'osc', label: 'oscillation',
+    formula: 'e^(-x/2) sin(2x) + 1',
+    f: x => Math.exp(-x/2) * Math.sin(2*x) + 1,
+    xMin: 0, xMax: PI * 1.4, yMin: 0.2, yMax: 2.0
+  },
+  {
+    id: 'runge', label: 'Runge',
+    formula: '1 / (1 + 12(x - π/2)²)',
+    f: x => 1 / (1 + 12 * (x - PI/2) * (x - PI/2)),
+    xMin: 0, xMax: PI, yMin: -0.3, yMax: 1.25
+  },
+  {
+    id: 'gauss', label: 'Gaussian',
+    formula: 'exp(-(x-1.5)²)',
+    f: x => { const d = x - 1.5; return Math.exp(-(d * d)); },
+    xMin: 0, xMax: 3, yMin: 0, yMax: 1.15
+  },
+  {
+    id: 'abs', label: 'abs value',
+    formula: '|x - π/2|',
+    f: x => Math.abs(x - PI/2),
+    xMin: 0, xMax: PI, yMin: -0.2, yMax: 1.8
+  }
+];
+
+let lagFnIndex = 0;
+let lagN = 3;
+
+// ──── Quadrature test functions ────
+const QUAD_FUNCTIONS = [
+  {
+    id: 'osc', label: 'oscillation',
+    formula: '1.4 + sin(1.6x)',
+    f: x => 1.4 + Math.sin(1.6 * x),
+    a: 0, b: PI, yMin: 0, yMax: 2.6
+  },
+  {
+    id: 'exp', label: 'exponential',
+    formula: 'e^(x/2)',
+    f: x => Math.exp(x / 2),
+    a: 0, b: PI, yMin: 0, yMax: 5.5
+  },
+  {
+    id: 'bell', label: 'Gaussian bell',
+    formula: 'exp(-2(x - π/2)²)',
+    f: x => { const d = x - PI/2; return Math.exp(-2 * d * d); },
+    a: 0, b: PI, yMin: 0, yMax: 1.15
+  },
+  {
+    id: 'sqrt', label: 'square root',
+    formula: '√(x + 0.05)',
+    f: x => Math.sqrt(x + 0.05),
+    a: 0, b: PI, yMin: 0, yMax: 2.0
+  }
+];
+
+let quadFnIndex = 0;
+const QUAD_TRUE = QUAD_FUNCTIONS.map(c => trueIntegral(c.f, c.a, c.b));
+
+// ──── Function selector ────
+function buildFnSelector(containerId, functions, getIndex, setIndex) {
+  const container = document.getElementById(containerId);
+  while (container.children.length > 1) container.removeChild(container.lastChild);
+  functions.forEach((cfg, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = cfg.label;
+    btn.dataset.idx = i;
+    if (i === getIndex()) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      setIndex(i);
+      container.querySelectorAll('button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.idx) === i));
+      const span = container.querySelector('.formula');
+      if (span) span.textContent = functions[i].formula;
+    });
+    container.appendChild(btn);
+  });
+  const formulaSpan = document.createElement('span');
+  formulaSpan.className = 'formula';
+  formulaSpan.textContent = functions[getIndex()].formula;
+  container.appendChild(formulaSpan);
+}
+
+// ──── VIZ 1: Lagrange ────
+function drawLagrange() {
+  const cfg = LAG_FUNCTIONS[lagFnIndex];
+  const svg = document.getElementById('viz-lagrange');
+  clear(svg);
+  const plot = new Plot(svg, cfg.xMin, cfg.xMax, cfg.yMin, cfg.yMax);
+  svg.appendChild(plot.drawAxes({ xTicks: 7, yTicks: 4 }));
+
+  svg.appendChild(el('path', { d: plot.curvePath(cfg.f, 360), class: 'true-curve' }));
+
+  const nodes = [];
+  for (let i = 0; i < lagN; i++) {
+    nodes.push(cfg.xMin + (cfg.xMax - cfg.xMin) * i / (lagN - 1));
+  }
+  const ys = nodes.map(cfg.f);
+  const interp = lagrangeInterp(nodes, ys);
+
+  // Approximation curve (clipped if it diverges far above/below the plot)
+  let d = '';
+  let started = false;
+  const steps = 480;
+  const yRange = cfg.yMax - cfg.yMin;
+  for (let i = 0; i <= steps; i++) {
+    const x = cfg.xMin + (cfg.xMax - cfg.xMin) * i / steps;
+    const y = interp(x);
+    if (!isFinite(y) || y > cfg.yMax + yRange * 0.15 || y < cfg.yMin - yRange * 0.15) {
+      started = false;
+      continue;
+    }
+    d += (started ? 'L' : 'M') + plot.X(x).toFixed(2) + ',' + plot.Y(y).toFixed(2) + ' ';
+    started = true;
+  }
+  svg.appendChild(el('path', { d, class: 'approx-curve' }));
+
+  for (let i = 0; i < nodes.length; i++) {
+    svg.appendChild(el('circle', { cx: plot.X(nodes[i]), cy: plot.Y(ys[i]), r: 5.5, class: 'node-dot' }));
+  }
+  svg.appendChild(plot.legend([
+    { color: '#1F1A17', label: 'true f(x)' },
+    { color: '#9E1B32', label: 'Lagrange P_f(x)' }
+  ], plot.X(cfg.xMax) - 175, plot.pad.t + 14));
+}
+
+buildFnSelector('lag-fn-selector', LAG_FUNCTIONS,
+  () => lagFnIndex,
+  i => { lagFnIndex = i; drawLagrange(); });
+
+document.querySelectorAll('.lag-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lag-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    lagN = parseInt(btn.dataset.n);
+    drawLagrange();
+  });
+});
+
+drawLagrange();
+
+// ──── VIZ 2: Trapezoid ────
+let trapN = 6;
+
+function drawTrap() {
+  const cfg = QUAD_FUNCTIONS[quadFnIndex];
+  const svg = document.getElementById('viz-trap');
+  clear(svg);
+  const xMin = cfg.a - 0.1, xMax = cfg.b + 0.15;
+  const plot = new Plot(svg, xMin, xMax, cfg.yMin, cfg.yMax);
+  svg.appendChild(plot.drawAxes({ xTicks: 6, yTicks: 4 }));
+
+  const N = trapN;
+  const h = (cfg.b - cfg.a) / N;
+  const panelG = el('g');
+  for (let i = 0; i < N; i++) {
+    const x0 = cfg.a + i * h;
+    const x1 = cfg.a + (i + 1) * h;
+    const y0 = cfg.f(x0);
+    const y1 = cfg.f(x1);
+    const path = `M ${plot.X(x0)},${plot.Y(0)} L ${plot.X(x0)},${plot.Y(y0)} L ${plot.X(x1)},${plot.Y(y1)} L ${plot.X(x1)},${plot.Y(0)} Z`;
+    panelG.appendChild(el('path', { d: path, class: 'trap-fill' }));
+  }
+  svg.appendChild(panelG);
+  svg.appendChild(el('path', { d: plot.curvePath(cfg.f, 320), class: 'true-curve' }));
+  for (let i = 0; i <= N; i++) {
+    const x = cfg.a + i * h;
+    svg.appendChild(el('circle', { cx: plot.X(x), cy: plot.Y(cfg.f(x)), r: 4, class: 'node-dot' }));
+  }
+  svg.appendChild(plot.legend([
+    { color: '#1F1A17', label: 'true f(x)' },
+    { color: '#9E1B32', label: 'trapezoid panels' }
+  ], plot.X(xMax) - 180, plot.pad.t + 14));
+
+  const approx = compositeTrap(cfg.f, cfg.a, cfg.b, N);
+  const trueVal = QUAD_TRUE[quadFnIndex];
+  const err = Math.abs(approx - trueVal);
+  document.getElementById('trap-readout').innerHTML = `
+    <div class="stat"><span class="stat-label">true value</span><span class="stat-val">${trueVal.toFixed(6)}</span></div>
+    <div class="stat"><span class="stat-label">trapezoid</span><span class="stat-val crimson">${approx.toFixed(6)}</span></div>
+    <div class="stat"><span class="stat-label">|error|</span><span class="stat-val">${err.toExponential(2)}</span></div>
+    <div class="stat"><span class="stat-label">N</span><span class="stat-val">${N}</span></div>
+  `;
+}
+
+document.getElementById('trap-slider').addEventListener('input', (e) => {
+  trapN = parseInt(e.target.value);
+  document.getElementById('trap-N-display').textContent = trapN;
+  drawTrap();
+});
+
+// ──── VIZ 3: Simpson ────
+let simpsonPairs = 3;
+
+function drawSimpson() {
+  const cfg = QUAD_FUNCTIONS[quadFnIndex];
+  const svg = document.getElementById('viz-simpson');
+  clear(svg);
+  const xMin = cfg.a - 0.1, xMax = cfg.b + 0.15;
+  const plot = new Plot(svg, xMin, xMax, cfg.yMin, cfg.yMax);
+  svg.appendChild(plot.drawAxes({ xTicks: 6, yTicks: 4 }));
+
+  const pairs = simpsonPairs;
+  const N = 2 * pairs;
+  const h = (cfg.b - cfg.a) / N;
+
+  const arcG = el('g');
+  for (let p = 0; p < pairs; p++) {
+    const a = cfg.a + 2 * p * h;
+    const m = a + h;
+    const b = a + 2 * h;
+    const interp = lagrangeInterp([a, m, b], [cfg.f(a), cfg.f(m), cfg.f(b)]);
+    let d = `M ${plot.X(a)},${plot.Y(0)} L ${plot.X(a)},${plot.Y(cfg.f(a))} `;
+    const steps = 32;
+    for (let s = 1; s <= steps; s++) {
+      const x = a + (b - a) * s / steps;
+      d += `L ${plot.X(x)},${plot.Y(interp(x))} `;
+    }
+    d += `L ${plot.X(b)},${plot.Y(0)} Z`;
+    arcG.appendChild(el('path', { d, class: 'simpson-fill' }));
+  }
+  svg.appendChild(arcG);
+  svg.appendChild(el('path', { d: plot.curvePath(cfg.f, 320), class: 'true-curve' }));
+  for (let i = 0; i <= N; i++) {
+    const x = cfg.a + i * h;
+    const isMid = (i % 2 === 1);
+    svg.appendChild(el('circle', {
+      cx: plot.X(x), cy: plot.Y(cfg.f(x)),
+      r: isMid ? 3.5 : 4.5,
+      class: 'node-dot',
+      'fill-opacity': isMid ? 0.65 : 1
+    }));
+  }
+  svg.appendChild(plot.legend([
+    { color: '#1F1A17', label: 'true f(x)' },
+    { color: '#9E1B32', label: 'parabolic arcs' }
+  ], plot.X(xMax) - 180, plot.pad.t + 14));
+
+  const approx = compositeSimpson(cfg.f, cfg.a, cfg.b, N);
+  const trueVal = QUAD_TRUE[quadFnIndex];
+  const err = Math.abs(approx - trueVal);
+  document.getElementById('simpson-readout').innerHTML = `
+    <div class="stat"><span class="stat-label">true value</span><span class="stat-val">${trueVal.toFixed(6)}</span></div>
+    <div class="stat"><span class="stat-label">Simpson</span><span class="stat-val crimson">${approx.toFixed(6)}</span></div>
+    <div class="stat"><span class="stat-label">|error|</span><span class="stat-val">${err.toExponential(2)}</span></div>
+    <div class="stat"><span class="stat-label">N (sub-int)</span><span class="stat-val">${N}</span></div>
+  `;
+}
+
+document.getElementById('simpson-slider').addEventListener('input', (e) => {
+  simpsonPairs = parseInt(e.target.value);
+  document.getElementById('simpson-N-display').textContent = simpsonPairs;
+  drawSimpson();
+});
+
+// ──── VIZ 4: Boole ────
+let boolePanels = 2;
+
+function drawBoole() {
+  const cfg = QUAD_FUNCTIONS[quadFnIndex];
+  const svg = document.getElementById('viz-boole');
+  clear(svg);
+  const xMin = cfg.a - 0.1, xMax = cfg.b + 0.15;
+  const plot = new Plot(svg, xMin, xMax, cfg.yMin, cfg.yMax);
+  svg.appendChild(plot.drawAxes({ xTicks: 6, yTicks: 4 }));
+
+  const panels = boolePanels;
+  const N = 4 * panels;
+  const h = (cfg.b - cfg.a) / N;
+
+  const arcG = el('g');
+  for (let p = 0; p < panels; p++) {
+    const x0 = cfg.a + 4 * p * h;
+    const xs = [x0, x0 + h, x0 + 2*h, x0 + 3*h, x0 + 4*h];
+    const ys = xs.map(cfg.f);
+    const interp = lagrangeInterp(xs, ys);
+    let d = `M ${plot.X(x0)},${plot.Y(0)} L ${plot.X(x0)},${plot.Y(cfg.f(x0))} `;
+    const steps = 64;
+    const a = x0, b = x0 + 4 * h;
+    for (let s = 1; s <= steps; s++) {
+      const x = a + (b - a) * s / steps;
+      d += `L ${plot.X(x)},${plot.Y(interp(x))} `;
+    }
+    d += `L ${plot.X(b)},${plot.Y(0)} Z`;
+    arcG.appendChild(el('path', { d, class: 'boole-fill' }));
+  }
+  svg.appendChild(arcG);
+  svg.appendChild(el('path', { d: plot.curvePath(cfg.f, 320), class: 'true-curve' }));
+  for (let i = 0; i <= N; i++) {
+    const x = cfg.a + i * h;
+    const isPanel = (i % 4 === 0);
+    svg.appendChild(el('circle', {
+      cx: plot.X(x), cy: plot.Y(cfg.f(x)),
+      r: isPanel ? 5 : 3,
+      class: 'node-dot',
+      'fill-opacity': isPanel ? 1 : 0.55
+    }));
+  }
+  svg.appendChild(plot.legend([
+    { color: '#1F1A17', label: 'true f(x)' },
+    { color: '#9E1B32', label: 'quartic arcs' }
+  ], plot.X(xMax) - 180, plot.pad.t + 14));
+
+  const approx = compositeBoole(cfg.f, cfg.a, cfg.b, N);
+  const trueVal = QUAD_TRUE[quadFnIndex];
+  const err = Math.abs(approx - trueVal);
+  document.getElementById('boole-readout').innerHTML = `
+    <div class="stat"><span class="stat-label">true value</span><span class="stat-val">${trueVal.toFixed(6)}</span></div>
+    <div class="stat"><span class="stat-label">Boole</span><span class="stat-val crimson">${approx.toFixed(6)}</span></div>
+    <div class="stat"><span class="stat-label">|error|</span><span class="stat-val">${err.toExponential(2)}</span></div>
+    <div class="stat"><span class="stat-label">N (sub-int)</span><span class="stat-val">${N}</span></div>
+  `;
+}
+
+document.getElementById('boole-slider').addEventListener('input', (e) => {
+  boolePanels = parseInt(e.target.value);
+  document.getElementById('boole-N-display').textContent = boolePanels;
+  drawBoole();
+});
+
+// ──── VIZ 5: Error comparison (log-log) ────
+function drawCompare() {
+  const cfg = QUAD_FUNCTIONS[quadFnIndex];
+  const trueVal = QUAD_TRUE[quadFnIndex];
+  const svg = document.getElementById('viz-compare');
+  clear(svg);
+
+  const Ns = [4, 8, 16, 32, 64, 128];
+  const errsTrap = [], errsSimp = [], errsBoole = [];
+  for (const N of Ns) {
+    errsTrap.push(Math.abs(compositeTrap(cfg.f, cfg.a, cfg.b, N) - trueVal));
+    const Nev = N % 2 === 0 ? N : N + 1;
+    errsSimp.push(Math.abs(compositeSimpson(cfg.f, cfg.a, cfg.b, Nev) - trueVal));
+    const Nb = N % 4 === 0 ? N : N + (4 - N % 4);
+    errsBoole.push(Math.abs(compositeBoole(cfg.f, cfg.a, cfg.b, Nb) - trueVal));
+  }
+
+  const lx = Ns.map(Math.log10);
+  const allErrs = [...errsTrap, ...errsSimp, ...errsBoole].filter(v => v > 0);
+  const yMax = Math.ceil(Math.max(...allErrs.map(Math.log10)));
+  const yMin = Math.floor(Math.min(...allErrs.map(Math.log10)));
+  const xMin = Math.min(...lx) - 0.1, xMax = Math.max(...lx) + 0.1;
+
+  const plot = new Plot(svg, xMin, xMax, yMin, yMax, {t:24, r:24, b:42, l:62});
+  const g = el('g');
+  g.appendChild(el('rect', {
+    x: plot.pad.l, y: plot.pad.t,
+    width: plot.plotW, height: plot.plotH,
+    fill: 'white', stroke: '#B8AFA3', 'stroke-width': 1
+  }));
+  for (const N of Ns) {
+    const x = Math.log10(N);
+    const px = plot.X(x);
+    g.appendChild(el('line', { x1: px, y1: plot.pad.t + plot.plotH, x2: px, y2: plot.pad.t + plot.plotH + 5, class: 'tick' }));
+    g.appendChild(el('text', { x: px, y: plot.pad.t + plot.plotH + 18, 'text-anchor': 'middle', class: 'axis-label' }, 'N=' + N));
+  }
+  for (let yt = yMin; yt <= yMax; yt++) {
+    const py = plot.Y(yt);
+    g.appendChild(el('line', { x1: plot.pad.l - 5, y1: py, x2: plot.pad.l, y2: py, class: 'tick' }));
+    g.appendChild(el('text', { x: plot.pad.l - 8, y: py + 4, 'text-anchor': 'end', class: 'axis-label' }, '10^' + yt));
+  }
+  g.appendChild(el('text', {
+    x: plot.pad.l + plot.plotW / 2, y: plot.h - 8,
+    'text-anchor': 'middle', class: 'axis-label', 'font-style': 'italic'
+  }, 'subintervals N (log scale)'));
+  g.appendChild(el('text', {
+    x: 14, y: plot.pad.t + plot.plotH / 2,
+    'text-anchor': 'middle', class: 'axis-label', 'font-style': 'italic',
+    transform: `rotate(-90 14 ${plot.pad.t + plot.plotH / 2})`
+  }, '|error|  (log scale)'));
+  g.appendChild(el('text', {
+    x: plot.pad.l + plot.plotW / 2, y: plot.pad.t - 7,
+    'text-anchor': 'middle', class: 'axis-label', 'font-style': 'italic', 'font-size': '13'
+  }, `f(x) = ${cfg.formula}`));
+  svg.appendChild(g);
+
+  function plotSeries(errs, color) {
+    let d = '';
+    let started = false;
+    for (let i = 0; i < Ns.length; i++) {
+      if (errs[i] <= 0 || !isFinite(errs[i])) { started = false; continue; }
+      const px = plot.X(Math.log10(Ns[i]));
+      const py = plot.Y(Math.log10(errs[i]));
+      d += (started ? 'L' : 'M') + px + ',' + py + ' ';
+      started = true;
+    }
+    svg.appendChild(el('path', { d, fill: 'none', stroke: color, 'stroke-width': 2.5 }));
+    for (let i = 0; i < Ns.length; i++) {
+      if (errs[i] <= 0 || !isFinite(errs[i])) continue;
+      const px = plot.X(Math.log10(Ns[i]));
+      const py = plot.Y(Math.log10(errs[i]));
+      svg.appendChild(el('circle', { cx: px, cy: py, r: 4, fill: color, stroke: 'white', 'stroke-width': 1.5 }));
+    }
+  }
+
+  plotSeries(errsTrap, '#C9A227');
+  plotSeries(errsSimp, '#9E1B32');
+  plotSeries(errsBoole, '#1F1A17');
+
+  svg.appendChild(plot.legend([
+    { color: '#C9A227', label: 'trapezoidal' },
+    { color: '#9E1B32', label: 'Simpson' },
+    { color: '#1F1A17', label: 'Boole' }
+  ], plot.X(xMax) - 140, plot.pad.t + 14));
+}
+
+buildFnSelector('quad-fn-selector', QUAD_FUNCTIONS,
+  () => quadFnIndex,
+  i => {
+    quadFnIndex = i;
+    drawTrap();
+    drawSimpson();
+    drawBoole();
+    drawCompare();
+  });
+
+drawTrap();
+drawSimpson();
+drawBoole();
+drawCompare();
+
+// ──── VIZ 6: Hermite (piecewise, multi-node) ────
+const hermF  = x => Math.sin(x) + 0.3 * Math.sin(3 * x);
+const hermFp = x => Math.cos(x) + 0.9 * Math.cos(3 * x);
+
+const hermState = {
+  m: 1,
+  showLinear: true,
+  showHermite: true,
+  showTangents: false
+};
+
+function drawHermite() {
+  const svg = document.getElementById('viz-hermite');
+  clear(svg);
+  const a = 0, b = PI;
+  const xMin = -0.1, xMax = b + 0.15;
+  const yMin = -1.0, yMax = 1.6;
+  const plot = new Plot(svg, xMin, xMax, yMin, yMax);
+  svg.appendChild(plot.drawAxes({ xTicks: 6, yTicks: 5 }));
+
+  const defs = el('defs');
+  defs.appendChild(el('marker', {
+    id: 'arrowR', viewBox: '0 0 10 10', refX: 7, refY: 5,
+    markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse'
+  }, el('path', { d: 'M 0,0 L 10,5 L 0,10 z', fill: '#9E1B32' })));
+  svg.appendChild(defs);
+
+  const m = hermState.m;
+  const xs = [];
+  for (let i = 0; i <= m; i++) xs.push(a + (b - a) * i / m);
+  const ys = xs.map(hermF);
+  const dys = xs.map(hermFp);
+
+  function findPiece(x) {
+    for (let k = 0; k < m; k++) if (x >= xs[k] && x <= xs[k+1]) return k;
+    return x < xs[0] ? 0 : m - 1;
+  }
+  function herm(x) {
+    const i = findPiece(x);
+    const x0 = xs[i], x1 = xs[i+1];
+    const span = x1 - x0;
+    const t = (x - x0) / span;
+    const t2 = t*t, t3 = t2*t;
+    return ys[i]   * (2*t3 - 3*t2 + 1) +
+           span*dys[i]   * (t3 - 2*t2 + t) +
+           ys[i+1] * (-2*t3 + 3*t2) +
+           span*dys[i+1] * (t3 - t2);
+  }
+  function lin(x) {
+    const i = findPiece(x);
+    const x0 = xs[i], x1 = xs[i+1];
+    return ys[i] + (ys[i+1] - ys[i]) * (x - x0) / (x1 - x0);
+  }
+
+  // True curve
+  svg.appendChild(el('path', { d: plot.curvePath(hermF, 360), class: 'true-curve' }));
+
+  // Piecewise linear
+  if (hermState.showLinear) {
+    let d = '';
+    for (let i = 0; i <= m; i++) {
+      d += (i === 0 ? 'M' : 'L') + plot.X(xs[i]) + ',' + plot.Y(ys[i]) + ' ';
+    }
+    svg.appendChild(el('path', { d, class: 'linear-curve' }));
+  }
+
+  // Piecewise Hermite
+  if (hermState.showHermite) {
+    svg.appendChild(el('path', { d: plot.curvePath(herm, 360), class: 'approx-curve' }));
+  }
+
+  // Tangents at every node
+  if (hermState.showTangents) {
+    const tlen = 0.55;
+    for (let i = 0; i <= m; i++) {
+      const x0 = xs[i], y0 = ys[i], slope = dys[i];
+      const dx = tlen / Math.sqrt(1 + slope*slope);
+      const x1 = x0 + dx, y1 = y0 + slope * dx;
+      svg.appendChild(el('line', {
+        x1: plot.X(x0), y1: plot.Y(y0), x2: plot.X(x1), y2: plot.Y(y1),
+        stroke: '#9E1B32', 'stroke-width': 2, 'marker-end': 'url(#arrowR)',
+        opacity: 0.85
+      }));
+    }
+  }
+
+  // Node dots on top
+  for (let i = 0; i <= m; i++) {
+    svg.appendChild(el('circle', { cx: plot.X(xs[i]), cy: plot.Y(ys[i]), r: 5.5, class: 'node-dot' }));
+  }
+
+  const legendItems = [{ color: '#1F1A17', label: 'true f(x)' }];
+  if (hermState.showLinear) legendItems.push({ color: '#C9A227', label: 'piecewise linear', dash: '4 3' });
+  if (hermState.showHermite) legendItems.push({ color: '#9E1B32', label: 'Hermite cubic spline' });
+  svg.appendChild(plot.legend(legendItems, plot.X(xMax) - 220, plot.pad.t + 14));
+
+  let linMax = 0, hermMax = 0;
+  for (let k = 0; k <= 400; k++) {
+    const x = a + (b - a) * k / 400;
+    linMax = Math.max(linMax, Math.abs(lin(x) - hermF(x)));
+    hermMax = Math.max(hermMax, Math.abs(herm(x) - hermF(x)));
+  }
+  const ratio = linMax / Math.max(hermMax, 1e-16);
+  document.getElementById('hermite-readout').innerHTML = `
+    <div class="stat"><span class="stat-label">intervals m</span><span class="stat-val">${m}</span></div>
+    <div class="stat"><span class="stat-label">linear  ‖err‖∞</span><span class="stat-val gold">${linMax.toExponential(2)}</span></div>
+    <div class="stat"><span class="stat-label">Hermite ‖err‖∞</span><span class="stat-val crimson">${hermMax.toExponential(2)}</span></div>
+    <div class="stat"><span class="stat-label">improvement</span><span class="stat-val">${ratio.toFixed(0)}×</span></div>
+  `;
+}
+
+document.getElementById('hermite-slider').addEventListener('input', (e) => {
+  hermState.m = parseInt(e.target.value);
+  document.getElementById('hermite-N-display').textContent = hermState.m;
+  drawHermite();
+});
+document.getElementById('hermite-toggle-linear').addEventListener('click', (e) => {
+  hermState.showLinear = !hermState.showLinear;
+  e.target.classList.toggle('active', hermState.showLinear);
+  drawHermite();
+});
+document.getElementById('hermite-toggle-hermite').addEventListener('click', (e) => {
+  hermState.showHermite = !hermState.showHermite;
+  e.target.classList.toggle('active', hermState.showHermite);
+  drawHermite();
+});
+document.getElementById('hermite-toggle-tangents').addEventListener('click', (e) => {
+  hermState.showTangents = !hermState.showTangents;
+  e.target.classList.toggle('active', hermState.showTangents);
+  drawHermite();
+});
+
+drawHermite();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Karush–Kuhn–Tucker Conditions</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700;1,900&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true,
+      tags: 'ams'
+    },
+    svg: { fontCache: 'global' },
+    chtml: { scale: 1.05 }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+  /* ---------------- Design tokens · Crimson Tide ---------------- */
+  :root {
+    --paper:      #fbf3e7;
+    --paper-2:    #f5e7d2;
+    --paper-3:    #ffffff;
+    --ink:        #14110d;
+    --ink-soft:   #38312a;
+    --ink-mute:   #6b6253;
+    --rule:       #c8b692;
+
+    --crimson:      #9E1B32;
+    --crimson-deep: #6e0e23;
+    --crimson-soft: #c43d56;
+
+    --forest: #2c4a2b;
+    --forest-soft: #4a6a44;
+    --ochre: #b8860b;
+    --indigo: #1c2c4a;
+    --plum: #5a2a4a;
+
+    --grad-f: var(--indigo);
+    --grad-h: var(--crimson);
+    --constraint: var(--forest);
+    --levelset: #8a7d62;
+    --optimal: #c2451f;
+
+    --serif-display: 'Playfair Display', 'Bodoni Moda', Georgia, serif;
+    --serif-body:    'Crimson Pro', 'EB Garamond', Georgia, serif;
+    --mono:          'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif-body);
+    font-size: 20px;
+    line-height: 1.55;
+    font-feature-settings: "onum", "liga", "kern";
+    background-image:
+      radial-gradient(ellipse 900px 400px at 0% 0%, rgba(158,27,50,0.06), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 30%, rgba(184,134,11,0.05), transparent),
+      radial-gradient(ellipse 800px 400px at 50% 100%, rgba(158,27,50,0.04), transparent);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  main { position: relative; z-index: 1; }
+
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 80px 56px 120px;
+  }
+  @media (max-width: 760px) {
+    body { font-size: 17px; }
+    .page { padding: 48px 24px 80px; }
+  }
+
+  /* ---------------- Houndstooth ---------------- */
+  .houndstooth-strip {
+    height: 14px;
+    width: 100%;
+    background-color: var(--paper-3);
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><rect width='20' height='20' fill='%23ffffff'/><path d='M0,0 H10 V10 H0 Z M10,10 H20 V20 H10 Z M10,0 L14,0 L10,4 Z M0,14 L0,10 L4,10 Z M16,10 L20,10 L20,14 Z M6,20 L10,20 L10,16 Z' fill='%239E1B32'/></svg>");
+    background-size: 14px 14px;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,0.08), inset 0 -1px 0 rgba(0,0,0,0.08);
+  }
+
+  /* ---------------- Masthead · Crimson Banner ---------------- */
+  header.masthead {
+    margin: -80px -56px 64px;
+    padding: 0;
+    text-align: left;
+    position: relative;
+  }
+  @media (max-width: 760px) { header.masthead { margin: -48px -24px 48px; } }
+
+  .masthead-banner {
+    background: linear-gradient(180deg, var(--crimson) 0%, var(--crimson-deep) 100%);
+    color: #fdf5e7;
+    padding: 38px 56px 44px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 36px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (max-width: 760px) {
+    .masthead-banner { padding: 28px 24px 32px; grid-template-columns: 1fr; gap: 18px; text-align: center; }
+  }
+  .masthead-banner::before {
+    content: "";
+    position: absolute;
+    top: -40%; right: -10%;
+    width: 60%; height: 180%;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.10), transparent 70%);
+    pointer-events: none;
+  }
+
+  .monogram {
+    font-family: var(--serif-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(96px, 14vw, 156px);
+    line-height: 0.78;
+    color: #fdf5e7;
+    letter-spacing: -0.06em;
+    text-shadow: -3px 4px 0 var(--crimson-deep), 4px 4px 18px rgba(0,0,0,0.25);
+    padding: 0 8px 0 0;
+    position: relative;
+    z-index: 1;
+    user-select: none;
+  }
+  @media (max-width: 760px) { .monogram { padding: 0; line-height: 0.85; } }
+
+  .masthead-text { position: relative; z-index: 1; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: rgba(253,245,231,0.72);
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(253,245,231,0.35);
+    padding-bottom: 10px;
+  }
+
+  h1.title {
+    font-family: var(--serif-display);
+    font-weight: 800;
+    font-size: clamp(34px, 5.6vw, 56px);
+    line-height: 1.0;
+    margin: 0 0 12px;
+    letter-spacing: -0.012em;
+    color: #fdf5e7;
+  }
+  h1.title em {
+    font-style: italic;
+    font-weight: 900;
+    color: #fdf5e7;
+    text-decoration: underline wavy;
+    text-decoration-color: rgba(253,245,231,0.4);
+    text-underline-offset: 8px;
+    text-decoration-thickness: 1px;
+  }
+
+  .subtitle {
+    font-family: var(--serif-body);
+    font-size: 18px;
+    color: rgba(253,245,231,0.86);
+    margin: 0;
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .byline {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    color: rgba(253,245,231,0.65);
+    text-transform: uppercase;
+    margin-top: 18px;
+    font-weight: 500;
+  }
+
+  /* Drop cap */
+  .lede { font-size: 22px; line-height: 1.5; }
+  .lede::first-letter {
+    font-family: var(--serif-display);
+    font-weight: 900;
+    color: var(--crimson);
+    float: left;
+    font-size: 96px;
+    line-height: 0.82;
+    margin: 8px 12px 0 0;
+    padding: 0;
+  }
+
+  /* ---------------- Headings ---------------- */
+  h2 {
+    font-family: var(--serif-display);
+    font-weight: 800;
+    font-size: 42px;
+    line-height: 1.08;
+    margin: 88px 0 12px;
+    letter-spacing: -0.012em;
+  }
+  h2 .num {
+    font-family: var(--serif-display);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--crimson);
+    display: block;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  h2::after {
+    content: "";
+    display: block;
+    width: 48px;
+    height: 1px;
+    background: var(--ink);
+    margin-top: 18px;
+  }
+
+  h3 {
+    font-family: var(--serif-display);
+    font-weight: 600;
+    font-style: italic;
+    font-size: 26px;
+    margin: 40px 0 8px;
+    color: var(--ink);
+  }
+
+  h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 28px 0 12px;
+    font-weight: 500;
+  }
+
+  p { margin: 0 0 18px; }
+  p + p { text-indent: 1.6em; }
+  h2 + p, h3 + p, h4 + p, .lede, blockquote + p, figure + p, .callout + p, ol + p, ul + p { text-indent: 0; }
+
+  strong { font-weight: 600; color: var(--ink); }
+  em { font-style: italic; }
+
+  a {
+    color: var(--crimson);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(158,27,50,0.3);
+  }
+  a:hover { border-bottom-color: var(--crimson); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: rgba(20,17,13,0.06);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  /* ---------------- Callouts ---------------- */
+  .callout {
+    border-left: 4px solid var(--crimson);
+    background: rgba(158,27,50,0.05);
+    padding: 18px 24px 4px;
+    margin: 28px 0;
+    font-size: 17.5px;
+    line-height: 1.55;
+  }
+  .callout .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 8px;
+    display: block;
+    font-weight: 700;
+  }
+  .keypoint { border-left-color: var(--forest); background: rgba(44,74,43,0.05); }
+  .keypoint .label { color: var(--forest); }
+
+  /* ---------------- The Four Conditions panel ---------------- */
+  .kkt-panel {
+    margin: 32px 0;
+    border: 1px solid var(--rule);
+    background: var(--paper-3);
+    box-shadow: 0 14px 32px -18px rgba(20,17,13,0.2);
+  }
+  .kkt-panel-header {
+    background: var(--crimson);
+    color: #fdf5e7;
+    padding: 10px 20px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .kkt-panel-body { padding: 20px 28px 8px; }
+  .kkt-panel-body ol {
+    counter-reset: kkt;
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  .kkt-panel-body ol li {
+    counter-increment: kkt;
+    position: relative;
+    padding: 12px 0 12px 80px;
+    border-bottom: 1px solid rgba(20,17,13,0.08);
+  }
+  .kkt-panel-body ol li:last-child { border-bottom: none; }
+  .kkt-panel-body ol li::before {
+    content: counter(kkt);
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 44px; height: 44px;
+    background: var(--crimson);
+    color: #fdf5e7;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 44px;
+    font-family: var(--serif-display);
+    font-weight: 900;
+    font-size: 22px;
+  }
+  .kkt-panel-body ol li .lbl {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  /* ---------------- Figures ---------------- */
+  figure { margin: 36px 0; text-align: center; }
+  figure svg, figure canvas, figure .threeholder {
+    max-width: 100%;
+    background: rgba(255,253,248,0.5);
+    border: 1px solid var(--rule);
+    border-radius: 0;
+    box-shadow:
+      0 0 0 4px var(--paper),
+      0 0 0 5px var(--rule),
+      0 14px 36px -16px rgba(20,17,13,0.22);
+  }
+  figcaption {
+    font-family: var(--serif-body);
+    font-style: italic;
+    font-size: 16.5px;
+    color: var(--ink-soft);
+    margin-top: 18px;
+    line-height: 1.45;
+    max-width: 660px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  figcaption .figlabel {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-right: 12px;
+    font-weight: 700;
+  }
+
+  /* ---------------- Examples ---------------- */
+  .example {
+    margin: 64px 0;
+    padding: 0;
+    background: var(--paper-3);
+    border: 1px solid var(--rule);
+    position: relative;
+    box-shadow: 0 14px 32px -18px rgba(20,17,13,0.2);
+  }
+  .example::before {
+    content: "";
+    display: block;
+    height: 14px;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><rect width='20' height='20' fill='%23ffffff'/><path d='M0,0 H10 V10 H0 Z M10,10 H20 V20 H10 Z M10,0 L14,0 L10,4 Z M0,14 L0,10 L4,10 Z M16,10 L20,10 L20,14 Z M6,20 L10,20 L10,16 Z' fill='%239E1B32'/></svg>");
+    background-size: 14px 14px;
+    border-bottom: 2px solid var(--crimson);
+    margin: 0;
+  }
+  .example::after {
+    content: "";
+    display: block;
+    height: 5px;
+    background: var(--crimson);
+    margin: 0;
+  }
+  .example > .ex-body { padding: 32px 40px 28px; }
+  @media (max-width: 760px) { .example > .ex-body { padding: 24px 22px 20px; } }
+
+  .example .ex-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #fdf5e7;
+    display: inline-block;
+    padding: 5px 14px;
+    background: var(--crimson);
+    margin: 0 0 16px;
+    font-weight: 700;
+  }
+  .example h3 { margin: 4px 0 0; font-style: italic; font-weight: 700; }
+
+  /* Solution steps */
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 24px 0; }
+  .steps li {
+    position: relative;
+    padding-left: 56px;
+    margin-bottom: 20px;
+    counter-increment: step;
+  }
+  .steps li::before {
+    content: counter(step, lower-roman) ".";
+    position: absolute;
+    left: 0; top: 0;
+    font-family: var(--serif-display);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--crimson);
+    width: 44px;
+    text-align: right;
+  }
+
+  /* Iteration table for active-set walkthrough */
+  .iter-table {
+    margin: 24px 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .iter-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--crimson);
+    font-weight: 700;
+  }
+  .iter-table td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(20,17,13,0.08);
+    font-family: var(--serif-body);
+    vertical-align: top;
+  }
+  .iter-table td.mono { font-family: var(--mono); font-size: 13px; }
+  .iter-table tr:last-child td {
+    border-bottom: 2px solid var(--crimson);
+    background: rgba(158,27,50,0.04);
+  }
+
+  /* Equation block */
+  .eqn-block {
+    margin: 22px 0;
+    padding: 14px 18px;
+    background: rgba(20,17,13,0.025);
+    border-left: 2px solid var(--ink-mute);
+  }
+
+  blockquote {
+    margin: 36px 0;
+    padding: 0 0 0 32px;
+    border-left: 4px solid var(--crimson);
+    font-family: var(--serif-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 23px;
+    color: var(--ink-soft);
+    line-height: 1.42;
+  }
+
+  /* TOC */
+  .toc {
+    border-top: 3px double var(--crimson);
+    border-bottom: 3px double var(--crimson);
+    padding: 26px 0 22px;
+    margin: 48px 0;
+    font-family: var(--serif-body);
+    background: rgba(255,255,255,0.5);
+  }
+  .toc h4 { margin: 0 0 14px; color: var(--crimson); font-weight: 700; letter-spacing: 0.24em; }
+  .toc ol { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 36px; }
+  @media (max-width: 600px) { .toc ol { columns: 1; } }
+  .toc li { padding: 5px 0; font-size: 17px; break-inside: avoid; }
+  .toc li a { border-bottom: none; color: var(--ink-soft); transition: color 160ms ease; }
+  .toc li a:hover { color: var(--crimson); }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+    justify-content: center;
+    font-size: 14px;
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-family: var(--serif-body);
+    font-style: italic;
+  }
+  .legend .swatch {
+    display: inline-block;
+    width: 22px; height: 2px;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  .legend .dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  /* Colophon */
+  footer.colophon {
+    margin: 96px -56px -120px;
+    padding: 36px 56px 40px;
+    background: var(--crimson-deep);
+    color: rgba(253,245,231,0.78);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.10em;
+    text-align: center;
+    line-height: 1.85;
+    position: relative;
+  }
+  @media (max-width: 760px) { footer.colophon { margin: 80px -24px -80px; padding: 32px 24px 36px; } }
+  footer.colophon::before {
+    content: "";
+    display: block;
+    height: 12px;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><rect width='20' height='20' fill='%236e0e23'/><path d='M0,0 H10 V10 H0 Z M10,10 H20 V20 H10 Z M10,0 L14,0 L10,4 Z M0,14 L0,10 L4,10 Z M16,10 L20,10 L20,14 Z M6,20 L10,20 L10,16 Z' fill='%23fdf5e7'/></svg>");
+    background-size: 12px 12px;
+    margin: -36px -56px 28px;
+  }
+  @media (max-width: 760px) { footer.colophon::before { margin: -32px -24px 24px; } }
+  footer.colophon .ornament {
+    font-family: var(--serif-display);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.15em;
+    color: #fdf5e7;
+    margin-bottom: 12px;
+  }
+
+  /* SVG common */
+  svg text { font-family: var(--serif-display); }
+
+  /* Interactive Fig styles */
+  figure.fig-interactive svg {
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  figure.fig-interactive svg.dragging { cursor: grabbing; }
+
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: -1px;
+    border: 1px solid var(--rule);
+    border-top: none;
+    background: rgba(255, 253, 248, 0.7);
+    box-shadow: 0 12px 36px -16px rgba(20,17,13,0.18);
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .readout .ro-cell {
+    padding: 12px 16px;
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .readout .ro-cell:last-child { border-right: none; }
+  .readout .ro-key {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .readout .ro-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    transition: color 220ms ease;
+  }
+  .readout .ro-status .ro-val { font-size: 12.5px; }
+  .readout .ro-val.kkt-ok { color: var(--forest); font-weight: 700; }
+  .readout .ro-val.infeasible { color: var(--crimson); font-weight: 700; }
+  @media (max-width: 600px) {
+    .readout { grid-template-columns: repeat(2, 1fr); }
+    .readout .ro-cell:nth-child(2) { border-right: none; }
+    .readout .ro-cell:nth-child(1), .readout .ro-cell:nth-child(2) { border-bottom: 1px solid var(--rule); }
+  }
+  mjx-container[display="true"] { margin: 14px 0 !important; }
+</style>
+</head>
+<body>
+<main class="page">
+
+<!-- ===================== MASTHEAD ===================== -->
+<header class="masthead">
+  <div class="houndstooth-strip"></div>
+  <div class="masthead-banner">
+    <div class="monogram" aria-hidden="true">A</div>
+    <div class="masthead-text">
+      <div class="eyebrow">Department of Mathematics &middot; The University of Alabama</div>
+      <h1 class="title">The <em>Karush–Kuhn–Tucker</em> Conditions</h1>
+      <p class="subtitle">Inequality-constrained optimization,<br/>with active-set walkthroughs in the plane.</p>
+      <div class="byline">An illustrated companion &middot; Read time &asymp; 22 min</div>
+    </div>
+  </div>
+  <div class="houndstooth-strip"></div>
+</header>
+
+<!-- ===================== TOC ===================== -->
+<nav class="toc">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#problem">I. The general problem</a></li>
+    <li><a href="#active">II. Active &amp; inactive constraints</a></li>
+    <li><a href="#lagrangian">III. The Lagrangian</a></li>
+    <li><a href="#kkt">IV. The KKT conditions</a></li>
+    <li><a href="#cs">V. The geometry of slackness</a></li>
+    <li><a href="#feasible">VI. Feasible directions</a></li>
+    <li><a href="#activeset">VII. Active-set methods</a></li>
+    <li><a href="#example1">VIII. Example: a triangle</a></li>
+    <li><a href="#example2">IX. Example: bounds in a box</a></li>
+    <li><a href="#example3">X. Example: an active-set walkthrough</a></li>
+  </ol>
+</nav>
+
+<!-- ===================== I. PROBLEM ===================== -->
+<section id="problem">
+  <h2><span class="num">&sect; I</span>The general constrained problem</h2>
+
+  <p class="lede">Real optimization problems rarely come with equality constraints alone. We must also obey <em>inequalities</em> &mdash; budgets, capacities, physical limits, non-negativity. The general smooth problem reads</p>
+
+  <div class="eqn-block">
+  $$\begin{aligned}\min_{\mathbf{x}}\quad & f(\mathbf{x}),\\ \text{s.t.}\quad & \mathbf{g}(\mathbf{x}) = \mathbf{0},\\ & \mathbf{h}(\mathbf{x}) \leq \mathbf{0}.\end{aligned}$$
+  </div>
+
+  <p>The feasible set is the intersection of the equality surface $\{\mathbf{x}: \mathbf{g}(\mathbf{x}) = \mathbf{0}\}$ with the sub-level region $\{\mathbf{x}: \mathbf{h}(\mathbf{x}) \leq \mathbf{0}\}$. Inequalities introduce a new behaviour absent from the equality case: at the optimum, an inequality $h_j(\mathbf{x}) \leq 0$ may be <em>binding</em> &mdash; satisfied with equality and acting locally like a wall &mdash; or it may be <em>slack</em>, contributing nothing to the local picture. Which inequalities bind at $\mathbf{x}^*$ is itself part of the answer.</p>
+
+  <p>This combinatorial element is what makes inequality-constrained optimization different. The first-order optimality conditions accordingly carry more structure than the bare gradient-alignment of Lagrange multipliers: they are the <strong>Karush&ndash;Kuhn&ndash;Tucker conditions</strong>, which we develop in stages.</p>
+</section>
+
+<!-- ===================== II. ACTIVE / INACTIVE ===================== -->
+<section id="active">
+  <h2><span class="num">&sect; II</span>Active and inactive constraints</h2>
+
+  <p>At any feasible point $\mathbf{x}$, partition the inequalities into two classes:</p>
+
+  <ul>
+    <li><strong>Active</strong> (or <em>binding</em>): $h_j(\mathbf{x}) = 0$. The point sits exactly on the boundary of this constraint.</li>
+    <li><strong>Inactive</strong> (or <em>slack</em>): $h_j(\mathbf{x}) < 0$. There is room to spare; small perturbations cannot violate this constraint.</li>
+  </ul>
+
+  <p>The set of active inequalities at $\mathbf{x}$ is denoted</p>
+
+  <div class="eqn-block">
+  $$\mathcal{A}(\mathbf{x}) = \{\, j : h_j(\mathbf{x}) = 0 \,\}.$$
+  </div>
+
+  <p>At an optimum $\mathbf{x}^*$, the active inequalities $\mathcal{A}(\mathbf{x}^*)$ behave exactly like equality constraints: they pin $\mathbf{x}^*$ to a lower-dimensional surface, and they participate in the gradient-alignment conditions. The inactive ones do not enter the local first-order picture at all &mdash; we could delete them from the problem without changing $\mathbf{x}^*$.</p>
+
+  <p>The geometric setup is illustrated in Fig. I. The feasible region is bounded by three inequalities; the contours of a quadratic $f$ are concentric circles centred outside the region; and the constrained optimum sits on the boundary edge where the contour is tangent to that edge.</p>
+
+  <!-- ============= INTERACTIVE FIG I ============= -->
+  <figure class="fig-interactive">
+    <svg id="fig1" viewBox="0 0 760 480" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Interactive KKT geometry — drag through the feasible triangle">
+      <defs>
+        <marker id="arr-fI" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1c2c4a"/>
+        </marker>
+        <marker id="arr-hI" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9E1B32"/>
+        </marker>
+        <marker id="arr-faded" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9E1B32" opacity="0.35"/>
+        </marker>
+        <pattern id="gridI" width="22" height="22" patternUnits="userSpaceOnUse">
+          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="#c8b692" stroke-width="0.5" opacity="0.45"/>
+        </pattern>
+        <clipPath id="clipI"><rect x="0" y="0" width="760" height="480"/></clipPath>
+      </defs>
+
+      <rect width="760" height="480" fill="url(#gridI)"/>
+
+      <!-- Axes — math origin at (180, 380), SCALE = 140 -->
+      <line x1="80" y1="380" x2="700" y2="380" stroke="#38312a" stroke-width="0.8"/>
+      <line x1="180" y1="40" x2="180" y2="450" stroke="#38312a" stroke-width="0.8"/>
+      <text x="694" y="372" font-size="13" fill="#38312a" font-style="italic">x₁</text>
+      <text x="188" y="50" font-size="13" fill="#38312a" font-style="italic">x₂</text>
+
+      <!-- Feasible triangle: vertices (0,0),(2,0),(0,2) -> (180,380),(460,380),(180,100) -->
+      <g clip-path="url(#clipI)">
+        <polygon points="180,380 460,380 180,100" fill="rgba(44,74,43,0.10)" stroke="none"/>
+
+        <!-- Reference level circles of f, centred at (1.4,1.6) -> (376,156). Radii sqrt(2c)*140 -->
+        <g fill="none" stroke="#8a7d62" stroke-width="1.2" opacity="0.85">
+          <!-- c = 0.10 -> r = sqrt(0.2)*140 = 62.6 -->
+          <circle cx="376" cy="156" r="62.6"/>
+          <!-- c = 0.25 -> r = sqrt(0.5)*140 = 99.0 -->
+          <circle cx="376" cy="156" r="99.0"/>
+          <!-- c = 0.50 -> r = sqrt(1.0)*140 = 140 -->
+          <circle cx="376" cy="156" r="140.0"/>
+          <!-- c = 1.0 -> r = sqrt(2.0)*140 = 198 -->
+          <circle cx="376" cy="156" r="198.0" opacity="0.5"/>
+          <!-- c = 2.0 -> r = sqrt(4)*140 = 280 -->
+          <circle cx="376" cy="156" r="280.0" opacity="0.3"/>
+        </g>
+
+        <!-- Constraint edges drawn solid green. h1: x+y=2 (line from (2,0)->(0,2)), h2: x=0 (vertical), h3: y=0 (horizontal) -->
+        <line x1="460" y1="380" x2="180" y2="100" stroke="#2c4a2b" stroke-width="2.4"/>
+        <line x1="180" y1="380" x2="180" y2="100" stroke="#2c4a2b" stroke-width="2.4"/>
+        <line x1="180" y1="380" x2="460" y2="380" stroke="#2c4a2b" stroke-width="2.4"/>
+      </g>
+
+      <!-- Constraint labels -->
+      <text x="332" y="222" font-size="13" fill="#2c4a2b" font-style="italic">h₁: x₁+x₂≤2</text>
+      <text x="100" y="240" font-size="13" fill="#2c4a2b" font-style="italic">h₂: x₁≥0</text>
+      <text x="280" y="404" font-size="13" fill="#2c4a2b" font-style="italic">h₃: x₂≥0</text>
+
+      <!-- Unconstrained min of f at (1.4, 1.6) -> (376, 156) -->
+      <g>
+        <circle cx="376" cy="156" r="3.5" fill="#1c2c4a"/>
+        <text x="383" y="154" font-size="11" fill="#1c2c4a" font-style="italic">∇f = 0</text>
+      </g>
+
+      <!-- KKT optimum at (0.9, 1.1) -> (306, 226) -->
+      <g>
+        <circle cx="306" cy="226" r="5.5" fill="#c2451f" stroke="#14110d" stroke-width="1.0"/>
+        <text x="316" y="222" font-size="11" fill="#38312a" font-style="italic">x* (KKT optimum)</text>
+      </g>
+
+      <!-- ========== DYNAMIC GROUP ========== -->
+      <!-- Level circle of f through current point -->
+      <circle id="dyn-levelset" cx="376" cy="156" r="0" fill="none" stroke="#c2451f" stroke-width="2" stroke-dasharray="6 4" opacity="0.95" clip-path="url(#clipI)"/>
+
+      <!-- Active constraint normals (∇h_j arrows) -->
+      <line id="dyn-h1" x1="0" y1="0" x2="0" y2="0" stroke="#9E1B32" stroke-width="2.2" marker-end="url(#arr-hI)" opacity="0"/>
+      <line id="dyn-h2" x1="0" y1="0" x2="0" y2="0" stroke="#9E1B32" stroke-width="2.2" marker-end="url(#arr-hI)" opacity="0"/>
+      <line id="dyn-h3" x1="0" y1="0" x2="0" y2="0" stroke="#9E1B32" stroke-width="2.2" marker-end="url(#arr-hI)" opacity="0"/>
+
+      <!-- ∇f arrow -->
+      <line id="dyn-gradf" x1="0" y1="0" x2="0" y2="0" stroke="#1c2c4a" stroke-width="2.2" marker-end="url(#arr-fI)"/>
+      <text id="dyn-label-f" x="0" y="0" font-size="14" fill="#1c2c4a" font-style="italic" pointer-events="none">∇f</text>
+
+      <!-- Draggable marker -->
+      <g id="dyn-marker-group" style="cursor: grab;">
+        <circle id="dyn-marker-halo" cx="0" cy="0" r="14" fill="#c2451f" opacity="0.18"/>
+        <circle id="dyn-marker"      cx="0" cy="0" r="7"  fill="#c2451f" stroke="#14110d" stroke-width="1.4"/>
+      </g>
+
+      <!-- Hint -->
+      <g id="hint-group">
+        <text x="40" y="36" font-size="12" fill="#8a7d62" font-style="italic">drag the orange point through the feasible triangle</text>
+      </g>
+    </svg>
+
+    <div class="readout" aria-live="polite">
+      <div class="ro-cell">
+        <span class="ro-key">point</span>
+        <span class="ro-val" id="ro-pos">(0.000, 0.000)</span>
+      </div>
+      <div class="ro-cell">
+        <span class="ro-key">f(x)</span>
+        <span class="ro-val" id="ro-f">0.000</span>
+      </div>
+      <div class="ro-cell">
+        <span class="ro-key">active set</span>
+        <span class="ro-val" id="ro-active">∅</span>
+      </div>
+      <div class="ro-cell ro-status">
+        <span class="ro-key">status</span>
+        <span class="ro-val" id="ro-status">—</span>
+      </div>
+    </div>
+
+    <figcaption>
+      <span class="figlabel">Fig. I.</span>
+      Quadratic objective $f(\mathbf{x}) = \tfrac{1}{2}(x_1 - 1.4)^2 + \tfrac{1}{2}(x_2 - 1.6)^2$ over the feasible triangle defined by $x_1 \geq 0,\ x_2 \geq 0,\ x_1 + x_2 \leq 2$. <strong>Drag the orange point</strong>: the readout reports which constraints are active, whether the point is feasible, and how close $f$ is to the optimum. The unconstrained minimum (navy dot) sits outside the triangle, so the KKT optimum lives on the slanted edge $h_1 = 0$.
+    </figcaption>
+    <div class="legend">
+      <span><span class="swatch" style="background:#8a7d62;"></span>level sets of $f$</span>
+      <span><span class="swatch" style="background:#2c4a2b;"></span>constraint edges</span>
+      <span><span class="swatch" style="background:#1c2c4a;"></span>$\nabla f$</span>
+      <span><span class="swatch" style="background:#9E1B32;"></span>active $\nabla h_j$</span>
+      <span><span class="dot" style="background:#c2451f;"></span>$\mathbf{x}^*$ (KKT optimum)</span>
+    </div>
+  </figure>
+</section>
+
+<!-- ===================== III. LAGRANGIAN ===================== -->
+<section id="lagrangian">
+  <h2><span class="num">&sect; III</span>The Lagrangian</h2>
+
+  <p>To absorb both kinds of constraint into a single objective, introduce one multiplier per scalar constraint. The Lagrangian is</p>
+
+  <div class="eqn-block">
+  $$\mathcal{L}(\mathbf{x}, \boldsymbol{\lambda}, \boldsymbol{\mu}) = f(\mathbf{x}) + \boldsymbol{\lambda}^\top \mathbf{g}(\mathbf{x}) + \boldsymbol{\mu}^\top \mathbf{h}(\mathbf{x}),$$
+  </div>
+
+  <p>with $\boldsymbol{\lambda} \in \mathbb{R}^p$ for the equalities and $\boldsymbol{\mu} \in \mathbb{R}^q$ for the inequalities. Crucially, the $\boldsymbol{\mu}$ multipliers carry a <em>sign restriction</em>: $\boldsymbol{\mu} \geq \mathbf{0}$ component-wise.</p>
+
+  <p>The reason for the sign is physical. An inequality $h_j(\mathbf{x}) \leq 0$ defines a wall; if the optimum sits against it, the wall pushes back. Push and counter-push must be opposed, hence the multiplier &mdash; the magnitude of the constraint's resistance &mdash; is non-negative. A negative $\mu_j$ would correspond to a wall that <em>pulls you outward</em>, which is geometrically impossible for a one-sided constraint.</p>
+
+  <p>Equality multipliers carry no such restriction; an equality is a wall on both sides and can push either way.</p>
+</section>
+
+<!-- ===================== IV. KKT ===================== -->
+<section id="kkt">
+  <h2><span class="num">&sect; IV</span>The KKT conditions</h2>
+
+  <p>The first-order optimality conditions for the inequality-constrained problem &mdash; the <strong>Karush&ndash;Kuhn&ndash;Tucker conditions</strong> &mdash; require four statements to hold simultaneously at $(\mathbf{x}^*, \boldsymbol{\lambda}^*, \boldsymbol{\mu}^*)$:</p>
+
+  <div class="kkt-panel">
+    <div class="kkt-panel-header">The Four KKT Conditions</div>
+    <div class="kkt-panel-body">
+      <ol>
+        <li>
+          <span class="lbl">Stationarity</span>
+          $\displaystyle \nabla_{\mathbf{x}} \mathcal{L}(\mathbf{x}^*, \boldsymbol{\lambda}^*, \boldsymbol{\mu}^*) = \mathbf{0}$, equivalently
+          $\;\nabla f(\mathbf{x}^*) + \sum_i \lambda_i^* \nabla g_i(\mathbf{x}^*) + \sum_j \mu_j^* \nabla h_j(\mathbf{x}^*) = \mathbf{0}.$
+        </li>
+        <li>
+          <span class="lbl">Primal feasibility</span>
+          $\;\mathbf{g}(\mathbf{x}^*) = \mathbf{0}$ and $\mathbf{h}(\mathbf{x}^*) \leq \mathbf{0}$. The optimum lies in the feasible set.
+        </li>
+        <li>
+          <span class="lbl">Dual feasibility</span>
+          $\;\mu_j^* \geq 0$ for every $j$. The inequality multipliers respect their sign restriction.
+        </li>
+        <li>
+          <span class="lbl">Complementary slackness</span>
+          $\;\mu_j^* \, h_j(\mathbf{x}^*) = 0$ for every $j$. For each inequality, either the constraint is active or its multiplier is zero (or both).
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <p>Stationarity says that $-\nabla f(\mathbf{x}^*)$ is a particular linear combination of constraint gradients: a free combination of equality gradients, plus a <em>non-negative</em> combination of inequality gradients. Together with complementary slackness, only the <em>active</em> inequalities contribute &mdash; inactive ones have $\mu_j^* = 0$ and drop out of the sum entirely.</p>
+
+  <div class="callout keypoint">
+    <span class="label">Sufficiency</span>
+    <p>For convex problems &mdash; convex $f$, convex inequalities $h_j$, affine equalities $\mathbf{g}$ &mdash; the KKT conditions are <em>sufficient</em>: any KKT point is a global minimizer. For general (non-convex) problems they are <em>necessary</em> at any local minimum where a constraint qualification holds.</p>
+  </div>
+</section>
+
+<!-- ===================== V. COMPLEMENTARY SLACKNESS ===================== -->
+<section id="cs">
+  <h2><span class="num">&sect; V</span>The geometry of complementary slackness</h2>
+
+  <p>Complementary slackness $\mu_j^* h_j(\mathbf{x}^*) = 0$ encodes a switch:</p>
+
+  <ul>
+    <li>If $h_j(\mathbf{x}^*) < 0$ (inactive), then $\mu_j^* = 0$. The constraint exerts no force.</li>
+    <li>If $\mu_j^* > 0$, then $h_j(\mathbf{x}^*) = 0$. The constraint binds.</li>
+    <li>The degenerate case $\mu_j^* = 0$ and $h_j(\mathbf{x}^*) = 0$ is permitted &mdash; the constraint is active in name only.</li>
+  </ul>
+
+  <p>Geometrically, an inactive constraint sits at a strict distance from $\mathbf{x}^*$. We could perturb $\mathbf{x}^*$ slightly in any direction and not violate it. So this constraint cannot be holding the optimum in place; it cannot be exerting any force; its multiplier must be zero. The remaining (active) constraints alone determine the local KKT system.</p>
+
+  <p>This is what allows the active-set view of the problem: <em>at the solution</em>, the inequality-constrained problem is equivalent to an equality-constrained problem on $\mathcal{A}(\mathbf{x}^*)$, which we already know how to solve. The combinatorial difficulty of inequality-constrained optimization is, in essence, identifying $\mathcal{A}(\mathbf{x}^*)$.</p>
+
+  <!-- ============= FIG II: COMPLEMENTARY SLACKNESS ============= -->
+  <figure>
+    <svg viewBox="0 0 760 440" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Geometry of complementary slackness — active vs inactive constraints at the optimum">
+      <defs>
+        <marker id="arr-h-cs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9E1B32"/>
+        </marker>
+        <marker id="arr-f-cs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1c2c4a"/>
+        </marker>
+        <pattern id="gridCS" width="22" height="22" patternUnits="userSpaceOnUse">
+          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="#c8b692" stroke-width="0.5" opacity="0.4"/>
+        </pattern>
+      </defs>
+
+      <rect width="760" height="440" fill="url(#gridCS)"/>
+
+      <!-- Feasible region bounded by 3 active-shown constraints + 1 inactive -->
+      <!-- Make a quad-like region: edges sketched. The optimum is at one vertex (intersection of 2 active). -->
+
+      <!-- Inactive constraint h_3: a far-away dotted line that doesn't touch the optimum -->
+      <line x1="100" y1="80" x2="700" y2="380" stroke="#9E1B32" stroke-width="1.6" stroke-dasharray="4 5" opacity="0.45"/>
+      <text x="610" y="365" font-size="13" fill="#9E1B32" font-style="italic" opacity="0.55">h₃ = 0  (inactive)</text>
+
+      <!-- Active constraint h_1: a solid line passing through the optimum -->
+      <line x1="160" y1="320" x2="650" y2="120" stroke="#9E1B32" stroke-width="2.4"/>
+      <text x="540" y="116" font-size="14" fill="#9E1B32" font-style="italic">h₁ = 0  (active)</text>
+
+      <!-- Active constraint h_2: another solid line passing through the optimum -->
+      <line x1="280" y1="80" x2="500" y2="400" stroke="#9E1B32" stroke-width="2.4"/>
+      <text x="490" y="406" font-size="14" fill="#9E1B32" font-style="italic">h₂ = 0  (active)</text>
+
+      <!-- Optimum at intersection of h_1 and h_2 -->
+      <!-- Compute intersection: h1 line (160,320)-(650,120). slope_1 = (120-320)/(650-160) = -200/490 = -0.408
+           h2 line (280,80)-(500,400). slope_2 = (400-80)/(500-280) = 320/220 = 1.4545
+           Param: h1: y = 320 + (x-160)*(-0.4082) = 320 - 0.4082*(x-160)
+                  h2: y = 80 + (x-280)*1.4545 = 80 + 1.4545*(x-280)
+           Set equal: 320 - 0.4082*(x-160) = 80 + 1.4545*(x-280)
+                      320 - 0.4082x + 65.31 = 80 + 1.4545x - 407.27
+                      385.31 - 0.4082x = -327.27 + 1.4545x
+                      712.58 = 1.8627x
+                      x ≈ 382.5,  y = 80 + 1.4545*(382.5-280) = 80 + 149.08 ≈ 229.1
+      -->
+      <circle cx="382" cy="229" r="6.5" fill="#c2451f" stroke="#14110d" stroke-width="1.2"/>
+      <text x="392" y="225" font-size="14" fill="#14110d" font-weight="600">x*</text>
+
+      <!-- ∇h_1 normal at optimum (perpendicular to h1 line, pointing into infeasible side i.e. away from feasible region)
+           h1 direction: (490, -200) normalised. Normal: (200, 490) (90° rotation). Or (-200, -490) opposite.
+           For h_j ≤ 0, ∇h_j points toward h > 0 (infeasible). Just pick a direction perpendicular to h1, scaling.
+           Use (200, 490)/|.| * 70 = (200, 490)*0.132 = (26.4, 64.7) -->
+      <line x1="382" y1="229" x2="382" y2="229" stroke="#9E1B32" stroke-width="2.2" marker-end="url(#arr-h-cs)"
+            id="cs-arr-h1"/>
+      <line x1="382" y1="229" x2="408" y2="294" stroke="#9E1B32" stroke-width="2.4" marker-end="url(#arr-h-cs)"/>
+      <text x="412" y="298" font-size="13" fill="#9E1B32" font-style="italic">∇h₁ &middot; μ₁ &gt; 0</text>
+
+      <!-- ∇h_2 normal: h2 direction (220, 320) normalised. Normal: (-320, 220). Scale ~70: 
+           |dir| = sqrt(220^2 + 320^2) = 388. Normal /388 * 70 = (-320, 220)/388*70 = (-57.7, 39.7) -->
+      <line x1="382" y1="229" x2="324" y2="269" stroke="#9E1B32" stroke-width="2.4" marker-end="url(#arr-h-cs)"/>
+      <text x="234" y="285" font-size="13" fill="#9E1B32" font-style="italic">∇h₂ &middot; μ₂ &gt; 0</text>
+
+      <!-- ∇f at optimum: a generic direction in the cone (sum of the two ∇h's negated) -->
+      <line x1="382" y1="229" x2="350" y2="124" stroke="#1c2c4a" stroke-width="2.4" marker-end="url(#arr-f-cs)"/>
+      <text x="356" y="116" font-size="14" fill="#1c2c4a" font-style="italic">−∇f</text>
+
+      <!-- Inactive constraint label far from optimum -->
+      <text x="100" y="60" font-size="13" fill="#38312a" font-style="italic">h₃(x*) &lt; 0  ⟹  μ₃ = 0</text>
+    </svg>
+    <figcaption>
+      <span class="figlabel">Fig. II.</span>
+      At the optimum $\mathbf{x}^*$, two inequalities are active and one is slack. The active normals $\nabla h_1, \nabla h_2$ carry strictly positive multipliers; together they span the cone in which $-\nabla f$ must lie. The inactive constraint $h_3$ (dotted) has $\mu_3 = 0$ &mdash; complementary slackness collapses it out of the optimality system.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ===================== VI. FEASIBLE DIRECTIONS ===================== -->
+<section id="feasible">
+  <h2><span class="num">&sect; VI</span>Feasible directions</h2>
+
+  <p>A geometrically transparent way to see the KKT conditions is via the <em>cone of feasible directions</em>. From a feasible point $\mathbf{x}$, a direction $\mathbf{d}$ is feasible if a small step $\mathbf{x} + \alpha \mathbf{d}$ remains feasible for some $\alpha &gt; 0$. To first order, this requires</p>
+
+  <div class="eqn-block">
+  $$\nabla g_i(\mathbf{x})^\top \mathbf{d} = 0 \quad \forall i, \qquad \nabla h_j(\mathbf{x})^\top \mathbf{d} \leq 0 \quad \forall j \in \mathcal{A}(\mathbf{x}).$$
+  </div>
+
+  <p>Equality constraints are bilateral: motion is constrained to their tangent space. Active inequalities are unilateral: motion is allowed only into the half-space pointing <em>away</em> from $\nabla h_j$. Inactive inequalities impose no constraint on $\mathbf{d}$ &mdash; perturbations small enough to stay clear of their boundary do not violate them.</p>
+
+  <p>For $\mathbf{x}^*$ to be optimal, no feasible direction can decrease $f$:</p>
+
+  <div class="eqn-block">
+  $$\nabla f(\mathbf{x}^*)^\top \mathbf{d} \geq 0 \qquad \text{for every feasible } \mathbf{d}.$$
+  </div>
+
+  <p>By the Farkas lemma &mdash; a duality between linear systems &mdash; this is equivalent to $-\nabla f(\mathbf{x}^*)$ lying in the cone generated by the active constraint gradients with non-negative coefficients on the inequalities. That is exactly the KKT stationarity statement.</p>
+
+  <!-- ============= FIG III: CONE OF FEASIBLE DIRECTIONS ============= -->
+  <figure>
+    <svg viewBox="0 0 760 420" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cone of feasible directions at a corner of the feasible region">
+      <defs>
+        <marker id="arr-h-fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9E1B32"/>
+        </marker>
+        <marker id="arr-f-fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1c2c4a"/>
+        </marker>
+        <pattern id="gridFD" width="22" height="22" patternUnits="userSpaceOnUse">
+          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="#c8b692" stroke-width="0.5" opacity="0.4"/>
+        </pattern>
+      </defs>
+
+      <rect width="760" height="420" fill="url(#gridFD)"/>
+
+      <!-- A corner at point (380, 220). Two active constraint edges meet there;
+           feasible wedge opens to the right. -->
+
+      <!-- Feasible wedge: triangle from corner toward the right edge of the viewport -->
+      <path d="M 380 220 L 720 348 L 720 92 Z" fill="rgba(44,74,43,0.16)" stroke="none"/>
+
+      <!-- Active constraint h_1: from (60, 340) to (720, 92), passing through (380,220) -->
+      <line x1="60" y1="340" x2="720" y2="92" stroke="#9E1B32" stroke-width="2.4"/>
+      <text x="640" y="80" font-size="14" fill="#9E1B32" font-style="italic">h₁ = 0</text>
+
+      <!-- Active constraint h_2: from (60, 100) to (720, 348), passing through (380,220) -->
+      <line x1="60" y1="100" x2="720" y2="348" stroke="#9E1B32" stroke-width="2.4"/>
+      <text x="640" y="364" font-size="14" fill="#9E1B32" font-style="italic">h₂ = 0</text>
+
+      <!-- ∇h_1 normal pointing into the infeasible side (up-left) -->
+      <line x1="380" y1="220" x2="356" y2="155" stroke="#9E1B32" stroke-width="2.4" marker-end="url(#arr-h-fd)"/>
+      <text x="340" y="148" font-size="13" fill="#9E1B32" font-style="italic">∇h₁</text>
+
+      <!-- ∇h_2 normal pointing into the infeasible side (down-left) -->
+      <line x1="380" y1="220" x2="356" y2="285" stroke="#9E1B32" stroke-width="2.4" marker-end="url(#arr-h-fd)"/>
+      <text x="340" y="304" font-size="13" fill="#9E1B32" font-style="italic">∇h₂</text>
+
+      <!-- Cone label -->
+      <text x="500" y="216" font-size="14" fill="#2c4a2b" font-style="italic">cone of feasible directions</text>
+      <text x="500" y="234" font-size="11" fill="#4a6a44" font-style="italic">∇h₁·d ≤ 0  and  ∇h₂·d ≤ 0</text>
+
+      <!-- Sample feasible direction d (pointing into wedge) -->
+      <line x1="380" y1="220" x2="475" y2="220" stroke="#2c4a2b" stroke-width="1.8" stroke-dasharray="5 3"/>
+      <polygon points="480,217 480,223 488,220" fill="#2c4a2b"/>
+      <text x="492" y="224" font-size="12" fill="#2c4a2b" font-style="italic">d</text>
+
+      <!-- −∇f pointing INTO the active normal cone (i.e., out of the feasible wedge) -->
+      <line x1="380" y1="220" x2="295" y2="220" stroke="#1c2c4a" stroke-width="2.4" marker-end="url(#arr-f-fd)"/>
+      <text x="226" y="216" font-size="14" fill="#1c2c4a" font-style="italic">−∇f</text>
+
+      <!-- Corner point x* -->
+      <circle cx="380" cy="220" r="5.5" fill="#c2451f" stroke="#14110d" stroke-width="1.2"/>
+      <text x="376" y="208" font-size="13" fill="#14110d" font-weight="600">x*</text>
+    </svg>
+    <figcaption>
+      <span class="figlabel">Fig. III.</span>
+      At a corner where $h_1$ and $h_2$ are simultaneously active, the cone of feasible directions opens toward the right (shaded). Optimality requires that no feasible $\mathbf{d}$ decreases $f$ &mdash; equivalently, $-\nabla f(\mathbf{x}^*)$ lies in the dual cone spanned by $\nabla h_1$ and $\nabla h_2$ with non-negative coefficients. Those coefficients are the KKT multipliers $\mu_1, \mu_2$.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ===================== VII. ACTIVE-SET METHODS ===================== -->
+<section id="activeset">
+  <h2><span class="num">&sect; VII</span>Active-set methods</h2>
+
+  <p>For <strong>quadratic programs</strong> &mdash; objective $f(\mathbf{x}) = \tfrac{1}{2} \mathbf{x}^\top Q \mathbf{x} + \mathbf{c}^\top \mathbf{x}$ with linear constraints &mdash; the KKT system is itself linear once the active set $\mathcal{A}^*$ is fixed. The combinatorial work, then, is <em>finding</em> $\mathcal{A}^*$. Active-set methods do this by trial and revision: maintain a working set of inequalities, treat them as equalities, solve, and revise.</p>
+
+  <h4>The algorithm sketch</h4>
+
+  <p>At iteration $k$ we have an estimate $\mathcal{W}^k$ of the active set and a feasible iterate $\mathbf{x}^k$. The step is:</p>
+
+  <ol class="steps">
+    <li><strong>Solve the equality-constrained subproblem.</strong> Minimize $f(\mathbf{x})$ subject to $h_j(\mathbf{x}) = 0$ for all $j \in \mathcal{W}^k$ and $\mathbf{g}(\mathbf{x}) = \mathbf{0}$. Call the resulting search direction $\mathbf{p} = \mathbf{x}_{\text{sub}} - \mathbf{x}^k$.
+    </li>
+    <li><strong>If $\mathbf{p} = \mathbf{0}$.</strong> The current iterate is optimal for the subproblem. Examine the multipliers $\mu_j$ of $j \in \mathcal{W}^k$:
+      <ul>
+        <li>If $\mu_j \geq 0$ for every $j \in \mathcal{W}^k$: KKT is satisfied for the original problem. <strong>Stop.</strong></li>
+        <li>Otherwise, drop the constraint with the most negative multiplier from $\mathcal{W}^k$ and continue. (A negative multiplier means the constraint is pushing the wrong way &mdash; releasing it should let $f$ decrease.)</li>
+      </ul>
+    </li>
+    <li><strong>If $\mathbf{p} \neq \mathbf{0}$.</strong> Take a step $\mathbf{x}^{k+1} = \mathbf{x}^k + \alpha_k \mathbf{p}$, where $\alpha_k \in (0, 1]$ is the largest step keeping all <em>non-working</em> inequalities feasible. If $\alpha_k &lt; 1$, the step is blocked by some $j' \notin \mathcal{W}^k$; add $j'$ to $\mathcal{W}^{k+1}$.
+    </li>
+  </ol>
+
+  <p>Each iteration alters $\mathcal{W}$ by exactly one element &mdash; either dropping a misfit or adding a blocker. With non-degeneracy, the algorithm is finite.</p>
+
+  <div class="callout">
+    <span class="label">Correctness, briefly</span>
+    <p>The algorithm terminates exactly when the working set equals $\mathcal{A}(\mathbf{x}^k)$ <em>and</em> all multipliers in $\mathcal{W}$ are non-negative <em>and</em> $\mathbf{x}^k$ minimizes $f$ on the working subspace. Those three together are the KKT conditions for the original inequality-constrained problem.</p>
+  </div>
+</section>
+
+<!-- ===================== VIII. EXAMPLE I ===================== -->
+<section id="example1" class="example">
+  <div class="ex-body">
+    <span class="ex-tag">Example I</span>
+    <h3>A quadratic minimum on a triangle</h3>
+
+    <p>Solve the problem displayed in Fig. I:</p>
+
+    <div class="eqn-block">
+    $$\min_{\mathbf{x}}\; \tfrac{1}{2}(x_1 - 1.4)^2 + \tfrac{1}{2}(x_2 - 1.6)^2 \quad \text{s.t.}\quad x_1 + x_2 \leq 2,\; x_1 \geq 0,\; x_2 \geq 0.$$
+    </div>
+
+    <p>Write the inequalities in standard form $\mathbf{h}(\mathbf{x}) \leq \mathbf{0}$:</p>
+
+    <div class="eqn-block">
+    $$h_1 = x_1 + x_2 - 2,\qquad h_2 = -x_1,\qquad h_3 = -x_2.$$
+    </div>
+
+    <ol class="steps">
+      <li><strong>Try the unconstrained minimum.</strong> $\nabla f = \mathbf{0}$ at $(1.4, 1.6)$. But $h_1(1.4, 1.6) = 1.0 > 0$ &mdash; infeasible. So at least one inequality must be active at the solution.</li>
+      <li><strong>Guess the active set.</strong> $h_1$ is most violated at the unconstrained min; try $\mathcal{A} = \{1\}$.</li>
+      <li><strong>Solve the equality-constrained subproblem.</strong> Lagrangian
+        $$\mathcal{L} = \tfrac{1}{2}(x_1-1.4)^2 + \tfrac{1}{2}(x_2-1.6)^2 + \mu_1 (x_1 + x_2 - 2).$$
+        Stationarity: $x_1 - 1.4 + \mu_1 = 0,\ x_2 - 1.6 + \mu_1 = 0$. So $x_1 = 1.4 - \mu_1$, $x_2 = 1.6 - \mu_1$.<br/>
+        Active constraint: $x_1 + x_2 = 2 \Rightarrow (1.4 - \mu_1) + (1.6 - \mu_1) = 2 \Rightarrow \mu_1 = \tfrac{1}{2}$.<br/>
+        Therefore $\mathbf{x}^* = (0.9, 1.1)$, $\mu_1^* = 0.5$.
+      </li>
+      <li><strong>Check all four KKT conditions.</strong>
+        <ul>
+          <li>Stationarity ✓ (by construction).</li>
+          <li>Primal feasibility: $h_1 = 0$ ✓, $h_2 = -0.9 &lt; 0$ ✓, $h_3 = -1.1 &lt; 0$ ✓.</li>
+          <li>Dual feasibility: $\mu_1^* = 0.5 \geq 0$ ✓ (others trivially zero).</li>
+          <li>Complementary slackness: $\mu_1 \cdot 0 + 0 \cdot (-0.9) + 0 \cdot (-1.1) = 0$ ✓.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <p>The candidate satisfies every condition, so $\mathbf{x}^* = (0.9, 1.1)$ with $f(\mathbf{x}^*) = 0.25$ is the global minimum (the problem is convex). Geometrically, the level circle of radius $1/\sqrt{2}$ about $(1.4, 1.6)$ is tangent to the line $x_1 + x_2 = 2$ exactly at $\mathbf{x}^*$.</p>
+  </div>
+</section>
+
+<!-- ===================== IX. EXAMPLE II ===================== -->
+<section id="example2" class="example">
+  <div class="ex-body">
+    <span class="ex-tag">Example II</span>
+    <h3>A quadratic in a box</h3>
+
+    <p>Bound-constrained problems are everywhere &mdash; and they are pure inequality problems with simple structure:</p>
+
+    <div class="eqn-block">
+    $$\min_{\mathbf{x}}\; \tfrac{1}{2}(x_1 + 1)^2 + \tfrac{1}{2}(x_2 - 0.5)^2 \quad \text{s.t.}\quad 0 \leq x_i \leq 1, \; i = 1, 2.$$
+    </div>
+
+    <p>Each variable has two box constraints: $h_{i,\text{lo}} = -x_i \leq 0$ and $h_{i,\text{hi}} = x_i - 1 \leq 0$. The active set picks out which of the four bounds are tight.</p>
+
+    <ol class="steps">
+      <li><strong>Unconstrained min:</strong> $\mathbf{x}_{\text{u}} = (-1, 0.5)$. The $x_1$ component violates $x_1 \geq 0$; project that bound onto the active set: $\mathcal{A} = \{1,\text{lo}\}$.</li>
+      <li><strong>Solve the subproblem with $x_1 = 0$.</strong>
+        Lagrangian $\mathcal{L} = f + \mu (-x_1)$. Stationarity in $x_2$: $x_2 - 0.5 = 0 \Rightarrow x_2^* = 0.5$. Stationarity in $x_1$: $x_1 + 1 - \mu = 0$ with $x_1 = 0$ gives $\mu = 1$.
+      </li>
+      <li><strong>Check.</strong> $\mathbf{x}^* = (0, 0.5)$ satisfies $0 \leq x_i \leq 1$. The active multiplier $\mu = 1 \geq 0$, all other bound multipliers are zero, and complementary slackness holds. KKT ✓.</li>
+    </ol>
+
+    <p>So the solution is $\mathbf{x}^* = (0, 0.5)$ with $f(\mathbf{x}^*) = 0.5$. The unconstrained minimizer was projected onto the active face $\{x_1 = 0\}$, picking up a single positive multiplier. The other bounds remain slack and silent.</p>
+  </div>
+</section>
+
+<!-- ===================== X. EXAMPLE III ===================== -->
+<section id="example3" class="example">
+  <div class="ex-body">
+    <span class="ex-tag">Example III</span>
+    <h3>An active-set walkthrough</h3>
+
+    <p>Project the point $\mathbf{c} = (-0.5, -0.5)$ onto the non-negative orthant:</p>
+
+    <div class="eqn-block">
+    $$\min_{\mathbf{x}}\; \tfrac{1}{2}\|\mathbf{x} - \mathbf{c}\|^2 \quad \text{s.t.}\quad x_1 \geq 0,\; x_2 \geq 0.$$
+    </div>
+
+    <p>The unconstrained minimizer $\mathbf{c}$ is infeasible, so the active-set method walks from a feasible starting point along directions blocked, in turn, by each constraint. Take $\mathbf{x}^0 = (1, 0.5)$, which sits in the interior of the feasible orthant, and $\mathcal{W}^0 = \emptyset$:</p>
+
+    <table class="iter-table">
+      <thead>
+        <tr>
+          <th>Iter.</th>
+          <th>$\mathcal{W}^k$</th>
+          <th>Subproblem &amp; step</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>0</td>
+          <td class="mono">∅</td>
+          <td>Unconstrained sub-solution: $\mathbf{c} = (-0.5, -0.5)$. Step from $(1, 0.5)$. Maximum feasible $\alpha = \tfrac{1}{2}$, blocked by $h_2$ ($x_2 \to 0$).</td>
+          <td>Move to $(0.25, 0)$. Add $h_2$.</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="mono">{2}</td>
+          <td>Sub-solution with $x_2 = 0$: $(-0.5, 0)$. Step from $(0.25, 0)$. Maximum feasible $\alpha = \tfrac{1}{3}$, blocked by $h_1$ ($x_1 \to 0$).</td>
+          <td>Move to $(0, 0)$. Add $h_1$.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td class="mono">{1, 2}</td>
+          <td>Sub-solution with $x_1 = x_2 = 0$: just $(0, 0)$. Step direction $\mathbf{p} = \mathbf{0}$. Multipliers $\mu_1 = \mu_2 = 0.5$, both $\geq 0$.</td>
+          <td>KKT satisfied. <strong>Stop.</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The KKT optimum is $\mathbf{x}^* = (0, 0)$ with $\mu_1^* = \mu_2^* = 0.5$. Complementary slackness holds because both inequalities are active. Geometrically, projecting a point in the third quadrant onto the first quadrant lands at the origin &mdash; the corner where both axis-bounds bind.</p>
+
+    <p>Notice how the working set evolved: $\emptyset \to \{2\} \to \{1, 2\}$, growing by one element per iteration whenever the step was blocked. In larger problems the working set may also <em>shrink</em>, when a previously-active multiplier turns negative and signals that the algorithm should release that constraint.</p>
+  </div>
+</section>
+
+<!-- ===================== Closing ===================== -->
+<section id="close">
+  <h2><span class="num">&sect; XI</span>Summary</h2>
+
+  <p>The KKT conditions extend the geometric intuition of Lagrange multipliers from equalities to inequalities. The four conditions &mdash; stationarity, primal feasibility, dual feasibility, complementary slackness &mdash; together encode a single statement: at the optimum, $-\nabla f$ lies in the cone of active constraint normals, with non-negative weights on the inequality contributions.</p>
+
+  <p>Complementary slackness is the bridge between continuous and combinatorial: it tells us that, although the problem nominally involves all $q$ inequalities, only a subset is "live" at the solution. Identifying that subset is what active-set methods do. Each iteration solves an equality-constrained subproblem &mdash; for which the Lagrange-multiplier machinery suffices &mdash; and updates the working set by one element. The two ideas, KKT optimality and active-set search, are inseparable.</p>
+
+  <div class="callout keypoint">
+    <span class="label">In summary</span>
+    <p>Inequality-constrained optimality is a statement about the cone of active constraint normals: $-\nabla f$ must lie inside it, with strictly non-negative coefficients on inequality multipliers. The slack constraints contribute nothing; the active ones contribute everything. Active-set algorithms exploit this by alternating between identifying $\mathcal{A}^*$ and solving the equality-constrained subproblem on it.</p>
+  </div>
+</section>
+
+<footer class="colophon">
+  <div class="ornament">Roll&nbsp;Tide.</div>
+  Set in Playfair Display &amp; Crimson Pro &middot; Mathematics typeset by MathJax<br/>
+  Diagrams hand-composed in SVG &middot; Houndstooth pattern after the late Coach Bryant
+</footer>
+
+</main>
+
+<!-- ===================== INTERACTIVE FIG I JS ===================== -->
+<script>
+(function(){
+  const svg = document.getElementById('fig1');
+  if (!svg) return;
+
+  // Math <-> screen mapping
+  const ORIGIN_X = 180, ORIGIN_Y = 380, SCALE = 140;
+
+  // f(x,y) = 0.5(x-1.4)^2 + 0.5(y-1.6)^2;  ∇f = (x-1.4, y-1.6)
+  const FCX = 1.4, FCY = 1.6;
+  const FCX_S = ORIGIN_X + SCALE * FCX;  // 376
+  const FCY_S = ORIGIN_Y - SCALE * FCY;  // 156
+
+  const $ = (id) => document.getElementById(id);
+  const elMarker   = $('dyn-marker');
+  const elHalo     = $('dyn-marker-halo');
+  const elGradF    = $('dyn-gradf');
+  const elH1       = $('dyn-h1');
+  const elH2       = $('dyn-h2');
+  const elH3       = $('dyn-h3');
+  const elLevelSet = $('dyn-levelset');
+  const elLabF     = $('dyn-label-f');
+  const elHint     = $('hint-group');
+  const elPos      = $('ro-pos');
+  const elFVal     = $('ro-f');
+  const elActive   = $('ro-active');
+  const elStatus   = $('ro-status');
+
+  // Constraint helpers (math frame). Convention: h_j(x) ≤ 0
+  // h1(x,y) = x + y - 2     ; ∇h1 = (1, 1)
+  // h2(x,y) = -x            ; ∇h2 = (-1, 0)
+  // h3(x,y) = -y            ; ∇h3 = (0, -1)
+
+  // Initial point: somewhere visible inside the triangle
+  let px = 1.0, py = 0.6;
+  let isDragging = false;
+  let hasInteracted = false;
+
+  function arrowEnd(sx, sy, mx, my, len) {
+    const m = Math.hypot(mx, my);
+    if (m < 1e-9) return [sx, sy];
+    return [sx + (mx/m)*len, sy - (my/m)*len];
+  }
+
+  function setArrow(el, sx, sy, mx, my, len, opacity) {
+    el.setAttribute('opacity', opacity);
+    if (opacity < 0.01) return;
+    const [ex, ey] = arrowEnd(sx, sy, mx, my, len);
+    el.setAttribute('x1', sx); el.setAttribute('y1', sy);
+    el.setAttribute('x2', ex); el.setAttribute('y2', ey);
+  }
+
+  function update() {
+    const sx = ORIGIN_X + SCALE * px;
+    const sy = ORIGIN_Y - SCALE * py;
+
+    elMarker.setAttribute('cx', sx);
+    elMarker.setAttribute('cy', sy);
+    elHalo.setAttribute('cx', sx);
+    elHalo.setAttribute('cy', sy);
+
+    // f and ∇f
+    const fVal = 0.5*(px - FCX)*(px - FCX) + 0.5*(py - FCY)*(py - FCY);
+    const gfx = px - FCX, gfy = py - FCY;
+
+    // ∇f arrow
+    const fLen = 60;
+    const [feX, feY] = arrowEnd(sx, sy, gfx, gfy, fLen);
+    elGradF.setAttribute('x1', sx); elGradF.setAttribute('y1', sy);
+    elGradF.setAttribute('x2', feX); elGradF.setAttribute('y2', feY);
+    elLabF.setAttribute('x', feX + 6);
+    elLabF.setAttribute('y', feY - 4);
+
+    // Constraint values
+    const h1 = px + py - 2;
+    const h2 = -px;
+    const h3 = -py;
+    const TOL = 0.04;
+
+    // Active set membership and feasibility
+    const a1 = Math.abs(h1) < TOL, a2 = Math.abs(h2) < TOL, a3 = Math.abs(h3) < TOL;
+    const v1 = h1 >  TOL,         v2 = h2 >  TOL,         v3 = h3 >  TOL;
+    const feasible = !v1 && !v2 && !v3;
+
+    // ∇h_j arrows (only when active and feasible)
+    const showArrows = feasible;
+    setArrow(elH1, sx, sy, 1, 1, 50, (a1 && showArrows) ? 0.95 : 0);
+    setArrow(elH2, sx, sy, -1, 0, 50, (a2 && showArrows) ? 0.95 : 0);
+    setArrow(elH3, sx, sy, 0, -1, 50, (a3 && showArrows) ? 0.95 : 0);
+
+    // Level circle through current point: radius sqrt(2 fVal) in math, scale by SCALE
+    const r = Math.sqrt(Math.max(2 * fVal, 0)) * SCALE;
+    elLevelSet.setAttribute('r', r);
+
+    // Readouts
+    elPos.textContent = `(${px.toFixed(3)}, ${py.toFixed(3)})`;
+    elFVal.textContent = fVal.toFixed(3);
+
+    // Active set badge
+    const active = [];
+    if (a1) active.push('h₁');
+    if (a2) active.push('h₂');
+    if (a3) active.push('h₃');
+    elActive.textContent = active.length ? active.join(', ') : '∅ (interior)';
+
+    // Status: feasible/infeasible/optimal
+    elStatus.classList.remove('kkt-ok', 'infeasible');
+    const distOpt = Math.hypot(px - 0.9, py - 1.1);
+    if (!feasible) {
+      const violated = [];
+      if (v1) violated.push('h₁');
+      if (v2) violated.push('h₂');
+      if (v3) violated.push('h₃');
+      elStatus.textContent = `infeasible: ${violated.join(', ')} > 0`;
+      elStatus.classList.add('infeasible');
+      elHalo.setAttribute('r', 14);
+      elHalo.setAttribute('fill', '#9E1B32');
+    } else if (distOpt < 0.04) {
+      elStatus.textContent = '◆ KKT satisfied';
+      elStatus.classList.add('kkt-ok');
+      elHalo.setAttribute('r', 18);
+      elHalo.setAttribute('fill', '#c2451f');
+    } else if (active.length === 0) {
+      elStatus.textContent = 'interior — only stationarity counts';
+      elHalo.setAttribute('r', 14);
+      elHalo.setAttribute('fill', '#c2451f');
+    } else {
+      elStatus.textContent = `on ${active.join(' & ')} — check μ ≥ 0`;
+      elHalo.setAttribute('r', 14);
+      elHalo.setAttribute('fill', '#c2451f');
+    }
+  }
+
+  function clientToSvg(cx, cy) {
+    const pt = svg.createSVGPoint();
+    pt.x = cx; pt.y = cy;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    return pt.matrixTransform(ctm.inverse());
+  }
+
+  function setPointFromEvent(cx, cy) {
+    const local = clientToSvg(cx, cy);
+    if (!local) return;
+    px = (local.x - ORIGIN_X) / SCALE;
+    py = (ORIGIN_Y - local.y) / SCALE;
+    // Clamp to a generous box so user doesn't lose the point off-screen
+    px = Math.max(-0.5, Math.min(2.8, px));
+    py = Math.max(-0.5, Math.min(2.4, py));
+    update();
+  }
+
+  function onPointerDown(e) {
+    isDragging = true;
+    svg.classList.add('dragging');
+    try { if (e.pointerId !== undefined) svg.setPointerCapture(e.pointerId); } catch(_) {}
+    setPointFromEvent(e.clientX, e.clientY);
+    if (!hasInteracted) {
+      hasInteracted = true;
+      if (elHint) {
+        elHint.style.transition = 'opacity 500ms ease';
+        elHint.style.opacity = 0;
+      }
+    }
+    e.preventDefault();
+  }
+  function onPointerMove(e) { if (isDragging) { setPointFromEvent(e.clientX, e.clientY); e.preventDefault(); } }
+  function onPointerUp(e) {
+    isDragging = false;
+    svg.classList.remove('dragging');
+    try { if (e.pointerId !== undefined) svg.releasePointerCapture(e.pointerId); } catch(_) {}
+  }
+
+  svg.addEventListener('pointerdown',   onPointerDown);
+  svg.addEventListener('pointermove',   onPointerMove);
+  svg.addEventListener('pointerup',     onPointerUp);
+  svg.addEventListener('pointercancel', onPointerUp);
+  svg.addEventListener('pointerleave',  onPointerUp);
+
+  update();
+})();
+</script>
+
+</body>
+</html>
