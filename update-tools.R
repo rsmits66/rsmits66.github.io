@@ -23,6 +23,9 @@
 
 UPDATE_FILE <- TRUE    # FALSE = just preview.  TRUE = actually update tools.html.
 
+FORCE_REBUILD <- TRUE  # TRUE = rewrite tools.html even if nothing looks changed.
+# FALSE = only rewrite when tools or titles changed.
+
 REPO_DIR <- ""         # Leave blank to auto-find your website folder.
                        # Only fill this in if the auto-detect fails. Use
                        # FORWARD slashes, e.g.:
@@ -325,7 +328,7 @@ titles_changed <- is.null(old_ft_body) || !identical(trimws(new_ft_body), trimws
 # ---------- 3. report what changed ----------
 added   <- sort(setdiff(new_paths, old_paths))
 removed <- sort(setdiff(old_paths, new_paths))
-changed <- length(added) > 0 || length(removed) > 0 || titles_changed
+changed <- FORCE_REBUILD || length(added) > 0 || length(removed) > 0 || titles_changed
 
 cat(sprintf("\nWebsite folder: %s\n", REPO))
 cat(sprintf("Found %d tool%s in %s/.\n\n", length(new_paths), if (length(new_paths) == 1) "" else "s", ROOT))
