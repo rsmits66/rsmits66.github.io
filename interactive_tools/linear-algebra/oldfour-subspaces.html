@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Four Fundamental Subspaces</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+  <style>
+    :root {
+      --cream:    #faf7f2;
+      --paper:    #ffffff;
+      --navy:     #18284a;
+      --navy2:    #2c4070;
+      --accent:   #3a6eb5;
+      --red:      #b33a2f;
+      --red-bg:   #fef0ee;
+      --gold:     #c8a430;
+      --gray:     #7a7a8a;
+      --border:   #ddd9d0;
+      --acc-bg:   #edf1fb;
+      --mod-bg:   #fff9f5;
+      --green:    #2e7d32;
+      --green-bg: #e8f5e9;
+      --font-body:'Crimson Pro', Georgia, serif;
+      --font-head:'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: var(--font-body); background: var(--cream); color: var(--navy); font-size:18px; line-height:1.55; }
+
+    header { background: var(--navy); color:#fff; padding:1.8rem 2.5rem; border-bottom:3px solid var(--gold); display:flex; flex-direction:column; gap:.25rem; }
+    header h1 { font-family: var(--font-head); font-size:2rem; font-weight:400; letter-spacing:.02em; }
+    header p  { color:#a0b8d8; font-size:1.05rem; font-style:italic; }
+
+    main { max-width:1150px; margin:0 auto; padding:2rem 1.5rem; }
+
+    .card { background:var(--paper); border:1px solid var(--border); border-radius:8px; padding:1.8rem 2rem; margin-bottom:2rem; box-shadow:0 2px 14px rgba(24,40,74,.06); }
+    .card h2 { font-family:var(--font-head); font-size:1.25rem; font-weight:600; color:var(--navy); margin-bottom:1.2rem; }
+
+    .size-row { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .size-row label { display:flex; align-items:center; gap:.5rem; font-size:.95rem; color:var(--navy2); }
+    .size-row input[type=number] { width:56px; padding:.28rem .4rem; border:1px solid var(--border); border-radius:4px; font-family:var(--font-body); font-size:1rem; color:var(--navy); text-align:center; }
+    .size-row input[type=number]:focus { outline:none; border-color:var(--accent); }
+
+    .examples-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+
+    button { font-family:var(--font-body); font-size:.95rem; cursor:pointer; border:none; border-radius:4px; padding:.35rem .9rem; transition:background .15s, transform .1s; }
+    button:active { transform:scale(.97); }
+    .btn-ghost { background:var(--acc-bg); color:var(--navy2); border:1px solid #c0ccdd; }
+    .btn-ghost:hover { background:#d8e4f8; }
+    .btn-solve { background:var(--red); color:#fff; padding:.55rem 2rem; font-size:1.05rem; letter-spacing:.04em; margin-top:1.4rem; display:inline-flex; align-items:center; gap:.5rem; }
+    .btn-solve:hover { background:#952e24; }
+
+    .matrix-wrapper { overflow-x:auto; margin:.8rem 0; }
+    .matrix-grid { display:inline-grid; gap:7px 8px; align-items:center; }
+    .matrix-grid input { width:62px; padding:.32rem .4rem; border:1px solid var(--border); border-radius:4px; font-family:var(--font-body); font-size:1rem; color:var(--navy); text-align:center; background:#fafafa; transition:border-color .15s, background .15s; }
+    .matrix-grid input:focus { outline:none; border-color:var(--accent); background:#fff; }
+    .matrix-grid .col-lbl { text-align:center; font-size:.82rem; color:var(--gray); }
+    .matrix-grid .row-lbl { text-align:right; padding-right:8px; font-size:.88rem; color:var(--gray); }
+
+    /* Steps */
+    .steps-container { display:flex; flex-direction:column; gap:1.6rem; }
+    .step-block { background:var(--paper); border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:0 2px 10px rgba(24,40,74,.05); }
+    .step-header { background:var(--navy); color:#fff; padding:.6rem 1.2rem; display:flex; align-items:center; gap:.75rem; }
+    .step-num { background:var(--gold); color:var(--navy); width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; flex-shrink:0; }
+    .step-num.init-badge { background:#4a6fa0; color:#fff; font-size:.72rem; font-weight:600; }
+    .step-title-txt { font-style:italic; font-size:.95rem; color:#d0ddf0; }
+    .step-body { padding:.8rem 1.4rem; }
+
+    .tableau-scroll { overflow-x:auto; padding:.4rem 0 .6rem; }
+    .tableau { border-collapse:collapse; font-size:.93rem; }
+    .tableau th, .tableau td { padding:.4rem .75rem; border:1px solid #e8e4de; text-align:center; white-space:nowrap; }
+    .tableau thead th { font-family:var(--font-body); font-weight:400; font-size:.85rem; color:var(--navy2); background:#f5f7fa; border-bottom:2px solid var(--border); }
+    .tableau td.pivot-cell { background:var(--red-bg); }
+    .pivot-inner { display:inline-block; border:2px solid var(--red); border-radius:4px; padding:1px 7px; color:var(--red); font-weight:600; }
+    .tableau td.sep-col { border-right:2.5px solid #bbb !important; }
+    .tableau td.e-col { background:var(--acc-bg); }
+    .tableau thead th.e-hdr { background:var(--acc-bg); color:var(--accent); }
+
+    /* Subspace cards */
+    .ss-row { display:flex; gap:1.2rem; flex-wrap:wrap; margin-bottom:1.6rem; }
+    .ss-card { flex:1 1 45%; min-width:280px; border-radius:8px; padding:1.2rem 1.4rem; }
+    .ss-card h3 { font-family:var(--font-head); font-size:1.1rem; margin-bottom:.6rem; }
+    .ss-card .basis-list { font-size:.95rem; line-height:1.7; }
+    .ss-card .dim-tag { display:inline-block; padding:.1rem .6rem; border-radius:4px; font-size:.82rem; font-weight:600; margin-left:.5rem; }
+
+    .ss-row-left  .ss-card { background:#f0f4fb; border:1px solid #c0ccdd; }
+    .ss-row-left  .ss-card h3 { color:var(--navy); }
+    .ss-row-right .ss-card { background:#faf5ef; border:1px solid #ddd0bb; }
+    .ss-row-right .ss-card h3 { color:#6b4c1e; }
+
+    /* Big picture diagram */
+    .diagram-card { background:var(--paper); border:1px solid var(--border); border-radius:8px; padding:1.2rem; box-shadow:0 2px 14px rgba(24,40,74,.06); margin-bottom:2rem; overflow-x:auto; }
+    .diagram-card h2 { font-family:var(--font-head); font-size:1.25rem; font-weight:600; color:var(--navy); margin-bottom:.8rem; text-align:center; }
+
+    .solution-card { background:var(--navy); color:#fff; border-radius:8px; padding:1.4rem 2rem; margin-bottom:1.6rem; }
+    .solution-card h3 { font-family:var(--font-head); color:var(--gold); font-size:1.3rem; margin-bottom:.6rem; }
+
+    .key-box { background:var(--acc-bg); border:1px solid #c0ccdd; border-radius:6px; padding:.85rem 1.2rem; font-size:.9rem; color:var(--navy2); line-height:1.6; }
+    .key-box strong { color:var(--navy); }
+    .red-sq { color:var(--red); }
+
+    .err-msg { color:var(--red); font-style:italic; padding:.5rem 0; }
+
+    @media(max-width:600px){ header{padding:1.2rem 1rem;} header h1{font-size:1.5rem;} main{padding:1rem .75rem;} .card{padding:1.2rem 1rem;} }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>The Four Fundamental Subspaces</h1>
+  <p>Augment [A | I], row-reduce to [R | E], and read off bases for C(A<sup>T</sup>), N(A), C(A), and N(A<sup>T</sup>)</p>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Enter Matrix A</h2>
+    <div class="size-row">
+      <label>Rows (m): <input type="number" id="nRows" min="1" max="6" value="3"></label>
+      <label>Cols (n): <input type="number" id="nCols" min="1" max="6" value="4"></label>
+      <button class="btn-ghost" onclick="rebuildMatrix()">Resize</button>
+    </div>
+    <div class="examples-row">
+      <button class="btn-ghost" onclick="loadExample(0)">Strang 3×4</button>
+      <button class="btn-ghost" onclick="loadExample(1)">2×3</button>
+      <button class="btn-ghost" onclick="loadExample(2)">3×3 (rank 2)</button>
+      <button class="btn-ghost" onclick="loadExample(3)">3×3 (full rank)</button>
+      <button class="btn-ghost" onclick="loadExample(4)">4×3</button>
+    </div>
+    <p style="font-size:.88rem; color:var(--gray); margin-bottom:.5rem;">
+      Enter integers, decimals, or fractions like <code>2/3</code>.
+    </p>
+    <div class="matrix-wrapper" id="matrixContainer"></div>
+    <button class="btn-solve" onclick="runAnalysis()">Find Four Subspaces →</button>
+  </div>
+  <div id="outputSection"></div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  FRACTION ARITHMETIC
+// ═══════════════════════════════════════════════
+function gcd(a,b){ a=Math.abs(a);b=Math.abs(b); while(b>0){const t=b;b=a%b;a=t;} return a===0?1:a; }
+
+class Frac {
+  constructor(n,d=1){
+    if(d===0){this.n=0;this.d=1;this.bad=true;return;}
+    if(d<0){n=-n;d=-d;}
+    const g=gcd(Math.abs(n),d);
+    this.n=Math.trunc(n/g); this.d=Math.trunc(d/g);
+  }
+  static parse(str){
+    str=(str||'').trim();
+    if(!str||str==='-') return new Frac(0);
+    if(str.includes('/')){const[a,b]=str.split('/');const na=parseInt(a),nd=parseInt(b);return(isNaN(na)||isNaN(nd))?new Frac(0):new Frac(na,nd);}
+    if(str.includes('.')){const parts=str.replace('-','').split('.');const dec=parts[1]?parts[1].length:0;const dn=Math.pow(10,dec);return new Frac(Math.round(parseFloat(str)*dn),dn);}
+    const n=parseInt(str); return isNaN(n)?new Frac(0):new Frac(n);
+  }
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  div(o){return new Frac(this.n*o.d,this.d*o.n);}
+  neg(){return new Frac(-this.n,this.d);}
+  recip(){return new Frac(this.d,this.n);}
+  isZero(){return this.n===0;}
+  isOne(){return this.n>0&&this.n===this.d;}
+  toTeX(inline=true){
+    if(this.d===1) return String(this.n);
+    const cmd=inline?'\\tfrac':'\\dfrac';
+    const abs=Math.abs(this.n);const sg=this.n<0?'-':'';
+    return `${sg}${cmd}{${abs}}{${this.d}}`;
+  }
+}
+
+const ZERO=new Frac(0), ONE=new Frac(1);
+
+function rk(tex){ try{return katex.renderToString(tex,{throwOnError:false});}catch(e){return tex;} }
+
+// ═══════════════════════════════════════════════
+//  RREF of [A | I]  →  [R | E]
+// ═══════════════════════════════════════════════
+function rrefAugmented(A, m, n) {
+  // Build [A | I_m]: m rows, (n+m) cols
+  let M = [];
+  for (let i=0;i<m;i++) {
+    const row = [];
+    for (let j=0;j<n;j++) row.push(A[i][j].clone());
+    for (let j=0;j<m;j++) row.push(new Frac(i===j?1:0));
+    M.push(row);
+  }
+  const totalCols = n + m;
+  const steps = [];
+
+  function snap(title, ops, pivots, isInit) {
+    return {
+      title, isInit: !!isInit,
+      pivots: pivots || [],
+      rows: M.map((r,i) => ({
+        entries: r.slice(0, n).map(f=>f.clone()),
+        eEntries: r.slice(n).map(f=>f.clone()),
+        op: ops ? ops[i] : { modified:false, tex:`R_{${i+1}}` }
+      }))
+    };
+  }
+
+  steps.push(snap('Initial augmented matrix [A | I]', null, [], true));
+
+  let pivotRow = 0;
+  const pivotCols = [];
+
+  // Forward elimination (only pivot on first n columns)
+  for (let col=0; col<n && pivotRow<m; col++) {
+    // Find pivot
+    let best = -1;
+    for (let r=pivotRow; r<m; r++) {
+      if (!M[r][col].isZero()) { best=r; break; }
+    }
+    if (best === -1) continue;
+
+    // Swap
+    if (best !== pivotRow) {
+      [M[best], M[pivotRow]] = [M[pivotRow], M[best]];
+      const swops = Array.from({length:m},(_,i)=>({
+        modified: i===pivotRow||i===best,
+        tex: i===pivotRow ? `R_{${best+1}} \\leftrightarrow R_{${pivotRow+1}}`
+           : i===best ? `R_{${pivotRow+1}} \\leftrightarrow R_{${best+1}}`
+           : `R_{${i+1}}`
+      }));
+      steps.push(snap(`Swap R_{${pivotRow+1}} and R_{${best+1}}`, swops, [{row:pivotRow,col}]));
+    }
+
+    // Scale pivot row
+    const piv = M[pivotRow][col];
+    if (!piv.isOne()) {
+      const sc = piv.recip();
+      for (let c=0;c<totalCols;c++) M[pivotRow][c] = M[pivotRow][c].mul(sc);
+      const sops = Array.from({length:m},(_,i)=>({
+        modified: i===pivotRow,
+        tex: i===pivotRow ? `${sc.toTeX(true)}\\,R_{${pivotRow+1}} \\to R_{${pivotRow+1}}` : `R_{${i+1}}`
+      }));
+      steps.push(snap(`Scale R_{${pivotRow+1}} to make pivot 1`, sops, [{row:pivotRow,col}]));
+    }
+
+    // Eliminate all other rows (full RREF)
+    const eops = Array.from({length:m},(_,i)=>({modified:false, tex:`R_{${i+1}}`}));
+    let any = false;
+    for (let r=0; r<m; r++) {
+      if (r === pivotRow) continue;
+      if (!M[r][col].isZero()) {
+        const mult = M[r][col].clone();
+        for (let c=0;c<totalCols;c++) M[r][c] = M[r][c].sub(mult.mul(M[pivotRow][c]));
+        eops[r] = { modified:true, tex: elimLabel(r, pivotRow, mult) };
+        any = true;
+      }
+    }
+    if (any) steps.push(snap(`Eliminate column ${col+1} using pivot in R_{${pivotRow+1}}`, eops, [{row:pivotRow,col}]));
+
+    pivotCols.push(col);
+    pivotRow++;
+  }
+
+  const rank = pivotCols.length;
+
+  // Extract R and E
+  const R = M.map(r => r.slice(0, n).map(f=>f.clone()));
+  const E = M.map(r => r.slice(n).map(f=>f.clone()));
+
+  return { steps, R, E, rank, pivotCols, m, n };
+}
+
+function elimLabel(ri, rj, mult) {
+  const mt = mult.toTeX(true);
+  if (mult.isOne()) return `R_{${ri+1}} - R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n===-mult.d) return `R_{${ri+1}} + R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n<0) return `R_{${ri+1}} + ${mult.neg().toTeX(true)}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+  return `R_{${ri+1}} - ${mt}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+}
+
+// ═══════════════════════════════════════════════
+//  EXTRACT FOUR SUBSPACES
+// ═══════════════════════════════════════════════
+function extractSubspaces(A, R, E, rank, pivotCols, m, n) {
+  // 1. Row space C(A^T): nonzero rows of R (first `rank` rows)
+  const rowSpaceBasis = [];
+  for (let i=0; i<rank; i++) rowSpaceBasis.push(R[i].map(f=>f.clone()));
+
+  // 2. Null space N(A): free variable method from R
+  const freeCols = [];
+  for (let j=0;j<n;j++) if (!pivotCols.includes(j)) freeCols.push(j);
+
+  const nullBasis = [];
+  for (const fc of freeCols) {
+    const vec = Array.from({length:n}, ()=>new Frac(0));
+    vec[fc] = new Frac(1);
+    for (let i=0;i<rank;i++) {
+      const pc = pivotCols[i];
+      vec[pc] = R[i][fc].neg();
+    }
+    nullBasis.push(vec);
+  }
+
+  // 3. Column space C(A): original columns at pivot positions
+  const colSpaceBasis = [];
+  for (const pc of pivotCols) {
+    const vec = [];
+    for (let i=0;i<m;i++) vec.push(A[i][pc].clone());
+    colSpaceBasis.push(vec);
+  }
+
+  // 4. Left nullspace N(A^T): rows of E corresponding to zero rows of R
+  const leftNullBasis = [];
+  for (let i=rank; i<m; i++) {
+    // Row i of E, transposed to a column vector
+    leftNullBasis.push(E[i].map(f=>f.clone()));
+  }
+
+  return { rowSpaceBasis, nullBasis, colSpaceBasis, leftNullBasis, freeCols };
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════
+function vecTeX(v) {
+  return '\\begin{bmatrix}' + v.map(f=>f.toTeX(true)).join('\\\\') + '\\end{bmatrix}';
+}
+
+function rowVecTeX(v) {
+  return '\\begin{bmatrix}' + v.map(f=>f.toTeX(true)).join(' & ') + '\\end{bmatrix}';
+}
+
+function renderAll(A, result, subspaces) {
+  const { steps, R, E, rank, pivotCols, m, n } = result;
+  const { rowSpaceBasis, nullBasis, colSpaceBasis, leftNullBasis, freeCols } = subspaces;
+  const sec = document.getElementById('outputSection');
+  sec.innerHTML = '';
+
+  // ── 1. RREF Steps ──
+  const stepsCard = document.createElement('div');
+  stepsCard.className = 'card';
+  stepsCard.innerHTML = '<h2>Row Reduction: [A | I] → [R | E]</h2>';
+
+  // Show just the final result as a single tableau
+  const lastStep = steps[steps.length - 1];
+  const wrap = document.createElement('div');
+  wrap.className = 'tableau-scroll';
+  const tbl = document.createElement('table');
+  tbl.className = 'tableau';
+
+  // Thead with R | E group headers
+  const thead = document.createElement('thead');
+
+  const gr = document.createElement('tr');
+  const thEmpty = document.createElement('th');
+  thEmpty.rowSpan = 2; thEmpty.style.verticalAlign = 'middle';
+  gr.appendChild(thEmpty);
+  const thR = document.createElement('th');
+  thR.colSpan = n; thR.textContent = 'R  (RREF)';
+  thR.style.borderBottom = 'none';
+  gr.appendChild(thR);
+  const thE = document.createElement('th');
+  thE.colSpan = m; thE.className = 'e-hdr';
+  thE.textContent = 'E  (row operations record)';
+  thE.style.borderBottom = 'none';
+  gr.appendChild(thE);
+  thead.appendChild(gr);
+
+  const sr = document.createElement('tr');
+  for (let j=0;j<n;j++) {
+    const th = document.createElement('th');
+    th.innerHTML = rk(`r_{\\cdot${j+1}}`);
+    if (j===n-1) th.style.borderRight = '2.5px solid #bbb';
+    sr.appendChild(th);
+  }
+  for (let j=0;j<m;j++) {
+    const th = document.createElement('th');
+    th.className = 'e-hdr';
+    th.innerHTML = rk(`e_{\\cdot${j+1}}`);
+    sr.appendChild(th);
+  }
+  thead.appendChild(sr);
+  tbl.appendChild(thead);
+
+  // Tbody
+  const tbody = document.createElement('tbody');
+  lastStep.rows.forEach((row, ri) => {
+    const tr = document.createElement('tr');
+
+    // Row label
+    const tdLbl = document.createElement('td');
+    tdLbl.style.cssText = 'text-align:right; padding-right:1rem; font-size:.88rem; color:var(--gray); background:#fafafa;';
+    tdLbl.innerHTML = rk(`R_{${ri+1}}`);
+    tr.appendChild(tdLbl);
+
+    // R entries
+    row.entries.forEach((f, j) => {
+      const td = document.createElement('td');
+      const isPivot = pivotCols.includes(j) && ri < rank && pivotCols[ri] === j;
+      if (isPivot) {
+        td.className = 'pivot-cell';
+        td.innerHTML = `<span class="pivot-inner">${rk(f.toTeX(true))}</span>`;
+      } else {
+        td.innerHTML = rk(f.toTeX(true));
+      }
+      if (j===n-1) td.classList.add('sep-col');
+      // Dim zero rows
+      if (ri >= rank) td.style.color = '#aaa';
+      tr.appendChild(td);
+    });
+
+    // E entries
+    row.eEntries.forEach((f, j) => {
+      const td = document.createElement('td');
+      td.className = 'e-col';
+      td.innerHTML = rk(f.toTeX(true));
+      // Highlight rows of E that give left nullspace
+      if (ri >= rank) td.style.fontWeight = '600';
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  wrap.appendChild(tbl);
+
+  const note = document.createElement('p');
+  note.style.cssText = 'font-size:.88rem; color:var(--gray); margin-top:.8rem; font-style:italic;';
+  note.innerHTML = `${rk('EA = R')} — the matrix ${rk('E')} records the net effect of all row operations. ` +
+    `Pivot columns: ${pivotCols.map(c=>c+1).join(', ')}. ` +
+    (rank < m ? `Zero rows of ${rk('R')} (rows ${Array.from({length:m-rank},(_,i)=>rank+i+1).join(', ')}) ` +
+      `give left nullspace vectors via the corresponding <strong>bolded</strong> rows of ${rk('E')}.` : 'All rows are pivot rows — full row rank.');
+
+  stepsCard.appendChild(wrap);
+  stepsCard.appendChild(note);
+
+  sec.appendChild(stepsCard);
+
+  // ── 2. Summary card ──
+  const sumCard = document.createElement('div');
+  sumCard.className = 'solution-card';
+  let sumHTML = `<h3>Rank and Dimensions</h3>`;
+  sumHTML += `<p style="font-size:1.1rem; line-height:1.8">`;
+  sumHTML += `${rk(`A`)} is ${rk(`${m} \\times ${n}`)}, &ensp; ${rk(`r = \\text{rank} = ${rank}`)}`;
+  sumHTML += `<br>${rk(`\\dim C(A^T) = ${rank}`)}, &ensp; ${rk(`\\dim N(A) = ${n - rank}`)}`;
+  sumHTML += ` &ensp;(in ${rk(`\\mathbf{R}^{${n}}`)}, &ensp; ${rk(`${rank} + ${n-rank} = ${n}`)})`;
+  sumHTML += `<br>${rk(`\\dim C(A) = ${rank}`)}, &ensp; ${rk(`\\dim N(A^T) = ${m - rank}`)}`;
+  sumHTML += ` &ensp;(in ${rk(`\\mathbf{R}^{${m}}`)}, &ensp; ${rk(`${rank} + ${m-rank} = ${m}`)})`;
+  sumHTML += `</p>`;
+  sumCard.innerHTML = sumHTML;
+  sec.appendChild(sumCard);
+
+  // ── 3. Four subspace cards ──
+  // Left pair: Row space + Null space (in R^n)
+  const ssDiv = document.createElement('div');
+
+  // R^n side
+  const rnTitle = document.createElement('h2');
+  rnTitle.style.cssText = 'font-family:var(--font-head); font-size:1.15rem; color:var(--navy); margin:1rem 0 .6rem; text-align:center;';
+  rnTitle.innerHTML = `Subspaces of ${rk(`\\mathbf{R}^{${n}}`)} — row space ⊥ nullspace`;
+  ssDiv.appendChild(rnTitle);
+
+  const row1 = document.createElement('div');
+  row1.className = 'ss-row ss-row-left';
+
+  // Row space
+  const rsCard = document.createElement('div');
+  rsCard.className = 'ss-card';
+  let rsHTML = `<h3>Row Space ${rk(`C(A^T)`)}<span class="dim-tag" style="background:#d0ddee; color:var(--navy2);">dim ${rank}</span></h3>`;
+  rsHTML += `<div class="basis-list">`;
+  if (rowSpaceBasis.length === 0) rsHTML += `<em style="color:var(--gray);">Only the zero vector</em>`;
+  else rsHTML += `<p style="font-size:.85rem; color:var(--gray); margin-bottom:.3rem;">Nonzero rows of R:</p>` +
+    rowSpaceBasis.map((v,i) => `<div style="margin:.3rem 0">${rk(rowVecTeX(v))}</div>`).join('');
+  rsHTML += `</div>`;
+  rsCard.innerHTML = rsHTML;
+
+  // Null space
+  const nsCard = document.createElement('div');
+  nsCard.className = 'ss-card';
+  let nsHTML = `<h3>Null Space ${rk(`N(A)`)}<span class="dim-tag" style="background:#d0ddee; color:var(--navy2);">dim ${n-rank}</span></h3>`;
+  nsHTML += `<div class="basis-list">`;
+  if (nullBasis.length === 0) nsHTML += `<em style="color:var(--gray);">Only the zero vector</em>`;
+  else {
+    nsHTML += `<p style="font-size:.85rem; color:var(--gray); margin-bottom:.3rem;">One vector per free variable (cols ${freeCols.map(c=>c+1).join(', ')}):</p>`;
+    nsHTML += nullBasis.map((v,i) => `<div style="margin:.3rem 0">${rk(rowVecTeX(v))}</div>`).join('');
+  }
+  nsHTML += `</div>`;
+  nsCard.innerHTML = nsHTML;
+
+  row1.append(rsCard, nsCard);
+  ssDiv.appendChild(row1);
+
+  // R^m side
+  const rmTitle = document.createElement('h2');
+  rmTitle.style.cssText = 'font-family:var(--font-head); font-size:1.15rem; color:#6b4c1e; margin:1.4rem 0 .6rem; text-align:center;';
+  rmTitle.innerHTML = `Subspaces of ${rk(`\\mathbf{R}^{${m}}`)} — column space ⊥ left nullspace`;
+  ssDiv.appendChild(rmTitle);
+
+  const row2 = document.createElement('div');
+  row2.className = 'ss-row ss-row-right';
+
+  // Column space
+  const csCard = document.createElement('div');
+  csCard.className = 'ss-card';
+  let csHTML = `<h3>Column Space ${rk(`C(A)`)}<span class="dim-tag" style="background:#f0e4d0; color:#6b4c1e;">dim ${rank}</span></h3>`;
+  csHTML += `<div class="basis-list">`;
+  if (colSpaceBasis.length === 0) csHTML += `<em style="color:var(--gray);">Only the zero vector</em>`;
+  else {
+    csHTML += `<p style="font-size:.85rem; color:var(--gray); margin-bottom:.3rem;">Original columns of A at pivot positions (cols ${pivotCols.map(c=>c+1).join(', ')}):</p>`;
+    csHTML += colSpaceBasis.map(v => `<div style="margin:.3rem 0">${rk(vecTeX(v))}</div>`).join('');
+  }
+  csHTML += `</div>`;
+  csCard.innerHTML = csHTML;
+
+  // Left nullspace
+  const lnCard = document.createElement('div');
+  lnCard.className = 'ss-card';
+  let lnHTML = `<h3>Left Null Space ${rk(`N(A^T)`)}<span class="dim-tag" style="background:#f0e4d0; color:#6b4c1e;">dim ${m-rank}</span></h3>`;
+  lnHTML += `<div class="basis-list">`;
+  if (leftNullBasis.length === 0) lnHTML += `<em style="color:var(--gray);">Only the zero vector</em>`;
+  else {
+    lnHTML += `<p style="font-size:.85rem; color:var(--gray); margin-bottom:.3rem;">Rows ${Array.from({length:m-rank},(_,i)=>rank+i+1).join(', ')} of E (transposed):</p>`;
+    lnHTML += leftNullBasis.map(v => `<div style="margin:.3rem 0">${rk(vecTeX(v))}</div>`).join('');
+  }
+  lnHTML += `</div>`;
+  lnCard.innerHTML = lnHTML;
+
+  row2.append(csCard, lnCard);
+  ssDiv.appendChild(row2);
+  sec.appendChild(ssDiv);
+
+  // ── 4. Big picture diagram (SVG) ──
+  const diagCard = document.createElement('div');
+  diagCard.className = 'diagram-card';
+  diagCard.innerHTML = '<h2>The Big Picture — Four Fundamental Subspaces</h2>';
+  diagCard.appendChild(buildDiagramSVG(
+    rowSpaceBasis, nullBasis, colSpaceBasis, leftNullBasis,
+    rank, m, n, pivotCols, freeCols
+  ));
+  sec.appendChild(diagCard);
+
+  // ── 5. Key ──
+  const keyDiv = document.createElement('div');
+  keyDiv.className = 'key-box';
+  keyDiv.innerHTML = `
+    <strong>How we found each subspace:</strong><br><br>
+    <strong>Row space</strong> ${rk('C(A^T)')}: the nonzero rows of the RREF ${rk('R')}. These are the same
+    combinations of original rows that elimination naturally produces.<br><br>
+    <strong>Null space</strong> ${rk('N(A)')}: for each free variable (non-pivot column of ${rk('R')}),
+    set it to 1 and all other free variables to 0. The pivot variables are
+    read off from ${rk('R')}. This gives one basis vector per free variable.<br><br>
+    <strong>Column space</strong> ${rk('C(A)')}: take the <em>original</em> columns of ${rk('A')}
+    at the pivot positions. These are linearly independent and span ${rk('C(A)')}.<br><br>
+    <strong>Left null space</strong> ${rk('N(A^T)')}: the augmented reduction
+    ${rk('[A|I] \\to [R|E]')} means ${rk('EA = R')}. Zero rows of ${rk('R')} correspond to
+    rows of ${rk('E')} that annihilate ${rk('A')}: if row ${rk('i')} of ${rk('R')} is zero,
+    then row ${rk('i')} of ${rk('E')} satisfies ${rk('e_i^T A = 0')}, i.e.
+    ${rk('A^T e_i = 0')}. These transposed rows are a basis for ${rk('N(A^T)')}.
+    <br><br>
+    <span class="red-sq">■</span> <strong>Orthogonality</strong>: row space ⊥ null space in ${rk(`\\mathbf{R}^{${n}}`)},
+    &ensp; column space ⊥ left null space in ${rk(`\\mathbf{R}^{${m}}`)}.
+  `;
+  sec.appendChild(keyDiv);
+
+  sec.scrollIntoView({behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════
+//  SVG DIAGRAM
+// ═══════════════════════════════════════════════
+function buildDiagramSVG(rowBasis, nullBasis, colBasis, leftNullBasis, rank, m, n, pivotCols, freeCols) {
+  const W = 920, H = 440;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.style.display = 'block';
+  svg.style.maxWidth = '920px';
+  svg.style.margin = '0 auto';
+
+  // Helper to make KaTeX-free simple text (for SVG)
+  function fracStr(f) {
+    if (f.d===1) return String(f.n);
+    return `${f.n}/${f.d}`;
+  }
+
+  function vecStr(v) {
+    return '(' + v.map(fracStr).join(', ') + ')';
+  }
+
+  function vecStrT(v) {
+    return '[' + v.map(fracStr).join(', ') + ']';
+  }
+
+  // Rotated rectangles
+  const angle = 45;
+  const cosA = Math.cos(angle * Math.PI/180);
+  const sinA = Math.sin(angle * Math.PI/180);
+
+  function rotRect(cx, cy, w, h, a, fill, stroke) {
+    const rad = a * Math.PI / 180;
+    const c = Math.cos(rad), s = Math.sin(rad);
+    const corners = [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+    const pts = corners.map(([x,y]) => `${cx+x*c-y*s},${cy+x*s+y*c}`).join(' ');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', fill);
+    poly.setAttribute('stroke', stroke);
+    poly.setAttribute('stroke-width', '1.5');
+    return poly;
+  }
+
+  function addText(x, y, text, size, color, anchor, weight, rotate) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('font-size', size); t.setAttribute('fill', color);
+    t.setAttribute('text-anchor', anchor || 'middle');
+    t.setAttribute('font-family', "'Crimson Pro', Georgia, serif");
+    if (weight) t.setAttribute('font-weight', weight);
+    if (rotate) t.setAttribute('transform', `rotate(${rotate},${x},${y})`);
+    t.textContent = text;
+    svg.appendChild(t);
+    return t;
+  }
+
+  function addLine(x1,y1,x2,y2,color,w,dash) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('stroke',color); l.setAttribute('stroke-width',w||1.5);
+    if(dash) l.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(l);
+  }
+
+  function addArrow(x1,y1,x2,y2,color) {
+    // Shorten slightly for arrowhead
+    const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    const ux=dx/len, uy=dy/len;
+    const ex=x2-ux*6, ey=y2-uy*6;
+    addLine(x1,y1,ex,ey,color,2);
+    // Arrowhead
+    const ax=x2, ay=y2;
+    const p1x=ax-ux*10+uy*4, p1y=ay-uy*10-ux*4;
+    const p2x=ax-ux*10-uy*4, p2y=ay-uy*10+ux*4;
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', `${ax},${ay} ${p1x},${p1y} ${p2x},${p2y}`);
+    poly.setAttribute('fill', color);
+    svg.appendChild(poly);
+  }
+
+  // Layout
+  const LCX = 200, RCX = 720;  // Left/right center X
+  const TY = 140, BY = 320;    // Top/bottom Y centers
+  const RW = 200, RH = 130;    // Rectangle w/h
+
+  // Left side: R^n
+  svg.appendChild(rotRect(LCX, TY, RW, RH, 45, '#edf4ff', '#3a6eb5'));
+  svg.appendChild(rotRect(LCX, BY, RW, RH, 45, '#f0f4fb', '#7a9cc8'));
+
+  // Right side: R^m
+  svg.appendChild(rotRect(RCX, TY, RW, RH, -45, '#fef6ea', '#c8a430'));
+  svg.appendChild(rotRect(RCX, BY, RW, RH, -45, '#faf5ef', '#c8a430'));
+
+  // Perpendicular symbols
+  addText(LCX, (TY+BY)/2, '⊥', 22, '#3a6eb5', 'middle', '600');
+  addText(RCX, (TY+BY)/2, '⊥', 22, '#c8a430', 'middle', '600');
+
+  // Labels: space names and dims
+  addText(LCX, TY-8, 'row space C(Aᵀ)', 14, '#18284a', 'middle', '600');
+  addText(LCX, TY+10, `dim ${rank}`, 12, '#3a6eb5', 'middle', '400');
+
+  addText(LCX, BY-8, 'nullspace N(A)', 14, '#18284a', 'middle', '600');
+  addText(LCX, BY+10, `dim ${n-rank}`, 12, '#7a9cc8', 'middle', '400');
+
+  addText(RCX, TY-8, 'column space C(A)', 14, '#18284a', 'middle', '600');
+  addText(RCX, TY+10, `dim ${rank}`, 12, '#c8a430', 'middle', '400');
+
+  addText(RCX, BY-8, 'left nullspace N(Aᵀ)', 14, '#18284a', 'middle', '600');
+  addText(RCX, BY+10, `dim ${m-rank}`, 12, '#b08830', 'middle', '400');
+
+  // Basis vectors inside rectangles
+  const maxShow = 3;
+
+  function showBasis(basis, cx, startY, transpose, color) {
+    const count = Math.min(basis.length, maxShow);
+    const lineH = 16;
+    let y = startY + 22;
+    for (let i=0; i<count; i++) {
+      const str = transpose ? vecStrT(basis[i]) : vecStr(basis[i]);
+      addText(cx, y, str, 11, color, 'middle', '400');
+      y += lineH;
+    }
+    if (basis.length > maxShow) {
+      addText(cx, y, `... (${basis.length} total)`, 10, '#888', 'middle', '400');
+    }
+    if (basis.length === 0) {
+      addText(cx, y, '{0}', 12, '#888', 'middle', '400');
+    }
+  }
+
+  showBasis(rowBasis, LCX, TY, true, '#2c4070');
+  showBasis(nullBasis, LCX, BY, true, '#2c4070');
+  showBasis(colBasis, RCX, TY, false, '#6b4c1e');
+  showBasis(leftNullBasis, RCX, BY, false, '#6b4c1e');
+
+  // R^n and R^m labels
+  addText(LCX, 30, `ℝⁿ  (n = ${n})`, 18, '#18284a', 'middle', '600');
+  addText(RCX, 30, `ℝᵐ  (m = ${m})`, 18, '#18284a', 'middle', '600');
+
+  // Arrows between sides
+  const arrY1 = TY - 30;
+  const arrY2 = BY + 45;
+  addArrow(LCX+120, arrY1, RCX-120, arrY1, '#b33a2f');
+  addText((LCX+RCX)/2, arrY1-10, 'Ax = b', 14, '#b33a2f', 'middle', '600');
+  addText((LCX+RCX)/2, arrY1+16, 'row space → column space', 10, '#888', 'middle', '400');
+
+  addArrow(LCX+120, arrY2, RCX-120, arrY2, '#7a7a8a');
+  addText((LCX+RCX)/2, arrY2-10, 'Axₙ = 0', 14, '#7a7a8a', 'middle', '600');
+  addText((LCX+RCX)/2, arrY2+16, 'nullspace → zero', 10, '#888', 'middle', '400');
+
+  // Middle: x = x_r + x_n
+  addText((LCX+RCX)/2, (TY+BY)/2, 'x = xᵣ + xₙ', 14, '#18284a', 'middle', '600');
+
+  // Dimension annotations at corners
+  addText(LCX-115, TY, `r = ${rank}`, 11, '#3a6eb5', 'middle', '400');
+  addText(LCX-115, BY, `n−r = ${n-rank}`, 11, '#7a9cc8', 'middle', '400');
+  addText(RCX+115, TY, `r = ${rank}`, 11, '#c8a430', 'middle', '400');
+  addText(RCX+115, BY, `m−r = ${m-rank}`, 11, '#b08830', 'middle', '400');
+
+  // 0 at origin
+  addText(LCX, (TY+BY)/2 + 30, '0', 14, '#aaa', 'middle', '400');
+
+  // Footer
+  addText(W/2, H-12, 'Fundamental Theorem of Linear Algebra (Strang)', 12, '#888', 'middle', '400');
+
+  return svg;
+}
+
+// ═══════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════
+let cM=3, cN=4;
+
+function rebuildMatrix(){
+  cM=Math.min(Math.max(parseInt(document.getElementById('nRows').value)||3,1),6);
+  cN=Math.min(Math.max(parseInt(document.getElementById('nCols').value)||4,1),6);
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrid();
+}
+
+function buildGrid(){
+  const cont=document.getElementById('matrixContainer');
+  cont.innerHTML='';
+  const grid=document.createElement('div');
+  grid.className='matrix-grid';
+  grid.style.gridTemplateColumns=`auto repeat(${cN},64px)`;
+
+  const empty=document.createElement('div');
+  grid.appendChild(empty);
+  for(let j=0;j<cN;j++){
+    const lbl=document.createElement('div');
+    lbl.className='col-lbl';
+    lbl.textContent=`c${j+1}`;
+    grid.appendChild(lbl);
+  }
+
+  for(let i=0;i<cM;i++){
+    const rl=document.createElement('div');
+    rl.className='row-lbl';
+    rl.innerHTML=rk(`R_{${i+1}}`);
+    grid.appendChild(rl);
+    for(let j=0;j<cN;j++){
+      const inp=document.createElement('input');
+      inp.type='text'; inp.id=`c${i}_${j}`; inp.placeholder='0';
+      inp.autocomplete='off';
+      grid.appendChild(inp);
+    }
+  }
+  cont.appendChild(grid);
+}
+
+function getInput(){
+  return Array.from({length:cM},(_,i)=>
+    Array.from({length:cN},(_,j)=>
+      Frac.parse(document.getElementById(`c${i}_${j}`)?.value||'0')
+    )
+  );
+}
+
+const EXAMPLES=[
+  { m:3, n:4, data:[['1','0','2','3'],['0','1','4','5'],['0','0','0','0']] },
+  { m:2, n:3, data:[['1','3','2'],['2','1','4']] },
+  { m:3, n:3, data:[['1','2','3'],['4','5','6'],['7','8','9']] },
+  { m:3, n:3, data:[['1','2','-1'],['2','1','3'],['-1','3','2']] },
+  { m:4, n:3, data:[['1','2','0'],['0','1','1'],['1','3','1'],['2','5','1']] },
+];
+
+function loadExample(idx){
+  const ex=EXAMPLES[idx];
+  cM=ex.m; cN=ex.n;
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrid();
+  ex.data.forEach((row,i)=>{
+    for(let j=0;j<cN;j++){
+      const el=document.getElementById(`c${i}_${j}`);
+      if(el) el.value=row[j];
+    }
+  });
+}
+
+function runAnalysis(){
+  try{
+    const A=getInput();
+    const result=rrefAugmented(A,cM,cN);
+    const subspaces=extractSubspaces(A, result.R, result.E, result.rank, result.pivotCols, cM, cN);
+    renderAll(A, result, subspaces);
+  }catch(e){
+    document.getElementById('outputSection').innerHTML=
+      `<div class="err-msg" style="padding:1rem">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+window.addEventListener('DOMContentLoaded',()=>{ buildGrid(); loadExample(0); });
+</script>
+</body>
+</html>

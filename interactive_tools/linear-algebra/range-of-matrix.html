@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Range of a Matrix — Constraint Equations</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+  <style>
+    :root {
+      --cream:    #faf7f2;
+      --paper:    #ffffff;
+      --navy:     #18284a;
+      --navy2:    #2c4070;
+      --accent:   #3a6eb5;
+      --red:      #b33a2f;
+      --red-bg:   #fef0ee;
+      --gold:     #c8a430;
+      --gray:     #7a7a8a;
+      --border:   #ddd9d0;
+      --acc-bg:   #edf1fb;
+      --mod-bg:   #fff9f5;
+      --green:    #2e7d4f;
+      --green-bg: #eef7f1;
+      --font-body:'Crimson Pro', Georgia, serif;
+      --font-head:'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--navy);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    /* ── HEADER ─────────────────────────────────── */
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 1.8rem 2.5rem;
+      border-bottom: 3px solid var(--gold);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    header h1 { font-family: var(--font-head); font-size: 2rem; font-weight: 400; letter-spacing:.02em; }
+    header p  { color: #a0b8d8; font-size: 1.05rem; font-style: italic; }
+
+    /* ── LAYOUT ─────────────────────────────────── */
+    main { max-width: 1150px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── CARDS ───────────────────────────────────── */
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 14px rgba(24,40,74,.06);
+    }
+    .card h2 {
+      font-family: var(--font-head);
+      font-size: 1.25rem; font-weight:600;
+      color: var(--navy);
+      margin-bottom: 1.2rem;
+    }
+    .card p.desc {
+      font-size: .98rem;
+      color: var(--navy2);
+      margin-bottom: 1.2rem;
+      line-height: 1.65;
+    }
+
+    /* ── SIZE CONTROLS ───────────────────────────── */
+    .size-row { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .size-row label { display:flex; align-items:center; gap:.5rem; font-size:.95rem; color: var(--navy2); }
+    .size-row input[type=number] {
+      width:56px; padding:.28rem .4rem;
+      border: 1px solid var(--border); border-radius:4px;
+      font-family:var(--font-body); font-size:1rem;
+      color:var(--navy); text-align:center;
+    }
+    .size-row input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+    .examples-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+
+    /* ── BUTTONS ─────────────────────────────────── */
+    button {
+      font-family: var(--font-body);
+      font-size:.95rem; cursor:pointer;
+      border:none; border-radius:4px;
+      padding:.35rem .9rem;
+      transition: background .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    .btn-ghost { background: var(--acc-bg); color: var(--navy2); border:1px solid #c0ccdd; }
+    .btn-ghost:hover { background:#d8e4f8; }
+    .btn-solve {
+      background: var(--red); color:#fff;
+      padding: .55rem 2rem; font-size:1.05rem;
+      letter-spacing:.04em; margin-top:1.4rem;
+      display:inline-flex; align-items:center; gap:.5rem;
+    }
+    .btn-solve:hover { background:#952e24; }
+
+    /* ── MATRIX GRID ─────────────────────────────── */
+    .matrix-wrapper { overflow-x:auto; margin: .8rem 0; }
+    .matrix-grid {
+      display: inline-grid;
+      gap: 7px 8px;
+      align-items: center;
+    }
+    .matrix-grid input {
+      width: 62px;
+      padding: .32rem .4rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--font-body); font-size: 1rem;
+      color: var(--navy); text-align:center; background:#fafafa;
+      transition: border-color .15s, background .15s;
+    }
+    .matrix-grid input:focus { outline:none; border-color:var(--accent); background:#fff; }
+    .matrix-grid .col-lbl { text-align:center; font-size:.82rem; color:var(--gray); }
+    .matrix-grid .row-lbl { text-align:right; padding-right:8px; font-size:.88rem; color:var(--gray); }
+
+    /* ── STEPS CONTAINER ─────────────────────────── */
+    .steps-container { display:flex; flex-direction:column; gap:1.6rem; }
+
+    /* ── STEP BLOCK ──────────────────────────────── */
+    .step-block {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(24,40,74,.05);
+    }
+    .step-header {
+      background: var(--navy);
+      color:#fff;
+      padding:.6rem 1.2rem;
+      display:flex; align-items:center; gap:.75rem;
+    }
+    .step-num {
+      background: var(--gold); color: var(--navy);
+      width:26px; height:26px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:.8rem; font-weight:700; flex-shrink:0;
+    }
+    .step-num.init-badge { background: #4a6fa0; color:#fff; font-size:.72rem; font-weight:600; letter-spacing:.03em; }
+    .step-title-txt { font-style:italic; font-size:.95rem; color:#d0ddf0; }
+
+    .tableau-scroll { overflow-x:auto; padding:.6rem .6rem .8rem; }
+
+    /* ── TABLEAU TABLE ───────────────────────────── */
+    .tableau {
+      border-collapse: collapse;
+      font-size: .93rem;
+    }
+    .tableau th, .tableau td {
+      padding: .4rem .75rem;
+      border: 1px solid #e8e4de;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .tableau thead tr:first-child th {
+      font-family: var(--font-body); font-weight:400; font-size:.78rem;
+      text-transform: uppercase; letter-spacing:.06em;
+      color: #888;
+      background: #f8f6f2;
+      padding: .25rem .75rem;
+      border-bottom: none;
+    }
+    .tableau thead tr:first-child th.acc-group { background: var(--acc-bg); color: var(--accent); }
+    .tableau thead tr.sub-header th {
+      background: #f5f7fa;
+      font-family:var(--font-body); font-weight:400;
+      font-size:.85rem; color: var(--navy2);
+      border-top: none;
+      border-bottom: 2px solid var(--border);
+    }
+    .tableau thead tr.sub-header th.acc-sub { background: var(--acc-bg); color: #4060a0; }
+
+    .tableau td.op-lbl {
+      text-align: left; padding-left: 1rem;
+      color: var(--navy2); background: #fafafa;
+      font-size: .88rem; min-width: 160px; max-width: 240px;
+    }
+    .tableau td.acc-col  { background: var(--acc-bg); color: #3a5aa8; }
+    .tableau td.sep-r    { border-right: 2.5px solid #bbb !important; }
+    .tableau td.b-col    { background: var(--green-bg); color: var(--green); }
+    .tableau td.eq-col   { text-align:left; padding-left:1rem; color:var(--navy2); font-style:italic; }
+
+    /* Pivot highlight */
+    .tableau td.pivot-cell {
+      background: var(--red-bg);
+    }
+    .pivot-inner {
+      display: inline-block;
+      border: 2px solid var(--red);
+      border-radius: 4px;
+      padding: 1px 7px;
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    /* Modified row */
+    .tableau tbody tr.mod-row > td           { background: var(--mod-bg); }
+    .tableau tbody tr.mod-row > td.acc-col   { background: #f3ece6; }
+    .tableau tbody tr.mod-row > td.b-col     { background: #ecf0e8; }
+    .tableau tbody tr.mod-row > td.pivot-cell{ background: var(--red-bg); }
+    .tableau tbody tr.mod-row > td.op-lbl    { background: #fff4ee; }
+
+    /* ── ZERO ROW highlight ──────────────────────── */
+    .tableau tbody tr.zero-row > td {
+      background: #fdf6e3;
+    }
+    .tableau tbody tr.zero-row > td.b-col {
+      background: #fcf0c0;
+      font-weight: 600;
+    }
+    .tableau tbody tr.zero-row > td.acc-col { background: #f5efd8; }
+    .tableau tbody tr.zero-row > td.op-lbl  { background: #fdf6e3; }
+
+    /* ── SOLUTION BOX ────────────────────────────── */
+    .solution-card {
+      background: var(--navy);
+      color:#fff;
+      border-radius: 8px;
+      padding: 1.4rem 2rem;
+    }
+    .solution-card h3 { font-family:var(--font-head); color:var(--gold); font-size:1.3rem; margin-bottom:.9rem; }
+    .solution-card p  { line-height: 1.6; margin-bottom: .6rem; }
+    .constraint-list { display:flex; flex-direction:column; gap:.7rem; margin-top:.8rem; }
+    .constraint-item {
+      background: rgba(255,255,255,.1);
+      border-radius:6px; padding:.55rem 1.2rem;
+      font-size:1.1rem;
+      border-left: 3px solid var(--gold);
+    }
+    .no-constraint {
+      background: rgba(46,125,79,.2);
+      border-left-color: #5cb85c;
+    }
+    .info-tag {
+      display:inline-block; background:#e8edf5; color:var(--navy2);
+      border-radius:4px; padding:.15rem .7rem; font-size:.85rem;
+      font-style:italic; margin-top:.5rem;
+    }
+
+    /* ── NOTATION KEY ────────────────────────────── */
+    .key-box {
+      background: var(--acc-bg);
+      border: 1px solid #c0ccdd;
+      border-radius: 6px;
+      padding: .85rem 1.2rem;
+      font-size: .9rem;
+      color: var(--navy2);
+      line-height: 1.6;
+    }
+    .key-box strong { color: var(--navy); }
+    .red-sq { color: var(--red); }
+
+    /* ── ERROR ───────────────────────────────────── */
+    .err-msg { color: var(--red); font-style:italic; padding:.5rem 0; }
+
+    @media(max-width:600px){
+      header{padding:1.2rem 1rem;} header h1{font-size:1.5rem;}
+      main{padding:1rem .75rem;}
+      .card{padding:1.2rem 1rem;}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Range of a Matrix</h1>
+  <p>Determine the conditions on <em>y</em> for the system <em>Ax = y</em> to be consistent</p>
+</header>
+
+<main>
+  <!-- ── INPUT CARD ─────────────────────────────────── -->
+  <div class="card">
+    <h2>Enter the Matrix A</h2>
+
+    <p class="desc">
+      Given a linear map <span id="mapTeX"></span>, we augment <span id="augTeX"></span>
+      and row-reduce. Any zero row on the left produces a
+      <em>constraint</em> that the right-hand side must satisfy for <em>y</em>
+      to lie in the range (column space) of <em>A</em>.
+    </p>
+
+    <div class="size-row">
+      <label>Rows <em>n</em> (target dim): <input type="number" id="nRows" min="1" max="6" value="3"></label>
+      <label>Cols <em>m</em> (source dim): <input type="number" id="nCols" min="1" max="6" value="2"></label>
+      <button class="btn-ghost" onclick="rebuildMatrix()">Resize</button>
+    </div>
+
+    <div class="examples-row">
+      <button class="btn-ghost" onclick="loadExample(0)">3×2 (rank deficient)</button>
+      <button class="btn-ghost" onclick="loadExample(1)">3×3 (rank 2)</button>
+      <button class="btn-ghost" onclick="loadExample(2)">4×3 (rank 2)</button>
+      <button class="btn-ghost" onclick="loadExample(3)">3×3 (full rank)</button>
+    </div>
+
+    <p style="font-size:.88rem; color:var(--gray); margin-bottom:.5rem;">
+      Enter integers, decimals, or fractions like <code>2/3</code>.
+    </p>
+
+    <div class="matrix-wrapper" id="matrixContainer"></div>
+
+    <button class="btn-solve" onclick="runAnalysis()">
+      Find Range Constraints →
+    </button>
+  </div>
+
+  <!-- ── SOLUTION OUTPUT ───────────────────────────── -->
+  <div id="solutionSection"></div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  FRACTION ARITHMETIC  (same as row-reduction)
+// ═══════════════════════════════════════════════
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b > 0) { const t = b; b = a % b; a = t; }
+  return a === 0 ? 1 : a;
+}
+
+class Frac {
+  constructor(n, d = 1) {
+    if (d === 0) { this.n = 0; this.d = 1; this.bad = true; return; }
+    if (d < 0)   { n = -n; d = -d; }
+    const g = gcd(Math.abs(n), d);
+    this.n = Math.trunc(n / g);
+    this.d = Math.trunc(d / g);
+  }
+
+  static parse(str) {
+    str = (str || '').trim();
+    if (!str || str === '-') return new Frac(0);
+    if (str.includes('/')) {
+      const [a, b] = str.split('/');
+      const na = parseInt(a), nd = parseInt(b);
+      return (isNaN(na)||isNaN(nd)) ? new Frac(0) : new Frac(na, nd);
+    }
+    if (str.includes('.')) {
+      const parts = str.replace('-','').split('.');
+      const dec = parts[1] ? parts[1].length : 0;
+      const denom = Math.pow(10, dec);
+      return new Frac(Math.round(parseFloat(str)*denom), denom);
+    }
+    const n = parseInt(str);
+    return isNaN(n) ? new Frac(0) : new Frac(n);
+  }
+
+  clone()  { return new Frac(this.n, this.d); }
+  add(o)   { return new Frac(this.n*o.d + o.n*this.d, this.d*o.d); }
+  sub(o)   { return new Frac(this.n*o.d - o.n*this.d, this.d*o.d); }
+  mul(o)   { return new Frac(this.n*o.n, this.d*o.d); }
+  div(o)   { return new Frac(this.n*o.d, this.d*o.n); }
+  neg()    { return new Frac(-this.n, this.d); }
+  recip()  { return new Frac(this.d, this.n); }
+
+  isZero() { return this.n === 0; }
+  isOne()  { return this.n > 0 && this.n === this.d; }
+
+  toTeX(inline=true) {
+    if (this.d === 1) return String(this.n);
+    const cmd = inline ? '\\tfrac' : '\\dfrac';
+    const abs = Math.abs(this.n);
+    const sg  = this.n < 0 ? '-' : '';
+    return `${sg}${cmd}{${abs}}{${this.d}}`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  SYMBOLIC EXPRESSION  (linear combo of y_i)
+//  Represents c_1·y_1 + c_2·y_2 + ... + c_n·y_n
+// ═══════════════════════════════════════════════
+class SymExpr {
+  constructor(coeffs) {
+    // coeffs: array of Frac, one per y_i
+    this.coeffs = coeffs.map(f => f.clone());
+  }
+
+  static basis(i, n) {
+    // e_i: the expression that is just y_{i+1}
+    const c = Array.from({length: n}, () => new Frac(0));
+    c[i] = new Frac(1);
+    return new SymExpr(c);
+  }
+
+  static zero(n) {
+    return new SymExpr(Array.from({length: n}, () => new Frac(0)));
+  }
+
+  clone() { return new SymExpr(this.coeffs); }
+
+  add(o) {
+    return new SymExpr(this.coeffs.map((c, i) => c.add(o.coeffs[i])));
+  }
+
+  sub(o) {
+    return new SymExpr(this.coeffs.map((c, i) => c.sub(o.coeffs[i])));
+  }
+
+  mulScalar(f) {
+    return new SymExpr(this.coeffs.map(c => c.mul(f)));
+  }
+
+  divScalar(f) {
+    return new SymExpr(this.coeffs.map(c => c.div(f)));
+  }
+
+  isZero() {
+    return this.coeffs.every(c => c.isZero());
+  }
+
+  toTeX(yNames) {
+    const terms = [];
+    this.coeffs.forEach((c, i) => {
+      if (c.isZero()) return;
+      const v = yNames[i];
+      if (terms.length === 0) {
+        if (c.isOne())        terms.push(v);
+        else if (c.n === -c.d) terms.push(`-${v}`);
+        else                   terms.push(`${c.toTeX(true)}\\,${v}`);
+      } else {
+        if (c.isOne())        terms.push(`+ ${v}`);
+        else if (c.n === -c.d) terms.push(`- ${v}`);
+        else if (c.n < 0)     terms.push(`- ${c.neg().toTeX(true)}\\,${v}`);
+        else                   terms.push(`+ ${c.toTeX(true)}\\,${v}`);
+      }
+    });
+    if (!terms.length) return '0';
+    return terms.join('\\;');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  ROW REDUCTION  (augmented with symbolic RHS)
+// ═══════════════════════════════════════════════
+function analyzeRange(Ainput, nRows, mCols) {
+  const n = nRows;
+  const m = mCols;
+
+  // Working copies
+  let A   = Ainput.map(r => r.map(f => f.clone()));
+  // Accounting matrix
+  let acc = Array.from({length: n}, (_, i) =>
+            Array.from({length: n}, (_, j) => new Frac(i === j ? 1 : 0)));
+  // Symbolic RHS: row i starts as y_{i+1}
+  let bSym = Array.from({length: n}, (_, i) => SymExpr.basis(i, n));
+
+  const steps = [];
+
+  function snap(pivots, ops) {
+    return {
+      rows: Array.from({length: n}, (_, i) => ({
+        varCoeffs: A[i].map(f => f.clone()),
+        accCoeffs: acc[i].map(f => f.clone()),
+        bSym:      bSym[i].clone(),
+        op:        ops[i]
+      })),
+      pivots: pivots.slice()
+    };
+  }
+
+  // Initial
+  steps.push({
+    title: 'Initial augmented system [A | y]',
+    isInit: true,
+    ...snap([], Array.from({length: n}, (_, i) => ({
+      modified: false,
+      tex: `R_{${i+1}}`
+    })))
+  });
+
+  let pr = 0;
+  const allPivots = [];
+
+  // ── forward elimination ──
+  for (let col = 0; col < m && pr < n; col++) {
+    let found = -1;
+    for (let r = pr; r < n; r++) if (!A[r][col].isZero()) { found = r; break; }
+    if (found === -1) continue;
+
+    if (found !== pr) {
+      [A[found], A[pr]] = [A[pr], A[found]];
+      [bSym[found], bSym[pr]] = [bSym[pr], bSym[found]];
+      [acc[found], acc[pr]] = [acc[pr], acc[found]];
+      const swops = Array.from({length: n}, (_, i) => ({
+        modified: i === pr || i === found,
+        tex: i === pr    ? `R_{${found+1}} \\leftrightarrow R_{${pr+1}}` :
+             i === found ? `R_{${pr+1}} \\leftrightarrow R_{${found+1}}` :
+                           `R_{${i+1}}`
+      }));
+      steps.push({ title: `Swap rows ${pr+1} and ${found+1}`, ...snap([], swops) });
+    }
+
+    allPivots.push({row: pr, col});
+
+    const ops = Array.from({length: n}, (_, i) => ({modified: false, tex: `R_{${i+1}}`}));
+    let any = false;
+
+    for (let r = pr + 1; r < n; r++) {
+      if (!A[r][col].isZero()) {
+        const mult = A[r][col].div(A[pr][col]);
+        for (let c = 0; c < m; c++) A[r][c] = A[r][c].sub(mult.mul(A[pr][c]));
+        bSym[r] = bSym[r].sub(bSym[pr].mulScalar(mult));
+        for (let c = 0; c < n; c++) acc[r][c] = acc[r][c].sub(mult.mul(acc[pr][c]));
+        ops[r] = { modified: true, tex: opLabel(r, pr, mult) };
+        any = true;
+      }
+    }
+    if (any) steps.push({
+      title: `Forward elimination — clear column ${col+1} below pivot`,
+      ...snap([{row: pr, col}], ops)
+    });
+    pr++;
+  }
+
+  // ── back substitution ──
+  for (let p = allPivots.length - 1; p >= 0; p--) {
+    const {row, col} = allPivots[p];
+    const ops = Array.from({length: n}, (_, i) => ({modified: false, tex: `R_{${i+1}}`}));
+    let any = false;
+    for (let r = 0; r < row; r++) {
+      if (!A[r][col].isZero()) {
+        const mult = A[r][col].div(A[row][col]);
+        for (let c = 0; c < m; c++) A[r][c] = A[r][c].sub(mult.mul(A[row][c]));
+        bSym[r] = bSym[r].sub(bSym[row].mulScalar(mult));
+        for (let c = 0; c < n; c++) acc[r][c] = acc[r][c].sub(mult.mul(acc[row][c]));
+        ops[r] = { modified: true, tex: opLabel(r, row, mult) };
+        any = true;
+      }
+    }
+    if (any) steps.push({
+      title: `Back substitution — clear column ${col+1} above pivot`,
+      ...snap([{row, col}], ops)
+    });
+  }
+
+  // ── normalize pivots to 1 ──
+  const sops = Array.from({length: n}, (_, i) => ({modified: false, tex: `R_{${i+1}}`}));
+  let anySc = false;
+  for (const {row, col} of allPivots) {
+    const piv = A[row][col];
+    if (!piv.isOne()) {
+      const sc = piv.recip();
+      for (let c = 0; c < m; c++) A[row][c] = A[row][c].mul(sc);
+      bSym[row] = bSym[row].mulScalar(sc);
+      for (let c = 0; c < n; c++) acc[row][c] = acc[row][c].mul(sc);
+      sops[row] = { modified: true,
+                    tex: `${sc.toTeX(true)} \\cdot R_{${row+1}} \\to R_{${row+1}}` };
+      anySc = true;
+    }
+  }
+  if (anySc) steps.push({
+    title: 'Normalize — scale each pivot row to get leading 1',
+    ...snap(allPivots, sops)
+  });
+
+  return { steps, n, m, allPivots };
+}
+
+function opLabel(ri, rj, mult) {
+  const mt = mult.toTeX(true);
+  if (mult.isOne())
+    return `R_{${ri+1}} - R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n === -mult.d)
+    return `R_{${ri+1}} + R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n < 0)
+    return `R_{${ri+1}} + ${mult.neg().toTeX(true)}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+  return `R_{${ri+1}} - ${mt}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+}
+
+// ═══════════════════════════════════════════════
+//  LATEX UTILITIES
+// ═══════════════════════════════════════════════
+function rk(tex) {
+  try { return katex.renderToString(tex, {throwOnError: false}); }
+  catch(e) { return tex; }
+}
+
+function colVarName(i, m) {
+  return m <= 4 ? ['x','y','z','w'][i] : `x_{${i+1}}`;
+}
+function colVarNames(m) { return Array.from({length: m}, (_, i) => colVarName(i, m)); }
+
+function yVarName(i) { return `y_{${i+1}}`; }
+function yVarNames(n) { return Array.from({length: n}, (_, i) => yVarName(i)); }
+
+function eqTeX(vc, bSym, vn, yn) {
+  const terms = [];
+  vc.forEach((c, i) => {
+    if (c.isZero()) return;
+    const v = vn[i];
+    if (terms.length === 0) {
+      if (c.isOne())        terms.push(v);
+      else if (c.n === -c.d) terms.push(`-${v}`);
+      else                   terms.push(`${c.toTeX(true)}\\,${v}`);
+    } else {
+      if (c.isOne())        terms.push(`+ ${v}`);
+      else if (c.n === -c.d) terms.push(`- ${v}`);
+      else if (c.n < 0)     terms.push(`- ${c.neg().toTeX(true)}\\,${v}`);
+      else                   terms.push(`+ ${c.toTeX(true)}\\,${v}`);
+    }
+  });
+  const lhs = terms.length ? terms.join('\\;') : '0';
+  return lhs + ' = ' + bSym.toTeX(yn);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER STEPS
+// ═══════════════════════════════════════════════
+function renderSteps(result) {
+  const {steps, n, m, allPivots} = result;
+  const vn = colVarNames(m);
+  const yn = yVarNames(n);
+  const sec = document.getElementById('solutionSection');
+  sec.innerHTML = '';
+  const cont = document.createElement('div');
+  cont.className = 'steps-container';
+
+  steps.forEach((step, si) => {
+    const block = document.createElement('div');
+    block.className = 'step-block';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'step-header';
+    const badge = document.createElement('span');
+    if (step.isInit) {
+      badge.className = 'step-num init-badge';
+      badge.textContent = 'init';
+    } else {
+      badge.className = 'step-num';
+      badge.textContent = si;
+    }
+    const ttxt = document.createElement('span');
+    ttxt.className = 'step-title-txt';
+    ttxt.textContent = step.title;
+    hdr.append(badge, ttxt);
+    block.appendChild(hdr);
+
+    // Table
+    const wrap = document.createElement('div');
+    wrap.className = 'tableau-scroll';
+    const tbl = document.createElement('table');
+    tbl.className = 'tableau';
+
+    // ── Two-row thead ──
+    const thead = document.createElement('thead');
+
+    // Row 1: group labels
+    const gr = document.createElement('tr');
+    const thOp0 = document.createElement('th');
+    thOp0.rowSpan = 2; thOp0.textContent = 'Row operation';
+    thOp0.style.verticalAlign = 'middle'; thOp0.style.textAlign = 'left';
+    gr.appendChild(thOp0);
+
+    const thAcc = document.createElement('th');
+    thAcc.colSpan = n; thAcc.className = 'acc-group';
+    thAcc.innerHTML = 'Accounting';
+    thAcc.style.borderBottom = 'none';
+    gr.appendChild(thAcc);
+
+    const thVars = document.createElement('th');
+    thVars.colSpan = m; thVars.textContent = 'A coefficients';
+    thVars.style.borderBottom = 'none';
+    gr.appendChild(thVars);
+
+    const thB0 = document.createElement('th');
+    thB0.rowSpan = 2; thB0.className = 'sep-r';
+    thB0.innerHTML = rk('y'); thB0.style.verticalAlign = 'middle';
+    thB0.style.background = 'var(--green-bg)'; thB0.style.color = 'var(--green)';
+    gr.appendChild(thB0);
+
+    const thEq0 = document.createElement('th');
+    thEq0.rowSpan = 2; thEq0.textContent = 'Equation';
+    thEq0.style.verticalAlign = 'middle'; thEq0.style.textAlign = 'left';
+    gr.appendChild(thEq0);
+
+    thead.appendChild(gr);
+
+    // Row 2: sub-labels
+    const sr = document.createElement('tr');
+    sr.className = 'sub-header';
+    for (let i = 0; i < n; i++) {
+      const th = document.createElement('th');
+      th.className = 'acc-sub' + (i === n-1 ? ' sep-r' : '');
+      th.innerHTML = rk(`E_{${i+1}}`);
+      sr.appendChild(th);
+    }
+    for (let i = 0; i < m; i++) {
+      const th = document.createElement('th');
+      th.innerHTML = rk(vn[i]);
+      sr.appendChild(th);
+    }
+    thead.appendChild(sr);
+    tbl.appendChild(thead);
+
+    // ── tbody ──
+    const isLastStep = si === steps.length - 1;
+    const tbody = document.createElement('tbody');
+    step.rows.forEach((row, ri) => {
+      const tr = document.createElement('tr');
+      if (row.op.modified) tr.classList.add('mod-row');
+
+      // Check if this is a zero row in the final step
+      const allVarZero = row.varCoeffs.every(f => f.isZero());
+      if (isLastStep && allVarZero) tr.classList.add('zero-row');
+
+      // op label
+      const tdOp = document.createElement('td');
+      tdOp.className = 'op-lbl';
+      tdOp.innerHTML = rk(row.op.tex);
+      tr.appendChild(tdOp);
+
+      // accounting
+      row.accCoeffs.forEach((f, j) => {
+        const td = document.createElement('td');
+        td.className = 'acc-col' + (j === n-1 ? ' sep-r' : '');
+        td.innerHTML = rk(f.toTeX(true));
+        tr.appendChild(td);
+      });
+
+      // variable coefficients
+      row.varCoeffs.forEach((f, j) => {
+        const td = document.createElement('td');
+        const isPiv = step.pivots.some(p => p.row === ri && p.col === j);
+        if (isPiv) {
+          td.className = 'pivot-cell';
+          td.innerHTML = `<span class="pivot-inner">${rk(f.toTeX(true))}</span>`;
+        } else {
+          td.innerHTML = rk(f.toTeX(true));
+        }
+        tr.appendChild(td);
+      });
+
+      // symbolic b
+      const tdB = document.createElement('td');
+      tdB.className = 'b-col sep-r';
+      tdB.innerHTML = rk(row.bSym.toTeX(yn));
+      tr.appendChild(tdB);
+
+      // equation
+      const tdEq = document.createElement('td');
+      tdEq.className = 'eq-col';
+      tdEq.innerHTML = rk(eqTeX(row.varCoeffs, row.bSym, vn, yn));
+      tr.appendChild(tdEq);
+
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    block.appendChild(wrap);
+    cont.appendChild(block);
+  });
+
+  // ── Determine constraints ──
+  const lastStep = steps[steps.length - 1];
+  const rank = allPivots.length;
+  const constraints = [];
+
+  for (let r = 0; r < n; r++) {
+    const row = lastStep.rows[r];
+    const allVarZero = row.varCoeffs.every(f => f.isZero());
+    if (allVarZero && !row.bSym.isZero()) {
+      constraints.push(row.bSym);
+    }
+  }
+
+  // ── Solution card ──
+  const solCard = document.createElement('div');
+  solCard.className = 'solution-card';
+
+  let html = '';
+  if (rank === n) {
+    // Full row rank — range is all of R^n
+    html += `<h3>Range = ℝ<sup>${n}</sup></h3>`;
+    html += `<p>The matrix <em>A</em> has <strong>rank ${rank}</strong>, equal to the
+             number of rows <em>n</em> = ${n}. Every row has a pivot, so there are
+             no constraints on <em>y</em>.</p>`;
+    html += `<div class="constraint-list">
+               <div class="constraint-item no-constraint">
+                 ${rk(`\\text{No constraints — every } y \\in \\mathbb{R}^{${n}} \\text{ is in the range.}`)}
+               </div>
+             </div>`;
+  } else {
+    const nConstraints = constraints.length;
+    const codim = n - rank;
+    html += `<h3>Range Constraints</h3>`;
+    html += `<p>The matrix has <strong>rank ${rank}</strong> with <em>n</em> = ${n} rows,
+             so the range is a <strong>${rank}-dimensional subspace</strong> of ℝ<sup>${n}</sup>
+             (codimension ${codim}).
+             The vector <em>y</em> lies in the range if and only if:</p>`;
+    html += `<div class="constraint-list">`;
+    constraints.forEach((sym, idx) => {
+      html += `<div class="constraint-item">
+                 ${rk(sym.toTeX(yn) + ' = 0')}
+               </div>`;
+    });
+    html += `</div>`;
+
+    // Show the accounting interpretation
+    html += `<p style="margin-top:1rem; color:#a0b8d8; font-size:.95rem;">
+      Each constraint arises from a zero row in the reduced matrix: the accounting column
+      tells you <em>which linear combination</em> of the original equations produces 0 = (constraint).
+      These are the left null-space vectors of <em>A</em>.
+    </p>`;
+  }
+
+  solCard.innerHTML = html;
+  cont.appendChild(solCard);
+
+  // ── Notation key ──
+  const key = document.createElement('div');
+  key.className = 'key-box';
+  key.innerHTML = `
+    <strong>How to read this:</strong>
+    We form the augmented matrix
+    <em>[A | y]</em>, where the right-hand column carries the <em>symbolic</em>
+    entries ${rk(yn.join(',\\,'))}.
+    Row reduction proceeds exactly as for a concrete system, but the right-hand side
+    tracks which linear combination of the original ${rk(yn.join(',\\,'))} each row becomes.
+    <br><br>
+    <span class="red-sq">■</span> <strong>Pivot elements</strong> identify the rank.
+    Rows that reduce to all zeros on the left (highlighted in gold) yield <strong>range constraints</strong>
+    on the right: the corresponding expression in the ${rk('y_i')} must equal zero for a solution to exist.
+    These constraints span the <em>left null-space</em> of <em>A</em>.
+  `;
+  cont.appendChild(key);
+
+  sec.appendChild(cont);
+  sec.scrollIntoView({behavior: 'smooth'});
+}
+
+// ═══════════════════════════════════════════════
+//  MATRIX INPUT UI
+// ═══════════════════════════════════════════════
+let cN = 3, cM = 2;
+
+function updateMapTeX() {
+  const el1 = document.getElementById('mapTeX');
+  const el2 = document.getElementById('augTeX');
+  if (el1) el1.innerHTML = rk(`A : \\mathbb{R}^{${cM}} \\to \\mathbb{R}^{${cN}}`);
+  if (el2) el2.innerHTML = rk(`[\\,A \\mid y\\,]`);
+}
+
+function rebuildMatrix() {
+  cN = Math.min(Math.max(parseInt(document.getElementById('nRows').value) || 2, 1), 6);
+  cM = Math.min(Math.max(parseInt(document.getElementById('nCols').value) || 2, 1), 6);
+  document.getElementById('nRows').value = cN;
+  document.getElementById('nCols').value = cM;
+  buildGrid();
+}
+
+function buildGrid() {
+  updateMapTeX();
+  const cont = document.getElementById('matrixContainer');
+  cont.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'matrix-grid';
+  // columns: rowLabel | cM inputs
+  grid.style.gridTemplateColumns = `auto repeat(${cM}, 64px)`;
+
+  // header row
+  const empty = document.createElement('div');
+  grid.appendChild(empty);
+  const xvn = colVarNames(cM);
+  for (let j = 0; j < cM; j++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'col-lbl';
+    lbl.innerHTML = rk(`\\text{col } ${j+1}`);
+    grid.appendChild(lbl);
+  }
+
+  // data rows
+  for (let i = 0; i < cN; i++) {
+    const rl = document.createElement('div');
+    rl.className = 'row-lbl';
+    rl.innerHTML = rk(`\\text{row } ${i+1}`);
+    grid.appendChild(rl);
+    for (let j = 0; j < cM; j++) {
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.id = `a${i}_${j}`; inp.placeholder = '0';
+      inp.autocomplete = 'off';
+      grid.appendChild(inp);
+    }
+  }
+  cont.appendChild(grid);
+}
+
+function getAMatrix() {
+  return Array.from({length: cN}, (_, i) =>
+    Array.from({length: cM}, (_, j) =>
+      Frac.parse(document.getElementById(`a${i}_${j}`)?.value || '0')
+    )
+  );
+}
+
+// ── pre-baked examples ──
+const EXAMPLES = [
+  // 3×2 rank 2 → 1 constraint
+  { n:3, m:2, data:[['1','2'],['3','4'],['5','6']] },
+  // 3×3 rank 2 → 1 constraint
+  { n:3, m:3, data:[['1','2','3'],['4','5','6'],['7','8','9']] },
+  // 4×3 rank 2 → 2 constraints
+  { n:4, m:3, data:[['1','0','1'],['0','1','1'],['1','1','2'],['2','1','3']] },
+  // 3×3 full rank → no constraints
+  { n:3, m:3, data:[['1','0','2'],['0','1','3'],['1','1','4']] },
+];
+
+function loadExample(idx) {
+  const ex = EXAMPLES[idx];
+  cN = ex.n; cM = ex.m;
+  document.getElementById('nRows').value = cN;
+  document.getElementById('nCols').value = cM;
+  buildGrid();
+  ex.data.forEach((row, i) => {
+    for (let j = 0; j < ex.m; j++) {
+      const el = document.getElementById(`a${i}_${j}`);
+      if (el) el.value = row[j];
+    }
+  });
+}
+
+function runAnalysis() {
+  try {
+    const A = getAMatrix();
+    const result = analyzeRange(A, cN, cM);
+    renderSteps(result);
+  } catch(e) {
+    document.getElementById('solutionSection').innerHTML =
+      `<div class="err-msg" style="padding:1rem">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+// ── init ──
+window.addEventListener('DOMContentLoaded', () => {
+  buildGrid();
+  loadExample(0);
+});
+</script>
+</body>
+</html>

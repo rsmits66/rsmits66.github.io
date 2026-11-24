@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jordan Normal Form</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <style>
+    :root{--cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;--accent:#3a6eb5;
+      --red:#b33a2f;--red-bg:#fef0ee;--gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+      --acc-bg:#edf1fb;--mod-bg:#fff9f5;--green:#2e7d32;--green-bg:#e8f5e9;
+      --font-body:'Crimson Pro',Georgia,serif;--font-head:'Playfair Display',Georgia,serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:18px;line-height:1.55;}
+    header{background:var(--navy);color:#fff;padding:1.8rem 2.5rem;border-bottom:3px solid var(--gold);display:flex;flex-direction:column;gap:.25rem;}
+    header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;}
+    header p{color:#a0b8d8;font-size:1.05rem;font-style:italic;}
+    main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+    .card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.8rem 2rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+    .card h2{font-family:var(--font-head);font-size:1.25rem;font-weight:600;color:var(--navy);margin-bottom:1.2rem;}
+    .size-row{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+    .size-row label{display:flex;align-items:center;gap:.5rem;font-size:.95rem;color:var(--navy2);}
+    .size-row input[type=number]{width:56px;padding:.28rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:1rem;color:var(--navy);text-align:center;}
+    .examples-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+    button{font-family:var(--font-body);font-size:.95rem;cursor:pointer;border:none;border-radius:4px;padding:.35rem .9rem;transition:background .15s,transform .1s;}
+    button:active{transform:scale(.97);}
+    .btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #c0ccdd;}
+    .btn-ghost:hover{background:#d8e4f8;}
+    .btn-solve{background:var(--red);color:#fff;padding:.55rem 2rem;font-size:1.05rem;letter-spacing:.04em;margin-top:1.4rem;}
+    .btn-solve:hover{background:#952e24;}
+    .matrix-wrapper{overflow-x:auto;margin:.8rem 0;}
+    .matrix-grid{display:inline-grid;gap:7px 8px;align-items:center;}
+    .matrix-grid input{width:62px;padding:.32rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:1rem;color:var(--navy);text-align:center;background:#fafafa;}
+    .matrix-grid input:focus{outline:none;border-color:var(--accent);background:#fff;}
+    .matrix-grid .col-lbl{text-align:center;font-size:.82rem;color:var(--gray);}
+    .matrix-grid .row-lbl{text-align:right;padding-right:8px;font-size:.88rem;color:var(--gray);}
+    .step-block{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);margin-bottom:1.6rem;}
+    .step-header{background:var(--navy);color:#fff;padding:.6rem 1.2rem;display:flex;align-items:center;gap:.75rem;}
+    .step-num{background:var(--gold);color:var(--navy);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+    .step-title-txt{font-style:italic;font-size:.95rem;color:#d0ddf0;}
+    .step-body{padding:1rem 1.4rem;line-height:1.7;}
+    .eq-display{overflow-x:auto;padding:.5rem 0;text-align:center;margin:.5rem 0;}
+    .solution-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;margin-bottom:1.6rem;}
+    .solution-card h3{font-family:var(--font-head);color:var(--gold);font-size:1.3rem;margin-bottom:.6rem;}
+    .key-box{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.85rem 1.2rem;font-size:.9rem;color:var(--navy2);line-height:1.6;}
+    .key-box strong{color:var(--navy);}
+    .chain-tag{display:inline-block;padding:.15rem .6rem;border-radius:4px;font-size:.88rem;margin:.15rem .2rem;}
+    .err-msg{color:var(--red);font-style:italic;padding:.5rem 0;}
+    @media(max-width:600px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Jordan Normal Form</h1>
+  <p>Build the Jordan decomposition AP = PJ one chain at a time</p>
+</header>
+<main>
+  <div class="card">
+    <h2>Enter a Square Matrix A</h2>
+    <div class="size-row">
+      <label>Size (n×n): <input type="number" id="nSize" min="2" max="5" value="3"></label>
+      <button class="btn-ghost" onclick="rebuildMatrix()">Resize</button>
+    </div>
+    <div class="examples-row">
+      <button class="btn-ghost" onclick="loadEx(0)">[1 1 0;0 1 0;0 0 3]</button>
+      <button class="btn-ghost" onclick="loadEx(1)">2×2 block</button>
+      <button class="btn-ghost" onclick="loadEx(2)">3×3 chain len 3</button>
+      <button class="btn-ghost" onclick="loadEx(3)">4×4 two blocks</button>
+      <button class="btn-ghost" onclick="loadEx(4)">3×3 nilpotent</button>
+      <button class="btn-ghost" onclick="loadEx(5)">3×3 diagonal</button>
+      <button class="btn-ghost" onclick="loadEx(6)">5×5 mixed</button>
+    </div>
+    <p style="font-size:.88rem;color:var(--gray);margin-bottom:.5rem;">Enter integers or fractions.</p>
+    <div class="matrix-wrapper" id="matrixContainer"></div>
+    <button class="btn-solve" onclick="runJordan()">Compute Jordan Form →</button>
+  </div>
+  <div id="out"></div>
+</main>
+<script>
+// ═══════════════════════════════════════
+//  FRACTION ARITHMETIC
+// ═══════════════════════════════════════
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b>0){const t=b;b=a%b;a=t;}return a===0?1:a;}
+class Frac{
+  constructor(n,d=1){if(d===0){this.n=0;this.d=1;return;}if(d<0){n=-n;d=-d;}const g=gcd(Math.abs(n),d);this.n=Math.trunc(n/g);this.d=Math.trunc(d/g);}
+  static parse(s){s=(s||'').trim();if(!s||s==='-')return new Frac(0);if(s.includes('/')){const[a,b]=s.split('/');return new Frac(parseInt(a)||0,parseInt(b)||1);}if(s.includes('.')){const p=s.replace('-','').split('.');const dc=p[1]?p[1].length:0;const dn=10**dc;return new Frac(Math.round(parseFloat(s)*dn),dn);}return new Frac(parseInt(s)||0);}
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  div(o){return new Frac(this.n*o.d,this.d*o.n);}
+  neg(){return new Frac(-this.n,this.d);}
+  isZero(){return this.n===0;}
+  toFloat(){return this.n/this.d;}
+  toTeX(i=true){if(this.d===1)return String(this.n);const c=i?'\\tfrac':'\\dfrac';const a=Math.abs(this.n);const s=this.n<0?'-':'';return s+c+'{'+a+'}{'+this.d+'}';}
+}
+function rk(t){try{return katex.renderToString(t,{throwOnError:false});}catch(e){return t;}}
+function rkd(t){try{return katex.renderToString(t,{throwOnError:false,displayMode:true});}catch(e){return t;}}
+
+// ═══════════════════════════════════════
+//  NUMERICAL LINEAR ALGEBRA
+// ═══════════════════════════════════════
+const TOL=1e-9;
+function zeros(m,n){return Array.from({length:m},()=>Array(n).fill(0));}
+function matClone(M){return M.map(r=>[...r]);}
+function matMul(A,B){const m=A.length,p=B[0].length,k=B.length;const C=zeros(m,p);for(let i=0;i<m;i++)for(let j=0;j<p;j++)for(let q=0;q<k;q++)C[i][j]+=A[i][q]*B[q][j];return C;}
+function matVec(A,v){return A.map(r=>r.reduce((s,a,j)=>s+a*v[j],0));}
+function vecNorm(v){return Math.sqrt(v.reduce((s,x)=>s+x*x,0));}
+
+function nullSpace(M,rows,cols){
+  const A=M.map(r=>[...r]);const m=rows,n=cols;const pivs=[];let pr=0;
+  for(let c=0;c<n&&pr<m;c++){
+    let best=pr,bv=Math.abs(A[pr][c]);for(let r=pr+1;r<m;r++){const v=Math.abs(A[r][c]);if(v>bv){best=r;bv=v;}}
+    if(bv<TOL)continue;[A[best],A[pr]]=[A[pr],A[best]];
+    const p=A[pr][c];for(let j=0;j<n;j++)A[pr][j]/=p;
+    for(let r=0;r<m;r++){if(r===pr)continue;const f=A[r][c];if(Math.abs(f)<TOL)continue;for(let j=0;j<n;j++)A[r][j]-=f*A[pr][j];}
+    pivs.push(c);pr++;
+  }
+  const free=[];for(let j=0;j<n;j++)if(!pivs.includes(j))free.push(j);
+  return free.map(fc=>{const v=Array(n).fill(0);v[fc]=1;for(let i=0;i<pivs.length;i++)v[pivs[i]]=-A[i][fc];return v;});
+}
+
+function solveAxEqB(M,b,n){
+  const A=M.map((r,i)=>[...r,b[i]]);const pivs=[];let pr=0;
+  for(let c=0;c<n&&pr<n;c++){
+    let best=pr,bv=Math.abs(A[pr][c]);for(let r=pr+1;r<n;r++){const v=Math.abs(A[r][c]);if(v>bv){best=r;bv=v;}}
+    if(bv<TOL)continue;[A[best],A[pr]]=[A[pr],A[best]];
+    const p=A[pr][c];for(let j=0;j<=n;j++)A[pr][j]/=p;
+    for(let r=0;r<n;r++){if(r===pr)continue;const f=A[r][c];if(Math.abs(f)<TOL)continue;for(let j=0;j<=n;j++)A[r][j]-=f*A[pr][j];}
+    pivs.push(c);pr++;
+  }
+  for(let r=pr;r<n;r++)if(Math.abs(A[r][n])>TOL)return null;
+  const x=Array(n).fill(0);for(let i=0;i<pivs.length;i++)x[pivs[i]]=A[i][n];
+  return x;
+}
+
+function rankOf(vecs,n){
+  const m=vecs.length;const A=vecs.map(r=>[...r]);let pr=0;
+  for(let c=0;c<n&&pr<m;c++){
+    let best=-1,bv=0;for(let r=pr;r<m;r++){const v=Math.abs(A[r][c]);if(v>bv){best=r;bv=v;}}
+    if(bv<TOL)continue;[A[best],A[pr]]=[A[pr],A[best]];
+    const p=A[pr][c];for(let j=0;j<n;j++)A[pr][j]/=p;
+    for(let r=0;r<m;r++){if(r===pr)continue;const f=A[r][c];for(let j=0;j<n;j++)A[r][j]-=f*A[pr][j];}
+    pr++;
+  }
+  return pr;
+}
+
+// ═══════════════════════════════════════
+//  CHAR POLY & EIGENVALUES (exact Frac)
+// ═══════════════════════════════════════
+function charPoly(Af,n){
+  const Z=new Frac(0),O=new Frac(1);
+  function fm(A,B){const C=Array.from({length:n},()=>Array.from({length:n},()=>Z));for(let i=0;i<n;i++)for(let j=0;j<n;j++){let s=Z;for(let k=0;k<n;k++)s=s.add(A[i][k].mul(B[k][j]));C[i][j]=s;}return C;}
+  function tr(M){let s=Z;for(let i=0;i<n;i++)s=s.add(M[i][i]);return s;}
+  function addScI(M,s){const R=M.map(r=>r.map(f=>f.clone()));for(let i=0;i<n;i++)R[i][i]=R[i][i].add(s);return R;}
+  const A=Af.map(r=>r.map(v=>v.clone()));const c=Array(n+1);c[n]=O;
+  let Mk=A.map(r=>r.map(f=>f.clone()));c[n-1]=tr(Mk).neg();
+  for(let k=2;k<=n;k++){Mk=fm(A,addScI(Mk,c[n-k+1]));c[n-k]=tr(Mk).neg().div(new Frac(k));}
+  return c;
+}
+
+function polyToTeX(c,n){
+  const terms=[];
+  for(let k=n;k>=0;k--){
+    if(c[k].isZero())continue;const cf=c[k];
+    let s='';
+    if(k===n){s=(cf.n===cf.d)?'':(cf.n===-cf.d)?'-':cf.toTeX(true);}
+    else if(k===0){s=(terms.length&&cf.n>0?'+':'')+cf.toTeX(true);}
+    else{const neg=cf.n<0;const abs=new Frac(Math.abs(cf.n),cf.d);const one=abs.n===abs.d;
+      if(terms.length&&!neg)s='+';if(neg)s+='-';if(!one)s+=abs.toTeX(true);}
+    terms.push(s+(k===0?'':(k===1?'\\lambda':'\\lambda^{'+k+'}')));
+  }
+  return terms.join('')||'0';
+}
+
+function evalPolyFrac(c,n,x){let r=new Frac(0),xk=new Frac(1);for(let k=0;k<=n;k++){r=r.add(c[k].mul(xk));xk=xk.mul(x);}return r;}
+
+function divisors(n){n=Math.abs(n);if(n===0)return[1];const d=[];for(let i=1;i*i<=n;i++){if(n%i===0){d.push(i);if(i!==n/i)d.push(n/i);}}return d.sort((a,b)=>a-b);}
+function rat(x,tol=1e-8,maxD=1000){for(let d=1;d<=maxD;d++){const n=Math.round(x*d);if(Math.abs(x-n/d)<tol)return new Frac(n,d);}return null;}
+function numTeX(val,frac){return frac?frac.toTeX(true):val.toFixed(4);}
+
+function findEigenvalues(c,n){
+  let cur=c.slice(),deg=n;const eigs=new Map();
+  while(deg>=1){
+    let found=null;
+    if(cur[0].isZero()){found=new Frac(0);}
+    else{
+      const ps=divisors(Math.abs(cur[0].n)*cur[0].d===cur[0].d?Math.abs(cur[0].n):Math.abs(cur[0].n));
+      const qs=divisors(Math.abs(cur[deg].n)||1);
+      // Clear denominators
+      let lcm=1;for(let k=0;k<=deg;k++)lcm=lcm/gcd(lcm,cur[k].d)*cur[k].d;
+      const ic=cur.map(f=>Math.round(f.n*(lcm/f.d)));
+      const ps2=divisors(Math.abs(ic[0])||1),qs2=divisors(Math.abs(ic[deg])||1);
+      for(const p of ps2){for(const q of qs2){for(const sg of[1,-1]){
+        const x=new Frac(sg*p,q);
+        if(evalPolyFrac(cur,deg,x).isZero()){found=x;break;}}if(found)break;}if(found)break;}
+    }
+    if(!found){
+      if(deg===2){
+        const a=cur[2].toFloat(),b=cur[1].toFloat(),c0=cur[0].toFloat();
+        const disc=b*b-4*a*c0;
+        if(disc>=0){for(const r of[(-b+Math.sqrt(disc))/(2*a),(-b-Math.sqrt(disc))/(2*a)]){
+          const f=rat(r);const key=r.toFixed(10);if(!eigs.has(key))eigs.set(key,{frac:f,value:r,algMult:0});eigs.get(key).algMult++;}}
+      }else if(deg===1){
+        const r=-cur[0].toFloat()/cur[1].toFloat();const f=rat(r);const key=r.toFixed(10);
+        if(!eigs.has(key))eigs.set(key,{frac:f,value:r,algMult:0});eigs.get(key).algMult++;}
+      break;
+    }
+    const key=found.toFloat().toFixed(10);
+    if(!eigs.has(key))eigs.set(key,{frac:found,value:found.toFloat(),algMult:0});
+    eigs.get(key).algMult++;
+    // Deflate
+    const newC=Array(deg);const rv=found.toFloat();let carry=0;
+    for(let k=deg;k>=1;k--){carry=cur[k].toFloat()+carry;newC[k-1]=carry;carry*=rv;}
+    cur=newC.map(v=>{const f=rat(v);return f||new Frac(Math.round(v));});deg--;
+  }
+  return Array.from(eigs.values()).sort((a,b)=>a.value-b.value);
+}
+
+// ═══════════════════════════════════════
+//  TeX HELPERS
+// ═══════════════════════════════════════
+function fmtE(v){const f=rat(v);return f?f.toTeX(true):(Math.abs(v)<TOL?'0':v.toFixed(3));}
+
+function matTeX(M,rows,cols){
+  let s='\\begin{bmatrix}';
+  for(let i=0;i<rows;i++){const r=[];for(let j=0;j<cols;j++)r.push(fmtE(M[i][j]));s+=r.join(' & ');if(i<rows-1)s+='\\\\';}
+  return s+'\\end{bmatrix}';
+}
+
+function vecTeX(v){return '\\begin{bmatrix}'+v.map(fmtE).join('\\\\')+'\\end{bmatrix}';}
+
+function jordanMatTeX(blocks,size){
+  const J=zeros(size,size);let idx=0;const ones=new Set();
+  for(const b of blocks){for(let i=0;i<b.size;i++){J[idx+i][idx+i]=b.lam;if(i<b.size-1){J[idx+i][idx+i+1]=1;ones.add((idx+i)+','+(idx+i+1));}}idx+=b.size;}
+  let s='\\begin{bmatrix}';
+  for(let i=0;i<size;i++){const r=[];for(let j=0;j<size;j++){if(ones.has(i+','+j))r.push('{\\color{red}1}');else r.push(fmtE(J[i][j]));}s+=r.join(' & ');if(i<size-1)s+='\\\\';}
+  return s+'\\end{bmatrix}';
+}
+
+// ═══════════════════════════════════════
+//  MAIN ALGORITHM
+// ═══════════════════════════════════════
+function runJordan(){
+  try{
+  const Af=getInput();const n=cN;
+  const An=Af.map(r=>r.map(f=>f.toFloat()));
+  const charC=charPoly(Af,n);
+  const eigenvalues=findEigenvalues(charC,n);
+  const sec=document.getElementById('out');sec.innerHTML='';
+
+  // ── Step 1: Char poly ──
+  const s1=mkStep(1,'Characteristic polynomial');
+  const factors=eigenvalues.map(ev=>{
+    const lt=numTeX(ev.value,ev.frac);
+    let f=ev.value===0?'\\lambda':(ev.value>0?'(\\lambda - '+lt+')':'(\\lambda + '+numTeX(-ev.value,ev.frac?ev.frac.neg():null)+')');
+    if(ev.algMult>1)f+='^{'+ev.algMult+'}';return f;
+  });
+  s1.body.innerHTML=
+    '<div class="eq-display">'+rkd('\\det(A - \\lambda I) = '+polyToTeX(charC,n))+'</div>'+
+    '<div class="eq-display">'+rkd('= '+factors.join('\\,'))+'</div>';
+  sec.appendChild(s1.block);
+
+  // ── Step 2: Eigenspaces ──
+  const eigData=[];let G=0;
+  eigenvalues.forEach(ev=>{
+    const B=An.map((r,i)=>r.map((v,j)=>v-(i===j?ev.value:0)));
+    const basis=nullSpace(B,n,n);
+    eigData.push({lam:ev.value,frac:ev.frac,algMult:ev.algMult,geoMult:basis.length,eigvecs:basis});
+    G+=basis.length;
+  });
+
+  const s2=mkStep(2,'Eigenspaces — geometric multiplicities');
+  let h2='';
+  eigData.forEach(ed=>{
+    const lt=numTeX(ed.lam,ed.frac);
+    h2+='<p><strong>'+rk('\\lambda = '+lt)+'</strong>: &ensp;'+
+      rk('m^a = '+ed.algMult)+', &ensp;'+rk('m^g = '+ed.geoMult);
+    if(ed.geoMult<ed.algMult)h2+=' &ensp;<em style="color:var(--red);">deficient</em>';
+    h2+='</p><div style="margin:.2rem 0 .7rem 1rem;">Basis for Null(A − '+lt+'I): &ensp;';
+    h2+=ed.eigvecs.map(v=>rk(vecTeX(v))).join(', &ensp; ')+'</div>';
+  });
+  h2+='<p><strong>Total geometric count:</strong> '+rk('G = '+G);
+  if(G<n)h2+=' &ensp; < &ensp; '+rk('n = '+n)+' — <em>generalized eigenvectors needed.</em>';
+  else h2+=' &ensp; = &ensp; '+rk('n = '+n)+' — <em>diagonalizable!</em>';
+  h2+='</p>';
+  s2.body.innerHTML=h2;sec.appendChild(s2.block);
+
+  // ── Chain state: each chain = {lam, frac, algMult, vecs:[v0, v1, ...]} ──
+  // v0 = eigenvector, v1 = level-2 gen eigvec, etc.
+  const chains=[];
+  eigData.forEach(ed=>{ed.eigvecs.forEach(v=>{chains.push({lam:ed.lam,frac:ed.frac,algMult:ed.algMult,vecs:[v]});});});
+
+  function getPJ(){
+    const cols=[];chains.forEach(ch=>ch.vecs.forEach(v=>cols.push(v)));
+    const nc=cols.length;const P=zeros(n,nc);
+    for(let j=0;j<nc;j++)for(let i=0;i<n;i++)P[i][j]=cols[j][i];
+    const blocks=chains.map(ch=>({lam:ch.lam,frac:ch.frac,size:ch.vecs.length}));
+    return{P,blocks,nc};
+  }
+
+  function showEq(stepNum,title,note){
+    const{P,blocks,nc}=getPJ();
+    const st=mkStep(stepNum,title);
+    let h=note||'';
+    h+='<div class="eq-display">'+rkd('A\\;'+matTeX(P,n,nc)+' \\;=\\; '+matTeX(P,n,nc)+'\\;'+jordanMatTeX(blocks,nc))+'</div>';
+    // Column legend
+    h+='<div style="font-size:.85rem;color:var(--gray);margin-top:.2rem;">Columns of P: ';
+    const labels=[];chains.forEach(ch=>{const lt=numTeX(ch.lam,ch.frac);
+      ch.vecs.forEach((v,vi)=>{labels.push(vi===0?'eigvec('+lt+')':'gen.eigvec level '+(vi+1));});});
+    h+=labels.join(', &ensp; ')+'</div>';
+    if(nc<n)h+='<p style="margin-top:.4rem;color:var(--navy2);"><em>P is '+n+'×'+nc+' — need '+(n-nc)+' more column'+(n-nc>1?'s':'')+' to reach '+n+'×'+n+'.</em></p>';
+    st.body.innerHTML=h;sec.appendChild(st.block);
+    return stepNum+1;
+  }
+
+  // ── Step 3: Initial eigenvector equation ──
+  let stepNum=showEq(3,'Initial equation — eigenvectors only',
+    '<p>With the '+G+' eigenvector'+(G>1?'s':'')+', the equation '+rk('AP=PJ')+' already holds — but P is '+n+'×'+G+(G<n?' (rectangular):':' (square — done!):')+'</p>');
+
+  // ── Step 4+: Extend chains level by level ──
+  if(G<n){
+    let level=2;
+    while(level<=n){
+      let anyExtended=false;
+      const extDetails=[];
+
+      // For each eigenvalue group
+      const byLam=new Map();
+      chains.forEach((ch,ci)=>{const k=ch.lam.toFixed(10);if(!byLam.has(k))byLam.set(k,{lam:ch.lam,frac:ch.frac,algMult:ch.algMult,idx:[]});byLam.get(k).idx.push(ci);});
+
+      for(const[key,grp] of byLam){
+        const curTotal=grp.idx.reduce((s,ci)=>s+chains[ci].vecs.length,0);
+        if(curTotal>=grp.algMult)continue;
+        const B=An.map((r,i)=>r.map((v,j)=>v-(i===j?grp.lam:0)));
+
+        for(const ci of grp.idx){
+          const ch=chains[ci];
+          if(ch.vecs.length!==level-1)continue; // only extend at current level
+          const tip=ch.vecs[ch.vecs.length-1];
+          const sol=solveAxEqB(matClone(B),tip,n);
+          if(sol!==null){
+            ch.vecs.push(sol);anyExtended=true;
+            extDetails.push({lam:grp.lam,frac:grp.frac,tip,sol});
+          }
+        }
+      }
+
+      if(!anyExtended)break;
+
+      // Show this level
+      let note='<p><strong>Level '+level+' — solving '+rk('(A-\\lambda I)\\mathbf{x}=\\text{chain tip}')+':</strong></p>';
+      note+='<div style="margin:.4rem 0 .5rem;">';
+      extDetails.forEach(ext=>{
+        const lt=numTeX(ext.lam,ext.frac);
+        note+='<div style="margin:.2rem 0;">'+rk('(A - '+lt+'I)')+'&thinsp;'+rk(vecTeX(ext.sol))+' = '+rk(vecTeX(ext.tip))+' &ensp; ✓</div>';
+      });
+      note+='</div><p>Chains extended — updated equation:</p>';
+      stepNum=showEq(stepNum,'Extend chains — level '+level+' generalized eigenvectors',note);
+      level++;
+    }
+  }
+
+  // ── Final result ──
+  const{P,blocks,nc}=getPJ();
+  const finalCard=document.createElement('div');finalCard.className='solution-card';
+  let fh='<h3>Jordan Normal Form</h3>';
+  if(nc===n){
+    fh+='<div class="eq-display" style="color:#fff">'+rkd('P = '+matTeX(P,n,n))+'</div>';
+    fh+='<div class="eq-display" style="color:#fff">'+rkd('J = '+jordanMatTeX(blocks,n))+'</div>';
+    fh+='<div class="eq-display" style="color:#fff">'+rkd('A = P\\,J\\,P^{-1}')+'</div>';
+    fh+='<div style="margin-top:.6rem;font-size:.95rem;color:#a0b8d8;">Block structure: ';
+    fh+=blocks.map(b=>rk('J_{'+b.size+'}('+numTeX(b.lam,b.frac)+')')).join(' ⊕ ')+'</div>';
+    if(blocks.every(b=>b.size===1))fh+='<p style="margin-top:.5rem;color:#a0b8d8;"><strong>A is diagonalizable</strong> — all blocks are 1×1.</p>';
+  }else{
+    fh+='<p style="color:#ffa;">Found '+nc+' of '+n+' generalized eigenvectors.</p>';
+  }
+  finalCard.innerHTML=fh;sec.appendChild(finalCard);
+
+  // ── Key ──
+  const key=document.createElement('div');key.className='key-box';
+  key.innerHTML='<strong>The algorithm — building Jordan chains:</strong><br><br>'+
+    '<strong>1.</strong> Factor det(A − λI) to find eigenvalues with algebraic multiplicities.<br><br>'+
+    '<strong>2.</strong> For each λ, find eigenspace Null(A − λI). Each eigenvector starts a chain of length 1. Show the (possibly rectangular) equation AP = PJ.<br><br>'+
+    '<strong>3.</strong> For each chain tip <strong>x</strong>, try to solve (A − λI)<strong>y</strong> = <strong>x</strong>. If solvable, <strong>y</strong> is a generalized eigenvector — the chain grows and the Jordan block gains a '+rk('{\\color{red}1}')+' on the superdiagonal. Show updated AP = PJ.<br><br>'+
+    '<strong>4.</strong> Repeat level by level until all chains are complete and P is n×n.';
+  sec.appendChild(key);
+  sec.scrollIntoView({behavior:'smooth'});
+  }catch(e){document.getElementById('out').innerHTML='<div class="err-msg" style="padding:1rem">Error: '+e.message+'</div>';console.error(e);}
+}
+
+function mkStep(num,title){
+  const block=document.createElement('div');block.className='step-block';
+  const hdr=document.createElement('div');hdr.className='step-header';
+  const badge=document.createElement('span');badge.className='step-num';badge.textContent=num;
+  const txt=document.createElement('span');txt.className='step-title-txt';txt.textContent=title;
+  hdr.append(badge,txt);block.appendChild(hdr);
+  const body=document.createElement('div');body.className='step-body';block.appendChild(body);
+  return{block,body};
+}
+
+// ═══════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════
+let cN=3;
+function rebuildMatrix(){cN=Math.min(Math.max(parseInt(document.getElementById('nSize').value)||3,2),5);document.getElementById('nSize').value=cN;buildGrid();}
+function buildGrid(){
+  const c=document.getElementById('matrixContainer');c.innerHTML='';
+  const g=document.createElement('div');g.className='matrix-grid';
+  g.style.gridTemplateColumns='auto repeat('+cN+',64px)';
+  g.appendChild(document.createElement('div'));
+  for(let j=0;j<cN;j++){const l=document.createElement('div');l.className='col-lbl';l.textContent='c'+(j+1);g.appendChild(l);}
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');rl.className='row-lbl';rl.innerHTML=rk('R_{'+(i+1)+'}');g.appendChild(rl);
+    for(let j=0;j<cN;j++){const inp=document.createElement('input');inp.type='text';inp.id='c'+i+'_'+j;inp.placeholder='0';inp.autocomplete='off';g.appendChild(inp);}
+  }
+  c.appendChild(g);
+}
+function getInput(){return Array.from({length:cN},function(_,i){return Array.from({length:cN},function(_,j){return Frac.parse((document.getElementById('c'+i+'_'+j)||{}).value||'0');});});}
+
+var EXAMPLES=[
+  {n:3,d:[['1','1','0'],['0','1','0'],['0','0','3']]},
+  {n:2,d:[['5','-3'],['3','-1']]},
+  {n:3,d:[['2','1','0'],['0','2','1'],['0','0','2']]},
+  {n:4,d:[['2','1','0','0'],['0','2','0','0'],['0','0','3','1'],['0','0','0','3']]},
+  {n:3,d:[['0','1','0'],['0','0','1'],['0','0','0']]},
+  {n:3,d:[['1','0','0'],['0','2','0'],['0','0','3']]},
+  {n:5,d:[['2','1','0','0','0'],['0','2','1','0','0'],['0','0','2','0','0'],['0','0','0','1','0'],['0','0','0','0','1']]},
+];
+function loadEx(idx){var ex=EXAMPLES[idx];cN=ex.n;document.getElementById('nSize').value=cN;buildGrid();ex.d.forEach(function(r,i){for(var j=0;j<cN;j++){var el=document.getElementById('c'+i+'_'+j);if(el)el.value=r[j];}});}
+
+window.addEventListener('DOMContentLoaded',function(){buildGrid();loadEx(0);});
+</script>
+</body>
+</html>

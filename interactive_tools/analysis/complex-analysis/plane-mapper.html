@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plane Mapper</title>
+<style>
+/* Layout: toolbar, then domain | range side by side, then a readout strip (matrix, det, conformality).
+   Same visual family as Circle Mapper: grid lines are colored by their x- or y-index so the same
+   line can be found in both windows; e1 is orange, e2 is purple; the probe circle is painted by angle. */
+:root {
+  --bg: #F3F4F0;
+  --pane: #FFFFFF;
+  --ink: #1C2321;
+  --ink-2: #5C6663;
+  --rule: #D8DCD6;
+  --grid: #E6E9E4;
+  --axis: #B3BAB5;
+  --accent: #0B6E6A;
+  --e1: #D9731A;
+  --e2: #6B4FBB;
+  --rect: #0B6E6A;
+  --probe: #B23A2E;
+  --ok: #1E7F3C;
+  --bad: #B23A2E;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835; --grid: #252D2A; --axis: #4A5551;
+    --accent: #4FC3BD; --e1: #F2A25C; --e2: #A992F0; --rect: #4FC3BD; --probe: #F08A7B; --ok: #6FD48F; --bad: #F08A7B; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835; --grid: #252D2A; --axis: #4A5551;
+  --accent: #4FC3BD; --e1: #F2A25C; --e2: #A992F0; --rect: #4FC3BD; --probe: #F08A7B; --ok: #6FD48F; --bad: #F08A7B; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); }
+.wrap { max-width: 80rem; margin-inline: auto; padding-inline: 16px; padding-block: 1.25rem 2rem; display: grid; gap: 1rem; }
+h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+.sub { margin: 0.2rem 0 0; color: var(--ink-2); max-width: 64ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 0.6rem 1.4rem; align-items: end; }
+.field { display: grid; gap: 0.25rem; min-width: 0; }
+.field > span, .lbl { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+select, input[type="number"] { font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule); border-radius: 6px; padding: 0.35rem 0.5rem; }
+select { min-width: 13rem; }
+input[type="number"] { width: 4.6rem; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.mx { display: grid; grid-template-columns: auto auto auto; gap: 0.25rem; align-items: center; }
+.mx .br { font-size: 2.6rem; line-height: 1; color: var(--ink-2); font-weight: 200; }
+.mx .cells { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.btn { font: 500 0.82rem/1 var(--sans); color: var(--ink); background: var(--pane); border: 1px solid var(--rule); border-radius: 5px; padding: 0.4rem 0.6rem; cursor: pointer; }
+.btn:hover { border-color: var(--ink-2); }
+.chk { display: flex; gap: 0.4rem; align-items: center; color: var(--ink-2); padding-bottom: 0.4rem; }
+.chk input { accent-color: var(--accent); }
+input[type="range"] { width: 9rem; max-width: 100%; accent-color: var(--accent); margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.planes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.pane { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; min-width: 0; display: grid; gap: 0.5rem; }
+.pane h2 { margin: 0; font-size: 1rem; font-weight: 600; display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.pane h2 small { font-weight: 400; color: var(--ink-2); font-size: 0.82rem; }
+.view { position: relative; width: 100%; aspect-ratio: 1; max-width: 100%; }
+canvas { display: block; width: 100%; height: 100%; border-radius: 4px; cursor: crosshair; touch-action: none; }
+#dom { cursor: grab; }
+@media (max-width: 40rem) { .planes { gap: 0.5rem; } .pane { padding: 0.4rem; } .pane h2 small { display: none; } }
+
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
+.card { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem 0.9rem; min-width: 0; display: grid; gap: 0.45rem; align-content: start; }
+.card h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.card p { margin: 0; color: var(--ink-2); font-size: 0.9rem; }
+.jmat { display: grid; grid-template-columns: auto auto auto; align-items: center; gap: 0.3rem; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.jmat .br { font-size: 2.6rem; line-height: 1; color: var(--ink-2); font-weight: 200; }
+.jmat .cells { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.8rem; text-align: right; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem; font-size: 0.9rem; }
+.kv dt { color: var(--ink-2); margin: 0; }
+.kv dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tag { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; border: 1px solid currentColor; }
+.tag.ok { color: var(--ok); } .tag.bad { color: var(--bad); } .tag.mid { color: var(--ink-2); }
+.cr { font-family: var(--mono); font-size: 0.86rem; display: grid; gap: 0.15rem; font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.84rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 1.1em; height: 0.3em; border-radius: 2px; vertical-align: middle; margin-right: 0.3em; }
+.hint { color: var(--ink-2); font-size: 0.86rem; margin: 0; }
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>Plane Mapper</h1>
+    <p class="sub">A map from ℝ² to ℝ² acts on a grid, a rectangle, the unit square and a small circle. A linear map does the same thing everywhere; a nonlinear map is, near a point, its Jacobian.</p>
+  </header>
+
+  <div class="bar">
+    <label class="field"><span>Map</span>
+      <select id="map"></select>
+    </label>
+    <div class="field" id="matfield"><span>Matrix [a b; c d]</span>
+      <div class="mx"><span class="br">[</span>
+        <div class="cells">
+          <input type="number" id="a" step="0.1" value="1" aria-label="a"><input type="number" id="b" step="0.1" value="-1" aria-label="b">
+          <input type="number" id="c" step="0.1" value="1" aria-label="c"><input type="number" id="d" step="0.1" value="1" aria-label="d">
+        </div><span class="br">]</span></div>
+    </div>
+    <div class="field" id="presets"><span>Presets</span><div class="presets" id="pbtns"></div></div>
+    <label class="field"><span>Probe radius r = <output id="rv">0.30</output></span>
+      <input type="range" id="r" min="0.05" max="1" step="0.01" value="0.3">
+    </label>
+    <label class="chk"><input type="checkbox" id="showgrid" checked> Grid</label>
+    <label class="chk"><input type="checkbox" id="fit" checked> Fit range view</label>
+  </div>
+
+  <div class="planes">
+    <section class="pane">
+      <h2>Domain <small>drag the probe point, its circle edge, or the rectangle · scroll to zoom</small></h2>
+      <div class="view"><canvas id="dom"></canvas></div>
+    </section>
+    <section class="pane">
+      <h2>Range <small>scroll to zoom, drag to pan</small></h2>
+      <div class="view"><canvas id="ran"></canvas></div>
+    </section>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--e1)"></i>e₁ and its image (for a nonlinear map: a step r from p and the Jacobian's first column)</span>
+    <span><i style="background:var(--e2)"></i>e₂ and its image (second column)</span>
+    <span><i style="background:var(--rect)"></i>rectangle</span>
+    <span><i style="background:var(--probe)"></i>probe point p and circle (image painted by angle)</span>
+    <span><i style="border-top:2px dashed var(--ink-2);height:0"></i>linear approximation at p (dashed, nonlinear maps only)</span>
+  </div>
+
+  <div class="readout">
+    <section class="card">
+      <h3 id="jtitle">Matrix</h3>
+      <div class="jmat"><span class="br">[</span><div class="cells" id="jcells"><span>1</span><span>−1</span><span>1</span><span>1</span></div><span class="br">]</span></div>
+      <p id="jnote">Columns are the images of e₁ and e₂.</p>
+    </section>
+    <section class="card">
+      <h3>Area and orientation</h3>
+      <dl class="kv">
+        <dt>det</dt><dd id="det"></dd>
+        <dt>area factor</dt><dd id="area"></dd>
+        <dt>orientation</dt><dd id="orient"></dd>
+        <dt>circle of radius r →</dt><dd id="ell"></dd>
+      </dl>
+      <p>|det| is how much area is stretched near p; the sign says whether the plane is flipped. For a nonlinear map this is the Jacobian determinant of change of variables.</p>
+    </section>
+    <section class="card">
+      <h3>Angles and the Cauchy–Riemann form <span class="tag mid" id="ctag"></span></h3>
+      <div class="cr">
+        <span>a = d &nbsp;→&nbsp; <span id="cr1"></span></span>
+        <span>b = −c &nbsp;→&nbsp; <span id="cr2"></span></span>
+        <span>angle between images of e₁, e₂: <span id="ang"></span></span>
+      </div>
+      <p id="cnote"></p>
+    </section>
+  </div>
+  <p class="hint" id="note"></p>
+</main>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------- maps ----------
+// Each map gives f(x,y) and its Jacobian J(x,y) = [a b; c d]. Linear maps read the matrix inputs.
+const MAPS = [
+  { name: 'Linear: matrix [a b; c d]', linear: true },
+  { name: 'z² : (x² − y², 2xy)', f: (x, y) => [x * x - y * y, 2 * x * y], J: (x, y) => [2 * x, -2 * y, 2 * y, 2 * x],
+    note: 'Analytic. The Jacobian has the Cauchy–Riemann form at every point, so the small circle stays a circle and grid lines still meet at right angles.' },
+  { name: 'eᶻ : (eˣ cos y, eˣ sin y)', f: (x, y) => [Math.exp(x) * Math.cos(y), Math.exp(x) * Math.sin(y)], J: (x, y) => [Math.exp(x) * Math.cos(y), -Math.exp(x) * Math.sin(y), Math.exp(x) * Math.sin(y), Math.exp(x) * Math.cos(y)],
+    note: 'Analytic. Area factor e²ˣ: the map is a local rotation by y and scaling by eˣ.' },
+  { name: 'z̄² : (x² − y², −2xy)', f: (x, y) => [x * x - y * y, -2 * x * y], J: (x, y) => [2 * x, -2 * y, -2 * y, -2 * x],
+    note: 'Not analytic. Angles are preserved in size but the orientation is reversed (det < 0), so Cauchy–Riemann fails.' },
+  { name: 'Polar: (r cos θ, r sin θ), x = r, y = θ', f: (x, y) => [x * Math.cos(y), x * Math.sin(y)], J: (x, y) => [Math.cos(y), -x * Math.sin(y), Math.sin(y), x * Math.cos(y)],
+    note: 'The change to polar coordinates. Its Jacobian determinant is r, the factor in dA = r dr dθ. Try the probe at r = 0, where the map collapses.' },
+  { name: '(x², y)', f: (x, y) => [x * x, y], J: (x, y) => [2 * x, 0, 0, 1],
+    note: 'Stretches horizontally by 2x. Right angles survive but the circle becomes an ellipse: angle-preserving at a point needs equal stretching in every direction.' },
+  { name: '(x + y², y)', f: (x, y) => [x + y * y, y], J: (x, y) => [1, 2 * y, 0, 1],
+    note: 'A shear whose amount depends on y. det = 1 everywhere, so areas are preserved even though shapes are not.' },
+];
+const PRESETS = [
+  ['rotate 45°', [Math.SQRT1_2, -Math.SQRT1_2, Math.SQRT1_2, Math.SQRT1_2]],
+  ['× (1 + i)', [1, -1, 1, 1]],
+  ['scale 2', [2, 0, 0, 2]],
+  ['stretch x', [2, 0, 0, 1]],
+  ['shear', [1, 1, 0, 1]],
+  ['reflect', [1, 0, 0, -1]],
+  ['project', [1, 0, 0, 0]],
+  ['general', [1, 2, 3, 4]],
+];
+MAPS.forEach((M, i) => { const o = document.createElement('option'); o.value = i; o.textContent = M.name; $('map').appendChild(o); });
+PRESETS.forEach(([name, m]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = name;
+  b.addEventListener('click', () => { ['a', 'b', 'c', 'd'].forEach((k, i) => $(k).value = +m[i].toFixed(3)); render(); });
+  $('pbtns').appendChild(b);
+});
+
+// ---------- state ----------
+const S = { mi: 0, px: 1.2, py: 0.6, r: 0.3, rect: { x: -1.6, y: 0.4, w: 1, h: 0.6 }, grid: true, fit: true };
+const dom = { cvs: $('dom'), x: 0, y: 0, half: 2.5 };
+const ran = { cvs: $('ran'), x: 0, y: 0, half: 4 };
+const linMat = () => [+$('a').value || 0, +$('b').value || 0, +$('c').value || 0, +$('d').value || 0];
+function current() {
+  const M = MAPS[S.mi];
+  if (M.linear) { const m = linMat(); return { f: (x, y) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y], J: () => m, linear: true }; }
+  return M;
+}
+const finite = p => Number.isFinite(p[0]) && Number.isFinite(p[1]) && Math.hypot(p[0], p[1]) < 1e6;
+const hue = t => `hsl(${(t * 180 / Math.PI).toFixed(0)} 70% 48%)`;
+const fmt = v => (Math.abs(v) < 5e-4 ? 0 : v).toFixed(2).replace('-', '−');
+
+// ---------- canvas plumbing ----------
+function setup(v) {
+  const dpr = window.devicePixelRatio || 1, w = v.cvs.clientWidth, h = v.cvs.clientHeight;
+  if (v.cvs.width !== Math.round(w * dpr) || v.cvs.height !== Math.round(h * dpr)) { v.cvs.width = Math.round(w * dpr); v.cvs.height = Math.round(h * dpr); }
+  const g = v.cvs.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  v.w = w; v.h = h; v.scale = Math.min(w, h) / (2 * v.half);
+  v.toPx = p => [w / 2 + (p[0] - v.x) * v.scale, h / 2 - (p[1] - v.y) * v.scale];
+  v.toW = (px, py) => [v.x + (px - w / 2) / v.scale, v.y - (py - h / 2) / v.scale];
+  return g;
+}
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function niceStep(half) { const raw = half / 3, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+
+function drawAxes(g, v) {
+  g.clearRect(0, 0, v.w, v.h);
+  const step = niceStep(v.half), lo = v.toW(0, v.h), hi = v.toW(v.w, 0);
+  g.lineWidth = 1; g.strokeStyle = cssVar('--grid');
+  for (let x = Math.ceil(lo[0] / step) * step; x <= hi[0]; x += step) { const [px] = v.toPx([x, 0]); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, v.h); g.stroke(); }
+  for (let y = Math.ceil(lo[1] / step) * step; y <= hi[1]; y += step) { const [, py] = v.toPx([0, y]); g.beginPath(); g.moveTo(0, py); g.lineTo(v.w, py); g.stroke(); }
+  g.strokeStyle = cssVar('--axis'); const [ox, oy] = v.toPx([0, 0]);
+  g.beginPath(); g.moveTo(ox, 0); g.lineTo(ox, v.h); g.moveTo(0, oy); g.lineTo(v.w, oy); g.stroke();
+  g.font = '11px ' + cssVar('--sans'); g.fillStyle = cssVar('--ink-2'); g.textBaseline = 'top';
+  const dec = step < 1 ? Math.ceil(-Math.log10(step)) : 0;
+  for (let x = Math.ceil(lo[0] / step) * step; x <= hi[0]; x += step) { if (Math.abs(x) < 1e-9) continue; const [px] = v.toPx([x, 0]); g.fillText(x.toFixed(dec), px + 3, Math.min(Math.max(oy + 3, 2), v.h - 14)); }
+  for (let y = Math.ceil(lo[1] / step) * step; y <= hi[1]; y += step) { if (Math.abs(y) < 1e-9) continue; const [, py] = v.toPx([0, y]); g.fillText(y.toFixed(dec), Math.min(Math.max(ox + 3, 2), v.w - 24), py + 2); }
+}
+// polyline in plane coordinates; broken where the map blows up
+function poly(g, v, pts, color, width, dash) {
+  g.lineWidth = width; g.strokeStyle = color; g.setLineDash(dash || []); g.lineJoin = 'round'; g.beginPath();
+  let pen = false;
+  for (const p of pts) { if (!finite(p)) { pen = false; continue; } const [x, y] = v.toPx(p); if (pen) g.lineTo(x, y); else g.moveTo(x, y); pen = true; }
+  g.stroke(); g.setLineDash([]);
+}
+function painted(g, v, pts, width) {           // pts: {t, p}; color by t
+  g.lineWidth = width; g.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1].p, b = pts[i].p; if (!finite(a) || !finite(b)) continue;
+    const [ax, ay] = v.toPx(a), [bx, by] = v.toPx(b);
+    g.strokeStyle = hue(pts[i - 1].t); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  }
+}
+function arrow(g, v, from, to, color) {
+  if (!finite(to)) return;
+  const [x0, y0] = v.toPx(from), [x1, y1] = v.toPx(to), dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
+  g.strokeStyle = g.fillStyle = color; g.lineWidth = 2.5; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  if (L < 4) return;
+  const ux = dx / L, uy = dy / L, h = 10;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x1 - h * ux + 5 * uy, y1 - h * uy - 5 * ux); g.lineTo(x1 - h * ux - 5 * uy, y1 - h * uy + 5 * ux); g.closePath(); g.fill();
+}
+function dot(g, v, p, color, rad) {
+  if (!finite(p)) return; const [x, y] = v.toPx(p);
+  g.beginPath(); g.arc(x, y, rad, 0, 2 * Math.PI); g.fillStyle = color; g.fill(); g.lineWidth = 2; g.strokeStyle = cssVar('--pane'); g.stroke();
+}
+
+// ---------- geometry ----------
+const seg = (a, b, n) => Array.from({ length: n + 1 }, (_, i) => [a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]);
+function rectPts() { const { x, y, w, h } = S.rect; return [].concat(seg([x, y], [x + w, y], 24), seg([x + w, y], [x + w, y + h], 24), seg([x + w, y + h], [x, y + h], 24), seg([x, y + h], [x, y], 24)); }
+const squarePts = () => [].concat(seg([0, 0], [1, 0], 24), seg([1, 0], [1, 1], 24), seg([1, 1], [0, 1], 24), seg([0, 1], [0, 0], 24));
+function circlePts() { const out = []; for (let i = 0; i <= 180; i++) { const t = 2 * Math.PI * i / 180; out.push({ t, p: [S.px + S.r * Math.cos(t), S.py + S.r * Math.sin(t)] }); } return out; }
+const GR = 4;                                     // grid covers [-GR, GR]²
+function gridLines() {
+  const lines = [];
+  for (let k = -GR; k <= GR; k++) { lines.push({ k, dir: 'v', pts: seg([k, -GR], [k, GR], 64) }); lines.push({ k, dir: 'h', pts: seg([-GR, k], [GR, k], 64) }); }
+  return lines;
+}
+const gridColor = (ln, strong) => ln.k === 0 ? cssVar('--axis') : strong ? `hsl(${ln.dir === 'v' ? 200 : 330} 45% ${55 + Math.abs(ln.k) * 4}% / 0.55)` : cssVar('--grid');
+
+// ---------- render ----------
+function render() {
+  const M = current(), f = M.f, J = M.J(S.px, S.py), [a, b, c, d] = J;
+  const F = p => f(p[0], p[1]);
+  const lin = p => [f(S.px, S.py)[0] + a * (p[0] - S.px) + b * (p[1] - S.py), f(S.px, S.py)[1] + c * (p[0] - S.px) + d * (p[1] - S.py)];
+  const img = { rect: rectPts().map(F), sq: squarePts().map(F), circ: circlePts().map(o => ({ t: o.t, p: F(o.p) })), lin: circlePts().map(o => lin(o.p)), p: F([S.px, S.py]), e1: f(1, 0), e2: f(0, 1), o: f(0, 0) };
+  const gl = gridLines().map(ln => ({ ...ln, img: ln.pts.map(F) }));
+
+  if (S.fit) {
+    const all = [].concat(img.rect, img.sq, img.circ.map(o => o.p), [img.p, img.e1, img.e2, img.o]).filter(finite);
+    const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+    const lo = [Math.min(...xs), Math.min(...ys)], hi = [Math.max(...xs), Math.max(...ys)];
+    ran.x = (lo[0] + hi[0]) / 2; ran.y = (lo[1] + hi[1]) / 2; ran.half = Math.max(0.5, Math.max(hi[0] - lo[0], hi[1] - lo[1]) / 2 * 1.25);
+  }
+  const gd = setup(dom), gr = setup(ran);
+  drawAxes(gd, dom); drawAxes(gr, ran);
+  if (S.grid) for (const ln of gl) { poly(gd, dom, ln.pts, gridColor(ln, true), 1); poly(gr, ran, ln.img, gridColor(ln, true), 1); }
+  const rc = cssVar('--rect');
+  poly(gd, dom, rectPts(), rc, 2); poly(gr, ran, img.rect, rc, 2);
+  const ink2 = cssVar('--ink-2');
+  poly(gd, dom, squarePts(), ink2, 1.5); poly(gr, ran, img.sq, ink2, 1.5);
+  if (M.linear) {   // e1, e2 at the origin and their images
+    arrow(gd, dom, [0, 0], [1, 0], cssVar('--e1')); arrow(gd, dom, [0, 0], [0, 1], cssVar('--e2'));
+    arrow(gr, ran, img.o, img.e1, cssVar('--e1')); arrow(gr, ran, img.o, img.e2, cssVar('--e2'));
+  } else {          // steps of length r from p, and the Jacobian's columns times r from f(p)
+    arrow(gd, dom, [S.px, S.py], [S.px + S.r, S.py], cssVar('--e1')); arrow(gd, dom, [S.px, S.py], [S.px, S.py + S.r], cssVar('--e2'));
+    arrow(gr, ran, img.p, [img.p[0] + a * S.r, img.p[1] + c * S.r], cssVar('--e1')); arrow(gr, ran, img.p, [img.p[0] + b * S.r, img.p[1] + d * S.r], cssVar('--e2'));
+  }
+  if (!M.linear) poly(gr, ran, img.lin, ink2, 1.5, [5, 4]);
+  painted(gd, dom, circlePts(), 3); painted(gr, ran, img.circ, 3);
+  const pc = cssVar('--probe');
+  dot(gd, dom, [S.px, S.py], pc, 6); dot(gr, ran, img.p, pc, 6);
+
+  // readouts
+  const det = a * d - b * c;
+  $('jtitle').textContent = M.linear ? 'Matrix' : `Jacobian at p = (${fmt(S.px)}, ${fmt(S.py)})`;
+  $('jnote').textContent = M.linear ? 'Columns are the images of e₁ and e₂.' : 'Columns are ∂f/∂x and ∂f/∂y at p: the images of e₁ and e₂ under the local linearization (dashed circle in the range).';
+  $('jcells').innerHTML = J.map(v => `<span>${fmt(v)}</span>`).join('');
+  $('det').textContent = fmt(det);
+  $('area').textContent = `× ${fmt(Math.abs(det))}`;
+  $('orient').textContent = Math.abs(det) < 1e-9 ? 'collapsed (singular)' : det > 0 ? 'preserved' : 'reversed (flipped)';
+  // singular values: semi-axes of the image ellipse of the unit circle
+  const s = Math.sqrt(a * a + b * b + c * c + d * d), q = Math.sqrt(Math.max(0, s * s * s * s / 4 - det * det)) ;
+  const s1 = Math.sqrt(s * s / 2 + q), s2 = Math.sqrt(Math.max(0, s * s / 2 - q));
+  $('ell').textContent = Math.abs(s1 - s2) < 1e-6 ? `circle of radius ${fmt(s1 * S.r)}` : `ellipse with semi-axes ${fmt(s1 * S.r)} and ${fmt(s2 * S.r)}`;
+  const cr1 = Math.abs(a - d) < 1e-6, cr2 = Math.abs(b + c) < 1e-6;
+  $('cr1').textContent = `${fmt(a)} ${cr1 ? '=' : '≠'} ${fmt(d)}`;
+  $('cr2').textContent = `${fmt(b)} ${cr2 ? '=' : '≠'} ${fmt(-c)}`;
+  const n1 = Math.hypot(a, c), n2 = Math.hypot(b, d);
+  $('ang').textContent = n1 > 1e-9 && n2 > 1e-9 ? (Math.acos(Math.max(-1, Math.min(1, (a * b + c * d) / (n1 * n2)))) * 180 / Math.PI).toFixed(1) + '°' : 'undefined';
+  const tag = $('ctag');
+  if (cr1 && cr2 && Math.abs(det) > 1e-9) {
+    tag.className = 'tag ok'; tag.textContent = 'conformal';
+    $('cnote').textContent = `The matrix is [k cos φ, −k sin φ; k sin φ, k cos φ]: multiplication by the complex number ${fmt(a)} + ${fmt(c)}i, a rotation by ${(Math.atan2(c, a) * 180 / Math.PI).toFixed(1)}° and scaling by ${fmt(n1)}. Every angle at p is preserved, which is what the Cauchy–Riemann equations uₓ = v_y, u_y = −vₓ say.`;
+  } else if (cr1 && cr2) {
+    tag.className = 'tag mid'; tag.textContent = 'zero';
+    $('cnote').textContent = 'The Jacobian is zero here: the Cauchy–Riemann form holds trivially, but the map collapses the neighborhood (for z² this happens at the origin, where angles are doubled).';
+  } else {
+    tag.className = 'tag bad'; tag.textContent = 'not conformal';
+    $('cnote').textContent = Math.abs(a - d) < 1e-6 && Math.abs(b - c) < 1e-6 && Math.abs(det) > 1e-9 && n1 === n2
+      ? 'Angles keep their size but the orientation is reversed: this is the conjugate (anti-analytic) form [a b; b −a].'
+      : 'A circle becomes an ellipse and right angles are bent: the map stretches different directions by different amounts, so it is not a rotation-and-scaling. The Cauchy–Riemann equations fail at p.';
+  }
+  $('note').textContent = M.linear ? 'A linear map is its own Jacobian everywhere. The "× (1 + i)" preset has the Cauchy–Riemann form: compare it with "stretch x", which also preserves right angles between grid lines but not every angle.' : MAPS[S.mi].note;
+  $('matfield').style.opacity = $('presets').style.opacity = M.linear ? 1 : 0.4;
+  ['a', 'b', 'c', 'd'].forEach(k => $(k).disabled = !M.linear);
+  $('pbtns').querySelectorAll('button').forEach(bt => bt.disabled = !M.linear);
+}
+
+// ---------- controls ----------
+$('map').addEventListener('change', e => { S.mi = +e.target.value; render(); });
+['a', 'b', 'c', 'd'].forEach(k => $(k).addEventListener('input', render));
+$('r').addEventListener('input', e => { S.r = +e.target.value; $('rv').textContent = S.r.toFixed(2); render(); });
+$('showgrid').addEventListener('change', e => { S.grid = e.target.checked; render(); });
+$('fit').addEventListener('change', e => { S.fit = e.target.checked; render(); });
+
+const pos = (v, e) => { const r = v.cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+let drag = null;
+dom.cvs.addEventListener('pointerdown', e => {
+  const [px, py] = pos(dom, e), w = dom.toW(px, py), tol = 12 / dom.scale;
+  const dp = Math.hypot(w[0] - S.px, w[1] - S.py), R = S.rect;
+  if (Math.abs(dp - S.r) < tol && dp > tol) drag = { kind: 'edge' };
+  else if (dp < Math.max(S.r, tol)) drag = { kind: 'point', dx: w[0] - S.px, dy: w[1] - S.py };
+  else if (w[0] > R.x && w[0] < R.x + R.w && w[1] > R.y && w[1] < R.y + R.h) drag = { kind: 'rect', dx: w[0] - R.x, dy: w[1] - R.y };
+  else drag = { kind: 'pan', px, py, x: dom.x, y: dom.y };
+  dom.cvs.setPointerCapture(e.pointerId);
+});
+dom.cvs.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [px, py] = pos(dom, e), w = dom.toW(px, py);
+  if (drag.kind === 'point') { S.px = w[0] - drag.dx; S.py = w[1] - drag.dy; }
+  else if (drag.kind === 'edge') { S.r = Math.min(1, Math.max(0.05, Math.hypot(w[0] - S.px, w[1] - S.py))); $('r').value = S.r; $('rv').textContent = S.r.toFixed(2); }
+  else if (drag.kind === 'rect') { S.rect.x = w[0] - drag.dx; S.rect.y = w[1] - drag.dy; }
+  else { dom.x = drag.x - (px - drag.px) / dom.scale; dom.y = drag.y + (py - drag.py) / dom.scale; }
+  render();
+});
+const stop = () => { drag = null; };
+dom.cvs.addEventListener('pointerup', stop); dom.cvs.addEventListener('pointercancel', stop);
+
+let pan = null;
+ran.cvs.addEventListener('pointerdown', e => { const [px, py] = pos(ran, e); pan = { px, py, x: ran.x, y: ran.y }; ran.cvs.setPointerCapture(e.pointerId); });
+ran.cvs.addEventListener('pointermove', e => {
+  if (!pan) return; const [px, py] = pos(ran, e);
+  if (S.fit) { S.fit = false; $('fit').checked = false; }
+  ran.x = pan.x - (px - pan.px) / ran.scale; ran.y = pan.y + (py - pan.py) / ran.scale; render();
+});
+ran.cvs.addEventListener('pointerup', () => { pan = null; }); ran.cvs.addEventListener('pointercancel', () => { pan = null; });
+function wheel(v) {
+  return e => {
+    e.preventDefault();
+    const [px, py] = pos(v, e), before = v.toW(px, py);
+    v.half = Math.min(1e3, Math.max(0.05, v.half * Math.exp(e.deltaY * 0.0015)));
+    if (v === ran && S.fit) { S.fit = false; $('fit').checked = false; }
+    setup(v); const after = v.toW(px, py);
+    v.x += before[0] - after[0]; v.y += before[1] - after[1]; render();
+  };
+}
+dom.cvs.addEventListener('wheel', wheel(dom), { passive: false });
+ran.cvs.addEventListener('wheel', wheel(ran), { passive: false });
+new ResizeObserver(render).observe(dom.cvs);
+new ResizeObserver(render).observe(ran.cvs);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+render();
+})();
+</script>
+</html>

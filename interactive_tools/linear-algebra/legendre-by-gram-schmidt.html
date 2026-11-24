@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Legendre Polynomials — by Gram–Schmidt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --crimson: #9E1B32;
+  --crimson-dark: #6B0F22;
+  --crimson-light: rgba(158, 27, 50, 0.08);
+  --cream: #F5EFE3;
+  --paper: #FBF7EF;
+  --ink: #1A1614;
+  --ink-soft: rgba(26, 22, 20, 0.65);
+  --ink-faint: rgba(26, 22, 20, 0.4);
+  --gold: #C9A961;
+  --gold-dark: #8B7142;
+  --rule: rgba(26, 22, 20, 0.14);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% -260px, rgba(158, 27, 50, 0.07), transparent),
+    radial-gradient(ellipse 700px 350px at 100% 900px, rgba(201, 169, 97, 0.06), transparent);
+  min-height: 100vh;
+}
+
+.editorial-band {
+  height: 14px;
+  background: var(--crimson);
+  position: relative;
+}
+.editorial-band::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 3px 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.editorial-band::after {
+  content: '';
+  position: absolute;
+  inset: 3px 0 auto 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.gold-rule { height: 2px; background: var(--gold); opacity: 0.85; }
+
+header.hero {
+  padding: 5rem 2rem 3.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 1.8rem;
+}
+.eyebrow .dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+  vertical-align: middle;
+  margin: 0 0.7em;
+  transform: translateY(-2px);
+}
+
+h1.display {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(46px, 7.5vw, 92px);
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 1.4rem;
+}
+h1.display em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--crimson);
+}
+
+.dek {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-soft);
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 2rem 6rem;
+}
+
+section {
+  margin-top: 5.5rem;
+  scroll-margin-top: 2rem;
+}
+
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 38px;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  margin-bottom: 1.6rem;
+  padding-bottom: 0.4rem;
+}
+h2::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 3px;
+  background: var(--crimson);
+  margin-top: 0.6rem;
+}
+h2 .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--crimson);
+  display: block;
+  margin-bottom: 0.4rem;
+  text-transform: none;
+}
+
+h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 23px;
+  margin: 2.4rem 0 0.7rem;
+  color: var(--ink);
+}
+
+h3.step {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  font-style: normal;
+}
+h3.step .step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  color: var(--crimson);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+p { margin: 0.95em 0; }
+
+.lead {
+  font-size: 22px;
+  line-height: 1.55;
+  margin-top: 1.2rem;
+}
+.lead::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 4.4em;
+  line-height: 0.85;
+  float: left;
+  margin: 0.08em 0.12em -0.05em 0;
+  color: var(--crimson);
+}
+
+em { color: var(--ink); }
+strong { font-weight: 600; color: var(--ink); }
+
+.aside {
+  border-left: 2px solid var(--ink);
+  padding: 0.4rem 0 0.4rem 1.4rem;
+  margin: 1.8rem 0;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 19px;
+}
+
+.theorem {
+  background: var(--crimson-light);
+  border-left: 3px solid var(--crimson);
+  padding: 1.2rem 1.6rem;
+  margin: 1.6rem 0;
+  border-radius: 0 2px 2px 0;
+}
+.theorem .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  display: block;
+  margin-bottom: 0.55rem;
+  font-weight: 500;
+}
+
+.proof-block {
+  border-left: 2px solid var(--gold);
+  padding: 0.2rem 0 0.2rem 1.4rem;
+  margin: 1.4rem 0;
+  font-size: 19px;
+}
+.proof-block .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  display: block;
+  margin-bottom: 0.55rem;
+  font-weight: 500;
+}
+.qed {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--crimson);
+  margin-left: 0.4em;
+  transform: rotate(45deg) translateY(-1px);
+  vertical-align: middle;
+}
+
+.basis-list {
+  background: #FFFCF7;
+  border: 1px solid var(--rule);
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 14px 36px rgba(26, 22, 20, 0.07);
+  padding: 1.5rem 1.8rem;
+  margin: 1.6rem 0;
+}
+.basis-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 18px;
+}
+.basis-list td {
+  padding: 0.55rem 0.5rem;
+  vertical-align: middle;
+}
+.basis-list tr:not(:last-child) td {
+  border-bottom: 1px solid rgba(26, 22, 20, 0.08);
+}
+.basis-list td:first-child {
+  width: 60px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--crimson);
+  letter-spacing: 0.06em;
+}
+
+.viz {
+  background: #FFFCF7;
+  border: 1px solid var(--rule);
+  padding: 1.6rem;
+  margin: 2rem 0 1rem;
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 16px 40px rgba(26, 22, 20, 0.07);
+}
+.viz.static .viz-title {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--ink-soft);
+  margin-bottom: 0.8rem;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  align-items: center;
+  margin-bottom: 1.3rem;
+  padding-bottom: 1.3rem;
+  border-bottom: 1px solid var(--rule);
+}
+.control-group { display: flex; align-items: center; gap: 0.7rem; }
+.control-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.fn-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.fn-buttons button {
+  font-family: 'EB Garamond', serif;
+  font-size: 18px;
+  font-style: italic;
+  background: transparent;
+  border: 1.5px solid var(--rule);
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.18s ease;
+  line-height: 1.2;
+}
+.fn-buttons button:hover { border-color: var(--crimson); color: var(--crimson); }
+.fn-buttons button.active { background: var(--crimson); color: var(--cream); border-color: var(--crimson); }
+
+.slider-wrap { display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 220px; }
+input[type=range] { flex: 1; accent-color: var(--crimson); cursor: pointer; }
+.n-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--crimson);
+  font-weight: 500;
+  min-width: 32px;
+  text-align: right;
+}
+
+canvas { width: 100%; height: auto; display: block; }
+
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  margin-top: 0.9rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  flex-wrap: wrap;
+}
+.legend .swatch { display: inline-block; width: 20px; vertical-align: middle; margin-right: 0.5rem; }
+.legend .target { border-top: 1.5px dashed rgba(26, 22, 20, 0.55); height: 1px; }
+.legend .fourier { background: var(--crimson); height: 3px; }
+
+.legendre-legend {
+  display: flex;
+  gap: 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  margin-top: 0.6rem;
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.legendre-legend .swatch { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 0.4rem; }
+
+footer {
+  text-align: center;
+  padding: 3rem 2rem 2.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+footer .sep { display: inline-block; margin: 0 1em; color: var(--crimson); }
+
+mjx-container { font-size: 1.03em !important; }
+mjx-container[display="true"] { margin: 1.2em 0 !important; }
+
+@media (max-width: 640px) {
+  body { font-size: 18px; }
+  main { padding: 0 1.2rem 4rem; }
+  header.hero { padding: 3.5rem 1.2rem 2.5rem; }
+  h2 { font-size: 30px; }
+  .lead { font-size: 20px; }
+  mjx-container { font-size: 0.9em !important; }
+  .basis-list { padding: 1rem; font-size: 15px; }
+  .viz { padding: 1.1rem; }
+  .controls { gap: 1rem; }
+}
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+</head>
+<body>
+
+<div class="editorial-band"></div>
+<div class="gold-rule"></div>
+
+<header class="hero">
+  <div class="eyebrow">A Note on Linear Algebra <span class="dot"></span> Vol. II</div>
+  <h1 class="display">The Legendre Polynomials<br><em>by Gram–Schmidt</em></h1>
+  <p class="dek">The monomials $1, x, x^2, x^3, \ldots$ are linearly independent on $[-1,1]$, but they aren't orthogonal. So orthogonalize them. What falls out is classical — and satisfies a beautiful three-term recurrence.</p>
+</header>
+
+<main>
+
+<section id="setup">
+  <h2><span class="num">§ 01</span>The Setup</h2>
+  <p class="lead">Same inner product, new interval. On $C[-1, 1]$, put</p>
+
+  $$\langle f, g \rangle \;=\; \int_{-1}^{1} f(x)\, g(x)\, dx.$$
+
+  <p>Start with the monomial sequence</p>
+
+  $$v_0 = 1, \quad v_1 = x, \quad v_2 = x^2, \quad v_3 = x^3, \quad \ldots$$
+
+  <p>These are linearly independent — no nontrivial linear combination of finitely many is the zero function. But they are <em>not</em> orthogonal:</p>
+
+  $$\langle 1, x^2 \rangle = \int_{-1}^{1} x^2\,dx = \frac{2}{3} \neq 0.$$
+
+  <p>So we run the Gram–Schmidt procedure. The interesting question is: what basis falls out?</p>
+</section>
+
+<section id="procedure">
+  <h2><span class="num">§ 02</span>The Procedure</h2>
+  <p>Same Gram–Schmidt as anywhere else. We're going to keep the basis <em>orthogonal</em> rather than orthonormal — defer the square-root normalization until we actually need unit-norm vectors. The orthogonal projection formula carries a denominator:</p>
+
+  $$u_k \;=\; v_k \;-\; \sum_{j=0}^{k-1}\, \frac{\langle v_k,\, u_j\rangle}{\langle u_j,\, u_j\rangle}\, u_j.$$
+
+  <p>The $u_j$ produced by this process are mutually orthogonal but not unit-norm; the projection coefficients used to subtract earlier components are $\langle v_k, u_j\rangle / \|u_j\|^2$. When we eventually want to project a function $f$ onto this basis, we'll do</p>
+
+  $$f \;\approx\; \sum_{n=0}^{N}\, a_n\, u_n, \qquad a_n \;=\; \frac{\langle f, u_n\rangle}{\|u_n\|^2}.$$
+
+  <p>One observation pays for itself a dozen times below: on the symmetric interval $[-1, 1]$, the integral of an <em>odd</em> function vanishes. So whenever $v_k\, u_j$ is odd — i.e., $k + j$ is odd — that inner product is zero, and the term drops out. Even functions stay coupled to even functions; odd to odd.</p>
+</section>
+
+<section id="steps">
+  <h2><span class="num">§ 03</span>Step by Step</h2>
+
+  <h3 class="step"><span class="step-num">Step 0</span> orthogonalize $1$</h3>
+  <p>Nothing to subtract: $u_0 = 1$.</p>
+  $$\|u_0\|^2 \;=\; \int_{-1}^{1}\!dx \;=\; 2.$$
+
+  <h3 class="step"><span class="step-num">Step 1</span> orthogonalize $x$</h3>
+  <p>The only previous vector is $u_0 = 1$, and</p>
+  $$\langle x, u_0 \rangle \;=\; \int_{-1}^{1} x\,dx \;=\; 0$$
+  <p>(odd integrand, symmetric interval). So $u_1 = x$, with</p>
+  $$\|u_1\|^2 \;=\; \int_{-1}^{1} x^2\,dx \;=\; \tfrac{2}{3}.$$
+
+  <h3 class="step"><span class="step-num">Step 2</span> orthogonalize $x^2$</h3>
+  <p>Two inner products to compute:</p>
+  $$\langle x^2, u_0\rangle \;=\; \int_{-1}^{1}\! x^2\,dx \;=\; \tfrac{2}{3}, \qquad \langle x^2, u_1\rangle \;=\; \int_{-1}^{1}\! x^3\,dx \;=\; 0$$
+  <p>(the second is odd). So</p>
+  $$u_2 \;=\; x^2 \;-\; \frac{2/3}{2}\cdot 1 \;=\; x^2 - \tfrac{1}{3},$$
+  <p>and</p>
+  $$\|u_2\|^2 \;=\; \int_{-1}^{1}\!\bigl(x^2 - \tfrac{1}{3}\bigr)^2\,dx \;=\; \tfrac{2}{5} - \tfrac{4}{9} + \tfrac{2}{9} \;=\; \tfrac{8}{45}.$$
+
+  <h3 class="step"><span class="step-num">Step 3</span> orthogonalize $x^3$</h3>
+  <p>By parity, $\langle x^3, u_0\rangle$ and $\langle x^3, u_2\rangle$ both vanish (each integrand is odd). The only surviving projection is onto $u_1$:</p>
+  $$\langle x^3, u_1\rangle \;=\; \int_{-1}^{1}\! x^4\,dx \;=\; \tfrac{2}{5}.$$
+  <p>Subtracting,</p>
+  $$u_3 \;=\; x^3 \;-\; \frac{2/5}{2/3}\, x \;=\; x^3 - \tfrac{3}{5}\, x, \qquad \|u_3\|^2 \;=\; \tfrac{8}{175}.$$
+
+  <h3>Switching to the classical normalization</h3>
+  <p>The four polynomials above are <em>monic</em> — leading coefficient $1$ — because Gram–Schmidt on monic monomials produces monic outputs. They are perfectly good orthogonal polynomials, but they aren't quite the classical Legendre polynomials. The classical $P_n$ are the same polynomials rescaled so that $P_n(1) = 1$, which gives much cleaner integer coefficients downstream and makes the recurrence (next section) snap into integer form. Multiplying $u_n$ by the right scalar:</p>
+
+  $$P_0 = 1, \qquad P_1 = x, \qquad P_2 = \tfrac{3}{2}\!\left(x^2 - \tfrac{1}{3}\right) = \tfrac{1}{2}(3x^2 - 1), \qquad P_3 = \tfrac{5}{2}\!\left(x^3 - \tfrac{3}{5}x\right) = \tfrac{1}{2}(5x^3 - 3x).$$
+
+  <p>And the norms scale by the square of that factor:</p>
+
+  $$\|P_n\|^2 \;=\; \frac{2}{2n+1}.$$
+
+  <p>Check: $\|P_2\|^2 = (3/2)^2 \cdot (8/45) = 9/4 \cdot 8/45 = 2/5$ ✓; $\|P_3\|^2 = (5/2)^2 \cdot (8/175) = 25/4 \cdot 8/175 = 2/7$ ✓.</p>
+</section>
+
+<section id="recurrence">
+  <h2><span class="num">§ 04</span>The Three-Term Recurrence</h2>
+  <p>Doing Gram–Schmidt by hand to get $P_4, P_5, P_6, \ldots$ is unbearable. We don't have to: <em>every</em> orthogonal polynomial system on a symmetric weight obeys a three-term recurrence, and for Legendre it is</p>
+
+  <div class="theorem">
+    <span class="tag">Bonnet's Recurrence</span>
+    $$\boxed{\;(n+1)\, P_{n+1}(x) \;=\; (2n+1)\, x\, P_n(x) \;-\; n\, P_{n-1}(x).\;}$$
+  </div>
+
+  <p>This is not a special trick. It's a consequence of a single linear-algebraic fact: the operator "multiply by $x$" is self-adjoint with respect to this inner product. That's all you need.</p>
+
+  <div class="proof-block">
+    <span class="tag">Proof</span>
+    <p>Two ingredients carry the entire argument.</p>
+
+    <p><strong>(i) Multiplication by $x$ is self-adjoint.</strong> For any $f, g$,</p>
+    $$\langle xf,\, g\rangle \;=\; \int_{-1}^{1}\! x\, f(x)\, g(x)\, dx \;=\; \langle f,\, xg\rangle.$$
+
+    <p><strong>(ii) $P_n$ is orthogonal to every polynomial of degree $< n$.</strong> Because any such polynomial is a linear combination of $P_0, P_1, \ldots, P_{n-1}$, each individually orthogonal to $P_n$ by construction.</p>
+
+    <p>Now consider $x P_n$. It is a polynomial of degree $n+1$, so it expands uniquely in the orthogonal basis $\{P_0, P_1, \ldots, P_{n+1}\}$:</p>
+    $$x P_n \;=\; \sum_{k=0}^{n+1} \alpha_k\, P_k, \qquad \alpha_k \;=\; \frac{\langle x P_n,\, P_k\rangle}{\|P_k\|^2}.$$
+
+    <p><em>Most of the $\alpha_k$ are zero.</em> For $k \leq n-2$, use (i) and then (ii):</p>
+    $$\langle x P_n,\, P_k\rangle \;=\; \langle P_n,\, x P_k\rangle \;=\; 0,$$
+    <p>because $x P_k$ has degree $k+1 \leq n-1$, and $P_n$ is orthogonal to every such polynomial. For $k = n$, parity finishes the job: $P_n^2$ has parity $2n$ (even), so $x P_n^2$ is odd, integrating to zero on $[-1, 1]$, hence $\alpha_n = 0$.</p>
+
+    <p>So only three coefficients survive:</p>
+    $$x P_n \;=\; \alpha_{n+1} P_{n+1} \;+\; \alpha_{n-1} P_{n-1}.$$
+
+    <p>A three-term recurrence — purely from self-adjointness and orthogonality, before we touched any specific formula. To extract the constants, match leading terms on each side. The leading coefficient of $P_n$ works out to $k_n = \binom{2n}{n}/2^n$ (by induction on the recurrence itself, with $k_0 = k_1 = 1$). The $x^{n+1}$ coefficient on the left is $k_n$; on the right it is $\alpha_{n+1} k_{n+1}$. A short computation gives</p>
+    $$\alpha_{n+1} \;=\; \frac{k_n}{k_{n+1}} \;=\; \frac{n+1}{2n+1}.$$
+
+    <p>For $\alpha_{n-1}$, use self-adjointness one more time: $\alpha_{n-1}\|P_{n-1}\|^2 = \langle xP_n, P_{n-1}\rangle = \langle P_n, xP_{n-1}\rangle$. Writing $xP_{n-1} = (k_{n-1}/k_n) P_n + (\text{lower})$, the inner product picks out the $P_n$ component, giving</p>
+    $$\alpha_{n-1} \;=\; \frac{k_{n-1}}{k_n}\cdot\frac{\|P_n\|^2}{\|P_{n-1}\|^2} \;=\; \frac{n}{2n+1}.$$
+
+    <p>Substituting and multiplying through by $(2n+1)$:</p>
+    $$(2n+1)\, x\, P_n \;=\; (n+1)\, P_{n+1} \;+\; n\, P_{n-1},$$
+    <p>which rearranges into the stated recurrence. <span class="qed"></span></p>
+  </div>
+
+  <p>Now $P_4, P_5, P_6$ are arithmetic, not integration:</p>
+
+  $$4 P_4 \;=\; 7 x P_3 \;-\; 3 P_2 \;\Longrightarrow\; P_4 \;=\; \tfrac{1}{8}\!\left(35 x^4 - 30 x^2 + 3\right),$$
+
+  $$5 P_5 \;=\; 9 x P_4 \;-\; 4 P_3 \;\Longrightarrow\; P_5 \;=\; \tfrac{1}{8}\!\left(63 x^5 - 70 x^3 + 15 x\right),$$
+
+  $$6 P_6 \;=\; 11 x P_5 \;-\; 5 P_4 \;\Longrightarrow\; P_6 \;=\; \tfrac{1}{16}\!\left(231 x^6 - 315 x^4 + 105 x^2 - 5\right).$$
+
+  <p>You could continue indefinitely with nothing but multiplication and subtraction. The whole Legendre family — orthogonal polynomials Adrien-Marie Legendre wrote down in 1782 — falls out of one inner-product identity.</p>
+</section>
+
+<section id="basis">
+  <h2><span class="num">§ 05</span>The First Several, In One Place</h2>
+
+  <div class="basis-list">
+    <table>
+      <tr>
+        <td>$P_0$</td>
+        <td>$1$</td>
+        <td style="font-style:italic; color:var(--ink-soft); font-size:16px;">$\|P_0\|^2 = 2$</td>
+      </tr>
+      <tr>
+        <td>$P_1$</td>
+        <td>$x$</td>
+        <td style="font-style:italic; color:var(--ink-soft); font-size:16px;">$\|P_1\|^2 = \tfrac{2}{3}$</td>
+      </tr>
+      <tr>
+        <td>$P_2$</td>
+        <td>$\tfrac{1}{2}(3x^2 - 1)$</td>
+        <td style="font-style:italic; color:var(--ink-soft); font-size:16px;">$\|P_2\|^2 = \tfrac{2}{5}$</td>
+      </tr>
+      <tr>
+        <td>$P_3$</td>
+        <td>$\tfrac{1}{2}(5x^3 - 3x)$</td>
+        <td style="font-style:italic; color:var(--ink-soft); font-size:16px;">$\|P_3\|^2 = \tfrac{2}{7}$</td>
+      </tr>
+      <tr>
+        <td>$P_4$</td>
+        <td>$\tfrac{1}{8}(35x^4 - 30x^2 + 3)$</td>
+        <td style="font-style:italic; color:var(--ink-soft); font-size:16px;">$\|P_4\|^2 = \tfrac{2}{9}$</td>
+      </tr>
+      <tr>
+        <td>$P_5$</td>
+        <td>$\tfrac{1}{8}(63x^5 - 70x^3 + 15x)$</td>
+        <td style="font-style:italic; color:var(--ink-soft); font-size:16px;">$\|P_5\|^2 = \tfrac{2}{11}$</td>
+      </tr>
+    </table>
+  </div>
+
+  <p>Each $P_n$ has parity $n$: even index → even function, odd index → odd. Each has $n$ zeros, all strictly inside $(-1, 1)$. Each satisfies $P_n(1) = 1$ and $P_n(-1) = (-1)^n$. The values oscillate between $-1$ and $+1$ on the interval, growing in frequency with $n$ — visible at a glance:</p>
+
+  <div class="viz static">
+    <div class="viz-title">$P_0, P_1, P_2, P_3, P_4, P_5$ on $[-1, 1]$</div>
+    <canvas id="basisPlot" width="1200" height="600"></canvas>
+    <div class="legendre-legend" id="basisLegend"></div>
+  </div>
+</section>
+
+<section id="approx">
+  <h2><span class="num">§ 06</span>Approximating Other Functions</h2>
+  <p>Once you have an orthogonal basis, projection is mechanical. For a function $f$ on $[-1, 1]$, the projection coefficients are</p>
+
+  $$a_n \;=\; \frac{\langle f,\, P_n\rangle}{\|P_n\|^2} \;=\; \frac{2n+1}{2}\!\int_{-1}^{1}\! f(x)\, P_n(x)\, dx,$$
+
+  <p>and the partial sum</p>
+
+  $$S_N(x) \;=\; \sum_{n=0}^{N} a_n\, P_n(x)$$
+
+  <p>is the best polynomial approximation of degree $\leq N$ to $f$ in the least-squares sense. Pick a function below, watch the partial sums march in.</p>
+
+  <div class="viz">
+    <div class="controls">
+      <div class="control-group">
+        <span class="control-label">f(x)</span>
+        <div class="fn-buttons" id="fnBtns">
+          <button data-fn="exp" class="active">eˣ</button>
+          <button data-fn="cos">cos(πx)</button>
+          <button data-fn="sin">sin(πx)</button>
+          <button data-fn="abs">|x|</button>
+          <button data-fn="sign">sgn(x)</button>
+          <button data-fn="runge">1/(1+25x²)</button>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <span class="control-label">N</span>
+        <input type="range" id="nSlider" min="0" max="40" value="6" step="1" aria-label="Polynomial degree">
+        <span class="n-value" id="nVal">6</span>
+      </div>
+    </div>
+    <canvas id="approxPlot" width="1200" height="720" aria-label="Function and Legendre polynomial approximation"></canvas>
+    <div class="legend">
+      <span><span class="swatch target"></span>target $f(x)$</span>
+      <span><span class="swatch fourier"></span>partial sum $S_N(x)$</span>
+    </div>
+  </div>
+
+  <p>A few coefficients, to make the rate of decay concrete. For $f(x) = e^x$, the integrals come out in closed form:</p>
+
+  $$a_0 = \sinh(1) \approx 1.175, \quad a_1 = \frac{3}{e} \approx 1.104, \quad a_2 = \tfrac{5}{2}\!\left(e - \tfrac{7}{e}\right) \approx 0.357, \quad a_3 \approx 0.0703, \quad a_4 \approx 0.00996, \quad a_5 \approx 0.00110, \ldots$$
+
+  <p>The coefficients of $e^x$ collapse <em>geometrically fast</em>. That is the signature of a smooth (analytic) function in an orthogonal polynomial expansion: spectral accuracy. Compare with $f(x) = |x|$, where the integrals are nicer and the answer is exact:</p>
+
+  $$a_0 = \tfrac{1}{2}, \quad a_2 = \tfrac{5}{8}, \quad a_4 = -\tfrac{3}{16}, \quad a_6 = \tfrac{13}{128}, \quad a_8 = -\tfrac{17}{256}, \;\ldots$$
+
+  <p>(the odd $a_n$ vanish because $|x|$ is even). These decay only like $1/n^2$ — far slower, because the kink at the origin is the slowest feature for smooth basis functions to resolve. For $\mathrm{sgn}(x)$, decay drops to $1/n$, and the partial sums never converge uniformly: Gibbs' phenomenon, this time wearing polynomial clothes.</p>
+</section>
+
+<section id="moral">
+  <h2><span class="num">§ 07</span>The Moral</h2>
+  <p>The Fourier basis and the Legendre basis look like wildly different objects — trig functions on a circle, polynomials on an interval. But the linear algebra underneath is identical. Pick an inner product, pick a sequence to orthogonalize, run Gram–Schmidt or (when the inputs are already orthogonal) read off the projection coefficients. Whether you land on $\sin nx, \cos nx$, $P_n(x)$, or some other classical family — Chebyshev, Hermite, Laguerre, each one is Gram–Schmidt with a different interval or weight — depends only on what you started with and what inner product you chose.</p>
+
+  <p>The three-term recurrence is the linear algebra paying you back. It is not a curiosity of Legendre polynomials specifically; it is what self-adjointness of multiplication-by-$x$ forces on any orthogonal polynomial system. The constants $\alpha_{n\pm 1}$ change family to family. The fact that there are only two of them never does.</p>
+
+  <p>The functions on $[-1, 1]$ form a vector space. It happens to be infinite-dimensional. Everything else is bookkeeping.</p>
+</section>
+
+</main>
+
+<div class="gold-rule"></div>
+<div class="editorial-band"></div>
+
+<footer>
+  Linear Algebra <span class="sep">◆</span> Orthogonal Polynomials <span class="sep">◆</span> Roll Tide
+</footer>
+
+<script>
+// ─── Classical Legendre polynomials via Bonnet's recurrence ─────────────
+// P_0 = 1, P_1 = x, (n+1) P_{n+1} = (2n+1) x P_n - n P_{n-1}
+// These are orthogonal but NOT orthonormal: ||P_n||² = 2/(2n+1).
+
+function legendreArray(x, Nmax) {
+  const P = new Array(Nmax + 1);
+  P[0] = 1;
+  if (Nmax >= 1) P[1] = x;
+  for (let n = 1; n < Nmax; n++) {
+    P[n + 1] = ((2 * n + 1) * x * P[n] - n * P[n - 1]) / (n + 1);
+  }
+  return P;
+}
+
+// Projection coefficient a_n = (2n+1)/2 · ∫_{-1}^{1} f(x) P_n(x) dx.
+// Trapezoidal rule with many samples; accurate enough for visualization.
+
+function computeCoefficients(f, Nmax, samples = 4000) {
+  const integrals = new Array(Nmax + 1).fill(0);
+  for (let i = 0; i <= samples; i++) {
+    const x = -1 + (2 * i) / samples;
+    const fx = f(x);
+    const P = legendreArray(x, Nmax);
+    const w = (i === 0 || i === samples) ? 0.5 : 1;
+    for (let n = 0; n <= Nmax; n++) {
+      integrals[n] += fx * P[n] * w;
+    }
+  }
+  const dx = 2 / samples;
+  const a = new Array(Nmax + 1);
+  for (let n = 0; n <= Nmax; n++) {
+    a[n] = ((2 * n + 1) / 2) * integrals[n] * dx;
+  }
+  return a;
+}
+
+function partialSum(coeffs, N, x) {
+  const P = legendreArray(x, N);
+  let s = 0;
+  for (let n = 0; n <= N; n++) s += coeffs[n] * P[n];
+  return s;
+}
+
+// ─── Function registry ──────────────────────────────────────────────────
+const FN = {
+  exp:   { f: x => Math.exp(x), yRange: [-0.4, Math.E + 0.4] },
+  cos:   { f: x => Math.cos(Math.PI * x), yRange: [-1.3, 1.3] },
+  sin:   { f: x => Math.sin(Math.PI * x), yRange: [-1.3, 1.3] },
+  abs:   { f: x => Math.abs(x), yRange: [-0.2, 1.2] },
+  sign:  { f: x => x > 0 ? 1 : (x < 0 ? -1 : 0), yRange: [-1.4, 1.4] },
+  runge: { f: x => 1 / (1 + 25 * x * x), yRange: [-0.15, 1.15] },
+};
+
+const NMAX = 40;
+const coeffCache = {};
+Object.keys(FN).forEach(key => {
+  coeffCache[key] = computeCoefficients(FN[key].f, NMAX);
+});
+
+// ─── Static plot: first six classical Legendre polynomials ──────────────
+const basisCanvas = document.getElementById('basisPlot');
+const basisCtx = basisCanvas.getContext('2d');
+const PALETTE = ['#9E1B32', '#C9A961', '#6B0F22', '#8B7142', '#1A1614', '#B85A6C'];
+const N_BASIS = 5; // plot P_0 through P_5
+
+function drawBasis() {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = basisCanvas.clientWidth;
+  const cssH = Math.round(cssW * 0.45);
+  basisCanvas.style.height = cssH + 'px';
+  basisCanvas.width = Math.round(cssW * dpr);
+  basisCanvas.height = Math.round(cssH * dpr);
+  basisCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = cssW, H = cssH;
+  basisCtx.clearRect(0, 0, W, H);
+
+  const padL = 50, padR = 24, padTop = 18, padBottom = 36;
+  const plotW = W - padL - padR;
+  const plotH = H - padTop - padBottom;
+
+  // Classical Legendre on [-1, 1] has |P_n(x)| ≤ 1, so range is tight.
+  const yMin = -1.15, yMax = 1.15;
+  const X = x => padL + ((x + 1) / 2) * plotW;
+  const Y = y => padTop + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+
+  basisCtx.strokeStyle = 'rgba(26, 22, 20, 0.06)';
+  basisCtx.lineWidth = 1;
+  const xTicks = [-1, -0.5, 0, 0.5, 1];
+  basisCtx.beginPath();
+  for (const xt of xTicks) {
+    basisCtx.moveTo(X(xt), padTop);
+    basisCtx.lineTo(X(xt), padTop + plotH);
+  }
+  basisCtx.stroke();
+
+  basisCtx.strokeStyle = 'rgba(26, 22, 20, 0.2)';
+  basisCtx.lineWidth = 1;
+  basisCtx.beginPath();
+  basisCtx.moveTo(padL, Y(0));
+  basisCtx.lineTo(padL + plotW, Y(0));
+  basisCtx.stroke();
+
+  basisCtx.fillStyle = 'rgba(26, 22, 20, 0.55)';
+  basisCtx.font = '11px "JetBrains Mono", monospace';
+  basisCtx.textAlign = 'center';
+  basisCtx.textBaseline = 'top';
+  ['−1', '−0.5', '0', '0.5', '1'].forEach((lbl, i) => {
+    basisCtx.fillText(lbl, X(xTicks[i]), padTop + plotH + 8);
+  });
+
+  basisCtx.textAlign = 'right';
+  basisCtx.textBaseline = 'middle';
+  [-1, -0.5, 0, 0.5, 1].forEach(yt => {
+    basisCtx.fillText(yt.toString(), padL - 6, Y(yt));
+  });
+
+  const samples = 700;
+  for (let n = 0; n <= N_BASIS; n++) {
+    basisCtx.strokeStyle = PALETTE[n];
+    basisCtx.lineWidth = 2;
+    basisCtx.lineJoin = 'round';
+    basisCtx.beginPath();
+    for (let i = 0; i <= samples; i++) {
+      const x = -1 + (2 * i) / samples;
+      const P = legendreArray(x, N_BASIS);
+      const px = X(x), py = Y(P[n]);
+      if (i === 0) basisCtx.moveTo(px, py);
+      else basisCtx.lineTo(px, py);
+    }
+    basisCtx.stroke();
+  }
+
+  basisCtx.strokeStyle = 'rgba(26, 22, 20, 0.18)';
+  basisCtx.lineWidth = 1;
+  basisCtx.strokeRect(padL, padTop, plotW, plotH);
+}
+
+const basisLegend = document.getElementById('basisLegend');
+for (let n = 0; n <= N_BASIS; n++) {
+  const item = document.createElement('span');
+  item.innerHTML = `<span class="swatch" style="background:${PALETTE[n]}"></span>P<sub>${n}</sub>`;
+  basisLegend.appendChild(item);
+}
+
+// ─── Interactive approximation plot ─────────────────────────────────────
+const approxCanvas = document.getElementById('approxPlot');
+const approxCtx = approxCanvas.getContext('2d');
+
+let currentFn = 'exp';
+let currentN = 6;
+
+function drawApprox() {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = approxCanvas.clientWidth;
+  const cssH = Math.round(cssW * 0.58);
+  approxCanvas.style.height = cssH + 'px';
+  approxCanvas.width = Math.round(cssW * dpr);
+  approxCanvas.height = Math.round(cssH * dpr);
+  approxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = cssW, H = cssH;
+  approxCtx.clearRect(0, 0, W, H);
+
+  const spec = FN[currentFn];
+  const coeffs = coeffCache[currentFn];
+  const N = Math.min(currentN, NMAX);
+
+  const padL = 56, padR = 28, padTop = 24, padBottom = 42;
+  const plotW = W - padL - padR;
+  const plotH = H - padTop - padBottom;
+
+  const samples = 1200;
+  const targetPts = new Array(samples + 1);
+  const approxPts = new Array(samples + 1);
+  let yMin = spec.yRange[0], yMax = spec.yRange[1];
+  for (let i = 0; i <= samples; i++) {
+    const x = -1 + (2 * i) / samples;
+    const yt = spec.f(x);
+    const ya = partialSum(coeffs, N, x);
+    targetPts[i] = [x, yt];
+    approxPts[i] = [x, ya];
+    if (ya < yMin) yMin = Math.max(ya, spec.yRange[0] - (spec.yRange[1] - spec.yRange[0]) * 0.6);
+    if (ya > yMax) yMax = Math.min(ya, spec.yRange[1] + (spec.yRange[1] - spec.yRange[0]) * 0.6);
+  }
+
+  const X = x => padL + ((x + 1) / 2) * plotW;
+  const Y = y => padTop + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+
+  approxCtx.strokeStyle = 'rgba(26, 22, 20, 0.07)';
+  approxCtx.lineWidth = 1;
+  const xTicks = [-1, -0.5, 0, 0.5, 1];
+  approxCtx.beginPath();
+  for (const xt of xTicks) {
+    approxCtx.moveTo(X(xt), padTop);
+    approxCtx.lineTo(X(xt), padTop + plotH);
+  }
+  approxCtx.stroke();
+
+  if (yMin < 0 && yMax > 0) {
+    approxCtx.strokeStyle = 'rgba(26, 22, 20, 0.22)';
+    approxCtx.lineWidth = 1;
+    approxCtx.beginPath();
+    approxCtx.moveTo(padL, Y(0));
+    approxCtx.lineTo(padL + plotW, Y(0));
+    approxCtx.stroke();
+  }
+
+  const yTicks = niceTicks(yMin, yMax, 5);
+  approxCtx.fillStyle = 'rgba(26, 22, 20, 0.5)';
+  approxCtx.font = '11px "JetBrains Mono", monospace';
+  approxCtx.textAlign = 'right';
+  approxCtx.textBaseline = 'middle';
+  for (const yt of yTicks) {
+    approxCtx.fillText(formatNum(yt), padL - 8, Y(yt));
+    approxCtx.strokeStyle = 'rgba(26, 22, 20, 0.06)';
+    approxCtx.beginPath();
+    approxCtx.moveTo(padL, Y(yt));
+    approxCtx.lineTo(padL + plotW, Y(yt));
+    approxCtx.stroke();
+  }
+
+  approxCtx.fillStyle = 'rgba(26, 22, 20, 0.55)';
+  approxCtx.font = '12px "JetBrains Mono", monospace';
+  approxCtx.textAlign = 'center';
+  approxCtx.textBaseline = 'top';
+  ['−1', '−0.5', '0', '0.5', '1'].forEach((lbl, i) => {
+    approxCtx.fillText(lbl, X(xTicks[i]), padTop + plotH + 10);
+  });
+
+  approxCtx.strokeStyle = 'rgba(26, 22, 20, 0.55)';
+  approxCtx.lineWidth = 1.6;
+  approxCtx.setLineDash([6, 5]);
+  approxCtx.beginPath();
+  drawPolyline(approxCtx, targetPts, X, Y, yMin, yMax);
+  approxCtx.stroke();
+  approxCtx.setLineDash([]);
+
+  approxCtx.strokeStyle = '#9E1B32';
+  approxCtx.lineWidth = 2.6;
+  approxCtx.lineJoin = 'round';
+  approxCtx.lineCap = 'round';
+  approxCtx.beginPath();
+  drawPolyline(approxCtx, approxPts, X, Y, yMin, yMax);
+  approxCtx.stroke();
+
+  approxCtx.strokeStyle = 'rgba(26, 22, 20, 0.2)';
+  approxCtx.lineWidth = 1;
+  approxCtx.strokeRect(padL, padTop, plotW, plotH);
+}
+
+function drawPolyline(ctx, pts, X, Y, yMin, yMax) {
+  let started = false;
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = pts[i];
+    if (y < yMin - (yMax - yMin) * 0.5 || y > yMax + (yMax - yMin) * 0.5) {
+      started = false;
+      continue;
+    }
+    if (!started) {
+      ctx.moveTo(X(x), Y(y));
+      started = true;
+    } else {
+      ctx.lineTo(X(x), Y(y));
+    }
+  }
+}
+
+function niceTicks(lo, hi, target) {
+  const range = hi - lo;
+  const rawStep = range / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalized = rawStep / mag;
+  let step;
+  if (normalized < 1.5) step = 1 * mag;
+  else if (normalized < 3) step = 2 * mag;
+  else if (normalized < 7) step = 5 * mag;
+  else step = 10 * mag;
+  const ticks = [];
+  const start = Math.ceil(lo / step) * step;
+  for (let v = start; v <= hi + step * 0.0001; v += step) {
+    ticks.push(Math.round(v / step) * step);
+  }
+  return ticks;
+}
+
+function formatNum(v) {
+  if (Math.abs(v) < 1e-9) return '0';
+  if (Math.abs(v) >= 1000) return v.toExponential(1);
+  if (Math.abs(v) < 0.01) return v.toExponential(1);
+  return Number(v.toPrecision(3)).toString();
+}
+
+document.querySelectorAll('#fnBtns button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#fnBtns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFn = btn.dataset.fn;
+    drawApprox();
+  });
+});
+
+const slider = document.getElementById('nSlider');
+const nVal = document.getElementById('nVal');
+slider.addEventListener('input', () => {
+  currentN = parseInt(slider.value);
+  nVal.textContent = currentN;
+  drawApprox();
+});
+
+window.addEventListener('resize', () => { drawBasis(); drawApprox(); });
+window.addEventListener('load', () => { drawBasis(); drawApprox(); });
+drawBasis();
+drawApprox();
+</script>
+
+</body>
+</html>

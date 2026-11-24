@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Row Reduction over ℂ and ℚ(√3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#edf1fb;--mod-bg:#fff9f5;
+  --c-col:#2e4a8a;--c-bg:#f0f4ff;   /* ℂ tint */
+  --q-col:#2e6a40;--q-bg:#f0f7f1;   /* ℚ(√3) tint */
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1240px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1rem;}
+.card h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--navy2);margin:.8rem 0 .3rem;}
+
+/* mode tabs */
+.mode-tabs{display:flex;gap:.5rem;margin-bottom:1rem;}
+.mode-tab{padding:.35rem 1.1rem;border-radius:5px;cursor:pointer;font-size:.95rem;font-family:inherit;border:2px solid var(--border);background:var(--paper);color:var(--navy2);transition:all .13s;}
+.mode-tab.active-C{background:var(--c-bg);border-color:var(--c-col);color:var(--c-col);font-weight:600;}
+.mode-tab.active-Q{background:var(--q-bg);border-color:var(--q-col);color:var(--q-col);font-weight:600;}
+.mode-tab:hover{border-color:var(--accent);}
+
+/* controls */
+.ctrl-row{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;margin-bottom:.7rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;color:var(--navy2);}
+.ctrl-row input[type=number]{width:52px;padding:.25rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.28rem .8rem;font-size:.88rem;transition:background .13s;}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-solve{background:var(--red);color:#fff;padding:.5rem 1.8rem;font-size:.98rem;margin-top:1.1rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+/* matrix input table */
+.mx-wrap{overflow-x:auto;margin:.6rem 0;}
+table.mx-tbl{border-collapse:separate;border-spacing:5px 4px;font-size:.88rem;}
+table.mx-tbl thead th{color:var(--gray);font-weight:400;text-align:center;font-size:.78rem;padding:0 .1rem;}
+table.mx-tbl thead th.var-hd{font-size:.84rem;color:var(--navy2);font-weight:600;padding-bottom:.25rem;}
+table.mx-tbl .row-lbl{color:var(--gray);font-size:.84rem;padding-right:.4rem;white-space:nowrap;text-align:right;vertical-align:middle;}
+table.mx-tbl .eq-sep{color:var(--navy2);text-align:center;vertical-align:middle;padding:0 .25rem;font-size:1rem;}
+.coeff-cell{display:flex;align-items:center;gap:2px;background:#fafafa;border:1px solid var(--border);border-radius:5px;padding:2px 4px;}
+.coeff-cell .part{width:36px;text-align:center;border:none;background:transparent;font-family:inherit;font-size:.88rem;color:var(--navy);outline:none;padding:2px 1px;}
+.coeff-cell .part:focus{background:#f0f6ff;}
+.coeff-cell .sep{font-size:.75rem;color:var(--gray);user-select:none;}
+.coeff-cell.b-cell{background:#f4f8ff;border-color:#b8caec;}
+.field-hint{font-size:.83rem;color:var(--gray);margin:.35rem 0 0;font-style:italic;}
+
+/* field algebra card */
+.alg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:.5rem;}
+@media(max-width:600px){.alg-grid{grid-template-columns:1fr;}}
+.alg-box{background:#f5f7fa;border:1px solid var(--border);border-radius:6px;padding:.75rem 1rem;font-size:.9rem;line-height:1.7;}
+.alg-box h3{font-size:.92rem;margin-bottom:.35rem;}
+.alg-box.c-box{background:var(--c-bg);border-color:#c0ccee;}
+.alg-box.q-box{background:var(--q-bg);border-color:#b0c8b8;}
+
+/* steps */
+.steps-wrap{display:flex;flex-direction:column;gap:1.2rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.5rem 1rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:25px;height:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.62rem;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.88rem;flex:1;}
+
+.twrap{overflow-x:auto;padding:.5rem .55rem .65rem;}
+.tab{border-collapse:collapse;font-size:.88rem;}
+.tab th,.tab td{padding:.32rem .6rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+.tab thead tr:first-child th{font-size:.72rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;padding:.18rem .6rem;}
+.tab th.ahd{background:var(--acc-bg);color:#3a5aa8;}
+.tab th.mhd{background:#f5f5f3;color:#555;}
+.tab th.bhd{background:#f0f6ff;color:#3a60a0;}
+.tab th.ehd{background:#fafaf5;color:#666;text-align:left;padding-left:.9rem;}
+.tab td.ac{background:var(--acc-bg);}
+.tab td.bc{background:#f4f8ff;}
+.tab td.ec{text-align:left;padding-left:.9rem;color:var(--navy2);font-style:italic;font-size:.83rem;}
+.tab td.op-lbl{text-align:left;padding-left:.8rem;font-size:.82rem;color:var(--navy2);background:#fafafa;min-width:200px;}
+.tab .sepr{border-right:2.5px solid #aaa !important;}
+.tab td.piv-cell{background:var(--red-bg);}
+.pbox{display:inline-block;border:2px solid var(--red);border-radius:3px;padding:0 4px;color:var(--red);font-weight:700;}
+.tab tr.mod-r td{background:var(--mod-bg);}
+.tab tr.mod-r td.ac{background:#f3ece6;}
+.tab tr.mod-r td.piv-cell{background:var(--red-bg);}
+.tab tr.mod-r td.op-lbl{background:#fff4ee;}
+
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.3rem 1.8rem;margin-top:.4rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:.75rem;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:.55rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.28rem .85rem;font-size:1.05rem;}
+.sol-note{color:#8ab8d0;font-style:italic;font-size:.87rem;}
+
+.keybox{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.75rem 1rem;font-size:.86rem;color:var(--navy2);line-height:1.6;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Row Reduction over ℂ and ℚ(√3)</h1>
+  <p>The Accounting Method — exact arithmetic over extension fields, tracking every operation</p>
+</header>
+<main>
+
+<!-- INPUT CARD -->
+<div class="card">
+  <h2>Choose Field and Enter System</h2>
+  <div class="mode-tabs">
+    <button class="mode-tab" id="tabC" onclick="setMode('C')">ℂ  — Complex numbers</button>
+    <button class="mode-tab" id="tabQ" onclick="setMode('Q')">ℚ(√3)  — Quadratic extension</button>
+  </div>
+  <div class="ctrl-row">
+    <label>Equations: <input type="number" id="nRows" min="2" max="5" value="2"></label>
+    <label>Variables: <input type="number" id="nCols" min="2" max="4" value="2"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p class="field-hint" id="fieldHint"></p>
+  <div class="mx-wrap" id="mxWrap"></div>
+  <button class="btn-solve" onclick="doSolve()">Solve &amp; Show Steps →</button>
+</div>
+
+<!-- FIELD ALGEBRA CARD -->
+<div class="card" id="algCard">
+  <h2 id="algTitle"></h2>
+  <div class="alg-grid" id="algGrid"></div>
+</div>
+
+<!-- OUTPUT -->
+<div id="out"></div>
+
+</main>
+<script>
+/* ══════════════════════════════════════════
+   KaTeX helper
+══════════════════════════════════════════ */
+function rk(t){
+  t=String(t).replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/g,'');
+  try{return katex.renderToString(t,{throwOnError:false});}catch(e){return t;}
+}
+
+/* ══════════════════════════════════════════
+   EXACT RATIONAL ARITHMETIC
+══════════════════════════════════════════ */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=b;b=a%b;a=t;}return a||1;}
+function Frac(n,d){
+  d=d===undefined?1:d;
+  if(d===0) throw new Error('div by 0');
+  if(d<0){n=-n;d=-d;}
+  var g=gcd(Math.abs(n),d);
+  this.n=Math.trunc(n/g);this.d=Math.trunc(d/g);
+}
+Frac.of=function(n,d){return new Frac(n,d===undefined?1:d);};
+Frac.parse=function(s){
+  s=(s||'').trim().replace(/\s/g,'');
+  if(!s)return Frac.of(0);
+  if(s.indexOf('/')>-1){var p=s.split('/');return Frac.of(parseInt(p[0])||0,parseInt(p[1])||1);}
+  return Frac.of(parseInt(s)||0);
+};
+Frac.prototype.add=function(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);};
+Frac.prototype.sub=function(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);};
+Frac.prototype.mul=function(o){return new Frac(this.n*o.n,this.d*o.d);};
+Frac.prototype.div=function(o){return new Frac(this.n*o.d,this.d*o.n);};
+Frac.prototype.neg=function(){return new Frac(-this.n,this.d);};
+Frac.prototype.isZero=function(){return this.n===0;};
+Frac.prototype.isOne=function(){return this.n===this.d;};
+Frac.prototype.toTeX=function(){
+  if(this.d===1)return String(this.n);
+  var abs=Math.abs(this.n),sg=this.n<0?'-':'';
+  return sg+'\\tfrac{'+abs+'}{'+this.d+'}';
+};
+
+/* ══════════════════════════════════════════
+   FIELD ELEMENTS
+   CNum  = a + bi     (a,b ∈ ℚ, i²=-1)
+   Q3El  = a + b√3    (a,b ∈ ℚ, (√3)²=3)
+══════════════════════════════════════════ */
+function CNum(re,im){this.re=re;this.im=im;}
+CNum.zero=function(){return new CNum(Frac.of(0),Frac.of(0));};
+CNum.one =function(){return new CNum(Frac.of(1),Frac.of(0));};
+CNum.prototype.add=function(o){return new CNum(this.re.add(o.re),this.im.add(o.im));};
+CNum.prototype.sub=function(o){return new CNum(this.re.sub(o.re),this.im.sub(o.im));};
+CNum.prototype.mul=function(o){
+  return new CNum(this.re.mul(o.re).sub(this.im.mul(o.im)),
+                  this.re.mul(o.im).add(this.im.mul(o.re)));
+};
+CNum.prototype.neg=function(){return new CNum(this.re.neg(),this.im.neg());};
+CNum.prototype.isZero=function(){return this.re.isZero()&&this.im.isZero();};
+CNum.prototype.inv=function(){
+  var d=this.re.mul(this.re).add(this.im.mul(this.im));
+  if(d.isZero()) throw new Error('0 has no inverse in ℂ');
+  return new CNum(this.re.div(d),this.im.neg().div(d));
+};
+CNum.prototype.div=function(o){return this.mul(o.inv());};
+CNum.prototype.needsParens=function(){
+  // needs parens when used as a multiplier next to ·Rⱼ
+  return !this.re.isZero()&&!this.im.isZero();
+};
+CNum.prototype.toTeX=function(){
+  var r=this.re,m=this.im;
+  if(r.isZero()&&m.isZero()) return'0';
+  if(m.isZero()) return r.toTeX();
+  var iStr=(m.n===m.d)?'i':(m.n===-m.d)?'-i':m.toTeX()+'i';
+  if(r.isZero()) return iStr;
+  if(m.n>0||(m.n===0)){
+    if(m.n===m.d) return r.toTeX()+'+i';
+    return r.toTeX()+'+'+m.toTeX()+'i';
+  } else {
+    if(m.n===-m.d) return r.toTeX()+'-i';
+    return r.toTeX()+m.toTeX()+'i';
+  }
+};
+
+function Q3El(a,b){this.a=a;this.b=b;}
+Q3El.zero=function(){return new Q3El(Frac.of(0),Frac.of(0));};
+Q3El.one =function(){return new Q3El(Frac.of(1),Frac.of(0));};
+Q3El.prototype.add=function(o){return new Q3El(this.a.add(o.a),this.b.add(o.b));};
+Q3El.prototype.sub=function(o){return new Q3El(this.a.sub(o.a),this.b.sub(o.b));};
+Q3El.prototype.mul=function(o){
+  // (a+b√3)(c+d√3) = (ac+3bd) + (ad+bc)√3
+  return new Q3El(this.a.mul(o.a).add(this.b.mul(o.b).mul(Frac.of(3))),
+                  this.a.mul(o.b).add(this.b.mul(o.a)));
+};
+Q3El.prototype.neg=function(){return new Q3El(this.a.neg(),this.b.neg());};
+Q3El.prototype.isZero=function(){return this.a.isZero()&&this.b.isZero();};
+Q3El.prototype.inv=function(){
+  // N = a²-3b²; (a+b√3)^{-1} = (a-b√3)/N
+  var N=this.a.mul(this.a).sub(this.b.mul(this.b).mul(Frac.of(3)));
+  if(N.isZero()) throw new Error('Element not invertible in ℚ(√3): norm is 0');
+  return new Q3El(this.a.div(N),this.b.neg().div(N));
+};
+Q3El.prototype.div=function(o){return this.mul(o.inv());};
+Q3El.prototype.needsParens=function(){
+  return !this.a.isZero()&&!this.b.isZero();
+};
+Q3El.prototype.toTeX=function(){
+  var a=this.a,b=this.b;
+  if(a.isZero()&&b.isZero()) return'0';
+  if(b.isZero()) return a.toTeX();
+  var s3=(b.n===b.d)?'\\sqrt{3}':(b.n===-b.d)?'-\\sqrt{3}':b.toTeX()+'\\sqrt{3}';
+  if(a.isZero()) return s3;
+  if(b.n>0){
+    if(b.n===b.d) return a.toTeX()+'+\\sqrt{3}';
+    return a.toTeX()+'+'+b.toTeX()+'\\sqrt{3}';
+  } else {
+    if(b.n===-b.d) return a.toTeX()+'-\\sqrt{3}';
+    return a.toTeX()+b.toTeX()+'\\sqrt{3}';
+  }
+};
+
+/* ══════════════════════════════════════════
+   FIELD FACTORIES (selected by MODE)
+══════════════════════════════════════════ */
+let MODE='C';
+function makeZero(){return MODE==='C'?CNum.zero():Q3El.zero();}
+function makeOne() {return MODE==='C'?CNum.one():Q3El.one();}
+
+/* ══════════════════════════════════════════
+   INPUT PARSING
+══════════════════════════════════════════ */
+function parseElem(re_str,im_str){
+  var re=Frac.parse(re_str);
+  var im=Frac.parse(im_str);
+  return MODE==='C'?new CNum(re,im):new Q3El(re,im);
+}
+
+/* ══════════════════════════════════════════
+   GAUSS–JORDAN ELIMINATION
+   Works over any field via duck-typed elements.
+══════════════════════════════════════════ */
+function solve(input){
+  // input[i][j]: field element;  input[i][last] = b_i
+  var n=input.length, m=input[0].length-1;
+  var M=input.map(function(r){return r.map(function(e){return e;});});
+  // Accounting matrix: starts as I_n
+  var acc=Array.from({length:n},function(_,i){
+    return Array.from({length:n},function(_,j){return i===j?makeOne():makeZero();});
+  });
+  var steps=[];
+  function snap(op,pivs){
+    steps.push({op:op,pivs:pivs?pivs.slice():[],
+      M:M.map(function(r){return r.slice();}),
+      acc:acc.map(function(r){return r.slice();})});
+  }
+  snap({t:'init'},[]);
+
+  var pr=0, allPivots=[], swapCount=0;
+
+  // Forward elimination
+  for(var col=0;col<m&&pr<n;col++){
+    var found=-1;
+    for(var r=pr;r<n;r++) if(!M[r][col].isZero()){found=r;break;}
+    if(found===-1) continue;
+    if(found!==pr){
+      var tmp=M[found];M[found]=M[pr];M[pr]=tmp;
+      var tA=acc[found];acc[found]=acc[pr];acc[pr]=tA;
+      swapCount++;
+      snap({t:'swap',i:pr,j:found},[]);
+    }
+    allPivots.push({row:pr,col:col});
+    for(var r2=pr+1;r2<n;r2++){
+      if(!M[r2][col].isZero()){
+        var mult=M[r2][col].div(M[pr][col]);
+        for(var c=0;c<=m;c++){
+          M[r2][c]=M[r2][c].sub(mult.mul(M[pr][c]));
+          if(c<n) acc[r2][c]=acc[r2][c].sub(mult.mul(acc[pr][c]));
+        }
+        snap({t:'rowop',i:r2,j:pr,mult:mult,dir:'fwd'},[{row:pr,col:col}]);
+      }
+    }
+    pr++;
+  }
+
+  // Back substitution
+  for(var pIdx=allPivots.length-1;pIdx>=0;pIdx--){
+    var pv=allPivots[pIdx], prow=pv.row, pcol=pv.col;
+    for(var r3=0;r3<prow;r3++){
+      if(!M[r3][pcol].isZero()){
+        var mult2=M[r3][pcol].div(M[prow][pcol]);
+        for(var c2=0;c2<=m;c2++){
+          M[r3][c2]=M[r3][c2].sub(mult2.mul(M[prow][c2]));
+          if(c2<n) acc[r3][c2]=acc[r3][c2].sub(mult2.mul(acc[prow][c2]));
+        }
+        snap({t:'rowop',i:r3,j:prow,mult:mult2,dir:'back'},[{row:prow,col:pcol}]);
+      }
+    }
+  }
+
+  // Normalize pivots to 1
+  for(var k=0;k<allPivots.length;k++){
+    var pv2=allPivots[k]; var prow2=pv2.row, pcol2=pv2.col;
+    var pivEl=M[prow2][pcol2];
+    if(!pivEl.isZero()&&!pivEl.isOne&&!(pivEl.toTeX&&pivEl.toTeX()==='1')){
+      // Check if already 1
+      var pivTeX=pivEl.toTeX();
+      if(pivTeX!=='1'){
+        var sc=makeOne().div(pivEl);
+        for(var c3=0;c3<=m;c3++){
+          M[prow2][c3]=sc.mul(M[prow2][c3]);
+          if(c3<n) acc[prow2][c3]=sc.mul(acc[prow2][c3]);
+        }
+        snap({t:'scale',i:prow2,sc:sc,piv:pivEl},allPivots.filter(function(p){return p.row<=prow2;}));
+      }
+    }
+  }
+
+  return{steps:steps,n:n,m:m,allPivots:allPivots,
+    finalM:steps[steps.length-1].M,finalAcc:steps[steps.length-1].acc};
+}
+
+/* ══════════════════════════════════════════
+   TeX HELPERS
+══════════════════════════════════════════ */
+function elemTeX(e){
+  var s=e.toTeX();
+  if(e.needsParens&&e.needsParens()) return'('+s+')';
+  return s;
+}
+
+function varName(i,m){
+  return m<=4?['x','y','z','w'][i]:'x_{'+(i+1)+'}';
+}
+
+function opDescTeX(op){
+  if(op.t==='init') return'[\\,\\text{acc}\\mid A\\mid b\\,] \\;\\text{— initial augmented system}';
+  if(op.t==='swap') return'R_{'+(op.i+1)+'}\\leftrightarrow R_{'+(op.j+1)+'}\\;\\text{(row swap)}';
+  if(op.t==='scale'){
+    var scTeX=elemTeX(op.sc),pivTeX=op.piv.toTeX();
+    return'R_{'+(op.i+1)+'}\\leftarrow '+scTeX+'\\cdot R_{'+(op.i+1)+'}'+'\\;\\text{(normalize: }'+pivTeX+'^{-1}='+scTeX+'\\text{)}';
+  }
+  if(op.t==='rowop'){
+    var mTeX=elemTeX(op.mult);
+    var dir=op.dir==='fwd'?'\\text{(fwd)}':'\\text{(back)}';
+    if(op.mult.toTeX()==='1')
+      return'R_{'+(op.i+1)+'}\\leftarrow R_{'+(op.i+1)+'}-R_{'+(op.j+1)+'}\\;'+dir;
+    if(op.mult.toTeX()==='-1')
+      return'R_{'+(op.i+1)+'}\\leftarrow R_{'+(op.i+1)+'}+R_{'+(op.j+1)+'}\\;'+dir;
+    return'R_{'+(op.i+1)+'}\\leftarrow R_{'+(op.i+1)+'}-'+mTeX+'\\cdot R_{'+(op.j+1)+'}\\;'+dir;
+  }
+  return'';
+}
+
+function eqTeX(row,b,m,vn){
+  var terms=[];
+  for(var i=0;i<m;i++){
+    var c=row[i];
+    if(c.isZero()) continue;
+    var v=vn[i];
+    var cTeX=elemTeX(c);
+    terms.push(terms.length===0?cTeX+'\\,'+v:'+'+cTeX+'\\,'+v);
+  }
+  if(!terms.length) return'0 = '+b.toTeX();
+  return terms.join('')+' = '+b.toTeX();
+}
+
+/* ══════════════════════════════════════════
+   RENDER OUTPUT
+══════════════════════════════════════════ */
+function renderOutput(result){
+  var {steps,n,m,allPivots,finalM,finalAcc}=result;
+  var vn=Array.from({length:m},function(_,i){return varName(i,m);});
+  var out=document.getElementById('out');
+  out.innerHTML='';
+  var wrap=document.createElement('div');wrap.className='steps-wrap';
+  var stepNum=0;
+
+  steps.forEach(function(step){
+    if(step.op.t!=='init') stepNum++;
+    var block=document.createElement('div');block.className='scard';
+    var hd=document.createElement('div');hd.className='shd';
+    var badge=document.createElement('span');
+    if(step.op.t==='init'){badge.className='sbadge init-b';badge.textContent='init';}
+    else{badge.className='sbadge';badge.textContent=stepNum;}
+    var desc=document.createElement('span');desc.className='sdesc';
+    desc.innerHTML=rk(opDescTeX(step.op));
+    hd.append(badge,desc);block.appendChild(hd);
+
+    // Table
+    var tw=document.createElement('div');tw.className='twrap';
+    var tbl=document.createElement('table');tbl.className='tab';
+    var thead=document.createElement('thead');
+
+    // Row 1: group headers
+    var hr=document.createElement('tr');
+    var thOp=document.createElement('th');thOp.rowSpan=2;thOp.style.verticalAlign='middle';thOp.textContent='Op';thOp.className='mhd';hr.appendChild(thOp);
+    var thAcc=document.createElement('th');thAcc.colSpan=n;thAcc.className='ahd sepr';
+    thAcc.textContent='Accounting — linear combination of E₁…Eₙ';hr.appendChild(thAcc);
+    var thVar=document.createElement('th');thVar.colSpan=m;thVar.className='mhd';thVar.textContent='Coefficients';hr.appendChild(thVar);
+    var thB=document.createElement('th');thB.rowSpan=2;thB.className='bhd sepr';thB.style.verticalAlign='middle';thB.innerHTML=rk('b');hr.appendChild(thB);
+    var thEq=document.createElement('th');thEq.rowSpan=2;thEq.className='ehd';thEq.style.verticalAlign='middle';thEq.textContent='Equation';hr.appendChild(thEq);
+    thead.appendChild(hr);
+
+    // Row 2: sub-labels
+    var sr=document.createElement('tr');
+    for(var j=0;j<n;j++){
+      var th=document.createElement('th');th.className='ahd'+(j===n-1?' sepr':'');
+      th.innerHTML=rk('E_{'+(j+1)+'}');sr.appendChild(th);
+    }
+    for(var j2=0;j2<m;j2++){
+      var th2=document.createElement('th');th2.className='mhd';
+      th2.innerHTML=rk(vn[j2]);sr.appendChild(th2);
+    }
+    thead.appendChild(sr);tbl.appendChild(thead);
+
+    // Tbody
+    var tbody=document.createElement('tbody');
+    for(var i=0;i<n;i++){
+      var tr=document.createElement('tr');
+      var isMod=step.op.t==='rowop'&&step.op.i===i||
+                step.op.t==='swap'&&(step.op.i===i||step.op.j===i)||
+                step.op.t==='scale'&&step.op.i===i;
+      if(isMod) tr.classList.add('mod-r');
+
+      // Op label
+      var tdOp=document.createElement('td');tdOp.className='op-lbl';
+      if(i===0&&step.op.t!=='init') tdOp.innerHTML=rk(opDescTeX(step.op));
+      tr.appendChild(tdOp);
+
+      // Accounting
+      for(var j3=0;j3<n;j3++){
+        var td=document.createElement('td');td.className='ac'+(j3===n-1?' sepr':'');
+        td.innerHTML=rk(step.acc[i][j3].toTeX());tr.appendChild(td);
+      }
+
+      // Coefficients
+      for(var j4=0;j4<m;j4++){
+        var td2=document.createElement('td');
+        var isPiv=step.pivs.some(function(pv){return pv.row===i&&pv.col===j4;});
+        if(isPiv){
+          td2.className='piv-cell';
+          td2.innerHTML='<span class="pbox">'+rk(step.M[i][j4].toTeX())+'</span>';
+        } else {
+          td2.innerHTML=rk(step.M[i][j4].toTeX());
+        }
+        tr.appendChild(td2);
+      }
+
+      // b
+      var tdB=document.createElement('td');tdB.className='bc sepr';
+      tdB.innerHTML=rk(step.M[i][m].toTeX());tr.appendChild(tdB);
+
+      // Equation
+      var tdEq=document.createElement('td');tdEq.className='ec';
+      tdEq.innerHTML=rk(eqTeX(step.M[i],step.M[i][m],m,vn));tr.appendChild(tdEq);
+
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);tw.appendChild(tbl);block.appendChild(tw);wrap.appendChild(block);
+  });
+
+  // Solution
+  var sol=document.createElement('div');sol.className='sol-card';
+  var inconsistent=false,underdetermined=false;
+  for(var r=0;r<n;r++){
+    var allZ=true;
+    for(var c4=0;c4<m;c4++) if(!finalM[r][c4].isZero()) allZ=false;
+    if(allZ&&!finalM[r][m].isZero()){inconsistent=true;break;}
+  }
+  if(!inconsistent&&allPivots.length<Math.min(n,m)) underdetermined=true;
+
+  var fieldName=MODE==='C'?'ℂ':'ℚ(√3)';
+  if(inconsistent){
+    sol.innerHTML='<h3>No Solution</h3><p class="sol-note">The system is inconsistent over '+fieldName+
+      ': a row reduces to 0 = c with c ≠ 0 in '+fieldName+'.</p>';
+  } else if(underdetermined||allPivots.length<m){
+    var pivCols=new Set(allPivots.map(function(pv){return pv.col;}));
+    var freeVars=Array.from({length:m},function(_,i){return i;}).filter(function(j){return!pivCols.has(j);});
+    sol.innerHTML='<h3>Infinitely Many Solutions</h3><p class="sol-note">Free variables over '+fieldName+
+      ': '+freeVars.map(function(j){return '<em>'+vn[j]+'</em>';}).join(', ')+' can be any element of '+fieldName+'.'+
+      ' Each free choice gives a distinct solution.</p>';
+  } else {
+    sol.innerHTML='<h3>Unique Solution over '+fieldName+'</h3>';
+    var vals=document.createElement('div');vals.className='sol-vals';
+    allPivots.forEach(function(pv3){
+      var val=finalM[pv3.row][m].div(finalM[pv3.row][pv3.col]);
+      var item=document.createElement('div');item.className='sol-item';
+      item.innerHTML=rk(vn[pv3.col]+' = '+val.toTeX());
+      vals.appendChild(item);
+    });
+    sol.appendChild(vals);
+  }
+  wrap.appendChild(sol);
+
+  // Key
+  var key=document.createElement('div');key.className='keybox';
+  key.innerHTML='<strong>Reading this tableau:</strong> '+
+    'All arithmetic is exact over <strong>'+fieldName+'</strong>. '+
+    'The <span style="color:#3a5aa8">blue accounting columns</span> record how each current row '+
+    'is a '+fieldName+'-linear combination of the original equations E₁, …, Eₙ. '+
+    '<span style="color:var(--red)">Red-boxed</span> entries are active <strong>pivot elements</strong>. '+
+    'The pivot\'s inverse is always computed exactly in '+fieldName+'.';
+  wrap.appendChild(key);
+
+  out.appendChild(wrap);
+  out.scrollIntoView({behavior:'smooth'});
+}
+
+/* ══════════════════════════════════════════
+   FIELD ALGEBRA CARD
+══════════════════════════════════════════ */
+function renderAlgCard(){
+  var grid=document.getElementById('algGrid');
+  grid.innerHTML='';
+  if(MODE==='C'){
+    document.getElementById('algTitle').textContent='ℂ — The Complex Number Field';
+    var boxes=[
+      {cls:'c-box',title:'Definition and structure',
+       body:'ℂ = ℝ[i]\\,/\\,(i^2+1) \\;\\Longleftrightarrow\\; i^2=-1',
+       extra:'Every nonzero element has a unique multiplicative inverse. ℂ is algebraically closed.'},
+      {cls:'c-box',title:'Arithmetic rules',
+       body:'(a+bi)(c+di)=(ac-bd)+(ad+bc)i',
+       extra:'Division: '+rk('\\dfrac{a+bi}{c+di}=\\dfrac{(ac+bd)+(bc-ad)i}{c^2+d^2}')},
+      {cls:'c-box',title:'Inverse formula',
+       body:'(a+bi)^{-1}=\\dfrac{a-bi}{a^2+b^2}',
+       extra:'The denominator a²+b²>0 for any nonzero a+bi.'},
+      {cls:'c-box',title:'Why ℂ is a field',
+       body:'|a+bi|^2 = a^2+b^2 = 0 \\iff a=b=0',
+       extra:'So every nonzero complex number is invertible — the row operations always work.'},
+    ];
+    boxes.forEach(function(b){
+      var d=document.createElement('div');d.className='alg-box '+b.cls;
+      d.innerHTML='<h3>'+b.title+'</h3>'+rk(b.body)+'<p style="margin-top:.35rem;font-size:.85rem;color:var(--gray)">'+b.extra+'</p>';
+      grid.appendChild(d);
+    });
+  } else {
+    document.getElementById('algTitle').textContent='ℚ(√3) — A Quadratic Number Field';
+    var boxes2=[
+      {cls:'q-box',title:'Definition',
+       body:'\\mathbb{Q}(\\sqrt{3})=\\{a+b\\sqrt{3}:a,b\\in\\mathbb{Q}\\},\\quad (\\sqrt{3})^2=3',
+       extra:'ℚ(√3) = ℚ[x]/(x²−3). It is the smallest field containing ℚ and √3.'},
+      {cls:'q-box',title:'Multiplication',
+       body:'(a+b\\sqrt{3})(c+d\\sqrt{3})=(ac+3bd)+(ad+bc)\\sqrt{3}',
+       extra:'The product stays in ℚ(√3) — the set is closed under all field operations.'},
+      {cls:'q-box',title:'Norm and inverse',
+       body:'N(a+b\\sqrt{3})=a^2-3b^2, \\quad (a+b\\sqrt{3})^{-1}=\\dfrac{a-b\\sqrt{3}}{a^2-3b^2}',
+       extra:'N(α)=0 in ℚ only if a=b=0 (since √3 is irrational), so inverses always exist.'},
+      {cls:'q-box',title:'Why ℚ(√3) is a field',
+       body:'a^2-3b^2=0 \\text{ in } \\mathbb{Q}\\iff a=b=0',
+       extra:'Unlike ℤ/pℤ, ℚ(√3) is an infinite field of characteristic 0. Row reduction here produces exact rational+irrational answers.'},
+    ];
+    boxes2.forEach(function(b){
+      var d=document.createElement('div');d.className='alg-box '+b.cls;
+      d.innerHTML='<h3>'+b.title+'</h3>'+rk(b.body)+'<p style="margin-top:.35rem;font-size:.85rem;color:var(--gray)">'+b.extra+'</p>';
+      grid.appendChild(d);
+    });
+  }
+}
+
+/* ══════════════════════════════════════════
+   MATRIX INPUT UI
+══════════════════════════════════════════ */
+let cN=2,cM=2;
+
+const PRESETS={
+  C:[
+    {n:2,m:2,label:'2×2 basic',
+     re:[[1,2],[3,1]],im:[[1,0],[0,-1]],bre:[2,1],bim:[3,0]},
+    {n:2,m:2,label:'2×2 conjugate det',
+     re:[[0,1],[1,0]],im:[[1,0],[0,1]],bre:[1,1],bim:[1,-1]},
+    {n:3,m:3,label:'3×3 triangular',
+     re:[[1,0,0],[0,1,0],[0,0,1]],im:[[0,1,0],[0,0,1],[0,0,0]],
+     bre:[1,0,-1],bim:[0,1,0]},
+    {n:2,m:2,label:'Inconsistent',
+     re:[[1,0],[0,0]],im:[[0,1],[-1,0]],bre:[1,1],bim:[0,1]},
+  ],
+  Q:[
+    {n:2,m:2,label:'2×2 basic',
+     a:[[1,2],[1,1]],b3:[[1,0],[0,-1]],ba:[3,1],bb3:[0,0]},
+    {n:2,m:2,label:'2×2 clean norms',
+     a:[[2,0],[0,1]],b3:[[0,1],[1,0]],ba:[1,0],bb3:[1,0]},
+    {n:3,m:3,label:'3×3 mixed',
+     a:[[1,0,2],[0,1,0],[1,0,1]],b3:[[1,0,0],[1,0,1],[0,1,0]],
+     ba:[3,1,2],bb3:[0,0,1]},
+    {n:2,m:2,label:'Underdetermined',
+     a:[[1,0],[0,0]],b3:[[0,1],[1,0]],ba:[2,2],bb3:[0,0]},
+  ]
+};
+
+function buildGrid(){
+  var cont=document.getElementById('mxWrap');cont.innerHTML='';
+  var unit=MODE==='C'?'i':'√3';
+  var partA=MODE==='C'?'Re':'a';
+  var partB=MODE==='C'?'Im':'b';
+
+  var tbl=document.createElement('table');tbl.className='mx-tbl';
+  var thead=document.createElement('thead');
+
+  // Row 1: variable names spanning 2 cols each + b
+  var hr1=document.createElement('tr');
+  var emptyTh=document.createElement('th');hr1.appendChild(emptyTh);
+  for(var j=0;j<cM;j++){
+    var th=document.createElement('th');th.colSpan=2;th.className='var-hd';
+    th.innerHTML=rk(cM<=4?['x','y','z','w'][j]:'x_{'+(j+1)+'}');hr1.appendChild(th);
+  }
+  var eqTh=document.createElement('th');hr1.appendChild(eqTh);
+  var bth=document.createElement('th');bth.colSpan=2;bth.className='var-hd';
+  bth.innerHTML=rk('b');hr1.appendChild(bth);
+  thead.appendChild(hr1);
+
+  // Row 2: part labels
+  var hr2=document.createElement('tr');
+  hr2.appendChild(document.createElement('th'));
+  for(var j2=0;j2<cM;j2++){
+    var ta=document.createElement('th');ta.textContent=partA;hr2.appendChild(ta);
+    var tb=document.createElement('th');tb.textContent=partB;hr2.appendChild(tb);
+  }
+  hr2.appendChild(document.createElement('th'));
+  var ta2=document.createElement('th');ta2.textContent=partA;hr2.appendChild(ta2);
+  var tb2=document.createElement('th');tb2.textContent=partB;hr2.appendChild(tb2);
+  thead.appendChild(hr2);
+  tbl.appendChild(thead);
+
+  var tbody=document.createElement('tbody');
+  for(var i=0;i<cN;i++){
+    var tr=document.createElement('tr');
+    // Row label
+    var rl=document.createElement('td');rl.className='row-lbl';rl.innerHTML=rk('E_{'+(i+1)+'}');
+    tr.appendChild(rl);
+    // Coefficient cells
+    for(var j3=0;j3<cM;j3++){
+      // First part
+      var td1=document.createElement('td');
+      var cell1=document.createElement('div');cell1.className='coeff-cell';
+      var inp1=document.createElement('input');inp1.type='text';inp1.className='part';
+      inp1.id='re_'+i+'_'+j3;inp1.placeholder='0';inp1.autocomplete='off';
+      cell1.appendChild(inp1);td1.appendChild(cell1);tr.appendChild(td1);
+      // Second part (with unit label)
+      var td2=document.createElement('td');
+      var cell2=document.createElement('div');cell2.className='coeff-cell';
+      var inp2=document.createElement('input');inp2.type='text';inp2.className='part';
+      inp2.id='im_'+i+'_'+j3;inp2.placeholder='0';inp2.autocomplete='off';
+      var unitSpan=document.createElement('span');unitSpan.className='sep';
+      unitSpan.textContent=unit;
+      cell2.appendChild(inp2);cell2.appendChild(unitSpan);td2.appendChild(cell2);tr.appendChild(td2);
+    }
+    // = sign
+    var eqTd=document.createElement('td');eqTd.className='eq-sep';
+    eqTd.innerHTML=rk('=');tr.appendChild(eqTd);
+    // b cell
+    var bTd1=document.createElement('td');
+    var bc1=document.createElement('div');bc1.className='coeff-cell b-cell';
+    var bi1=document.createElement('input');bi1.type='text';bi1.className='part';
+    bi1.id='bre_'+i;bi1.placeholder='0';bi1.autocomplete='off';
+    bc1.appendChild(bi1);bTd1.appendChild(bc1);tr.appendChild(bTd1);
+    var bTd2=document.createElement('td');
+    var bc2=document.createElement('div');bc2.className='coeff-cell b-cell';
+    var bi2=document.createElement('input');bi2.type='text';bi2.className='part';
+    bi2.id='bim_'+i;bi2.placeholder='0';bi2.autocomplete='off';
+    var u2=document.createElement('span');u2.className='sep';u2.textContent=unit;
+    bc2.appendChild(bi2);bc2.appendChild(u2);bTd2.appendChild(bc2);tr.appendChild(bTd2);
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);cont.appendChild(tbl);
+
+  // Field hint
+  var hint=document.getElementById('fieldHint');
+  if(MODE==='C') hint.textContent='Enter rationals or fractions (e.g. 1/2). The Re column is the real part; Im·i is the imaginary part.';
+  else hint.textContent='Enter rationals or fractions. The a column is the rational part; b·√3 is the irrational part.';
+}
+
+function loadPreset(ex){
+  if(MODE==='C'){
+    cN=ex.n;cM=ex.m;
+    document.getElementById('nRows').value=cN;
+    document.getElementById('nCols').value=cM;
+    buildGrid();
+    for(var i=0;i<ex.n;i++){
+      for(var j=0;j<ex.m;j++){
+        var re=document.getElementById('re_'+i+'_'+j);
+        var im=document.getElementById('im_'+i+'_'+j);
+        if(re)re.value=ex.re[i][j]||0;if(im)im.value=ex.im[i][j]||0;
+      }
+      var br=document.getElementById('bre_'+i);var bi=document.getElementById('bim_'+i);
+      if(br)br.value=ex.bre[i]||0;if(bi)bi.value=ex.bim[i]||0;
+    }
+  } else {
+    cN=ex.n;cM=ex.m;
+    document.getElementById('nRows').value=cN;
+    document.getElementById('nCols').value=cM;
+    buildGrid();
+    for(var i=0;i<ex.n;i++){
+      for(var j=0;j<ex.m;j++){
+        var a=document.getElementById('re_'+i+'_'+j);
+        var b3=document.getElementById('im_'+i+'_'+j);
+        if(a)a.value=ex.a[i][j]||0;if(b3)b3.value=ex.b3[i][j]||0;
+      }
+      var ba=document.getElementById('bre_'+i);var bb3=document.getElementById('bim_'+i);
+      if(ba)ba.value=ex.ba[i]||0;if(bb3)bb3.value=ex.bb3[i]||0;
+    }
+  }
+}
+
+function rebuildExamples(){
+  var row=document.getElementById('exRow');row.innerHTML='';
+  var exs=PRESETS[MODE];
+  exs.forEach(function(ex){
+    var btn=document.createElement('button');btn.className='btn-ghost';
+    btn.textContent=ex.label;
+    btn.onclick=function(){loadPreset(ex);};
+    row.appendChild(btn);
+  });
+}
+
+function rebuildAll(){
+  cN=Math.min(Math.max(parseInt(document.getElementById('nRows').value)||2,2),5);
+  cM=Math.min(Math.max(parseInt(document.getElementById('nCols').value)||2,2),4);
+  document.getElementById('nRows').value=cN;
+  document.getElementById('nCols').value=cM;
+  buildGrid();
+}
+
+function setMode(m){
+  MODE=m;
+  document.getElementById('tabC').className='mode-tab'+(m==='C'?' active-C':'');
+  document.getElementById('tabQ').className='mode-tab'+(m==='Q'?' active-Q':'');
+  renderAlgCard();
+  rebuildExamples();
+  buildGrid();
+  document.getElementById('out').innerHTML='';
+}
+
+function doSolve(){
+  try{
+    var input=Array.from({length:cN},function(_,i){
+      return Array.from({length:cM+1},function(_,j){
+        var re_id=j<cM?'re_'+i+'_'+j:'bre_'+i;
+        var im_id=j<cM?'im_'+i+'_'+j:'bim_'+i;
+        var re_el=document.getElementById(re_id);
+        var im_el=document.getElementById(im_id);
+        return parseElem(re_el?re_el.value:'0',im_el?im_el.value:'0');
+      });
+    });
+    var result=solve(input);
+    renderOutput(result);
+  } catch(e){
+    document.getElementById('out').innerHTML=
+      '<div class="err-msg" style="padding:1rem">Error: '+e.message+'</div>';
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  setMode('C');
+  loadPreset(PRESETS.C[0]);
+});
+</script>
+</body>
+</html>

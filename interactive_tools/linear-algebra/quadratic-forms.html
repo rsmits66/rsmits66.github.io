@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quadratic Forms — Diagonalization by Congruence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root {
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  --acc-bg:#edf1fb; --mod-bg:#fff9f5;
+  --left-bg:#edf2fb;  --left-hd:#b8ccee;
+  --right-bg:#f0ecfb; --right-hd:#c0b0e8;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:18px;line-height:1.55;}
+header{background:var(--navy);color:#fff;padding:1.8rem 2.5rem;border-bottom:3px solid var(--gold);display:flex;flex-direction:column;gap:.25rem;}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-size:1.05rem;font-style:italic;}
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.8rem 2rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:var(--font-head);font-size:1.25rem;font-weight:600;color:var(--navy);margin-bottom:1.2rem;}
+.size-row{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+.size-row label{display:flex;align-items:center;gap:.5rem;font-size:.95rem;color:var(--navy2);}
+.size-row input[type=number]{width:56px;padding:.28rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:1rem;color:var(--navy);text-align:center;}
+.size-row input:focus{outline:none;border-color:var(--accent);}
+.examples-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+button{font-family:var(--font-body);font-size:.95rem;cursor:pointer;border:none;border-radius:4px;padding:.35rem .9rem;transition:background .15s,transform .1s;}
+button:active{transform:scale(.97);}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #c0ccdd;}
+.btn-ghost:hover{background:#d8e4f8;}
+.btn-solve{background:var(--red);color:#fff;padding:.55rem 2rem;font-size:1.05rem;letter-spacing:.04em;margin-top:1.4rem;display:inline-flex;align-items:center;gap:.5rem;}
+.btn-solve:hover{background:#952e24;}
+.btn-sym{background:#fff4e8;color:#7a3800;border:1px solid #e8a060;}
+.btn-sym:hover{background:#ffe8cc;}
+.matrix-wrapper{overflow-x:auto;margin:.8rem 0;}
+.matrix-grid{display:inline-grid;gap:7px 8px;align-items:center;}
+.matrix-grid input{width:62px;padding:.32rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:1rem;color:var(--navy);text-align:center;background:#fafafa;}
+.matrix-grid input:focus{outline:none;border-color:var(--accent);background:#fff;}
+.matrix-grid .col-lbl{text-align:center;font-size:.82rem;color:var(--gray);}
+.matrix-grid .row-lbl{text-align:right;padding-right:8px;font-size:.88rem;color:var(--gray);}
+.warn-sym{background:#fff4e8;border:1px solid #e8a060;border-radius:5px;padding:.5rem 1rem;font-size:.9rem;color:#7a3800;margin:.4rem 0;}
+/* Steps */
+.steps-container{display:flex;flex-direction:column;gap:1.6rem;}
+.step-block{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.step-header{background:var(--navy);color:#fff;padding:.6rem 1.2rem;display:flex;align-items:center;gap:.75rem;}
+.step-num{background:var(--gold);color:var(--navy);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-num.init-badge{background:#4a6fa0;color:#fff;font-size:.72rem;font-weight:600;}
+.step-num.row-badge{background:#b05010;color:#fff;}
+.step-num.col-badge{background:#503090;color:#fff;}
+.step-num.fin-badge{background:#1a6a40;color:#fff;}
+.step-title-txt{font-style:italic;font-size:.95rem;color:#d0ddf0;}
+/* Tableau */
+.tableau-scroll{overflow-x:auto;padding:.4rem 0 .6rem;}
+.tableau{border-collapse:collapse;font-size:.93rem;}
+.tableau th,.tableau td{padding:.4rem .75rem;border:1px solid #e8e4de;text-align:center;white-space:nowrap;}
+.tableau thead th{font-family:var(--font-body);font-weight:400;font-size:.85rem;color:var(--navy2);background:#f5f7fa;border-bottom:2px solid var(--border);}
+.tableau .op-lbl{text-align:left;font-size:.85rem;min-width:190px;background:#fafafa;color:var(--gray);}
+/* Group headers */
+.tableau .grp-left{background:var(--left-bg);color:#1a2870;font-size:.83rem;border-bottom:none;border-right:2.5px solid #bbb !important;}
+.tableau .grp-ctr{background:#f5f7fa;color:var(--navy2);font-size:.83rem;border-bottom:none;border-right:2.5px solid #bbb !important;}
+.tableau .grp-right{background:var(--right-bg);color:#2a1870;font-size:.83rem;border-bottom:none;}
+.tableau .sub-left{background:var(--left-bg);border-bottom:2px solid var(--left-hd);}
+.tableau .sub-left.sep-r{border-right:2.5px solid #bbb !important;}
+.tableau .sub-ctr{background:#f5f7fa;}
+.tableau .sub-ctr.sep-r{border-right:2.5px solid #bbb !important;}
+.tableau .sub-right{background:var(--right-bg);border-bottom:2px solid var(--right-hd);}
+/* Data cells */
+.tableau td.c-left{background:var(--left-bg);}
+.tableau td.c-left.sep-r{border-right:2.5px solid #bbb !important;}
+.tableau td.c-right{background:var(--right-bg);}
+.tableau td.c-ctr.sep-r{border-right:2.5px solid #bbb !important;}
+.tableau .pivot-cell{background:var(--red-bg) !important;}
+.pivot-inner{display:inline-block;border:2px solid var(--red);border-radius:4px;padding:1px 7px;color:var(--red);font-weight:600;}
+/* Modified rows */
+.tableau tbody tr.mod-row>td{background:var(--mod-bg);}
+.tableau tbody tr.mod-row>td.c-left{background:#f0e8e0;}
+.tableau tbody tr.mod-row>td.c-right{background:#e8e0f8;}
+.tableau tbody tr.mod-row>td.pivot-cell{background:var(--red-bg);}
+.tableau tbody tr.mod-row>td.op-lbl{background:#fff4ee;}
+/* Final / zero */
+.tableau td.is-diag{background:#e8f5ec !important;font-weight:600;color:#1a6a40;}
+.tableau td.is-zero{color:#ccc;}
+/* Key / sig boxes */
+.key-box{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.85rem 1.2rem;font-size:.9rem;color:var(--navy2);line-height:1.65;margin:.5rem 1.4rem .5rem;}
+.key-box strong{color:var(--navy);}
+.sig-card{background:#e8f5ec;border:1px solid #80c090;border-radius:8px;padding:1.2rem 1.6rem;margin:.5rem 1.4rem .4rem;}
+.sig-card h3{font-family:var(--font-head);font-size:1.1rem;color:#1a6a40;margin-bottom:.4rem;}
+.step-note{font-size:.85rem;color:var(--gray);padding:.3rem 1.4rem .5rem;font-style:italic;}
+@media(max-width:600px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Quadratic Forms — Congruence Diagonalization</h1>
+  <p>Simultaneous row &amp; column operations on [P<sup>T</sup>&thinsp;| A |&thinsp;P] reduce A to diagonal form, preserving Sylvester's signature</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter Symmetric Matrix A</h2>
+  <div class="size-row">
+    <label>Size n×n: <input type="number" id="nIn" min="1" max="6" value="4"></label>
+    <button class="btn-ghost" onclick="resize()">Resize</button>
+    <button class="btn-sym" onclick="symmetrize()">Symmetrize ↗ copy upper → lower</button>
+  </div>
+  <div class="examples-row" id="exRow"></div>
+  <p style="font-size:.88rem;color:var(--gray);margin-bottom:.5rem;">
+    Integers, decimals, or fractions like <code>2/3</code>. Matrix must be symmetric (A = Aᵀ).
+  </p>
+  <div class="matrix-wrapper" id="matWrap"></div>
+  <div id="symWarn"></div>
+  <button class="btn-solve" onclick="runDiag()">Diagonalize ▶</button>
+</div>
+
+<div id="outputSection"></div>
+</main>
+<script>
+/* ══════════════════════════════════════════
+   FRACTION ARITHMETIC
+══════════════════════════════════════════ */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b>0){var t=b;b=a%b;a=t;}return a===0?1:a;}
+function Frac(n,d){
+  d=d===undefined?1:d;
+  if(d===0){this.n=0;this.d=1;return;}
+  if(d<0){n=-n;d=-d;}
+  var g=gcd(Math.abs(n),Math.trunc(d));
+  this.n=Math.trunc(n/g);this.d=Math.trunc(d/g);
+}
+Frac.parse=function(s){
+  s=(s||'').trim();
+  if(!s||s==='-')return new Frac(0);
+  if(s.indexOf('/')>-1){var p=s.split('/');var a=parseInt(p[0]),b=parseInt(p[1]);
+    return(isNaN(a)||isNaN(b))?new Frac(0):new Frac(a,b);}
+  if(s.indexOf('.')>-1){var pts=s.replace('-','').split('.');var dec=pts[1]?pts[1].length:0;
+    var dn=Math.pow(10,dec);return new Frac(Math.round(parseFloat(s)*dn),dn);}
+  var n2=parseInt(s);return isNaN(n2)?new Frac(0):new Frac(n2);
+};
+Frac.prototype.clone=function(){return new Frac(this.n,this.d);};
+Frac.prototype.add=function(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);};
+Frac.prototype.sub=function(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);};
+Frac.prototype.mul=function(o){return new Frac(this.n*o.n,this.d*o.d);};
+Frac.prototype.div=function(o){return new Frac(this.n*o.d,this.d*o.n);};
+Frac.prototype.neg=function(){return new Frac(-this.n,this.d);};
+Frac.prototype.isZero=function(){return this.n===0;};
+Frac.prototype.isPos=function(){return this.n>0;};
+Frac.prototype.isNeg=function(){return this.n<0;};
+Frac.prototype.toTeX=function(){
+  if(this.d===1)return String(this.n);
+  var abs=Math.abs(this.n);var sg=this.n<0?'-':'';
+  return sg+'\\tfrac{'+abs+'}{'+this.d+'}';
+};
+var ZERO=new Frac(0),ONE=new Frac(1);
+
+function rk(t){try{return katex.renderToString(t,{throwOnError:false});}catch(e){return t;}}
+
+/* ══════════════════════════════════════════
+   MATRIX HELPERS
+══════════════════════════════════════════ */
+function cloneMat(M){return M.map(function(r){return r.map(function(f){return f.clone();});});}
+function identity(n){return Array.from({length:n},function(_,i){return Array.from({length:n},function(_,j){return new Frac(i===j?1:0);});});}
+function isSymmetric(M){
+  var n=M.length;
+  for(var i=0;i<n;i++)for(var j=0;j<i;j++)
+    if(M[i][j].n!==M[j][i].n||M[i][j].d!==M[j][i].d)return false;
+  return true;
+}
+
+/* ══════════════════════════════════════════
+   SNAP  — records a full [PT | A | P] state
+   modRow: highlighted row (-1 = none)
+   pivK, pivI: pivot coordinates to box
+══════════════════════════════════════════ */
+function snap(PT,A,P,type,opTeX,modRow,pivK,pivI){
+  var n=A.length;
+  return{type:type,opTeX:opTeX||'',modRow:modRow!=null?modRow:-1,
+    pivK:pivK!=null?pivK:-1,pivI:pivI!=null?pivI:-1,
+    rows:Array.from({length:n},function(_,i){return{
+      PT:PT[i].map(function(f){return f.clone();}),
+      A:A[i].map(function(f){return f.clone();}),
+      P:P[i].map(function(f){return f.clone();})
+    };})
+  };
+}
+
+/* ══════════════════════════════════════════
+   DIAGONALIZATION — records every operation
+══════════════════════════════════════════ */
+function diagonalize(Ain){
+  var n=Ain.length;
+  var A=cloneMat(Ain);
+  var PT=identity(n);  /* accumulates row ops  → becomes P^T */
+  var P=identity(n);   /* accumulates col ops  → becomes P   */
+  var steps=[];
+
+  steps.push(snap(PT,A,P,'initial','',- 1,-1,-1));
+
+  for(var k=0;k<n;k++){
+    /* Handle zero diagonal */
+    if(A[k][k].isZero()){
+      var fi=-1;
+      for(var ii=k+1;ii<n;ii++){if(!A[ii][k].isZero()){fi=ii;break;}}
+      if(fi===-1)continue;
+      /* Row op R_k <- R_k + R_fi */
+      for(var j=0;j<n;j++){A[k][j]=A[k][j].add(A[fi][j]);PT[k][j]=PT[k][j].add(PT[fi][j]);}
+      steps.push(snap(PT,A,P,'row',
+        'R_{'+(k+1)+'}\\leftarrow R_{'+(k+1)+'}+R_{'+(fi+1)+'}',
+        k,k,-1));
+      /* Col op C_k <- C_k + C_fi */
+      for(var j=0;j<n;j++){A[j][k]=A[j][k].add(A[j][fi]);P[j][k]=P[j][k].add(P[j][fi]);}
+      steps.push(snap(PT,A,P,'col',
+        'C_{'+(k+1)+'}\\leftarrow C_{'+(k+1)+'}+C_{'+(fi+1)+'}',
+        -1,k,-1));
+    }
+    if(A[k][k].isZero())continue;
+
+    for(var i=k+1;i<n;i++){
+      if(A[i][k].isZero())continue;
+      var t=A[i][k].div(A[k][k]).neg();
+      var tTeX=t.toTeX();
+      /* Row op R_i <- R_i + t R_k */
+      for(var j=0;j<n;j++){A[i][j]=A[i][j].add(t.mul(A[k][j]));PT[i][j]=PT[i][j].add(t.mul(PT[k][j]));}
+      steps.push(snap(PT,A,P,'row',
+        'R_{'+(i+1)+'}\\leftarrow R_{'+(i+1)+'}+'+tTeX+'\\,R_{'+(k+1)+'}',
+        i,k,i));
+      /* Col op C_i <- C_i + t C_k */
+      for(var j=0;j<n;j++){A[j][i]=A[j][i].add(t.mul(A[j][k]));P[j][i]=P[j][i].add(t.mul(P[j][k]));}
+      steps.push(snap(PT,A,P,'col',
+        'C_{'+(i+1)+'}\\leftarrow C_{'+(i+1)+'}+'+tTeX+'\\,C_{'+(k+1)+'}',
+        -1,k,i));
+    }
+  }
+
+  var diag=Array.from({length:n},function(_,i){return A[i][i].clone();});
+  var pos=0,neg=0,zer=0;
+  diag.forEach(function(d){if(d.isPos())pos++;else if(d.isNeg())neg++;else zer++;});
+  var fsnap=snap(PT,A,P,'final','',- 1,-1,-1);
+  fsnap.diag=diag;fsnap.pos=pos;fsnap.neg=neg;fsnap.zer=zer;
+  steps.push(fsnap);
+  return steps;
+}
+
+/* ══════════════════════════════════════════
+   RENDER ONE TABLEAU  [PT | A | P]
+══════════════════════════════════════════ */
+function renderTab(step,n,isFinal){
+  var wrap=document.createElement('div');wrap.className='tableau-scroll';
+  var tbl=document.createElement('table');tbl.className='tableau';
+  var thead=document.createElement('thead');
+
+  /* Group header row */
+  var gr=document.createElement('tr');
+  var thOp=document.createElement('th');
+  thOp.rowSpan=2;thOp.style.verticalAlign='middle';thOp.style.textAlign='left';
+  thOp.className='op-lbl';thOp.textContent='Operation';
+  gr.appendChild(thOp);
+
+  function mkGH(html,cls){
+    var th=document.createElement('th');th.colSpan=n;th.className=cls;th.innerHTML=html;return th;
+  }
+  gr.appendChild(mkGH(rk('P^{\\!\\top}')+'&thinsp;&mdash; row ops accumulate here','grp-left'));
+  gr.appendChild(mkGH(isFinal?'D = '+rk('P^{\\!\\top}\\!A\\,P'):'A&thinsp;&mdash; quadratic form matrix','grp-ctr'));
+  gr.appendChild(mkGH(rk('P')+'&thinsp;&mdash; column ops accumulate here','grp-right'));
+  thead.appendChild(gr);
+
+  /* Sub-header row */
+  var sr=document.createElement('tr');
+  for(var j=0;j<n;j++){
+    var th=document.createElement('th');
+    th.className='sub-left'+(j===n-1?' sep-r':'');
+    th.innerHTML=rk('r_{'+(j+1)+'}');sr.appendChild(th);
+  }
+  for(var j=0;j<n;j++){
+    var th=document.createElement('th');
+    th.className='sub-ctr'+(j===n-1?' sep-r':'');
+    th.innerHTML=rk('x_{'+(j+1)+'}');sr.appendChild(th);
+  }
+  for(var j=0;j<n;j++){
+    var th=document.createElement('th');
+    th.className='sub-right';
+    th.innerHTML=rk('c_{'+(j+1)+'}');sr.appendChild(th);
+  }
+  thead.appendChild(sr);
+  tbl.appendChild(thead);
+
+  var tbody=document.createElement('tbody');
+  step.rows.forEach(function(row,ri){
+    var tr=document.createElement('tr');
+    var isMod=(ri===step.modRow);
+    if(isMod)tr.className='mod-row';
+
+    /* Op label */
+    var tdOp=document.createElement('td');tdOp.className='op-lbl';
+    if(isMod&&step.opTeX)tdOp.innerHTML=rk(step.opTeX);
+    tr.appendChild(tdOp);
+
+    /* PT cells */
+    row.PT.forEach(function(f,j){
+      var td=document.createElement('td');
+      td.className='c-left'+(j===n-1?' sep-r':'');
+      if(f.isZero()&&!isMod)td.className+=' is-zero';
+      td.innerHTML=rk(f.toTeX());tr.appendChild(td);
+    });
+
+    /* A cells */
+    row.A.forEach(function(f,j){
+      var isPivEl=(ri===step.pivI&&j===step.pivK)||(ri===step.pivK&&j===step.pivI);
+      var td=document.createElement('td');
+      var cls='c-ctr'+(j===n-1?' sep-r':'');
+      if(isPivEl){
+        td.className='pivot-cell'+(j===n-1?' sep-r':'');
+        td.innerHTML='<span class="pivot-inner">'+rk(f.toTeX())+'</span>';
+      } else if(isFinal&&ri===j&&!f.isZero()){
+        td.className=cls+' is-diag';td.innerHTML=rk(f.toTeX());
+      } else if(f.isZero()&&!isMod){
+        td.className=cls+' is-zero';td.innerHTML=rk('0');
+      } else {
+        td.className=cls;td.innerHTML=rk(f.toTeX());
+      }
+      tr.appendChild(td);
+    });
+
+    /* P cells */
+    row.P.forEach(function(f,j){
+      var td=document.createElement('td');
+      td.className='c-right';
+      if(f.isZero()&&!isMod)td.className+=' is-zero';
+      td.innerHTML=rk(f.toTeX());tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);wrap.appendChild(tbl);
+  return wrap;
+}
+
+/* ══════════════════════════════════════════
+   RENDER ALL
+══════════════════════════════════════════ */
+function renderAll(steps,n){
+  var sec=document.getElementById('outputSection');sec.innerHTML='';
+  var cont=document.createElement('div');cont.className='steps-container';
+  var stepCount=0;
+
+  steps.forEach(function(step){
+    var block=document.createElement('div');block.className='step-block';
+    var hdr=document.createElement('div');hdr.className='step-header';
+    var badge=document.createElement('span');
+    var ttxt=document.createElement('span');ttxt.className='step-title-txt';
+
+    if(step.type==='initial'){
+      badge.className='step-num init-badge';badge.textContent='init';
+      ttxt.textContent='Initial augmented matrix  [ I | A | I ]';
+    } else if(step.type==='row'){
+      stepCount++;
+      badge.className='step-num row-badge';badge.textContent=stepCount;
+      ttxt.innerHTML='Row operation on '+rk('P^{\\!\\top}')+' and A&ensp;&mdash;&ensp;'+rk(step.opTeX);
+    } else if(step.type==='col'){
+      stepCount++;
+      badge.className='step-num col-badge';badge.textContent=stepCount;
+      ttxt.innerHTML='Column operation on A and '+rk('P')+'&ensp;&mdash;&ensp;'+rk(step.opTeX);
+    } else {
+      badge.className='step-num fin-badge';badge.textContent='★';
+      ttxt.textContent='Diagonal form achieved';
+    }
+    hdr.append(badge,ttxt);block.appendChild(hdr);
+    block.appendChild(renderTab(step,n,step.type==='final'));
+
+    /* Annotations */
+    if(step.type==='initial'){
+      var kb=document.createElement('div');kb.className='key-box';
+      kb.innerHTML=
+        '<strong>Left block</strong> '+rk('P^{\\!\\top}')
+        +' (blue): starts as '+rk('I_n')
+        +'. Every <em>row</em> operation applied to A is simultaneously applied here. '
+        +'Reading down: row '+rk('i')
+        +' of '+rk('P^{\\!\\top}')
+        +' keeps the cumulative linear combination of original rows.<br>'
+        +'<strong>Right block</strong> '+rk('P')
+        +' (purple): starts as '+rk('I_n')
+        +'. Every <em>column</em> operation applied to A is simultaneously applied here.<br><br>'
+        +'<strong>Strategy:</strong> To eliminate '
+        +rk('A_{ik}')
+        +' with pivot '
+        +rk('A_{kk}')
+        +': &ensp;(1) Row op '
+        +rk('R_i\\leftarrow R_i+t\\,R_k,\\ t=-A_{ik}/A_{kk}')
+        +' zeros '+rk('A_{ik}')
+        +'. &ensp;(2) Column op '
+        +rk('C_i\\leftarrow C_i+t\\,C_k')
+        +' zeros '+rk('A_{ki}')
+        +' by symmetry. Together: '
+        +rk('E^{\\!\\top}\\!A\\,E')
+        +'.'
+        ;
+      block.appendChild(kb);
+    } else if(step.type==='row'){
+      var p=document.createElement('p');p.className='step-note';
+      p.innerHTML='Highlighted row updated in '+rk('P^{\\!\\top}')+' and A. '
+        +'A is temporarily <em>not symmetric</em> until the matching column op.';
+      block.appendChild(p);
+    } else if(step.type==='col'){
+      var p=document.createElement('p');p.className='step-note';
+      p.innerHTML='Matching column op restores symmetry in A and updates '+rk('P')+'.';
+      block.appendChild(p);
+    } else if(step.type==='final'){
+      var diag=step.diag,pos=step.pos,neg=step.neg,zer=step.zer;
+      var sc=document.createElement('div');sc.className='sig-card';
+      sc.innerHTML='<h3>Sylvester\'s Law of Inertia</h3>';
+      var dline=document.createElement('div');dline.style.margin='.3rem 0';
+      var dTeX='D=\\operatorname{diag}('+diag.map(function(d){return d.toTeX();}).join(',\\;')+')';
+      dline.innerHTML=rk(dTeX,true);sc.appendChild(dline);
+      var qterms=diag.map(function(d,i){
+        if(d.isZero())return null;
+        var pm=i===0||d.isNeg()?'':'+';
+        return pm+d.toTeX()+'\\,y_{'+(i+1)+'}^2';
+      }).filter(Boolean).join('');
+      var qline=document.createElement('div');qline.style.margin='.2rem 0';
+      qline.innerHTML='Under '+rk('x=Py')+':&ensp;'+rk('Q(x)='+qterms,true);
+      sc.appendChild(qline);
+      var parts=[];
+      if(pos>0)parts.push('<strong style="color:#1a6a40">'+pos+' positive</strong>');
+      if(neg>0)parts.push('<strong style="color:var(--red)">'+neg+' negative</strong>');
+      if(zer>0)parts.push('<strong style="color:var(--gray)">'+zer+' zero</strong>');
+      var cls=zer>0?'Degenerate':neg===0?'Positive definite':pos===0?'Negative definite':'Indefinite';
+      var sl=document.createElement('p');
+      sl.innerHTML='Signature '+rk('(\\pi,\\nu,\\delta)=('+pos+','+neg+','+zer+')')
+        +'&ensp;&mdash;&ensp;'+parts.join(', ')+'<br>Classification: <strong>'+cls+'</strong>';
+      sc.appendChild(sl);block.appendChild(sc);
+      var kb=document.createElement('div');kb.className='key-box';
+      kb.innerHTML='<strong>Verification:</strong> '
+        +rk('P^{\\!\\top}\\!A\\,P=D')
+        +' — read off '+rk('P^{\\!\\top}')+' from the left block and '+rk('P')
+        +' from the right block. &ensp;|&ensp; '
+        +'<strong>Sylvester\'s theorem:</strong> Every invertible congruence gives the same signature '
+        +rk('('+pos+','+neg+','+zer+')')
+        +'; this is the complete invariant of the quadratic form over '+rk('\\mathbb{R}')+'.';
+      block.appendChild(kb);
+    }
+    cont.appendChild(block);
+  });
+  sec.appendChild(cont);
+}
+
+/* ══════════════════════════════════════════
+   UI
+══════════════════════════════════════════ */
+var cN=4;
+function resize(){cN=Math.min(Math.max(parseInt(document.getElementById('nIn').value)||4,1),6);document.getElementById('nIn').value=cN;buildGrid();}
+function buildGrid(){
+  var w=document.getElementById('matWrap');w.innerHTML='';
+  var g=document.createElement('div');g.className='matrix-grid';
+  g.style.gridTemplateColumns='auto repeat('+cN+',64px)';
+  g.appendChild(document.createElement('div'));
+  for(var j=0;j<cN;j++){var lbl=document.createElement('div');lbl.className='col-lbl';lbl.innerHTML='x<sub>'+(j+1)+'</sub>';g.appendChild(lbl);}
+  for(var i=0;i<cN;i++){
+    var rl=document.createElement('div');rl.className='row-lbl';rl.innerHTML=rk('R_{'+(i+1)+'}');g.appendChild(rl);
+    for(var j=0;j<cN;j++){var inp=document.createElement('input');inp.type='text';inp.id='m'+i+'_'+j;inp.placeholder='0';inp.autocomplete='off';g.appendChild(inp);}
+  }
+  w.appendChild(g);
+}
+function getMatrix(){
+  return Array.from({length:cN},function(_,i){return Array.from({length:cN},function(_,j){return Frac.parse(document.getElementById('m'+i+'_'+j)?.value||'0');});});
+}
+function setMatrix(data){
+  cN=data.length;document.getElementById('nIn').value=cN;buildGrid();
+  data.forEach(function(row,i){row.forEach(function(v,j){var el=document.getElementById('m'+i+'_'+j);if(el)el.value=v;});});
+  document.getElementById('symWarn').innerHTML='';
+}
+function symmetrize(){
+  var M=getMatrix();
+  for(var i=0;i<cN;i++)for(var j=0;j<i;j++){var el=document.getElementById('m'+i+'_'+j);var elT=document.getElementById('m'+j+'_'+i);if(el&&elT)el.value=elT.value;}
+  document.getElementById('symWarn').innerHTML='';
+}
+function runDiag(){
+  var M=getMatrix();
+  if(!isSymmetric(M)){document.getElementById('symWarn').innerHTML='<div class="warn-sym">⚠ Not symmetric. Use Symmetrize or enter a symmetric matrix.</div>';return;}
+  renderAll(diagonalize(M),cN);
+}
+
+var PRESETS=[
+  {label:'Strang 4×4',n:4,data:[['1','1','0','-1'],['1','2','-2','0'],['0','-2','3','1'],['-1','0','1','5']]},
+  {label:'2×2 indefinite',n:2,data:[['1','2'],['2','1']]},
+  {label:'3×3 pos. def.',n:3,data:[['2','1','0'],['1','3','1'],['0','1','2']]},
+  {label:'3×3 zero pivot',n:3,data:[['0','1','0'],['1','0','0'],['0','0','3']]},
+  {label:'4×4 tridiag.',n:4,data:[['2','-1','0','0'],['-1','2','-1','0'],['0','-1','2','-1'],['0','0','-1','2']]},
+];
+function buildExamples(){
+  var row=document.getElementById('exRow');
+  PRESETS.forEach(function(p){var btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=p.label;btn.addEventListener('click',function(){setMatrix(p.data);});row.appendChild(btn);});
+}
+window.addEventListener('DOMContentLoaded',function(){
+  buildExamples();buildGrid();
+  setMatrix([['1','1','0','-1'],['1','2','-2','0'],['0','-2','3','1'],['-1','0','1','5']]);
+});
+</script>
+</body>
+</html>

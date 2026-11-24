@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kronecker Products and Algebraic Numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0; --red:#b33a2f;
+  --A-col:#2c4a96;   --A-bg:#edf1fb;   /* A matrix — indigo */
+  --B-col:#1a6a58;   --B-bg:#e8f5f2;   /* B matrix — teal */
+  --K-col:#6a1a80;   --K-bg:#f5e8fb;   /* Kronecker — purple */
+  --C-col:#8a5a00;   --C-bg:#fff8ea;   /* companion — amber */
+  --S-col:#b33a2f;   --S-bg:#fef0ee;   /* sum construction — crimson */
+  --P-col:#1a3a70;   --P-bg:#e8f0f8;   /* product construction — navy */
+  --ok:#1a6a58; --ok-bg:#e8f5f2;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.6rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.18rem;font-weight:600;margin-bottom:1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--A-bg);color:var(--A-col);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-go{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:.9rem;}
+.btn-go:hover{background:#952e24;}
+.btn-sm{padding:.22rem .65rem;font-size:.86rem;}
+
+/* Matrix grid input */
+.ctrl-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.6rem;}
+.ctrl-row label{font-size:.9rem;color:var(--navy2);display:flex;align-items:center;gap:.35rem;}
+.ctrl-row input[type=number]{width:48px;padding:.25rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.mx-grid{display:inline-grid;gap:5px;align-items:center;}
+.mx-cell{width:58px;padding:.25rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.mx-cell.A-cell{border-color:var(--A-col);background:var(--A-bg);}
+.mx-cell.B-cell{border-color:var(--B-col);background:var(--B-bg);}
+.mx-cell:focus{outline:none;}
+.clbl{text-align:center;font-size:.75rem;color:var(--gray);}
+.rlbl{text-align:right;padding-right:5px;font-size:.8rem;color:var(--gray);}
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;}
+
+/* Section cards */
+.scard{border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.07);margin-bottom:1.4rem;}
+.shd{padding:.52rem 1.1rem;display:flex;align-items:center;gap:.7rem;}
+.shd h3{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:400;color:#fff;}
+.sbadge{min-width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;background:var(--gold);color:var(--navy);}
+.sbody{background:var(--paper);padding:1.1rem 1.5rem;border:1px solid var(--border);border-top:none;overflow-x:auto;}
+
+.sec-kron .shd{background:var(--K-col);}
+.sec-comp .shd{background:var(--C-col);}
+.sec-sum  .shd{background:var(--S-col);}
+.sec-prod .shd{background:var(--P-col);}
+.sec-field .shd{background:var(--navy);}
+
+/* Display matrix table */
+.mtbl{border-collapse:collapse;display:inline-table;font-size:.9rem;}
+.mtbl td{padding:.3rem .58px;border:1px solid #e0dbd3;text-align:right;min-width:48px;font-variant-numeric:tabular-nums;}
+.mtbl td.A-c{background:var(--A-bg);color:var(--A-col);}
+.mtbl td.B-c{background:var(--B-bg);color:var(--B-col);}
+.mtbl td.K-c{background:var(--K-bg);color:var(--K-col);}
+.mtbl td.C-c{background:var(--C-bg);color:var(--C-col);}
+.mtbl td.S-c{background:var(--S-bg);color:var(--S-col);}
+.mtbl td.P-c{background:var(--P-bg);color:var(--P-col);}
+.mtbl td.zero{color:#ddd;}
+.mtbl td.block-hi{outline:2px solid var(--K-col);outline-offset:-1px;}
+
+/* Equation layout */
+.mat-eq{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;overflow-x:auto;padding:.35rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.mat-lbl{font-size:.78rem;font-style:italic;color:var(--gray);text-align:center;}
+.mat-op{font-size:1.35rem;color:var(--navy2);align-self:center;}
+.formula-row{overflow-x:auto;margin:.45rem 0;}
+
+/* Kronecker expansion display */
+.kron-expand{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.5rem 0;}
+.kron-block{border:2px solid var(--K-col);border-radius:4px;padding:.2rem .4rem;background:var(--K-bg);}
+.kron-scalar{color:var(--A-col);font-weight:700;font-size:.9rem;}
+
+/* Result boxes */
+.result-box{border-radius:7px;padding:.75rem 1.1rem;margin:.55rem 0;overflow-x:auto;}
+.rb-sum{background:var(--S-bg);border:2px solid var(--S-col);}
+.rb-prod{background:var(--P-bg);border:2px solid var(--P-col);}
+.rb-field{background:var(--ok-bg);border:2px solid var(--ok);}
+.result-big{font-family:'Playfair Display',serif;font-size:1.15rem;}
+
+/* Keyboard/notes */
+.kb{border-radius:6px;padding:.75rem 1rem;font-size:.87rem;line-height:1.65;margin:.5rem 0;}
+.kb strong{color:var(--navy);}
+.kb-K{background:var(--K-bg);border:1px solid #c890d8;color:#3a0a50;}
+.kb-C{background:var(--C-bg);border:1px solid #d8c080;color:#4a3000;}
+.kb-S{background:var(--S-bg);border:1px solid #e8b0a8;color:#5a0808;}
+.kb-P{background:var(--P-bg);border:1px solid #a8c0d8;color:#0a2a50;}
+.kb-F{background:var(--ok-bg);border:1px solid #90ccc0;color:#0a3a18;}
+
+/* Analogy/table */
+.atbl{width:100%;border-collapse:collapse;font-size:.88rem;margin:.5rem 0;}
+.atbl th,.atbl td{padding:.32rem .65rem;border:1px solid var(--border);}
+.atbl thead th{background:var(--navy);color:#fff;font-family:'Playfair Display',serif;font-weight:400;}
+.atbl td:first-child{background:var(--K-bg);color:var(--K-col);font-weight:600;}
+
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.7rem;}
+.err{color:var(--red);font-style:italic;}
+.two-col{display:flex;gap:1.4rem;flex-wrap:wrap;}
+.two-col>*{flex:1;min-width:240px;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .7rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kronecker Products and Algebraic Numbers</h1>
+  <p>How A⊗B works, and why it proves the algebraic numbers are a field</p>
+</header>
+<main>
+
+<!-- ═══ PART I: Kronecker product sandbox ═══════════════ -->
+<div class="card">
+  <h2>Part I — The Kronecker Product A ⊗ B</h2>
+  <p style="font-size:.88rem;color:var(--navy2);margin-bottom:.8rem;">
+    Enter two matrices A (m×m) and B (n×n). The Kronecker product A⊗B is the mn×mn block matrix
+    where each entry a<sub>ij</sub> of A is replaced by the scaled block a<sub>ij</sub>·B.
+  </p>
+  <div class="ctrl-row">
+    <label>Size of A: <input type="number" id="mSz" min="2" max="4" value="2"></label>
+    <label>Size of B: <input type="number" id="nSz" min="2" max="3" value="2"></label>
+    <button class="btn-ghost btn-sm" onclick="rebuildKron()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRowK"></div>
+  <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:.8rem;">
+    <div>
+      <div style="font-size:.82rem;color:var(--A-col);font-weight:600;margin-bottom:.3rem;">Matrix A</div>
+      <div style="overflow-x:auto"><div class="mx-grid" id="mxA"></div></div>
+    </div>
+    <div>
+      <div style="font-size:.82rem;color:var(--B-col);font-weight:600;margin-bottom:.3rem;">Matrix B</div>
+      <div style="overflow-x:auto"><div class="mx-grid" id="mxB"></div></div>
+    </div>
+  </div>
+  <button class="btn-go" onclick="computeKron()">Compute A ⊗ B →</button>
+</div>
+<div id="outKron"></div>
+
+<!-- ═══ PART II: Algebraic numbers ══════════════════════ -->
+<div class="card">
+  <h2>Part II — Algebraic Numbers Form a Field</h2>
+  <p style="font-size:.88rem;color:var(--navy2);margin-bottom:.8rem;">
+    Enter two monic irreducible polynomials p(x) and q(x) with integer coefficients.
+    Their roots α and β are algebraic numbers. We will show α+β and α·β are also algebraic
+    by finding their minimal polynomials using Kronecker products of companion matrices.
+  </p>
+  <div class="ex-row" id="exRowF"></div>
+  <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start;">
+    <div>
+      <div style="font-size:.82rem;color:var(--C-col);font-weight:600;margin-bottom:.3rem;">
+        p(x) — polynomial with root α
+      </div>
+      <div style="overflow-x:auto"><div class="mx-grid" id="mxP"></div></div>
+      <div style="font-size:.8rem;color:var(--gray);margin-top:.3rem;" id="pLabel"></div>
+    </div>
+    <div>
+      <div style="font-size:.82rem;color:var(--B-col);font-weight:600;margin-bottom:.3rem;">
+        q(x) — polynomial with root β
+      </div>
+      <div style="overflow-x:auto"><div class="mx-grid" id="mxQ"></div></div>
+      <div style="font-size:.8rem;color:var(--gray);margin-top:.3rem;" id="qLabel"></div>
+    </div>
+  </div>
+  <button class="btn-go" onclick="computeField()">Show α+β and α·β are Algebraic →</button>
+</div>
+<div id="outField"></div>
+
+</main>
+<script>
+/* ═══════════════════════════════════
+   FRACTION ARITHMETIC
+═══════════════════════════════════ */
+function gcd(a,b){a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));while(b){var t=b;b=a%b;a=t;}return a||1;}
+function FR(n,d){if(d===undefined)d=1;if(d===0)return{n:0,d:1};if(d<0){n=-n;d=-d;}var g=gcd(Math.abs(n),d);return{n:Math.round(n/g),d:Math.round(d/g)};}
+function F0(){return FR(0);}function F1(){return FR(1);}function Fn(v){return FR(Math.round(v));}
+function fadd(a,b){return FR(a.n*b.d+b.n*a.d,a.d*b.d);}
+function fsub(a,b){return FR(a.n*b.d-b.n*a.d,a.d*b.d);}
+function fmul(a,b){return FR(a.n*b.n,a.d*b.d);}
+function fdiv(a,b){return FR(a.n*b.d,a.d*b.n);}
+function fneg(a){return FR(-a.n,a.d);}
+function fiszero(a){return a.n===0;}
+function fTeX(a){if(a.d===1)return String(a.n);var sg=a.n<0?'-':'';return sg+'\\tfrac{'+Math.abs(a.n)+'}{'+a.d+'}';}
+function fNum(a){return a.n/a.d;}
+
+/* ═══════════════════════════════════
+   POLYNOMIAL (coefficient array, index=degree)
+═══════════════════════════════════ */
+function ptrim(p){var q=p.slice();while(q.length>0&&fiszero(q[q.length-1]))q.pop();return q;}
+function padd(a,b){var r=[];for(var i=0;i<Math.max(a.length,b.length);i++)r.push(fadd(i<a.length?a[i]:F0(),i<b.length?b[i]:F0()));return ptrim(r);}
+function psub(a,b){var r=[];for(var i=0;i<Math.max(a.length,b.length);i++)r.push(fsub(i<a.length?a[i]:F0(),i<b.length?b[i]:F0()));return ptrim(r);}
+function pneg(p){return p.map(fneg);}
+function pscale(p,c){return p.map(function(x){return fmul(x,c);});}
+function pmul(a,b){if(!a.length||!b.length)return[];var r=Array(a.length+b.length-1).fill(null).map(F0);for(var i=0;i<a.length;i++)for(var j=0;j<b.length;j++)r[i+j]=fadd(r[i+j],fmul(a[i],b[j]));return ptrim(r);}
+function pdivrem(a,b){a=ptrim(a.slice());b=ptrim(b);var q=[];while(a.length>=b.length){var lc=fdiv(a[a.length-1],b[b.length-1]);var deg=a.length-b.length;while(q.length<=deg)q.push(F0());q[deg]=fadd(q[deg],lc);var sub=[];for(var s=0;s<deg;s++)sub.push(F0());var bsc=pscale(b,lc);for(var s=0;s<bsc.length;s++)sub.push(bsc[s]);a=psub(a,sub);a=ptrim(a);}return{q:ptrim(q),r:a};}
+function pgcd(a,b){a=ptrim(a);b=ptrim(b);while(b.length>0){var t=pdivrem(a,b).r;a=b;b=t;}if(!a.length)return[F1()];var lc=a[a.length-1];return pscale(a,fdiv(F1(),lc));}
+
+function pTeX(p,v){
+  v=v||'x';p=ptrim(p);if(!p.length)return'0';
+  var terms=[];
+  for(var i=p.length-1;i>=0;i--){
+    if(fiszero(p[i]))continue;
+    var c=p[i],neg=c.n<0,cab={n:Math.abs(c.n),d:c.d},one=fiszero(fsub(cab,F1()));
+    var t='';
+    if(i===0)t=fTeX(c);
+    else if(i===1)t=(one?(neg?'-':''): fTeX(c))+v;
+    else t=(one?(neg?'-':''):fTeX(c))+v+'^{'+i+'}';
+    terms.push({neg:neg,s:t});
+  }
+  if(!terms.length)return'0';
+  var out=terms[0].s;
+  for(var k=1;k<terms.length;k++){var s2=terms[k].s;if(terms[k].neg){out+=' - '+s2.replace(/^-/,'');}else{out+=' + '+s2;}}
+  return out;
+}
+
+/* ═══════════════════════════════════
+   MATRIX ARITHMETIC (fraction entries)
+═══════════════════════════════════ */
+function mzero(n){var M=[];for(var i=0;i<n;i++){var r=[];for(var j=0;j<n;j++)r.push(F0());M.push(r);}return M;}
+function mident(n){var M=mzero(n);for(var i=0;i<n;i++)M[i][i]=F1();return M;}
+function mclone(M){return M.map(function(r){return r.slice();});}
+function mmul(A,B,n){var C=mzero(n);for(var i=0;i<n;i++)for(var k=0;k<n;k++)for(var j=0;j<n;j++)C[i][j]=fadd(C[i][j],fmul(A[i][k],B[k][j]));return C;}
+function madd(A,B,n){return A.map(function(r,i){return r.map(function(x,j){return fadd(x,B[i][j]);});});}
+
+/* ═══════════════════════════════════
+   KRONECKER PRODUCT  (fraction matrices)
+═══════════════════════════════════ */
+function kronecker(A,m,B,n){
+  var N=m*n;
+  var K=mzero(N);
+  for(var i=0;i<m;i++) for(var j=0;j<m;j++) {
+    var aij=A[i][j];
+    for(var p=0;p<n;p++) for(var q=0;q<n;q++)
+      K[i*n+p][j*n+q]=fmul(aij,B[p][q]);
+  }
+  return K;
+}
+
+/* ═══════════════════════════════════
+   COMPANION MATRIX (monic polynomial)
+═══════════════════════════════════ */
+function companionMat(poly){
+  var p=ptrim(poly),d=p.length-1;
+  var C=mzero(d);
+  for(var i=1;i<d;i++)C[i][i-1]=F1();
+  for(var i=0;i<d;i++)C[i][d-1]=fneg(p[i]);
+  return C;
+}
+
+/* ═══════════════════════════════════
+   CHARACTERISTIC POLYNOMIAL  det(xI-M)
+   (cofactor expansion, polynomial entries)
+═══════════════════════════════════ */
+function charPolyFrac(T,n){
+  var M=[];
+  for(var i=0;i<n;i++){var row=[];for(var j=0;j<n;j++){var e=[fneg(T[i][j])];if(i===j)e.push(F1());row.push(ptrim(e));}M.push(row);}
+  return detPolyRec(M,n);
+}
+
+function detPolyRec(M,n){
+  if(n===1)return M[0][0];
+  if(n===2)return psub(pmul(M[0][0],M[1][1]),pmul(M[0][1],M[1][0]));
+  var result=[];
+  for(var j=0;j<n;j++){
+    var minor=[];
+    for(var i=1;i<n;i++){var row=[];for(var k=0;k<n;k++)if(k!==j)row.push(M[i][k]);minor.push(row);}
+    var cof=detPolyRec(minor,n-1);
+    var term=pmul(M[0][j],cof);
+    if(j%2===0)result=padd(result,term);else result=psub(result,term);
+  }
+  return ptrim(result);
+}
+
+/* Square-free part (divide by gcd with derivative) */
+function polyDeriv(p){if(p.length<=1)return[];var r=[];for(var i=1;i<p.length;i++)r.push(fmul(Fn(i),p[i]));return ptrim(r);}
+function squareFreePart(p){var dp=polyDeriv(p);if(!dp.length)return p;var g=pgcd(p,dp);var q=pdivrem(p,g).q;return ptrim(q);}
+
+/* ═══════════════════════════════════
+   NUMERICAL ROOTS (Newton's method for verification)
+═══════════════════════════════════ */
+function evalPolyNum(p,x){var s=0;for(var i=0;i<p.length;i++)s+=fNum(p[i])*Math.pow(x,i);return s;}
+function evalPolyDerNum(p,x){var s=0;for(var i=1;i<p.length;i++)s+=i*fNum(p[i])*Math.pow(x,i-1);return s;}
+function newtonRoot(p,x0){
+  for(var i=0;i<80;i++){var fx=evalPolyNum(p,x0),dfx=evalPolyDerNum(p,x0);if(Math.abs(dfx)<1e-15)break;var x1=x0-fx/dfx;if(Math.abs(x1-x0)<1e-13)break;x0=x1;}
+  return x0;
+}
+
+/* Find real roots of a polynomial by scanning + Newton */
+function realRoots(p,lo,hi){
+  var roots=[];var steps=200;var dx=(hi-lo)/steps;
+  for(var i=0;i<steps;i++){
+    var x1=lo+i*dx,x2=x1+dx;
+    var f1=evalPolyNum(p,x1),f2=evalPolyNum(p,x2);
+    if(f1*f2<=0){
+      var r=newtonRoot(p,(x1+x2)/2);
+      // dedup
+      var dup=false;for(var k=0;k<roots.length;k++)if(Math.abs(roots[k]-r)<1e-6)dup=true;
+      if(!dup)roots.push(r);
+    }
+  }
+  return roots;
+}
+
+/* ═══════════════════════════════════
+   KaTeX helper
+═══════════════════════════════════ */
+function rk(t,opts){try{return katex.renderToString(t,Object.assign({throwOnError:false},opts||{}));}catch(e){return '<span>'+t+'</span>';}}
+
+/* ═══════════════════════════════════
+   MATRIX TABLE RENDERER
+═══════════════════════════════════ */
+function matTbl(M,n,cls,specialFn){
+  var tbl=document.createElement('table');tbl.className='mtbl';
+  for(var i=0;i<n;i++){
+    var tr=document.createElement('tr');
+    for(var j=0;j<n;j++){
+      var td=document.createElement('td');
+      var v=M[i][j];
+      td.className=(specialFn?specialFn(i,j,v,n):(fiszero(v)?'zero':cls))||'';
+      td.innerHTML=rk(fTeX(v));
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  return tbl;
+}
+
+function matBlock(lbl,tbl){
+  var b=document.createElement('div');b.className='mat-block';
+  var l=document.createElement('div');l.className='mat-lbl';l.textContent=lbl;
+  b.appendChild(l);b.appendChild(tbl);return b;
+}
+function matOp(t){var s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+function matEqRow(){var d=document.createElement('div');d.className='mat-eq';return d;}
+
+/* ═══════════════════════════════════
+   KRONECKER BLOCK HIGHLIGHT
+═══════════════════════════════════ */
+function kronTbl(K,m,n){
+  var tbl=document.createElement('table');tbl.className='mtbl';
+  for(var i=0;i<m*n;i++){
+    var tr=document.createElement('tr');
+    for(var j=0;j<m*n;j++){
+      var td=document.createElement('td');
+      var v=K[i][j];
+      var bi=Math.floor(i/n),bj=Math.floor(j/n);
+      td.innerHTML=rk(fTeX(v));
+      if(fiszero(v))td.className='zero';else td.className='K-c';
+      /* Border the blocks */
+      var styles=[];
+      if(i%n===0&&i>0)styles.push('border-top:2px solid var(--K-col)');
+      if(j%n===0&&j>0)styles.push('border-left:2px solid var(--K-col)');
+      if(styles.length)td.style.cssText=styles.join(';');
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  return tbl;
+}
+
+/* ═══════════════════════════════════
+   KRONECKER SECTION OUTPUT
+═══════════════════════════════════ */
+function computeKron(){
+  var m=cM,n=cN;
+  var A=[],B=[];
+  for(var i=0;i<m;i++){var r=[];for(var j=0;j<m;j++){var el=document.getElementById('a'+i+'_'+j);r.push(Fn(parseFloat((el?el.value:'')||'0')||0));}A.push(r);}
+  for(var i=0;i<n;i++){var r=[];for(var j=0;j<n;j++){var el=document.getElementById('b'+i+'_'+j);r.push(Fn(parseFloat((el?el.value:'')||'0')||0));}B.push(r);}
+
+  var K=kronecker(A,m,B,n);
+
+  /* Kronecker sum: A⊕B = A⊗I_n + I_m⊗B */
+  var Im=mident(m), In=mident(n);
+  var KSL=kronecker(A,m,In,n);   /* A ⊗ I_n */
+  var KSR=kronecker(Im,m,B,n);   /* I_m ⊗ B */
+  var KSum=madd(KSL,KSR,m*n);
+
+  var out=document.getElementById('outKron');out.innerHTML='';
+
+  /* ── Card 1: Kronecker Product ── */
+  var sec=document.createElement('div');sec.className='scard sec-kron';
+  var hd=document.createElement('div');hd.className='shd';
+  hd.innerHTML='<span class="sbadge" style="background:var(--K-col);color:#fff">⊗</span><h3>Kronecker Product A ⊗ B — Definition</h3>';
+  sec.appendChild(hd);
+  var body=document.createElement('div');body.className='sbody';
+
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk(
+    'A\\otimes B = \\begin{pmatrix}a_{11}B & a_{12}B & \\cdots \\\\ a_{21}B & a_{22}B & \\cdots \\\\ \\vdots & & \\ddots\\end{pmatrix} \\in \\mathbb{R}^{'+m*n+'\\times'+m*n+'}',
+    {displayMode:true});
+  body.appendChild(fDiv);
+
+  var eq=matEqRow();
+  eq.appendChild(matBlock('A ('+m+'×'+m+')',matTbl(A,m,'A-c',function(i,j,v){return fiszero(v)?'zero':'A-c';})));
+  eq.appendChild(matOp('\\otimes'));
+  eq.appendChild(matBlock('B ('+n+'×'+n+')',matTbl(B,n,'B-c',function(i,j,v){return fiszero(v)?'zero':'B-c';})));
+  eq.appendChild(matOp('='));
+  eq.appendChild(matBlock('A⊗B ('+m*n+'×'+m*n+', blocks = aᵢⱼ·B)',kronTbl(K,m,n)));
+  body.appendChild(eq);
+
+  body.appendChild(mkKB('kb-K',
+    '<strong>How to read A⊗B:</strong> The ('+m*n+')×('+m*n+') matrix is divided into '+m*m+' blocks of size '+n+'×'+n+
+    '. Block (i,j) equals a<sub>ij</sub>·B. The bold lines show block boundaries.'));
+
+  var propDiv=document.createElement('div');propDiv.className='formula-row';
+  propDiv.innerHTML='<strong style="font-size:.9rem">Key properties:</strong><br>'+
+    rk('(A\\otimes B)(C\\otimes D) = (AC)\\otimes (BD)')+
+    '&nbsp;&nbsp;|&nbsp;&nbsp;'+
+    rk('(A\\otimes B)^T = A^T\\otimes B^T')+
+    '&nbsp;&nbsp;|&nbsp;&nbsp;'+
+    rk('\\text{eigenvalues of }A\\otimes B = \\{\\lambda_i\\mu_j\\}');
+  body.appendChild(propDiv);
+
+  sec.appendChild(body);
+  out.appendChild(sec);
+
+  /* ── Card 2: Kronecker Sum ── */
+  var sec2=document.createElement('div');sec2.className='scard sec-kron';
+  sec2.style.borderTopColor='var(--B-col)';
+  var hd2=document.createElement('div');hd2.className='shd';
+  hd2.style.background='var(--B-col)';
+  hd2.innerHTML='<span class="sbadge" style="background:#fff;color:var(--B-col)">⊕</span><h3>Kronecker Sum A ⊕ B = A⊗I<sub>n</sub> + I<sub>m</sub>⊗B</h3>';
+  sec2.appendChild(hd2);
+  var body2=document.createElement('div');body2.className='sbody';
+
+  var fDiv2=document.createElement('div');fDiv2.className='formula-row';
+  fDiv2.innerHTML=rk(
+    'A\\oplus B \\;:=\\; A\\otimes I_n + I_m\\otimes B \\;\\in\\; \\mathbb{R}^{'+m*n+'\\times'+m*n+'}',
+    {displayMode:true});
+  body2.appendChild(fDiv2);
+
+  /* Show the two summands and their sum */
+  var eq2=matEqRow();
+  eq2.appendChild(matBlock('A⊗I_'+n+' ('+m*n+'×'+m*n+')',
+    matTbl(KSL,m*n,'A-c',function(i,j,v){return fiszero(v)?'zero':'A-c';})));
+  eq2.appendChild(matOp('+'));
+  eq2.appendChild(matBlock('I_'+m+'⊗B ('+m*n+'×'+m*n+')',
+    matTbl(KSR,m*n,'B-c',function(i,j,v){return fiszero(v)?'zero':'B-c';})));
+  eq2.appendChild(matOp('='));
+  eq2.appendChild(matBlock('A⊕B  (eigenvalues = {λᵢ+μⱼ})',
+    kronSumTbl(KSum,m,n)));
+  body2.appendChild(eq2);
+
+  body2.appendChild(mkKB('kb-K',
+    '<strong>Reading A⊕B:</strong> The block structure is the same mn×mn grid. '+
+    'On the main diagonal blocks (i=j), we get A<sub>ii</sub>·I + B — combining the diagonal of A with the whole of B. '+
+    'Off-diagonal blocks carry only the A contribution: a<sub>ij</sub>·I<sub>n</sub>.'+
+    '<br><br>'+
+    '<strong>Why not just A⊗B?</strong> The Kronecker sum arises naturally in differential equations: '+
+    'if ẋ = Ax and ẏ = By, then the matrix equation Ẋ = AX + XB has solution '+
+    rk('\\text{vec}(X)(t) = e^{t(A\\oplus B)}\\text{vec}(X_0)')+'. '+
+    'It also describes the combined eigenstructure of two independent systems.'));
+
+  /* Eigenvalue sum property */
+  body2.appendChild(secKronEig(A,B,K,KSum,m,n));
+
+  sec2.appendChild(body2);
+  out.appendChild(sec2);
+}
+
+/* Colour the Kronecker sum: diagonal n×n blocks get a special highlight */
+function kronSumTbl(KS,m,n){
+  var N2=m*n;
+  var tbl=document.createElement('table');tbl.className='mtbl';
+  for(var i=0;i<N2;i++){
+    var tr=document.createElement('tr');
+    for(var j=0;j<N2;j++){
+      var td=document.createElement('td');
+      var v=KS[i][j];
+      var bi=Math.floor(i/n),bj=Math.floor(j/n);
+      var withinDiagBlock=(bi===bj);
+      td.innerHTML=rk(fTeX(v));
+      if(fiszero(v)) td.className='zero';
+      else if(withinDiagBlock) td.className='diag';
+      else td.className='K-c';
+      /* Block boundary lines */
+      var styles=[];
+      if(i%n===0&&i>0) styles.push('border-top:2px solid var(--B-col)');
+      if(j%n===0&&j>0) styles.push('border-left:2px solid var(--B-col)');
+      if(styles.length) td.style.cssText=styles.join(';');
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  return tbl;
+}
+
+function secKronEig(A,B,K,KSum,m,n){
+  var d=document.createElement('div');d.style.marginTop='.7rem';
+  d.innerHTML='<div style="font-size:.82rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Eigenvalue properties — product and sum</div>';
+
+  var chiA=charPolyFrac(A,m);
+  var chiB=charPolyFrac(B,n);
+  var chiK=charPolyFrac(K,m*n);
+  var chiS=charPolyFrac(KSum,m*n);
+
+  /* Product row */
+  var eq1=document.createElement('div');eq1.className='mat-eq';
+  eq1.style.marginBottom='.5rem';
+  var lbl1=document.createElement('div');lbl1.style.cssText='font-size:.8rem;color:var(--gray);margin-bottom:.2rem;';
+  lbl1.textContent='Kronecker product eigenvalues λᵢ·μⱼ:';
+  eq1.appendChild(matBlock('χ_A(x)',makePolyDiv(chiA)));
+  eq1.appendChild(matOp('\\quad'));
+  eq1.appendChild(matBlock('χ_B(x)',makePolyDiv(chiB)));
+  eq1.appendChild(matOp('\\quad'));
+  eq1.appendChild(matBlock('χ_{A⊗B}(x)',makePolyDiv(chiK)));
+
+  /* Sum row */
+  var eq2=document.createElement('div');eq2.className='mat-eq';
+  var lbl2=document.createElement('div');lbl2.style.cssText='font-size:.8rem;color:var(--gray);margin-bottom:.2rem;';
+  lbl2.textContent='Kronecker sum eigenvalues λᵢ+μⱼ:';
+  eq2.appendChild(matBlock('χ_A(x)',makePolyDiv(chiA)));
+  eq2.appendChild(matOp('\\quad'));
+  eq2.appendChild(matBlock('χ_B(x)',makePolyDiv(chiB)));
+  eq2.appendChild(matOp('\\quad'));
+  eq2.appendChild(matBlock('χ_{A⊕B}(x)',makePolyDiv(chiS)));
+
+  var wrap=document.createElement('div');
+  wrap.appendChild(lbl1);wrap.appendChild(eq1);
+  wrap.appendChild(lbl2);wrap.appendChild(eq2);
+  d.appendChild(wrap);
+
+  d.appendChild(mkKB('kb-K',
+    '<strong>Eigenvalue theorem:</strong><br>'+
+    '• A⊗B has eigenvalues {λ<sub>i</sub>μ<sub>j</sub>} — <em>products</em> of eigenvalues.<br>'+
+    '• A⊕B has eigenvalues {λ<sub>i</sub>+μ<sub>j</sub>} — <em>sums</em> of eigenvalues.<br><br>'+
+    '<strong>Proof sketch:</strong> If Av=λv and Bw=μw, then '+
+    rk('(A\\otimes B)(v\\otimes w)=(Av)\\otimes(Bw)=\\lambda\\mu\\,(v\\otimes w)')+'. '+
+    'For the sum: '+
+    rk('(A\\otimes I+I\\otimes B)(v\\otimes w)=\\lambda(v\\otimes w)+\\mu(v\\otimes w)=(\\lambda+\\mu)(v\\otimes w)')+'. '+
+    'The same tensor product of eigenvectors works for both!'));
+  return d;
+}
+
+function makePolyDiv(p){
+  var d=document.createElement('div');d.style.cssText='padding:.3rem .5rem;font-size:.88rem;max-width:320px;overflow-x:auto;';
+  d.innerHTML=rk(pTeX(p));return d;
+}
+
+/* ═══════════════════════════════════
+   POLYNOMIAL INPUT (for Part II)
+═══════════════════════════════════ */
+var cPdeg=2, cQdeg=2;
+
+function buildPolyInputs(){
+  buildPolyGrid('mxP','p',cPdeg,'pLabel');
+  buildPolyGrid('mxQ','q',cQdeg,'qLabel');
+}
+
+function buildPolyGrid(divId,prefix,deg,lblId){
+  var cont=document.getElementById(divId);cont.innerHTML='';
+  cont.style.gridTemplateColumns='auto '+Array(deg+1).fill('62px').join(' ');
+
+  /* Coefficient header: x^deg ... x^0 */
+  var empty=document.createElement('div');cont.appendChild(empty);
+  for(var i=deg;i>=0;i--){
+    var d=document.createElement('div');d.className='clbl';
+    d.innerHTML=rk(i===0?'const':(i===1?'x':'x^{'+i+'}'));cont.appendChild(d);
+  }
+
+  /* One row of inputs */
+  var rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(prefix+'(x) =');cont.appendChild(rl);
+  for(var i=deg;i>=0;i--){
+    var inp=document.createElement('input');inp.type='text';
+    inp.className='mx-cell';inp.style.borderColor=(prefix==='p'?'var(--C-col)':'var(--B-col)');
+    inp.style.background=(prefix==='p'?'var(--C-bg)':'var(--B-bg)');
+    inp.id=prefix+'coef'+i;inp.placeholder=(i===deg?'1':(i===0?'0':'0'));
+    inp.autocomplete='off';
+    inp.oninput=function(){updatePolyLabel(prefix,deg,lblId);};
+    cont.appendChild(inp);
+  }
+  cont.className='mx-grid';
+  /* default values */
+  var defs=(prefix==='p')?{2:1,1:0,0:-2}:{2:1,1:0,0:-3};
+  for(var i=deg;i>=0;i--){var el=document.getElementById(prefix+'coef'+i);if(el&&defs[i]!==undefined)el.value=defs[i];}
+  updatePolyLabel(prefix,deg,lblId);
+}
+
+function updatePolyLabel(prefix,deg,lblId){
+  var p=readPoly(prefix,deg);
+  var lbl=document.getElementById(lblId);
+  if(lbl)lbl.innerHTML='= '+rk(pTeX(p))+' &nbsp; (degree '+deg+')';
+}
+
+function readPoly(prefix,deg){
+  var p=[];
+  for(var i=0;i<=deg;i++){var el=document.getElementById(prefix+'coef'+i);p.push(Fn(parseFloat((el?el.value:'')||'0')||0));}
+  return ptrim(p);
+}
+
+/* ═══════════════════════════════════
+   MAIN ALGEBRAIC NUMBERS COMPUTATION
+═══════════════════════════════════ */
+function computeField(){
+  var p=readPoly('p',cPdeg);
+  var q=readPoly('q',cQdeg);
+  var out=document.getElementById('outField');out.innerHTML='';
+  if(p.length<2||q.length<2){out.innerHTML='<p class="err" style="padding:1rem">Please enter polynomials of degree ≥ 1.</p>';return;}
+
+  var m=p.length-1, n=q.length-1;
+  var Cp=companionMat(p), Cq=companionMat(q);
+  var Im=mident(m), In=mident(n);
+
+  /* Sum matrix: Cp⊗In + Im⊗Cq */
+  var KSum_L=kronecker(Cp,m,In,n);  /* Cp ⊗ In */
+  var KSum_R=kronecker(Im,m,Cq,n);  /* Im ⊗ Cq */
+  var KSum=madd(KSum_L,KSum_R,m*n);
+
+  /* Product matrix: Cp⊗Cq */
+  var KProd=kronecker(Cp,m,Cq,n);
+
+  /* Characteristic polynomials */
+  var chiSum=charPolyFrac(KSum,m*n);
+  var chiProd=charPolyFrac(KProd,m*n);
+
+  /* Square-free (remove repeated roots) */
+  var sfSum=squareFreePart(chiSum);
+  var sfProd=squareFreePart(chiProd);
+
+  /* Numerical roots for verification */
+  var pRoots=realRoots(p,-8,8);
+  var qRoots=realRoots(q,-8,8);
+  var pTeX2=pTeX(p),qTeX2=pTeX(q);
+
+  out.appendChild(secCompanions(p,q,Cp,Cq,m,n));
+  out.appendChild(secSumConstruction(Cp,Cq,Im,In,KSum_L,KSum_R,KSum,chiSum,sfSum,m,n,p,q,pRoots,qRoots));
+  out.appendChild(secProdConstruction(Cp,Cq,KProd,chiProd,sfProd,m,n,p,q,pRoots,qRoots));
+  out.appendChild(secFieldConclusion(p,q,sfSum,sfProd,pRoots,qRoots,m,n));
+}
+
+/* ── Companion matrices section ── */
+function secCompanions(p,q,Cp,Cq,m,n){
+  var sec=document.createElement('div');sec.className='scard sec-comp';
+  var hd=document.createElement('div');hd.className='shd';
+  hd.innerHTML='<span class="sbadge" style="background:var(--C-col);color:var(--navy)">C</span><h3>Step 1 — Companion Matrices</h3>';
+  sec.appendChild(hd);
+  var body=document.createElement('div');body.className='sbody';
+
+  /* Definition */
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk(
+    '\\text{Companion matrix of }f(x)=x^d+a_{d-1}x^{d-1}+\\cdots+a_0:\\quad '+
+    'C(f)=\\begin{pmatrix}0&0&\\cdots&-a_0\\\\1&0&\\cdots&-a_1\\\\0&1&\\cdots&-a_2\\\\\\vdots&&\\ddots&\\vdots\\end{pmatrix}',
+    {displayMode:true});
+  body.appendChild(fDiv);
+
+  var eq=matEqRow();
+  eq.appendChild(matBlock('C_p  (char poly = p)',matTbl(Cp,m,'C-c',function(i,j,v,n){if(fiszero(v)&&!(i===j-1||j===n-1))return'zero';return 'C-c';})));
+  eq.appendChild(matOp('\\qquad'));
+  eq.appendChild(matBlock('C_q  (char poly = q)',matTbl(Cq,n,'B-c',function(i,j,v,n){if(fiszero(v)&&!(i===j-1||j===n-1))return'zero';return 'B-c';})));
+  body.appendChild(eq);
+
+  /* Show chi_C = p */
+  var chiCp=charPolyFrac(Cp,m);
+  var chiCq=charPolyFrac(Cq,n);
+  var vDiv=document.createElement('div');vDiv.className='formula-row';
+  vDiv.innerHTML=rk('\\chi_{C_p}(x) = '+pTeX(chiCp)+'\\;\\checkmark\\qquad\\chi_{C_q}(x) = '+pTeX(chiCq)+'\\;\\checkmark',{displayMode:false});
+  body.appendChild(vDiv);
+
+  body.appendChild(mkKB('kb-C',
+    '<strong>Why companion matrices?</strong> The characteristic polynomial of C(f) is exactly f itself. '+
+    'So α is an eigenvalue of C_p, and β is an eigenvalue of C_q. '+
+    'The key idea is then: by the Kronecker eigenvalue theorem, '+
+    rk('\\alpha+\\beta')+' is an eigenvalue of '+rk('C_p\\otimes I_n + I_m\\otimes C_q')+
+    ', and '+rk('\\alpha\\beta')+' is an eigenvalue of '+rk('C_p\\otimes C_q')+'.'));
+  sec.appendChild(body);return sec;
+}
+
+/* ── Sum construction section ── */
+function secSumConstruction(Cp,Cq,Im,In,KL,KR,KSum,chiSum,sfSum,m,n,p,q,pRoots,qRoots){
+  var sec=document.createElement('div');sec.className='scard sec-sum';
+  var hd=document.createElement('div');hd.className='shd';
+  hd.innerHTML='<span class="sbadge" style="background:var(--S-col);color:#fff">+</span><h3>Step 2 — α + β is Algebraic</h3>';
+  sec.appendChild(hd);
+  var body=document.createElement('div');body.className='sbody';
+
+  /* Matrix equation */
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk('M_{\\alpha+\\beta} = C_p\\otimes I_'+n+' + I_'+m+'\\otimes C_q\\in\\mathbb{R}^{'+m*n+'\\times'+m*n+'}',{displayMode:true});
+  body.appendChild(fDiv);
+
+  var N=m*n;
+  var eq=matEqRow();
+  eq.appendChild(matBlock('C_p⊗I_'+n,matTbl(KL,N,'S-c',function(i,j,v){return fiszero(v)?'zero':'S-c';})));
+  eq.appendChild(matOp('+'));
+  eq.appendChild(matBlock('I_'+m+'⊗C_q',matTbl(KR,N,'B-c',function(i,j,v){return fiszero(v)?'zero':'B-c';})));
+  eq.appendChild(matOp('='));
+  eq.appendChild(matBlock('M_{α+β} (eigenvalues = {αᵢ+βⱼ})',matTbl(KSum,N,'S-c',function(i,j,v){return fiszero(v)?'zero':'S-c';})));
+  body.appendChild(eq);
+
+  /* Characteristic polynomial */
+  var pDiv=document.createElement('div');pDiv.className='result-box rb-sum';
+  pDiv.innerHTML='<div class="result-big" style="color:var(--S-col)">'+rk('\\chi_{M_{\\alpha+\\beta}}(x) = '+pTeX(chiSum))+'</div>'+
+    (ptrim(psub(sfSum,chiSum)).length>0?'<div style="font-size:.88rem;color:var(--navy2);margin-top:.3rem;">Squarefree part: &nbsp;'+rk(pTeX(sfSum))+'</div>':'');
+  body.appendChild(pDiv);
+
+  /* Numerical verification */
+  body.appendChild(numVerifySum(p,q,sfSum,pRoots,qRoots));
+
+  body.appendChild(mkKB('kb-S',
+    '<strong>Why does this work?</strong> '+
+    rk('C_p')+' has eigenvalues '+rk('\\alpha_1,\\ldots,\\alpha_m')+
+    ' and '+rk('C_q')+' has eigenvalues '+rk('\\beta_1,\\ldots,\\beta_n')+'. '+
+    'The matrix '+rk('C_p\\otimes I_n + I_m\\otimes C_q')+
+    ' has eigenvalue '+rk('\\alpha_i+\\beta_j')+' for each pair (i,j) — this follows from '+
+    'the mixed-product property: if '+rk('C_pv=\\alpha v')+' and '+rk('C_qw=\\beta w')+
+    ' then '+rk('(C_p\\otimes I_n+I_m\\otimes C_q)(v\\otimes w) = (\\alpha+\\beta)(v\\otimes w).')+
+    '<br><br>Therefore '+rk('\\alpha+\\beta')+' is a root of '+rk('\\chi_{M_{\\alpha+\\beta}}')+
+    ', which is a polynomial with rational coefficients. This proves '+rk('\\alpha+\\beta')+' is algebraic.'));
+  sec.appendChild(body);return sec;
+}
+
+/* ── Product construction section ── */
+function secProdConstruction(Cp,Cq,KProd,chiProd,sfProd,m,n,p,q,pRoots,qRoots){
+  var sec=document.createElement('div');sec.className='scard sec-prod';
+  var hd=document.createElement('div');hd.className='shd';
+  hd.innerHTML='<span class="sbadge" style="background:var(--P-col);color:#fff">×</span><h3>Step 3 — α · β is Algebraic</h3>';
+  sec.appendChild(hd);
+  var body=document.createElement('div');body.className='sbody';
+
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk('M_{\\alpha\\beta} = C_p\\otimes C_q\\in\\mathbb{R}^{'+m*n+'\\times'+m*n+'}',{displayMode:true});
+  body.appendChild(fDiv);
+
+  var N=m*n;
+  var eq=matEqRow();
+  eq.appendChild(matBlock('C_p',matTbl(Cp,m,'C-c',function(i,j,v){return fiszero(v)?'zero':'C-c';})));
+  eq.appendChild(matOp('\\otimes'));
+  eq.appendChild(matBlock('C_q',matTbl(Cq,n,'B-c',function(i,j,v){return fiszero(v)?'zero':'B-c';})));
+  eq.appendChild(matOp('='));
+  eq.appendChild(matBlock('M_{αβ} (eigenvalues = {αᵢ·βⱼ})',matTbl(KProd,N,'P-c',function(i,j,v){return fiszero(v)?'zero':'P-c';})));
+  body.appendChild(eq);
+
+  var pDiv=document.createElement('div');pDiv.className='result-box rb-prod';
+  pDiv.innerHTML='<div class="result-big" style="color:var(--P-col)">'+rk('\\chi_{M_{\\alpha\\beta}}(x) = '+pTeX(chiProd))+'</div>'+
+    (ptrim(psub(sfProd,chiProd)).length>0?'<div style="font-size:.88rem;color:var(--navy2);margin-top:.3rem;">Squarefree part: &nbsp;'+rk(pTeX(sfProd))+'</div>':'');
+  body.appendChild(pDiv);
+
+  body.appendChild(numVerifyProd(p,q,sfProd,pRoots,qRoots));
+
+  body.appendChild(mkKB('kb-P',
+    '<strong>Why this works:</strong> If '+rk('C_pv=\\alpha v')+' and '+rk('C_qw=\\beta w')+
+    ' then by the mixed-product property '+
+    rk('(C_p\\otimes C_q)(v\\otimes w) = C_pv\\otimes C_qw = \\alpha v\\otimes\\beta w = \\alpha\\beta\\,(v\\otimes w).')+
+    '<br><br>So '+rk('\\alpha\\beta')+' is an eigenvalue of '+rk('C_p\\otimes C_q')+
+    ', hence a root of its characteristic polynomial — which has rational coefficients. '+
+    'This proves '+rk('\\alpha\\beta')+' is algebraic.'));
+  sec.appendChild(body);return sec;
+}
+
+/* Numerical verification box */
+function numVerifySum(p,q,sfSum,pRoots,qRoots){
+  var d=document.createElement('div');
+  d.innerHTML='<div style="font-size:.82rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin:.5rem 0 .2rem;">Numerical verification</div>';
+  var rows=[];
+  pRoots.forEach(function(a){
+    qRoots.forEach(function(b){
+      var sum=a+b;
+      var val=evalPolyNum(sfSum,sum);
+      rows.push({a:a,b:b,c:sum,val:val});
+    });
+  });
+  if(rows.length===0){d.innerHTML+='<p style="font-size:.85rem;color:var(--gray);font-style:italic">No real roots found in [−8,8].</p>';return d;}
+  rows.forEach(function(r){
+    var ok=Math.abs(r.val)<1e-4;
+    var line=document.createElement('div');line.style.cssText='font-size:.86rem;margin:.2rem 0;';
+    line.innerHTML=rk('\\alpha\\approx'+r.a.toFixed(5)+',\\;\\beta\\approx'+r.b.toFixed(5)+
+      '\\;\\Rightarrow\\;\\alpha+\\beta\\approx'+r.c.toFixed(5)+
+      '\\;\\Rightarrow\\;p_{\\alpha+\\beta}('+r.c.toFixed(4)+')\\approx'+r.val.toFixed(2e-5?6:3)+
+      (ok?'\\approx 0\\;\\checkmark':'\\text{ (check roots range)}}'))+
+    (ok?'<span style="color:var(--ok);font-size:.8rem;margin-left:.4rem">✓ root confirmed</span>':'');
+    d.appendChild(line);
+  });
+  return d;
+}
+
+function numVerifyProd(p,q,sfProd,pRoots,qRoots){
+  var d=document.createElement('div');
+  d.innerHTML='<div style="font-size:.82rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin:.5rem 0 .2rem;">Numerical verification</div>';
+  var rows=[];
+  pRoots.forEach(function(a){
+    qRoots.forEach(function(b){
+      var prod=a*b;
+      var val=evalPolyNum(sfProd,prod);
+      rows.push({a:a,b:b,c:prod,val:val});
+    });
+  });
+  if(rows.length===0){d.innerHTML+='<p style="font-size:.85rem;color:var(--gray);font-style:italic">No real roots found.</p>';return d;}
+  rows.forEach(function(r){
+    var ok=Math.abs(r.val)<1e-4;
+    var line=document.createElement('div');line.style.cssText='font-size:.86rem;margin:.2rem 0;';
+    line.innerHTML=rk('\\alpha\\approx'+r.a.toFixed(5)+',\\;\\beta\\approx'+r.b.toFixed(5)+
+      '\\;\\Rightarrow\\;\\alpha\\beta\\approx'+r.c.toFixed(5)+
+      '\\;\\Rightarrow\\;p_{\\alpha\\beta}('+r.c.toFixed(5)+')\\approx'+r.val.toFixed(6)+
+      (ok?'\\approx 0\\;\\checkmark':''))+
+    (ok?'<span style="color:var(--ok);font-size:.8rem;margin-left:.4rem">✓ root confirmed</span>':'');
+    d.appendChild(line);
+  });
+  return d;
+}
+
+/* ── Field conclusion ── */
+function secFieldConclusion(p,q,sfSum,sfProd,pRoots,qRoots,m,n){
+  var sec=document.createElement('div');sec.className='scard sec-field';
+  var hd=document.createElement('div');hd.className='shd';
+  hd.innerHTML='<span class="sbadge" style="background:var(--ok);color:#fff">𝔸</span><h3>Conclusion — The Algebraic Numbers Form a Field</h3>';
+  sec.appendChild(hd);
+  var body=document.createElement('div');body.className='sbody';
+
+  /* Summary table */
+  var tbl=document.createElement('table');tbl.className='atbl';
+  var thead=document.createElement('thead');
+  var hr=document.createElement('tr');
+  ['Operation','Matrix construction','Eigenvalues are the results','Char. poly. has rational coefficients'].forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
+  thead.appendChild(hr);tbl.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  var rows2=[
+    ['α + β',rk('C_p\\otimes I_n + I_m\\otimes C_q'),rk('\\{\\alpha_i+\\beta_j\\}'),'Yes — '+rk(pTeX(sfSum).slice(0,40))+'...'],
+    ['α · β',rk('C_p\\otimes C_q'),rk('\\{\\alpha_i\\cdot\\beta_j\\}'),'Yes — '+rk(pTeX(sfProd).slice(0,40))+'...'],
+    ['−α',rk('−C_p'),rk('\\{-\\alpha_i\\}'),'Yes — replace x by −x in p'],
+    ['α⁻¹',rk('\\text{reverse }C_p'),rk('\\{1/\\alpha_i\\}'),'Yes — reverse coefficients of p'],
+  ];
+  rows2.forEach(function(r){
+    var tr=document.createElement('tr');
+    r.forEach(function(c,i){var td=document.createElement('td');td.innerHTML=c;tr.appendChild(td);});
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);body.appendChild(tbl);
+
+  /* Big theorem box */
+  var thm=document.createElement('div');thm.className='result-box rb-field';thm.style.marginTop='.7rem';
+  thm.innerHTML=
+    '<div class="result-big" style="color:var(--ok)">'+rk('\\mathbb{A} = \\{\\alpha\\in\\mathbb{C} : p(\\alpha)=0 \\text{ for some } p\\in\\mathbb{Z}[x]\\}\\text{ is a field}')+'</div>'+
+    '<div style="font-size:.9rem;color:var(--navy2);margin-top:.4rem;">'+
+    '<b>Proof sketch via Kronecker products:</b> '+
+    'For any algebraic numbers α,β with minimal polynomials p,q over ℚ, '+
+    rk('\\alpha+\\beta')+' is a root of '+rk('\\chi(C_p\\otimes I + I\\otimes C_q)')+' '+
+    'and '+rk('\\alpha\\beta')+' is a root of '+rk('\\chi(C_p\\otimes C_q)')+'. '+
+    'Both characteristic polynomials lie in ℚ[x]. Hence ℚ(α,β) ⊆ ℚ[x]/(irred. factor), which is a field. '+
+    'Closure under +, ×, and the other field operations follows. □</div>';
+  body.appendChild(thm);
+
+  body.appendChild(mkKB('kb-F',
+    '<strong>Why this is remarkable:</strong> To show ℚ(√2, √3) is a field we need to know that '+
+    rk('\\sqrt{2}+\\sqrt{3}')+' satisfies a degree-4 polynomial over ℚ. '+
+    'Without Kronecker products, finding this polynomial requires clever tricks. '+
+    'With them, we just form a 4×4 matrix (C_p⊗I₂+I₂⊗C_q) and compute its characteristic polynomial. '+
+    'Pure linear algebra!<br><br>'+
+    '<strong>The mixed-product property</strong> '+rk('(A\\otimes B)(C\\otimes D)=(AC)\\otimes(BD)')+
+    ' is the single identity that makes everything work. '+
+    'It tells us that tensor products of eigenvectors are eigenvectors of Kronecker products.'));
+  sec.appendChild(body);return sec;
+}
+
+function mkKB(cls,html){var d=document.createElement('div');d.className='kb '+cls;d.innerHTML=html;return d;}
+
+/* ═══════════════════════════════════
+   UI FOR PART I (Kronecker sandbox)
+═══════════════════════════════════ */
+var cM=2,cN=2;
+var EXAMPLES_K=[
+  {label:'2⊗2 identity',  m:2,n:2, A:[[1,0],[0,1]], B:[[1,0],[0,1]]},
+  {label:'2⊗2 general',   m:2,n:2, A:[[1,2],[3,4]], B:[[0,1],[1,0]]},
+  {label:'2⊗3',           m:2,n:3, A:[[1,2],[0,1]], B:[[1,0,0],[0,1,0],[0,0,1]]},
+  {label:'diag⊗full',     m:2,n:2, A:[[2,0],[0,3]], B:[[1,1],[1,1]]},
+  {label:'3⊗2',           m:3,n:2, A:[[1,0,0],[0,2,0],[0,0,3]], B:[[1,0],[0,1]]},
+];
+
+function rebuildKron(){
+  cM=Math.min(Math.max(parseInt(document.getElementById('mSz').value)||2,2),4);
+  cN=Math.min(Math.max(parseInt(document.getElementById('nSz').value)||2,2),3);
+  document.getElementById('mSz').value=cM;document.getElementById('nSz').value=cN;
+  buildKronGrids(cM,cN);
+}
+function buildKronGrids(m,n){buildMxGrid('mxA','a',m,'A-cell');buildMxGrid('mxB','b',n,'B-cell');}
+function buildMxGrid(divId,prefix,n,cellCls){
+  var cont=document.getElementById(divId);cont.innerHTML='';
+  cont.style.gridTemplateColumns='auto '+Array(n).fill('58px').join(' ');
+  cont.className='mx-grid';
+  var empty=document.createElement('div');cont.appendChild(empty);
+  for(var j=0;j<n;j++){var d=document.createElement('div');d.className='clbl';d.innerHTML=rk('c_{'+(j+1)+'}');cont.appendChild(d);}
+  for(var i=0;i<n;i++){
+    var rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk('r_{'+(i+1)+'}');cont.appendChild(rl);
+    for(var j=0;j<n;j++){var inp=document.createElement('input');inp.type='text';inp.className='mx-cell '+cellCls;inp.id=prefix+i+'_'+j;inp.placeholder='0';inp.autocomplete='off';cont.appendChild(inp);}
+  }
+}
+function loadExK(ex){
+  cM=ex.m;cN=ex.n;
+  document.getElementById('mSz').value=cM;document.getElementById('nSz').value=cN;
+  buildKronGrids(ex.m,ex.n);
+  ex.A.forEach(function(row,i){row.forEach(function(v,j){var el=document.getElementById('a'+i+'_'+j);if(el)el.value=v;});});
+  ex.B.forEach(function(row,i){row.forEach(function(v,j){var el=document.getElementById('b'+i+'_'+j);if(el)el.value=v;});});
+  computeKron();
+}
+function buildKronExamples(){
+  var row=document.getElementById('exRowK');
+  EXAMPLES_K.forEach(function(ex){var btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent=ex.label;btn.onclick=function(){loadExK(ex);};row.appendChild(btn);});
+}
+
+/* ═══════════════════════════════════
+   UI FOR PART II (field examples)
+═══════════════════════════════════ */
+var EXAMPLES_F=[
+  {label:'√2 + √3', pd:2, qd:2, p:[[-2,0,1]], q:[[-3,0,1]]},
+  {label:'√2 · √5', pd:2, qd:2, p:[[-2,0,1]], q:[[-5,0,1]]},
+  {label:'∛2 + √3', pd:3, qd:2, p:[[-2,0,0,1]], q:[[-3,0,1]]},
+  {label:'∛2 · √2', pd:3, qd:2, p:[[-2,0,0,1]], q:[[-2,0,1]]},
+  {label:'√(2+√3)',  pd:2, qd:2, p:[[-7,0,4,0,-1]], q:[[-3,0,1]], useP4:true},
+];
+
+// For the degree-4 example, override
+function buildFieldExamples(){
+  var row=document.getElementById('exRowF');
+  EXAMPLES_F.forEach(function(ex){
+    var btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent=ex.label;
+    btn.onclick=function(){loadExF(ex);};row.appendChild(btn);
+  });
+}
+
+function loadExF(ex){
+  if(ex.useP4){
+    /* Special: degree 4 polynomial */
+    cPdeg=4;cQdeg=2;
+    buildPolyGrid('mxP','p',4,'pLabel');
+    buildPolyGrid('mxQ','q',2,'qLabel');
+    /* Set p = x^4 - 4x^2 + 1 */
+    [[-7,0,4,0,1]].forEach(function(cs){
+      cs.forEach(function(v,i){var el=document.getElementById('pcoef'+i);if(el)el.value=v;});
+    });
+    [[-3,0,1]].forEach(function(cs){
+      cs.forEach(function(v,i){var el=document.getElementById('qcoef'+i);if(el)el.value=v;});
+    });
+  } else {
+    cPdeg=ex.pd;cQdeg=ex.qd;
+    buildPolyGrid('mxP','p',ex.pd,'pLabel');
+    buildPolyGrid('mxQ','q',ex.qd,'qLabel');
+    ex.p[0].forEach(function(v,i){var el=document.getElementById('pcoef'+i);if(el)el.value=v;});
+    ex.q[0].forEach(function(v,i){var el=document.getElementById('qcoef'+i);if(el)el.value=v;});
+  }
+  updatePolyLabel('p',cPdeg,'pLabel');
+  updatePolyLabel('q',cQdeg,'qLabel');
+  computeField();
+}
+
+/* ═══════════════════════════════════
+   BOOT
+═══════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  buildKronExamples();
+  buildKronGrids(2,2);
+  loadExK(EXAMPLES_K[1]);
+
+  buildFieldExamples();
+  cPdeg=2;cQdeg=2;
+  buildPolyInputs();
+  loadExF(EXAMPLES_F[0]);
+});
+</script>
+</body>
+</html>

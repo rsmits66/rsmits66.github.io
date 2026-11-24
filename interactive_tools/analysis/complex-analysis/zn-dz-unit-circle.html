@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zⁿ dz around the unit circle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: header, one control bar, three square plots side by side (real part | imaginary part | value plane), readout tiles */
+  --bg:#f3f5f9; --panel:#ffffff; --ink:#171c2b; --muted:#5b6479; --line:#d6dbe6;
+  --re:#687082; --im:#b3122f; --accent:#3b46c4;
+  --display:"STIX Two Text","Cambria Math",Georgia,serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#10131c; --panel:#181c28; --ink:#e8ebf3; --muted:#9aa3b8; --line:#2c3344;
+    --re:#a7aebd; --im:#ff5c7a; --accent:#9aa4ff;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#10131c; --panel:#181c28; --ink:#e8ebf3; --muted:#9aa3b8; --line:#2c3344;
+  --re:#a7aebd; --im:#ff5c7a; --accent:#9aa4ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+main{max-width:1400px;margin:0 auto;padding:28px 20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
+h1{font-family:var(--display);font-style:italic;font-weight:400;font-size:34px;line-height:1.15;margin:0;text-wrap:balance}
+.formula{font-family:var(--display);font-size:22px;white-space:nowrap}
+.formula i{font-style:italic}
+.bar{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px}
+.group{display:flex;align-items:center;gap:8px}
+.group.grow{flex:1 1 300px;min-width:0}
+.lab{color:var(--muted);font-size:13px;white-space:nowrap}
+.lab i{font-family:var(--display);font-size:16px;color:var(--ink)}
+button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;height:36px;min-width:36px;padding:0 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:500}
+input[type=number]{font:inherit;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;height:36px;width:64px;text-align:center}
+input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.deg{font-variant-numeric:tabular-nums;min-width:44px;text-align:right;font-weight:500}
+.plots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.plot{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.plot h2{font-size:14px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.dot.re{background:var(--re)}.dot.im{background:var(--im)}.dot.val{background:var(--accent)}
+.plot p.cap{font-family:var(--display);font-size:15px;color:var(--ink)}
+.plot p{margin:0;color:var(--muted);font-size:13px}
+canvas{width:100%;aspect-ratio:1/1;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13px;color:var(--muted)}
+.legend label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.legend input{accent-color:var(--accent);margin:0}
+.sw{display:inline-block;width:22px;height:0;border-top:2px solid var(--im)}
+.sw.re{border-top:2px dashed var(--re)}
+.math{font-family:var(--display);font-size:15px;color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:0}
+.tile .k{font-size:12.5px;color:var(--muted)}
+.tile .v{font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile .v.math{font-size:21px;font-weight:400}
+.tile.re{border-left:4px solid var(--re)}
+.tile.im{border-left:4px solid var(--im)}
+.pill{display:inline-block;font-size:12.5px;font-weight:500;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:1px 10px;margin-left:6px;white-space:nowrap}
+.note{color:var(--muted);font-size:13.5px;max-width:65ch;margin:0}
+@media (max-width:1000px){
+  .plots{grid-template-columns:minmax(0,1fr)}
+  .plot{max-width:560px;width:100%;margin:0 auto}
+}
+@media (max-width:760px){
+  .plots{grid-template-columns:minmax(0,1fr)}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Integration on the unit circle</h1>
+    <div class="formula" aria-label="integral over gamma of z to the n dz">∫<sub><i>γ</i></sub> <i>z</i><sup id="fexp">−1</sup> <i>dz</i></div>
+  </header>
+
+  <section class="bar" aria-label="Controls">
+    <div class="group">
+      <span class="lab">Power <i>n</i></span>
+      <button id="nminus" type="button" aria-label="Decrease n">−</button>
+      <input id="n" type="number" min="-20" max="20" step="1" value="-1" aria-label="Integer power n">
+      <button id="nplus" type="button" aria-label="Increase n">+</button>
+    </div>
+    <div class="group grow">
+      <span class="lab">Endpoint <i>θ</i></span>
+      <input id="theta" type="range" min="0" max="360" step="1" value="360" aria-label="Endpoint angle in degrees">
+      <span class="deg" id="deg">360°</span>
+    </div>
+    <div class="group">
+      <button id="play" type="button" class="primary">Go around</button>
+    </div>
+  </section>
+
+  <section class="plots">
+    <div class="plot">
+      <h2><span class="dot re"></span>Real part of the form</h2>
+      <canvas id="zr" role="img" aria-label="Grey arrow field for the real part of z to the n dz, with the unit circle traced counterclockwise from 1 to the chosen angle"></canvas>
+      <p class="cap" id="reForm"></p>
+    </div>
+    <div class="plot">
+      <h2><span class="dot im"></span>Imaginary part of the form</h2>
+      <canvas id="zi" role="img" aria-label="Crimson arrow field for the imaginary part of z to the n dz, with the unit circle traced counterclockwise from 1 to the chosen angle"></canvas>
+      <p class="cap" id="imForm"></p>
+    </div>
+    <div class="plot">
+      <h2><span class="dot val"></span>Value plane: the running integral</h2>
+      <canvas id="vc" role="img" aria-label="Path traced in the complex plane by the value of the integral as the endpoint moves around the circle"></canvas>
+      <p id="vnote"></p>
+    </div>
+  </section>
+
+  <section class="tiles" aria-live="polite">
+    <div class="tile re"><div class="k">Real part</div><div class="v" id="reV">0.000</div></div>
+    <div class="tile im"><div class="k">Imaginary part</div><div class="v" id="imV">6.283</div></div>
+    <div class="tile"><div class="k">Value at <span id="degK">360°</span></div><div class="v" id="totV">2πi</div></div>
+    <div class="tile"><div class="k">Closed form <span class="pill" id="pill"></span></div><div class="v math" id="closed"></div></div>
+  </section>
+
+  <p class="note" id="note"></p>
+</main>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var zr=$('zr'), zi=$('zi'), vc=$('vc');
+  var state={n:-1, deg:360};
+  var raf=0;
+
+  function tok(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
+  function sup(k){
+    var m={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+    return String(k).split('').map(function(c){return m[c];}).join('');
+  }
+  function fmt(v){var s=v.toFixed(3); if(s==='-0.000') s='0.000'; return s.replace('-','−');}
+  function gcd(a,b){return b?gcd(b,a%b):a;}
+
+  function setup(c){
+    var dpr=window.devicePixelRatio||1, w=c.clientWidth, h=c.clientHeight;
+    if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
+    var ctx=c.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+    return {ctx:ctx,w:w,h:h};
+  }
+
+  function arrow(ctx,x,y,ux,uy,half,color,alpha,dash){
+    var x1=x-ux*half,y1=y-uy*half,x2=x+ux*half,y2=y+uy*half,hd=Math.min(4.5,half*0.9),nx=-uy,ny=ux;
+    ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=1.4; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.setLineDash(dash?[3,2.5]:[]);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(x2-ux*hd+nx*hd*0.6,y2-uy*hd+ny*hd*0.6); ctx.lineTo(x2,y2); ctx.lineTo(x2-ux*hd-nx*hd*0.6,y2-uy*hd-ny*hd*0.6);
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+
+  function drawZ(zc,which){
+    var s=setup(zc), ctx=s.ctx, w=s.w, h=s.h, n=state.n;
+    var ink=tok('--ink'), muted=tok('--muted'), line=tok('--line'), col=tok(which==='re'?'--re':'--im');
+    var ext=1.7, S=w/(2*ext), cx=w/2, cy=h/2, t=state.deg*Math.PI/180;
+    var step=w<300?0.3:0.2, cnt=Math.floor(ext/step+1e-9), sp=step*S;
+
+    ctx.strokeStyle=line; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.stroke();
+
+    for(var i=-cnt;i<=cnt;i++){for(var j=-cnt;j<=cnt;j++){
+      var x=i*step,y=j*step,r=Math.hypot(x,y);
+      if(r<0.14) continue;
+      var phi=Math.atan2(y,x), m=Math.pow(r,n), q=m/(1+m);
+      var half=(0.11+0.36*q)*sp, a=0.35+0.6*q;
+      var px=cx+x*S, py=cy-y*S, c=Math.cos(n*phi), sn=Math.sin(n*phi);
+      if(which==='re') arrow(ctx,px,py,c,sn,half,col,a,false);
+      else arrow(ctx,px,py,sn,-c,half,col,a,false);
+    }}
+
+    ctx.strokeStyle=muted; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.arc(cx,cy,S,0,2*Math.PI); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.strokeStyle=ink; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round';
+    if(state.deg>0){ctx.beginPath(); ctx.arc(cx,cy,S,0,-t,true); ctx.stroke();}
+    var ex=cx+S*Math.cos(t), ey=cy-S*Math.sin(t);
+    if(state.deg>=4){
+      var tx=-Math.sin(t), ty=-Math.cos(t), nx=Math.cos(t), ny=-Math.sin(t), hd=10;
+      ctx.beginPath(); ctx.moveTo(ex-tx*hd+nx*6,ey-ty*hd+ny*6); ctx.lineTo(ex,ey); ctx.lineTo(ex-tx*hd-nx*6,ey-ty*hd-ny*6); ctx.stroke();
+    }
+    ctx.fillStyle=ink; ctx.beginPath(); ctx.arc(cx+S,cy,4,0,2*Math.PI); ctx.fill();
+
+    ctx.font='13px '+tok('--body'); ctx.fillStyle=muted; ctx.textBaseline='top';
+    ctx.textAlign='left'; ctx.fillText('1',cx+S+7,cy+6);
+    ctx.textAlign='right'; ctx.fillText('−1',cx-S-7,cy+6);
+    ctx.textAlign='left'; ctx.fillText('i',cx+7,cy-S-20);
+    ctx.fillText('−i',cx+7,cy+S+7);
+    if(n<0){
+      ctx.strokeStyle=ink; ctx.lineWidth=1.3; ctx.fillStyle=tok('--panel');
+      ctx.beginPath(); ctx.arc(cx,cy,5,0,2*Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=muted; ctx.fillText('pole',cx+9,cy+6);
+    } else {
+      ctx.fillStyle=ink; ctx.beginPath(); ctx.arc(cx,cy,2.5,0,2*Math.PI); ctx.fill();
+    }
+    ctx.font='italic 22px '+tok('--display'); ctx.fillStyle=ink; ctx.textBaseline='alphabetic'; ctx.textAlign='left';
+    ctx.fillText('γ',cx+S*0.74+8,cy-S*0.74-8);
+  }
+
+  function F(n,t){
+    var k=n+1;
+    if(k===0) return [0,t];
+    return [(Math.cos(k*t)-1)/k, Math.sin(k*t)/k];
+  }
+
+  function drawV(){
+    var s=setup(vc), ctx=s.ctx, w=s.w, h=s.h, n=state.n, k=n+1;
+    var ink=tok('--ink'), muted=tok('--muted'), line=tok('--line'), acc=tok('--accent');
+    var t=state.deg*Math.PI/180, ccx, ccy, half;
+    if(k===0){ccx=0; ccy=Math.PI; half=3.9;} else {ccx=-1/k; ccy=0; half=1.6/Math.abs(k);}
+    var S=w/(2*half);
+    function X(a){return w/2+(a-ccx)*S;}
+    function Y(b){return h/2-(b-ccy)*S;}
+
+    ctx.strokeStyle=line; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,Y(0)); ctx.lineTo(w,Y(0)); ctx.moveTo(X(0),0); ctx.lineTo(X(0),h); ctx.stroke();
+
+    ctx.strokeStyle=muted; ctx.lineWidth=1; ctx.setLineDash([3,4]); ctx.beginPath();
+    if(k===0){ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(0),Y(2*Math.PI));}
+    else {ctx.arc(X(-1/k),Y(0),S/Math.abs(k),0,2*Math.PI);}
+    ctx.stroke(); ctx.setLineDash([]);
+
+    var steps=Math.max(2,Math.ceil(state.deg*Math.max(1,Math.abs(k))/2));
+    ctx.strokeStyle=acc; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath();
+    for(var i=0;i<=steps;i++){var p=F(n,t*i/steps); if(i===0) ctx.moveTo(X(p[0]),Y(p[1])); else ctx.lineTo(X(p[0]),Y(p[1]));}
+    if(state.deg>0) ctx.stroke();
+
+    var cur=F(n,t);
+    ctx.strokeStyle=ink; ctx.lineWidth=1; ctx.globalAlpha=0.55;
+    ctx.beginPath(); ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(cur[0]),Y(cur[1])); ctx.stroke(); ctx.globalAlpha=1;
+
+    ctx.fillStyle=ink; ctx.beginPath(); ctx.arc(X(0),Y(0),3,0,2*Math.PI); ctx.fill();
+    ctx.fillStyle=acc; ctx.beginPath(); ctx.arc(X(cur[0]),Y(cur[1]),6,0,2*Math.PI); ctx.fill();
+    ctx.strokeStyle=tok('--panel'); ctx.lineWidth=2; ctx.stroke();
+
+    ctx.font='13px '+tok('--body'); ctx.fillStyle=muted; ctx.textBaseline='top';
+    if(k===0){
+      ctx.textAlign='left';
+      ctx.fillText('0',X(0)+8,Y(0)+6);
+      [[Math.PI,'πi'],[2*Math.PI,'2πi']].forEach(function(m){
+        ctx.strokeStyle=muted; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(X(0)-4,Y(m[0])); ctx.lineTo(X(0)+4,Y(m[0])); ctx.stroke();
+        ctx.textBaseline='middle'; ctx.fillText(m[1],X(0)+10,Y(m[0]));
+      });
+    } else {
+      var g=gcd(2,Math.abs(k)), num=2/g, den=Math.abs(k)/g, lab=(k>0?'−':'')+num+(den>1?'/'+den:'');
+      var far=-2/k;
+      ctx.fillStyle=muted; ctx.beginPath(); ctx.arc(X(far),Y(0),2.5,0,2*Math.PI); ctx.fill();
+      if(k>0){ctx.textAlign='left'; ctx.fillText('0',X(0)+8,Y(0)+6); ctx.textAlign='right'; ctx.fillText(lab,X(far)-8,Y(0)+6);}
+      else {ctx.textAlign='right'; ctx.fillText('0',X(0)-8,Y(0)+6); ctx.textAlign='left'; ctx.fillText(lab,X(far)+8,Y(0)+6);}
+    }
+  }
+
+  function text(){
+    var n=state.n, k=n+1, t=state.deg*Math.PI/180, v=F(n,t);
+    $('fexp').textContent=String(n).replace('-','−');
+    $('deg').textContent=state.deg+'°';
+    $('degK').textContent=state.deg+'°';
+    $('reV').textContent=fmt(v[0]);
+    $('imV').textContent=fmt(v[1]);
+
+    var rn = n===0?'':'r'+sup(n)+' ';
+    var a = n===0?'':(n===1?'θ':(n===-1?'θ':Math.abs(n)+'θ'));
+    var hr='Re(z'+sup(n)+' dz) = ', hi='Im(z'+sup(n)+' dz) = ';
+    if(n===0){$('reForm').textContent=hr+'dx'; $('imForm').textContent=hi+'dy';}
+    else if(n>0){
+      $('reForm').textContent=hr+rn+'(cos '+a+' dx − sin '+a+' dy)';
+      $('imForm').textContent=hi+rn+'(sin '+a+' dx + cos '+a+' dy)';
+    } else {
+      $('reForm').textContent=hr+rn+'(cos '+a+' dx + sin '+a+' dy)';
+      $('imForm').textContent=hi+rn+'(cos '+a+' dy − sin '+a+' dx)';
+    }
+
+    var tot;
+    if(state.deg===0) tot='0';
+    else if(state.deg===360) tot=(k===0?'2πi':'0');
+    else if(k===0) tot=fmt(v[1])+' i';
+    else tot=fmt(v[0])+(v[1]<-0.0005?' − ':' + ')+fmt(Math.abs(v[1]))+' i';
+    $('totV').textContent=tot;
+
+    if(k===0){
+      $('closed').textContent='iθ';
+      $('pill').textContent='full circle: 2πi';
+      $('vnote').textContent='The value climbs the imaginary axis at a steady rate and never returns: after a full turn it is 2πi.';
+      $('note').textContent='n = −1 is the one exception. The antiderivative log z gains 2πi each time the curve winds around the pole, so the integral around the whole circle is not zero.';
+    } else {
+      var e = k===1?'iθ':(k===-1?'−iθ':String(k).replace('-','−')+'iθ');
+      $('closed').textContent = k===1 ? 'e'+'^('+e+') − 1' : (k===-1 ? '1 − e^('+e+')' : '(e^('+e+') − 1) / '+(k<0?'('+String(k).replace('-','−')+')':k));
+      $('pill').textContent='full circle: 0';
+      var turns=Math.abs(k), dir=k>0?'counterclockwise':'clockwise';
+      $('vnote').textContent='The value runs '+dir+' around a circle of radius 1/'+turns+', '+(turns===1?'once':turns+' times')+', and returns to 0 after a full turn.';
+      $('note').textContent='For n ≠ −1 the form is exact: it is the differential of z'+sup(k)+'/'+(k<0?'('+String(k).replace('-','−')+')':k)+', which is single-valued'+(n<0?' away from the pole':'')+'. A closed curve starts and ends at the same value, so the integral around the whole circle is 0.';
+    }
+  }
+
+  function render(){text(); drawZ(zr,'re'); drawZ(zi,'im'); drawV();}
+
+  function setN(v){
+    v=Math.round(Number(v)); if(!isFinite(v)) v=state.n;
+    v=Math.max(-20,Math.min(20,v));
+    state.n=v; $('n').value=v; render();
+  }
+  function stop(){if(raf){cancelAnimationFrame(raf); raf=0; $('play').textContent='Go around';}}
+
+  $('nminus').addEventListener('click',function(){setN(state.n-1);});
+  $('nplus').addEventListener('click',function(){setN(state.n+1);});
+  $('n').addEventListener('change',function(e){setN(e.target.value);});
+  $('theta').addEventListener('input',function(e){stop(); state.deg=+e.target.value; render();});
+  $('play').addEventListener('click',function(){
+    if(raf){stop(); return;}
+    var from=state.deg>=360?0:state.deg, t0=null, dur=7000*(360-from)/360;
+    $('play').textContent='Pause';
+    function tick(ts){
+      if(t0===null) t0=ts;
+      var u=Math.min(1,(ts-t0)/dur);
+      state.deg=Math.round(from+(360-from)*u);
+      $('theta').value=state.deg; render();
+      if(u<1) raf=requestAnimationFrame(tick); else stop();
+    }
+    raf=requestAnimationFrame(tick);
+  });
+
+  window.addEventListener('resize',render);
+  if(window.ResizeObserver){new ResizeObserver(render).observe(zr);}
+  if(window.matchMedia){
+    var mq=window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener) mq.addEventListener('change',render);
+  }
+  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(render);}
+  render();
+})();
+</script>
+</body>
+</html>

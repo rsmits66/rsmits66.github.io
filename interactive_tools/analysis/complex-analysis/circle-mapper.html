@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circle Mapper</title>
+<style>
+/* Layout: a one-row toolbar, then two equal plane views (domain | range) that stack on phones.
+   The circle is painted by angle (hue sweeps 0..2π), and the same hue is used for its image,
+   so corresponding points share a color across the two windows. */
+:root {
+  --bg: #F3F4F0;
+  --pane: #FFFFFF;
+  --ink: #1C2321;
+  --ink-2: #5C6663;
+  --rule: #D8DCD6;
+  --grid: #E6E9E4;
+  --axis: #B3BAB5;
+  --accent: #0B6E6A;
+  --center: #B23A2E;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+    --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+  --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); }
+.wrap { max-width: 78rem; margin-inline: auto; padding-inline: 16px; padding-block: 1.25rem 2rem; display: grid; gap: 1rem; }
+h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+.sub { margin: 0.2rem 0 0; color: var(--ink-2); max-width: 60ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 0.6rem 1.4rem; align-items: end; }
+.field { display: grid; gap: 0.25rem; min-width: 0; }
+.field > span { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+select, input[type="number"] {
+  font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 0.35rem 0.5rem; min-width: 5.5rem;
+}
+select { min-width: 11rem; }
+input[type="number"] { width: 6.5rem; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.row { display: flex; gap: 0.4rem; align-items: center; }
+.chk { display: flex; gap: 0.4rem; align-items: center; color: var(--ink-2); padding-bottom: 0.4rem; }
+.chk input { accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.planes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 40rem) { .planes { gap: 0.5rem; } .pane { padding: 0.4rem; } .pane h2 small { display: none; } .read { font-size: 0.72rem; } }
+.pane { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; min-width: 0; display: grid; gap: 0.5rem; }
+.pane h2 { margin: 0; font-size: 1rem; font-weight: 600; display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.pane h2 small { font-weight: 400; color: var(--ink-2); font-size: 0.82rem; }
+.view { position: relative; width: 100%; aspect-ratio: 1; max-width: 100%; }
+canvas { display: block; width: 100%; height: 100%; border-radius: 4px; cursor: crosshair; touch-action: none; }
+#dom { cursor: grab; }
+.read { font-family: var(--mono); font-size: 0.86rem; font-variant-numeric: tabular-nums; color: var(--ink-2); display: grid; gap: 0.15rem; }
+.read b { color: var(--ink); font-weight: 600; }
+.swatch { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; vertical-align: -0.05em; margin-right: 0.3em; background: var(--center); }
+.hint { color: var(--ink-2); font-size: 0.86rem; margin: 0; }
+input[type="range"] { width: 12rem; max-width: 100%; accent-color: var(--accent); margin: 0; }
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>Circle Mapper</h1>
+    <p class="sub">Pick a circle in the <em>z</em>-plane; the <em>w</em>-plane shows its image under an analytic function. Matching colors mark matching points.</p>
+  </header>
+
+  <div class="bar">
+    <label class="field"><span>Function f(z)</span>
+      <select id="fn"></select>
+    </label>
+    <div class="field"><span>Center z₀ (re, im)</span>
+      <div class="row">
+        <input type="number" id="cx" step="0.1" value="1" aria-label="Real part of the center">
+        <input type="number" id="cy" step="0.1" value="0.5" aria-label="Imaginary part of the center">
+      </div>
+    </div>
+    <label class="field"><span>Radius r</span>
+      <input type="number" id="r" step="0.05" min="0.01" value="0.75">
+    </label>
+    <label class="field"><span>Probe angle θ = <output id="thv">0°</output></span>
+      <input type="range" id="th" min="0" max="360" step="1" value="0">
+    </label>
+    <label class="chk"><input type="checkbox" id="fit" checked> Fit range view to the image</label>
+    <label class="chk"><input type="checkbox" id="grid"> Show image of a grid inside the circle</label>
+  </div>
+
+  <div class="planes">
+    <section class="pane">
+      <h2>Domain <small>z-plane · drag the center, drag the edge to resize, scroll to zoom</small></h2>
+      <div class="view"><canvas id="dom"></canvas></div>
+      <div class="read">
+        <div><span class="swatch"></span>z₀ = <b id="rz0"></b></div>
+        <div><span class="swatch" id="swz"></span>z(θ) = <b id="rz"></b></div>
+      </div>
+    </section>
+    <section class="pane">
+      <h2>Range <small>w-plane · scroll to zoom, drag to pan</small></h2>
+      <div class="view"><canvas id="ran"></canvas></div>
+      <div class="read">
+        <div><span class="swatch"></span>f(z₀) = <b id="rw0"></b></div>
+        <div><span class="swatch" id="sww"></span>f(z(θ)) = <b id="rw"></b></div>
+      </div>
+    </section>
+  </div>
+  <p class="hint" id="note"></p>
+</main>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------- complex arithmetic ----------
+const C = (re, im) => ({ re, im });
+const add = (a, b) => C(a.re + b.re, a.im + b.im);
+const sub = (a, b) => C(a.re - b.re, a.im - b.im);
+const mul = (a, b) => C(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+const div = (a, b) => { const d = b.re * b.re + b.im * b.im; return C((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+const exp = z => { const m = Math.exp(z.re); return C(m * Math.cos(z.im), m * Math.sin(z.im)); };
+const log = z => C(Math.log(Math.hypot(z.re, z.im)), Math.atan2(z.im, z.re));
+const sqrt = z => { const m = Math.sqrt(Math.hypot(z.re, z.im)), a = Math.atan2(z.im, z.re) / 2; return C(m * Math.cos(a), m * Math.sin(a)); };
+const sin = z => C(Math.sin(z.re) * Math.cosh(z.im), Math.cos(z.re) * Math.sinh(z.im));
+const cos = z => C(Math.cos(z.re) * Math.cosh(z.im), -Math.sin(z.re) * Math.sinh(z.im));
+const ONE = C(1, 0), I = C(0, 1);
+
+const FUNCS = [
+  { name: 'z²',             f: z => mul(z, z),                       note: 'Angles at z₀ are doubled when the circle encloses 0, so the image winds twice.' },
+  { name: 'z³',             f: z => mul(z, mul(z, z)),               note: 'A circle around the origin maps to a curve that winds three times.' },
+  { name: 'eᶻ',             f: exp,                                  note: 'Vertical lines go to circles and horizontal lines to rays; small circles map to near-circles.' },
+  { name: '1/z',            f: z => div(ONE, z),                     note: 'A Möbius map: every circle not through 0 goes to a circle; one through 0 goes to a line.' },
+  { name: '(z − 1)/(z + 1)', f: z => div(sub(z, ONE), add(z, ONE)),  note: 'The Cayley-type map sends circles to circles and the imaginary axis to the unit circle.' },
+  { name: 'sin z',          f: sin,                                  note: 'Try a circle that crosses the real axis near ±π/2, where sin′ vanishes.' },
+  { name: 'cos z',          f: cos,                                  note: 'cos z = sin(z + π/2); the image is the sin image shifted.' },
+  { name: '√z (principal)', f: sqrt,                                 note: 'The branch cut is the negative real axis; a circle crossing it has a broken image.' },
+  { name: 'log z (principal)', f: log,                               note: 'A circle around 0 maps to a closed-looking curve with a gap of 2πi across the branch cut.' },
+  { name: 'z + 1/z',        f: z => add(z, div(ONE, z)),             note: 'The Joukowski map: a circle through z = 1 becomes an airfoil-like shape; the unit circle flattens to [−2, 2].' },
+  { name: 'z² + i',         f: z => add(mul(z, z), I),               note: 'Same as z², then translated by i.' },
+];
+FUNCS.forEach((F, i) => { const o = document.createElement('option'); o.value = i; o.textContent = F.name; $('fn').appendChild(o); });
+$('fn').value = 0;
+
+// ---------- state ----------
+const S = { fi: 0, cx: 1, cy: 0.5, r: 0.75, th: 0, fit: true, grid: false };
+const dom = { cvs: $('dom'), x: 0, y: 0, half: 3 };     // view center and half-width in plane units
+const ran = { cvs: $('ran'), x: 0, y: 0, half: 3 };
+const N = 720;                                           // samples around the circle
+const hue = t => `hsl(${(t * 180 / Math.PI).toFixed(0)} 70% 48%)`;
+const fmt = z => `${z.re.toFixed(3)} ${z.im < 0 ? '−' : '+'} ${Math.abs(z.im).toFixed(3)}i`;
+const finite = w => Number.isFinite(w.re) && Number.isFinite(w.im) && Math.hypot(w.re, w.im) < 1e6;
+
+function circlePt(t) { return C(S.cx + S.r * Math.cos(t), S.cy + S.r * Math.sin(t)); }
+
+// ---------- canvas plumbing ----------
+function setup(v) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = v.cvs.clientWidth, h = v.cvs.clientHeight;
+  if (v.cvs.width !== Math.round(w * dpr) || v.cvs.height !== Math.round(h * dpr)) {
+    v.cvs.width = Math.round(w * dpr); v.cvs.height = Math.round(h * dpr);
+  }
+  const g = v.cvs.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  v.w = w; v.h = h; v.scale = Math.min(w, h) / (2 * v.half);
+  v.toPx = z => [w / 2 + (z.re - v.x) * v.scale, h / 2 - (z.im - v.y) * v.scale];
+  v.toZ = (px, py) => C(v.x + (px - w / 2) / v.scale, v.y - (py - h / 2) / v.scale);
+  return g;
+}
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function niceStep(half) { const raw = half / 3, p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+
+function drawGrid(g, v) {
+  g.clearRect(0, 0, v.w, v.h);
+  const step = niceStep(v.half);
+  const z0 = v.toZ(0, v.h), z1 = v.toZ(v.w, 0);
+  g.lineWidth = 1; g.strokeStyle = cssVar('--grid');
+  g.font = '11px ' + cssVar('--sans'); g.fillStyle = cssVar('--ink-2'); g.textAlign = 'left'; g.textBaseline = 'top';
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) {
+    const [px] = v.toPx(C(x, 0)); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, v.h); g.stroke();
+  }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) {
+    const [, py] = v.toPx(C(0, y)); g.beginPath(); g.moveTo(0, py); g.lineTo(v.w, py); g.stroke();
+  }
+  g.strokeStyle = cssVar('--axis');
+  const [ox, oy] = v.toPx(C(0, 0));
+  g.beginPath(); g.moveTo(ox, 0); g.lineTo(ox, v.h); g.moveTo(0, oy); g.lineTo(v.w, oy); g.stroke();
+  // tick labels on the axes
+  const dec = step < 1 ? Math.ceil(-Math.log10(step)) : 0;
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) {
+    if (Math.abs(x) < 1e-9) continue;
+    const [px] = v.toPx(C(x, 0)); g.fillText(x.toFixed(dec), px + 3, Math.min(Math.max(oy + 3, 2), v.h - 14));
+  }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) {
+    if (Math.abs(y) < 1e-9) continue;
+    const [, py] = v.toPx(C(0, y)); g.fillText(y.toFixed(dec) + 'i', Math.min(Math.max(ox + 3, 2), v.w - 30), py + 2);
+  }
+}
+
+// polyline painted by parameter, broken where the map blows up
+function paintCurve(g, v, pts, width) {
+  g.lineWidth = width; g.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    if (!finite(a.w) || !finite(b.w)) continue;
+    const [ax, ay] = v.toPx(a.w), [bx, by] = v.toPx(b.w);
+    if (Math.hypot(bx - ax, by - ay) > Math.max(v.w, v.h)) continue;   // a jump across a branch cut or pole
+    g.strokeStyle = hue(a.t); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  }
+}
+function dot(g, v, z, color, rad) {
+  if (!finite(z)) return;
+  const [x, y] = v.toPx(z);
+  g.beginPath(); g.arc(x, y, rad, 0, 2 * Math.PI); g.fillStyle = color; g.fill();
+  g.lineWidth = 2; g.strokeStyle = cssVar('--pane'); g.stroke();
+}
+
+// polar grid inside the disk, as curves to be mapped
+function gridCurves() {
+  const curves = [];
+  for (let k = 1; k <= 4; k++) {                       // concentric circles
+    const rr = S.r * k / 4, pts = [];
+    for (let i = 0; i <= 180; i++) { const t = 2 * Math.PI * i / 180; pts.push(C(S.cx + rr * Math.cos(t), S.cy + rr * Math.sin(t))); }
+    curves.push(pts);
+  }
+  for (let k = 0; k < 12; k++) {                       // spokes
+    const t = 2 * Math.PI * k / 12, pts = [];
+    for (let i = 0; i <= 40; i++) { const rr = S.r * i / 40; pts.push(C(S.cx + rr * Math.cos(t), S.cy + rr * Math.sin(t))); }
+    curves.push(pts);
+  }
+  return curves;
+}
+function paintPlain(g, v, pts, color) {
+  g.lineWidth = 1; g.strokeStyle = color; g.globalAlpha = 0.7; g.beginPath();
+  let pen = false;
+  for (const z of pts) {
+    if (!finite(z)) { pen = false; continue; }
+    const [x, y] = v.toPx(z);
+    if (pen) g.lineTo(x, y); else g.moveTo(x, y);
+    pen = true;
+  }
+  g.stroke(); g.globalAlpha = 1;
+}
+
+// ---------- render ----------
+function render() {
+  const f = FUNCS[S.fi].f;
+  const pts = [];
+  for (let i = 0; i <= N; i++) { const t = 2 * Math.PI * i / N, z = circlePt(t); pts.push({ t, z, w: f(z) }); }
+  const z0 = C(S.cx, S.cy), w0 = f(z0);
+  const zp = circlePt(S.th), wp = f(zp);
+
+  if (S.fit) {   // frame the finite part of the image, with the image of the center
+    let lo = C(Infinity, Infinity), hi = C(-Infinity, -Infinity), n = 0;
+    const take = w => { if (!finite(w)) return; lo = C(Math.min(lo.re, w.re), Math.min(lo.im, w.im)); hi = C(Math.max(hi.re, w.re), Math.max(hi.im, w.im)); n++; };
+    pts.forEach(p => take(p.w)); take(w0);
+    if (n) {
+      // trim extreme outliers (near a pole) by using the 2nd–98th percentile of distances from the median point
+      const fin = pts.filter(p => finite(p.w)).map(p => p.w);
+      const mre = fin.map(w => w.re).sort((a, b) => a - b), mim = fin.map(w => w.im).sort((a, b) => a - b);
+      const q = (arr, p) => arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
+      const L = C(Math.min(q(mre, 0.02), w0.re), Math.min(q(mim, 0.02), w0.im)), H = C(Math.max(q(mre, 0.98), w0.re), Math.max(q(mim, 0.98), w0.im));
+      ran.x = (L.re + H.re) / 2; ran.y = (L.im + H.im) / 2;
+      ran.half = Math.max(0.05, Math.max(H.re - L.re, H.im - L.im) / 2 * 1.3);
+    }
+  }
+
+  const gd = setup(dom), gr = setup(ran);
+  drawGrid(gd, dom); drawGrid(gr, ran);
+  if (S.grid) {
+    for (const c of gridCurves()) { paintPlain(gd, dom, c, cssVar('--accent')); paintPlain(gr, ran, c.map(f), cssVar('--accent')); }
+  }
+  paintCurve(gd, dom, pts.map(p => ({ t: p.t, w: p.z })), 3);
+  paintCurve(gr, ran, pts, 3);
+  const center = cssVar('--center');
+  dot(gd, dom, z0, center, 6); dot(gr, ran, w0, center, 6);
+  dot(gd, dom, zp, hue(S.th), 7); dot(gr, ran, wp, hue(S.th), 7);
+
+  $('rz0').textContent = fmt(z0); $('rw0').textContent = finite(w0) ? fmt(w0) : 'undefined (pole)';
+  $('rz').textContent = fmt(zp); $('rw').textContent = finite(wp) ? fmt(wp) : 'undefined (pole)';
+  $('swz').style.background = $('sww').style.background = hue(S.th);
+  $('thv').textContent = Math.round(S.th * 180 / Math.PI) + '°';
+  $('note').textContent = FUNCS[S.fi].note;
+}
+
+// ---------- controls ----------
+function syncInputs() { $('cx').value = S.cx.toFixed(2); $('cy').value = S.cy.toFixed(2); $('r').value = S.r.toFixed(2); }
+$('fn').addEventListener('change', e => { S.fi = +e.target.value; render(); });
+$('cx').addEventListener('input', e => { const v = +e.target.value; if (Number.isFinite(v)) { S.cx = v; render(); } });
+$('cy').addEventListener('input', e => { const v = +e.target.value; if (Number.isFinite(v)) { S.cy = v; render(); } });
+$('r').addEventListener('input', e => { const v = +e.target.value; if (v > 0) { S.r = v; render(); } });
+$('th').addEventListener('input', e => { S.th = +e.target.value * Math.PI / 180; render(); });
+$('fit').addEventListener('change', e => { S.fit = e.target.checked; render(); });
+$('grid').addEventListener('change', e => { S.grid = e.target.checked; render(); });
+
+// domain: drag center or edge; wheel zooms
+let drag = null;
+const pos = (v, e) => { const r = v.cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+dom.cvs.addEventListener('pointerdown', e => {
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  const d = Math.hypot(z.re - S.cx, z.im - S.cy);
+  const tol = 12 / dom.scale;
+  if (Math.abs(d - S.r) < tol) drag = { kind: 'edge' };
+  else if (d < S.r || d < tol) drag = { kind: 'center', dx: z.re - S.cx, dy: z.im - S.cy };
+  else drag = { kind: 'pan', px, py, x: dom.x, y: dom.y };
+  dom.cvs.setPointerCapture(e.pointerId);
+});
+dom.cvs.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  if (drag.kind === 'center') { S.cx = z.re - drag.dx; S.cy = z.im - drag.dy; }
+  else if (drag.kind === 'edge') { S.r = Math.max(0.01, Math.hypot(z.re - S.cx, z.im - S.cy)); }
+  else { dom.x = drag.x - (px - drag.px) / dom.scale; dom.y = drag.y + (py - drag.py) / dom.scale; }
+  syncInputs(); render();
+});
+const stop = () => { drag = null; };
+dom.cvs.addEventListener('pointerup', stop); dom.cvs.addEventListener('pointercancel', stop);
+
+// range: drag pans (and turns auto-fit off); wheel zooms
+let pan = null;
+ran.cvs.addEventListener('pointerdown', e => { const [px, py] = pos(ran, e); pan = { px, py, x: ran.x, y: ran.y }; ran.cvs.setPointerCapture(e.pointerId); });
+ran.cvs.addEventListener('pointermove', e => {
+  if (!pan) return;
+  const [px, py] = pos(ran, e);
+  if (S.fit) { S.fit = false; $('fit').checked = false; }
+  ran.x = pan.x - (px - pan.px) / ran.scale; ran.y = pan.y + (py - pan.py) / ran.scale; render();
+});
+ran.cvs.addEventListener('pointerup', () => { pan = null; }); ran.cvs.addEventListener('pointercancel', () => { pan = null; });
+
+function wheel(v) {
+  return e => {
+    e.preventDefault();
+    const [px, py] = pos(v, e), before = v.toZ(px, py);
+    v.half = Math.min(1e4, Math.max(1e-3, v.half * Math.exp(e.deltaY * 0.0015)));
+    if (v === ran && S.fit) { S.fit = false; $('fit').checked = false; }
+    setup(v);
+    const after = v.toZ(px, py);                   // keep the point under the cursor fixed
+    v.x += before.re - after.re; v.y += before.im - after.im;
+    render();
+  };
+}
+dom.cvs.addEventListener('wheel', wheel(dom), { passive: false });
+ran.cvs.addEventListener('wheel', wheel(ran), { passive: false });
+
+new ResizeObserver(render).observe(dom.cvs);
+new ResizeObserver(render).observe(ran.cvs);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+syncInputs(); render();
+})();
+</script>
+</html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8. Dual norms and polar balls | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1fr 1.1fr 1.1fr; } }
+#cvG { height: 190px; touch-action: pan-y; cursor: ew-resize; } #cvBars { height: 250px; touch-action: none; cursor: ns-resize; }
+#cvDual, #cvPrim { aspect-ratio: 1 / 1; height: auto; max-width: 440px; margin: 0 auto; touch-action: none; cursor: grab; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); opacity: .35; } .legend i.sq.k { background: var(--ink); opacity: .3; }
+.legend i.dot { width: .75rem; height: .75rem; border: 0; border-radius: 50%; background: var(--ink); } .legend i.dot.c { background: var(--accent); }
+.legend i.thin { border-top-width: 1.5px; }
+.controls .btn { align-self: end; } .controls .btn button { width: 100%; }
+.check { display: flex; gap: .45rem; align-items: center; font-size: .95rem; } .check input { accent-color: var(--crimson); width: 1.05rem; height: 1.05rem; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Section 2.4</span>
+    </div>
+    <div class="page-number" aria-hidden="true">8</div>
+    <div>
+      <h1>Every ball has a polar twin</h1>
+      <p>The size of a functional is the most it can extract from the unit ball. Measure every functional that way and their unit ball appears: corners where the first ball had faces, faces where it had corners, and ℓ<sup>q</sup> where it was ℓ<sup>p</sup>.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>Page 7 borrowed the dual ball without explanation. Here it is built. Drag the functional $F$ in either plane, and slide the point $x$ around the unit sphere to hunt for the largest value of $F(x)$. That largest value is $\|F\|$, and the set of $F$ for which it is at most $1$ is the polar ball.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>The unit ball of X</legend>
+        <div class="chips">
+          <input type="radio" name="kind" id="k-lp" value="lp" checked><label for="k-lp">The ℓ<sup>p</sup> family</label>
+          <input type="radio" name="kind" id="k-hex" value="hex"><label for="k-hex">A hexagon you shape</label>
+        </div>
+      </fieldset>
+      <div class="slider big lp"><label for="sQ">Exponent p</label><output id="oP">1</output><input type="range" id="sQ" min="0" max="1" step="0.005" value="1"></div>
+      <div class="slider lp"><label for="sA">Stretch</label><output id="oA">1.00</output><input type="range" id="sA" min="0.6" max="1.6" step="0.01" value="1"></div>
+      <div class="slider lp"><label for="sTh">Tilt</label><output id="oTh">0°</output><input type="range" id="sTh" min="-45" max="45" step="1" value="0"></div>
+      <div class="slider"><label for="sT">Position of x on the sphere</label><output id="oT">40°</output><input type="range" id="sT" min="0" max="360" step="0.5" value="40"></div>
+      <div class="slider btn"><button type="button" class="plain" id="slide">Slide x to the maximizer</button></div>
+      <div class="slider" style="align-self:end"><label class="check" style="grid-column:1/-1"><input type="checkbox" id="ghost"> Overlay the other ball, dashed</label></div>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">The value F(x) as x travels once around the unit sphere of X.</p>
+        <canvas id="cvG" aria-label="Plot of F of x as x goes around the unit sphere"></canvas>
+        <ul class="legend"><li><i></i>F(x)</li><li><i class="c"></i>the ceiling ‖F‖</li><li><i class="dot c"></i>your x</li></ul>
+        <p class="cap">A sharp peak is a unique maximizer. A flat top is a whole face of maximizers. Drag here to move x.</p>
+        <p class="sub" style="margin-top:1rem">The same search in ℝ⁸, for the pair ℓ<sup>p</sup> and ℓ<sup>q</sup>. Drag the black bars to set F.</p>
+        <canvas id="cvBars" aria-label="Bars of a functional F in eight dimensions and of its maximizer x star"></canvas>
+        <ul class="legend"><li><i class="sq k" style="opacity:1"></i>F ∈ ℓ<sup>q</sup></li><li><i class="sq" style="opacity:1"></i>x* with ‖x*‖<sub>p</sub> = 1 and F(x*) = ‖F‖<sub>q</sub></li></ul>
+        <p class="cap" id="capBars"></p>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">The plane of functionals F = (F₁, F₂), with the polar ball { F : F(x) ≤ 1 on the ball of X }.</p>
+        <canvas id="cvDual" aria-label="The dual plane with the polar ball and the functional F"></canvas>
+        <ul class="legend">
+          <li><i class="sq k"></i>unit ball of X′</li><li><i class="dot"></i>F, and F/‖F‖ on the dual sphere</li>
+          <li><i class="c"></i>{ G : G(x*) = 1 }, the maximizer acting as a functional</li><li><i class="g thin"></i>{ G : G(x) = 1 } for your x</li>
+        </ul>
+        <table class="read">
+          <tr><th>F</th><td id="d1">–</td></tr>
+          <tr><th>‖F‖ in X′</th><td id="d2">–</td></tr>
+          <tr><th>dual exponent q</th><td id="d3">–</td></tr>
+          <tr><th>maximizers of F on the ball of X</th><td id="d4" style="white-space:normal">–</td></tr>
+        </table>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub">The plane X with its unit ball. The level line { F = ‖F‖ } is pushed outward until it just touches.</p>
+        <canvas id="cvPrim" aria-label="The primal plane with the unit ball, the functional F, its supporting line and the point x"></canvas>
+        <ul class="legend">
+          <li><i class="sq"></i>unit ball of X</li><li><i></i>F, drawn as an arrow</li><li><i class="c"></i>{ F = ‖F‖ }, touching at x*</li>
+          <li><i class="g thin"></i>{ F = 0 } and { F = −‖F‖ }</li><li><i class="dot c"></i>x, on the sphere</li>
+        </ul>
+        <table class="read">
+          <tr><th>x, with ‖x‖ = 1</th><td id="p1">–</td></tr>
+          <tr><th>F(x)</th><td id="p2">–</td></tr>
+          <tr><th>F(x) / (‖F‖ ‖x‖)</th><td id="p3">–</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Definitions.</span> For a bounded linear functional $F$ on a normed space $X$, $\ \|F\|=\sup\{F(x):\|x\|\le1\}$. The polar of a set $B\subset X$ is $B^\circ=\{F\in X':F(x)\le1\text{ for all }x\in B\}$. The unit ball of $X'$ is the polar of the unit ball of $X$.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem (Hölder, and its case of equality).</span> Let $1\le p\le\infty$ and $\tfrac1p+\tfrac1q=1$. For $x,F\in\mathbb R^n$,
+    $$\Bigl|\sum_iF_ix_i\Bigr|\le\|F\|_q\,\|x\|_p ,$$
+    and for every $F$ there is $x^*$ with $\|x^*\|_p=1$ and $F(x^*)=\|F\|_q$. For $1\lt p\lt\infty$ it is unique: $x^*_i=\operatorname{sign}(F_i)\,|F_i|^{q-1}/\|F\|_q^{\,q-1}$. Consequently the dual of $\ell^p_n$ is $\ell^q_n$, with equal norms.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem (dual spaces of sequences).</span> For $1\le p\lt\infty$, every bounded linear functional on $\ell^p$ has the form $F(x)=\sum_iF_ix_i$ with $(F_i)\in\ell^q$ and $\|F\|=\|(F_i)\|_q$. So $(\ell^p)'=\ell^q$; in particular $(\ell^1)'=\ell^\infty$. Also $(c_0)'=\ell^1$. But $(\ell^\infty)'$ is strictly larger than $\ell^1$.</p>
+    <p><span class="kind">Change of variables.</span> If $\|x\|=\|Ax\|_p$ with $A$ invertible, then $\|F\|=\|A^{-\mathsf T}F\|_q$. Stretching the ball in one direction squeezes the polar ball in that direction.</p>
+  </div>
+  <div class="prose">
+    <p>The argument for $(\ell^p)'=\ell^q$ is the Coordinates panel of page 6 over again: probe $F$ with the unit vectors to find the numbers $F_i=F(e_i)$, then feed $F$ the maximizer of the theorem, truncated to $n$ terms, to show that $\sum_{i\le n}|F_i|^q\le\|F\|^q$ for every $n$. It breaks down at $p=\infty$ because the truncations of a bounded sequence need not converge to it in the $\ell^\infty$ norm. The functionals that escape are produced by the Hahn–Banach theorem, and none of them can be written down.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>The ball that is its own twin</h3>
+      <p>At p = 2 the two balls coincide, the maximizer points along F, and the bars of x* are the bars of F rescaled. This is page 6. Every other p breaks the symmetry.</p>
+      <button type="button" class="plain" data-exp="two">Set up p = 2</button>
+    </div>
+    <div class="exp">
+      <h3>Diamond and square</h3>
+      <p>With p = 1, drag F slowly around. The maximizer sits at one corner of the diamond, then jumps to the next. At the instant of the jump F/‖F‖ is at a corner of the square, and a whole edge of the diamond maximizes.</p>
+      <button type="button" class="plain" data-exp="one">Set up ℓ¹ and ℓ<sup>∞</sup></button>
+    </div>
+    <div class="exp">
+      <h3>Winner takes all, or everyone votes</h3>
+      <p>In ℝ⁸, run p from 1 to ∞. At p = 1 the maximizer spends its whole budget on the largest bar of F. At p = ∞ every coordinate contributes ±1 regardless of size. In between, x* is F raised to the power q − 1.</p>
+      <button type="button" class="plain" data-exp="bars">Set up the ℝ⁸ bars</button>
+    </div>
+    <div class="exp">
+      <h3>Conjugate exponents</h3>
+      <p>p = 4/3 pairs with q = 4. Overlay the other ball: one bulges where the other is pinched, and they cross on the diagonals. Find the p whose ball touches its twin along the axes and along the diagonals.</p>
+      <button type="button" class="plain" data-exp="conj">Set up p = 4/3</button>
+    </div>
+    <div class="exp">
+      <h3>Stretch one, squeeze the other</h3>
+      <p>Stretch and tilt the ball of X. The polar ball tilts the same way and is squeezed along the long axis. A functional has less room to be large where the ball reaches further.</p>
+      <button type="button" class="plain" data-exp="stretch">Set up a stretched ball</button>
+    </div>
+    <div class="exp">
+      <h3>Corners become faces</h3>
+      <p>Drag the three free corners of the hexagon. Each corner v of the ball is a face { F : F(v) = 1 } of the polar ball, and each face of the ball is a corner of the polar. Count both. Make one corner redundant and watch a face of the polar disappear.</p>
+      <button type="button" class="plain" data-exp="hex">Set up the hexagon</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>The polar ball on the screen is computed from the formula $\|A^{-\mathsf T}F\|_q$, and the Function panel checks it against a direct search over the sphere. The two agree, which is Hölder's inequality with its case of equality, in $\mathbb R^2$.</li>
+        <li>The correspondence between corners and faces is exact for polygons: $\|F\|=\max_i|F(v_i)|$ over the corners $v_i$, so the polar ball is cut out by one pair of lines per pair of corners.</li>
+        <li>Taking the polar twice returns the original ball. On the screen you can see it: the gray line $\{G:G(x)=1\}$ supports the polar ball for every $x$ on the sphere. This is consequence (a) of page 7, that $\|x\|=\max\{F(x):\|F\|\le1\}$.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>Two planes that look alike are being kept apart on purpose. $X$ and $X'$ are different spaces, and drawing $F$ as an arrow in the plane of $X$ uses the dot product, which is a convention and not part of the structure. Only at $p=2$ is there a natural identification.</li>
+        <li>In $\mathbb R^n$ the maximum is attained because the ball is compact. In infinite dimensions the supremum defining $\|F\|$ need not be attained. On $c_0$ the functional $F=(2^{-i})$ has $\|F\|=1$ and no maximizer.</li>
+        <li>In $\mathbb R^n$ the double dual is the space itself. For sequence spaces, $(c_0)''=\ell^\infty\ne c_0$ and $(\ell^1)''\supsetneq\ell^1$. Spaces that do equal their double dual are called reflexive, and they are the subject of Chapter 8.</li>
+        <li>At $p=\infty$ the ℝ⁸ bars look as harmless as at any other $p$. The dual of $\ell^\infty$ contains functionals, such as generalized limits, that vanish on every finitely supported sequence. No finite number of bars can display one.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Verify that the $x^*$ of the theorem satisfies $\|x^*\|_p=1$ and $F(x^*)=\|F\|_q$. Describe all maximizers when $p=1$ and when $p=\infty$, and say exactly when the maximizer is unique. Compare with what the laboratory reports in its "maximizers" row.</li>
+    <li>Prove the change-of-variables rule $\|F\|=\|A^{-\mathsf T}F\|_q$. For $A=\operatorname{diag}(a,1/a)$ and $p=2$, both balls are ellipses. Find their semi-axes and check that the product of the two areas does not depend on $a$. Does it depend on $p$? Compute it for $p=1$ and $p=2$.</li>
+    <li>Let $F$ be a bounded linear functional on $\ell^p$, $1\le p\lt\infty$, and put $F_i=F(e_i)$. Using the maximizer of the theorem for $(F_1,\dots,F_n,0,0,\dots)$, show $\sum_{i\le n}|F_i|^q\le\|F\|^q$. Then show $F(x)=\sum F_ix_i$ for all $x\in\ell^p$. Where does the last step use $p\lt\infty$? Which subspace of $\ell^\infty$ would the same argument handle?</li>
+    <li>Let $B$ be the hexagon with corners $\pm v_1,\pm v_2,\pm v_3$. Show that $B^\circ=\{F:|F(v_i)|\le1,\ i=1,2,3\}$ and that $(B^\circ)^\circ=B$. Now let $B$ be any closed, convex, symmetric set with $0$ in its interior. Use the separation theorem of page 7 to prove $(B^\circ)^\circ=B$. What goes wrong if $B$ is not convex? Try the star-shaped balls of page 2 with $p\lt1$: what is their polar?</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="07_hahn_banach_geometry.html">Previous: 7. Hahn–Banach geometry</a>
+  <a href="index.html">Course contents</a>
+  <a href="09.html" id="nextLink">Next page: 9</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   A norm on R^2, its dual norm, and maximizers
+   ------------------------------------------------------------------ */
+const state = { kind: 'lp', q: 1, a: 1, th: 0, F: [1.3, 0.6], t: 40, ghost: false, V: [[1.4, 0.2], [0.6, 1.1], [-0.7, 0.9]], F8: [0.9, -0.55, 0.35, 0.7, -0.2, 0.45, -0.8, 0.15] };
+const pOf = q => (q < 0.004 ? Infinity : 1 / q), conj = p => (p === Infinity ? 1 : p === 1 ? Infinity : p / (p - 1));
+const pn = (z, p) => { const q = z.map(Math.abs), m = Math.max(...q); if (!m) return 0; if (p === Infinity) return m; let S = 0; for (const v of q) S += (v / m) ** p; return m * S ** (1 / p); };
+const rc = () => { const t = state.th * Math.PI / 180; return [Math.cos(t), Math.sin(t)]; };
+const Amap = x => { const [c, s] = rc(); return [state.a * (c * x[0] + s * x[1]), (-s * x[0] + c * x[1]) / state.a]; };          // z = A x
+const Ainv = z => { const [c, s] = rc(), u = [z[0] / state.a, z[1] * state.a]; return [c * u[0] - s * u[1], s * u[0] + c * u[1]]; };
+const AinvT = F => { const [c, s] = rc(); return [(c * F[0] + s * F[1]) / state.a, (-s * F[0] + c * F[1]) * state.a]; };          // w = A^{-T} F
+function hull(P) { const pts = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const p of pts) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 1e-12) lo.pop(); lo.push(p); } for (const p of pts.slice().reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], p) <= 1e-12) up.pop(); up.push(p); } return lo.slice(0, -1).concat(up.slice(0, -1)); }
+const R = {};
+function geometry() {
+  const p = pOf(state.q); let N, Nd, verts = null, dverts = null;
+  if (state.kind === 'hex') {
+    verts = hull(state.V.concat(state.V.map(v => [-v[0], -v[1]]))); dverts = verts.map((v, i) => { const w = verts[(i + 1) % verts.length], n = [w[1] - v[1], v[0] - w[0]], h = n[0] * v[0] + n[1] * v[1]; return [n[0] / h, n[1] / h]; });   // one polar corner per edge
+    N = x => Math.max(...dverts.map(g => g[0] * x[0] + g[1] * x[1])); Nd = F => Math.max(...verts.map(v => F[0] * v[0] + F[1] * v[1]));
+  } else {
+    N = x => pn(Amap(x), p); Nd = F => pn(AinvT(F), conj(p));
+    if (p === 1) { verts = [[1, 0], [0, 1], [-1, 0], [0, -1]].map(Ainv); dverts = [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(w => { const [c, s] = rc(), u = [w[0] * state.a, w[1] / state.a]; return [c * u[0] - s * u[1], s * u[0] + c * u[1]]; }); }
+    if (p === Infinity) { verts = [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(Ainv); dverts = [[1, 0], [0, 1], [-1, 0], [0, -1]].map(w => { const [c, s] = rc(), u = [w[0] * state.a, w[1] / state.a]; return [c * u[0] - s * u[1], s * u[0] + c * u[1]]; }); }
+  }
+  const F = state.F, nF = Nd(F); let maxers;
+  if (verts) { const vals = verts.map(v => F[0] * v[0] + F[1] * v[1]), m = Math.max(...vals); maxers = verts.filter((v, i) => vals[i] >= m - 1e-7 * (1 + Math.abs(m))); }
+  else { const w = AinvT(F), qq = conj(p), nw = pn(w, qq); maxers = nw > 1e-12 ? [Ainv(w.map(v => Math.sign(v) * (Math.abs(v) / nw) ** (qq - 1)))] : []; }
+  const f = state.t * Math.PI / 180, d = [Math.cos(f), Math.sin(f)], nd = N(d), x = [d[0] / nd, d[1] / nd];
+  Object.assign(R, { p, N, Nd, verts, dverts, nF, maxers, x, Fx: F[0] * x[0] + F[1] * x[1] });
+}
+function bars() {
+  const p = R.p, q = conj(p), F = state.F8, nq = pn(F, q); let xs;
+  if (p === 1) { let k = 0; F.forEach((v, i) => { if (Math.abs(v) > Math.abs(F[k])) k = i; }); xs = F.map((v, i) => (i === k ? Math.sign(v) : 0)); }
+  else if (p === Infinity) xs = F.map(v => Math.sign(v)); else xs = F.map(v => (nq > 1e-12 ? Math.sign(v) * (Math.abs(v) / nq) ** (q - 1) : 0));
+  Object.assign(R, { q, nq, xs, pair: F.reduce((s, v, i) => s + v * xs[i], 0), nxs: pn(xs, p) });
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); col.dark = parseInt(col.panel.slice(1, 3), 16) < 128; }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }) {
+  const x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function plane(ctx, F, labels) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; for (let k = Math.ceil(F.xr[0]); k <= F.xr[1]; k++) { ctx.beginPath(); ctx.moveTo(F.X(k) + .5, F.y0); ctx.lineTo(F.X(k) + .5, F.y1); ctx.moveTo(F.x0, F.Y(k) + .5); ctx.lineTo(F.x1, F.Y(k) + .5); ctx.stroke(); }
+  ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.moveTo(F.X(0) + .5, F.y0); ctx.lineTo(F.X(0) + .5, F.y1); ctx.stroke();
+  ctx.fillStyle = col.gray; ctx.font = `italic 13px ${col.font}`; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText(labels[0], F.x1 - 5, F.Y(0) - 3); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(labels[1], F.X(0) + 5, F.y0 + 3); ctx.font = `12px ${col.font}`;
+}
+function drag(cv, start, end) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { if (move && end) end(); move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = (v, d = 3) => (Math.abs(v) < 5e-7 ? '0' : v.toFixed(d)), vec = v => '(' + v.map(q => num(q)).join(', ') + ')';
+const pText = p => (p === Infinity ? '∞' : p >= 10 ? p.toFixed(0) : Math.abs(p - 4 / 3) < 1e-9 ? '4/3' : p.toFixed(2).replace(/\.?0+$/, ''));
+function ballPath(ctx, F, norm, verts) { ctx.beginPath(); if (verts) verts.forEach((v, i) => (i ? ctx.lineTo(F.X(v[0]), F.Y(v[1])) : ctx.moveTo(F.X(v[0]), F.Y(v[1])))); else { const t0 = -state.th * Math.PI / 180; for (let k = 0; k <= 720; k++) { const f = t0 + k * Math.PI / 360, d = [Math.cos(f), Math.sin(f)], s = 1 / norm(d); ctx.lineTo(F.X(s * d[0]), F.Y(s * d[1])); } } ctx.closePath(); }
+function lineWhere(ctx, F, g, value) { const l2 = g[0] * g[0] + g[1] * g[1]; if (l2 < 1e-12) return; const p0 = [g[0] * value / l2, g[1] * value / l2], d = [-g[1], g[0]], L = 12 / Math.sqrt(l2); ctx.beginPath(); ctx.moveTo(F.X(p0[0] - L * d[0]), F.Y(p0[1] - L * d[1])); ctx.lineTo(F.X(p0[0] + L * d[0]), F.Y(p0[1] + L * d[1])); ctx.stroke(); }   // the line { y : <g, y> = value }
+function knob(ctx, F, v, color, name, r = 8) { ctx.beginPath(); ctx.arc(F.X(v[0]), F.Y(v[1]), r, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = col.panel; ctx.stroke(); if (name) { ctx.fillStyle = color; ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(name, F.X(v[0]) + 10, F.Y(v[1]) - 6); ctx.font = `12px ${col.font}`; } }
+function arrow(ctx, F, v, color, lw) { const X0 = F.X(0), Y0 = F.Y(0), X = F.X(v[0]), Y = F.Y(v[1]), a = Math.atan2(Y - Y0, X - X0); ctx.strokeStyle = ctx.fillStyle = color; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(X0, Y0); ctx.lineTo(X, Y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X - 12 * Math.cos(a - .4), Y - 12 * Math.sin(a - .4)); ctx.lineTo(X - 12 * Math.cos(a + .4), Y - 12 * Math.sin(a + .4)); ctx.closePath(); ctx.fill(); }
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {}, VIEW = 2.7;
+function drawPrim() {
+  const { ctx, W, H } = fit($('cvPrim')), F = FR.prim = frame(W, H, [-VIEW, VIEW], [-VIEW, VIEW], { l: 6, r: 6, t: 6, b: 6 }), G = state.F; clip(ctx, F); plane(ctx, F, ['x₁', 'x₂']);
+  ballPath(ctx, F, R.N, R.verts); ctx.globalAlpha = col.dark ? .32 : .18; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.accent; ctx.lineWidth = 2.2; ctx.stroke();
+  if (state.ghost) { ballPath(ctx, F, R.Nd, R.dverts); ctx.setLineDash([5, 4]); ctx.strokeStyle = col.ink; ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]); }
+  ctx.strokeStyle = col.gray; ctx.lineWidth = 1.2; lineWhere(ctx, F, G, 0); lineWhere(ctx, F, G, -R.nF); ctx.strokeStyle = col.accent; ctx.lineWidth = 3; lineWhere(ctx, F, G, R.nF);
+  if (R.maxers.length > 1) { ctx.strokeStyle = col.accent; ctx.lineWidth = 7; ctx.beginPath(); R.maxers.forEach((v, i) => (i ? ctx.lineTo(F.X(v[0]), F.Y(v[1])) : ctx.moveTo(F.X(v[0]), F.Y(v[1])))); ctx.stroke(); }
+  for (const v of R.maxers) { ctx.beginPath(); ctx.arc(F.X(v[0]), F.Y(v[1]), 5.5, 0, 7); ctx.fillStyle = col.panel; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = col.accent; ctx.stroke(); }
+  if (R.maxers.length) { const v = R.maxers[0]; ctx.fillStyle = col.accent; ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('x*', F.X(v[0]) + 9, F.Y(v[1]) + 5); ctx.font = `12px ${col.font}`; }
+  arrow(ctx, F, G, col.ink, 3); knob(ctx, F, G, col.ink, 'F', 6);
+  if (state.kind === 'hex') state.V.forEach((v, i) => knob(ctx, F, v, col.gray, 'v' + '₁₂₃'[i], 7));
+  knob(ctx, F, R.x, col.accent, 'x'); ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function drawDual() {
+  const { ctx, W, H } = fit($('cvDual')), F = FR.dual = frame(W, H, [-VIEW, VIEW], [-VIEW, VIEW], { l: 6, r: 6, t: 6, b: 6 }), G = state.F; clip(ctx, F); plane(ctx, F, ['F₁', 'F₂']);
+  ballPath(ctx, F, R.Nd, R.dverts); ctx.globalAlpha = col.dark ? .35 : .16; ctx.fillStyle = col.ink; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.ink; ctx.lineWidth = 2.2; ctx.stroke();
+  if (state.ghost) { ballPath(ctx, F, R.N, R.verts); ctx.setLineDash([5, 4]); ctx.strokeStyle = col.accent; ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]); }
+  ctx.strokeStyle = col.gray; ctx.lineWidth = 1.3; lineWhere(ctx, F, R.x, 1);
+  ctx.strokeStyle = col.accent; ctx.lineWidth = R.maxers.length > 1 ? 1.8 : 3; for (const v of R.maxers) lineWhere(ctx, F, v, 1);
+  if (R.nF > 1e-9) { const u = [G[0] / R.nF, G[1] / R.nF]; ctx.strokeStyle = col.ink; ctx.lineWidth = 1.2; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(F.X(0), F.Y(0)); ctx.lineTo(F.X(G[0]), F.Y(G[1])); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.arc(F.X(u[0]), F.Y(u[1]), 5.5, 0, 7); ctx.fillStyle = col.panel; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = col.ink; ctx.stroke(); }
+  knob(ctx, F, G, col.ink, 'F'); ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function drawG() {
+  const { ctx, W, H } = fit($('cvG')), m = Math.max(0.3, R.nF) * 1.25, F = FR.g = frame(W, H, [0, 360], [-m, m]), G = state.F;
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0); ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const a of [0, 90, 180, 270, 360]) { const X = Math.round(F.X(a)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(a + '°', clamp(X, F.x0 + 8, F.x1 - 12), F.y1 + 4); }
+  ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0)); ctx.lineTo(F.x1, F.Y(0)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('0', F.x0 - 5, F.Y(0)); ctx.fillStyle = col.accent; ctx.fillText(num(R.nF, 2), F.x0 - 5, F.Y(R.nF));
+  ctx.strokeStyle = col.accent; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(R.nF)); ctx.lineTo(F.x1, F.Y(R.nF)); ctx.stroke();
+  ctx.beginPath(); for (let k = 0; k <= 720; k++) { const f = k * Math.PI / 360, d = [Math.cos(f), Math.sin(f)], s = 1 / R.N(d); ctx.lineTo(F.X(k / 2), F.Y(s * (G[0] * d[0] + G[1] * d[1]))); } ctx.strokeStyle = col.ink; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(F.X(state.t), F.Y(R.Fx), 6, 0, 7); ctx.fillStyle = col.accent; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col.panel; ctx.stroke();
+}
+function drawBars() {
+  const { ctx, W, H } = fit($('cvBars')), n = 8, hh = (H - 16) / 2, rows = [[state.F8, col.ink, 'F', 0], [R.xs, col.accent, 'x*', hh]];
+  rows.forEach(([v, color, name, top], ri) => { const x0 = 40, x1 = W - 8, y0 = top + 8, y1 = top + hh - 6, Y = q => (y0 + y1) / 2 - q * (y1 - y0) / 2 / 1.08, cw = (x1 - x0) / n; if (!ri) FR.bars = { x0, cw, y0, y1, inv: py => clamp(-(py - (y0 + y1) / 2) / ((y1 - y0) / 2 / 1.08), -1, 1) };
+    ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(x0 + .5, y0 + .5, x1 - x0, y1 - y0); ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(x0, Y(0) + .5); ctx.lineTo(x1, Y(0) + .5); ctx.stroke();
+    ctx.fillStyle = color; for (let i = 0; i < n; i++) { const yy = Y(v[i]); ctx.fillRect(x0 + i * cw + cw * .2, Math.min(yy, Y(0)), cw * .6, Math.max(1, Math.abs(yy - Y(0)))); }
+    ctx.fillStyle = col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('1', x0 - 5, Y(1)); ctx.fillText('−1', x0 - 5, Y(-1)); ctx.fillStyle = color; ctx.font = `italic 14px ${col.font}`; ctx.textBaseline = 'top'; ctx.fillText(name, x1 - 6, y0 + 3); ctx.font = `12px ${col.font}`;
+    if (ri) { ctx.fillStyle = col.gray; ctx.textAlign = 'center'; for (let i = 0; i < n; i++) ctx.fillText('i=' + (i + 1), x0 + (i + .5) * cw, y1 + 2); } });
+}
+function readouts() {
+  const p = R.p, q = conj(p), lp = state.kind === 'lp';
+  $('oP').textContent = pText(p); $('oA').textContent = state.a.toFixed(2); $('oTh').textContent = state.th + '°'; $('oT').textContent = state.t.toFixed(1).replace('.0', '') + '°';
+  $('d1').textContent = vec(state.F); $('d2').textContent = num(R.nF); $('d3').textContent = lp ? pText(q) : 'not an ℓᵖ norm';
+  $('d4').textContent = R.maxers.length === 0 ? 'F = 0: every x' : R.maxers.length === 1 ? 'one point, x* = ' + vec(R.maxers[0]) : 'the whole edge from ' + vec(R.maxers[0]) + ' to ' + vec(R.maxers[1]);
+  $('p1').textContent = vec(R.x); $('p2').textContent = num(R.Fx); $('p3').textContent = R.nF > 1e-9 ? num(R.Fx / R.nF) : '–';
+  $('capBars').innerHTML = `p = ${pText(p)}, q = ${pText(q)}. &nbsp; ‖F‖<sub>q</sub> = <b>${num(R.nq)}</b>, &nbsp; F(x*) = <b>${num(R.pair)}</b>, &nbsp; ‖x*‖<sub>p</sub> = <b>${num(R.nxs)}</b>.` + (lp ? '' : ' The bars follow the exponent slider, not the hexagon.');
+  $('eqLive').innerHTML = (lp ? `X = ℓ<sup>${pText(p)}</sup>, &nbsp; X′ = ℓ<sup>${pText(q)}</sup>${state.a !== 1 || state.th !== 0 ? ', both transformed' : ''}.` : 'X has a hexagonal ball with ' + R.verts.length + ' corners. X′ has a ball with ' + R.dverts.length + ' corners.') + ` &nbsp; ‖F‖ = max F(x) over the ball = <b>${num(R.nF)}</b>. &nbsp; At your x, F(x) = <b>${num(R.Fx)}</b>, which is <b>${R.nF > 1e-9 ? (R.Fx / R.nF * 100).toFixed(1) : '0'}%</b> of the maximum.`;
+}
+let pending = false;
+function update() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; geometry(); bars(); drawPrim(); drawDual(); drawG(); drawBars(); readouts(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+function syncUI() { document.querySelector(`input[name=kind][value=${state.kind}]`).checked = true; for (const el of document.querySelectorAll('.controls .lp')) el.style.opacity = state.kind === 'lp' ? 1 : .45; $('sQ').value = state.q; $('sA').value = state.a; $('sTh').value = state.th; $('sT').value = state.t; $('ghost').checked = state.ghost; }
+let anim = 0;
+for (const r of document.querySelectorAll('input[name=kind]')) r.addEventListener('change', () => { anim++; state.kind = r.value; syncUI(); update(); });
+[['sQ', 'q'], ['sA', 'a'], ['sTh', 'th'], ['sT', 't']].forEach(([id, k]) => $(id).addEventListener('input', e => { anim++; state[k] = +e.target.value; if (k === 'q') for (const p of [1, 4 / 3, 1.5, 2, 3, 4]) if (Math.abs(state.q - 1 / p) < 0.011) state.q = 1 / p; update(); }));
+$('ghost').addEventListener('change', e => { state.ghost = e.target.checked; update(); });
+$('slide').addEventListener('click', () => { geometry(); if (!R.maxers.length) return; const m = R.maxers.length > 1 ? [(R.maxers[0][0] + R.maxers[1][0]) / 2, (R.maxers[0][1] + R.maxers[1][1]) / 2] : R.maxers[0]; let target = (Math.atan2(m[1], m[0]) * 180 / Math.PI + 360) % 360; while (target - state.t > 180) target -= 360; while (state.t - target > 180) target += 360;
+  const id = ++anim, from = state.t, t0 = performance.now(), step = t => { if (anim !== id) return; const k = Math.min(1, (t - t0) / 800), e = k * k * (3 - 2 * k); state.t = ((from + (target - from) * e) % 360 + 360) % 360; $('sT').value = state.t; update(); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); });
+const snap = v => { const o = [v[0], v[1]]; for (let i = 0; i < 2; i++) if (Math.abs(o[i]) < 0.05) o[i] = 0; if (Math.abs(Math.abs(o[0]) - Math.abs(o[1])) < 0.05) { const m = (Math.abs(o[0]) + Math.abs(o[1])) / 2; o[0] = Math.sign(o[0]) * m; o[1] = Math.sign(o[1]) * m; } return o; };   // make the axes and diagonals easy to hit
+const setF = (F, qx, qy) => { state.F = snap([clamp(Math.round(F.iX(qx) * 100) / 100, -2.5, 2.5), clamp(Math.round(F.iY(qy) * 100) / 100, -2.5, 2.5)]); update(); };
+drag($('cvDual'), () => { const F = FR.dual; anim++; return F ? (qx, qy) => setF(F, qx, qy) : null; });
+drag($('cvPrim'), (px, py) => { const F = FR.prim; if (!F) return null; anim++; const near = v => Math.hypot(px - F.X(v[0]), py - F.Y(v[1])); const c = [['F', near(state.F)], ['x', near(R.x)]]; if (state.kind === 'hex') state.V.forEach((v, i) => c.push([i, near(v)])); c.sort((a, b) => a[1] - b[1]); if (c[0][1] > 30) return null; const k = c[0][0];
+  if (k === 'F') return (qx, qy) => setF(F, qx, qy); if (k === 'x') return (qx, qy) => { state.t = (Math.atan2(F.iY(qy), F.iX(qx)) * 180 / Math.PI + 360) % 360; $('sT').value = state.t; update(); };
+  return (qx, qy) => { const v = [clamp(F.iX(qx), -2.3, 2.3), clamp(F.iY(qy), -2.3, 2.3)]; if (Math.hypot(...v) > 0.3) { state.V[k] = v; update(); } }; });
+drag($('cvG'), () => { const F = FR.g; anim++; return F ? qx => { state.t = clamp(F.iX(qx), 0, 360); $('sT').value = state.t; update(); } : null; });
+drag($('cvBars'), (px, py) => { const B = FR.bars; if (!B || py > B.y1 + 4) return null; return (qx, qy) => { const i = clamp(Math.floor((qx - B.x0) / B.cw), 0, 7); state.F8[i] = Math.round(B.inv(qy) * 50) / 50; update(); }; });
+
+const EXP = { two: { kind: 'lp', q: 0.5, a: 1, th: 0, F: [1.3, 0.6], t: 100, ghost: true }, one: { kind: 'lp', q: 1, a: 1, th: 0, F: [1.4, 0.5], t: 60, ghost: false }, bars: { kind: 'lp', q: 1, a: 1, th: 0, F: [1.0, 0.7], t: 40, ghost: false },
+  conj: { kind: 'lp', q: 0.75, a: 1, th: 0, F: [1.2, 0.9], t: 20, ghost: true }, stretch: { kind: 'lp', q: 0.5, a: 1.5, th: 25, F: [0.8, 1.0], t: 150, ghost: false }, hex: { kind: 'hex', F: [1.0, 0.9], t: 200, ghost: false, V: [[1.4, 0.2], [0.6, 1.1], [-0.7, 0.9]] } };
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => { anim++; Object.assign(state, JSON.parse(JSON.stringify(EXP[b.dataset.exp]))); syncUI(); update(); $('lab').scrollIntoView({ block: 'start' }); $(state.kind === 'lp' ? 'sQ' : 'sT').focus({ preventScroll: true }); });
+
+const recolor = () => { readColors(); update(); };
+readColors(); syncUI(); update();
+new ResizeObserver(update).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
+})();
+</script>
+</body>
+</html>

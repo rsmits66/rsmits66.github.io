@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conjugate Gradient Method — Worked Example (N=8, n=4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    macros: {
+      R: "{\\mathbb{R}}",
+      K: "{\\mathcal{K}}",
+      inner: ["{\\langle #1, #2 \\rangle}", 2]
+    }
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --crimson:        #9E1B32;
+    --crimson-deep:   #6b0f20;
+    --crimson-soft:   rgba(158,27,50,0.08);
+    --crimson-tint:   rgba(158,27,50,0.04);
+    --cream:          #f6efdf;
+    --cream-2:        #efe6d0;
+    --paper:          #ffffff;
+    --ink:            #1c1713;
+    --ink-2:          #554a3e;
+    --ink-3:          #8a7e6c;
+    --line:           #d9cfb6;
+    --line-2:         #bfb298;
+    --gold:           #a4822c;
+    --gold-soft:      rgba(164,130,44,0.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Crimson Pro","Crimson Text","Iowan Old Style",Georgia,serif;
+    font-weight: 400;
+    background:
+      radial-gradient(1100px 600px at 100% 0%, rgba(158,27,50,0.035), transparent 55%),
+      radial-gradient(900px 500px at 0% 35%, rgba(164,130,44,0.028), transparent 60%),
+      #ffffff;
+    color: var(--ink);
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5em 1.4em 5em;
+    line-height: 1.55;
+    font-size: 19px;
+    letter-spacing: 0.003em;
+    min-height: 100vh;
+  }
+  /* paper grain removed for white background */
+  h1 {
+    font-family: "Playfair Display", "Crimson Pro", Georgia, serif;
+    font-weight: 900;
+    font-size: 2.7em;
+    line-height: 1.1;
+    color: var(--crimson-deep);
+    margin: 0 0 0.15em;
+    letter-spacing: -0.01em;
+  }
+  h1::after {
+    content: "";
+    display: block;
+    width: 5em;
+    height: 3px;
+    margin-top: 0.4em;
+    background: linear-gradient(to right, var(--crimson) 0%, var(--crimson) 70%, var(--gold) 70%, var(--gold) 100%);
+  }
+  h2 {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 700;
+    font-size: 1.7em;
+    color: var(--crimson-deep);
+    margin: 2.2em 0 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 1px solid var(--line);
+    letter-spacing: -0.005em;
+  }
+  h3 {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: 1.25em;
+    color: var(--crimson);
+    margin-top: 1.6em;
+    margin-bottom: 0.4em;
+  }
+  p { margin: 0.55em 0; }
+  .subtitle {
+    font-family: "Playfair Display", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ink-2);
+    margin: 0.4em 0 0;
+    font-size: 1.15em;
+  }
+  /* Boxed callouts */
+  .theorem, .algorithm, .definition {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--crimson);
+    padding: 1.1em 1.4em;
+    margin: 1.3em 0;
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(108,15,32,0.04), 0 6px 16px -10px rgba(108,15,32,0.18);
+  }
+  .algorithm {
+    border-left-color: var(--gold);
+    background: linear-gradient(180deg, var(--paper) 0%, #f7eed7 100%);
+  }
+  .theorem .label, .algorithm .label, .definition .label {
+    font-family: "Playfair Display", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.78em;
+    letter-spacing: 0.12em;
+    color: var(--crimson);
+    margin-bottom: 0.5em;
+  }
+  .algorithm .label { color: var(--gold); }
+  /* Iteration cards */
+  .iteration {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 1.1em 1.4em;
+    margin: 1.4em 0;
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(108,15,32,0.05), 0 8px 20px -12px rgba(108,15,32,0.18);
+    position: relative;
+  }
+  .iteration::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right, var(--crimson), var(--crimson) 70%, var(--gold) 70%, var(--gold));
+  }
+  .iteration h3 {
+    margin-top: 0.3em;
+    color: var(--crimson-deep);
+    font-style: normal;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.4em;
+  }
+  /* Matrix display */
+  table.matrix {
+    border-collapse: collapse;
+    margin: 0.7em auto;
+    font-family: "JetBrains Mono","Menlo",monospace;
+    font-size: 0.86em;
+    color: var(--ink);
+  }
+  table.matrix td {
+    padding: 3px 9px;
+    text-align: right;
+    min-width: 32px;
+  }
+  table.matrix.bracketed {
+    border-left: 2px solid var(--crimson-deep);
+    border-right: 2px solid var(--crimson-deep);
+    position: relative;
+  }
+  table.matrix.bracketed::before, table.matrix.bracketed::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    height: 7px;
+    width: 7px;
+    border: 2px solid var(--crimson-deep);
+  }
+  table.matrix.bracketed::before { left: -2px; border-right: none; border-bottom: none; }
+  table.matrix.bracketed::after  { right: -2px; top: auto; bottom: 0; border-left: none; border-top: none; }
+  /* Vectors and inline code-like */
+  .vec {
+    display: inline-block;
+    font-family: "JetBrains Mono","Menlo",monospace;
+    font-size: 0.9em;
+    background: #fff8e6;
+    color: var(--ink);
+    padding: 0.15em 0.55em;
+    border-radius: 2px;
+    border: 1px solid var(--line-2);
+  }
+  /* Small computation strips */
+  .computation {
+    background: var(--cream-2);
+    border: 1px solid var(--line-2);
+    border-left: 3px solid var(--gold);
+    padding: 0.6em 1em;
+    border-radius: 2px;
+    margin: 0.7em 0;
+    font-size: 0.97em;
+  }
+  .scalar {
+    display: inline-block;
+    background: var(--crimson);
+    color: var(--paper);
+    padding: 0.12em 0.6em;
+    border-radius: 2px;
+    font-family: "JetBrains Mono",monospace;
+    font-weight: 600;
+    font-size: 0.88em;
+    letter-spacing: 0.01em;
+  }
+  .label-tag {
+    display: inline-block;
+    background: var(--crimson-deep);
+    color: var(--cream);
+    font-size: 0.7em;
+    font-family: "Playfair Display", Georgia, serif;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0.2em 0.7em;
+    border-radius: 2px;
+    margin-right: 0.5em;
+    vertical-align: middle;
+    font-weight: 700;
+  }
+  .converged {
+    background: var(--paper);
+    border: 2px solid var(--crimson);
+    border-radius: 2px;
+    padding: 1.1em 1.4em;
+    margin: 1.6em 0;
+    text-align: center;
+    font-size: 1.1em;
+    box-shadow: 0 4px 16px -8px rgba(108,15,32,0.3);
+    position: relative;
+  }
+  .converged::before, .converged::after {
+    content: "❧";
+    color: var(--crimson);
+    font-style: italic;
+    margin: 0 0.5em;
+    opacity: 0.6;
+  }
+  .converged strong { color: var(--crimson-deep); }
+  .data-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em 1.2em;
+    align-items: center;
+    margin: 0.45em 0;
+  }
+  .data-row .item-label {
+    font-style: italic;
+    color: var(--ink-2);
+    min-width: 4.5em;
+  }
+  details {
+    margin: 0.8em 0;
+    padding: 0.7em 1em;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+  }
+  details summary {
+    cursor: pointer;
+    font-family: "Playfair Display", Georgia, serif;
+    font-style: italic;
+    font-weight: 600;
+    color: var(--crimson-deep);
+  }
+  details[open] summary { margin-bottom: 0.6em; }
+  ol.algo-steps { padding-left: 1.5em; }
+  ol.algo-steps li { margin: 0.5em 0; }
+  ol.algo-steps li::marker { color: var(--gold); font-weight: 700; }
+  ul li::marker { color: var(--crimson); }
+  .note {
+    font-size: 0.94em;
+    color: var(--ink-2);
+    border-left: 3px solid var(--gold);
+    padding: 0.35em 0.95em;
+    margin: 1em 0;
+    font-style: italic;
+  }
+  /* Figure */
+  .figure {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 1.2em 0.8em 0.8em;
+    margin: 1.4em 0;
+    box-shadow: 0 4px 18px -10px rgba(108,15,32,0.25), 0 1px 0 rgba(108,15,32,0.05);
+    position: relative;
+  }
+  .figure::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right, var(--crimson) 0%, var(--crimson) 50%, var(--gold) 50%, var(--gold) 100%);
+  }
+  .figure svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+  .figure-caption {
+    text-align: center;
+    color: var(--ink-2);
+    font-style: italic;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.95em;
+    margin: 0.7em 1.2em 0.3em;
+    line-height: 1.45;
+  }
+  /* Meaning blocks */
+  .meaning-block {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--crimson);
+    padding: 1em 1.3em;
+    margin: 1.1em 0;
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(108,15,32,0.04);
+  }
+  .meaning-block h3 {
+    margin-top: 0.1em;
+    margin-bottom: 0.5em;
+    color: var(--crimson-deep);
+    font-style: normal;
+  }
+  .meaning-block .formula-line {
+    font-family: "JetBrains Mono","Menlo",monospace;
+    background: var(--cream-2);
+    border: 1px solid var(--line-2);
+    border-left: 3px solid var(--gold);
+    padding: 0.5em 0.8em;
+    margin: 0.5em 0 0.7em;
+    border-radius: 2px;
+    font-size: 0.97em;
+  }
+  /* Summary tables */
+  table.summary-vars {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.97em;
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  table.summary-vars th, table.summary-vars td {
+    padding: 0.65em 0.85em;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  table.summary-vars tr:last-child td { border-bottom: none; }
+  table.summary-vars th {
+    background: var(--crimson-deep);
+    color: var(--cream);
+    font-family: "Playfair Display", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-bottom: none;
+  }
+  table.summary-vars td:first-child {
+    font-family: "JetBrains Mono",monospace;
+    font-weight: 600;
+    width: 4em;
+    text-align: center;
+    background: var(--gold-soft);
+    color: var(--crimson-deep);
+  }
+  table.summary-vars tr:nth-child(even) td {
+    background: rgba(158,27,50,0.025);
+  }
+  table.summary-vars tr:nth-child(even) td:first-child {
+    background: var(--gold-soft);
+  }
+  /* MathJax color tweak */
+  mjx-container { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<h1>The Conjugate Gradient Method</h1>
+<p class="subtitle">Solving $Ax = b$ for symmetric positive&nbsp;definite $A \in \R^{N\times N}$ — with a worked example for $N=8$, $n=4$.</p>
+
+<h2>1. The setting</h2>
+
+<p>We are given a <strong>symmetric positive definite</strong> matrix $A \in \R^{N\times N}$ (i.e. $A^\top = A$ and $\langle Ax,x\rangle_2 > 0$ for $x\neq 0$) and a vector $b \in \R^N$. We want to find $x \in \R^N$ with</p>
+<p>$$ Ax \;=\; b. $$</p>
+
+<p>Because $A$ is SPD, it induces an inner product $\langle u,v\rangle_A := \langle Au,v\rangle_2$ and an associated <em>energy norm</em> $\|x\|_A = \sqrt{\langle x,x\rangle_A}$. The method of conjugate gradients constructs successive approximations $x_n$ that <strong>minimise the error in this $A$-norm</strong> over the affine spaces $x_0 + \K_n(A,b)$, where</p>
+
+<p>$$ \K_n(A,b) \;=\; \mathrm{span}\bigl\{b,\,Ab,\,A^2 b,\,\ldots,\,A^{n-1}b\bigr\} $$</p>
+
+<p>is the $n$th <em>Krylov subspace</em>. Vectors $d_0,d_1,\ldots,d_{n-1}$ are called <em>$A$-conjugate</em> if $\langle Ad_i, d_j\rangle_2 = 0$ for $i\neq j$.</p>
+
+<h2>2. Building $A$-conjugate directions (proof sketch)</h2>
+
+<div class="theorem">
+<div class="label">Theorem (induction step)</div>
+<p>Assume that $d_0 = b,\, d_1,\, \ldots,\, d_{n-1}$ are $A$-conjugate and that
+$$\mathrm{span}\{d_0,\ldots,d_{n-1}\} \;=\; \K_n(A,b).$$
+Since $r_n \in \K_n(A,b)^\perp$, the vectors $d_0, \ldots, d_{n-1},\,-r_n$ are linearly independent whenever $r_n \neq 0$. Performing Gram–Schmidt on this collection with respect to $\langle\cdot,\cdot\rangle_A$ produces</p>
+
+<p>$$
+d_n \;=\; -r_n + \sum_{j=0}^{n-1}\frac{\langle Ar_n,d_j\rangle_2}{\langle Ad_j,d_j\rangle_2}\, d_j
+\;\stackrel{(*)}{=}\; -r_n + \beta_{n-1}\, d_{n-1}.
+$$</p>
+
+<p>The crucial simplification $(*)$ follows from $A\bigl(\K_{n-1}(A,b)\bigr) \subset \K_n(A,b)$ together with $r_n \in \K_n(A,b)^\perp$:
+$$ \langle Ar_n, d_j\rangle_2 \;=\; \langle r_n, Ad_j\rangle_2 \;=\; 0,\qquad j=0,1,\ldots,n-2. $$
+So <em>all but one</em> of the Gram–Schmidt coefficients vanish, leaving a <strong>two-term recursion</strong>. By construction the new vectors are $A$-conjugate and $\mathrm{span}\{d_0,\ldots,d_n\} = \K_{n+1}(A,b)$, closing the induction.</p>
+</div>
+
+<p>This is the structural miracle of CG: although in principle each new direction must be orthogonalised against <em>all</em> previous ones, $A$-conjugacy collapses Gram–Schmidt to a single term, giving an $\mathcal O(N^2)$ per-step cost.</p>
+
+<h2>3. The algorithm</h2>
+
+<div class="algorithm">
+<div class="label">Conjugate Gradient method</div>
+<p><strong>Step 0.</strong> Choose $x_0 \in \R^N$ (typically $x_0 = 0$). Set $r_0 = Ax_0 - b$.</p>
+<p><strong>For</strong> $n = 0, 1, 2, \ldots$:</p>
+<ol class="algo-steps">
+<li>If $r_n = 0$, <strong>stop</strong>; the solution is $x_n$.</li>
+<li>Otherwise, build the search direction
+$$ d_n = \begin{cases} -r_0, & n=0, \\ -r_n + \beta_{n-1}\,d_{n-1}, & n\geq 1, \end{cases}\qquad \beta_{n-1} = \dfrac{\|r_n\|_2^2}{\|r_{n-1}\|_2^2}. $$</li>
+<li>Compute the step length and update:
+$$ \alpha_n = \frac{\|r_n\|_2^2}{\langle Ad_n,\,d_n\rangle_2},\qquad
+   x_{n+1} = x_n + \alpha_n d_n,\qquad
+   r_{n+1} = r_n + \alpha_n A d_n. $$</li>
+</ol>
+<p class="note">Convention used here (matching the text): $r_n = Ax_n - b$, so $r_0 = -b$ when $x_0 = 0$. The method terminates in at most $N$ steps in exact arithmetic.</p>
+</div>
+
+<h2>4. The geometric picture: $\phi$, gradients, and CG as smart descent</h2>
+
+<p>The whole algorithm becomes intuitive once we recognise that solving $Ax = b$ is the same as <em>minimising a quadratic bowl</em>. Define</p>
+<p>$$ \phi(x) \;=\; \tfrac{1}{2}\langle Ax,\,x\rangle_2 \,-\, \langle b,\,x\rangle_2. $$</p>
+<p>Because $A$ is SPD, $\phi$ is strictly convex with a <em>unique</em> minimiser. Differentiating,</p>
+<p>$$ \nabla\phi(x) \;=\; Ax - b. $$</p>
+<p>So the gradient vanishes exactly where $Ax = b$, and the residual is the gradient:</p>
+<p>$$ r_n \;=\; A x_n - b \;=\; \nabla\phi(x_n). $$</p>
+
+<p>The level sets $\{x : \phi(x) = c\}$ are concentric ellipsoids in $\R^N$, all centred at $x_*$. Their shape is governed by the eigenvalues of $A$: long axes correspond to small eigenvalues (shallow directions of $\phi$), short axes to large eigenvalues (steep directions). When the condition number is large, these ellipsoids become highly elongated — and that is precisely when ordinary steepest descent struggles.</p>
+
+<div class="figure">
+<svg viewBox="0 0 820 380" xmlns="http://www.w3.org/2000/svg" font-family="Charter, Georgia, serif">
+  <defs>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9E1B32"/>
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a4822c"/>
+    </marker>
+    <marker id="arr-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a7e6c"/>
+    </marker>
+    <radialGradient id="bowl-shade" cx="50%" cy="80%" r="60%">
+      <stop offset="0%" stop-color="#9E1B32" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#9E1B32" stop-opacity="0.02"/>
+    </radialGradient>
+  </defs>
+
+  <!-- =========== LEFT PANEL: the bowl =========== -->
+  <g transform="translate(20, 0)">
+    <text x="180" y="22" text-anchor="middle" font-style="italic" font-size="14" fill="#554a3e">
+      <tspan font-style="italic">&#981;</tspan>(<tspan font-style="italic">x</tspan>) as a strictly convex bowl
+    </text>
+
+    <!-- Bowl side walls (filled with subtle gradient) -->
+    <path d="M 50 95 Q 90 290, 180 290 Q 270 290, 310 95 Z"
+          fill="url(#bowl-shade)" stroke="none"/>
+
+    <!-- Bowl outline curves (sides) -->
+    <path d="M 50 95 Q 90 290, 180 290" fill="none" stroke="#6b0f20" stroke-width="2"/>
+    <path d="M 310 95 Q 270 290, 180 290" fill="none" stroke="#6b0f20" stroke-width="2"/>
+
+    <!-- Top rim ellipse (the opening) -->
+    <ellipse cx="180" cy="95" rx="130" ry="22" fill="none" stroke="#6b0f20" stroke-width="2"/>
+
+    <!-- Inner depth contours (suggesting concavity) -->
+    <ellipse cx="180" cy="135" rx="110" ry="18" fill="none" stroke="#6b0f20" stroke-width="0.8" opacity="0.45"/>
+    <ellipse cx="180" cy="180" rx="85"  ry="14" fill="none" stroke="#6b0f20" stroke-width="0.8" opacity="0.45"/>
+    <ellipse cx="180" cy="225" rx="55"  ry="9"  fill="none" stroke="#6b0f20" stroke-width="0.8" opacity="0.45"/>
+    <ellipse cx="180" cy="262" rx="25"  ry="4"  fill="none" stroke="#6b0f20" stroke-width="0.8" opacity="0.45"/>
+
+    <!-- Marble at the bottom = x* -->
+    <circle cx="180" cy="276" r="6" fill="#6b0f20"/>
+    <circle cx="178" cy="274" r="2" fill="#fff" opacity="0.6"/>
+    <text x="195" y="282" font-size="14" fill="#6b0f20" font-style="italic">x<tspan baseline-shift="sub" font-size="10" font-style="normal">*</tspan></text>
+
+    <!-- Marble at upper bowl wall = x_0 -->
+    <circle cx="245" cy="148" r="5" fill="#a4822c"/>
+    <circle cx="243" cy="146" r="1.6" fill="#fff" opacity="0.6"/>
+    <text x="255" y="143" font-size="14" fill="#a4822c" font-style="italic">x<tspan baseline-shift="sub" font-size="10" font-style="normal">0</tspan></text>
+
+    <!-- Dashed descent path -->
+    <path d="M 245 148 Q 220 220, 180 274" fill="none" stroke="#a4822c" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.75"/>
+
+    <!-- Caption -->
+    <text x="180" y="335" text-anchor="middle" font-size="12" fill="#554a3e">
+      Solving <tspan font-style="italic">Ax</tspan> = <tspan font-style="italic">b</tspan> &#x21D4; finding the bottom of <tspan font-style="italic">&#981;</tspan>.
+    </text>
+    <text x="180" y="352" text-anchor="middle" font-size="12" fill="#554a3e">
+      The residual <tspan font-style="italic">r</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">n</tspan> = &#8711;<tspan font-style="italic">&#981;</tspan>(<tspan font-style="italic">x</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">n</tspan>) tells you which way is uphill.
+    </text>
+  </g>
+
+  <!-- divider -->
+  <line x1="400" y1="40" x2="400" y2="320" stroke="#bfb298" stroke-width="1"/>
+
+  <!-- =========== RIGHT PANEL: level sets seen from above =========== -->
+  <g transform="translate(420, 0)">
+    <text x="190" y="22" text-anchor="middle" font-style="italic" font-size="14" fill="#554a3e">
+      Level sets {<tspan font-style="italic">&#981;</tspan> = <tspan font-style="italic">c</tspan>} from above (the case <tspan font-style="italic">N</tspan> = 2)
+    </text>
+
+    <!-- Nested ellipses (level sets) -->
+    <g fill="none" stroke="#9E1B32">
+      <ellipse cx="200" cy="200" rx="170" ry="62" stroke-opacity="0.18"/>
+      <ellipse cx="200" cy="200" rx="130" ry="47" stroke-opacity="0.28"/>
+      <ellipse cx="200" cy="200" rx="90"  ry="33" stroke-opacity="0.40"/>
+      <ellipse cx="200" cy="200" rx="50"  ry="18" stroke-opacity="0.55"/>
+    </g>
+
+    <!-- Steepest-descent zigzag (drawn under, faint) -->
+    <polyline points="345,110 280,205 245,160 215,210 205,190 200,202"
+              fill="none" stroke="#8a7e6c" stroke-width="1.1"
+              stroke-dasharray="3,3" opacity="0.55"
+              marker-end="url(#arr-gray)"/>
+    <!-- Steepest descent label (moved into upper region, well inside viewBox) -->
+    <text x="195" y="60" text-anchor="middle" font-size="10.5" fill="#8a7e6c" font-style="italic">
+      steepest descent
+    </text>
+    <text x="195" y="73" text-anchor="middle" font-size="10.5" fill="#8a7e6c" font-style="italic">
+      zigzags forever
+    </text>
+    <!-- thin leader from label down toward the start of the zigzag -->
+    <line x1="240" y1="68" x2="335" y2="105" stroke="#8a7e6c" stroke-width="0.7" stroke-dasharray="2,2" opacity="0.5"/>
+
+    <!-- CG step 1: x_0 -> x_1, with arrow alpha_0 d_0 -->
+    <line x1="345" y1="110" x2="80"  y2="232"
+          stroke="#9E1B32" stroke-width="2.2"
+          marker-end="url(#arr-blue)"/>
+
+    <!-- CG step 2: x_1 -> x_* (= x_2) -->
+    <line x1="80"  y1="232" x2="195" y2="201"
+          stroke="#9E1B32" stroke-width="2.2"
+          marker-end="url(#arr-blue)"/>
+
+    <!-- Perpendicular tick at x_1 showing -r_1 perp d_0 -->
+    <line x1="80" y1="232" x2="91" y2="256"
+          stroke="#a4822c" stroke-width="1.6"
+          stroke-dasharray="3,2"
+          marker-end="url(#arr-orange)"/>
+    <text x="62" y="272" font-size="12" fill="#a4822c" font-style="italic">
+      &#8722;<tspan font-style="italic">r</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">1</tspan>
+    </text>
+
+    <!-- small right-angle marker between -r_1 and d_0 at x_1 -->
+    <path d="M 86 244 L 92 247 L 89 253" fill="none" stroke="#a4822c" stroke-width="1" opacity="0.7"/>
+
+    <!-- x_0 marker -->
+    <circle cx="345" cy="110" r="5" fill="#a4822c"/>
+    <text x="354" y="106" font-size="14" fill="#a4822c" font-style="italic">x<tspan baseline-shift="sub" font-size="10" font-style="normal">0</tspan></text>
+
+    <!-- x_1 marker -->
+    <circle cx="80" cy="232" r="5" fill="#9E1B32"/>
+    <text x="48" y="226" font-size="14" fill="#9E1B32" font-style="italic">x<tspan baseline-shift="sub" font-size="10" font-style="normal">1</tspan></text>
+
+    <!-- x_* marker -->
+    <circle cx="200" cy="200" r="4" fill="#6b0f20"/>
+    <text x="210" y="195" font-size="14" fill="#6b0f20" font-style="italic">x<tspan baseline-shift="sub" font-size="10" font-style="normal">*</tspan></text>
+
+    <!-- Step labels -->
+    <text x="225" y="172" font-size="13" fill="#9E1B32" font-weight="600" font-style="italic">
+      &#945;<tspan baseline-shift="sub" font-size="10" font-style="normal">0</tspan><tspan font-style="italic">d</tspan><tspan baseline-shift="sub" font-size="10" font-style="normal">0</tspan>
+    </text>
+    <text x="125" y="225" font-size="13" fill="#9E1B32" font-weight="600" font-style="italic">
+      &#945;<tspan baseline-shift="sub" font-size="10" font-style="normal">1</tspan><tspan font-style="italic">d</tspan><tspan baseline-shift="sub" font-size="10" font-style="normal">1</tspan>
+    </text>
+
+    <!-- Caption -->
+    <text x="190" y="335" text-anchor="middle" font-size="12" fill="#554a3e">
+      CG hits <tspan font-style="italic">x</tspan><tspan baseline-shift="sub" font-size="9">*</tspan> in &#8804; <tspan font-style="italic">N</tspan> steps. At <tspan font-style="italic">x</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">1</tspan>, the new residual <tspan font-style="italic">r</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">1</tspan> is
+    </text>
+    <text x="190" y="352" text-anchor="middle" font-size="12" fill="#554a3e">
+      &#8869;<tspan baseline-shift="sub" font-size="9">2</tspan> to <tspan font-style="italic">d</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">0</tspan> (line-search optimality), and <tspan font-style="italic">d</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">1</tspan> is <tspan font-style="italic">A</tspan>-conjugate to <tspan font-style="italic">d</tspan><tspan baseline-shift="sub" font-size="9" font-style="italic">0</tspan>.
+    </text>
+  </g>
+</svg>
+<div class="figure-caption">
+  Left: the quadratic $\phi$ as a bowl, with $x_0$ on the wall and $x_*$ at the bottom.
+  Right: a 2D contour view. Compared with steepest descent (gray, zigzagging), CG's
+  $A$-conjugate directions reach $x_*$ in exactly two steps when $N=2$.
+</div>
+</div>
+
+<p>Two facts visible in the right panel are central:</p>
+<ul>
+<li>At $x_1$, the new residual $r_1$ is <strong>$2$-orthogonal to $d_0$</strong>. This is forced by the line-search step: the directional derivative of $\phi$ along $d_0$ vanishes at $x_1$, i.e. $\langle r_1, d_0\rangle_2 = 0$.</li>
+<li>If we naively picked $d_1 = -r_1$ (steepest descent), we'd zigzag through the elongated ellipses — each step perpendicular to the last in the standard inner product, but not aimed at $x_*$. CG instead chooses $d_1$ <strong>$A$-conjugate to $d_0$</strong>, which in the geometry of the level-set ellipsoids is the right notion of "perpendicular" — and aims directly at $x_*$.</li>
+</ul>
+
+<h2>5. Meanings of $r_n$, $\alpha_n$, $\beta_n$</h2>
+
+<div class="meaning-block">
+<h3>$r_n$ — the residual is the gradient of $\phi$</h3>
+<div class="formula-line">$r_n \;=\; A x_n - b \;=\; \nabla\phi(x_n)$</div>
+<p>Literally: how badly the equation $Ax = b$ is currently violated. Geometrically: the steepest-ascent direction of $\phi$ at the current iterate. So $-r_n$ is steepest <em>descent</em>. The norm $\|r_n\|_2$ doubles as a termination criterion — when it hits zero, $x_n = x_*$.</p>
+<p>A key identity that drives the whole algorithm: successive residuals are mutually orthogonal in the standard inner product,
+$$ \langle r_i, r_j\rangle_2 = 0 \qquad (i \neq j), $$
+because $r_n \in \K_n(A,b)^\perp$. This is what makes the eventual formula for $\beta_{n-1}$ collapse so cleanly.</p>
+</div>
+
+<div class="meaning-block">
+<h3>$\alpha_n$ — the optimal step length along $d_n$</h3>
+<div class="formula-line">$\alpha_n \;=\; \dfrac{\|r_n\|_2^2}{\langle Ad_n,\,d_n\rangle_2}$</div>
+<p>Once the search direction $d_n$ is fixed, CG asks: how far should we step? The answer is whatever value of $\alpha$ minimises the one-dimensional quadratic $\alpha \mapsto \phi(x_n + \alpha d_n)$. Setting the derivative to zero gives</p>
+<p>$$ \alpha_n \;=\; -\frac{\langle r_n, d_n\rangle_2}{\langle A d_n, d_n\rangle_2}. $$</p>
+<p>Substituting $d_n = -r_n + \beta_{n-1}d_{n-1}$ and using $\langle r_n, d_{n-1}\rangle_2 = 0$ (line-search optimality from the previous step) collapses the numerator to $-\|r_n\|_2^2$.</p>
+<p>Read it as a ratio: <em>directional slope ÷ directional curvature</em>. That is exactly a one-dimensional Newton step — and since $\phi$ is genuinely quadratic, the Newton step lands on the line minimum in one shot. CG is a first-order method that nonetheless takes Newton-optimal steps inside each Krylov subspace.</p>
+</div>
+
+<div class="meaning-block">
+<h3>$\beta_{n-1}$ — the conjugacy correction (a.k.a. momentum)</h3>
+<div class="formula-line">$\beta_{n-1} \;=\; \dfrac{\|r_n\|_2^2}{\|r_{n-1}\|_2^2}$</div>
+<p>The new direction must point downhill (which $-r_n$ does) <em>and</em> be $A$-conjugate to all previous directions (which $-r_n$ alone does not). The fix is to recycle a fraction of the previous direction:</p>
+<p>$$ d_n \;=\; -r_n \;+\; \beta_{n-1}\, d_{n-1}. $$</p>
+<p>The Gram–Schmidt formula initially gives $\beta_{n-1} = \langle Ar_n, d_{n-1}\rangle_2 / \langle Ad_{n-1}, d_{n-1}\rangle_2$. Using the residual update $r_n - r_{n-1} = \alpha_{n-1} A d_{n-1}$ together with $\langle r_n, r_{n-1}\rangle_2 = 0$ collapses this to the simple ratio of squared residual norms.</p>
+<p>Read it as <em>momentum</em>: $\beta_{n-1}$ is the share of last step's direction to carry forward. When residuals shrink fast, $\beta_{n-1}$ is small and CG mostly heads along the fresh gradient. When progress stalls, $\beta_{n-1}$ approaches $1$ and the method leans on inherited momentum. This is exactly the heavy-ball method — but with the momentum coefficient chosen <em>optimally</em> at every step rather than tuned by hand.</p>
+</div>
+
+<h3>Putting it all together</h3>
+
+<table class="summary-vars">
+  <thead>
+    <tr><th>symbol</th><th>role</th><th>geometric meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>$r_n$</td>
+      <td>residual / gradient of $\phi$ at $x_n$</td>
+      <td>which way is steepest uphill, and how far from optimal we are</td>
+    </tr>
+    <tr>
+      <td>$\alpha_n$</td>
+      <td>optimal step length along $d_n$</td>
+      <td>Newton step in 1D: slope ÷ curvature, lands at the line minimum</td>
+    </tr>
+    <tr>
+      <td>$\beta_{n-1}$</td>
+      <td>conjugacy correction (momentum)</td>
+      <td>how much of $d_{n-1}$ to keep so $d_n$ stays $A$-orthogonal to history</td>
+    </tr>
+    <tr>
+      <td>$d_n$</td>
+      <td>search direction</td>
+      <td>$-\,$gradient $+\,$momentum, mixed so $\phi$ is minimised over all of $\K_{n+1}(A,b)$</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>A single iteration, in plain words:</p>
+<ol>
+<li>Look at the current gradient: $r_n = A x_n - b$.</li>
+<li>Mix it with last step's direction using $\beta_{n-1}$: &nbsp; $d_n = -r_n + \beta_{n-1}\,d_{n-1}$.</li>
+<li>Take a Newton-optimal step of length $\alpha_n$ along $d_n$.</li>
+<li>Update $x_n \to x_{n+1}$, $r_n \to r_{n+1}$, repeat.</li>
+</ol>
+
+<p>The deep fact is that step 2 — even though it only orthogonalises against <em>the previous</em> direction — produces a $d_n$ that is automatically $A$-conjugate to <em>every</em> prior direction. That is the gift symmetry of $A$ gives you, and it is why each Newton-optimal line search along $d_n$ amounts to minimising $\phi$ over the full Krylov subspace $\K_{n+1}(A,b)$ rather than just the line.</p>
+
+<h2>6. Worked example: $N=8$, $n=4$</h2>
+
+<p>We pick the classical SPD matrix — the <strong>1D discrete Laplacian</strong> $A = \mathrm{tridiag}(-1,\,2,\,-1) \in \R^{8\times 8}$, with right-hand side $b = (1,1,\ldots,1)^\top$. This matrix is SPD because $A = L^\top L$ where $L$ is bidiagonal (it is also strictly diagonally dominant on the boundary rows with positive diagonal).</p>
+
+<h3>Setup</h3>
+<div id="setup"></div>
+
+<h3>Iterations</h3>
+<div id="iterations"></div>
+
+<div id="convergence"></div>
+
+<h2>7. Why convergence here is exact in 4 steps</h2>
+
+<p>For this particular $b = (1,\ldots,1)^\top$, the residuals stay in the symmetric-about-the-middle subspace of $\R^8$, which is invariant under $A$ and only $4$-dimensional. Hence the Krylov sequence terminates at $\K_4(A,b)$, and CG — being optimal in the energy norm over $\K_n(A,b)$ — produces the exact solution at step $n=4$.</p>
+
+<p>The exact solution can also be derived from the 1D Poisson finite-difference formula $x_i = \tfrac{i\,(N+1-i)}{2}$, giving $(4,7,9,10,10,9,7,4)^\top$, which matches $x_4$ computed above.</p>
+
+<details>
+<summary>The matrix $A$ and the vector $b$, in full</summary>
+<div id="full-data"></div>
+</details>
+
+<script>
+// ============================================================
+// Worked CG run for the 8x8 1D Laplacian with b = (1,...,1)
+// ============================================================
+const N = 8;
+
+// Build A = tridiag(-1, 2, -1)
+function makeA(N) {
+  const A = Array.from({length: N}, () => Array(N).fill(0));
+  for (let i = 0; i < N; i++) {
+    A[i][i] = 2;
+    if (i > 0)     A[i][i-1] = -1;
+    if (i < N-1)   A[i][i+1] = -1;
+  }
+  return A;
+}
+
+const A = makeA(N);
+const b = Array(N).fill(1);
+
+// linear algebra helpers
+const dot   = (u,v) => u.reduce((s, x, i) => s + x*v[i], 0);
+const matvec= (M,v) => M.map(row => dot(row, v));
+const axpy  = (a,x,y) => x.map((xi,i) => a*xi + y[i]);     // a*x + y
+const scale = (a,x) => x.map(xi => a*xi);
+const neg   = (x) => x.map(xi => -xi);
+const add   = (x,y) => x.map((xi,i) => xi + y[i]);
+const norm2sq = v => dot(v, v);
+
+// formatters
+function fmt(x, d = 4) {
+  if (Math.abs(x) < 1e-12) return "0";
+  if (Number.isInteger(x)) return x.toString();
+  return Number(x.toFixed(d)).toString();
+}
+function fmtVec(v, d = 4) {
+  return "(" + v.map(x => fmt(x,d)).join(",\u00A0") + ")<sup>\u22A4</sup>";
+}
+function vecBox(v, d = 4) {
+  return `<span class="vec">${fmtVec(v,d)}</span>`;
+}
+function matrixHTML(M) {
+  let s = `<table class="matrix bracketed"><tbody>`;
+  for (const row of M) {
+    s += "<tr>" + row.map(x => `<td>${fmt(x,3)}</td>`).join("") + "</tr>";
+  }
+  s += "</tbody></table>";
+  return s;
+}
+
+// ---------- Render setup ----------
+const setupDiv = document.getElementById("setup");
+setupDiv.innerHTML = `
+  <p><strong>$A \\in \\R^{8\\times 8}$:</strong></p>
+  ${matrixHTML(A)}
+  <p><strong>$b$:</strong> ${vecBox(b)}</p>
+  <p><strong>$x_0$:</strong> ${vecBox(Array(N).fill(0))}, &nbsp;
+     <strong>$r_0 = Ax_0 - b$:</strong> ${vecBox(neg(b))}</p>
+`;
+
+// ---------- Run CG, capturing every quantity ----------
+let x = Array(N).fill(0);
+let r = neg(b);                      // r_0 = -b
+const MAX_ITER = 4;
+const log = [];
+let prev_d = null;
+let prev_r_norm_sq = norm2sq(r);
+
+for (let n = 0; n < MAX_ITER; n++) {
+  const r_norm_sq = norm2sq(r);
+  if (r_norm_sq < 1e-20) {
+    log.push({converged: true, n, x: x.slice()});
+    break;
+  }
+
+  // build search direction d_n
+  let d, beta;
+  if (n === 0) {
+    d = neg(r);                      // d_0 = -r_0 = b
+    beta = null;
+  } else {
+    beta = r_norm_sq / prev_r_norm_sq;
+    d = add(neg(r), scale(beta, prev_d));
+  }
+
+  const Ad = matvec(A, d);
+  const dAd = dot(Ad, d);
+  const alpha = r_norm_sq / dAd;
+
+  const x_new = axpy(alpha, d, x);
+  const r_new = axpy(alpha, Ad, r);
+
+  log.push({
+    n, x: x.slice(), r: r.slice(),
+    d, Ad, dAd, alpha, beta,
+    r_norm_sq,
+    x_new: x_new.slice(), r_new: r_new.slice(),
+    r_new_norm_sq: norm2sq(r_new)
+  });
+
+  prev_d = d;
+  prev_r_norm_sq = r_norm_sq;
+  x = x_new;
+  r = r_new;
+}
+
+// ---------- Render iterations ----------
+const itDiv = document.getElementById("iterations");
+let html = "";
+for (const step of log) {
+  if (step.converged) continue;
+  const {n, x, r, d, Ad, dAd, alpha, beta, r_norm_sq, x_new, r_new, r_new_norm_sq} = step;
+
+  html += `<div class="iteration"><h3>Iteration $n = ${n}$</h3>`;
+
+  html += `<div class="data-row"><span class="item-label">$x_${n}$:</span>${vecBox(x)}</div>`;
+  html += `<div class="data-row"><span class="item-label">$r_${n}$:</span>${vecBox(r)} &nbsp; <span class="scalar">$\\|r_${n}\\|_2^2 = ${fmt(r_norm_sq)}$</span></div>`;
+
+  // direction
+  if (n === 0) {
+    html += `<div class="computation"><span class="label-tag">direction</span>
+       $d_0 = -r_0 = $ ${vecBox(d)}</div>`;
+  } else {
+    html += `<div class="computation"><span class="label-tag">β</span>
+       $\\beta_{${n-1}} = \\dfrac{\\|r_${n}\\|_2^2}{\\|r_${n-1}\\|_2^2} = \\dfrac{${fmt(r_norm_sq)}}{${fmt(log[n-1].r_norm_sq)}} = $ <span class="scalar">${fmt(beta)}</span></div>`;
+    html += `<div class="computation"><span class="label-tag">direction</span>
+       $d_${n} = -r_${n} + \\beta_{${n-1}}\\,d_{${n-1}} = $ ${vecBox(d)}</div>`;
+  }
+
+  html += `<div class="data-row"><span class="item-label">$Ad_${n}$:</span>${vecBox(Ad)}</div>`;
+  html += `<div class="data-row"><span class="item-label">$\\langle Ad_${n},d_${n}\\rangle$:</span><span class="scalar">${fmt(dAd)}</span></div>`;
+
+  html += `<div class="computation"><span class="label-tag">step</span>
+       $\\alpha_${n} = \\dfrac{\\|r_${n}\\|_2^2}{\\langle Ad_${n},d_${n}\\rangle_2} = \\dfrac{${fmt(r_norm_sq)}}{${fmt(dAd)}} = $ <span class="scalar">${fmt(alpha)}</span></div>`;
+
+  html += `<div class="computation"><span class="label-tag">update x</span>
+       $x_{${n+1}} = x_${n} + \\alpha_${n}\\,d_${n} = $ ${vecBox(x_new)}</div>`;
+  html += `<div class="computation"><span class="label-tag">update r</span>
+       $r_{${n+1}} = r_${n} + \\alpha_${n}\\,A d_${n} = $ ${vecBox(r_new)} &nbsp;
+       <span class="scalar">$\\|r_{${n+1}}\\|_2^2 = ${fmt(r_new_norm_sq)}$</span></div>`;
+
+  html += `</div>`;
+}
+itDiv.innerHTML = html;
+
+// ---------- Convergence note ----------
+const last = log[log.length - 1];
+const finalX = last.x_new || last.x;
+const finalRsq = last.r_new_norm_sq !== undefined ? last.r_new_norm_sq : 0;
+document.getElementById("convergence").innerHTML = `
+  <div class="converged">
+    After $n = 4$ iterations: $r_4 = 0$ (with $\\|r_4\\|_2^2 = ${fmt(finalRsq)}$). <br>
+    <strong>The exact solution is</strong> $x_4 = $ ${vecBox(finalX)}.
+  </div>
+`;
+
+// ---------- Full data dump ----------
+const fullDiv = document.getElementById("full-data");
+fullDiv.innerHTML = `
+  <p><strong>$A$ (full $8\\times 8$):</strong></p>
+  ${matrixHTML(A)}
+  <p><strong>$b$:</strong> ${vecBox(b)}</p>
+  <p><strong>Exact solution $x = A^{-1}b$:</strong> ${vecBox(finalX)}</p>
+`;
+</script>
+
+</body>
+</html>

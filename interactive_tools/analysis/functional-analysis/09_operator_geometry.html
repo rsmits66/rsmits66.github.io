@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>9. What an operator does to a ball | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1fr 1.1fr 1.2fr; } }
+#cvS { height: 200px; touch-action: pan-y; cursor: ew-resize; } #cvOp { height: 210px; }
+#cvDom, #cvCod { aspect-ratio: 1 / 1; height: auto; margin: 0 auto; touch-action: none; } #cvDom { max-width: 400px; cursor: grab; } #cvCod { max-width: 470px; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); opacity: .35; } .legend i.sq.k { background: var(--ink); opacity: .25; }
+.legend i.dot { width: .75rem; height: .75rem; border: 0; border-radius: 50%; background: var(--ink); } .legend i.dot.c { background: var(--accent); } .legend i.dot.g { background: var(--gray); }
+.legend i.thin { border-top-width: 1.5px; }
+.matrix { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 1.2rem; padding: .7rem .9rem; border-left: 3px solid var(--ink); border-right: 3px solid var(--ink); margin: .2rem 0 1rem; }
+.matrix .slider label { font-family: var(--serif); font-size: .92rem; } .matrix .slider output { font-family: var(--slab); font-size: 1.25rem; color: var(--accent); }
+.verdict { font-family: var(--slab); font-weight: 700; font-size: 1rem; padding: .4rem .7rem; margin: .6rem 0 0; border-left: 5px solid var(--gray); background: var(--mist); }
+.verdict.bad { border-color: var(--crimson); color: var(--accent); }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Section 3.1</span>
+    </div>
+    <div class="page-number" aria-hidden="true">9</div>
+    <div>
+      <h1>What an operator does to a ball</h1>
+      <p>A linear operator is known by the body it makes out of the unit ball. How far that body reaches is the norm. How close it comes to the origin decides whether the operator can be undone.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>Chapter 2 studied maps from a normed space to the scalars. Now the target is another normed space. Set the four entries of $A$, choose a norm on each side, and watch the unit ball of $X$ turn into a body in $Y$. Two numbers summarize it: the largest stretch $\|A\|$ and the smallest stretch $m(A)$.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>A matrix to start from</legend>
+        <div class="chips" id="presets"></div>
+      </fieldset>
+      <div class="slider big"><label for="sP">Norm on X: exponent p</label><output id="oP">2</output><input type="range" id="sP" min="0" max="1" step="0.005" value="0.5"></div>
+      <div class="slider big"><label for="sR">Norm on Y: exponent r</label><output id="oR">2</output><input type="range" id="sR" min="0" max="1" step="0.005" value="0.5"></div>
+      <div class="slider"><label for="sT">Position of x on the unit sphere</label><output id="oT">30°</output><input type="range" id="sT" min="0" max="360" step="0.5" value="30"></div>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">The stretch ‖Ax‖ / ‖x‖ as x goes once around the unit sphere of X.</p>
+        <canvas id="cvS" aria-label="Plot of the stretch factor as x goes around the unit sphere"></canvas>
+        <ul class="legend"><li><i></i>stretch</li><li><i class="c"></i>its maximum, ‖A‖</li><li><i class="g"></i>its minimum, m(A)</li></ul>
+        <p class="cap">Drag here to move x.</p>
+        <p class="sub" style="margin-top:1rem">The same two numbers for operators on functions, tested on e<sub>k</sub> = √2 sin kπx.</p>
+        <div class="mini"><div class="chips" id="opChips"></div></div>
+        <canvas id="cvOp" aria-label="Bars of the stretch of an operator on the sine functions"></canvas>
+        <p class="verdict" id="opVerdict"></p>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">The operator as four numbers, and the space X where x lives. The columns of A are the images of e₁ and e₂.</p>
+        <div class="matrix">
+          <div class="slider"><label for="a11">a₁₁</label><output id="o11"></output><input type="range" id="a11" min="-2" max="2" step="0.05"></div>
+          <div class="slider"><label for="a12">a₁₂</label><output id="o12"></output><input type="range" id="a12" min="-2" max="2" step="0.05"></div>
+          <div class="slider"><label for="a21">a₂₁</label><output id="o21"></output><input type="range" id="a21" min="-2" max="2" step="0.05"></div>
+          <div class="slider"><label for="a22">a₂₂</label><output id="o22"></output><input type="range" id="a22" min="-2" max="2" step="0.05"></div>
+        </div>
+        <canvas id="cvDom" aria-label="The domain X with its unit ball, the point x, and the directions of largest and smallest stretch"></canvas>
+        <ul class="legend">
+          <li><i class="sq k"></i>unit ball of X</li><li><i class="dot"></i>x</li><li><i class="c"></i>most stretched direction</li><li><i class="g"></i>least stretched</li>
+          <li><i style="border-top-width:5px"></i>kernel N(A)</li>
+        </ul>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub">The space Y. The shaded body is the image of the unit ball. It is caught between two balls of Y.</p>
+        <canvas id="cvCod" aria-label="The codomain Y with the image of the unit ball and the balls of radius norm of A and minimum modulus"></canvas>
+        <ul class="legend">
+          <li><i class="sq"></i>A(unit ball)</li><li><i class="c d"></i>ball of radius ‖A‖</li><li><i class="g d"></i>ball of radius m(A)</li><li><i class="dot"></i>Ax</li>
+          <li><i class="g thin"></i>Ae₁, Ae₂</li><li><i style="border-top-width:5px"></i>range R(A), when it is a line</li>
+        </ul>
+        <table class="read" id="readT"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Definitions.</span> A linear operator $A:X\to Y$ between normed spaces is bounded if $\|Ax\|\le M\|x\|$ for some $M$ and all $x$. Its norm and its minimum modulus are
+    $$\|A\|=\sup_{x\ne0}\frac{\|Ax\|}{\|x\|},\qquad m(A)=\inf_{x\ne0}\frac{\|Ax\|}{\|x\|}.$$
+    The null space is $N(A)=\{x:Ax=0\}$ and the range is $R(A)=\{Ax:x\in X\}$. The set $B(X,Y)$ of bounded operators is a normed space, and a Banach space whenever $Y$ is.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem.</span> For a linear operator $A$ the following are equivalent: $A$ is continuous; $A$ is continuous at $0$; $A$ is bounded; $A$ maps the unit ball into some ball.</p>
+    <p><span class="kind">Theorem (bounded below).</span> $m(A)\gt0$ if and only if $A$ is one-to-one and $A^{-1}:R(A)\to X$ is bounded, and then $\|A^{-1}\|=1/m(A)$. If $X$ is a Banach space and $m(A)\gt0$, then $R(A)$ is closed.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Formulas in $\mathbb R^n$.</span> From $\ell^1$ to $\ell^1$, $\|A\|$ is the largest absolute column sum. From $\ell^\infty$ to $\ell^\infty$ it is the largest absolute row sum. From $\ell^2$ to $\ell^2$, $\|A\|=\sigma_1$ and $m(A)=\sigma_n$, the largest and smallest singular values, and the image of the ball is an ellipsoid with semi-axes $\sigma_iu_i=Av_i$.</p>
+  </div>
+  <div class="prose">
+    <p>In the picture, $\|A\|$ is the radius of the smallest ball of $Y$ that contains the image, and $m(A)$ is the radius of the largest ball that the image of the <em>sphere</em> stays outside of. When $A$ is onto, that inner ball lies inside the image of the ball, which is the quantitative content of the open mapping theorem of Section 3.7. The two numbers $\|A\|$ and $m(A)$ will return in every chapter: perturbing $A$ by an operator of norm less than $m(A)$ cannot create a null space, and that is the first stability theorem on the way to Fredholm operators.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>An ellipse and its axes</h3>
+      <p>With Euclidean norms on both sides the image is an ellipse. Its long semi-axis has length ‖A‖ and its short one m(A). Slide x to the crimson direction, then the gray one, and watch Ax reach the two dashed circles.</p>
+      <button type="button" class="plain" data-exp="ellipse">Set up p = r = 2</button>
+    </div>
+    <div class="exp">
+      <h3>The norm is not the largest eigenvalue</h3>
+      <p>The shear has both eigenvalues equal to 1, and it still stretches some vectors by 1.62. It also shrinks others to 0.62. Eigenvalues describe directions that are kept. The norm asks about all directions.</p>
+      <button type="button" class="plain" data-exp="shear">Set up the shear</button>
+    </div>
+    <div class="exp">
+      <h3>A rigid motion that is not rigid</h3>
+      <p>Rotation by 45° has ‖A‖ = m(A) = 1 for the Euclidean norm. Change both exponents to 1. The diamond turns into a square that pokes out of the diamond of Y, and ‖A‖ = √2. Whether an operator is an isometry depends on the norms.</p>
+      <button type="button" class="plain" data-exp="rot">Set up the rotation</button>
+    </div>
+    <div class="exp">
+      <h3>Collapse</h3>
+      <p>Move a₂₂ from 1.1 down to 1. The image flattens, the inner ball shrinks to a point, and at 1 the image is a segment inside the line R(A) while a whole line N(A) is sent to 0. Just before that, the inverse has norm 1/m(A), as large as you please.</p>
+      <button type="button" class="plain" data-exp="collapse">Set up a nearly singular matrix</button>
+    </div>
+    <div class="exp">
+      <h3>Read the norm off the matrix</h3>
+      <p>With p = r = 1 the most stretched direction is always a coordinate axis, and ‖A‖ is the larger column sum. Switch both to ∞: now it is a corner of the square and the larger row sum. Check against the entries.</p>
+      <button type="button" class="plain" data-exp="cols">Set up p = r = 1</button>
+    </div>
+    <div class="exp">
+      <h3>No kernel, and still not bounded below</h3>
+      <p>In the lower Function plot choose integration. No e<sub>k</sub> is sent to 0, but the stretch 1/kπ sinks toward 0. Then choose differentiation, where it climbs without limit. Neither can happen to a matrix.</p>
+      <button type="button" class="plain" data-exp="integ">Set up integration</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>For $p=r=2$ the numbers come from the singular value decomposition and are exact. For $p,r\in\{1,\infty\}$ the maximum is attained at a corner of the ball and is also exact. For other exponents the sphere is searched at 1440 points and refined, which is good to the digits shown.</li>
+        <li>The sandwich is a theorem: the image of the unit sphere lies between the spheres of radius $m(A)$ and $\|A\|$ in $Y$, and touches both.</li>
+        <li>For a square matrix, $m(A)\gt0$, $N(A)=\{0\}$, $R(A)=Y$ and $\det A\ne0$ all say the same thing. The laboratory shows them failing together.</li>
+        <li>In the lower plot the stretches of integration and differentiation on $e_k$ are exactly $\sqrt3/(k\pi)$ and $k\pi$. The trends are formulas, not measurements.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>Every matrix is bounded, and its supremum is attained because the sphere is compact. In infinite dimensions an operator can be unbounded, and a bounded one need not attain its norm.</li>
+        <li>For matrices, one-to-one and bounded below are the same, and both are the same as onto. In infinite dimensions all three separate. Integration is one-to-one with $m=0$. The right shift on $\ell^2$ has $m=1$ and is not onto. Sorting out which combinations can occur, and how stable they are, is Fredholm theory.</li>
+        <li>The image of the closed unit ball is closed and bounded here. In general it need not be closed, and whether its closure is compact is the definition of a compact operator in Chapter 4.</li>
+        <li>The lower plot tests an operator on one sequence of vectors. That gives a lower bound for $\|T\|$ and an upper bound for $m(T)$ and nothing more. For multiplication by $1+x$ the true norm is $2$, and no sine reaches it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Prove that from $\ell^1_n$ to $\ell^1_n$ the norm of $A$ is the largest absolute column sum. (A convex function on the diamond is largest at a corner.) Use page 8 to deduce the row-sum formula for $\ell^\infty_n$ from it. What is $\|A\|$ from $\ell^1_n$ to $\ell^\infty_n$? Check all three in the laboratory.</li>
+    <li>For Euclidean norms show $\|A\|^2$ is the largest eigenvalue of $A^{\mathsf T}A$ and $m(A)^2$ the smallest. For the shear $\begin{pmatrix}1&1\\0&1\end{pmatrix}$ compute both and their product. Why must the product be $|\det A|$? Give a sequence of matrices with all eigenvalues equal to $1$ and $\|A_n\|\to\infty$.</li>
+    <li>Prove the theorem on operators bounded below, including the closed range. Then let $T$ be integration on $L^2(0,1)$, $Tf(x)=\int_0^xf$. Show $N(T)=\{0\}$, $\|Te_k\|\to0$, and conclude $m(T)=0$. Describe $R(T)$ and show it is dense but not all of $L^2$. Hence $R(T)$ is not closed: no matrix behaves this way.</li>
+    <li>Let $A,B\in B(X,Y)$ with $\|B\|\lt m(A)$. Show that $m(A+B)\ge m(A)-\|B\|\gt0$, so $A+B$ is still one-to-one with closed range. In the laboratory, take the nearly singular matrix and find the smallest change of one entry that creates a kernel. Compare its size with $m(A)$ in the norm you chose. Can a perturbation smaller than $m(A)$ ever create a kernel?</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="08_dual_norms_and_polar_balls.html">Previous: 8. Dual norms and polar balls</a>
+  <a href="index.html">Course contents</a>
+  <a href="10.html" id="nextLink">Next page: 10</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   Norms, the stretch function, and the singular value decomposition
+   ------------------------------------------------------------------ */
+const state = { A: [[1.5, 0.5], [0.25, 0.75]], qp: 0.5, qr: 0.5, t: 30, op: 'mult' };
+const pOf = q => (q < 0.004 ? Infinity : 1 / q);
+const pn = (z, p) => { const a = Math.abs(z[0]), b = Math.abs(z[1]), m = Math.max(a, b); if (!m) return 0; if (p === Infinity) return m; return m * ((a / m) ** p + (b / m) ** p) ** (1 / p); };
+const mul = (A, x) => [A[0][0] * x[0] + A[0][1] * x[1], A[1][0] * x[0] + A[1][1] * x[1]];
+const R = {};
+function compute() {
+  const A = state.A, p = pOf(state.qp), r = pOf(state.qr), n = 1440, xs = [], ys = [], st = [];
+  const at = f => { const d = [Math.cos(f), Math.sin(f)], s = 1 / pn(d, p), x = [d[0] * s, d[1] * s], y = mul(A, x); return { x, y, s: pn(y, r) }; };
+  for (let k = 0; k < n; k++) { const q = at(k * 2 * Math.PI / n); xs.push(q.x); ys.push(q.y); st.push(q.s); }
+  let kmax = 0, kmin = 0; st.forEach((s, k) => { if (s > st[kmax]) kmax = k; if (s < st[kmin]) kmin = k; });
+  const refine = (k, sign) => { let lo = (k - 1) * 2 * Math.PI / n, hi = (k + 1) * 2 * Math.PI / n; for (let i = 0; i < 50; i++) { const a = lo + (hi - lo) * 0.382, b = lo + (hi - lo) * 0.618; sign * at(a).s >= sign * at(b).s ? (hi = b) : (lo = a); } const q = at((lo + hi) / 2); return sign * q.s > sign * st[k] ? q : at(k * 2 * Math.PI / n); };
+  let mx = refine(kmax, 1), mn = refine(kmin, -1);
+  const det = A[0][0] * A[1][1] - A[0][1] * A[1][0], fro2 = A.flat().reduce((s, v) => s + v * v, 0), disc = Math.sqrt(Math.max(0, fro2 * fro2 - 4 * det * det)), s1 = Math.sqrt((fro2 + disc) / 2), s2 = Math.sqrt(Math.max(0, (fro2 - disc) / 2));
+  const scale = Math.sqrt(fro2) || 1, singular = Math.abs(det) < 1e-9 * Math.max(1, fro2), zero = fro2 < 1e-18; let ker = null, ran = null;
+  if (singular && !zero) { const r0 = Math.hypot(A[0][0], A[0][1]) >= Math.hypot(A[1][0], A[1][1]) ? A[0] : A[1]; ker = [-r0[1], r0[0]]; const c0 = Math.hypot(A[0][0], A[1][0]) >= Math.hypot(A[0][1], A[1][1]) ? [A[0][0], A[1][0]] : [A[0][1], A[1][1]]; ran = c0; const kn = pn(ker, p); ker = ker.map(v => v / kn); mn = { x: ker, y: [0, 0], s: 0 }; }
+  if (zero) mn = { x: [1, 0], y: [0, 0], s: 0 };
+  const f = state.t * Math.PI / 180, cur = at(f);
+  const euclid = p === 2 && r === 2;                   // Euclidean norms: take the exact singular values
+  Object.assign(R, { p, r, xs, ys, st, mx, mn, det, s1, s2, singular, zero, ker, ran, cur, norm: euclid ? s1 : mx.s, mod: singular ? 0 : euclid ? s2 : mn.s, scale });
+}
+/* operators on functions, tested on sines */
+const Mg = 800, hx = 1 / Mg, xg = Float64Array.from({ length: Mg + 1 }, (_, i) => i * hx), KS = 24;
+const OPS = {
+  mult:  ['Multiply by 1 + x', (e, k) => e.map((v, i) => (1 + xg[i]) * v)],
+  integ: ['Integrate from 0 to x', (e, k) => { const o = new Float64Array(Mg + 1); for (let i = 1; i <= Mg; i++) o[i] = o[i - 1] + hx * (e[i - 1] + e[i]) / 2; return o; }],
+  diff:  ['Differentiate', (e, k) => Float64Array.from(xg, x => Math.SQRT2 * k * Math.PI * Math.cos(k * Math.PI * x))],
+  aver:  ['Project onto constants', (e, k) => { let s = 0; for (let i = 0; i <= Mg; i++) s += (i === 0 || i === Mg ? .5 : 1) * e[i]; return new Float64Array(Mg + 1).fill(s * hx); }]
+};
+const l2 = a => { let s = 0; for (let i = 0; i <= Mg; i++) s += (i === 0 || i === Mg ? .5 : 1) * a[i] * a[i]; return Math.sqrt(s * hx); };
+function opRatios() { const out = []; for (let k = 1; k <= KS; k++) { const e = Float64Array.from(xg, x => Math.SQRT2 * Math.sin(k * Math.PI * x)); out.push(l2(OPS[state.op][1](e, k)) / l2(e)); } return out; }
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); col.dark = parseInt(col.panel.slice(1, 3), 16) < 128; }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }) {
+  const x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function plane(ctx, F, labels) {
+  const step = F.xr[1] > 4.5 ? 2 : 1; ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.fillStyle = col.gray; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  for (let k = Math.ceil(F.xr[0] / step) * step; k <= F.xr[1]; k += step) { ctx.beginPath(); ctx.moveTo(F.X(k) + .5, F.y0); ctx.lineTo(F.X(k) + .5, F.y1); ctx.moveTo(F.x0, F.Y(k) + .5); ctx.lineTo(F.x1, F.Y(k) + .5); ctx.stroke(); if (k) ctx.fillText(String(k), F.X(k) + 3, F.Y(0) + 3); }
+  ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.moveTo(F.X(0) + .5, F.y0); ctx.lineTo(F.X(0) + .5, F.y1); ctx.stroke();
+  ctx.font = `italic 14px ${col.font}`; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText(labels, F.x1 - 6, F.y0 + 5); ctx.font = `12px ${col.font}`;
+}
+function drag(cv, start) { let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } }); cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop); }
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = (v, d = 3) => (Math.abs(v) < 5e-7 ? '0' : Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(d)), vec = v => '(' + v.map(q => num(q, 2)).join(', ') + ')';
+const pText = p => (p === Infinity ? '∞' : p >= 10 ? p.toFixed(0) : p.toFixed(2).replace(/\.?0+$/, ''));
+const pathOf = (ctx, F, pts) => { ctx.beginPath(); pts.forEach((v, i) => (i ? ctx.lineTo(F.X(v[0]), F.Y(v[1])) : ctx.moveTo(F.X(v[0]), F.Y(v[1])))); ctx.closePath(); };
+const ball = (ctx, F, p, rad) => { ctx.beginPath(); for (let k = 0; k <= 720; k++) { const f = k * Math.PI / 360, d = [Math.cos(f), Math.sin(f)], s = rad / pn(d, p); ctx.lineTo(F.X(s * d[0]), F.Y(s * d[1])); } ctx.closePath(); };
+const seg = (ctx, F, a, b) => { ctx.beginPath(); ctx.moveTo(F.X(a[0]), F.Y(a[1])); ctx.lineTo(F.X(b[0]), F.Y(b[1])); ctx.stroke(); };
+function knob(ctx, F, v, color, name, r = 8, open = false) { ctx.beginPath(); ctx.arc(F.X(v[0]), F.Y(v[1]), r, 0, 7); ctx.fillStyle = open ? col.panel : color; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = open ? color : col.panel; ctx.stroke(); if (name) { ctx.fillStyle = color; ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(name, F.X(v[0]) + 10, F.Y(v[1]) - 6); ctx.font = `12px ${col.font}`; } }
+function arrow(ctx, F, v, color, lw) { const X0 = F.X(0), Y0 = F.Y(0), X = F.X(v[0]), Y = F.Y(v[1]), a = Math.atan2(Y - Y0, X - X0); if (Math.hypot(X - X0, Y - Y0) < 4) return; ctx.strokeStyle = ctx.fillStyle = color; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(X0, Y0); ctx.lineTo(X, Y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X - 10 * Math.cos(a - .4), Y - 10 * Math.sin(a - .4)); ctx.lineTo(X - 10 * Math.cos(a + .4), Y - 10 * Math.sin(a + .4)); ctx.closePath(); ctx.fill(); }
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {};
+function drawDom() {
+  const { ctx, W, H } = fit($('cvDom')), V = 1.9, F = FR.dom = frame(W, H, [-V, V], [-V, V], { l: 6, r: 6, t: 6, b: 6 }); clip(ctx, F); plane(ctx, F, 'X');
+  pathOf(ctx, F, R.xs); ctx.globalAlpha = col.dark ? .35 : .15; ctx.fillStyle = col.ink; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.ink; ctx.lineWidth = 2; ctx.stroke();
+  if (R.ker) { ctx.strokeStyle = col.ink; ctx.lineWidth = 5; seg(ctx, F, R.ker.map(v => -4 * v), R.ker.map(v => 4 * v)); }
+  for (const [q, c] of [[R.mn, col.gray], [R.mx, col.accent]]) if (!R.zero) { ctx.strokeStyle = c; ctx.lineWidth = 2.2; seg(ctx, F, q.x.map(v => -v), q.x); knob(ctx, F, q.x, c, '', 5, true); }
+  arrow(ctx, F, R.cur.x, col.ink, 2.5); knob(ctx, F, R.cur.x, col.ink, 'x'); ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function drawCod() {
+  const { ctx, W, H } = fit($('cvCod')); let ext = 1.2; for (const y of R.ys) ext = Math.max(ext, Math.abs(y[0]), Math.abs(y[1])); const rr = R.r === 1 ? R.norm : R.norm; ext = Math.max(ext, rr); const V = Math.ceil(ext * 1.15 * 2) / 2;
+  const F = frame(W, H, [-V, V], [-V, V], { l: 6, r: 6, t: 6, b: 6 }), A = state.A; clip(ctx, F); plane(ctx, F, 'Y');
+  if (R.ran) { ctx.strokeStyle = col.ink; ctx.lineWidth = 1.5; const l = Math.hypot(...R.ran); seg(ctx, F, R.ran.map(v => -9 * v / l), R.ran.map(v => 9 * v / l)); }
+  pathOf(ctx, F, R.ys); ctx.globalAlpha = col.dark ? .4 : .22; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.accent; ctx.lineWidth = R.singular ? 5 : 2.2; ctx.stroke();
+  ctx.setLineDash([6, 4]); ctx.lineWidth = 1.6; if (R.norm > 1e-9) { ball(ctx, F, R.r, R.norm); ctx.strokeStyle = col.accent; ctx.stroke(); } if (R.mod > 1e-9) { ball(ctx, F, R.r, R.mod); ctx.strokeStyle = col.gray; ctx.stroke(); } ctx.setLineDash([]);
+  arrow(ctx, F, [A[0][0], A[1][0]], col.gray, 1.5); arrow(ctx, F, [A[0][1], A[1][1]], col.gray, 1.5); ctx.fillStyle = col.gray; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText('Ae₁', F.X(A[0][0]) + 5, F.Y(A[1][0]) - 3); ctx.fillText('Ae₂', F.X(A[0][1]) + 5, F.Y(A[1][1]) - 3);
+  if (!R.zero) { ctx.strokeStyle = col.accent; ctx.lineWidth = 2.2; seg(ctx, F, R.mx.y.map(v => -v), R.mx.y); knob(ctx, F, R.mx.y, col.accent, '', 5, true); if (!R.singular) { ctx.strokeStyle = col.gray; seg(ctx, F, R.mn.y.map(v => -v), R.mn.y); knob(ctx, F, R.mn.y, col.gray, '', 5, true); } }
+  arrow(ctx, F, R.cur.y, col.ink, 2.5); knob(ctx, F, R.cur.y, col.ink, 'Ax', 7); ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function drawS() {
+  const { ctx, W, H } = fit($('cvS')), top = Math.max(0.5, R.norm) * 1.2, F = FR.s = frame(W, H, [0, 360], [0, top]);
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0); ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const a of [0, 90, 180, 270, 360]) { const X = Math.round(F.X(a)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(a + '°', clamp(X, F.x0 + 8, F.x1 - 12), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('0', F.x0 - 5, F.y1 - 5);
+  for (const [v, c] of [[R.norm, col.accent], [R.mod, col.gray]]) { ctx.strokeStyle = c; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(v)); ctx.lineTo(F.x1, F.Y(v)); ctx.stroke(); ctx.fillStyle = c; ctx.fillText(num(v, 2), F.x0 - 5, clamp(F.Y(v), F.y0 + 6, F.y1 - 16)); }
+  ctx.beginPath(); R.st.forEach((s, k) => ctx.lineTo(F.X(k / 4), F.Y(s))); ctx.lineTo(F.X(360), F.Y(R.st[0])); ctx.strokeStyle = col.ink; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(F.X(state.t), F.Y(R.cur.s), 6, 0, 7); ctx.fillStyle = col.ink; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col.panel; ctx.stroke();
+}
+function drawOp() {
+  const { ctx, W, H } = fit($('cvOp')), rt = opRatios(), lo = -3, hi = 2, F = frame(W, H, [0.3, KS + 0.7], [lo, hi]), lg = v => clamp(Math.log10(Math.max(v, 1e-12)), lo, hi);
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.fillStyle = col.gray; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let e = lo; e <= hi; e++) { const Y = Math.round(F.Y(e)) + .5; ctx.strokeStyle = e === 0 ? col.gray : col.rule; ctx.beginPath(); ctx.moveTo(F.x0, Y); ctx.lineTo(F.x1, Y); ctx.stroke(); ctx.fillText(e === 0 ? '1' : e === 1 ? '10' : e === 2 ? '100' : e === -1 ? '0.1' : e === -2 ? '0.01' : '0.001', F.x0 - 5, clamp(Y, F.y0 + 6, F.y1 - 6)); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const k of [1, 6, 12, 18, 24]) ctx.fillText('k=' + k, F.X(k), F.y1 + 4);
+  const bw = (F.x1 - F.x0) / KS * 0.62; ctx.fillStyle = col.accent; rt.forEach((v, i) => { const Y = F.Y(lg(v)), Y0 = F.Y(0); ctx.fillRect(F.X(i + 1) - bw / 2, Math.min(Y, Y0), bw, Math.max(1.5, Math.abs(Y - Y0))); });
+  const mx = Math.max(...rt), mn = Math.min(...rt), v = $('opVerdict'), bad = state.op === 'diff' || state.op === 'integ' || state.op === 'aver'; v.classList.toggle('bad', bad);
+  v.textContent = state.op === 'mult' ? `Stretches stay between ${num(mn, 2)} and ${num(mx, 2)}: bounded, and bounded below.` : state.op === 'integ' ? `Stretches fall like 1/k, down to ${num(mn, 3)} at k = 24. Bounded, one-to-one, and m(T) = 0.` : state.op === 'diff' ? `Stretches grow like kπ, up to ${num(mx, 1)} at k = 24. Not bounded.` : `Every even k is sent to 0, and the odd ones shrink like 1/k. Bounded, with a huge kernel.`;
+}
+function readouts() {
+  const A = state.A, p = R.p, r = R.r, euclid = p === 2 && r === 2, rows = [];
+  $('oP').textContent = pText(p); $('oR').textContent = pText(r); $('oT').textContent = state.t.toFixed(1).replace('.0', '') + '°'; [['11', 0, 0], ['12', 0, 1], ['21', 1, 0], ['22', 1, 1]].forEach(([k, i, j]) => { $('o' + k).textContent = A[i][j].toFixed(2); });
+  rows.push(['‖A‖, largest stretch', num(R.norm)], ['m(A), smallest stretch', num(R.mod)], ['‖A⁻¹‖ = 1 / m(A)', R.mod > 1e-9 ? num(1 / R.mod) : 'no inverse'], ['most stretched x', vec(R.mx.x)], ['least stretched x', vec(R.mn.x)]);
+  if (euclid) rows.push(['singular values σ₁, σ₂', num(R.s1) + ',  ' + num(R.s2)]);
+  rows.push(['det A', num(R.det)], ['N(A)', R.zero ? 'all of X' : R.ker ? 'the line through ' + vec(R.ker) : '{0}'], ['R(A)', R.zero ? '{0}' : R.ran ? 'the line through ' + vec(R.ran.map(v => v / Math.hypot(...R.ran))) : 'all of Y'], ['‖Ax‖ / ‖x‖ at your x', num(R.cur.s)]);
+  $('readT').innerHTML = rows.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join('');
+  $('eqLive').innerHTML = `A = [ ${A[0].map(v => v.toFixed(2)).join(', ')} ; ${A[1].map(v => v.toFixed(2)).join(', ')} ] &nbsp; from ℓ<sup>${pText(p)}</sup> to ℓ<sup>${pText(r)}</sup>. &nbsp; ‖A‖ = <b>${num(R.norm)}</b>, &nbsp; m(A) = <b>${num(R.mod)}</b>, &nbsp; ${R.singular ? '<b>A is singular.</b>' : 'condition number ‖A‖ ‖A⁻¹‖ = <b>' + num(R.norm / R.mod, 2) + '</b>.'}`;
+}
+let pending = false, opDirty = true;
+function update() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; compute(); drawDom(); drawCod(); drawS(); if (opDirty) { drawOp(); opDirty = false; } readouts(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+const c45 = Math.SQRT1_2;
+const PRE = { general: ['General', [[1.5, 0.5], [0.25, 0.75]]], diag: ['Diagonal', [[1.6, 0], [0, 0.5]]], shear: ['Shear', [[1, 1], [0, 1]]], rot: ['Rotation by 45°', [[c45, -c45], [c45, c45]]], refl: ['Reflection', [[0, 1], [1, 0]]], sing: ['Singular', [[1, 2], [0.5, 1]]], proj: ['Projection', [[1, 0], [0, 0]]] };
+for (const [k, [label]] of Object.entries(PRE)) $('presets').insertAdjacentHTML('beforeend', `<button type="button" class="plain" data-pre="${k}">${label}</button>`);
+for (const [k, [label]] of Object.entries(OPS)) $('opChips').insertAdjacentHTML('beforeend', `<input type="radio" name="op" id="op-${k}" value="${k}"><label for="op-${k}">${label}</label>`);
+function syncUI() { const A = state.A; $('a11').value = A[0][0]; $('a12').value = A[0][1]; $('a21').value = A[1][0]; $('a22').value = A[1][1]; $('sP').value = state.qp; $('sR').value = state.qr; $('sT').value = state.t; document.querySelector(`input[name=op][value=${state.op}]`).checked = true; }
+for (const b of document.querySelectorAll('[data-pre]')) b.addEventListener('click', () => { state.A = PRE[b.dataset.pre][1].map(r => [...r]); syncUI(); update(); });
+for (const r of document.querySelectorAll('input[name=op]')) r.addEventListener('change', () => { state.op = r.value; opDirty = true; update(); });
+[['a11', 0, 0], ['a12', 0, 1], ['a21', 1, 0], ['a22', 1, 1]].forEach(([id, i, j]) => $(id).addEventListener('input', e => { state.A[i][j] = +e.target.value; update(); }));
+const snapQ = q => { for (const p of [1, 1.5, 2, 3, 4]) if (Math.abs(q - 1 / p) < 0.012) return 1 / p; return q; };
+$('sP').addEventListener('input', e => { state.qp = snapQ(+e.target.value); update(); }); $('sR').addEventListener('input', e => { state.qr = snapQ(+e.target.value); update(); }); $('sT').addEventListener('input', e => { state.t = +e.target.value; update(); });
+drag($('cvDom'), () => { const F = FR.dom; return F ? (qx, qy) => { state.t = (Math.atan2(F.iY(qy), F.iX(qx)) * 180 / Math.PI + 360) % 360; $('sT').value = state.t; update(); } : null; });
+drag($('cvS'), () => { const F = FR.s; return F ? qx => { state.t = clamp(F.iX(qx), 0, 360); $('sT').value = state.t; update(); } : null; });
+
+const EXP = { ellipse: { A: PRE.general[1], qp: 0.5, qr: 0.5, t: 30 }, shear: { A: PRE.shear[1], qp: 0.5, qr: 0.5, t: 60 }, rot: { A: PRE.rot[1], qp: 0.5, qr: 0.5, t: 0 }, collapse: { A: [[1, 2], [0.5, 1.1]], qp: 0.5, qr: 0.5, t: 120 }, cols: { A: [[1.2, -0.5], [0.6, 1.0]], qp: 1, qr: 1, t: 20 }, integ: { op: 'integ' } };
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => { const e = JSON.parse(JSON.stringify(EXP[b.dataset.exp])); Object.assign(state, e); opDirty = true; syncUI(); update(); $('lab').scrollIntoView({ block: 'start' }); $(e.op ? 'op-integ' : 'a22').focus({ preventScroll: true }); });
+
+const recolor = () => { readColors(); opDirty = true; update(); };
+readColors(); syncUI(); update();
+new ResizeObserver(() => { opDirty = true; update(); }).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { opDirty = true; update(); });
+})();
+</script>
+</body>
+</html>

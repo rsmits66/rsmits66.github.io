@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>6. The Riesz representation theorem | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1.15fr 1fr 1.25fr; } }
+#cvFn { height: 280px; touch-action: none; } #cvC { height: 200px; } #cvNn { height: 170px; }
+#cv2 { aspect-ratio: 1 / 1; height: auto; max-width: 460px; margin: 0 auto; touch-action: none; }
+#cv3 { aspect-ratio: 1 / 0.9; height: auto; max-width: 460px; margin: .8rem auto 0; touch-action: none; cursor: grab; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); opacity: .35; }
+.legend i.dot { width: .75rem; height: .75rem; border: 0; border-radius: 50%; background: var(--ink); } .legend i.dot.c { background: var(--accent); }
+.legend i.thin { border-top-width: 1.5px; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Section 2.1</span>
+    </div>
+    <div class="page-number" aria-hidden="true">6</div>
+    <div>
+      <h1>Every functional is a vector in disguise</h1>
+      <p>A bounded linear functional on a Hilbert space slices the space into parallel level sets. One vector, perpendicular to all of them, carries everything the functional knows.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>A linear functional eats a vector and returns a number. In the Geometry panel you hold the representing vector $y$ and watch the level sets of $F(x)=\langle x,y\rangle$ follow it. In the other two panels the vectors are functions, the functional arrives as a black box, and the job is to find the $g$ hiding inside it.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>The functional F on L²(0, 1)</legend>
+        <div class="chips" id="FChips"></div>
+      </fieldset>
+      <div class="slider big"><label for="sNe">Grid cells N</label><output id="oN">64</output><input type="range" id="sNe" min="3" max="9" step="1" value="6"></div>
+      <fieldset style="grid-column:auto">
+        <legend>The pencil draws</legend>
+        <div class="chips">
+          <input type="radio" name="target" id="t-f" value="f" checked><label for="t-f">f</label>
+          <input type="radio" name="target" id="t-g" value="g"><label for="t-g">g</label>
+        </div>
+      </fieldset>
+      <div class="slider" style="align-self:end"><button type="button" class="plain" id="maxim" style="grid-column:1/-1">Set f to the maximizer g/‖g‖</button></div>
+      <fieldset style="grid-column:span 2">
+        <legend>Geometry panel shows</legend>
+        <div class="chips">
+          <input type="radio" name="geo" id="geo-r2" value="r2" checked><label for="geo-r2">Free vectors in ℝ²</label>
+          <input type="radio" name="geo" id="geo-r3" value="r3"><label for="geo-r3">Free vectors in ℝ³</label>
+          <input type="radio" name="geo" id="geo-slice" value="slice"><label for="geo-slice">The slice of L² through f and g</label>
+        </div>
+      </fieldset>
+      <div class="slider" id="y3Wrap" hidden><label for="sY3">Third coordinate y₃</label><output id="oY3">0.80</output><input type="range" id="sY3" min="-2" max="2" step="0.05" value="0.8"></div>
+      <div class="slider" id="x3Wrap" hidden><label for="sX3">Third coordinate x₃</label><output id="oX3">1.00</output><input type="range" id="sX3" min="-2" max="2" step="0.05" value="1"></div>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">A test function f, the representer g, and the product whose signed area is F(f).</p>
+        <canvas id="cvFn" aria-label="Graphs of the test function f, the representer g and their product"></canvas>
+        <ul class="legend"><li><i></i>f</li><li><i class="c"></i>g</li><li><i class="sq"></i>f · g, with signed area ⟨f, g⟩</li></ul>
+        <p class="cap" id="capFn"></p>
+        <table class="read">
+          <tr><th>F(f), from the black box</th><td id="f1">–</td></tr>
+          <tr><th>⟨f, g⟩ = ∫ f g</th><td id="f2">–</td></tr>
+          <tr><th>‖F‖ · ‖f‖, the Cauchy–Schwarz ceiling</th><td id="f3">–</td></tr>
+          <tr><th>|F(f)| / (‖F‖ ‖f‖) = cos of the angle</th><td id="f4">–</td></tr>
+        </table>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">Feed the black box the orthonormal cells e<sub>j</sub> one by one. The answers F(e<sub>j</sub>) are the coordinates of g.</p>
+        <canvas id="cvC" aria-label="Bar chart of the numbers F of e j"></canvas>
+        <p class="cap">g = Σ F(e<sub>j</sub>) e<sub>j</sub>, &nbsp; and &nbsp; ‖F‖² = ‖g‖² = Σ F(e<sub>j</sub>)².</p>
+        <canvas id="cvNn" aria-label="Norm of the functional against the number of grid cells"></canvas>
+        <p class="cap">‖F‖ computed on grids of 8 to 512 cells. A level line means a bounded functional on L². A climbing line means there is no g in L² to find.</p>
+        <table class="read">
+          <tr><th>‖F‖ = ‖g‖ at this N</th><td id="c1">–</td></tr>
+          <tr><th>largest single F(e<sub>j</sub>)</th><td id="c2">–</td></tr>
+          <tr><th>growth from N = 8 to N = 512</th><td id="c3">–</td></tr>
+        </table>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub" id="subGeo"></p>
+        <canvas id="cv2" aria-label="Level lines of the functional, its representing vector y and a test vector x"></canvas>
+        <ul class="legend">
+          <li><i class="dot c"></i>y</li><li><i class="dot"></i>x</li><li><i class="c"></i>null space N(F)</li><li><i class="g thin"></i>level sets F = ±1, ±2, …</li>
+          <li><i class="g d"></i>perpendicular from x to N(F)</li>
+        </ul>
+        <canvas id="cv3" hidden aria-label="Level planes of the functional in three dimensions"></canvas>
+        <p class="cap" id="capGeo"></p>
+        <table class="read">
+          <tr><th>F(x) = ⟨x, y⟩</th><td id="g1">–</td></tr>
+          <tr><th>‖F‖ = ‖y‖</th><td id="g2">–</td></tr>
+          <tr><th>distance from x to N(F) = |F(x)| / ‖y‖</th><td id="g3">–</td></tr>
+          <tr><th>z = x − P<sub>N</sub>x</th><td id="g4">–</td></tr>
+          <tr><th>F(z) z / ‖z‖², rebuilt from the proof</th><td id="g5">–</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Definition.</span> A linear functional $F$ on a normed space $X$ is bounded if $|F(x)|\le M\|x\|$ for some $M$ and all $x$. Its norm is $\|F\|=\sup_{\|x\|=1}|F(x)|$. The bounded linear functionals form the dual space $X'$.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem (Riesz representation).</span> Let $H$ be a Hilbert space. For every bounded linear functional $F$ on $H$ there is exactly one $y\in H$ with
+    $$F(x)=\langle x,y\rangle\quad\text{for all }x\in H,\qquad\text{and}\qquad\|F\|=\|y\|.$$</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">The proof in four lines.</span> Let $N=N(F)$. It is a closed subspace because $F$ is bounded. If $N=H$ take $y=0$. Otherwise choose $x_0\notin N$ and drop the perpendicular: $z=x_0-P_Nx_0\ne0$ and $z\perp N$. For any $x$ the vector $F(x)z-F(z)x$ lies in $N$, so it is orthogonal to $z$:
+    $$F(x)\|z\|^2-F(z)\langle x,z\rangle=0,\qquad\text{that is}\qquad F(x)=\Bigl\langle x,\ \frac{F(z)}{\|z\|^2}\,z\Bigr\rangle .$$
+    (For complex scalars replace $F(z)$ by its conjugate.) The norm identity is the Cauchy–Schwarz inequality together with its case of equality, $x=y/\|y\|$.</p>
+  </div>
+  <div class="prose">
+    <p>The one step that is not algebra is the perpendicular. It is the closest-point construction of page 5, applied to a subspace that is closed but infinite-dimensional, and it is where completeness enters. The last two rows of the Geometry readout carry out the proof on your vectors: whatever $x$ you choose off the null space, the rebuilt vector is $y$.</p>
+    <p>The theorem says $H'$ is a copy of $H$. For other spaces the dual is a different space, and finding it is the business of Section 2.4. The point-evaluation functional in the laboratory is a first warning: it is perfectly linear, and on $L^2$ it has no representer at all.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>Long vector, crowded lines</h3>
+      <p>Drag y outward. The level lines stay perpendicular to it and crowd together: the spacing is 1/‖y‖. Drag y around a circle and the whole family turns with it. The picture is the vector, and the vector is the picture.</p>
+      <button type="button" class="plain" data-exp="lines">Set up ℝ²</button>
+    </div>
+    <div class="exp">
+      <h3>Where on the unit circle is F largest?</h3>
+      <p>Drag x around the unit circle and watch F(x). It peaks at ‖y‖, exactly when x points along y, and it is 0 where the circle meets the null space. That is ‖F‖ = ‖y‖.</p>
+      <button type="button" class="plain" data-exp="circle">Set up x on the circle</button>
+    </div>
+    <div class="exp">
+      <h3>Run the proof</h3>
+      <p>Put x anywhere off the null space. The dashed perpendicular z always points along y, and the last readout rebuilds y from z and the single number F(z). Move x across the null space and see what survives.</p>
+      <button type="button" class="plain" data-exp="proof">Set up the perpendicular</button>
+    </div>
+    <div class="exp">
+      <h3>Opening the black box</h3>
+      <p>The functional “average of f over [½, ¾]” is given as a rule, not as an integral against something. Probing it with the cells e<sub>j</sub> draws its representer for you. Predict g before you look.</p>
+      <button type="button" class="plain" data-exp="window">Set up the window average</button>
+    </div>
+    <div class="exp">
+      <h3>A functional with no representer</h3>
+      <p>F(f) = f(½). On every grid there is a g, a single tall cell. Raise N: the cell gets taller, ‖F‖ = √N, and the line in the Coordinates panel climbs without end.</p>
+      <button type="button" class="plain" data-exp="point">Set up point evaluation</button>
+    </div>
+    <div class="exp">
+      <h3>Two functions, drawn as two arrows</h3>
+      <p>The slice view puts g along the horizontal axis and f where it truly lies relative to it. Redraw f to make F(f) = 0 and watch the arrow x land on the null space. Then press the maximizer button.</p>
+      <button type="button" class="plain" data-exp="slice">Set up the slice</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>In $\mathbb R^n$ the theorem is the statement that a linear map to $\mathbb R$ is a row vector. Probing with a basis, $y_j=F(e_j)$, is a complete proof there, and the Coordinates panel carries it out.</li>
+        <li>The slice view is exact. The functions $f$ and $g$ span a plane in $L^2$, the restriction of $F$ to that plane is $\langle\cdot,g\rangle$, and the arrows have their true lengths and angle.</li>
+        <li>The algebra of the proof, $F(x)z-F(z)x\in N$, is checked numerically for every $x$ you drag to. It is an identity, so it cannot fail.</li>
+        <li>For point evaluation the computed norm is exactly $\sqrt N$. That formula, not the plot, shows the functional is unbounded for the $L^2$ norm.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>Boundedness is never in doubt on the screen, because every linear functional on $\mathbb R^N$ is bounded and every subspace is closed. In infinite dimensions an unbounded functional has a null space that is dense, so there is nothing to be perpendicular to, and the proof stops at its first line.</li>
+        <li>The perpendicular from $x_0$ to $N$ exists because $H$ is complete. In an incomplete inner product space, such as $C[0,1]$ with the $L^2$ inner product, there are bounded functionals with no representer in the space: try $F(f)=\int_0^{1/2}f$.</li>
+        <li>A level line for $\|F\|$ against $N$ up to 512 suggests boundedness and does not prove it. The proof is an inequality, $|F(f)|\le\|g\|\,\|f\|$.</li>
+        <li>The null space of $F$ in $L^2$ is a closed hyperplane: infinitely many dimensions with exactly one removed. The line and the plane on the screen get the "one removed" right and the "infinitely many" not at all.</li>
+        <li>The identification $H'\cong H$ is special. Already for $\ell^p$ with $p\ne2$ the representer lives in a different space, $\ell^q$.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Verify that $F(x)z-F(z)x\in N(F)$ for every $x$, and complete the proof of the theorem, including uniqueness of $y$. Show that a linear functional is bounded if and only if its null space is closed. Where does the proof use that $N$ is closed, and where that $H$ is complete?</li>
+    <li>Prove $\|F\|=\|y\|$. In the $\mathbb R^2$ picture, the maximum of $F$ over the round unit ball is attained where a level line is tangent to the circle. Replace the circle by the $\ell^1$ diamond or the $\ell^\infty$ square of page 2. Where is the maximum now, what is $\|F\|$ in terms of $y$, and when is the maximizer not unique?</li>
+    <li>Let $F(f)=f(\tfrac12)$ on continuous functions. Using a spike from page 4, show $\sup\{|F(f)|:\|f\|_2\le1\}=\infty$. Show that on the grid of $N$ cells $\|F\|=\sqrt N$ exactly. Then show that $F$ is bounded for the $H^1$ norm of page 3, so that it has a representer $g$ in $H^1$, and verify that
+    $$g(x)=\frac{\cosh x\,\cosh(1-x_0)}{\sinh1}\ \ (x\le x_0),\qquad g(x)=\frac{\cosh x_0\,\cosh(1-x)}{\sinh1}\ \ (x\ge x_0)$$
+    satisfies $\int_0^1(fg+f'g')=f(x_0)$. Same functional, different Hilbert space, different vector.</li>
+    <li>Show that $F\mapsto y$ is a linear, norm-preserving map of $H'$ onto $H$ for real scalars, and conjugate-linear for complex scalars. Let $K$ be the integral operator of page 1 and fix $x$. Show that $f\mapsto(Kf)(x)$ is a bounded functional on $L^2(a,b)$ and find its representer. What is the matrix of $K$ in the Coordinates panel of page 1, row by row, in these terms?</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="05_fourier_projection.html">Previous: 5. Fourier sums as orthogonal projections</a>
+  <a href="index.html">Course contents</a>
+  <a href="07.html" id="nextLink">Next page: 7</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   Functionals as black boxes on cell arrays of length N
+   ------------------------------------------------------------------ */
+const M = 512;
+const xc = N => Float64Array.from({ length: N }, (_, j) => (j + 0.5) / N);
+let fSketch = Float64Array.from(xc(M), x => 1.1 * Math.sin(Math.PI * x) ** 2 - 0.5 * x), gSketch = Float64Array.from(xc(M), x => 1.3 * Math.exp(-(((x - 0.35) / 0.12) ** 2)));
+const down = (a, N) => { const b = M / N, out = new Float64Array(N); for (let j = 0; j < N; j++) { let s = 0; for (let q = 0; q < b; q++) s += a[j * b + q]; out[j] = s / b; } return out; };
+const FUNC = {
+  custom: ['∫ f g, with g drawn by you', a => { const N = a.length, g = down(gSketch, N); let s = 0; for (let j = 0; j < N; j++) s += a[j] * g[j]; return s / N; }],
+  half:   ['∫ of f over [0, ½]', a => { const N = a.length; let s = 0; for (let j = 0; j < N / 2; j++) s += a[j]; return s / N; }],
+  window: ['Average of f over [½, ¾]', a => { const N = a.length; let s = 0; for (let j = N / 2; j < 3 * N / 4; j++) s += a[j]; return s / (N / 4); }],
+  coef:   ['Sine coefficient √2 ∫ f sin 3πx', a => { const N = a.length; let s = 0; for (let j = 0; j < N; j++) s += a[j] * Math.SQRT2 * Math.sin(3 * Math.PI * (j + .5) / N); return s / N; }],
+  moment: ['First moment ∫ x f', a => { const N = a.length; let s = 0; for (let j = 0; j < N; j++) s += a[j] * (j + .5) / N; return s / N; }],
+  point:  ['Point evaluation f(½)', a => a[a.length / 2]]
+};
+const state = { F: 'window', Ne: 6, target: 'f', geo: 'r2', y: [1.2, 0.8, 0.8], x: [1.5, -0.6, 1.0], yaw: 2.1, pitch: 0.22 };
+const R = {};
+function probe(F, N) { const c = new Float64Array(N), e = new Float64Array(N), s = Math.sqrt(N); for (let j = 0; j < N; j++) { e[j] = s; c[j] = F(e); e[j] = 0; } return c; }   // e_j has cell value 1/sqrt(h) = sqrt(N)
+function compute() {
+  const N = 2 ** state.Ne, F = FUNC[state.F][1], f = down(fSketch, N), c = probe(F, N), g = c.map(v => v * Math.sqrt(N));
+  const ip = (a, b) => { let s = 0; for (let j = 0; j < N; j++) s += a[j] * b[j]; return s / N; };
+  const curve = []; for (let e = 3; e <= 9; e++) { const cc = probe(F, 2 ** e); curve.push(Math.sqrt(cc.reduce((s, v) => s + v * v, 0))); }
+  Object.assign(R, { N, f, g, c, Ff: F(f), fg: ip(f, g), nf: Math.sqrt(ip(f, f)), ng: Math.sqrt(ip(g, g)), curve });
+}
+function vectors() {                                 // the pair (x, y) shown in the Geometry panel
+  if (state.geo === 'slice') { const a = R.ng > 1e-12 ? R.fg / R.ng : 0; return { y: [R.ng, 0, 0], x: [a, Math.sqrt(Math.max(0, R.nf * R.nf - a * a)), 0] }; }
+  const d = state.geo === 'r3' ? 3 : 2; return { y: state.y.map((v, i) => (i < d ? v : 0)), x: state.x.map((v, i) => (i < d ? v : 0)) };
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }) {
+  const x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function axes(ctx, F, xt = [0, 0.5, 1]) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.fillStyle = col.gray; ctx.setLineDash([]); ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of xt) { const X = Math.round(F.X(t)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(String(t), X, F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(F.yr[1].toFixed(1), F.x0 - 5, F.y0 + 6); ctx.fillText(F.yr[0].toFixed(1), F.x0 - 5, F.y1 - 6);
+  if (F.yr[0] < 0 && F.yr[1] > 0) { const Yz = Math.round(F.Y(0)) + .5; ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, Yz); ctx.lineTo(F.x1, Yz); ctx.stroke(); ctx.fillText('0', F.x0 - 5, Yz); }
+}
+function steps(ctx, F, a, color, width) { const N = a.length; clip(ctx, F); ctx.beginPath(); for (let j = 0; j < N; j++) { const Y = Math.max(-1e4, Math.min(1e4, F.Y(a[j]))); ctx.lineTo(F.X(j / N), Y); ctx.lineTo(F.X((j + 1) / N), Y); } ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); ctx.restore(); }
+function drag(cv, start, end) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { if (move && end) end(); move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = (v, d = 4) => (Math.abs(v) < 5e-13 ? '0' : Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(d));
+const vec = (v, d) => '(' + v.slice(0, d).map(q => num(q, 3)).join(', ') + ')';
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', sup = e => (e < 0 ? '⁻' : '') + [...String(Math.abs(e))].map(q => SUP[q]).join('');
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {};
+function drawFn() {
+  const { ctx, W, H } = fit($('cvFn')), { f, g, N } = R, Rg = clamp(1.15 * Math.max(...g.map(Math.abs)), 2.2, 5), F = FR.fn = frame(W, H, [0, 1], [-Rg, Rg]); axes(ctx, F);
+  clip(ctx, F); ctx.globalAlpha = .28; ctx.fillStyle = col.accent; for (let j = 0; j < N; j++) { const Y = Math.max(-1e4, Math.min(1e4, F.Y(f[j] * g[j]))); ctx.fillRect(F.X(j / N), Math.min(Y, F.Y(0)), F.X((j + 1) / N) - F.X(j / N) + .5, Math.abs(Y - F.Y(0))); } ctx.globalAlpha = 1; ctx.restore();
+  steps(ctx, F, g, col.accent, 2.4); steps(ctx, F, f, col.ink, 2.8);
+  const gm = Math.max(...g.map(Math.abs)); if (gm > Rg) { ctx.fillStyle = col.accent; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('↑ g reaches ' + gm.toFixed(0), F.X(0.5), F.y0 + 4); }
+  ctx.fillStyle = state.target === 'f' ? col.ink : col.accent; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.font = `italic 13px ${col.font}`; ctx.fillText('pencil draws ' + state.target, F.x1 - 6, F.y1 - 5);
+}
+function drawC() {
+  const { ctx, W, H } = fit($('cvC')), c = R.c, N = R.N; let mx = 0.05; for (const v of c) mx = Math.max(mx, Math.abs(v)); mx *= 1.12;
+  const F = frame(W, H, [0, 1], [-mx, mx], { l: 40, r: 8, t: 10, b: 20 });
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0); ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.stroke();
+  ctx.fillStyle = col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(mx.toFixed(2), F.x0 - 5, F.y0 + 6); ctx.fillText('0', F.x0 - 5, F.Y(0));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('j = 1', F.x0 + 14, F.y1 + 4); ctx.fillText('j = ' + N, F.x1 - 22, F.y1 + 4);
+  const cw = (F.x1 - F.x0) / N, bw = Math.max(1, cw * (N <= 64 ? 0.7 : 1)); ctx.fillStyle = col.accent;
+  for (let j = 0; j < N; j++) if (Math.abs(c[j]) > 1e-14) { const Y = F.Y(c[j]); ctx.fillRect(F.x0 + j * cw + (cw - bw) / 2, Math.min(Y, F.Y(0)), bw, Math.max(1, Math.abs(Y - F.Y(0)))); }
+}
+function drawNn() {
+  const { ctx, W, H } = fit($('cvNn')), cv = R.curve, lo = Math.floor(Math.log10(Math.max(1e-3, Math.min(...cv))) - .01), hi = Math.max(lo + 2, Math.ceil(Math.log10(Math.max(...cv)) + .01));
+  const F = frame(W, H, [3, 9], [lo, hi], { l: 44, r: 14, t: 10, b: 20 });
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.fillStyle = col.gray; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (let e = 3; e <= 9; e++) { const X = Math.round(F.X(e)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(e === 3 ? 'N=8' : String(2 ** e), clamp(X, F.x0 + 12, F.x1 - 8), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; for (let e = lo; e <= hi; e++) { const Y = Math.round(F.Y(e)) + .5; ctx.beginPath(); ctx.moveTo(F.x0, Y); ctx.lineTo(F.x1, Y); ctx.stroke(); ctx.fillText(e === 0 ? '1' : '10' + sup(e), F.x0 - 5, clamp(Y, F.y0 + 6, F.y1 - 6)); }
+  ctx.beginPath(); cv.forEach((v, i) => ctx.lineTo(F.X(i + 3), F.Y(Math.log10(Math.max(v, 1e-3))))); ctx.strokeStyle = col.accent; ctx.lineWidth = 2.5; ctx.stroke();
+  cv.forEach((v, i) => { ctx.beginPath(); ctx.arc(F.X(i + 3), F.Y(Math.log10(Math.max(v, 1e-3))), i + 3 === state.Ne ? 5.5 : 3, 0, 7); ctx.fillStyle = i + 3 === state.Ne ? col.ink : col.accent; ctx.fill(); });
+}
+function arrow(ctx, P0, P1, color, lw, dash = []) {
+  const a = Math.atan2(P1[1] - P0[1], P1[0] - P0[0]); ctx.strokeStyle = ctx.fillStyle = color; ctx.lineWidth = lw; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(...P0); ctx.lineTo(...P1); ctx.stroke(); ctx.setLineDash([]);
+  if (Math.hypot(P1[0] - P0[0], P1[1] - P0[1]) > 8) { ctx.beginPath(); ctx.moveTo(...P1); ctx.lineTo(P1[0] - 11 * Math.cos(a - .4), P1[1] - 11 * Math.sin(a - .4)); ctx.lineTo(P1[0] - 11 * Math.cos(a + .4), P1[1] - 11 * Math.sin(a + .4)); ctx.closePath(); ctx.fill(); }
+}
+function draw2() {
+  const { ctx, W, H } = fit($('cv2')), { x, y } = vectors(), free = state.geo !== 'slice';
+  const Rv = free ? 3 : Math.max(1.2, 1.35 * Math.max(Math.hypot(...x), Math.hypot(...y))), F = FR.g = frame(W, H, [-Rv, Rv], [-Rv, Rv], { l: 6, r: 6, t: 6, b: 6 }), P = v => [F.X(v[0]), F.Y(v[1])];
+  clip(ctx, F); ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0)); ctx.lineTo(F.x1, F.Y(0)); ctx.moveTo(F.X(0), F.y0); ctx.lineTo(F.X(0), F.y1); ctx.stroke();
+  const ny2 = y[0] * y[0] + y[1] * y[1], ny = Math.sqrt(ny2);
+  if (ny > 1e-6) {
+    const u = [y[0] / ny, y[1] / ny], tdir = [-u[1], u[0]], big = 3 * Rv, cmax = Math.min(60, Math.floor(ny * Rv * 1.5)), stepc = cmax > 24 ? Math.ceil(cmax / 12) : 1;
+    ctx.font = `11px ${col.font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let c = -cmax; c <= cmax; c += 1) { if (c % stepc) continue; const p = [u[0] * c / ny, u[1] * c / ny]; ctx.strokeStyle = c === 0 ? col.accent : col.gray; ctx.lineWidth = c === 0 ? 3 : 1; ctx.globalAlpha = c === 0 ? 1 : .8; ctx.beginPath(); ctx.moveTo(...P([p[0] - tdir[0] * big, p[1] - tdir[1] * big])); ctx.lineTo(...P([p[0] + tdir[0] * big, p[1] + tdir[1] * big])); ctx.stroke();
+      if (c && 1 / ny * stepc * (F.x1 - F.x0) / (2 * Rv) > 16) { const q = P([p[0] + tdir[0] * Rv * 0.78, p[1] + tdir[1] * Rv * 0.78]); ctx.fillStyle = col.panel; ctx.globalAlpha = 1; ctx.fillRect(q[0] - 9, q[1] - 7, 18, 14); ctx.fillStyle = col.gray; ctx.fillText(String(c), q[0], q[1]); } }
+    ctx.globalAlpha = 1;
+  }
+  ctx.strokeStyle = col.ink; ctx.lineWidth = 1.2; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.arc(F.X(0), F.Y(0), (F.x1 - F.x0) / (2 * Rv), 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  if (ny > 1e-6 && state.geo !== 'r3') { const m = [y[0] / ny, y[1] / ny]; ctx.beginPath(); ctx.arc(...P(m), 4.5, 0, 7); ctx.fillStyle = col.panel; ctx.fill(); ctx.strokeStyle = col.accent; ctx.lineWidth = 2; ctx.stroke(); }
+  if (ny > 1e-6 && state.geo !== 'r3') { const Fx = x[0] * y[0] + x[1] * y[1], foot = [x[0] - Fx / ny2 * y[0], x[1] - Fx / ny2 * y[1]]; ctx.strokeStyle = col.gray; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(...P(x)); ctx.lineTo(...P(foot)); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.arc(...P(foot), 3.5, 0, 7); ctx.fillStyle = col.gray; ctx.fill(); }
+  arrow(ctx, P([0, 0]), P(x), col.ink, 3); arrow(ctx, P([0, 0]), P(y), col.accent, 3.5);
+  for (const [v, c, name] of [[x, col.ink, state.geo === 'slice' ? 'x = f' : 'x'], [y, col.accent, state.geo === 'slice' ? 'y = g' : 'y']]) { const p = P(v); if (free) { ctx.beginPath(); ctx.arc(p[0], p[1], 8, 0, 7); ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = col.panel; ctx.stroke(); } ctx.fillStyle = c; ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(name, clamp(p[0] + 10, F.x0, F.x1 - 40), clamp(p[1] - 6, F.y0 + 16, F.y1)); }
+  ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function draw3() {
+  if (state.geo !== 'r3') return; const { ctx, W, H } = fit($('cv3')), { x, y } = vectors(), ny = Math.hypot(...y), Rv = 3.2, sc = Math.min(W, H) / (2 * Rv);
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw), cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+  const cam = v => { const X = v[0] * cy - v[1] * sy, Yd = v[0] * sy + v[1] * cy; return [X, v[2] * cp - Yd * sp, v[2] * sp + Yd * cp]; }, S = v => { const q = cam(v); return [W / 2 + q[0] * sc, H / 2 - q[1] * sc]; };
+  const line = (a, b, color, w, dash = []) => { ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(...S(a)); ctx.lineTo(...S(b)); ctx.stroke(); ctx.setLineDash([]); };
+  [[2.8, 0, 0, 'x₁'], [0, 2.8, 0, 'x₂'], [0, 0, 2.8, 'x₃']].forEach(([a, b, c, l]) => { line([-a, -b, -c], [a, b, c], col.rule, 1); const s = S([a, b, c]); ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(l, s[0] + (s[0] - W / 2) * .07, s[1] + (s[1] - H / 2) * .07); });
+  if (ny > 1e-6) {
+    const u = y.map(v => v / ny), ref = Math.abs(u[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0], cr = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    let t1 = cr(u, ref); const l1 = Math.hypot(...t1); t1 = t1.map(v => v / l1); const t2 = cr(u, t1), s = 1.5, planes = [];
+    for (let c = -3; c <= 3; c++) { const d = c / ny; if (Math.abs(d) > 2.6) continue; const ctr = u.map(v => v * d); planes.push({ c, z: cam(ctr)[2], pts: [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => ctr.map((v, i) => v + s * (a * t1[i] + b * t2[i]))) }); }
+    planes.sort((a, b) => a.z - b.z);
+    for (const p of planes) { ctx.beginPath(); p.pts.forEach((v, i) => { const q = S(v); i ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.closePath(); ctx.globalAlpha = p.c === 0 ? .32 : .13; ctx.fillStyle = p.c === 0 ? col.accent : col.gray; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = p.c === 0 ? col.accent : col.gray; ctx.lineWidth = p.c === 0 ? 2 : 1; ctx.stroke();
+      const q = S(p.pts[2]); ctx.fillStyle = p.c === 0 ? col.accent : col.gray; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('F = ' + p.c, q[0] + 4, q[1]); }
+    const Fx = x.reduce((a, v, i) => a + v * y[i], 0), foot = x.map((v, i) => v - Fx / (ny * ny) * y[i]); line(x, foot, col.gray, 2, [6, 4]); const fs = S(foot); ctx.beginPath(); ctx.arc(fs[0], fs[1], 3.5, 0, 7); ctx.fillStyle = col.gray; ctx.fill();
+  }
+  arrow(ctx, S([0, 0, 0]), S(x), col.ink, 3); arrow(ctx, S([0, 0, 0]), S(y), col.accent, 3.5);
+  ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; let p = S(x); ctx.fillStyle = col.ink; ctx.fillText('x', p[0] + 8, p[1] - 4); p = S(y); ctx.fillStyle = col.accent; ctx.fillText('y', p[0] + 8, p[1] - 4);
+}
+function readouts() {
+  const d = state.geo === 'r3' ? 3 : 2, { x, y } = vectors(), Fx = x.reduce((a, v, i) => a + v * y[i], 0), ny2 = y.reduce((a, v) => a + v * v, 0), ny = Math.sqrt(ny2);
+  const z = ny > 1e-9 ? y.map(v => v * Fx / ny2) : [0, 0, 0], nz2 = z.reduce((a, v) => a + v * v, 0), Fz = z.reduce((a, v, i) => a + v * y[i], 0), rebuilt = nz2 > 1e-18 ? z.map(v => v * Fz / nz2) : null;
+  $('g1').textContent = num(Fx); $('g2').textContent = num(ny); $('g3').textContent = ny > 1e-9 ? num(Math.abs(Fx) / ny) : '–'; $('g4').textContent = vec(z, d); $('g5').textContent = rebuilt ? vec(rebuilt, d) + ' = y' : 'x lies in N(F): choose another x';
+  $('f1').textContent = num(R.Ff, 6); $('f2').textContent = num(R.fg, 6); $('f3').textContent = num(R.ng * R.nf, 6); $('f4').textContent = R.ng * R.nf > 1e-12 ? num(Math.abs(R.Ff) / (R.ng * R.nf)) : '–';
+  $('c1').textContent = num(R.ng); $('c2').textContent = num(Math.max(...R.c.map(Math.abs))); $('c3').textContent = '× ' + (R.curve[6] / Math.max(R.curve[0], 1e-12)).toFixed(2);
+  $('oN').textContent = R.N; $('oY3').textContent = state.y[2].toFixed(2); $('oX3').textContent = state.x[2].toFixed(2);
+  $('subGeo').textContent = state.geo === 'slice' ? 'The plane in L² spanned by g and f, drawn to scale. Here y is g and x is f.' : state.geo === 'r3' ? 'Level planes of F(x) = ⟨x, y⟩ in ℝ³. The square panel is the floor x₃ = 0; drag there to set the first two coordinates.' : 'Level lines of F(x) = ⟨x, y⟩ in ℝ². Drag the tips of y and x.';
+  $('capGeo').textContent = state.geo === 'slice' ? 'The arrows move when you redraw f or g, or change the functional.' : state.geo === 'r3' ? 'Above: the floor x₃ = 0 with the level lines F cuts in it. Below: the level planes, the null space in crimson, and the perpendicular from x. Drag the lower picture to turn it.' : 'The dotted circle is the unit ball. The open dot marks y/‖y‖, where F is largest on it.';
+  $('capFn').textContent = state.F === 'custom' ? 'Drag across the picture to draw with the pencil.' : 'The pencil draws f. To draw g yourself, choose the first functional.';
+  $('eqLive').innerHTML = `F = <b>${FUNC[state.F][0]}</b>, on ${R.N} cells. &nbsp; F(f) = <b>${num(R.Ff)}</b> = ⟨f, g⟩. &nbsp; ‖F‖ = ‖g‖ = <b>${num(R.ng)}</b>. &nbsp; In the Geometry panel, F(x) = <b>${num(Fx)}</b> and ‖y‖ = <b>${num(ny)}</b>.`;
+}
+let pending = false;
+function update() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; compute(); drawFn(); drawC(); drawNn(); draw2(); draw3(); readouts(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+for (const [k, [label]] of Object.entries(FUNC)) $('FChips').insertAdjacentHTML('beforeend', `<input type="radio" name="F" id="F-${k}" value="${k}"><label for="F-${k}">${label}</label>`);
+function syncUI() {
+  for (const k of ['F', 'target', 'geo']) document.querySelector(`input[name=${k}][value=${state[k]}]`).checked = true;
+  $('sNe').value = state.Ne; $('sY3').value = state.y[2]; $('sX3').value = state.x[2]; const r3 = state.geo === 'r3'; $('y3Wrap').hidden = !r3; $('x3Wrap').hidden = !r3; $('cv3').hidden = !r3;
+  $('cv2').style.cursor = state.geo === 'slice' ? 'default' : 'grab'; $('cvFn').style.cursor = 'crosshair';
+}
+for (const name of ['F', 'target', 'geo']) for (const r of document.querySelectorAll(`input[name=${name}]`)) r.addEventListener('change', () => {
+  if (name === 'target' && r.value === 'g' && state.F !== 'custom') { gSketch = upsample(R.g.map(v => clamp(v, -2.1, 2.1))); state.F = 'custom'; }
+  if (name === 'F' && r.value !== 'custom') state.target = 'f'; state[name] = r.value; syncUI(); update(); });
+$('sNe').addEventListener('input', e => { state.Ne = +e.target.value; update(); }); $('sY3').addEventListener('input', e => { state.y[2] = +e.target.value; update(); }); $('sX3').addEventListener('input', e => { state.x[2] = +e.target.value; update(); });
+const upsample = a => Float64Array.from({ length: M }, (_, i) => a[Math.floor(i * a.length / M)]);
+$('maxim').addEventListener('click', () => { if (R.ng > 1e-12) { fSketch = upsample(R.g.map(v => v / R.ng)); update(); } });
+let last = null;
+drag($('cvFn'), () => { const F = FR.fn; if (!F) return null; last = null; const arr = state.target === 'f' ? fSketch : gSketch;
+  return (px, py) => { const i = clamp(Math.round(F.iX(px) * M - .5), 0, M - 1), v = clamp(F.iY(py), -2.1, 2.1); if (last) { const [i0, v0] = last, a = Math.min(i0, i), b = Math.max(i0, i); for (let q = a; q <= b; q++) arr[q] = i === i0 ? v : v0 + (v - v0) * (q - i0) / (i - i0); } else arr[i] = v; last = [i, v]; update(); }; }, () => { last = null; });
+drag($('cv2'), (px, py) => { const F = FR.g; if (!F || state.geo === 'slice') return null; const near = v => Math.hypot(px - F.X(v[0]), py - F.Y(v[1])), dy = near(state.y), dx = near(state.x); if (Math.min(dx, dy) > 30) return null; const key = dy <= dx ? 'y' : 'x';
+  return (qx, qy) => { state[key][0] = clamp(Math.round(F.iX(qx) * 100) / 100, -2.9, 2.9); state[key][1] = clamp(Math.round(F.iY(qy) * 100) / 100, -2.9, 2.9); update(); }; });
+drag($('cv3'), (px, py) => { const y0 = state.yaw, p0 = state.pitch; return (qx, qy) => { state.yaw = y0 + (qx - px) * 0.01; state.pitch = clamp(p0 + (qy - py) * 0.01, -1.4, 1.4); update(); }; });
+
+const EXP = {
+  lines:  { geo: 'r2', y: [0.6, 0.4, 0.8], x: [1.5, -0.6, 1] }, circle: { geo: 'r2', y: [1.2, 0.8, 0.8], x: [Math.cos(2.2), Math.sin(2.2), 1] }, proof: { geo: 'r3', y: [1.0, 0.6, 0.9], x: [1.4, -1.2, 1.3] },
+  window: { F: 'window', Ne: 5, target: 'f' }, point: { F: 'point', Ne: 4, target: 'f' }, slice: { geo: 'slice', F: 'coef', Ne: 7, target: 'f' }
+};
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => { const e = EXP[b.dataset.exp]; Object.assign(state, e, e.y ? { y: [...e.y], x: [...e.x] } : {}); syncUI(); update(); $('lab').scrollIntoView({ block: 'start' }); $('sNe').focus({ preventScroll: true }); });
+
+const recolor = () => { readColors(); update(); };
+readColors(); syncUI(); update();
+new ResizeObserver(update).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
+})();
+</script>
+</body>
+</html>

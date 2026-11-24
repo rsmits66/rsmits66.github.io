@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Row Reduction — Accounting Method</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+  <style>
+    :root {
+      --cream:    #faf7f2;
+      --paper:    #ffffff;
+      --navy:     #18284a;
+      --navy2:    #2c4070;
+      --accent:   #3a6eb5;
+      --red:      #b33a2f;
+      --red-bg:   #fef0ee;
+      --gold:     #c8a430;
+      --gray:     #7a7a8a;
+      --border:   #ddd9d0;
+      --acc-bg:   #edf1fb;
+      --mod-bg:   #fff9f5;
+      --font-body:'Crimson Pro', Georgia, serif;
+      --font-head:'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--navy);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    /* ── HEADER ─────────────────────────────────── */
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 1.8rem 2.5rem;
+      border-bottom: 3px solid var(--gold);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    header h1 { font-family: var(--font-head); font-size: 2rem; font-weight: 400; letter-spacing:.02em; }
+    header p  { color: #a0b8d8; font-size: 1.05rem; font-style: italic; }
+
+    /* ── LAYOUT ─────────────────────────────────── */
+    main { max-width: 1150px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── CARDS ───────────────────────────────────── */
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 14px rgba(24,40,74,.06);
+    }
+    .card h2 {
+      font-family: var(--font-head);
+      font-size: 1.25rem; font-weight:600;
+      color: var(--navy);
+      margin-bottom: 1.2rem;
+    }
+
+    /* ── SIZE CONTROLS ───────────────────────────── */
+    .size-row { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .size-row label { display:flex; align-items:center; gap:.5rem; font-size:.95rem; color: var(--navy2); }
+    .size-row input[type=number] {
+      width:56px; padding:.28rem .4rem;
+      border: 1px solid var(--border); border-radius:4px;
+      font-family:var(--font-body); font-size:1rem;
+      color:var(--navy); text-align:center;
+    }
+    .size-row input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+    .examples-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+
+    /* ── BUTTONS ─────────────────────────────────── */
+    button {
+      font-family: var(--font-body);
+      font-size:.95rem; cursor:pointer;
+      border:none; border-radius:4px;
+      padding:.35rem .9rem;
+      transition: background .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    .btn-ghost { background: var(--acc-bg); color: var(--navy2); border:1px solid #c0ccdd; }
+    .btn-ghost:hover { background:#d8e4f8; }
+    .btn-solve {
+      background: var(--red); color:#fff;
+      padding: .55rem 2rem; font-size:1.05rem;
+      letter-spacing:.04em; margin-top:1.4rem;
+      display:inline-flex; align-items:center; gap:.5rem;
+    }
+    .btn-solve:hover { background:#952e24; }
+
+    /* ── MATRIX GRID ─────────────────────────────── */
+    .matrix-wrapper { overflow-x:auto; margin: .8rem 0; }
+    .matrix-grid {
+      display: inline-grid;
+      gap: 7px 8px;
+      align-items: center;
+    }
+    .matrix-grid input {
+      width: 62px;
+      padding: .32rem .4rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--font-body); font-size: 1rem;
+      color: var(--navy); text-align:center; background:#fafafa;
+      transition: border-color .15s, background .15s;
+    }
+    .matrix-grid input:focus { outline:none; border-color:var(--accent); background:#fff; }
+    .matrix-grid .b-input { background: #f4f8ff; border-color: #b8caec; }
+    .matrix-grid .col-lbl { text-align:center; font-size:.82rem; color:var(--gray); }
+    .matrix-grid .row-lbl { text-align:right; padding-right:8px; font-size:.88rem; color:var(--gray); }
+    .matrix-grid .eq-sign  { text-align:center; color:var(--navy2); font-size:1.05rem; padding:0 2px; }
+
+    /* ── STEPS CONTAINER ─────────────────────────── */
+    .steps-container { display:flex; flex-direction:column; gap:1.6rem; }
+
+    /* ── STEP BLOCK ──────────────────────────────── */
+    .step-block {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(24,40,74,.05);
+    }
+    .step-header {
+      background: var(--navy);
+      color:#fff;
+      padding:.6rem 1.2rem;
+      display:flex; align-items:center; gap:.75rem;
+    }
+    .step-num {
+      background: var(--gold); color: var(--navy);
+      width:26px; height:26px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:.8rem; font-weight:700; flex-shrink:0;
+    }
+    .step-num.init-badge { background: #4a6fa0; color:#fff; font-size:.72rem; font-weight:600; letter-spacing:.03em; }
+    .step-title-txt { font-style:italic; font-size:.95rem; color:#d0ddf0; }
+
+    .tableau-scroll { overflow-x:auto; padding:.6rem .6rem .8rem; }
+
+    /* ── TABLEAU TABLE ───────────────────────────── */
+    .tableau {
+      border-collapse: collapse;
+      font-size: .93rem;
+    }
+    .tableau th, .tableau td {
+      padding: .4rem .75rem;
+      border: 1px solid #e8e4de;
+      text-align: center;
+      white-space: nowrap;
+    }
+    /* Double-line header */
+    .tableau thead tr:first-child th {
+      font-family: var(--font-body); font-weight:400; font-size:.78rem;
+      text-transform: uppercase; letter-spacing:.06em;
+      color: #888;
+      background: #f8f6f2;
+      padding: .25rem .75rem;
+      border-bottom: none;
+    }
+    .tableau thead tr:first-child th.acc-group { background: var(--acc-bg); color: var(--accent); }
+    .tableau thead tr:second-child th { background:#f5f7fa; }
+    .tableau thead tr.sub-header th {
+      background: #f5f7fa;
+      font-family:var(--font-body); font-weight:400;
+      font-size:.85rem; color: var(--navy2);
+      border-top: none;
+      border-bottom: 2px solid var(--border);
+    }
+    .tableau thead tr.sub-header th.acc-sub { background: var(--acc-bg); color: #4060a0; }
+
+    .tableau td.op-lbl {
+      text-align: left; padding-left: 1rem;
+      color: var(--navy2); background: #fafafa;
+      font-size: .88rem; min-width: 160px; max-width: 240px;
+    }
+    .tableau td.acc-col  { background: var(--acc-bg); color: #3a5aa8; }
+    .tableau td.sep-r    { border-right: 2.5px solid #bbb !important; }
+    .tableau td.eq-col   { text-align:left; padding-left:1rem; color:var(--navy2); font-style:italic; }
+
+    /* Pivot highlight */
+    .tableau td.pivot-cell {
+      background: var(--red-bg);
+    }
+    .pivot-inner {
+      display: inline-block;
+      border: 2px solid var(--red);
+      border-radius: 4px;
+      padding: 1px 7px;
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    /* Modified row */
+    .tableau tbody tr.mod-row > td           { background: var(--mod-bg); }
+    .tableau tbody tr.mod-row > td.acc-col   { background: #f3ece6; }
+    .tableau tbody tr.mod-row > td.pivot-cell{ background: var(--red-bg); }
+    .tableau tbody tr.mod-row > td.op-lbl    { background: #fff4ee; }
+
+    /* ── SOLUTION BOX ────────────────────────────── */
+    .solution-card {
+      background: var(--navy);
+      color:#fff;
+      border-radius: 8px;
+      padding: 1.4rem 2rem;
+    }
+    .solution-card h3 { font-family:var(--font-head); color:var(--gold); font-size:1.3rem; margin-bottom:.9rem; }
+    .solution-list { display:flex; flex-wrap:wrap; gap:.9rem; }
+    .solution-item {
+      background: rgba(255,255,255,.1);
+      border-radius:6px; padding:.45rem 1.1rem;
+      font-size:1.1rem;
+    }
+    .info-tag {
+      display:inline-block; background:#e8edf5; color:var(--navy2);
+      border-radius:4px; padding:.15rem .7rem; font-size:.85rem;
+      font-style:italic; margin-top:.5rem;
+    }
+    .warn-tag { background:#fff3cd; color:#856404; }
+    .err-tag  { background:#f8d7da; color:#721c24; }
+
+    /* ── NOTATION KEY ────────────────────────────── */
+    .key-box {
+      background: var(--acc-bg);
+      border: 1px solid #c0ccdd;
+      border-radius: 6px;
+      padding: .85rem 1.2rem;
+      font-size: .9rem;
+      color: var(--navy2);
+      line-height: 1.6;
+    }
+    .key-box strong { color: var(--navy); }
+    .red-sq { color: var(--red); }
+
+    /* ── ERROR ───────────────────────────────────── */
+    .err-msg { color: var(--red); font-style:italic; padding:.5rem 0; }
+
+    @media(max-width:600px){
+      header{padding:1.2rem 1rem;} header h1{font-size:1.5rem;}
+      main{padding:1rem .75rem;}
+      .card{padding:1.2rem 1rem;}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Row Reduction</h1>
+  <p>The Accounting Method — tracing elementary row operations as group actions on equations</p>
+</header>
+
+<main>
+  <!-- ── INPUT CARD ─────────────────────────────────── -->
+  <div class="card">
+    <h2>Enter a System of Linear Equations</h2>
+
+    <div class="size-row">
+      <label>Equations (rows): <input type="number" id="nRows" min="2" max="6" value="2"></label>
+      <label>Variables (cols): <input type="number" id="nCols" min="2" max="6" value="2"></label>
+      <button class="btn-ghost" onclick="rebuildMatrix()">Resize</button>
+    </div>
+
+    <div class="examples-row">
+      <button class="btn-ghost" onclick="loadExample(0)">2×2 example</button>
+      <button class="btn-ghost" onclick="loadExample(1)">3×3 example</button>
+      <button class="btn-ghost" onclick="loadExample(2)">3×4 (underdetermined)</button>
+    </div>
+
+    <p style="font-size:.88rem; color:var(--gray); margin-bottom:.5rem;">
+      You may enter integers, decimals, or fractions like <code>2/3</code>.
+    </p>
+
+    <div class="matrix-wrapper" id="matrixContainer"></div>
+
+    <button class="btn-solve" onclick="runSolve()">
+      Solve &amp; Show Steps →
+    </button>
+  </div>
+
+  <!-- ── SOLUTION OUTPUT ───────────────────────────── -->
+  <div id="solutionSection"></div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  FRACTION ARITHMETIC
+// ═══════════════════════════════════════════════
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b > 0) { const t = b; b = a % b; a = t; }
+  return a === 0 ? 1 : a;
+}
+
+class Frac {
+  constructor(n, d = 1) {
+    if (d === 0) { this.n = 0; this.d = 1; this.bad = true; return; }
+    if (d < 0)   { n = -n; d = -d; }
+    const g = gcd(Math.abs(n), d);
+    this.n = Math.trunc(n / g);
+    this.d = Math.trunc(d / g);
+  }
+
+  static parse(str) {
+    str = (str || '').trim();
+    if (!str || str === '-') return new Frac(0);
+    if (str.includes('/')) {
+      const [a, b] = str.split('/');
+      const na = parseInt(a), nd = parseInt(b);
+      return (isNaN(na)||isNaN(nd)) ? new Frac(0) : new Frac(na, nd);
+    }
+    if (str.includes('.')) {
+      const parts = str.replace('-','').split('.');
+      const dec = parts[1] ? parts[1].length : 0;
+      const denom = Math.pow(10, dec);
+      return new Frac(Math.round(parseFloat(str)*denom), denom);
+    }
+    const n = parseInt(str);
+    return isNaN(n) ? new Frac(0) : new Frac(n);
+  }
+
+  clone()  { return new Frac(this.n, this.d); }
+  add(o)   { return new Frac(this.n*o.d + o.n*this.d, this.d*o.d); }
+  sub(o)   { return new Frac(this.n*o.d - o.n*this.d, this.d*o.d); }
+  mul(o)   { return new Frac(this.n*o.n, this.d*o.d); }
+  div(o)   { return new Frac(this.n*o.d, this.d*o.n); }
+  neg()    { return new Frac(-this.n, this.d); }
+  recip()  { return new Frac(this.d, this.n); }
+
+  isZero() { return this.n === 0; }
+  isOne()  { return this.n > 0 && this.n === this.d; }
+
+  toTeX(inline=true) {
+    if (this.d === 1) return String(this.n);
+    const cmd = inline ? '\\tfrac' : '\\dfrac';
+    const abs = Math.abs(this.n);
+    const sg  = this.n < 0 ? '-' : '';
+    return `${sg}${cmd}{${abs}}{${this.d}}`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  GAUSSIAN ELIMINATION  (records every step)
+// ═══════════════════════════════════════════════
+function solveSystem(input) {
+  // input: n×(m+1) array of Frac
+  const n = input.length;
+  const m = input[0].length - 1;
+
+  let A   = input.map(r => r.slice(0,m).map(f => f.clone()));
+  let bv  = input.map(r => r[m].clone());
+  let acc = Array.from({length:n}, (_,i) =>
+            Array.from({length:n}, (_,j) => new Frac(i===j?1:0)));
+
+  const steps = [];
+
+  function snap(pivots, ops) {
+    return {
+      rows: Array.from({length:n}, (_,i) => ({
+        varCoeffs: A[i].map(f=>f.clone()),
+        accCoeffs: acc[i].map(f=>f.clone()),
+        b: bv[i].clone(),
+        op: ops[i]
+      })),
+      pivots: pivots.slice()
+    };
+  }
+
+  // Initial
+  steps.push({
+    title:'Initial system',
+    isInit: true,
+    ...snap([], Array.from({length:n},(_,i)=>({
+      modified:false,
+      tex:`R_{${i+1}}`
+    })))
+  });
+
+  let pr = 0; // pivot row pointer
+  const allPivots = [];
+
+  // ── forward pass ──
+  for (let col=0; col<m && pr<n; col++) {
+    let found = -1;
+    for (let r=pr; r<n; r++) if (!A[r][col].isZero()) { found=r; break; }
+    if (found === -1) continue;
+
+    if (found !== pr) {
+      [A[found],A[pr]] = [A[pr],A[found]];
+      [bv[found],bv[pr]] = [bv[pr],bv[found]];
+      [acc[found],acc[pr]] = [acc[pr],acc[found]];
+      const swops = Array.from({length:n},(_,i)=>({
+        modified: i===pr||i===found,
+        tex: i===pr    ? `R_{${found+1}} \\leftrightarrow R_{${pr+1}}` :
+             i===found ? `R_{${pr+1}} \\leftrightarrow R_{${found+1}}` :
+                         `R_{${i+1}}`
+      }));
+      steps.push({ title:`Swap rows ${pr+1} and ${found+1}`,
+                   ...snap([], swops) });
+    }
+
+    allPivots.push({row:pr, col});
+
+    const ops = Array.from({length:n},(_,i)=>({modified:false, tex:`R_{${i+1}}`}));
+    let any=false;
+
+    for (let r=pr+1; r<n; r++) {
+      if (!A[r][col].isZero()) {
+        const mult = A[r][col].div(A[pr][col]);
+        for (let c=0;c<m;c++) A[r][c] = A[r][c].sub(mult.mul(A[pr][c]));
+        bv[r] = bv[r].sub(mult.mul(bv[pr]));
+        for (let c=0;c<n;c++) acc[r][c] = acc[r][c].sub(mult.mul(acc[pr][c]));
+        ops[r] = { modified:true, tex: opLabel(r, pr, mult) };
+        any=true;
+      }
+    }
+    if (any) steps.push({
+      title:`Forward elimination — clear column ${col+1} below pivot`,
+      ...snap([{row:pr,col}], ops)
+    });
+    pr++;
+  }
+
+  // ── back substitution ──
+  for (let p=allPivots.length-1; p>=0; p--) {
+    const {row,col} = allPivots[p];
+    const ops = Array.from({length:n},(_,i)=>({modified:false,tex:`R_{${i+1}}`}));
+    let any=false;
+    for (let r=0; r<row; r++) {
+      if (!A[r][col].isZero()) {
+        const mult = A[r][col].div(A[row][col]);
+        for (let c=0;c<m;c++) A[r][c] = A[r][c].sub(mult.mul(A[row][c]));
+        bv[r] = bv[r].sub(mult.mul(bv[row]));
+        for (let c=0;c<n;c++) acc[r][c] = acc[r][c].sub(mult.mul(acc[row][c]));
+        ops[r] = { modified:true, tex: opLabel(r, row, mult) };
+        any=true;
+      }
+    }
+    if (any) steps.push({
+      title:`Back substitution — clear column ${col+1} above pivot`,
+      ...snap([{row,col}], ops)
+    });
+  }
+
+  // ── normalize pivots to 1 ──
+  const sops = Array.from({length:n},(_,i)=>({modified:false,tex:`R_{${i+1}}`}));
+  let anySc=false;
+  for (const {row,col} of allPivots) {
+    const piv = A[row][col];
+    if (!piv.isOne()) {
+      const sc = piv.recip();
+      for (let c=0;c<m;c++) A[row][c] = A[row][c].mul(sc);
+      bv[row] = bv[row].mul(sc);
+      for (let c=0;c<n;c++) acc[row][c] = acc[row][c].mul(sc);
+      sops[row] = { modified:true,
+                    tex:`${sc.toTeX(true)} \\cdot R_{${row+1}} \\to R_{${row+1}}` };
+      anySc=true;
+    }
+  }
+  if (anySc) steps.push({
+    title:'Normalize — scale each pivot row to get leading 1',
+    ...snap(allPivots, sops)
+  });
+
+  return { steps, n, m, allPivots };
+}
+
+function opLabel(ri, rj, mult) {
+  const mt = mult.toTeX(true);
+  if (mult.isOne())
+    return `R_{${ri+1}} - R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n === -mult.d)
+    return `R_{${ri+1}} + R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n < 0)
+    return `R_{${ri+1}} + ${mult.neg().toTeX(true)}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+  return `R_{${ri+1}} - ${mt}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+}
+
+// ═══════════════════════════════════════════════
+//  LATEX UTILITIES
+// ═══════════════════════════════════════════════
+function rk(tex) {
+  try { return katex.renderToString(tex, {throwOnError:false}); }
+  catch(e) { return tex; }
+}
+
+function varName(i, m) {
+  return m <= 4 ? ['x','y','z','w'][i] : `x_{${i+1}}`;
+}
+function varNames(m) { return Array.from({length:m},(_,i)=>varName(i,m)); }
+
+function eqTeX(vc, b, vn) {
+  const terms=[];
+  vc.forEach((c,i)=>{
+    if(c.isZero()) return;
+    const v=vn[i];
+    if(terms.length===0){
+      if(c.isOne())        terms.push(v);
+      else if(c.n===-c.d)  terms.push(`-${v}`);
+      else                 terms.push(`${c.toTeX(true)}${v}`);
+    } else {
+      if(c.isOne())        terms.push(`+${v}`);
+      else if(c.n===-c.d)  terms.push(`-${v}`);
+      else if(c.n<0)       terms.push(`-${c.neg().toTeX(true)}${v}`);
+      else                 terms.push(`+${c.toTeX(true)}${v}`);
+    }
+  });
+  if(!terms.length) return `0 = ${b.toTeX(true)}`;
+  return terms.join('\\,') + ' = ' + b.toTeX(true);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER STEPS
+// ═══════════════════════════════════════════════
+function renderSteps(result) {
+  const {steps, n, m, allPivots} = result;
+  const vn = varNames(m);
+  const sec = document.getElementById('solutionSection');
+  sec.innerHTML='';
+  const cont = document.createElement('div');
+  cont.className='steps-container';
+
+  steps.forEach((step, si) => {
+    const block = document.createElement('div');
+    block.className='step-block';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className='step-header';
+    const badge = document.createElement('span');
+    if (step.isInit) {
+      badge.className='step-num init-badge';
+      badge.textContent='init';
+    } else {
+      badge.className='step-num';
+      badge.textContent=si;
+    }
+    const ttxt = document.createElement('span');
+    ttxt.className='step-title-txt';
+    ttxt.textContent=step.title;
+    hdr.append(badge, ttxt);
+    block.appendChild(hdr);
+
+    // Table
+    const wrap = document.createElement('div');
+    wrap.className='tableau-scroll';
+    const tbl = document.createElement('table');
+    tbl.className='tableau';
+
+    // ── Two-row thead ──
+    const thead = document.createElement('thead');
+
+    // Row 1: group labels
+    const gr = document.createElement('tr');
+    const thOp0 = document.createElement('th');
+    thOp0.rowSpan=2; thOp0.textContent='Row operation';
+    thOp0.style.verticalAlign='middle'; thOp0.style.textAlign='left';
+    gr.appendChild(thOp0);
+
+    const thAcc = document.createElement('th');
+    thAcc.colSpan=n; thAcc.className='acc-group';
+    thAcc.innerHTML='Accounting &thinsp;— linear combination of original rows';
+    thAcc.style.borderBottom='none';
+    gr.appendChild(thAcc);
+
+    const thVars = document.createElement('th');
+    thVars.colSpan=m; thVars.textContent='Coefficients';
+    thVars.style.borderBottom='none';
+    gr.appendChild(thVars);
+
+    const thB0 = document.createElement('th');
+    thB0.rowSpan=2; thB0.className='sep-r';
+    thB0.innerHTML=rk('b'); thB0.style.verticalAlign='middle';
+    gr.appendChild(thB0);
+
+    const thEq0 = document.createElement('th');
+    thEq0.rowSpan=2; thEq0.textContent='Equation';
+    thEq0.style.verticalAlign='middle'; thEq0.style.textAlign='left';
+    gr.appendChild(thEq0);
+
+    thead.appendChild(gr);
+
+    // Row 2: sub-labels
+    const sr = document.createElement('tr');
+    sr.className='sub-header';
+    for (let i=0;i<n;i++) {
+      const th=document.createElement('th');
+      th.className='acc-sub'+(i===n-1?' sep-r':'');
+      th.innerHTML=rk(`E_{${i+1}}`);
+      sr.appendChild(th);
+    }
+    for (let i=0;i<m;i++) {
+      const th=document.createElement('th');
+      th.innerHTML=rk(vn[i]);
+      sr.appendChild(th);
+    }
+    thead.appendChild(sr);
+    tbl.appendChild(thead);
+
+    // ── tbody ──
+    const tbody=document.createElement('tbody');
+    step.rows.forEach((row, ri)=>{
+      const tr=document.createElement('tr');
+      if(row.op.modified) tr.classList.add('mod-row');
+
+      // op label
+      const tdOp=document.createElement('td');
+      tdOp.className='op-lbl';
+      tdOp.innerHTML=rk(row.op.tex);
+      tr.appendChild(tdOp);
+
+      // accounting
+      row.accCoeffs.forEach((f,j)=>{
+        const td=document.createElement('td');
+        td.className='acc-col'+(j===n-1?' sep-r':'');
+        td.innerHTML=rk(f.toTeX(true));
+        tr.appendChild(td);
+      });
+
+      // variable coefficients
+      row.varCoeffs.forEach((f,j)=>{
+        const td=document.createElement('td');
+        const isPiv=step.pivots.some(p=>p.row===ri && p.col===j);
+        if(isPiv){
+          td.className='pivot-cell';
+          td.innerHTML=`<span class="pivot-inner">${rk(f.toTeX(true))}</span>`;
+        } else {
+          td.innerHTML=rk(f.toTeX(true));
+        }
+        tr.appendChild(td);
+      });
+
+      // b
+      const tdB=document.createElement('td');
+      tdB.className='b-col sep-r';
+      tdB.innerHTML=rk(row.b.toTeX(true));
+      tr.appendChild(tdB);
+
+      // equation
+      const tdEq=document.createElement('td');
+      tdEq.className='eq-col';
+      tdEq.innerHTML=rk(eqTeX(row.varCoeffs, row.b, vn));
+      tr.appendChild(tdEq);
+
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    block.appendChild(wrap);
+    cont.appendChild(block);
+  });
+
+  // ── Solution summary ──
+  const lastStep = steps[steps.length-1];
+
+  // Check consistency
+  let inconsistent=false;
+  for (let r=0;r<n;r++) {
+    const row=lastStep.rows[r];
+    const allVarZero=row.varCoeffs.every(f=>f.isZero());
+    if(allVarZero && !row.b.isZero()) { inconsistent=true; break; }
+  }
+
+  if(inconsistent){
+    const errCard=document.createElement('div');
+    errCard.className='solution-card';
+    errCard.innerHTML=`<h3>No Solution</h3>
+      <p>The system is <strong>inconsistent</strong>: a row of the form
+      <span style="font-style:italic">0 = c</span> (c ≠ 0) has appeared, which
+      is a contradiction.</p>`;
+    cont.appendChild(errCard);
+  } else if(allPivots.length < m) {
+    // Underdetermined
+    const freeVars=[];
+    const pivCols=new Set(allPivots.map(p=>p.col));
+    for(let j=0;j<m;j++) if(!pivCols.has(j)) freeVars.push(vn[j]);
+
+    const solCard=document.createElement('div');
+    solCard.className='solution-card';
+    let html=`<h3>Infinitely Many Solutions</h3>
+      <p>The system has <strong>free variables</strong>: `;
+    html += freeVars.map(v=>`<span style="font-style:italic">${v}</span>`).join(', ');
+    html += `.</p><div class="solution-list" style="margin-top:.8rem">`;
+    allPivots.forEach(({row,col})=>{
+      const rd=lastStep.rows[row];
+      const piv=rd.varCoeffs[col];
+      const sol=rd.b.div(piv);
+      html+=`<div class="solution-item">${rk(`${vn[col]} = ${eqTeX(rd.varCoeffs.map((c,i)=>i===col?new Frac(0):c.neg().div(piv)), sol, vn)}`)}</div>`;
+    });
+    html+=`</div>`;
+    solCard.innerHTML=html;
+    cont.appendChild(solCard);
+  } else {
+    // Unique solution
+    const solCard=document.createElement('div');
+    solCard.className='solution-card';
+    let html=`<h3>Unique Solution</h3><div class="solution-list">`;
+    allPivots.forEach(({row,col})=>{
+      const rd=lastStep.rows[row];
+      const piv=rd.varCoeffs[col];
+      const val=rd.b.div(piv);
+      html+=`<div class="solution-item">${rk(`${vn[col]} = ${val.toTeX(false)}`)}</div>`;
+    });
+    html+=`</div>`;
+    solCard.innerHTML=html;
+    cont.appendChild(solCard);
+  }
+
+  // ── Notation key ──
+  const key=document.createElement('div');
+  key.className='key-box';
+  key.innerHTML=`
+    <strong>How to read this tableau:</strong>
+    Each row in the <em>accounting section</em> (shaded blue) records
+    how the current row was built as a linear combination of the
+    <em>original</em> equations E<sub>1</sub>, E<sub>2</sub>, …, E<sub>n</sub>.
+    For example, accounting coefficients (−⅔, 1, 0, …) mean the current row equals
+    −(2/3)·E<sub>1</sub> + 1·E<sub>2</sub>.
+    This is equivalent to keeping track of the <em>elementary matrix</em> applied at each step.
+    <span class="red-sq">■</span> Red-boxed entries are <strong>pivot elements</strong>.
+    <br><br>
+    <strong>Why it matters:</strong> The accounting matrix is the product of all elementary
+    matrices applied so far, making row operations visible as <em>group actions</em> on
+    the equation space.
+  `;
+  cont.appendChild(key);
+
+  sec.appendChild(cont);
+  sec.scrollIntoView({behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════
+//  MATRIX INPUT UI
+// ═══════════════════════════════════════════════
+let cN=2, cM=2;
+
+function rebuildMatrix(){
+  cN=Math.min(Math.max(parseInt(document.getElementById('nRows').value)||2,2),6);
+  cM=Math.min(Math.max(parseInt(document.getElementById('nCols').value)||2,2),6);
+  document.getElementById('nRows').value=cN;
+  document.getElementById('nCols').value=cM;
+  buildGrid();
+}
+
+function buildGrid(){
+  const cont=document.getElementById('matrixContainer');
+  cont.innerHTML='';
+  const grid=document.createElement('div');
+  grid.className='matrix-grid';
+  // columns: rowLabel | cM inputs | '=' | b-input
+  grid.style.gridTemplateColumns=`auto repeat(${cM},64px) 24px 64px`;
+
+  // header row
+  const empty=document.createElement('div');
+  grid.appendChild(empty);
+  for(let j=0;j<cM;j++){
+    const lbl=document.createElement('div');
+    lbl.className='col-lbl';
+    lbl.innerHTML=rk(varName(j,cM));
+    grid.appendChild(lbl);
+  }
+  grid.appendChild(document.createElement('div'));
+  const bHdr=document.createElement('div');
+  bHdr.className='col-lbl';
+  bHdr.innerHTML=rk('b');
+  grid.appendChild(bHdr);
+
+  // data rows
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');
+    rl.className='row-lbl';
+    rl.innerHTML=rk(`E_{${i+1}}`);
+    grid.appendChild(rl);
+    for(let j=0;j<cM;j++){
+      const inp=document.createElement('input');
+      inp.type='text'; inp.id=`c${i}_${j}`; inp.placeholder='0';
+      inp.autocomplete='off';
+      grid.appendChild(inp);
+    }
+    const eq=document.createElement('div');
+    eq.className='eq-sign'; eq.textContent='=';
+    grid.appendChild(eq);
+    const bi=document.createElement('input');
+    bi.type='text'; bi.id=`b${i}`; bi.placeholder='0';
+    bi.className='b-input'; bi.autocomplete='off';
+    grid.appendChild(bi);
+  }
+  cont.appendChild(grid);
+}
+
+function getInput(){
+  return Array.from({length:cN},(_,i)=>[
+    ...Array.from({length:cM},(_,j)=>Frac.parse(document.getElementById(`c${i}_${j}`)?.value||'0')),
+    Frac.parse(document.getElementById(`b${i}`)?.value||'0')
+  ]);
+}
+
+// ── pre-baked examples ──
+const EXAMPLES=[
+  { n:2, m:2, data:[['3','5','14'],['2','7','13']] },
+  { n:3, m:3, data:[['1','2','-1','0'],['2','1','3','9'],['-1','3','2','5']] },
+  { n:3, m:4, data:[['1','2','0','1','3'],['0','1','3','2','5'],['2','0','1','-1','2']] }
+];
+
+function loadExample(idx){
+  const ex=EXAMPLES[idx];
+  cN=ex.n; cM=ex.m;
+  document.getElementById('nRows').value=cN;
+  document.getElementById('nCols').value=cM;
+  buildGrid();
+  ex.data.forEach((row,i)=>{
+    for(let j=0;j<ex.m;j++){
+      const el=document.getElementById(`c${i}_${j}`);
+      if(el) el.value=row[j];
+    }
+    const be=document.getElementById(`b${i}`);
+    if(be) be.value=row[ex.m];
+  });
+}
+
+function runSolve(){
+  try {
+    const input=getInput();
+    // basic zero-row check
+    let allZeroRow=false;
+    input.forEach(row=>{
+      if(row.slice(0,-1).every(f=>f.isZero()) && !row[row.length-1].isZero())
+        allZeroRow=true;
+    });
+    const result=solveSystem(input);
+    renderSteps(result);
+  } catch(e){
+    document.getElementById('solutionSection').innerHTML=
+      `<div class="err-msg" style="padding:1rem">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+// ── init ──
+window.addEventListener('DOMContentLoaded',()=>{
+  buildGrid();
+  loadExample(0);
+});
+</script>
+</body>
+</html>

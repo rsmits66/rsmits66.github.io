@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Row Reduction over 𝔽ₚ — Accounting Method</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#edf1fb;--mod-bg:#fff9f5;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+/* controls */
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;color:var(--navy2);}
+.ctrl-row input[type=number],.ctrl-row select{
+  padding:.27rem .45rem;border:1px solid var(--border);border-radius:4px;
+  font-family:inherit;font-size:1rem;color:var(--navy);
+}
+.ctrl-row input[type=number]{width:56px;text-align:center;}
+.ctrl-row select{background:#fafafa;}
+.ctrl-row input:focus,.ctrl-row select:focus{outline:none;border-color:var(--accent);}
+
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+/* matrix grid */
+.mx-wrap{overflow-x:auto;margin:.7rem 0;}
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:54px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid input.b-input{background:#f4f8ff;border-color:#b8caec;}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:8px;font-size:.84rem;color:var(--gray);}
+.mx-grid .eqsign{text-align:center;color:var(--navy2);font-size:1.05rem;}
+
+/* field tables */
+.tables-row{display:flex;gap:2rem;flex-wrap:wrap;margin-top:.5rem;}
+.ftable-wrap{}
+.ftable-wrap p{font-size:.85rem;color:var(--gray);margin-bottom:.35rem;font-style:italic;}
+.ftable{border-collapse:collapse;font-size:.88rem;}
+.ftable th,.ftable td{width:30px;height:28px;text-align:center;border:1px solid #ddd;padding:0;}
+.ftable thead th{background:var(--navy);color:#fff;font-weight:400;}
+.ftable thead th.op-cell{background:#3a5590;}
+.ftable tbody th{background:var(--acc-bg);color:var(--navy2);font-weight:400;}
+.ftable td.diag{background:#fff4e0;font-weight:600;}
+.ftable td.inv-cell{background:#e8f5e8;color:#2a7a2a;font-weight:600;}
+.ftable td.zero{color:#ccc;}
+
+/* steps */
+.steps-wrap{display:flex;flex-direction:column;gap:1.3rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.1rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.65rem;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;}
+
+.twrap{overflow-x:auto;padding:.55rem .6rem .7rem;}
+.tab{border-collapse:collapse;font-size:.9rem;}
+.tab th,.tab td{padding:.36rem .68rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+.tab thead tr:first-child th{font-size:.74rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;padding:.2rem .68rem;}
+.tab th.ahd{background:var(--acc-bg);color:#3a5aa8;}
+.tab th.mhd{background:#f5f5f3;color:#555;}
+.tab th.bhd{background:#f0f6ff;color:#3a60a0;}
+.tab th.ehd{background:#fafaf5;color:#666;text-align:left;padding-left:1rem;}
+.tab td.ac{background:var(--acc-bg);}
+.tab td.mc{}
+.tab td.bc{background:#f4f8ff;}
+.tab td.ec{text-align:left;padding-left:1rem;color:var(--navy2);font-style:italic;}
+.tab td.op-lbl{text-align:left;padding-left:.9rem;font-size:.85rem;color:var(--navy2);background:#fafafa;min-width:160px;max-width:280px;}
+.tab .sepr{border-right:2.5px solid #aaa !important;}
+.tab td.piv-cell{background:var(--red-bg);}
+.pbox{display:inline-block;border:2px solid var(--red);border-radius:3px;padding:0 5px;color:var(--red);font-weight:700;}
+.tab tr.mod-r td{background:var(--mod-bg);}
+.tab tr.mod-r td.ac{background:#f3ece6;}
+.tab tr.mod-r td.piv-cell{background:var(--red-bg);}
+.tab tr.mod-r td.op-lbl{background:#fff4ee;}
+
+/* solution */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;margin-top:.4rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.25rem;margin-bottom:.85rem;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.6rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.3rem .9rem;font-size:1.1rem;}
+.sol-note{color:#8ab8d0;font-style:italic;font-size:.88rem;}
+.det-badge{display:inline-block;background:rgba(200,164,48,.2);border:1px solid var(--gold);border-radius:4px;padding:.15rem .7rem;color:var(--gold);font-size:.9rem;margin-top:.5rem;}
+
+.keybox{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:var(--navy2);line-height:1.6;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Row Reduction over 𝔽ₚ</h1>
+  <p>The Accounting Method — solving linear systems modulo a prime, tracking every operation</p>
+</header>
+<main>
+
+<!-- INPUT CARD -->
+<div class="card">
+  <h2>Choose Field and Enter System</h2>
+  <div class="ctrl-row">
+    <label>Prime p:
+      <select id="primeP" onchange="onPrimeChange()">
+        <option value="2">𝔽₂ (mod 2)</option>
+        <option value="3">𝔽₃ (mod 3)</option>
+        <option value="5" selected>𝔽₅ (mod 5)</option>
+        <option value="7">𝔽₇ (mod 7)</option>
+        <option value="11">𝔽₁₁ (mod 11)</option>
+        <option value="13">𝔽₁₃ (mod 13)</option>
+      </select>
+    </label>
+    <label>Equations:
+      <input type="number" id="nRows" min="2" max="6" value="2">
+    </label>
+    <label>Variables:
+      <input type="number" id="nCols" min="2" max="6" value="2">
+    </label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.5rem;">
+    Enter integers; they will be reduced mod p automatically.
+  </p>
+  <div class="mx-wrap" id="mxWrap"></div>
+  <button class="btn-solve" onclick="doSolve()">Solve &amp; Show Steps →</button>
+</div>
+
+<!-- FIELD TABLES CARD -->
+<div class="card" id="fieldCard">
+  <h2 id="fieldCardTitle">𝔽₅ — Addition &amp; Multiplication Tables</h2>
+  <div class="tables-row" id="tablesRow"></div>
+</div>
+
+<!-- OUTPUT -->
+<div id="out"></div>
+
+</main>
+<script>
+/* ══════════════════════════════════════
+   Z_p ARITHMETIC
+══════════════════════════════════════ */
+let P = 5;
+
+const mod   = (a, p=P) => ((a % p) + p) % p;
+const add   = (a, b, p=P) => mod(a + b, p);
+const sub   = (a, b, p=P) => mod(a - b, p);
+const mul   = (a, b, p=P) => mod(a * b, p);
+const neg   = (a, p=P)   => mod(-a, p);
+const inv   = (a, p=P)   => { if (a === 0) return null; for (let i=1;i<p;i++) if (mul(a,i,p)===1) return i; return null; };
+const divFp = (a, b, p=P) => { const bi=inv(b,p); return bi===null?null:mul(a,bi,p); };
+
+function varName(i, m) {
+  return m <= 4 ? ['x','y','z','w'][i] : `x_{${i+1}}`;
+}
+
+/* ══════════════════════════════════════
+   GAUSSIAN ELIMINATION mod p
+══════════════════════════════════════ */
+function solveModP(input, p) {
+  const n = input.length, m = input[0].length - 1;
+  let M = input.map(r => r.map(v => mod(v, p)));
+  let acc = Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) => i===j?1:0));
+  const steps = [];
+
+  function snap(op, pivs) {
+    steps.push({
+      op, pivs: pivs ? pivs.slice() : [],
+      M: M.map(r=>r.slice()),
+      acc: acc.map(r=>r.slice()),
+    });
+  }
+
+  // initial
+  snap({t:'init'}, []);
+
+  let pr = 0;
+  const allPivots = [];
+  let det = 1;
+  let swapCount = 0;
+
+  // ── forward pass ──
+  for (let col=0; col<m && pr<n; col++) {
+    let found = -1;
+    for (let r=pr; r<n; r++) if (M[r][col] !== 0) { found=r; break; }
+    if (found === -1) continue;
+
+    if (found !== pr) {
+      [M[found], M[pr]] = [M[pr], M[found]];
+      [acc[found], acc[pr]] = [acc[pr], acc[found]];
+      swapCount++;
+      snap({t:'swap', i:pr, j:found}, []);
+    }
+
+    // accumulate pivot into det before any normalization
+    det = mul(det, M[pr][col], p);
+    allPivots.push({row:pr, col});
+
+    let anyElim = false;
+    for (let r=pr+1; r<n; r++) {
+      if (M[r][col] !== 0) {
+        const mult = divFp(M[r][col], M[pr][col], p);
+        for (let c=0; c<=m; c++) {
+          M[r][c]   = sub(M[r][c],   mul(mult, M[pr][c],   p), p);
+          if (c < n) acc[r][c] = sub(acc[r][c], mul(mult, acc[pr][c], p), p);
+        }
+        snap({t:'rowop', i:r, j:pr, mult, dir:'fwd'}, [{row:pr, col}]);
+        anyElim = true;
+      }
+    }
+    pr++;
+  }
+
+  // apply sign of row swaps to det
+  if (swapCount % 2 === 1) det = neg(det, p);
+  if (allPivots.length < Math.min(n, m)) det = 0;
+
+  // ── back substitution ──
+  for (let pIdx=allPivots.length-1; pIdx>=0; pIdx--) {
+    const {row, col} = allPivots[pIdx];
+    for (let r=0; r<row; r++) {
+      if (M[r][col] !== 0) {
+        const mult = divFp(M[r][col], M[row][col], p);
+        for (let c=0; c<=m; c++) {
+          M[r][c]   = sub(M[r][c],   mul(mult, M[row][c],   p), p);
+          if (c < n) acc[r][c] = sub(acc[r][c], mul(mult, acc[row][c], p), p);
+        }
+        snap({t:'rowop', i:r, j:row, mult, dir:'back'}, [{row, col}]);
+      }
+    }
+  }
+
+  // ── normalize pivots ──
+  for (const {row, col} of allPivots) {
+    const piv = M[row][col];
+    if (piv !== 0 && piv !== 1) {
+      const sc = inv(piv, p);
+      for (let c=0; c<=m; c++) {
+        M[row][c]   = mul(M[row][c],   sc, p);
+        if (c < n) acc[row][c] = mul(acc[row][c], sc, p);
+      }
+      snap({t:'scale', i:row, sc, piv}, allPivots.filter(pp=>pp.row<=row));
+    }
+  }
+
+  return {steps, n, m, allPivots, p,
+    finalM: steps[steps.length-1].M,
+    finalAcc: steps[steps.length-1].acc,
+    det};
+}
+
+/* ══════════════════════════════════════
+   TEX HELPERS
+══════════════════════════════════════ */
+function rk(t) { try { return katex.renderToString(t, {throwOnError:false}); } catch(e) { return t; } }
+
+function eqTeX(row, b, m, vn, p) {
+  const terms = [];
+  for (let i=0; i<m; i++) {
+    const c = row[i];
+    if (c === 0) continue;
+    const v = vn[i];
+    if (terms.length === 0) {
+      if (c === 1) terms.push(v);
+      else terms.push(`${c}${v}`);
+    } else {
+      if (c === 1) terms.push(`+${v}`);
+      else terms.push(`+${c}${v}`);
+    }
+  }
+  if (!terms.length) return `0 \\equiv ${b}`;
+  return terms.join('\\,') + ` \\equiv ${b}`;
+}
+
+function opDescTeX(op, p) {
+  if (op.t === 'init') return '[\\,\\text{acc}\\mid A\\mid b\\,] \\text{ — initial augmented system}';
+  if (op.t === 'swap') return `R_{${op.i+1}} \\leftrightarrow R_{${op.j+1}} \\;\\text{(swap rows)}`;
+  if (op.t === 'scale') {
+    const sc = inv(op.piv, p);
+    return `R_{${op.i+1}} \\leftarrow ${sc}\\cdot R_{${op.i+1}} \\;\\text{(normalize pivot: } ${op.piv}^{-1}\\equiv ${sc}\\text{ mod }${p}\\text{)}`;
+  }
+  if (op.t === 'rowop') {
+    const nm = neg(op.mult, p);
+    const dirNote = op.dir==='fwd' ? '\\text{(forward elim)}' : '\\text{(back sub)}';
+    if (op.mult === 1)
+      return `R_{${op.i+1}} \\leftarrow R_{${op.i+1}} - R_{${op.j+1}} ${dirNote}`;
+    if (nm === 1)
+      return `R_{${op.i+1}} \\leftarrow R_{${op.i+1}} + R_{${op.j+1}} ${dirNote}`;
+    // show the multiplier and its derivation
+    const pivVal = /* we'll annotate below */ '';
+    return `R_{${op.i+1}} \\leftarrow R_{${op.i+1}} - ${op.mult}\\cdot R_{${op.j+1}} ${dirNote}`;
+  }
+  return '';
+}
+
+/* ══════════════════════════════════════
+   RENDER STEPS
+══════════════════════════════════════ */
+function renderOutput(result) {
+  const {steps, n, m, allPivots, p, finalM, finalAcc, det} = result;
+  const vn = Array.from({length:m}, (_,i)=>varName(i,m));
+  const out = document.getElementById('out');
+  out.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className='steps-wrap';
+
+  let stepNum = 0;
+  steps.forEach(step => {
+    if (step.op.t !== 'init') stepNum++;
+    const block = document.createElement('div'); block.className='scard';
+
+    // header
+    const hd = document.createElement('div'); hd.className='shd';
+    const badge = document.createElement('span');
+    if (step.op.t==='init') { badge.className='sbadge init-b'; badge.textContent='init'; }
+    else { badge.className='sbadge'; badge.textContent=stepNum; }
+    const desc = document.createElement('span'); desc.className='sdesc';
+    desc.innerHTML = rk(opDescTeX(step.op, p));
+    hd.append(badge, desc); block.appendChild(hd);
+
+    // table
+    const tw = document.createElement('div'); tw.className='twrap';
+    const tbl = document.createElement('table'); tbl.className='tab';
+
+    // thead row 1: group labels
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    const thOp = document.createElement('th'); thOp.rowSpan=2; thOp.style.verticalAlign='middle'; thOp.textContent='Row op'; thOp.className='mhd';
+    hr.appendChild(thOp);
+    const thAcc = document.createElement('th'); thAcc.colSpan=n; thAcc.className='ahd sepr'; thAcc.innerHTML='Accounting — combination of original rows';
+    hr.appendChild(thAcc);
+    const thVar = document.createElement('th'); thVar.colSpan=m; thVar.className='mhd'; thVar.textContent='Coefficients';
+    hr.appendChild(thVar);
+    const thB = document.createElement('th'); thB.rowSpan=2; thB.className='bhd sepr'; thB.style.verticalAlign='middle'; thB.innerHTML=rk('b');
+    hr.appendChild(thB);
+    const thEq = document.createElement('th'); thEq.rowSpan=2; thEq.className='ehd'; thEq.style.verticalAlign='middle'; thEq.textContent='Equation (mod p)';
+    hr.appendChild(thEq);
+    thead.appendChild(hr);
+
+    // thead row 2: sub-labels
+    const sr = document.createElement('tr');
+    for (let j=0; j<n; j++) {
+      const th=document.createElement('th'); th.className='ahd'+(j===n-1?' sepr':'');
+      th.innerHTML=rk(`E_{${j+1}}`); sr.appendChild(th);
+    }
+    for (let j=0; j<m; j++) {
+      const th=document.createElement('th'); th.className='mhd';
+      th.innerHTML=rk(vn[j]); sr.appendChild(th);
+    }
+    thead.appendChild(sr);
+    tbl.appendChild(thead);
+
+    // tbody
+    const tbody = document.createElement('tbody');
+    for (let i=0; i<n; i++) {
+      const tr = document.createElement('tr');
+      const isModified = step.op.t==='rowop'&&step.op.i===i ||
+                         step.op.t==='swap'&&(step.op.i===i||step.op.j===i) ||
+                         step.op.t==='scale'&&step.op.i===i;
+      if (isModified) tr.classList.add('mod-r');
+
+      // op label
+      const tdOp = document.createElement('td'); tdOp.className='op-lbl';
+      if (i === 0 && step.op.t !== 'init') tdOp.innerHTML = rk(opDescTeX(step.op, p));
+      tr.appendChild(tdOp);
+
+      // accounting
+      for (let j=0; j<n; j++) {
+        const td=document.createElement('td'); td.className='ac'+(j===n-1?' sepr':'');
+        td.innerHTML=rk(String(step.acc[i][j])); tr.appendChild(td);
+      }
+
+      // variable coefficients
+      for (let j=0; j<m; j++) {
+        const td=document.createElement('td');
+        const isPiv = step.pivs.some(pv=>pv.row===i&&pv.col===j);
+        if (isPiv) {
+          td.className='piv-cell'; td.innerHTML=`<span class="pbox">${rk(String(step.M[i][j]))}</span>`;
+        } else {
+          td.className='mc'; td.innerHTML=rk(String(step.M[i][j]));
+        }
+        tr.appendChild(td);
+      }
+
+      // b
+      const tdB=document.createElement('td'); tdB.className='bc sepr';
+      tdB.innerHTML=rk(String(step.M[i][m])); tr.appendChild(tdB);
+
+      // equation
+      const tdEq=document.createElement('td'); tdEq.className='ec';
+      tdEq.innerHTML=rk(eqTeX(step.M[i], step.M[i][m], m, vn, p));
+      tr.appendChild(tdEq);
+
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    tw.appendChild(tbl); block.appendChild(tw); wrap.appendChild(block);
+  });
+
+  // ── Solution ──
+  const sol = document.createElement('div'); sol.className='sol-card';
+  let inconsistent = false, underdetermined = false;
+  for (let r=0; r<n; r++) {
+    const allZero = finalM[r].slice(0,m).every(v=>v===0);
+    if (allZero && finalM[r][m] !== 0) { inconsistent=true; break; }
+  }
+  if (!inconsistent && allPivots.length < Math.min(n,m)) underdetermined = true;
+
+  if (inconsistent) {
+    sol.innerHTML=`<h3>No Solution</h3><p class="sol-note">The system is inconsistent over 𝔽<sub>${p}</sub>: a row reduces to 0 ≡ c (c ≠ 0 mod ${p}), a contradiction.</p>`;
+  } else if (underdetermined || allPivots.length < m) {
+    const pivCols = new Set(allPivots.map(pv=>pv.col));
+    const freeVars = Array.from({length:m},(_,i)=>i).filter(j=>!pivCols.has(j));
+    sol.innerHTML=`<h3>Infinitely Many Solutions</h3>
+      <p class="sol-note">Free variables over 𝔽<sub>${p}</sub>: ${freeVars.map(j=>`<em>${vn[j]}</em>`).join(', ')} can be anything in {0,…,${p-1}}.
+      Each free choice gives a distinct solution.</p>`;
+  } else {
+    sol.innerHTML='<h3>Unique Solution over 𝔽<sub>' + p + '</sub></h3>';
+    const vals = document.createElement('div'); vals.className='sol-vals';
+    allPivots.forEach(({row,col}) => {
+      const val = divFp(finalM[row][m], finalM[row][col], p);
+      const item=document.createElement('div'); item.className='sol-item';
+      item.innerHTML=rk(`${vn[col]} \\equiv ${val} \\pmod{${p}}`);
+      vals.appendChild(item);
+    });
+    sol.appendChild(vals);
+    if (n===m) {
+      const db=document.createElement('div'); db.className='det-badge';
+      db.innerHTML=rk(`\\det(A)\\equiv ${det}\\pmod{${p}}`);
+      sol.appendChild(db);
+    }
+    // Accounting matrix at end
+    const accNote=document.createElement('p'); accNote.className='sol-note'; accNote.style.marginTop='.7rem';
+    accNote.innerHTML=`The accounting matrix L satisfies L·A ≡ (row-reduced form) mod ${p}. See the final step's accounting columns above.`;
+    sol.appendChild(accNote);
+  }
+  wrap.appendChild(sol);
+
+  // key
+  const key=document.createElement('div'); key.className='keybox';
+  key.innerHTML=`
+    <strong>Reading this tableau:</strong>
+    All arithmetic is mod <strong>${p}</strong>.
+    The <span style="color:#3a5aa8">blue accounting columns</span> record how each current row
+    is a 𝔽<sub>${p}</sub>-linear combination of the original equations E₁, …, E<sub>n</sub>.
+    <span style="color:var(--red)">Red-boxed</span> entries are the active <strong>pivot elements</strong>.
+    <br><br>
+    <strong>Why mod p?</strong> Since p is prime, every non-zero element of ℤ<sub>p</sub> has a
+    multiplicative inverse (see the multiplication table above), so row operations work exactly
+    as over ℝ — the same elimination algorithm, just with clock arithmetic.
+    The accounting matrix L is the product of all elementary matrices and satisfies
+    <em>L·A ≡ (RREF of A) mod p</em>.
+  `;
+  wrap.appendChild(key);
+  out.appendChild(wrap);
+  out.scrollIntoView({behavior:'smooth'});
+}
+
+/* ══════════════════════════════════════
+   FIELD TABLES RENDER
+══════════════════════════════════════ */
+function renderFieldTables(p) {
+  document.getElementById('fieldCardTitle').textContent = `𝔽${p} — Addition & Multiplication Tables`;
+  const cont = document.getElementById('tablesRow'); cont.innerHTML='';
+
+  ['add','mul'].forEach(type => {
+    const wr = document.createElement('div'); wr.className='ftable-wrap';
+    const lbl = document.createElement('p');
+    lbl.innerHTML = type==='add' ? `<strong>Addition</strong> (a + b mod ${p})` : `<strong>Multiplication</strong> (a · b mod ${p})`;
+    wr.appendChild(lbl);
+
+    const tbl = document.createElement('table'); tbl.className='ftable';
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    const opTh = document.createElement('th'); opTh.className='op-cell';
+    opTh.innerHTML = type==='add' ? '+' : '·';
+    hr.appendChild(opTh);
+    for (let j=0; j<p; j++) {const th=document.createElement('th');th.textContent=j;hr.appendChild(th);}
+    thead.appendChild(hr); tbl.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (let i=0; i<p; i++) {
+      const tr=document.createElement('tr');
+      const rh=document.createElement('th');rh.textContent=i;tr.appendChild(rh);
+      for (let j=0; j<p; j++) {
+        const td=document.createElement('td');
+        const v = type==='add' ? add(i,j,p) : mul(i,j,p);
+        td.textContent=v;
+        if (i===j) td.classList.add('diag');
+        if (type==='mul' && i>0 && j>0 && v===1) td.classList.add('inv-cell');
+        if (v===0) td.classList.add('zero');
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    wr.appendChild(tbl);
+
+    // For multiplication: show inverse table
+    if (type==='mul') {
+      const invP=document.createElement('p'); invP.style.marginTop='.6rem';
+      const invs=[]; for(let i=1;i<p;i++) invs.push(`${i}^{-1}\\equiv ${inv(i,p)}`);
+      invP.innerHTML=`<span style="font-size:.8rem;color:var(--gray);font-style:italic">Inverses: </span>`+rk(invs.join(',\\;'));
+      wr.appendChild(invP);
+    }
+    cont.appendChild(wr);
+  });
+}
+
+/* ══════════════════════════════════════
+   MATRIX INPUT UI
+══════════════════════════════════════ */
+let cN=2, cM=2;
+const EXAMPLES = {
+  5: [
+    {n:2,m:2,A:[[3,2],[1,3]],b:[4,2],label:'2×2 from text'},
+    {n:3,m:3,A:[[1,2,3],[4,0,1],[2,3,1]],b:[1,2,0],label:'3×3 unique'},
+    {n:2,m:2,A:[[2,4],[1,2]],b:[3,1],label:'2×2 no solution'},
+    {n:2,m:3,A:[[1,2,3],[2,4,1]],b:[1,2],label:'2×3 free variable'},
+  ],
+  7: [
+    {n:2,m:2,A:[[3,5],[2,4]],b:[1,6],label:'2×2 over 𝔽₇'},
+    {n:3,m:3,A:[[1,2,3],[0,4,5],[6,0,1]],b:[0,1,2],label:'3×3 over 𝔽₇'},
+  ],
+  2: [
+    {n:3,m:3,A:[[1,1,0],[0,1,1],[1,0,1]],b:[1,0,1],label:'3×3 over 𝔽₂'},
+  ],
+  3: [
+    {n:2,m:2,A:[[2,1],[1,2]],b:[0,1],label:'2×2 over 𝔽₃'},
+  ],
+  11: [
+    {n:2,m:2,A:[[5,3],[7,2]],b:[1,4],label:'2×2 over 𝔽₁₁'},
+  ],
+  13: [
+    {n:2,m:2,A:[[6,4],[3,9]],b:[2,7],label:'2×2 over 𝔽₁₃'},
+  ],
+};
+
+function onPrimeChange() {
+  P = parseInt(document.getElementById('primeP').value);
+  renderFieldTables(P);
+  rebuildExamples();
+  buildGrid();
+}
+
+function rebuildAll() {
+  P = parseInt(document.getElementById('primeP').value);
+  cN = Math.min(Math.max(parseInt(document.getElementById('nRows').value)||2,2),6);
+  cM = Math.min(Math.max(parseInt(document.getElementById('nCols').value)||2,2),6);
+  document.getElementById('nRows').value=cN;
+  document.getElementById('nCols').value=cM;
+  buildGrid();
+}
+
+function rebuildExamples() {
+  const row = document.getElementById('exRow'); row.innerHTML='';
+  const exs = EXAMPLES[P] || EXAMPLES[5];
+  exs.forEach((ex,i) => {
+    const btn=document.createElement('button'); btn.className='btn-ghost';
+    btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);
+    row.appendChild(btn);
+  });
+}
+
+function buildGrid() {
+  const cont=document.getElementById('mxWrap'); cont.innerHTML='';
+  const g=document.createElement('div'); g.className='mx-grid';
+  g.style.gridTemplateColumns=`auto ${Array(cM).fill('56px').join(' ')} 24px 56px`;
+  // col labels
+  const empty=document.createElement('div'); g.appendChild(empty);
+  for(let j=0;j<cM;j++){const d=document.createElement('div');d.className='clbl';d.innerHTML=rk(varName(j,cM));g.appendChild(d);}
+  g.appendChild(document.createElement('div'));
+  const bh=document.createElement('div');bh.className='clbl';bh.innerHTML=rk('b');g.appendChild(bh);
+  // rows
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`E_{${i+1}}`);g.appendChild(rl);
+    for(let j=0;j<cM;j++){
+      const inp=document.createElement('input');inp.type='text';inp.id=`m${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      g.appendChild(inp);
+    }
+    const eq=document.createElement('div');eq.className='eqsign';eq.innerHTML=rk('\\equiv');g.appendChild(eq);
+    const bi=document.createElement('input');bi.type='text';bi.id=`b${i}`;bi.placeholder='0';bi.className='b-input';bi.autocomplete='off';
+    g.appendChild(bi);
+  }
+  cont.appendChild(g);
+}
+
+function loadEx(ex) {
+  cN=ex.n; cM=ex.m;
+  document.getElementById('nRows').value=cN;
+  document.getElementById('nCols').value=cM;
+  buildGrid();
+  ex.A.forEach((row,i)=>{
+    row.forEach((v,j)=>{const el=document.getElementById(`m${i}_${j}`);if(el)el.value=v;});
+    const be=document.getElementById(`b${i}`);if(be)be.value=ex.b[i];
+  });
+}
+
+function doSolve() {
+  try {
+    P = parseInt(document.getElementById('primeP').value);
+    const input = Array.from({length:cN},(_,i)=>[
+      ...Array.from({length:cM},(_,j)=>parseInt(document.getElementById(`m${i}_${j}`)?.value||'0')||0),
+      parseInt(document.getElementById(`b${i}`)?.value||'0')||0
+    ]);
+    const result = solveModP(input, P);
+    renderOutput(result);
+  } catch(e) {
+    document.getElementById('out').innerHTML=`<div class="err-msg" style="padding:1rem">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  P=5;
+  renderFieldTables(P);
+  rebuildExamples();
+  buildGrid();
+  loadEx(EXAMPLES[5][0]);
+});
+</script>
+</body>
+</html>

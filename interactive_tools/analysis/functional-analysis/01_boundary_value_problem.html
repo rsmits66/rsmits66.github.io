@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>1. A problem from differential equations | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+#cvW { height: 150px; } #cvFn { height: 270px; }
+#cvM { aspect-ratio: 1 / 1; max-width: 340px; height: auto; margin: 0 auto; }
+#cvS { height: 180px; } #cvT { height: 230px; } #cvD { height: 170px; }
+#cvW, #cvFn, #cvM, #cvD { touch-action: none; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.mini .slider { flex: 1 1 8rem; min-width: 7rem; }
+.mini .slider label { font-family: var(--serif); font-size: .92rem; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); }
+.legend i.sq.g { background: var(--gray); }
+.note { font-size: .95rem; border-left: 4px solid var(--crimson); padding: .4rem .8rem; background: var(--mist); margin: .6rem 0; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Sections 1.1 and 1.2</span>
+    </div>
+    <div class="page-number" aria-hidden="true">1</div>
+    <div>
+      <h1>A problem from differential equations</h1>
+      <p>A differential equation becomes an integral equation, the integral equation becomes f = u + Kf, and the course begins: when can I − K be inverted?</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>Start with $f''+f=g$ and the initial data $f(a)=1$, $f'(a)=0$. Then let the right side depend on the unknown, $f''+f=\sigma f$. The first problem has a formula. The second has only an equation, $f=u+Kf$, and we solve it by applying $K$ again and again.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>Equation</legend>
+        <div class="chips">
+          <input type="radio" name="mode" id="m-forced" value="forced"><label for="m-forced">(1.1) f″ + f = g, with g given</label>
+          <input type="radio" name="mode" id="m-sigma" value="sigma" checked><label for="m-sigma">(1.6) f″ + f = σ f, with σ given</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend id="shapeLegend">Coefficient σ</legend>
+        <div class="chips">
+          <input type="radio" name="shape" id="s-one" value="one" checked><label for="s-one">Constant 1</label>
+          <input type="radio" name="shape" id="s-ramp" value="ramp"><label for="s-ramp">Ramp</label>
+          <input type="radio" name="shape" id="s-bump" value="bump"><label for="s-bump">Bump</label>
+          <input type="radio" name="shape" id="s-step" value="step"><label for="s-step">Step</label>
+          <input type="radio" name="shape" id="s-wave" value="wave"><label for="s-wave">cos 2(x − a)</label>
+          <input type="radio" name="shape" id="s-res" value="res"><label for="s-res">cos (x − a)</label>
+          <input type="radio" name="shape" id="s-sketch" value="sketch"><label for="s-sketch">Sketch your own</label>
+        </div>
+      </fieldset>
+      <div class="slider big" id="nWrap">
+        <label for="sN">Applications of K, n</label><output id="oN">4</output>
+        <input type="range" id="sN" min="0" max="30" step="1" value="4">
+      </div>
+      <div class="slider">
+        <label for="sLam">Strength λ</label><output id="oLam">1.00</output>
+        <input type="range" id="sLam" min="-3" max="3" step="0.01" value="1">
+      </div>
+      <div class="slider">
+        <label for="sL">Length b − a</label><output id="oL">6.0</output>
+        <input type="range" id="sL" min="1" max="14" step="0.1" value="6">
+      </div>
+      <div class="slider">
+        <label for="sA">f(a)</label><output id="oA">1.00</output>
+        <input type="range" id="sA" min="-2" max="2" step="0.05" value="1">
+      </div>
+      <div class="slider">
+        <label for="sB">f′(a)</label><output id="oB">0.00</output>
+        <input type="range" id="sB" min="-2" max="2" step="0.05" value="0">
+      </div>
+      <div class="slider">
+        <label for="sX">Evaluation point x − a</label><output id="oX">3.60</output>
+        <input type="range" id="sX" min="0.02" max="1" step="0.0025" value="0.6">
+      </div>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">What is given and what is found, as graphs on [a, b].</p>
+        <canvas id="cvW" aria-label="Graph of the given function"></canvas>
+        <ul class="legend"><li><i></i><span id="legW">σ = λ σ₀</span></li></ul>
+        <div class="mini" id="sketchTools" hidden>
+          <span>Drag across the graph above to draw.</span>
+          <button type="button" class="plain" id="clearSketch">Clear sketch</button>
+        </div>
+        <canvas id="cvFn" aria-label="Graph of the solution and its approximations"></canvas>
+        <ul class="legend">
+          <li><i></i><span id="legRef">f, from an ODE solver</span></li>
+          <li><i class="c"></i><span id="legApprox">f<sub>n</sub> = u + Ku + … + Kⁿu</span></li>
+          <li><i class="g d"></i>u, the solution when the right side is 0</li>
+        </ul>
+        <p class="cap" id="capTube">The shaded band is the set of all functions within ‖f − f<sub>n</sub>‖ of f. In C[a, b] a ball is a band around a graph. Drag the vertical marker to move x.</p>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">Sample at m points. Functions become columns and K becomes an m × m matrix.</p>
+        <div class="mini">
+          <div class="slider"><label for="sM">Grid size m</label><output id="oM">16</output><input type="range" id="sM" min="6" max="48" step="1" value="16"></div>
+          <div class="slider" id="powWrap"><label for="sP">Power shown, K<sup>j</sup></label><output id="oP">1</output><input type="range" id="sP" min="1" max="12" step="1" value="1"></div>
+        </div>
+        <canvas id="cvM" aria-label="Matrix of the integral operator in the nodal basis"></canvas>
+        <ul class="legend"><li><i class="sq"></i>positive entry</li><li><i class="sq g"></i>negative entry</li><li id="maxEntry"></li></ul>
+        <p class="cap">Rows are x, columns are t. Drag to choose the row x.</p>
+        <canvas id="cvS" aria-label="Row x of the kernel and the integrand"></canvas>
+        <ul class="legend"><li><i></i><span id="legRow">row of K: sin(x − t) σ(t)</span></li><li><i class="c"></i><span id="legInt">row × f<sub>n</sub>(t), shaded</span></li></ul>
+        <table class="read">
+          <tr><th id="r1h"></th><td id="r1">–</td></tr>
+          <tr><th id="r2h"></th><td id="r2">–</td></tr>
+          <tr><th id="r3h"></th><td id="r3">–</td></tr>
+        </table>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub">Sizes and distances in C[a, b] with ‖h‖ = max |h(x)|.</p>
+        <div class="mini" id="domainWrap">
+          <span>Integrate over</span>
+          <div class="chips">
+            <input type="radio" name="domain" id="d-volt" value="volterra" checked><label for="d-volt">a ≤ t ≤ x, the book's K</label>
+            <input type="radio" name="domain" id="d-fred" value="fredholm"><label for="d-fred">a ≤ t ≤ b, a look ahead</label>
+          </div>
+        </div>
+        <canvas id="cvT" aria-label="Sizes of the terms of the series, their bound, and the error"></canvas>
+        <ul class="legend" id="legT">
+          <li><i class="sq g"></i>‖K<sup>j</sup>u‖</li><li><i class="g d"></i><span id="legBound">bound (M(b − a))<sup>j</sup> / j!</span></li><li><i class="c"></i>‖f − f<sub>j</sub>‖</li>
+        </ul>
+        <div id="detBlock">
+          <p class="cap">Below: det(I − λK₀) for the finely sampled matrix, as λ varies. Drag to change λ.</p>
+          <canvas id="cvD" aria-label="Determinant of I minus lambda K as a function of lambda"></canvas>
+          <ul class="legend"><li><i></i>a ≤ t ≤ x: always 1</li><li><i class="c"></i>a ≤ t ≤ b</li></ul>
+        </div>
+        <p class="note" id="geoNote" hidden></p>
+        <table class="read">
+          <tr><th id="g1h"></th><td id="g1">–</td></tr>
+          <tr><th id="g2h"></th><td id="g2">–</td></tr>
+          <tr><th id="g3h"></th><td id="g3">–</td></tr>
+          <tr><th id="g4h"></th><td id="g4">–</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">The solved problem.</span> Let $g\in C[a,b]$. A function $f$ satisfies
+    $$f''+f=g\ \text{ on }[a,b],\qquad f(a)=1,\quad f'(a)=0 \tag{1.1, 1.2}$$
+    if and only if
+    $$f(x)=\cos(x-a)+\int_a^x\sin(x-t)\,g(t)\,dt .$$</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">The generalization.</span> Let $\sigma\in C[a,b]$. Putting $g=\sigma f$ in the formula, $f$ solves $f''+f=\sigma f$ with the same initial data if and only if
+    $$f(x)=\cos(x-a)+\int_a^x\sin(x-t)\,\sigma(t)\,f(t)\,dt. \tag{1.7}$$
+    With the shorthand $u(x)=\cos(x-a)$ and $Kh(x)=\int_a^x\sin(x-t)\sigma(t)h(t)\,dt$ this reads
+    $$f=u+Kf,\qquad\text{that is,}\qquad (I-K)f=u. \tag{1.9}$$</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem.</span> Give $C[a,b]$ the norm $\|h\|=\max_{a\le x\le b}|h(x)|$ and let $M=\|\sigma\|$. Then for every $h\in C[a,b]$ and every $n$,
+    $$|K^nh(x)|\le\frac{M^n(x-a)^n}{n!}\,\|h\|,\qquad\text{so}\qquad \|K^nh\|\le\frac{\bigl(M(b-a)\bigr)^n}{n!}\,\|h\| .$$
+    Consequently the partial sums $f_n=u+Ku+\dots+K^nu$ form a Cauchy sequence in $C[a,b]$. Because $C[a,b]$ is complete they converge to some $f\in C[a,b]$, this $f$ satisfies $f=u+Kf$, and it is the only solution.</p>
+  </div>
+  <div class="prose">
+    <p>Three ideas in that proof are the subject of Section 1.2 and of most of what follows. A <em>norm</em> measures the size of a function with one number. <em>Completeness</em> guarantees that a Cauchy sequence of functions has a limit inside the space. A <em>bounded linear operator</em> such as $K$ passes through limits, which is what lets us conclude $f=u+Kf$ from $f_{n+1}=u+Kf_n$.</p>
+    <p>The goal further on is the equation $(I-K)f=u$ for operators $K$ that are not so obliging. For the $K$ above, $I-K$ is always invertible. Integrate over all of $[a,b]$ instead and it may not be. Operators of the form $I-K$ with $K$ compact are the first examples of <em>Fredholm operators</em>: they can fail to be invertible, but only in a finite-dimensional way. The switch in the Geometry panel is a first look.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>The formula, tested</h3>
+      <p>Equation (1.1) with g = cos(x − a). The integral formula and an ODE solver agree. The solution grows without bound even though g does not: the forcing is in step with u.</p>
+      <button type="button" class="plain" data-exp="res">Set up the forced equation</button>
+    </div>
+    <div class="exp">
+      <h3>A series you can sum by hand</h3>
+      <p>With σ ≡ 1 the equation is f″ = 0, so f ≡ 1. Yet u = cos(x − a). Step n from 0 upward and watch cosine, plus corrections, flatten into a constant.</p>
+      <button type="button" class="plain" data-exp="one">Set up σ ≡ 1</button>
+    </div>
+    <div class="exp">
+      <h3>Worse before better</h3>
+      <p>On a long interval M(b − a) = 12. The early terms grow and f<sub>n</sub> is nowhere near f. Then n! takes over. Find the n at which the band first becomes thinner than the curve.</p>
+      <button type="button" class="plain" data-exp="long">Set up the long interval</button>
+    </div>
+    <div class="exp">
+      <h3>The matrix runs out of room</h3>
+      <p>With m = 8, raise the power j. Each multiplication pushes the entries one more step below the diagonal. At j = 8 nothing is left. Then raise m and try again.</p>
+      <button type="button" class="plain" data-exp="nil">Set up the 8 × 8 matrix</button>
+    </div>
+    <div class="exp">
+      <h3>When I − K fails</h3>
+      <p>Integrate over all of [a, b] with σ₀ = cos 2(x − a). Drag λ toward the point where the crimson determinant crosses zero and watch f. Then go back to a ≤ t ≤ x with the same λ.</p>
+      <button type="button" class="plain" data-exp="fred">Set up the look ahead</button>
+    </div>
+    <div class="exp">
+      <h3>A solution the series cannot reach</h3>
+      <p>Still over all of [a, b], now with λ = 1.5. The determinant is far from zero and f exists, but the terms ‖K<sup>j</sup>u‖ grow forever. Iteration is one way to invert I − K, not the only way.</p>
+      <button type="button" class="plain" data-exp="diverge">Set up the divergent series</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>For equation (1.1) the integral formula and the ODE solver are independent computations. Their agreement is evidence for the first statement, one $g$ at a time. The proof is two differentiations.</li>
+        <li>The bound $(M(b-a))^n/n!$ is a theorem, proved by induction. The gray bars must lie under the dashed line for every $\sigma$ you can draw, and they do.</li>
+        <li>The matrix of $K$ has zeros on and above the diagonal because $t\le x$ and $\sin(x-x)=0$. So $I-K_m$ is triangular with ones on the diagonal, its determinant is $1$, and the sampled problem is solvable for every $\sigma$. This is a fact about matrices and it is exact.</li>
+        <li>The band around $f$ really is the ball $\{h:\|h-f\|\le\varepsilon\}$ of $C[a,b]$. Uniform convergence means the band shrinks to the graph.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>A strictly triangular $m\times m$ matrix satisfies $K_m^m=0$, so on the screen the series stops after $m$ terms. The operator $K$ on $C[a,b]$ is not nilpotent: $K^n\ne0$ for every $n$. What survives the passage to infinitely many dimensions is the estimate with $n!$, not the vanishing.</li>
+        <li>There is no determinant of $I-K$ on $C[a,b]$. The plotted curve belongs to a large matrix. Saying what replaces the determinant is the work of the Fredholm theory.</li>
+        <li>A Cauchy sequence needs somewhere to converge. On the screen every sequence of columns of numbers converges. That the limit of the $f_n$ is again a continuous function is the completeness of $C[a,b]$, and it needs proof.</li>
+        <li>Both reference curves are approximations. The error $\|f-f_n\|$ is measured against the limit of the sampled iteration, so it shows the truncation of the series and nothing else. The ODE solver is an independent check: compare the last two readouts under the matrix. On a long interval they differ in the third decimal, because small quadrature errors are amplified by $(I-K)^{-1}$.</li>
+        <li>In the look ahead, the matrix is singular at one value of $\lambda$ and invertible at all others. Whether an operator on an infinite-dimensional space behaves so tamely is exactly what it means to be Fredholm. The picture suggests the question and does not answer it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Differentiate $f(x)=\cos(x-a)+\int_a^x\sin(x-t)g(t)\,dt$ twice and verify (1.1) and (1.2). At which step do you use $\sin(x-x)=0$, and at which step $\cos(x-x)=1$? Which feature of the matrix in the Coordinates panel records the first fact?</li>
+    <li>Prove $|K^nh(x)|\le M^n(x-a)^n\|h\|/n!$ by induction on $n$. Set up "Worse before better" and find, from the inequality alone, an $n$ that guarantees $\|f-f_n\|\lt10^{-6}$. Compare with the smallest $n$ that works in the laboratory. Why is the bound so pessimistic here?</li>
+    <li>Show that a strictly lower triangular $m\times m$ matrix $N$ satisfies $N^m=0$ and $(I-N)^{-1}=I+N+\dots+N^{m-1}$. Then take $\sigma\equiv1$ and compute $K1$ and $K^21$ by hand to see that $K$ itself is not nilpotent. Show that nevertheless $\|K^n\|^{1/n}\to0$. What does this say about solving $f=u+\lambda Kf$ for large $\lambda$?</li>
+    <li>Now let $Kh(x)=\int_a^b\sin(x-t)\sigma(t)h(t)\,dt$. Use $\sin(x-t)=\sin x\cos t-\cos x\sin t$ to show that every $Kh$ is a combination of $\sin x$ and $\cos x$, and reduce $f=u+\lambda Kf$ to two linear equations in two unknowns with determinant $1+\lambda^2(QR-P^2)$, where $P=\int\sigma\sin t\cos t$, $Q=\int\sigma\cos^2t$, $R=\int\sigma\sin^2t$. Prove that if $\sigma\ge0$ the equation is uniquely solvable for every real $\lambda$. For $\sigma=\cos2(x-a)$, find in the laboratory the $\lambda$ at which solvability fails. At that $\lambda$, how many independent solutions does $f=\lambda Kf$ have, and how many conditions must $u$ satisfy for $f=u+\lambda Kf$ to be solvable? Keep your two numbers. Their difference is the index.</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="index.html">Course contents</a>
+  <a href="02.html" id="nextLink">Next page: 2</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   Numerics.  Internally a = 0 and the variable is x - a in [0, L].
+   ------------------------------------------------------------------ */
+const n = 1600, J = 30;
+const state = { mode: 'sigma', shape: 'one', lam: 1, L: 6, alpha: 1, beta: 0, N: 4, domain: 'volterra', probe: 0.6, m: 16, pow: 1 };
+const defaultSketch = () => Float64Array.from({ length: n + 1 }, (_, i) => { const t = i / n; return 1.1 * Math.exp(-(((t - 0.3) / 0.1) ** 2)) - 0.9 * Math.exp(-(((t - 0.7) / 0.08) ** 2)); });
+let sketch = defaultSketch();
+const SHAPES = {
+  one: () => 1, ramp: t => t, bump: t => Math.exp(-(((t - 0.4) / 0.12) ** 2)), step: t => (t >= 0.5 ? 1 : 0),
+  wave: (t, x) => Math.cos(2 * x), res: (t, x) => Math.cos(x), sketch: (t, x, i) => sketch[i]
+};
+const R = {};
+const maxAbs = a => { let m = 0; for (const v of a) { const q = Math.abs(v); if (q > m || q !== q) m = q; } return m; };
+
+function compute() {
+  const { L, lam, alpha, beta, mode } = state, h = L / n, forced = mode === 'forced', fred = !forced && state.domain === 'fredholm';
+  const x = new Float64Array(n + 1), sx = new Float64Array(n + 1), cx = new Float64Array(n + 1), sh = new Float64Array(n + 1), w = new Float64Array(n + 1), u = new Float64Array(n + 1);
+  for (let i = 0; i <= n; i++) { x[i] = i * h; sx[i] = Math.sin(x[i]); cx[i] = Math.cos(x[i]); sh[i] = SHAPES[state.shape](i / n, x[i], i); w[i] = lam * sh[i]; u[i] = alpha * cx[i] + beta * sx[i]; }
+  const trap = f => { let s = 0; for (let i = 0; i <= n; i++) s += f(i); return h * (s - (f(0) + f(n)) / 2); };
+  // (K h)(x) = sin x * int cos(t) w h - cos x * int sin(t) w h, by cumulative trapezoid sums
+  const applyK = (hv, wv, whole) => {
+    const C = new Float64Array(n + 1), S = new Float64Array(n + 1), out = new Float64Array(n + 1);
+    for (let i = 1; i <= n; i++) { C[i] = C[i - 1] + h * (cx[i - 1] * wv[i - 1] * hv[i - 1] + cx[i] * wv[i] * hv[i]) / 2; S[i] = S[i - 1] + h * (sx[i - 1] * wv[i - 1] * hv[i - 1] + sx[i] * wv[i] * hv[i]) / 2; }
+    for (let i = 0; i <= n; i++) out[i] = whole ? sx[i] * C[n] - cx[i] * S[n] : sx[i] * C[i] - cx[i] * S[i];
+    return out;
+  };
+  // determinant data for the whole-interval operator: det(I - lam K0) = 1 + lam^2 (Q R - P^2)
+  const P0 = trap(i => sh[i] * sx[i] * cx[i]), Q0 = trap(i => sh[i] * cx[i] * cx[i]), R0 = trap(i => sh[i] * sx[i] * sx[i]);
+  const D = Q0 * R0 - P0 * P0, det = fred ? 1 + lam * lam * D : 1;
+  // reference solution
+  let ref = null;
+  if (fred) {
+    const P = lam * P0, Q = lam * Q0, Rr = lam * R0, a0 = trap(i => w[i] * cx[i] * u[i]), b0 = trap(i => w[i] * sx[i] * u[i]);
+    if (Math.abs(det) > 1e-7) { const A = (a0 * (1 + P) - Q * b0) / det, B = ((1 - P) * b0 + Rr * a0) / det; ref = u.map((v, i) => v + A * sx[i] - B * cx[i]); }
+  } else {                                            // classical Runge-Kutta on f'' = g - f  or  f'' = (sigma - 1) f
+    ref = new Float64Array(n + 1); let f = alpha, p = beta; ref[0] = f;
+    const acc = (wv, f) => forced ? wv - f : (wv - 1) * f;
+    for (let i = 0; i < n; i++) {
+      const w0 = w[i], w1 = (w[i] + w[i + 1]) / 2, w2 = w[i + 1];
+      const k1f = p, k1p = acc(w0, f), k2f = p + h / 2 * k1p, k2p = acc(w1, f + h / 2 * k1f), k3f = p + h / 2 * k2p, k3p = acc(w1, f + h / 2 * k2f), k4f = p + h * k3p, k4p = acc(w2, f + h * k3f);
+      f += h / 6 * (k1f + 2 * k2f + 2 * k3f + k4f); p += h / 6 * (k1p + 2 * k2p + 2 * k3p + k4p); ref[i + 1] = f;
+    }
+  }
+  const M = maxAbs(w), un = maxAbs(u);
+  let approx, tn = [], bound = [], err = [], ones = new Float64Array(n + 1).fill(1), Snorm = 0;
+  if (forced) {
+    const Sg = applyK(ones, w, false); approx = u.map((v, i) => v + Sg[i]);
+    Snorm = trap(i => Math.abs(sx[i]));              // ||S|| = max_x int_a^x |sin(x-t)| dt, attained at x = b
+    R.Sg = maxAbs(Sg); R.errForced = maxAbs(approx.map((v, i) => v - ref[i]));
+  } else {
+    // error is measured against the limit of the sampled iteration, so it shows truncation of the series only
+    let lim = ref;
+    if (!fred) { lim = Float64Array.from(u); let T = u, big = un; for (let j = 1; j <= 200; j++) { T = applyK(T, w, false); for (let i = 0; i <= n; i++) lim[i] += T[i]; const t = maxAbs(T); big = Math.max(big, t); if (t < 1e-17 * big) break; } }
+    R.lim = lim;
+    let T = u, sum = Float64Array.from(u), b = un;
+    for (let j = 0; j <= J; j++) {
+      if (j) { T = applyK(T, w, fred); for (let i = 0; i <= n; i++) sum[i] += T[i]; b *= fred ? M * L : M * L / j; }
+      tn.push(maxAbs(T)); bound.push(b); err.push(lim ? maxAbs(sum.map((v, i) => v - lim[i])) : NaN);
+      if (j === state.N) approx = sum.slice();
+    }
+  }
+  Object.assign(R, { h, x, sx, cx, sh, w, u, ref, approx, tn, bound, err, M, un, D, det, forced, fred, Snorm, applyK, ones });
+}
+function probe() {
+  const i0 = Math.round(state.probe * n), { x, w, u, approx, forced, fred, h } = R;
+  const row = new Float64Array(n + 1), integrand = new Float64Array(n + 1), hv = forced ? w : approx;
+  let area = 0; const top = fred ? n : i0;
+  for (let j = 0; j <= top; j++) { row[j] = Math.sin(x[i0] - x[j]) * (forced ? 1 : w[j]); integrand[j] = row[j] * hv[j]; area += integrand[j] * (j === 0 || j === top ? 0.5 : 1); }
+  area *= h;
+  return { i0, row, integrand, area, top };
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim();
+  col.font = cs.getPropertyValue('--serif').trim();
+}
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H);
+  ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 44, r: 10, t: 10, b: 20 }, top = 0, height = H) {
+  const x0 = m.l, x1 = W - m.r, y0 = top + m.t, y1 = top + height - m.b;
+  return { x0, x1, y0, y1, xr, yr,
+    X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const sup = e => (e < 0 ? '⁻' : '') + [...String(Math.abs(e))].map(c => SUP[c]).join('');
+function num(v, p = 4) {
+  if (v !== v) return 'none'; if (!isFinite(v)) return 'overflow'; if (v === 0) return '0';
+  const a = Math.abs(v); if (a >= 1e4 || a < 1e-3) { const e = Math.floor(Math.log10(a)); return (v / 10 ** e).toFixed(1) + ' × 10' + sup(e); }
+  return a >= 1000 ? v.toFixed(0) : v.toPrecision(p);
+}
+const tick = v => { const a = Math.abs(v); return a >= 1e4 ? num(v) : a >= 10 ? v.toFixed(0) : a >= 1 ? v.toFixed(1) : v.toFixed(2); };
+function axes(ctx, F, { xt = [], yt = null, zero = true, xfmt = String } = {}) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.fillStyle = col.gray; ctx.setLineDash([]);
+  ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) { const X = Math.round(F.X(t)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(xfmt(t), Math.min(F.x1 - 8, Math.max(F.x0 + 4, X)), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const hasZero = zero && F.yr[0] < 0 && F.yr[1] > 0;
+  for (const t of (yt || [F.yr[0], F.yr[1]])) if (!(hasZero && Math.abs(F.Y(t) - F.Y(0)) < 16)) ctx.fillText(tick(t), F.x0 - 5, Math.min(F.y1 - 5, Math.max(F.y0 + 6, F.Y(t))));
+  if (hasZero) { ctx.strokeStyle = col.gray; ctx.beginPath(); const Y = Math.round(F.Y(0)) + .5; ctx.moveTo(F.x0, Y); ctx.lineTo(F.x1, Y); ctx.stroke(); ctx.fillText('0', F.x0 - 5, Y); }
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function curve(ctx, F, xsArr, ys, color, width, dash = [], upto = ys.length - 1) {
+  clip(ctx, F); ctx.beginPath(); const big = 1e5;
+  for (let j = 0; j <= upto; j++) { const X = F.X(xsArr[j]), Y = Math.max(-big, Math.min(big, F.Y(ys[j]))); j ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.stroke(); ctx.restore();
+}
+function range(arrs, pad = 0.15) {
+  let lo = 0, hi = 0; for (const a of arrs) for (const v of a) if (isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  if (hi - lo < 1e-9) hi = lo + 1; const p = (hi - lo) * pad; return [lo < 0 ? lo - p : -p * .5, hi > 0 ? hi + p : p * .5];
+}
+function drag(cv, start) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const end = () => { move = null; if (cv._end) cv._end(); }; cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const xticks = L => { const s = L <= 4 ? 1 : L <= 8 ? 2 : 4, t = []; for (let v = 0; v <= L + 1e-9; v += s) t.push(v); return t; };
+const xfmt = t => t === 0 ? 'a' : 'a+' + t;
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {};
+function drawW() {
+  const { ctx, W, H } = fit($('cvW')), Rg = 1.5 * Math.max(1, Math.abs(state.lam));
+  const F = FR.w = frame(W, H, [0, state.L], [-Rg, Rg]); axes(ctx, F, { xt: xticks(state.L), xfmt });
+  curve(ctx, F, R.x, R.w, col.ink, 3);
+  if (state.shape === 'sketch' && Math.abs(state.lam) < 0.1) { ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('Raise |λ| above 0.1 to sketch.', (F.x0 + F.x1) / 2, F.y0 + 6); }
+}
+function drawFn() {
+  const { ctx, W, H } = fit($('cvFn')), { x, u, ref, approx, forced } = R;
+  const yr = range([ref || approx, u], 0.2);
+  const F = FR.f = frame(W, H, [0, state.L], yr, { l: 44, r: 12, t: 12, b: 20 }); axes(ctx, F, { xt: xticks(state.L), xfmt });
+  const eps = forced ? 0 : R.err[state.N];
+  if (ref && eps > 0 && isFinite(eps)) {                // the ball of radius eps about f, in the max norm
+    clip(ctx, F); ctx.beginPath(); const big = 1e5, Yc = v => Math.max(-big, Math.min(big, F.Y(v)));
+    const c = R.lim || ref; for (let i = 0; i <= n; i++) ctx.lineTo(F.X(x[i]), Yc(c[i] + eps)); for (let i = n; i >= 0; i--) ctx.lineTo(F.X(x[i]), Yc(c[i] - eps));
+    ctx.closePath(); ctx.globalAlpha = .16; ctx.fillStyle = col.accent; ctx.fill(); ctx.restore(); ctx.globalAlpha = 1;
+  }
+  curve(ctx, F, x, u, col.gray, 1.5, [5, 4]);
+  if (ref) curve(ctx, F, x, ref, col.ink, 4);
+  curve(ctx, F, x, approx, col.accent, 2);
+  if (!ref) { ctx.fillStyle = col.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('det(I − K) = 0: no unique solution', (F.x0 + F.x1) / 2, F.y0 + 6); }
+  const X = F.X(state.probe * state.L), i0 = Math.round(state.probe * n), right = state.probe > 0.7;
+  ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = col.ink; if (ref) { ctx.beginPath(); ctx.arc(X, clamp(F.Y(ref[i0]), F.y0, F.y1), 4.5, 0, 7); ctx.fill(); }
+  ctx.fillRect(X - 7, F.y1 - 4, 14, 8); ctx.textBaseline = 'bottom'; ctx.textAlign = right ? 'right' : 'left';
+  ctx.fillText('x = a + ' + (state.probe * state.L).toFixed(2), X + (right ? -9 : 9), F.y1 - 5);
+}
+/* matrix of K (or of S in the forced problem) at m nodes, and its powers */
+function matrix() {
+  const m = state.m, L = state.L, hm = L / (m - 1), A = [], whole = R.fred;
+  for (let i = 0; i < m; i++) { const r = new Float64Array(m); for (let j = 0; j < m; j++) if (whole || j <= i) {
+    const wj = R.forced ? 1 : R.w[Math.round(j / (m - 1) * n)], end = j === 0 || j === (whole ? m - 1 : i);
+    r[j] = Math.sin((i - j) * hm) * wj * hm * (end ? 0.5 : 1); } A.push(r); }
+  let Pw = A; const p = R.forced ? 1 : state.pow;
+  for (let q = 1; q < p; q++) { const Nw = []; for (let i = 0; i < m; i++) { const r = new Float64Array(m); for (let k = 0; k < m; k++) { const a = Pw[i][k]; if (a) for (let j = 0; j < m; j++) r[j] += a * A[k][j]; } Nw.push(r); } Pw = Nw; }
+  return Pw;
+}
+function drawM() {
+  const { ctx, W, H } = fit($('cvM')), A = matrix(), m = state.m;
+  const F = FR.m = frame(W, H, [0, 1], [1, 0], { l: 26, r: 8, t: 22, b: 8 }), side = F.x1 - F.x0, cs = side / m;
+  let mx = 0; for (const r of A) for (const v of r) mx = Math.max(mx, Math.abs(v));
+  for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) { const v = A[i][j]; if (!v || !mx) continue;
+    ctx.globalAlpha = Math.min(1, Math.sqrt(Math.abs(v) / mx)); ctx.fillStyle = v > 0 ? col.accent : col.gray; ctx.fillRect(F.x0 + j * cs, F.y0 + i * cs, cs + .5, cs + .5); }
+  ctx.globalAlpha = 1; ctx.strokeStyle = col.rule; ctx.lineWidth = 1;
+  if (m <= 24) { ctx.beginPath(); for (let q = 1; q < m; q++) { const p = Math.round(q * cs) + .5; ctx.moveTo(F.x0 + p, F.y0); ctx.lineTo(F.x0 + p, F.y1); ctx.moveTo(F.x0, F.y0 + p); ctx.lineTo(F.x1, F.y0 + p); } ctx.stroke(); }
+  ctx.strokeStyle = col.ink; ctx.strokeRect(F.x0 + .5, F.y0 + .5, side, side);
+  ctx.strokeStyle = col.gray; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(F.x0, F.y0); ctx.lineTo(F.x1, F.y1); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('a', F.x0, F.y0 - 4); ctx.fillText('t', (F.x0 + F.x1) / 2, F.y0 - 4); ctx.fillText('b', F.x1, F.y0 - 4);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('a', F.x0 - 6, F.y0 + 5); ctx.fillText('x', F.x0 - 6, (F.y0 + F.y1) / 2); ctx.fillText('b', F.x0 - 6, F.y1 - 5);
+  const ir = Math.round(state.probe * (m - 1)); ctx.strokeStyle = col.ink; ctx.lineWidth = 2.5; ctx.strokeRect(F.x0 - 3, F.y0 + ir * cs, side + 6, cs);
+  ctx.fillStyle = col.ink; ctx.fillRect(F.x1 + 1, F.y0 + ir * cs + cs / 2 - 7, 7, 14);
+  $('maxEntry').textContent = mx ? 'largest entry ' + num(mx, 3) : 'every entry is 0';
+}
+function drawS() {
+  const { ctx, W, H } = fit($('cvS')), p = probe(), { x } = R, h1 = H * 0.45;
+  const F1 = frame(W, H, [0, state.L], range([p.row], 0.15), { l: 44, r: 10, t: 8, b: 6 }, 0, h1);
+  axes(ctx, F1); curve(ctx, F1, x, p.row, col.ink, 2.5, [], p.top);
+  const F2 = frame(W, H, [0, state.L], range([p.integrand], 0.15), { l: 44, r: 10, t: 8, b: 20 }, h1, H - h1);
+  axes(ctx, F2, { xt: xticks(state.L), xfmt });
+  clip(ctx, F2); ctx.beginPath(); ctx.moveTo(F2.X(0), F2.Y(0)); for (let j = 0; j <= p.top; j++) ctx.lineTo(F2.X(x[j]), clamp(F2.Y(p.integrand[j]), -1e5, 1e5)); ctx.lineTo(F2.X(x[p.top]), F2.Y(0)); ctx.closePath();
+  ctx.globalAlpha = .28; ctx.fillStyle = col.accent; ctx.fill(); ctx.restore(); ctx.globalAlpha = 1;
+  curve(ctx, F2, x, p.integrand, col.accent, 2, [], p.top);
+  ctx.fillStyle = col.ink; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('shaded area = ' + num(p.area), F2.x1 - 6, F2.y0 + 3);
+  return p;
+}
+function drawT() {
+  const { ctx, W, H } = fit($('cvT'));
+  if (R.forced) {                                    // boundedness of g -> f - u
+    const g = maxAbs(R.w), rows = [['‖f − u‖', R.Sg, col.accent], ['‖S‖ · ‖g‖', R.Snorm * g, col.gray], ['(b − a) · ‖g‖', state.L * g, col.gray]];
+    const mx = Math.max(1e-9, state.L * g), x0 = 12, x1 = W - 12; ctx.textBaseline = 'middle';
+    rows.forEach(([name, v, c], i) => { const y = 24 + i * 64; ctx.fillStyle = col.ink; ctx.textAlign = 'left'; ctx.fillText(name + ' = ' + num(v), x0, y);
+      ctx.fillStyle = col.mist; ctx.fillRect(x0, y + 12, x1 - x0, 22); ctx.fillStyle = c; ctx.fillRect(x0, y + 12, (x1 - x0) * v / mx, 22); });
+    return;
+  }
+  const lg = v => Math.log10(Math.max(v, 1e-300)); let hi = 1;
+  for (let j = 0; j <= J; j++) { for (const v of [R.tn[j], R.bound[j]]) if (isFinite(v)) hi = Math.max(hi, lg(v)); }
+  hi = Math.min(14, Math.ceil(hi)); const lo = -10;
+  const F = frame(W, H, [-0.7, J + 0.7], [lo, hi], { l: 44, r: 10, t: 10, b: 20 });
+  ctx.fillStyle = col.mist; ctx.fillRect(F.x0, F.y0, F.X(state.N + 0.5) - F.x0, F.y1 - F.y0);
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.fillStyle = col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const stepY = hi - lo > 14 ? 4 : 2; for (let e = lo; e <= hi; e += stepY) { const Y = Math.round(F.Y(e)) + .5; ctx.beginPath(); ctx.moveTo(F.x0, Y); ctx.lineTo(F.x1, Y); ctx.stroke(); ctx.fillText(e === 0 ? '1' : '10' + sup(e), F.x0 - 5, clamp(Y, F.y0 + 6, F.y1 - 6)); }
+  ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const j of [0, 10, 20, 30]) ctx.fillText('j=' + j, F.X(j), F.y1 + 4);
+  const Yv = v => clamp(F.Y(lg(v)), F.y0, F.y1), bw = (F.x1 - F.x0) / (J + 1.4) * 0.6;
+  for (let j = 0; j <= J; j++) { ctx.globalAlpha = j <= state.N ? 1 : .3; ctx.fillStyle = col.gray; const Y = isFinite(R.tn[j]) ? Yv(R.tn[j]) : F.y0; ctx.fillRect(F.X(j) - bw / 2, Y, bw, F.y1 - Y); }
+  ctx.globalAlpha = 1;
+  const poly = (arr, color, w, dash) => { clip(ctx, F); ctx.beginPath(); let started = false; for (let j = 0; j <= J; j++) { if (arr[j] !== arr[j]) continue; const X = F.X(j), Y = isFinite(arr[j]) ? F.Y(lg(arr[j])) : -1e4; started ? ctx.lineTo(X, Math.max(-1e4, Y)) : ctx.moveTo(X, Y); started = true; } ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke(); ctx.restore(); };
+  poly(R.bound, col.gray, 2, [5, 4]); poly(R.err, col.accent, 2.5, []);
+  if (isFinite(R.err[state.N])) { ctx.fillStyle = col.accent; ctx.beginPath(); ctx.arc(F.X(state.N), Yv(R.err[state.N]), 5, 0, 7); ctx.fill(); }
+}
+function drawD() {
+  if (R.forced) return; const { ctx, W, H } = fit($('cvD')), D = R.D;
+  const F = FR.d = frame(W, H, [-3, 3], [-1.5, 3.5], { l: 44, r: 10, t: 10, b: 20 }); axes(ctx, F, { xt: [-3, -2, -1, 0, 1, 2, 3], yt: [1, 3.5], xfmt: t => t === 0 ? 'λ=0' : String(t) });
+  const ls = [], dv = []; for (let i = 0; i <= 120; i++) { const l = -3 + i / 20; ls.push(l); dv.push(1 + l * l * D); }
+  curve(ctx, F, ls, ls.map(() => 1), col.ink, R.fred ? 1.5 : 3); curve(ctx, F, ls, dv, col.accent, R.fred ? 3 : 1.5);
+  const X = F.X(state.lam); ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = R.fred ? col.accent : col.ink; ctx.beginPath(); ctx.arc(X, clamp(F.Y(R.det), F.y0, F.y1), 5.5, 0, 7); ctx.fill();
+  if (D < -1 / 9) { const ls0 = 1 / Math.sqrt(-D); ctx.fillStyle = col.accent; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; for (const s of [-1, 1]) ctx.fillText((s < 0 ? '−' : '') + ls0.toFixed(2), F.X(s * ls0) + s * 18, F.Y(0) + 16); }
+}
+function readouts(p) {
+  const { forced, fred, ref, approx, u } = R, i0 = p.i0, N = state.N, set = (id, html) => { $(id).innerHTML = html; };
+  $('oN').textContent = N; $('oLam').textContent = state.lam.toFixed(2); $('oL').textContent = state.L.toFixed(1);
+  $('oA').textContent = state.alpha.toFixed(2); $('oB').textContent = state.beta.toFixed(2); $('oX').textContent = (state.probe * state.L).toFixed(2);
+  $('oM').textContent = state.m; $('oP').textContent = state.pow;
+  const data = `f(a) = <b>${state.alpha.toFixed(2)}</b>, &nbsp; f′(a) = <b>${state.beta.toFixed(2)}</b>`;
+  set('eqLive', forced ? `Solving &nbsp; f″ + f = g on [a, a + ${state.L.toFixed(1)}], &nbsp; ${data}, &nbsp; by the formula f = u + ∫ sin(x − t) g(t) dt.`
+    : `Solving &nbsp; f = u + Kf on [a, a + ${state.L.toFixed(1)}], &nbsp; ${data}, &nbsp; K integrates over <b>${fred ? 'a ≤ t ≤ b' : 'a ≤ t ≤ x'}</b>, &nbsp; <b>${N}</b> application${N === 1 ? '' : 's'} of K.`);
+  if (forced) {
+    set('r1h', 'u(x) + ∫ sin(x − t) g(t) dt'); set('r1', num(u[i0] + p.area, 6)); set('r2h', 'f(x), ODE solver'); set('r2', num(ref[i0], 6)); set('r3h', 'largest gap over [a, b]'); set('r3', num(R.errForced, 2));
+    set('g1h', '‖g‖'); set('g1', num(maxAbs(R.w))); set('g2h', '‖f − u‖'); set('g2', num(R.Sg)); set('g3h', '‖S‖ = max<sub>x</sub> ∫ |sin(x − t)| dt'); set('g3', num(R.Snorm)); set('g4h', 'b − a'); set('g4', state.L.toFixed(1));
+  } else {
+    set('r1h', 'f<sub>n</sub>(x)'); set('r1', num(approx[i0], 6)); set('r2h', 'u(x) + (K f<sub>n</sub>)(x) = f<sub>n+1</sub>(x)'); set('r2', num(u[i0] + p.area, 6));
+    set('r3h', fred ? 'f(x), from the 2 × 2 system' : 'f(x), ODE solver'); set('r3', ref ? num(ref[i0], 6) : 'none');
+    set('g1h', fred ? 'M (b − a), must be below 1 for the bound to help' : 'M (b − a)'); set('g1', num(R.M * state.L, 3));
+    set('g2h', '‖K<sup>n</sup>u‖'); set('g2', num(R.tn[N], 3)); set('g3h', '‖f − f<sub>n</sub>‖'); set('g3', num(R.err[N], 3)); set('g4h', 'det(I − K), sampled'); set('g4', num(R.det, 4));
+  }
+}
+
+let pending = false, need = true;
+function update(recompute = true) {
+  need = need || recompute; if (pending) return; pending = true;
+  requestAnimationFrame(() => { pending = false; if (need) { compute(); need = false; } drawW(); drawFn(); drawM(); const p = drawS(); drawT(); drawD(); readouts(p); });
+}
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+function syncUI() {
+  for (const k of ['mode', 'shape', 'domain']) document.querySelector(`input[name=${k}][value=${state[k]}]`).checked = true;
+  $('sN').value = state.N; $('sLam').value = state.lam; $('sL').value = state.L; $('sA').value = state.alpha; $('sB').value = state.beta; $('sX').value = state.probe; $('sM').value = state.m; $('sP').value = state.pow;
+  const forced = state.mode === 'forced', fred = !forced && state.domain === 'fredholm', sk = state.shape === 'sketch';
+  for (const id of ['nWrap', 'powWrap', 'domainWrap', 'detBlock', 'legT', 'capTube']) $(id).hidden = forced;
+  $('sketchTools').hidden = !sk; $('cvW').style.cursor = sk ? 'crosshair' : 'default';
+  $('shapeLegend').textContent = forced ? 'Right side g' : 'Coefficient σ'; $('legW').textContent = forced ? 'g = λ g₀' : 'σ = λ σ₀';
+  $('legRef').textContent = fred ? 'f, from the exact 2 × 2 reduction' : 'f, from an ODE solver';
+  $('legApprox').innerHTML = forced ? 'f = u + ∫ sin(x − t) g(t) dt' : 'f<sub>n</sub> = u + Ku + … + Kⁿu';
+  $('legRow').textContent = forced ? 'row: sin(x − t)' : 'row of K: sin(x − t) σ(t)'; $('legInt').innerHTML = forced ? 'row × g(t), shaded' : 'row × f<sub>n</sub>(t), shaded';
+  $('legBound').innerHTML = fred ? 'bound (M(b − a))<sup>j</sup>, no factorial' : 'bound (M(b − a))<sup>j</sup> / j!';
+  const note = $('geoNote'); note.hidden = !forced;
+  if (forced) note.textContent = 'The map g ↦ f − u is linear and never stretches g by more than b − a. That single inequality is what "bounded operator" will mean. Switch to equation (1.6) to iterate.';
+}
+for (const name of ['mode', 'shape', 'domain']) for (const r of document.querySelectorAll(`input[name=${name}]`)) r.addEventListener('change', () => { state[name] = r.value; syncUI(); update(); });
+const bind = (id, key, re) => $(id).addEventListener('input', e => { state[key] = +e.target.value; update(re); });
+bind('sN', 'N', true); bind('sLam', 'lam', true); bind('sL', 'L', true); bind('sA', 'alpha', true); bind('sB', 'beta', true); bind('sX', 'probe', false); bind('sM', 'm', false); bind('sP', 'pow', false);
+$('clearSketch').addEventListener('click', () => { sketch.fill(0); update(); });
+
+drag($('cvFn'), () => { const F = FR.f; return F ? x => { state.probe = clamp(F.iX(x) / state.L, 0.02, 1); $('sX').value = state.probe; update(false); } : null; });
+$('cvFn').style.cursor = 'ew-resize';
+drag($('cvM'), () => { const F = FR.m; return F ? (_, y) => { state.probe = clamp((y - F.y0) / (F.y1 - F.y0), 0.02, 1); $('sX').value = state.probe; update(false); } : null; });
+$('cvM').style.cursor = 'ns-resize';
+drag($('cvD'), () => { const F = FR.d; return F ? x => { state.lam = clamp(Math.round(F.iX(x) * 100) / 100, -3, 3); $('sLam').value = state.lam; update(); } : null; });
+$('cvD').style.cursor = 'ew-resize';
+let last = null; $('cvW')._end = () => { last = null; };
+drag($('cvW'), () => {
+  const F = FR.w; if (!F || state.shape !== 'sketch' || Math.abs(state.lam) < 0.1) return null; last = null;
+  return (px, py) => {
+    const j = clamp(Math.round(F.iX(px) / state.L * n), 0, n), v = clamp(F.iY(py) / state.lam, -1.5, 1.5);
+    if (last) { const [j0, v0] = last, a = Math.min(j0, j), b = Math.max(j0, j); for (let q = a; q <= b; q++) sketch[q] = j === j0 ? v : v0 + (v - v0) * (q - j0) / (j - j0); } else sketch[j] = v;
+    last = [j, v]; update();
+  };
+});
+
+const base = { lam: 1, alpha: 1, beta: 0, pow: 1, m: 16, domain: 'volterra', mode: 'sigma' };
+const EXP = {
+  res:     { ...base, mode: 'forced', shape: 'res', L: 12, probe: 0.8 },
+  one:     { ...base, shape: 'one', L: 6, N: 0 },
+  long:    { ...base, shape: 'one', L: 12, N: 8 },
+  nil:     { ...base, shape: 'bump', L: 6, N: 4, m: 8, pow: 1 },
+  fred:    { ...base, domain: 'fredholm', shape: 'wave', L: 6, lam: 0.4, N: 6, m: 24 },
+  diverge: { ...base, domain: 'fredholm', shape: 'one', L: 6, lam: 1.5, N: 6, m: 24 }
+};
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => {
+  Object.assign(state, EXP[b.dataset.exp]); syncUI(); update();
+  $('lab').scrollIntoView({ block: 'start' }); $(state.mode === 'forced' ? 'sLam' : 'sN').focus({ preventScroll: true });
+});
+
+const recolor = () => { readColors(); update(false); };
+readColors(); syncUI(); update();
+new ResizeObserver(() => update(false)).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => update(false));
+})();
+</script>
+</body>
+</html>

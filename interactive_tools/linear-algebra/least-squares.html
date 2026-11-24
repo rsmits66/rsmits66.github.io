@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Least Squares — Minimizing ‖Ax − b‖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  /* column space — teal */
+  --CS-bg:#e8f5f2; --CS2:#1a6a58; --CS-hi:#b3e4d8;
+  /* normal equations — indigo */
+  --NE-bg:#edf1fb; --NE2:#3a5aa8;
+  /* residual — amber */
+  --R-bg:#fff8ea; --R2:#8a5a00;
+  --mod-bg:#f2f7fe; --done-bg:#f5f5f4; --done-c:#aaa;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--CS-bg);color:var(--CS2);border:1px solid #90ccc0;}
+.btn-ghost:hover{background:#c4e8e0;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+.input-wrap{display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start;margin:.7rem 0;}
+.sub-lbl{font-size:.82rem;color:var(--gray);margin-bottom:.35rem;font-style:italic;}
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:58px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid input.b-inp{background:#f4f8ff;border-color:#b8caec;}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+/* steps */
+.steps-wrap{display:flex;flex-direction:column;gap:1.3rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.cs-b{background:var(--CS2);color:#fff;}
+.sbadge.ne-b{background:var(--NE2);color:#fff;font-size:.72rem;}
+.sbadge.sol-b{background:#7a3ab5;color:#fff;}
+.sbadge.res-b{background:var(--R2);color:#fff;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;overflow-x:auto;}
+
+.sec-body{padding:1.1rem 1.5rem;}
+
+/* Matrix display */
+.mat-eq{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;overflow-x:auto;padding:.4rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.22rem;}
+.mat-lbl{font-size:.8rem;color:var(--gray);font-style:italic;}
+.mat-op{font-size:1.35rem;color:var(--navy2);align-self:center;padding:0 .15rem;}
+
+/* Column independence table */
+.col-table{border-collapse:collapse;font-size:.9rem;margin:.6rem 0;}
+.col-table th,.col-table td{padding:.32rem .72rem;border:1px solid #e0dbd3;text-align:center;vertical-align:middle;}
+.col-table thead th{background:var(--CS-bg);color:var(--CS2);font-weight:400;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;}
+.col-table td.indep{background:var(--CS-hi);color:#1a5a40;font-weight:700;}
+.col-table td.dep{background:#f5f5f4;color:#aaa;}
+.col-table td.pivot{color:var(--red);font-weight:700;}
+
+/* Normal equations tableau */
+.ne-table{border-collapse:collapse;font-size:.9rem;}
+.ne-table th,.ne-table td{padding:.35rem .7rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+.ne-table thead th{background:var(--NE-bg);color:var(--NE2);font-weight:400;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;}
+.ne-table td.sepr{border-right:2.5px solid #aaa !important;}
+.ne-table td.lhs{background:var(--NE-bg);}
+.ne-table td.rhs{background:#f0f6ff;}
+.ne-table td.piv-c{background:var(--red-bg);}
+.pbox{display:inline-block;border:2px solid var(--red);border-radius:3px;padding:0 5px;color:var(--red);font-weight:700;}
+
+/* Solve steps */
+.solve-steps{display:flex;flex-direction:column;gap:.5rem;margin-top:.7rem;}
+.sstep{display:flex;align-items:baseline;gap:.7rem;padding:.3rem .5rem;border-radius:4px;background:var(--NE-bg);}
+.sstep-idx{font-size:.78rem;color:var(--gray);min-width:55px;text-align:right;flex-shrink:0;}
+.sstep-tex{flex:1;overflow-x:auto;}
+
+/* Solution */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:.7rem;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.6rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.3rem .9rem;font-size:1.05rem;}
+.sol-sub{color:#8ab8d0;font-style:italic;font-size:.88rem;margin-top:.5rem;}
+
+/* Residual */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.9rem;margin-top:.5rem;}
+.res-item{background:var(--R-bg);border:1px solid #e8d090;border-radius:6px;padding:.6rem 1rem;}
+.res-item .r-lbl{font-size:.78rem;color:var(--R2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;}
+.res-item .r-val{font-size:1.05rem;color:var(--navy);overflow-x:auto;}
+
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+.keybox{background:var(--CS-bg);border:1px solid #90ccc0;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:#1a3a30;line-height:1.65;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+.info-note{background:var(--NE-bg);border:1px solid #c0ccdd;border-radius:5px;padding:.55rem .9rem;font-size:.87rem;color:var(--navy2);margin:.6rem 0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Least Squares — Minimizing ‖Ax − b‖</h1>
+  <p>Find the column space basis of A, form the normal equations AᵀAx̂ = Aᵀb, and solve for the best approximation</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter Matrix A and Vector b</h2>
+  <div class="ctrl-row">
+    <label>Rows m: <input type="number" id="nRows" min="2" max="6" value="4"></label>
+    <label>Cols n: <input type="number" id="nCols" min="1" max="5" value="2"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.6rem;">
+    A may be any m×n matrix (m ≥ n typical for overdetermined systems). Entries may be integers or fractions like <code>3/2</code>.
+  </p>
+  <div class="input-wrap">
+    <div>
+      <div class="sub-lbl">Matrix A</div>
+      <div style="overflow-x:auto"><div class="mx-grid" id="mxA"></div></div>
+    </div>
+    <div style="align-self:center;font-size:1.5rem;color:var(--navy2);padding-top:1.2rem;">·</div>
+    <div>
+      <div class="sub-lbl">Vector b</div>
+      <div class="mx-grid" id="mxB"></div>
+    </div>
+  </div>
+  <button class="btn-solve" onclick="doSolve()">Find Least Squares Solution →</button>
+</div>
+
+<div id="out"></div>
+<div id="vizSection" style="display:none;margin-top:1.8rem;"></div>
+</main>
+
+<script>
+/* ═══════════════════════════════════
+   FRACTION CLASS
+═══════════════════════════════════ */
+function gcd(a,b){a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));while(b){const t=b;b=a%b;a=t;}return a||1;}
+class Frac{
+  constructor(n,d=1){
+    if(d===0){this.n=0;this.d=1;return;}
+    if(d<0){n=-n;d=-d;}
+    const g=gcd(Math.abs(n),d);
+    this.n=Math.round(n/g);this.d=Math.round(d/g);
+  }
+  static parse(s){
+    s=(s||'').trim();if(!s||s==='-')return new Frac(0);
+    if(s.includes('/')){const[a,b]=s.split('/');return new Frac(+a,+b);}
+    if(s.includes('.')){const p=s.replace(/^-/,'').split('.'),dec=p[1]?p[1].length:0,dn=10**dec;return new Frac(Math.round(parseFloat(s)*dn),dn);}
+    return new Frac(+s||0);
+  }
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  div(o){return new Frac(this.n*o.d,this.d*o.n);}
+  neg(){return new Frac(-this.n,this.d);}
+  isZero(){return this.n===0;}
+  isOne(){return this.n>0&&this.n===this.d;}
+  toFloat(){return this.n/this.d;}
+  toTeX(){
+    if(this.d===1)return String(this.n);
+    const sg=this.n<0?'-':'';
+    return`${sg}\\tfrac{${Math.abs(this.n)}}{${this.d}}`;
+  }
+}
+
+/* ═══════════════════════════════════
+   HELPERS
+═══════════════════════════════════ */
+function rk(t,opts){try{return katex.renderToString(t,{throwOnError:false,...(opts||{})});}catch(e){return t;}}
+
+function matTeX(M,rows,cols){
+  return`\\begin{pmatrix}${Array.from({length:rows},(_,i)=>
+    Array.from({length:cols},(_,j)=>M[i][j].toTeX()).join('&')
+  ).join('\\\\')}\\end{pmatrix}`;
+}
+function vecTeX(v){return`\\begin{pmatrix}${v.map(f=>f.toTeX()).join('\\\\')}\\end{pmatrix}`;}
+
+function matBlock(label,tex,display=true){
+  const b=document.createElement('div');b.className='mat-block';
+  const l=document.createElement('div');l.className='mat-lbl';l.textContent=label;
+  const mv=document.createElement('div');mv.innerHTML=rk(tex,{displayMode:display});
+  b.append(l,mv);return b;
+}
+function opSpan(t){const s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+
+/* ═══════════════════════════════════
+   MATRIX MULTIPLY  C = A·B  (Frac)
+═══════════════════════════════════ */
+function matMul(A,rA,cA,B,rB,cB){
+  // A is rA×cA, B is rB×cB, cA must = rB
+  return Array.from({length:rA},(_,i)=>
+    Array.from({length:cB},(_,j)=>
+      Array.from({length:cA},(_,k)=>A[i][k].mul(B[k][j]))
+        .reduce((s,v)=>s.add(v),new Frac(0))
+    )
+  );
+}
+
+function matTranspose(A,r,c){
+  return Array.from({length:c},(_,i)=>Array.from({length:r},(_,j)=>A[j][i].clone()));
+}
+
+/* ═══════════════════════════════════
+   GAUSSIAN ELIMINATION WITH PARTIAL PIVOT
+   Solves square system Mx = rhs in place
+   Returns solution vector (Frac[])
+═══════════════════════════════════ */
+function gaussSolve(Morig, rhsOrig){
+  const n=Morig.length;
+  const M=Morig.map(r=>r.map(f=>f.clone()));
+  const rhs=rhsOrig.map(f=>f.clone());
+  const perm=Array.from({length:n},(_,i)=>i);
+  const steps=[];
+
+  // forward elimination with partial pivot
+  for(let k=0;k<n;k++){
+    // partial pivot
+    let best=k,bestV=Math.abs(M[k][k].toFloat());
+    for(let r=k+1;r<n;r++){const v=Math.abs(M[r][k].toFloat());if(v>bestV){bestV=v;best=r;}}
+    if(best!==k){
+      [M[best],M[k]]=[M[k],M[best]];
+      [rhs[best],rhs[k]]=[rhs[k],rhs[best]];
+      [perm[best],perm[k]]=[perm[k],perm[best]];
+    }
+    if(M[k][k].isZero()) throw new Error('Normal equations matrix is singular — columns of A* may still be dependent.');
+    for(let r=k+1;r<n;r++){
+      if(!M[r][k].isZero()){
+        const mult=M[r][k].div(M[k][k]);
+        for(let c=0;c<n;c++) M[r][c]=M[r][c].sub(mult.mul(M[k][c]));
+        rhs[r]=rhs[r].sub(mult.mul(rhs[k]));
+      }
+    }
+    steps.push({phase:'fwd',k,M:M.map(r=>r.map(f=>f.clone())),rhs:rhs.map(f=>f.clone())});
+  }
+  // back substitution
+  const x=Array(n).fill(null).map(()=>new Frac(0));
+  for(let i=n-1;i>=0;i--){
+    let val=rhs[i].clone();
+    for(let j=i+1;j<n;j++) val=val.sub(M[i][j].mul(x[j]));
+    x[i]=val.div(M[i][i]);
+    steps.push({phase:'back',i,x:x.map(f=>f.clone())});
+  }
+  return{x,steps};
+}
+
+/* ═══════════════════════════════════
+   FIND PIVOT COLUMNS (column space basis)
+   Row-reduce A, record which columns have pivots
+═══════════════════════════════════ */
+function findPivotCols(A,m,n){
+  const M=A.map(r=>r.map(f=>f.clone()));
+  const pivotCols=[];
+  let pr=0;
+  const rowSteps=[];
+  for(let col=0;col<n&&pr<m;col++){
+    let found=-1;
+    for(let r=pr;r<m;r++) if(!M[r][col].isZero()){found=r;break;}
+    if(found===-1) continue;
+    if(found!==pr){[M[found],M[pr]]=[M[pr],M[found]];}
+    pivotCols.push(col);
+    for(let r=0;r<m;r++){
+      if(r!==pr&&!M[r][col].isZero()){
+        const mult=M[r][col].div(M[pr][col]);
+        for(let c=0;c<n;c++) M[r][c]=M[r][c].sub(mult.mul(M[pr][c]));
+      }
+    }
+    // normalize
+    const piv=M[pr][col];
+    if(!piv.isOne()) for(let c=0;c<n;c++) M[pr][c]=M[pr][c].div(piv);
+    rowSteps.push({col,pivRow:pr,Msnap:M.map(r=>r.map(f=>f.clone()))});
+    pr++;
+  }
+  return{pivotCols,rref:M,rowSteps};
+}
+
+/* ═══════════════════════════════════
+   RENDER PHASE 1 — Column space basis
+═══════════════════════════════════ */
+function renderPhase1(A,m,n,pivotCols){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge cs-b';badge.textContent='A*';
+  const desc=document.createElement('span');desc.className='sdesc';
+  const k=pivotCols.length;
+  desc.innerHTML=rk(
+    k===n
+      ? `\\text{All }${n}\\text{ columns of }A\\text{ are linearly independent — }A^* = A`
+      : `\\text{Pivot columns: }\\{${pivotCols.map(j=>j+1).join(',')}\\}\\text{ — }A^*\\text{ uses these }${k}\\text{ columns}`
+  );
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Column-by-column independence table
+  const tbl=document.createElement('table');tbl.className='col-table';
+  const thead=document.createElement('thead');
+  const hr=document.createElement('tr');
+  ['Column', 'Vector', 'Status', 'Role in A*'].forEach(h=>{
+    const th=document.createElement('th');th.textContent=h;hr.appendChild(th);
+  });
+  thead.appendChild(hr);tbl.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  for(let j=0;j<n;j++){
+    const isIndep=pivotCols.includes(j);
+    const tr=document.createElement('tr');
+    // col number
+    const tdN=document.createElement('td');
+    tdN.innerHTML=rk(`c_{${j+1}}`);tr.appendChild(tdN);
+    // vector
+    const tdV=document.createElement('td');
+    tdV.innerHTML=rk(vecTeX(Array.from({length:m},(_,i)=>A[i][j])));
+    tr.appendChild(tdV);
+    // status
+    const tdS=document.createElement('td');
+    tdS.className=isIndep?'indep':'dep';
+    tdS.textContent=isIndep?'Independent':'Dependent';
+    tr.appendChild(tdS);
+    // role
+    const tdR=document.createElement('td');
+    if(isIndep){
+      const idx=pivotCols.indexOf(j)+1;
+      tdR.innerHTML=rk(`\\tilde{c}_{${idx}}`);
+      tdR.className='indep';
+    } else {
+      tdR.textContent='omitted';tdR.style.color='#aaa';
+    }
+    tr.appendChild(tdR);
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  sec.appendChild(tbl);
+
+  // Show A* matrix
+  const Astar=Array.from({length:m},(_,i)=>pivotCols.map(j=>A[i][j].clone()));
+  const k2=pivotCols.length;
+  const eq=document.createElement('div');eq.className='mat-eq';eq.style.marginTop='.8rem';
+  eq.append(
+    matBlock('A (original)',matTeX(A,m,n)),
+    opSpan('\\longrightarrow'),
+    matBlock('A* (independent columns)',matTeX(Astar,m,k2))
+  );
+  sec.appendChild(eq);
+
+  if(pivotCols.length<n){
+    const note=document.createElement('div');note.className='info-note';
+    note.innerHTML=`<strong>Note:</strong> Since ${n-k} column${n-k>1?'s are':' is'} dependent, `+
+      `we replace A with A* (${m}×${k2}) whose columns form a basis for the column space of A. `+
+      `The least squares solution x̂ will have ${k2} components corresponding to the independent columns.`;
+    sec.appendChild(note);
+  } else {
+    const note=document.createElement('div');note.className='info-note';
+    note.innerHTML=`<strong>All columns independent:</strong> A* = A. The normal equations `+
+      `(AᵀA)x̂ = Aᵀb will have a unique solution.`;
+    sec.appendChild(note);
+  }
+  block.appendChild(sec);
+  return{block,Astar,k:k2};
+}
+
+/* ═══════════════════════════════════
+   RENDER PHASE 2 — Normal equations
+═══════════════════════════════════ */
+function renderPhase2(Astar,b,m,k,ATA,ATb){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge ne-b';badge.textContent='AᵀA';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('(A^*)^{\\top} A^* \\,\\hat{x} = (A^*)^{\\top} b \\text{ — the normal equations}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Show the multiplication A*ᵀ · A* = ATA
+  const AT=matTranspose(Astar,m,k);
+  const eq1=document.createElement('div');eq1.className='mat-eq';eq1.style.marginBottom='1rem';
+  eq1.append(
+    matBlock('(A*)ᵀ',matTeX(AT,k,m)),
+    opSpan('\\cdot'),
+    matBlock('A*',matTeX(Astar,m,k)),
+    opSpan('='),
+    matBlock('(A*)ᵀA* — symmetric!',matTeX(ATA,k,k))
+  );
+  sec.appendChild(eq1);
+
+  // Show A*ᵀ · b = ATb
+  const eq2=document.createElement('div');eq2.className='mat-eq';eq2.style.marginBottom='1rem';
+  eq2.append(
+    matBlock('(A*)ᵀ',matTeX(AT,k,m)),
+    opSpan('\\cdot'),
+    matBlock('b',vecTeX(b)),
+    opSpan('='),
+    matBlock('(A*)ᵀb',vecTeX(ATb))
+  );
+  sec.appendChild(eq2);
+
+  // Augmented [ATA | ATb]
+  const augLbl=document.createElement('div');augLbl.style.cssText='font-size:.85rem;color:var(--gray);margin:.3rem 0;font-style:italic;';
+  augLbl.textContent='Augmented normal equations to solve:';
+  sec.appendChild(augLbl);
+  const cols='c'.repeat(k)+'|c';
+  const augRows=Array.from({length:k},(_,i)=>
+    Array.from({length:k},(_,j)=>ATA[i][j].toTeX()).join('&')+'&'+ATb[i].toTeX()
+  );
+  const augDiv=document.createElement('div');augDiv.style.cssText='overflow-x:auto;margin:.5rem 0;';
+  augDiv.innerHTML=rk(`\\left(\\begin{array}{${cols}}${augRows.join('\\\\')}\\end{array}\\right)`,{displayMode:true});
+  sec.appendChild(augDiv);
+
+  block.appendChild(sec);
+  return block;
+}
+
+/* ═══════════════════════════════════
+   RENDER PHASE 3 — Solve normal equations
+═══════════════════════════════════ */
+function renderPhase3(ATA,ATb,k,xhat,solveSteps){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge sol-b';badge.textContent='x̂';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Gaussian elimination on the normal equations — solving for }\\hat{x}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Show solve steps as augmented matrix snapshots
+  const fwdSteps=solveSteps.filter(s=>s.phase==='fwd');
+  const backSteps=solveSteps.filter(s=>s.phase==='back');
+
+  if(fwdSteps.length){
+    const lbl=document.createElement('div');lbl.style.cssText='font-size:.85rem;color:var(--gray);margin-bottom:.4rem;font-style:italic;';
+    lbl.textContent='Forward elimination:';sec.appendChild(lbl);
+    fwdSteps.forEach((step,si)=>{
+      const cols='c'.repeat(k)+'|c';
+      const rows=Array.from({length:k},(_,i)=>
+        Array.from({length:k},(_,j)=>step.M[i][j].toTeX()).join('&')+'&'+step.rhs[i].toTeX()
+      );
+      const d=document.createElement('div');d.style.cssText='overflow-x:auto;margin:.4rem 0;';
+      d.innerHTML=rk(`\\text{Step }${si+1}:\\quad\\left(\\begin{array}{${cols}}${rows.join('\\\\')}\\end{array}\\right)`,{displayMode:false});
+      sec.appendChild(d);
+    });
+  }
+
+  // Back substitution steps
+  const stepsDiv=document.createElement('div');stepsDiv.className='solve-steps';
+  const vn=Array.from({length:k},(_,i)=>k<=4?['\\hat{x}','\\hat{y}','\\hat{z}','\\hat{w}'][i]:`\\hat{x}_{${i+1}}`);
+
+  backSteps.forEach(step=>{
+    const i=step.i;
+    const row=document.createElement('div');row.className='sstep';
+    const idx=document.createElement('span');idx.className='sstep-idx';
+    idx.innerHTML=rk(`\\text{Row }${i+1}:`);
+    const tex=document.createElement('div');tex.className='sstep-tex';
+    tex.innerHTML=rk(`${vn[i]} = ${step.x[i].toTeX()}`);
+    row.append(idx,tex);stepsDiv.appendChild(row);
+  });
+  sec.appendChild(stepsDiv);
+
+  // Final solution vector
+  const solDiv=document.createElement('div');solDiv.style.cssText='margin-top:.9rem;overflow-x:auto;';
+  solDiv.innerHTML=rk(
+    `\\hat{x} = ${vecTeX(xhat)} \\quad\\text{minimizes }\\|A^*\\hat{x}-b\\|`,
+    {displayMode:true}
+  );
+  sec.appendChild(solDiv);
+  block.appendChild(sec);
+  return block;
+}
+
+/* ═══════════════════════════════════
+   RENDER PHASE 4 — Residual & projection
+═══════════════════════════════════ */
+function renderPhase4(Astar,b,xhat,m,k,pivotCols,nOrig){
+  // projection p = A* x̂
+  const p=Array.from({length:m},(_,i)=>
+    Array.from({length:k},(_,j)=>Astar[i][j].mul(xhat[j]))
+      .reduce((s,v)=>s.add(v),new Frac(0))
+  );
+  // residual r = b - p
+  const r=b.map((bi,i)=>bi.sub(p[i]));
+  // ||r||² (exact fraction)
+  const r2=r.reduce((s,ri)=>s.add(ri.mul(ri)),new Frac(0));
+  const rNormFloat=Math.sqrt(r2.toFloat());
+
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge res-b';badge.textContent='r';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\hat{p} = A^*\\hat{x}\\text{ (projection)},\\quad r = b - \\hat{p}\\text{ (residual)}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Vectors side by side
+  const eq=document.createElement('div');eq.className='mat-eq';eq.style.marginBottom='1rem';
+  eq.append(
+    matBlock('b',vecTeX(b)),
+    opSpan('='),
+    matBlock('p̂ = A*x̂ (projection onto col A)',vecTeX(p)),
+    opSpan('+'),
+    matBlock('r = b − p̂ (residual ⊥ col A)',vecTeX(r))
+  );
+  sec.appendChild(eq);
+
+  // Residual stats
+  const grid=document.createElement('div');grid.className='res-grid';
+  function resItem(lbl,val){
+    const d=document.createElement('div');d.className='res-item';
+    const l=document.createElement('div');l.className='r-lbl';l.textContent=lbl;
+    const v=document.createElement('div');v.className='r-val';v.innerHTML=val;
+    d.append(l,v);return d;
+  }
+  grid.appendChild(resItem('‖r‖² (exact)',
+    rk(`\\|r\\|^2 = ${r2.toTeX()}`)));
+  grid.appendChild(resItem('‖r‖ (approx)',
+    rk(`\\|r\\| \\approx ${rNormFloat.toFixed(6)}`)));
+
+  // Orthogonality check: rᵀ·(each col of A*) should be 0
+  const dotChecks=Array.from({length:k},(_,j)=>{
+    const dot=r.reduce((s,ri,i)=>s.add(ri.mul(Astar[i][j])),new Frac(0));
+    return dot;
+  });
+  const maxDot=Math.max(...dotChecks.map(d=>Math.abs(d.toFloat())));
+  grid.appendChild(resItem('r ⊥ col(A*)?',
+    maxDot<1e-10
+      ? rk('(A^*)^{\\top}r = 0 \\;\\checkmark')
+      : rk(`\\max|c_j^\\top r| = ${maxDot.toExponential(2)}`)
+  ));
+  sec.appendChild(grid);
+
+  // If original A had dependent columns, note the full x in terms of original indices
+  if(pivotCols.length < nOrig){
+    const note=document.createElement('div');note.className='info-note';note.style.marginTop='.7rem';
+    note.innerHTML=`<strong>Note on column selection:</strong> The solution x̂ = [${
+      xhat.map((v,i)=>rk(`${v.toTeX()}`)).join(', ')
+    }] gives weights for columns {${pivotCols.map(j=>j+1).join(', ')}} of the original A. `+
+    `Components for the omitted dependent columns are zero.`;
+    sec.appendChild(note);
+  }
+
+  block.appendChild(sec);
+  return block;
+}
+
+/* ═══════════════════════════════════
+   SOLUTION CARD
+═══════════════════════════════════ */
+function renderSolution(xhat,pivotCols,nOrig,rNormFloat){
+  const k=xhat.length;
+  const vn=Array.from({length:k},(_,i)=>k<=4?['\\hat{x}','\\hat{y}','\\hat{z}','\\hat{w}'][i]:`\\hat{x}_{${i+1}}`);
+  const card=document.createElement('div');card.className='sol-card';
+  card.innerHTML=`<h3>Least Squares Solution</h3>`;
+  const vals=document.createElement('div');vals.className='sol-vals';
+  xhat.forEach((v,i)=>{
+    const item=document.createElement('div');item.className='sol-item';
+    item.innerHTML=rk(`${vn[i]} = ${v.toTeX()}`);vals.appendChild(item);
+  });
+  card.appendChild(vals);
+  const sub=document.createElement('div');sub.className='sol-sub';
+  sub.innerHTML=rk(`\\|r\\| \\approx ${rNormFloat.toFixed(6)}\\text{ — minimum residual norm achieved}`);
+  card.appendChild(sub);
+  return card;
+}
+
+/* ═══════════════════════════════════
+   KEYBOX
+═══════════════════════════════════ */
+function renderKey(){
+  const k=document.createElement('div');k.className='keybox';
+  k.innerHTML=`
+    <strong>Why least squares works:</strong>
+    We cannot generally solve Ax = b exactly when b lies outside the column space of A.
+    The best we can do is find x̂ so that Ax̂ is the <em>orthogonal projection</em> of b onto col(A).
+    The residual r = b − Ax̂ is then perpendicular to every column of A, giving
+    <strong>Aᵀr = 0</strong>, which rearranges to the <strong>normal equations</strong> AᵀAx̂ = Aᵀb.
+    <br><br>
+    <strong>Column independence check:</strong>
+    If A has linearly dependent columns, AᵀA is singular and the normal equations have no unique solution.
+    We first row-reduce A to find the <em>pivot columns</em> — these form A*, a matrix with full column rank,
+    and we solve (A*)ᵀA*x̂ = (A*)ᵀb instead.
+    <br><br>
+    <strong>Connection to other factorizations:</strong>
+    When A has full column rank, the normal equations (AᵀA)x̂ = Aᵀb can also be solved via
+    Cholesky decomposition of AᵀA (which is symmetric positive definite),
+    or by the QR factorization A = QR giving x̂ = R⁻¹Qᵀb directly.
+    All three approaches find the same x̂.
+  `;
+  return k;
+}
+
+/* ═══════════════════════════════════
+   THREE.JS VISUALIZATION
+   Three panels: all A cols / A* cols / projection
+═══════════════════════════════════ */
+function renderVisualization(A_frac, Astar_frac, b_frac, xhat_frac, pivotCols, m, n, k) {
+
+  /* ── float conversions ── */
+  const toFC = (M,col) => M.map(row=>row[col].toFloat());
+  const toFV = v => v.map(f=>f.toFloat());
+  const Acols  = Array.from({length:n},(_,j)=>toFC(A_frac,j));
+  const AsCols = Array.from({length:k},(_,j)=>toFC(Astar_frac,j));
+  const bF     = toFV(b_frac);
+  const xhF    = toFV(xhat_frac);
+  const pF     = Array.from({length:m},(_,i)=>AsCols.reduce((s,col,j)=>s+col[i]*xhF[j],0));
+  const rF     = bF.map((v,i)=>v-pF[i]);
+
+  /* ── vector utilities ── */
+  const vnorm  = v=>Math.sqrt(v.reduce((s,x)=>s+x*x,0));
+  const vunit  = v=>{const l=vnorm(v);return l<1e-12?v.map(_=>0):v.map(x=>x/l);};
+  const vdot   = (a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
+  const vscale = (v,s)=>v.map(x=>x*s);
+  const vsub   = (a,b)=>a.map((x,i)=>x-b[i]);
+
+  function perpTo1(e,m){
+    for(let i=0;i<m;i++){let v=Array(m).fill(0);v[i]=1;v=vsub(v,vscale(e,vdot(v,e)));if(vnorm(v)>0.1)return vunit(v);}
+    return Array(m).fill(0);
+  }
+  function perpTo2(e1,e2,m){
+    for(let i=0;i<m;i++){let v=Array(m).fill(0);v[i]=1;v=vsub(v,vscale(e1,vdot(v,e1)));v=vsub(v,vscale(e2,vdot(v,e2)));if(vnorm(v)>0.1)return vunit(v);}
+    return Array(m).fill(0);
+  }
+
+  /* ── 3-D display basis ──
+     e1 = along first A* column  (→ Three.js +x)
+     e2 = second A* column ⊥ e1  (→ Three.js +z)
+     e3 = residual direction ⊥ plane (→ Three.js +y, "up") */
+  let e1 = vunit(AsCols[0]);
+  let e2;
+  if(k>=2){let c=AsCols[1].slice();c=vsub(c,vscale(e1,vdot(c,e1)));e2=vnorm(c)>1e-10?vunit(c):perpTo1(e1,m);}
+  else e2=perpTo1(e1,m);
+  let e3;
+  {let rv=rF.slice();rv=vsub(rv,vscale(e1,vdot(rv,e1)));rv=vsub(rv,vscale(e2,vdot(rv,e2)));
+   e3=vnorm(rv)>1e-10?vunit(rv):perpTo2(e1,e2,m);}
+
+  /* scale: max displayed vector → 2 units */
+  const allN=[...Acols.map(vnorm),vnorm(bF)].filter(x=>x>1e-10);
+  const SC = 2.0/(allN.length?Math.max(...allN):1);
+
+  /* project m-vector → THREE.Vector3 (col space = xz-plane, residual = +y) */
+  function sv(v){
+    return new THREE.Vector3(vdot(v,e1)*SC, vdot(v,e3)*SC, vdot(v,e2)*SC);
+  }
+
+  /* ── build viz DOM ── */
+  // cancel previous animation loops if any
+  if(window._vizCleanup) window._vizCleanup.forEach(f=>f());
+  window._vizCleanup=[];
+
+  const vizDiv=document.getElementById('vizSection');
+  vizDiv.style.display='block';
+  vizDiv.innerHTML=`
+    <div class="scard">
+      <div class="shd">
+        <span class="sbadge" style="background:#3a6eb5;color:#fff;font-size:.72rem;letter-spacing:.02em">3D</span>
+        <span class="sdesc">Geometric interpretation — drag to rotate each panel</span>
+      </div>
+      <div style="padding:.65rem 1.2rem .4rem;font-size:.84rem;color:var(--navy2);display:flex;gap:1.4rem;flex-wrap:wrap;border-bottom:1px solid var(--border);">
+        <span style="display:flex;align-items:center;gap:.4rem"><span style="width:13px;height:13px;background:#8a8a9a;display:inline-block;border-radius:2px"></span>cols of A (dependent)</span>
+        <span style="display:flex;align-items:center;gap:.4rem"><span style="width:13px;height:13px;background:#1a6a58;display:inline-block;border-radius:2px"></span>cols of A*</span>
+        <span style="display:flex;align-items:center;gap:.4rem"><span style="width:13px;height:13px;background:#c8a430;display:inline-block;border-radius:2px"></span>b</span>
+        <span style="display:flex;align-items:center;gap:.4rem"><span style="width:13px;height:13px;background:#3a6eb5;display:inline-block;border-radius:2px"></span>p̂ (projection)</span>
+        <span style="display:flex;align-items:center;gap:.4rem"><span style="width:13px;height:13px;background:#b33a2f;display:inline-block;border-radius:2px"></span>r (residual)</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;min-height:300px;">
+        <div style="flex:1;min-width:220px;border-right:1px solid var(--border);display:flex;flex-direction:column;">
+          <div style="text-align:center;padding:.45rem;font-size:.9rem;color:var(--navy2);font-family:'Playfair Display',serif;border-bottom:1px solid var(--border);">Step 1 — All columns of A</div>
+          <canvas id="viz1" style="width:100%;flex:1;display:block;min-height:260px;cursor:grab"></canvas>
+        </div>
+        <div style="flex:1;min-width:220px;border-right:1px solid var(--border);display:flex;flex-direction:column;">
+          <div style="text-align:center;padding:.45rem;font-size:.9rem;color:var(--navy2);font-family:'Playfair Display',serif;border-bottom:1px solid var(--border);">Step 2 — Basis A* for col(A)</div>
+          <canvas id="viz2" style="width:100%;flex:1;display:block;min-height:260px;cursor:grab"></canvas>
+        </div>
+        <div style="flex:1;min-width:220px;display:flex;flex-direction:column;">
+          <div style="text-align:center;padding:.45rem;font-size:.9rem;color:var(--navy2);font-family:'Playfair Display',serif;border-bottom:1px solid var(--border);">Step 3 — Projection of b</div>
+          <canvas id="viz3" style="width:100%;flex:1;display:block;min-height:260px;cursor:grab"></canvas>
+        </div>
+      </div>
+    </div>`;
+
+  const O3 = new THREE.Vector3(0,0,0);
+
+  function addArrow(scene, from, to, color) {
+    const dir = new THREE.Vector3().subVectors(to, from);
+    const len = dir.length();
+    if(len < 0.04) return;
+    dir.normalize();
+    const hL = Math.min(len*0.22, 0.32);
+    const hW = hL*0.55;
+    scene.add(new THREE.ArrowHelper(dir, from, len, color, hL, hW));
+  }
+
+  function addPlane(scene) {
+    // flat xz-plane panel representing col(A*)
+    const geo = new THREE.PlaneGeometry(5.5, 5.5);
+    const mat = new THREE.MeshBasicMaterial({color:0x1a6a58,side:THREE.DoubleSide,transparent:true,opacity:0.10});
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI/2;
+    scene.add(mesh);
+    // grid lines on the plane
+    const gmat = new THREE.LineBasicMaterial({color:0x1a6a58,transparent:true,opacity:0.20});
+    for(let i=-2;i<=2;i++){
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(i,0,-2.7),new THREE.Vector3(i,0,2.7)]),gmat));
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(-2.7,0,i),new THREE.Vector3(2.7,0,i)]),gmat));
+    }
+  }
+
+  function buildPanel(id, setupFn) {
+    const canvas = document.getElementById(id);
+    const W = Math.max(canvas.offsetWidth, 260);
+    const H = W; // square
+    canvas.width  = W * (window.devicePixelRatio||1);
+    canvas.height = H * (window.devicePixelRatio||1);
+    canvas.style.height = H+'px';
+
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+    renderer.setPixelRatio(window.devicePixelRatio||1);
+    renderer.setSize(W, H);
+    renderer.setClearColor(0xfaf7f2);
+
+    const scene = new THREE.Scene();
+    scene.add(new THREE.AmbientLight(0xffffff,1));
+    scene.background = new THREE.Color(0xfaf7f2);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100);
+
+    addPlane(scene);
+    setupFn(scene);
+
+    /* mouse / touch orbit */
+    let drag=false, px=0, py=0;
+    let theta=0.75, phi=1.05, radius=7.5;
+    function updateCam(){
+      camera.position.set(
+        radius*Math.sin(phi)*Math.sin(theta),
+        radius*Math.cos(phi),
+        radius*Math.sin(phi)*Math.cos(theta)
+      );
+      camera.lookAt(0, 0.2, 0);
+    }
+    canvas.addEventListener('mousedown', e=>{drag=true;px=e.clientX;py=e.clientY;canvas.style.cursor='grabbing';});
+    window.addEventListener('mouseup', ()=>{drag=false;canvas.style.cursor='grab';});
+    window.addEventListener('mousemove', e=>{
+      if(!drag)return;
+      theta-=(e.clientX-px)*0.012; phi-=(e.clientY-py)*0.012;
+      phi=Math.max(0.08,Math.min(Math.PI-0.08,phi));
+      px=e.clientX;py=e.clientY;
+    });
+    canvas.addEventListener('touchstart',e=>{drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();},{passive:false});
+    canvas.addEventListener('touchend',()=>drag=false);
+    canvas.addEventListener('touchmove',e=>{
+      if(!drag)return;
+      theta-=(e.touches[0].clientX-px)*0.012; phi-=(e.touches[0].clientY-py)*0.012;
+      phi=Math.max(0.08,Math.min(Math.PI-0.08,phi));
+      px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();
+    },{passive:false});
+
+    let raf;
+    function animate(){
+      raf=requestAnimationFrame(animate);
+      if(!drag) theta+=0.0035;
+      updateCam();
+      renderer.render(scene,camera);
+    }
+    animate();
+    window._vizCleanup.push(()=>{cancelAnimationFrame(raf);renderer.dispose();});
+  }
+
+  /* ── Panel 1: all columns of A ── */
+  buildPanel('viz1', scene=>{
+    Acols.forEach((col,j)=>{
+      const isIndep = pivotCols.includes(j);
+      addArrow(scene, O3, sv(col), isIndep ? 0x1a6a58 : 0x9a9aaa);
+    });
+  });
+
+  /* ── Panel 2: A* columns (independent teal, dependent faded) ── */
+  buildPanel('viz2', scene=>{
+    Acols.forEach((col,j)=>{
+      const isIndep = pivotCols.includes(j);
+      addArrow(scene, O3, sv(col), isIndep ? 0x1a6a58 : 0xcccccc);
+    });
+    // highlight A* column tips with small spheres
+    AsCols.forEach(col=>{
+      const tip = sv(col);
+      const sph = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07,12,8),
+        new THREE.MeshBasicMaterial({color:0x1a6a58})
+      );
+      sph.position.copy(tip);
+      scene.add(sph);
+    });
+  });
+
+  /* ── Panel 3: projection of b ── */
+  buildPanel('viz3', scene=>{
+    const pV = sv(pF);
+    const bV = sv(bF);
+
+    // A* columns for context (lighter)
+    AsCols.forEach(col=>addArrow(scene, O3, sv(col), 0x90c8b8));
+
+    // projection p̂ (indigo-blue)
+    addArrow(scene, O3, pV, 0x3a6eb5);
+
+    // b (gold)
+    addArrow(scene, O3, bV, 0xc8a430);
+
+    // residual r: from p̂ → b (red)
+    addArrow(scene, pV, bV, 0xb33a2f);
+
+    // right-angle marker at base of r (showing r ⊥ plane)
+    if(vnorm(rF) > 1e-10) {
+      const rUnit = sv(vunit(rF));          // up direction in 3D
+      const e1dir = sv(vunit(AsCols[0]));   // along-plane direction
+      const sq = 0.17;
+      const corner1 = pV.clone().addScaledVector(rUnit, sq);
+      const corner2 = pV.clone().addScaledVector(rUnit, sq).addScaledVector(e1dir, sq);
+      const corner3 = pV.clone().addScaledVector(e1dir, sq);
+      const pts=[corner1,corner2,corner3];
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({color:0xb33a2f,linewidth:1.5})
+      ));
+    }
+
+    // dashed vertical line from p̂ to b (shows the drop)
+    const steps2=12;
+    for(let i=0;i<steps2;i++){
+      const t0=i/steps2, t1=(i+0.45)/steps2;
+      const a=pV.clone().lerp(bV,t0);
+      const bb=pV.clone().lerp(bV,t1);
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([a,bb]),
+        new THREE.LineBasicMaterial({color:0xb33a2f,transparent:true,opacity:0.5})
+      ));
+    }
+
+    // small sphere at projection point p̂
+    const sph=new THREE.Mesh(
+      new THREE.SphereGeometry(0.07,12,8),
+      new THREE.MeshBasicMaterial({color:0x3a6eb5})
+    );
+    sph.position.copy(pV);
+    scene.add(sph);
+  });
+}
+
+/* ═══════════════════════════════════
+   MAIN DRIVER
+═══════════════════════════════════ */
+function doSolve(){
+  const out=document.getElementById('out');out.innerHTML='';
+  try{
+    const m=cM,n=cN;
+    const A=Array.from({length:m},(_,i)=>
+      Array.from({length:n},(_,j)=>Frac.parse(document.getElementById(`a${i}_${j}`)?.value||'0'))
+    );
+    const b=Array.from({length:m},(_,i)=>Frac.parse(document.getElementById(`b${i}`)?.value||'0'));
+
+    // Phase 1: find pivot columns → A*
+    const{pivotCols}=findPivotCols(A,m,n);
+    if(pivotCols.length===0) throw new Error('Matrix A is the zero matrix — no column space.');
+
+    const wrap=document.createElement('div');wrap.className='steps-wrap';
+
+    const lbl1=document.createElement('div');lbl1.className='phase-lbl';
+    lbl1.textContent='Phase 1 — Column Space Basis: which columns of A are linearly independent?';
+    wrap.appendChild(lbl1);
+    const{block:b1,Astar,k}=renderPhase1(A,m,n,pivotCols);
+    wrap.appendChild(b1);
+
+    // Phase 2: form normal equations
+    const AT=matTranspose(Astar,m,k);
+    const ATA=matMul(AT,k,m,Astar,m,k);   // k×k
+    const ATb2=Array.from({length:k},(_,i)=>
+      Array.from({length:m},(_,j)=>AT[i][j].mul(b[j])).reduce((s,v)=>s.add(v),new Frac(0))
+    );
+
+    const lbl2=document.createElement('div');lbl2.className='phase-lbl';
+    lbl2.textContent='Phase 2 — Normal Equations: (A*)ᵀA*x̂ = (A*)ᵀb';
+    wrap.appendChild(lbl2);
+    wrap.appendChild(renderPhase2(Astar,b,m,k,ATA,ATb2));
+
+    // Phase 3: solve
+    const{x:xhat,steps:solveSteps}=gaussSolve(ATA.map(r=>r.map(f=>f.clone())),ATb2.map(f=>f.clone()));
+
+    const lbl3=document.createElement('div');lbl3.className='phase-lbl';
+    lbl3.textContent='Phase 3 — Solving the Normal Equations';
+    wrap.appendChild(lbl3);
+    wrap.appendChild(renderPhase3(ATA,ATb2,k,xhat,solveSteps));
+
+    // Phase 4: residual
+    const p=Array.from({length:m},(_,i)=>
+      Array.from({length:k},(_,j)=>Astar[i][j].mul(xhat[j])).reduce((s,v)=>s.add(v),new Frac(0))
+    );
+    const r=b.map((bi,i)=>bi.sub(p[i]));
+    const r2=r.reduce((s,ri)=>s.add(ri.mul(ri)),new Frac(0));
+    const rNorm=Math.sqrt(r2.toFloat());
+
+    const lbl4=document.createElement('div');lbl4.className='phase-lbl';
+    lbl4.textContent='Phase 4 — Residual and Projection';
+    wrap.appendChild(lbl4);
+    wrap.appendChild(renderPhase4(Astar,b,xhat,m,k,pivotCols,n));
+
+    wrap.appendChild(renderSolution(xhat,pivotCols,n,rNorm));
+    wrap.appendChild(renderKey());
+    out.appendChild(wrap);
+
+    // Phase 5: 3D visualization
+    renderVisualization(A,Astar,b,xhat,pivotCols,m,n,k);
+
+    out.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    out.innerHTML=`<div class="err-msg" style="padding:1rem">${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ═══════════════════════════════════
+   UI — INPUT GRIDS
+═══════════════════════════════════ */
+let cM=4, cN=2;
+
+const EXAMPLES=[
+  {m:4,n:2, A:[[1,0],[1,1],[1,2],[1,3]], b:[1,2,0,3],        label:'4×2 overdetermined (line fit)'},
+  {m:3,n:2, A:[[1,1],[1,1],[1,2]], b:[2,3,4],                label:'3×2 inconsistent'},
+  {m:4,n:3, A:[[1,0,1],[1,1,0],[0,1,1],[1,1,1]], b:[2,1,1,3],label:'4×3 overdetermined'},
+  {m:4,n:3, A:[[1,2,3],[2,4,6],[1,0,1],[0,1,1]], b:[1,2,3,4],label:'4×3 dependent columns'},
+  {m:5,n:2, A:[[1,-1],[1,0],[1,1],[1,2],[1,3]], b:[0,1,1,2,4],label:'5×2 line fit'},
+];
+
+function rebuildAll(){
+  cM=Math.min(Math.max(parseInt(document.getElementById('nRows').value)||2,2),6);
+  cN=Math.min(Math.max(parseInt(document.getElementById('nCols').value)||1,1),5);
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrids();
+}
+
+function buildGrids(){buildA();buildB();}
+
+function buildA(){
+  const cont=document.getElementById('mxA');cont.innerHTML='';
+  cont.style.gridTemplateColumns=`auto ${Array(cN).fill('58px').join(' ')}`;
+  const empty=document.createElement('div');cont.appendChild(empty);
+  for(let j=0;j<cN;j++){
+    const d=document.createElement('div');d.className='clbl';
+    d.innerHTML=rk(`c_{${j+1}}`);cont.appendChild(d);
+  }
+  for(let i=0;i<cM;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.textContent=`r${i+1}`;cont.appendChild(rl);
+    for(let j=0;j<cN;j++){
+      const inp=document.createElement('input');
+      inp.type='text';inp.id=`a${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      cont.appendChild(inp);
+    }
+  }
+}
+
+function buildB(){
+  const cont=document.getElementById('mxB');cont.innerHTML='';
+  cont.style.gridTemplateColumns='auto 58px';
+  const empty=document.createElement('div');cont.appendChild(empty);
+  const bh=document.createElement('div');bh.className='clbl';bh.innerHTML=rk('b_i');cont.appendChild(bh);
+  for(let i=0;i<cM;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.textContent=`r${i+1}`;cont.appendChild(rl);
+    const inp=document.createElement('input');
+    inp.type='text';inp.id=`b${i}`;inp.placeholder='0';inp.className='b-inp';inp.autocomplete='off';
+    cont.appendChild(inp);
+  }
+}
+
+function loadEx(ex){
+  cM=ex.m;cN=ex.n;
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrids();
+  ex.A.forEach((row,i)=>row.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+  ex.b.forEach((v,i)=>{const el=document.getElementById(`b${i}`);if(el)el.value=v;});
+}
+
+function buildExamples(){
+  const row=document.getElementById('exRow');row.innerHTML='';
+  EXAMPLES.forEach(ex=>{
+    const btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);row.appendChild(btn);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{buildExamples();buildGrids();loadEx(EXAMPLES[0]);});
+</script>
+</body>
+</html>

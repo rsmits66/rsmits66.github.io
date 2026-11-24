@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Transformation Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c0f;
+  --surface: #141418;
+  --surface2: #1c1c22;
+  --border: #2a2a34;
+  --border-hi: #3d3d4a;
+  --text: #e8e6e3;
+  --text2: #9b98a0;
+  --text3: #5f5d66;
+  --accent: #6e8efb;
+  --accent2: #a777e3;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'DM Sans', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--bg); color: var(--text); font-family: var(--sans); }
+body { padding: 20px 24px; max-width: 960px; margin: 0 auto; }
+
+header {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 18px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+header h1 {
+  font-family: var(--mono); font-size: 18px; font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+header .subtitle { font-size: 13px; color: var(--text3); }
+
+.canvas-row {
+  display: flex; align-items: start; justify-content: center;
+  gap: 16px; margin-bottom: 6px;
+}
+.panel { display: flex; flex-direction: column; align-items: center; }
+.panel-header {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--text2); padding: 0 0 5px; text-align: center;
+  letter-spacing: 0.5px;
+}
+.panel-header span { color: var(--text3); font-weight: 400; }
+.canvas-box {
+  width: 340px; height: 340px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.canvas-box canvas { width: 340px; height: 340px; display: block; }
+
+.det-row {
+  display: flex; justify-content: center; gap: 16px;
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+  padding: 6px 0 0;
+}
+.det-row .val { color: var(--accent); font-weight: 500; }
+.det-row .neg { color: #f87171; }
+
+.controls-row {
+  display: flex; gap: 12px; align-items: start; justify-content: center;
+  flex-wrap: wrap; margin-top: 14px;
+}
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+}
+.card-title {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 1.1px;
+  margin-bottom: 8px;
+}
+
+.matrix-wrap { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.bracket {
+  font-size: 44px; font-weight: 200; color: var(--text3);
+  line-height: 1; user-select: none;
+}
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.mat-input {
+  width: 64px; height: 36px; text-align: center;
+  font-family: var(--mono); font-size: 15px; font-weight: 500;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.mat-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(110,142,251,0.15);
+}
+.mat-input:hover { border-color: var(--border-hi); }
+.mat-label {
+  font-family: var(--mono); font-size: 9px; color: var(--text3);
+  text-align: center; margin-top: 1px;
+}
+
+.presets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.preset-btn {
+  padding: 5px 8px; text-align: center;
+  font-family: var(--mono); font-size: 11px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text2); cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.preset-btn:hover {
+  background: var(--border); border-color: var(--border-hi); color: var(--text);
+}
+
+.legend-items { display: flex; flex-direction: column; gap: 5px; }
+.legend-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.legend-swatch.circle { border-radius: 50%; }
+
+.view-controls {
+  display: flex; gap: 6px; align-items: center;
+  font-size: 11px; color: var(--text3);
+}
+.view-controls label { font-family: var(--mono); }
+.view-controls input[type=range] {
+  width: 90px; accent-color: var(--accent);
+  height: 3px; -webkit-appearance: none; appearance: none;
+  background: var(--border); border-radius: 2px; outline: none;
+}
+.view-controls input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px;
+  background: var(--accent); border-radius: 50%; cursor: pointer;
+}
+
+@media (max-width: 740px) {
+  .canvas-row { flex-direction: column; align-items: center; }
+  .canvas-box, .canvas-box canvas { width: 280px; height: 280px; }
+  .controls-row { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Linear transformation</h1>
+  <span class="subtitle">Domain → image under T = [a b; c d]</span>
+</header>
+
+<div class="canvas-row">
+  <div class="panel">
+    <div class="panel-header">Domain <span>(pre-image)</span></div>
+    <div class="canvas-box"><canvas id="domC"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">Range <span>(image under T)</span></div>
+    <div class="canvas-box"><canvas id="ranC"></canvas></div>
+  </div>
+</div>
+<div class="det-row">
+  <span>det(T) = <span class="val" id="detVal">1.95</span></span>
+  <span>|det(T)| = <span class="val" id="absDetVal">1.95</span></span>
+  <span id="detNote" style="color:var(--text3)"></span>
+</div>
+
+<div class="controls-row">
+  <div class="card">
+    <div class="card-title">Transformation matrix</div>
+    <div class="matrix-wrap">
+      <span class="bracket">[</span>
+      <div>
+        <div class="matrix-grid">
+          <div><input class="mat-input" id="ma" type="number" step="any" value="1.5"><div class="mat-label">a</div></div>
+          <div><input class="mat-input" id="mb" type="number" step="any" value="0.5"><div class="mat-label">b</div></div>
+          <div><input class="mat-input" id="mc" type="number" step="any" value="-0.3"><div class="mat-label">c</div></div>
+          <div><input class="mat-input" id="md" type="number" step="any" value="1.2"><div class="mat-label">d</div></div>
+        </div>
+      </div>
+      <span class="bracket">]</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Presets</div>
+    <div class="presets-grid">
+      <button class="preset-btn" onclick="setMat(1,0,0,1)">Identity</button>
+      <button class="preset-btn" onclick="setMat(2,0,0,2)">Scale 2×</button>
+      <button class="preset-btn" onclick="setMat(1,1,0,1)">Shear</button>
+      <button class="preset-btn" onclick="setMat(0,-1,1,0)">Rot 90°</button>
+      <button class="preset-btn" onclick="setMat(0.707,-0.707,0.707,0.707)">Rot 45°</button>
+      <button class="preset-btn" onclick="setMat(1,0,0,-1)">Reflect y</button>
+      <button class="preset-btn" onclick="setMat(-1,0,0,1)">Reflect x</button>
+      <button class="preset-btn" onclick="setMat(1,0,0,0)">Projection</button>
+      <button class="preset-btn" onclick="setMat(3,1,1,2)">Reference</button>
+      <button class="preset-btn" onclick="setMat(0.5,0.866,-0.866,0.5)">Rot −60°</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Legend</div>
+    <div class="legend-items">
+      <div class="legend-row"><div class="legend-swatch" style="background:#4ade80"></div>e₁ = [1, 0]</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#f87171"></div>e₂ = [0, 1]</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.3)"></div>Square at (3, 1)</div>
+      <div class="legend-row"><div class="legend-swatch circle" style="border:2px solid #c084fc"></div>Circle at (−2, 2)</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#818cf8"></div>Elephant at (0, −4)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">View</div>
+    <div class="view-controls">
+      <label>Zoom</label>
+      <input type="range" id="zoomSlider" min="3" max="20" step="0.5" value="8">
+      <span id="zoomVal" style="min-width:22px;text-align:right;font-family:var(--mono)">8</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const domC = document.getElementById('domC');
+const ranC = document.getElementById('ranC');
+const dCtx = domC.getContext('2d');
+const rCtx = ranC.getContext('2d');
+
+const inputs = {
+  a: document.getElementById('ma'),
+  b: document.getElementById('mb'),
+  c: document.getElementById('mc'),
+  d: document.getElementById('md'),
+};
+const zoomSlider = document.getElementById('zoomSlider');
+const zoomVal = document.getElementById('zoomVal');
+const detVal = document.getElementById('detVal');
+const absDetVal = document.getElementById('absDetVal');
+const detNote = document.getElementById('detNote');
+
+const elephantBlue = [[2,0],[3,0],[4,0],[0,1],[1,1],[2,1],[4,1],[5,1],[0,2],[2,2]];
+const elephantOrange = [[5,2]];
+const eCols = 6, eRows = 3;
+
+let PX = 680;
+let VIEW = 8;
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const box = document.querySelector('.canvas-box');
+  const sz = box.getBoundingClientRect().width;
+  PX = Math.round(sz * dpr);
+  [domC, ranC].forEach(c => { c.width = PX; c.height = PX; });
+  draw();
+}
+
+function getMat() {
+  return [
+    parseFloat(inputs.a.value) || 0, parseFloat(inputs.b.value) || 0,
+    parseFloat(inputs.c.value) || 0, parseFloat(inputs.d.value) || 0
+  ];
+}
+function setMat(a, b, c, d) {
+  inputs.a.value = a; inputs.b.value = b;
+  inputs.c.value = c; inputs.d.value = d; draw();
+}
+function applyT(x, y, T) { return [T[0]*x + T[1]*y, T[2]*x + T[3]*y]; }
+function toCanvas(x, y) { return [(x / VIEW + 0.5) * PX, (0.5 - y / VIEW) * PX]; }
+
+function drawGrid(ctx, T, col, emphasis) {
+  const range = Math.ceil(VIEW) + 2;
+  const dpr = window.devicePixelRatio || 1;
+  const M = T || [1,0,0,1];
+  for (let i = -range * 3; i <= range * 3; i++) {
+    const isAxis = (i === 0 && !T);
+    ctx.strokeStyle = isAxis ? emphasis : col;
+    ctx.lineWidth = isAxis ? dpr * 1.5 : dpr * 0.7;
+    let [x1,y1] = applyT(-range*3, i, M);
+    let [x2,y2] = applyT(range*3, i, M);
+    let [cx1,cy1] = toCanvas(x1,y1);
+    let [cx2,cy2] = toCanvas(x2,y2);
+    ctx.beginPath(); ctx.moveTo(cx1,cy1); ctx.lineTo(cx2,cy2); ctx.stroke();
+    ctx.strokeStyle = isAxis ? emphasis : col;
+    ctx.lineWidth = isAxis ? dpr * 1.5 : dpr * 0.7;
+    [x1,y1] = applyT(i, -range*3, M);
+    [x2,y2] = applyT(i, range*3, M);
+    [cx1,cy1] = toCanvas(x1,y1);
+    [cx2,cy2] = toCanvas(x2,y2);
+    ctx.beginPath(); ctx.moveTo(cx1,cy1); ctx.lineTo(cx2,cy2); ctx.stroke();
+  }
+}
+
+function drawArrow(ctx, fx, fy, tx2, ty2, col, w) {
+  const dpr = window.devicePixelRatio || 1;
+  const [cx1, cy1] = toCanvas(fx, fy);
+  const [cx2, cy2] = toCanvas(tx2, ty2);
+  const dx = cx2 - cx1, dy = cy2 - cy1;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 2) return;
+  const ux = dx/len, uy = dy/len;
+  ctx.strokeStyle = col; ctx.lineWidth = w * dpr; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(cx1, cy1); ctx.lineTo(cx2, cy2); ctx.stroke();
+  const hl = 10 * dpr, ha = 0.4;
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(cx2, cy2);
+  ctx.lineTo(cx2 - hl*(ux*Math.cos(ha) - uy*Math.sin(ha)),
+             cy2 - hl*(uy*Math.cos(ha) + ux*Math.sin(ha)));
+  ctx.lineTo(cx2 - hl*(ux*Math.cos(-ha) - uy*Math.sin(-ha)),
+             cy2 - hl*(uy*Math.cos(-ha) + ux*Math.sin(-ha)));
+  ctx.closePath(); ctx.fill();
+}
+
+function drawQuad(ctx, corners, T, fill, stroke, lw) {
+  const dpr = window.devicePixelRatio || 1;
+  const tc = corners.map(p => applyT(p[0], p[1], T));
+  ctx.fillStyle = fill; ctx.strokeStyle = stroke;
+  ctx.lineWidth = lw * dpr; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  let [cx, cy] = toCanvas(tc[0][0], tc[0][1]); ctx.moveTo(cx, cy);
+  for (let i = 1; i < tc.length; i++) { [cx, cy] = toCanvas(tc[i][0], tc[i][1]); ctx.lineTo(cx, cy); }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+function drawSquare(ctx, T) {
+  drawQuad(ctx, [[3,1],[4,1],[4,2],[3,2]], T,
+    'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.55)', 1.5);
+}
+
+function drawCircle(ctx, T) {
+  const dpr = window.devicePixelRatio || 1;
+  const N = 120;
+  ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 2 * dpr;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const a = 2 * Math.PI * i / N;
+    const px = -2 + Math.cos(a), py = 2 + Math.sin(a);
+    const [tx2, ty2] = applyT(px, py, T);
+    const [cx, cy] = toCanvas(tx2, ty2);
+    i === 0 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
+  }
+  ctx.stroke();
+  const [ccx, ccy] = toCanvas(...applyT(-2, 2, T));
+  ctx.fillStyle = '#c084fc';
+  ctx.beginPath(); ctx.arc(ccx, ccy, 2.5 * dpr, 0, Math.PI*2); ctx.fill();
+}
+
+function drawElephant(ctx, T) {
+  const cx0 = 0, cy0 = -4;
+  elephantBlue.forEach(([col, row]) => {
+    const lx = col - eCols/2, ly = (eRows - 1 - row) - eRows/2 + 0.5;
+    drawQuad(ctx, [[lx+cx0,ly+cy0],[lx+cx0+1,ly+cy0],[lx+cx0+1,ly+cy0+1],[lx+cx0,ly+cy0+1]],
+      T, '#818cf8', '#818cf8', 0.3);
+  });
+  elephantOrange.forEach(([col, row]) => {
+    const lx = col - eCols/2, ly = (eRows - 1 - row) - eRows/2 + 0.5;
+    drawQuad(ctx, [[lx+cx0,ly+cy0],[lx+cx0+1,ly+cy0],[lx+cx0+1,ly+cy0+0.85],[lx+cx0,ly+cy0+0.85]],
+      T, '#fb923c', '#fb923c', 0.3);
+  });
+}
+
+function drawLabels(ctx, T, isRange) {
+  const dpr = window.devicePixelRatio || 1;
+  const s = 10 * dpr;
+  ctx.font = `500 ${s}px 'JetBrains Mono', monospace`;
+  ctx.textBaseline = 'bottom';
+  const [gx, gy] = applyT(1, 0, T);
+  const [rx, ry] = applyT(0, 1, T);
+  const [gcx, gcy] = toCanvas(gx, gy);
+  ctx.fillStyle = '#4ade80'; ctx.textAlign = 'left';
+  if (isRange) ctx.fillText(`T·e₁=[${gx.toFixed(1)},${gy.toFixed(1)}]`, gcx + 6*dpr, gcy - 4*dpr);
+  else ctx.fillText('e₁=[1,0]', gcx + 6*dpr, gcy - 4*dpr);
+  const [rcx, rcy] = toCanvas(rx, ry);
+  ctx.fillStyle = '#f87171';
+  if (isRange) ctx.fillText(`T·e₂=[${rx.toFixed(1)},${ry.toFixed(1)}]`, rcx + 6*dpr, rcy - 4*dpr);
+  else ctx.fillText('e₂=[0,1]', rcx + 6*dpr, rcy - 4*dpr);
+  const ss = 9 * dpr;
+  ctx.font = `400 ${ss}px 'DM Sans', sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'center';
+  if (!isRange) {
+    let [lx, ly] = toCanvas(3.5, 0.7); ctx.fillText('(3,1)', lx, ly);
+    [lx, ly] = toCanvas(-2, 3.2); ctx.fillText('(−2,2)', lx, ly);
+    [lx, ly] = toCanvas(0, -2.7); ctx.fillText('elephant (0,−4)', lx, ly);
+  }
+}
+
+function drawPanel(ctx, T, isRange) {
+  ctx.clearRect(0, 0, PX, PX);
+  ctx.fillStyle = '#0f0f13';
+  ctx.fillRect(0, 0, PX, PX);
+  const gridCol = isRange ? 'rgba(100,200,220,0.1)' : 'rgba(255,255,255,0.06)';
+  const axisCol = 'rgba(255,255,255,0.18)';
+  drawGrid(ctx, isRange ? T : null, gridCol, axisCol);
+  drawSquare(ctx, T);
+  drawCircle(ctx, T);
+  drawElephant(ctx, T);
+  drawArrow(ctx, 0, 0, ...applyT(1, 0, T), '#4ade80', 2);
+  drawArrow(ctx, 0, 0, ...applyT(0, 1, T), '#f87171', 2);
+  const dpr = window.devicePixelRatio || 1;
+  const [ocx, ocy] = toCanvas(0, 0);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.arc(ocx, ocy, 3*dpr, 0, Math.PI*2); ctx.fill();
+  drawLabels(ctx, T, isRange);
+}
+
+function updateDet(T) {
+  const d = T[0]*T[3] - T[1]*T[2];
+  detVal.textContent = d.toFixed(3);
+  absDetVal.textContent = Math.abs(d).toFixed(3);
+  detVal.classList.toggle('neg', d < 0);
+  if (Math.abs(d) < 0.001) detNote.textContent = '(singular)';
+  else if (d < 0) detNote.textContent = '(orientation reversed)';
+  else detNote.textContent = '(orientation preserved)';
+}
+
+function draw() {
+  VIEW = parseFloat(zoomSlider.value) || 8;
+  zoomVal.textContent = VIEW;
+  const T = getMat();
+  drawPanel(dCtx, [1,0,0,1], false);
+  drawPanel(rCtx, T, true);
+  updateDet(T);
+}
+
+Object.values(inputs).forEach(inp => {
+  inp.addEventListener('input', draw);
+  inp.addEventListener('change', draw);
+});
+zoomSlider.addEventListener('input', draw);
+document.querySelectorAll('.mat-input').forEach(inp => {
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.target.blur(); draw(); }});
+});
+window.addEventListener('resize', resize);
+resize();
+</script>
+</body>
+</html>

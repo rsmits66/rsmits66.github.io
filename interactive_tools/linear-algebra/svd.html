@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singular Value Decomposition — A = UΣVᵀ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--gold:#c8a430;--gray:#7a7a8a;
+  --border:#ddd9d0;
+  --U-bg:#edf6ee;--U2:#1a6a58;
+  --S-bg:#fff8ea;--S2:#8a5a00;
+  --V-bg:#edf1fb;--V2:#3a5aa8;
+  --sym:#7a2a90;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--V-bg);color:var(--V2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:62px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+.steps-wrap{display:flex;flex-direction:column;gap:1.4rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;overflow-x:auto;}
+.sec-body{padding:1.1rem 1.5rem;overflow-x:auto;}
+
+/* Matrix display */
+.mat-trio{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;overflow-x:auto;padding:.4rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.mat-lbl{font-size:.8rem;font-style:italic;color:var(--gray);text-align:center;}
+.mat-op{font-size:1.4rem;color:var(--navy2);align-self:center;padding:0 .15rem;}
+
+/* Matrix table */
+.mtbl{border-collapse:collapse;font-size:.88rem;}
+.mtbl td{padding:.28rem .55rem;text-align:right;border:1px solid #e0dbd3;min-width:52px;font-variant-numeric:tabular-nums;}
+.mtbl td.U-c{background:var(--U-bg);color:var(--U2);}
+.mtbl td.S-c{background:var(--S-bg);color:var(--S2);font-weight:700;}
+.mtbl td.V-c{background:var(--V-bg);color:var(--V2);}
+.mtbl td.Z-c{color:#ccc;}
+
+/* Singular value list */
+.sv-list{display:flex;flex-wrap:wrap;gap:.65rem;margin:.5rem 0;}
+.sv-item{border-radius:5px;padding:.35rem .9rem;font-size:.95rem;display:flex;flex-direction:column;align-items:center;gap:.15rem;}
+.sv-val{font-size:1.1rem;font-weight:600;}
+.sv-sub{font-size:.75rem;font-style:italic;}
+
+/* Symmetric note */
+.sym-note{background:#f5e8fb;border:1px solid #c890d8;border-radius:6px;padding:.7rem 1rem;font-size:.88rem;color:#5a1a70;margin:.6rem 0;}
+
+/* 4-panel diagram */
+.diagram-outer{padding:1rem 1.5rem;overflow-x:auto;}
+.diagram-wrap{display:inline-flex;flex-direction:column;align-items:center;gap:0;min-width:540px;}
+.diagram-row{display:flex;align-items:center;gap:0;}
+.panel-cell{display:flex;flex-direction:column;align-items:center;gap:.3rem;}
+.panel-lbl{font-size:.78rem;color:var(--gray);text-align:center;max-width:200px;font-style:italic;line-height:1.3;}
+.h-arr{width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.h-arr-name{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy2);font-style:italic;}
+.h-arr-line{width:80px;height:2px;background:var(--navy);position:relative;}
+.h-arr-line::after{content:'';position:absolute;right:-6px;top:-5px;border:6px solid transparent;border-left-color:var(--navy);}
+.mid-row{display:flex;align-items:center;height:72px;}
+.v-arr-wrap{width:200px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.v-arr-name{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy2);font-style:italic;}
+.v-arr-line{width:2px;height:44px;background:var(--navy);position:relative;}
+.v-arr-down::after{content:'';position:absolute;bottom:-7px;left:-5px;border:7px solid transparent;border-top-color:var(--navy);}
+.v-arr-up::after{content:'';position:absolute;top:-7px;left:-5px;border:7px solid transparent;border-bottom-color:var(--navy);}
+.mid-center{flex:1;text-align:center;}
+.diagram-formula{margin-top:.7rem;font-size:1.05rem;}
+
+.keybox{background:var(--U-bg);border:1px solid #a8d8b8;border-radius:6px;padding:.85rem 1.1rem;font-size:.88rem;color:#1a3a28;line-height:1.65;}
+.keybox strong{color:var(--navy);}
+.info-note{background:var(--V-bg);border:1px solid #c0ccdd;border-radius:5px;padding:.55rem .9rem;font-size:.87rem;color:var(--navy2);margin:.55rem 0;}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Singular Value Decomposition — A = UΣV<sup>T</sup></h1>
+  <p>U and V are orthogonal (pure rotations/reflections); Σ stretches a sphere into an ellipsoid</p>
+</header>
+<main>
+<div class="card">
+  <h2>Enter Matrix A</h2>
+  <div class="ctrl-row">
+    <label>Rows m: <input type="number" id="nRows" min="1" max="5" value="2"></label>
+    <label>Cols n: <input type="number" id="nCols" min="1" max="5" value="2"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.6rem;">
+    Enter integers or fractions. Any m×n matrix is accepted. For a symmetric matrix, U = V.
+  </p>
+  <div style="overflow-x:auto"><div class="mx-grid" id="mxA"></div></div>
+  <button class="btn-solve" onclick="doSolve()">Compute SVD →</button>
+</div>
+<div id="out"></div>
+</main>
+
+<script>
+/* ══════════════════════════════════════
+   MATH UTILITIES
+══════════════════════════════════════ */
+const zeros=(r,c)=>Array.from({length:r},()=>Array(c).fill(0));
+const eye=n=>{const M=zeros(n,n);for(let i=0;i<n;i++)M[i][i]=1;return M;};
+const Tr=(A,m,n)=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>A[j][i]));
+const mmul=(A,B,m,k,n)=>{const C=zeros(m,n);for(let i=0;i<m;i++)for(let j=0;j<n;j++)for(let l=0;l<k;l++)C[i][j]+=A[i][l]*B[l][j];return C;};
+const mvec=(A,v,m,n)=>Array.from({length:m},(_,i)=>A[i].reduce((s,a,j)=>s+a*v[j],0));
+const vdot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
+const vnorm=v=>Math.sqrt(vdot(v,v));
+const vsub=(a,b)=>a.map((x,i)=>x-b[i]);
+const vscale=(v,s)=>v.map(x=>x*s);
+const vunit=v=>{const n=vnorm(v);return n>1e-13?v.map(x=>x/n):v.slice();};
+
+/* ══════════════════════════════════════
+   JACOBI EIGENVALUE (symmetric matrix)
+══════════════════════════════════════ */
+function jacobiEig(S,n){
+  const A=S.map(r=>r.slice()),V=eye(n);
+  for(let sw=0;sw<300;sw++){
+    let off=0;
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)off+=A[i][j]*A[i][j];
+    if(off<1e-26)break;
+    for(let p=0;p<n-1;p++){
+      for(let q=p+1;q<n;q++){
+        if(Math.abs(A[p][q])<1e-17)continue;
+        const tau=(A[q][q]-A[p][p])/(2*A[p][q]);
+        const t=(tau>=0?1:-1)/(Math.abs(tau)+Math.sqrt(1+tau*tau));
+        const c=1/Math.sqrt(1+t*t),s=t*c;
+        const app=A[p][p],aqq=A[q][q],apq=A[p][q];
+        A[p][p]=app-t*apq; A[q][q]=aqq+t*apq; A[p][q]=A[q][p]=0;
+        for(let i=0;i<n;i++){
+          if(i!==p&&i!==q){
+            const ip=A[i][p],iq=A[i][q];
+            A[i][p]=A[p][i]=c*ip-s*iq;
+            A[i][q]=A[q][i]=s*ip+c*iq;
+          }
+        }
+        for(let i=0;i<n;i++){
+          const vp=V[i][p],vq=V[i][q];
+          V[i][p]=c*vp-s*vq; V[i][q]=s*vp+c*vq;
+        }
+      }
+    }
+  }
+  const eigs=Array.from({length:n},(_,i)=>({val:A[i][i],vec:V.map(r=>r[i])}));
+  eigs.sort((a,b)=>b.val-a.val);
+  return{vals:eigs.map(e=>e.val),vecs:eigs.map(e=>e.vec)};
+}
+
+/* ══════════════════════════════════════
+   GRAM-SCHMIDT COMPLETION
+══════════════════════════════════════ */
+function gsComplete(vecs,dim){
+  const R=vecs.map(v=>v.slice());
+  for(let tries=0;R.length<dim&&tries<4*dim;tries++){
+    let v=Array(dim).fill(0);v[tries%dim]=1;
+    for(const u of R)v=vsub(v,vscale(u,vdot(v,u)));
+    if(vnorm(v)>1e-10)R.push(vunit(v));
+  }
+  return R.slice(0,dim);
+}
+
+/* ══════════════════════════════════════
+   FULL SVD  A = U Σ Vᵀ
+   Returns: U (m×m cols), sigmas, V (n×n cols), rank
+══════════════════════════════════════ */
+function computeSVD(Ain,m0,n0){
+  let A=Ain.map(r=>r.slice()),m=m0,n=n0,tposed=false;
+  if(m<n){A=Tr(A,m,n);[m,n]=[n,m];tposed=true;}
+
+  const AT=Tr(A,m,n);
+  const ATA=mmul(AT,A,n,m,n);
+  const{vals,vecs}=jacobiEig(ATA,n);
+
+  const maxV=Math.max(...vals.map(Math.abs),1e-14);
+  const tol=maxV*Math.max(m,n)*1e-10;
+  const sigmas=vals.map(l=>l>tol?Math.sqrt(l):0);
+  const rank=sigmas.filter(s=>s>0).length;
+
+  // Right sing vecs: vecs[j], length n
+  const Vc=vecs.slice();
+
+  // Left sing vecs computed from A v_j / sigma_j
+  const Up=[];
+  for(let j=0;j<rank;j++){
+    const Av=mvec(A,Vc[j],m,n);
+    Up.push(vunit(Av));
+  }
+  const Uc=gsComplete(Up,m);
+
+  if(tposed){
+    // SVD of Aᵀ = Uc Σ Vcᵀ  ⟹  SVD of A_orig = Vc Σ Ucᵀ
+    return{U:Vc.slice(0,m0),sigmas:sigmas.slice(0,Math.min(m0,n0)),V:Uc.slice(0,n0),rank,m:m0,n:n0};
+  }
+  return{U:Uc.slice(0,m0),sigmas:sigmas.slice(0,Math.min(m0,n0)),V:Vc.slice(0,n0),rank,m:m0,n:n0};
+}
+
+/* ══════════════════════════════════════
+   SYMMETRY DETECTION
+══════════════════════════════════════ */
+function checkSymmetric(A,m,n){
+  if(m!==n)return false;
+  let maxD=0,frob=0;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+    frob+=A[i][j]*A[i][j];
+    maxD=Math.max(maxD,Math.abs(A[i][j]-A[j][i]));
+  }
+  return maxD<1e-9*Math.sqrt(frob)+1e-12;
+}
+
+/* ══════════════════════════════════════
+   FORMAT NUMBER
+══════════════════════════════════════ */
+function fmt(x,dp=3){
+  const v=Math.abs(x)<5e-11?0:x;
+  if(v===0)return'0';
+  const s=v.toFixed(dp);
+  return s.includes('.')?s.replace(/\.?0+$/,''):s;
+}
+
+/* ══════════════════════════════════════
+   KaTeX
+══════════════════════════════════════ */
+function rk(t,opts){try{return katex.renderToString(t,{throwOnError:false,...(opts||{})});}catch(e){return t;}}
+
+/* ══════════════════════════════════════
+   MATRIX TABLE RENDERER
+══════════════════════════════════════ */
+function matTable(data, rows, cols, cellClass, zeroClass){
+  const tbl=document.createElement('table');tbl.className='mtbl';
+  for(let i=0;i<rows;i++){
+    const tr=document.createElement('tr');
+    for(let j=0;j<cols;j++){
+      const td=document.createElement('td');
+      const v=data[i][j];
+      const isZero=Math.abs(v)<5e-11;
+      td.className=isZero?(zeroClass||cellClass):cellClass;
+      td.textContent=fmt(v);
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  return tbl;
+}
+
+/* ══════════════════════════════════════
+   RENDER: MATRICES U, Σ, V
+══════════════════════════════════════ */
+function renderMatrices(svd,m,n,isSym){
+  const{U,sigmas,V,rank}=svd;
+  const block=document.createElement('div');block.className='scard';
+
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge';badge.textContent='=';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk(`A = U\\,\\Sigma\\,V^T \\text{ — rank }${rank}${isSym?' \\text{ (symmetric: }U=V\\text{)}':''}`);
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Build Sigma matrix (m×n diagonal)
+  const Sm=zeros(m,n);
+  for(let k=0;k<sigmas.length;k++)if(k<m&&k<n)Sm[k][k]=sigmas[k];
+
+  // U cols → m×m matrix
+  const Umat=Array.from({length:m},(_,i)=>Array.from({length:m},(_,j)=>U[j]?U[j][i]||0:0));
+  // V cols → n×n matrix
+  const Vmat=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>V[j]?V[j][i]||0:0));
+
+  // A matrix
+  const Amat=mmul(mmul(Umat,Sm,m,m,n),Tr(Vmat,n,n),m,n,n);
+
+  function mb(lbl,tbl){
+    const b=document.createElement('div');b.className='mat-block';
+    const l=document.createElement('div');l.className='mat-lbl';l.textContent=lbl;
+    b.append(l,tbl);return b;
+  }
+  function op(t){const s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+
+  const trio=document.createElement('div');trio.className='mat-trio';
+  trio.append(
+    mb('A (reconstructed)',matTable(Amat,m,n,'U-c',null)),
+    op('='),
+    mb('U — orthogonal (rotates output)',matTable(Umat,m,m,'U-c',null)),
+    op('\\cdot'),
+    mb('Σ — diagonal (stretches)',matTable(Sm,m,n,'S-c','Z-c')),
+    op('\\cdot'),
+    mb('Vᵀ — orthogonal (rotates input)',matTable(Tr(Vmat,n,n),n,n,'V-c',null))
+  );
+  sec.appendChild(trio);
+
+  // Check A ≈ UΣVᵀ
+  if(m_global&&n_global){
+    const A_orig=Array.from({length:m},(_,i)=>Array.from({length:n},(_,j)=>
+      parseFloat(document.getElementById(`a${i}_${j}`)?.value||'0')||0
+    ));
+    let maxErr=0;
+    for(let i=0;i<m;i++)for(let j=0;j<n;j++)maxErr=Math.max(maxErr,Math.abs(Amat[i][j]-A_orig[i][j]));
+    const chk=document.createElement('div');chk.className='info-note';chk.style.marginTop='.6rem';
+    chk.innerHTML=rk(`\\text{Reconstruction error: }\\max|A - U\\Sigma V^T| = ${maxErr.toExponential(2)}\\;${maxErr<1e-8?'\\checkmark':'\\times'}`);
+    sec.appendChild(chk);
+  }
+
+  // Symmetric note
+  if(isSym){
+    const sn=document.createElement('div');sn.className='sym-note';
+    sn.innerHTML=`<strong>Symmetric matrix:</strong> The left and right singular vectors are the same — U = V = the eigenvector matrix Q.
+    The singular values are the absolute values of the eigenvalues: σᵢ = |λᵢ|.
+    Negative eigenvalues appear as a sign flip in the corresponding column of U relative to V.`;
+    sec.appendChild(sn);
+  }
+
+  block.appendChild(sec);return block;
+}
+
+/* ══════════════════════════════════════
+   RENDER: SINGULAR VALUES INFO
+══════════════════════════════════════ */
+function renderSVInfo(svd,m,n,isSym){
+  const{sigmas,rank}=svd;
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge';badge.style.background='var(--S2)';badge.style.color='#fff';badge.textContent='σ';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk(`\\sigma_1 \\geq \\sigma_2 \\geq \\cdots \\geq 0 \\text{ — the stretching factors}`);
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+  const list=document.createElement('div');list.className='sv-list';
+  const colors=['#c8a430','#d94f8a','#3a9ad9','#6a3ad9','#2a9a60'];
+
+  sigmas.forEach((s,i)=>{
+    const item=document.createElement('div');item.className='sv-item';
+    item.style.background=colors[i%colors.length]+'22';
+    item.style.border=`1px solid ${colors[i%colors.length]}88`;
+    const val=document.createElement('div');val.className='sv-val';val.style.color=colors[i%colors.length];
+    val.innerHTML=rk(`\\sigma_{${i+1}} = ${fmt(s,5)}`);
+    const sub=document.createElement('div');sub.className='sv-sub';
+    const pct=sigmas[0]>1e-12?`${(100*s/sigmas[0]).toFixed(1)}% of σ₁`:(s>0?'nonzero':'zero');
+    sub.textContent=s<1e-10?'zero (rank-deficient)':pct;
+    item.append(val,sub);list.appendChild(item);
+  });
+  sec.appendChild(list);
+
+  // Geometric interpretation
+  const geo=document.createElement('div');geo.className='info-note';
+  let geoText='';
+  if(rank===0)geoText='A is the zero matrix — everything maps to 0.';
+  else if(sigmas.filter(s=>s>1e-10).length===1)geoText=`A has rank 1. It maps ℝⁿ to a single line (along u₁), stretching by σ₁ = ${fmt(sigmas[0])}.`;
+  else{
+    const cond=sigmas[rank-1]>1e-12?fmt(sigmas[0]/sigmas[rank-1]):'∞';
+    geoText=`Condition number κ = σ₁/σ${rank} = ${cond}. `;
+    if(parseFloat(cond)>100)geoText+=`The matrix is nearly singular (ill-conditioned).`;
+    else if(parseFloat(cond)<2)geoText+=`Near-isometry (close to a rotation).`;
+    else geoText+=`The unit ball maps to an ellipsoid with semi-axes σ₁ = ${fmt(sigmas[0])} and σ${rank} = ${fmt(sigmas[rank-1])}.`;
+  }
+  geo.textContent=geoText;
+  sec.appendChild(geo);
+
+  // UᵀU and VᵀV check (show they're orthogonal)
+  const Umat=Array.from({length:svd.m},(_,i)=>Array.from({length:svd.m},(_,j)=>svd.U[j]?svd.U[j][i]||0:0));
+  const UTU=mmul(Tr(Umat,svd.m,svd.m),Umat,svd.m,svd.m,svd.m);
+  let maxOrthoErr=0;
+  for(let i=0;i<svd.m;i++)for(let j=0;j<svd.m;j++)maxOrthoErr=Math.max(maxOrthoErr,Math.abs(UTU[i][j]-(i===j?1:0)));
+  const orth=document.createElement('div');orth.className='info-note';
+  orth.innerHTML=rk(`U^TU = I_{${svd.m}},\\; V^TV = I_{${svd.n}} \\text{ (orthogonality, error: }${maxOrthoErr.toExponential(1)}\\text{)} \\checkmark`);
+  sec.appendChild(orth);
+
+  block.appendChild(sec);return block;
+}
+
+/* ══════════════════════════════════════
+   CANVAS DRAWING  — track e₁,e₂ through V*, Σ, U
+   TL: domain,  e₁ e₂
+   BL: after V*, circle,  v₁ v₂  (e_k → v_k)
+   BR: after Σ,  axis-aligned ellipse, σ₁e₁  σ₂e₂
+   TR: after U,  rotated ellipse,      σ₁u₁  σ₂u₂
+══════════════════════════════════════ */
+function drawAllPanels(svd){
+  const{U,sigmas,V,m,n}=svd;
+  const W=200,H=200,cx=W/2,cy=H/2;
+  const sig1=sigmas[0]||1;
+  const sig2=(sigmas.length>1?sigmas[1]:0)||0;
+
+  // 2D projections of singular vectors (first 2 components)
+  const v1x=V[0]?V[0][0]||0:1, v1y=V[0]?V[0][1]||0:0;
+  const v2x=V[1]?V[1][0]||0:0, v2y=V[1]?V[1][1]||0:1;
+  const u1x=U[0]?U[0][0]||0:1, u1y=U[0]?U[0][1]||0:0;
+  const u2x=U[1]?U[1][0]||0:0, u2y=U[1]?U[1][1]||0:1;
+
+  // Two independent scales:
+  // scC: unit circle panels (TL, BL) — circle radius = 68px
+  // scE: ellipse panels (BR, TR)     — major axis = 75px
+  const scC=68;
+  const scE=Math.min(68,75/sig1);
+  const is2D=(m===2&&n===2);
+
+  const GOLD='#c8a430', PINK='#d94f8a', BLUE='#2255cc';
+
+  // Guard: all four canvases must exist
+  const ids=['cvTL','cvBL','cvBR','cvTR'];
+  for(const id of ids){if(!document.getElementById(id)){console.warn('missing',id);return;}}
+
+  /* ── Shared drawing helpers ── */
+  function bg(ctx){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#f8f6f2';ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.strokeStyle='#e0dbd0';ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx,4);ctx.lineTo(cx,H-4);
+    ctx.moveTo(4,cy);ctx.lineTo(W-4,cy);
+    ctx.stroke();ctx.restore();
+  }
+
+  // Draw ellipse: centre (ecx,ecy), semi-axes a,b along unit vectors ax1,ax2
+  // Canvas y-axis flipped (up = negative canvas-y)
+  function ellipse(ctx,ecx,ecy,a,b,ax1,ax2,sc){
+    const N=120;
+    ctx.save();
+    ctx.beginPath();
+    for(let k=0;k<=N;k++){
+      const t=2*Math.PI*k/N;
+      const px=ecx+sc*(a*Math.cos(t)*ax1[0]+b*Math.sin(t)*ax2[0]);
+      const py=ecy-sc*(a*Math.cos(t)*ax1[1]+b*Math.sin(t)*ax2[1]);
+      k===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fillStyle='rgba(34,85,204,0.14)';ctx.fill();
+    ctx.strokeStyle=BLUE;ctx.lineWidth=2;ctx.stroke();
+    ctx.restore();
+  }
+
+  // Arrow from (ox,oy) pointing in direction (dx,dy) in canvas coords
+  function arrow(ctx,ox,oy,dx,dy,col,lbl){
+    const len=Math.sqrt(dx*dx+dy*dy);if(len<3)return;
+    const ang=Math.atan2(dy,dx);
+    const hL=Math.min(10,len*.26),hA=.42;
+    ctx.save();
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+dx,oy+dy);ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ox+dx,oy+dy);
+    ctx.lineTo(ox+dx-hL*Math.cos(ang-hA),oy+dy-hL*Math.sin(ang-hA));
+    ctx.lineTo(ox+dx-hL*Math.cos(ang+hA),oy+dy-hL*Math.sin(ang+hA));
+    ctx.closePath();ctx.fill();
+    if(lbl){
+      ctx.font='bold 12px Georgia,serif';
+      // Nudge label away from arrow tip
+      const lx=ox+dx+(dx>=0?7:-ctx.measureText(lbl).width-4);
+      const ly=oy+dy+(dy<=0?-4:14);
+      ctx.fillText(lbl,lx,ly);
+    }
+    ctx.restore();
+  }
+
+  // Small title at top-left of panel
+  function title(ctx,t1,t2){
+    ctx.save();
+    ctx.font='bold 11px "Crimson Pro",serif';ctx.fillStyle='#18284a';
+    ctx.fillText(t1,6,14);
+    if(t2){ctx.font='9.5px serif';ctx.fillStyle='#999';ctx.fillText(t2,6,26);}
+    ctx.restore();
+  }
+
+  // Scale indicator at bottom-right
+  function scaleNote(ctx,txt){
+    ctx.save();ctx.font='9px serif';ctx.fillStyle='#bbb';
+    ctx.fillText(txt,W-ctx.measureText(txt).width-5,H-5);
+    ctx.restore();
+  }
+
+  /* ── TL: domain,  unit circle,  e₁ and e₂ ── */
+  {
+    const ctx=document.getElementById('cvTL').getContext('2d');
+    bg(ctx);
+    ellipse(ctx,cx,cy,1,1,[1,0],[0,1],scC);
+    // e₁ = [1,0], e₂ = [0,1]
+    arrow(ctx,cx,cy, scC,0, GOLD,'e₁');
+    arrow(ctx,cx,cy, 0,-scC, PINK,'e₂');
+    title(ctx,is2D?'Input ℝ²':'Input ℝⁿ (proj)',is2D?'unit circle, std basis':null);
+    scaleNote(ctx,'unit = 1');
+  }
+
+  /* ── BL: after V*,  still unit circle,  e_k → v_k ── */
+  // V^T * e_k = v_k  (V^T maps standard basis to right sing vecs)
+  {
+    const ctx=document.getElementById('cvBL').getContext('2d');
+    bg(ctx);
+    ellipse(ctx,cx,cy,1,1,[1,0],[0,1],scC);
+    // Show v₁ and v₂ (the rotated images of e₁, e₂)
+    arrow(ctx,cx,cy, v1x*scC,-v1y*scC, GOLD,'v₁');
+    if(sig2>1e-10) arrow(ctx,cx,cy, v2x*scC,-v2y*scC, PINK,'v₂');
+    title(ctx,'After V*','V* rotates: e₁→v₁, e₂→v₂');
+    scaleNote(ctx,'unit = 1');
+  }
+
+  /* ── BR: after Σ,  axis-aligned ellipse,  σ₁e₁ and σ₂e₂ ── */
+  {
+    const ctx=document.getElementById('cvBR').getContext('2d');
+    bg(ctx);
+    ellipse(ctx,cx,cy,sig1,Math.max(sig2,0.01),[1,0],[0,1],scE);
+    arrow(ctx,cx,cy, sig1*scE,0, GOLD,`σ₁≈${sig1.toFixed(2)}`);
+    if(sig2>1e-10) arrow(ctx,cx,cy, 0,-sig2*scE, PINK,`σ₂≈${sig2.toFixed(2)}`);
+    title(ctx,'After Σ','scales axes: v_k axis → σ_k e_k');
+    scaleNote(ctx,`unit = ${(1/scE).toFixed(2)}`);
+  }
+
+  /* ── TR: after U,  rotated ellipse,  σ₁u₁ and σ₂u₂ ── */
+  {
+    const ctx=document.getElementById('cvTR').getContext('2d');
+    bg(ctx);
+    ellipse(ctx,cx,cy,sig1,Math.max(sig2,0.01),[u1x,u1y],[u2x,u2y],scE);
+    arrow(ctx,cx,cy, u1x*sig1*scE,-u1y*sig1*scE, GOLD,`σ₁u₁`);
+    if(sig2>1e-10) arrow(ctx,cx,cy, u2x*sig2*scE,-u2y*sig2*scE, PINK,`σ₂u₂`);
+    title(ctx,is2D?'Output ℝ² = A(ball)':'Output ℝᵐ (proj)','U rotates ellipse');
+    scaleNote(ctx,`unit = ${(1/scE).toFixed(2)}`);
+  }
+}
+
+/* ══════════════════════════════════════
+   3D PANELS  (Three.js) — used when m===n===3
+   Four interactive WebGL views, drag to rotate.
+   Each panel is a separate renderer on its own canvas.
+══════════════════════════════════════ */
+function drawAllPanels3D(svd){
+  const{U,sigmas,V}=svd;
+  const sig1=sigmas[0]||1, sig2=sigmas[1]||0, sig3=sigmas[2]||0;
+
+  // Clean up previous renderers
+  if(window._svd3Cleanup){ window._svd3Cleanup.forEach(f=>f()); }
+  window._svd3Cleanup=[];
+
+  const GOLD=0xc8a430, PINK=0xd94f8a, CYAN=0x3a9ad9;
+  const AX_COLS=[GOLD,PINK,CYAN];
+
+  // Get V and U columns as THREE.Vector3
+  const vc=i=>new THREE.Vector3(V[i]?V[i][0]:0, V[i]?V[i][1]:0, V[i]?V[i][2]:0);
+  const uc=i=>new THREE.Vector3(U[i]?U[i][0]:0, U[i]?U[i][1]:0, U[i]?U[i][2]:0);
+
+  function makePanel(canvasId, setupFn){
+    const canvas=document.getElementById(canvasId);
+    if(!canvas){ console.warn('3D canvas missing:',canvasId); return; }
+    const W=canvas.offsetWidth||200, H=W;
+    canvas.width=W*(window.devicePixelRatio||1);
+    canvas.height=H*(window.devicePixelRatio||1);
+    canvas.style.height=H+'px';
+
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+    renderer.setPixelRatio(window.devicePixelRatio||1);
+    renderer.setSize(W,H);
+    renderer.setClearColor(0xf8f6f2);
+
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(0xf8f6f2);
+    scene.add(new THREE.AmbientLight(0xffffff,0.7));
+    const dLight=new THREE.DirectionalLight(0xffffff,0.5);
+    dLight.position.set(3,5,4);scene.add(dLight);
+
+    const camera=new THREE.PerspectiveCamera(38,1,0.01,100);
+
+    // Faint coord axes
+    [[1,0,0,0x888888],[0,1,0,0x888888],[0,0,1,0x888888]].forEach(([x,y,z,col])=>{
+      const geo=new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2.5*x,-2.5*y,-2.5*z),
+        new THREE.Vector3(2.5*x,2.5*y,2.5*z)
+      ]);
+      scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.25})));
+    });
+
+    setupFn(scene);
+
+    // Orbit control (manual)
+    let drag=false,px=0,py=0,theta=0.6,phi=1.1,radius=5.5;
+    function updateCam(){
+      camera.position.set(
+        radius*Math.sin(phi)*Math.sin(theta),
+        radius*Math.cos(phi),
+        radius*Math.sin(phi)*Math.cos(theta)
+      );
+      camera.lookAt(0,0,0);
+    }
+    canvas.addEventListener('mousedown',e=>{drag=true;px=e.clientX;py=e.clientY;canvas.style.cursor='grabbing';});
+    window.addEventListener('mouseup',()=>{drag=false;canvas.style.cursor='grab';});
+    window.addEventListener('mousemove',e=>{
+      if(!drag)return;
+      theta-=(e.clientX-px)*0.013; phi-=(e.clientY-py)*0.013;
+      phi=Math.max(0.07,Math.min(Math.PI-0.07,phi));
+      px=e.clientX;py=e.clientY;
+    });
+    canvas.addEventListener('touchstart',e=>{drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();},{passive:false});
+    canvas.addEventListener('touchend',()=>drag=false);
+    canvas.addEventListener('touchmove',e=>{
+      if(!drag)return;
+      theta-=(e.touches[0].clientX-px)*0.013; phi-=(e.touches[0].clientY-py)*0.013;
+      phi=Math.max(0.07,Math.min(Math.PI-0.07,phi));
+      px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();
+    },{passive:false});
+    canvas.style.cursor='grab';
+
+    let raf;
+    function animate(){
+      raf=requestAnimationFrame(animate);
+      if(!drag) theta+=0.004;
+      updateCam();
+      renderer.render(scene,camera);
+    }
+    animate();
+    window._svd3Cleanup.push(()=>{cancelAnimationFrame(raf);renderer.dispose();});
+  }
+
+  // Helper: wireframe ellipsoid from a 3×3 scaling matrix diag(a,b,c)
+  // then optionally rotated by a 3×3 orthogonal matrix (columns = axes)
+  function addEllipsoid(scene, a, b, c, rotCols, color){
+    // We build a SphereGeometry and scale + rotate it
+    const geo=new THREE.SphereGeometry(1,48,32);
+    const mat=new THREE.MeshPhongMaterial({
+      color,transparent:true,opacity:0.22,
+      side:THREE.DoubleSide,shininess:60
+    });
+    const wiremat=new THREE.MeshBasicMaterial({
+      color,wireframe:true,transparent:true,opacity:0.18
+    });
+    const mesh=new THREE.Mesh(geo,mat);
+    const wire=new THREE.Mesh(geo.clone(),wiremat);
+
+    // Scale
+    mesh.scale.set(a,b,c);
+    wire.scale.set(a,b,c);
+
+    if(rotCols){
+      // Build rotation matrix from column vectors
+      const [c1,c2,c3]=rotCols;
+      const rm=new THREE.Matrix4().set(
+        c1.x,c2.x,c3.x,0,
+        c1.y,c2.y,c3.y,0,
+        c1.z,c2.z,c3.z,0,
+        0,0,0,1
+      );
+      const grp=new THREE.Group();
+      grp.add(mesh);grp.add(wire);
+      grp.applyMatrix4(rm);
+      scene.add(grp);
+    } else {
+      scene.add(mesh);scene.add(wire);
+    }
+  }
+
+  // Helper: arrow
+  function addArrow(scene, dir, length, color, label){
+    if(length<0.05)return;
+    const d=dir.clone().normalize();
+    const hL=Math.min(0.28,length*0.22), hW=hL*0.55;
+    scene.add(new THREE.ArrowHelper(d, new THREE.Vector3(0,0,0), length, color, hL, hW));
+  }
+
+  const scE=Math.min(1.5, 1.5/sig1); // scale so largest semi-axis ≤ 1.5
+
+  /* TL — unit sphere + e₁ e₂ e₃ */
+  makePanel('cvTL', scene=>{
+    addEllipsoid(scene,1,1,1,null,0x2255cc);
+    [[1,0,0,GOLD,'e₁'],[0,1,0,PINK,'e₂'],[0,0,1,CYAN,'e₃']].forEach(([x,y,z,col])=>{
+      addArrow(scene,new THREE.Vector3(x,y,z),1.3,col);
+    });
+  });
+
+  /* BL — unit sphere + v₁ v₂ v₃ (V* rotation) */
+  makePanel('cvBL', scene=>{
+    addEllipsoid(scene,1,1,1,null,0x2255cc);
+    [0,1,2].forEach(i=>{
+      addArrow(scene,vc(i),1.3,AX_COLS[i]);
+    });
+  });
+
+  /* BR — axis-aligned ellipsoid σ₁e₁, σ₂e₂, σ₃e₃ */
+  makePanel('cvBR', scene=>{
+    addEllipsoid(scene,sig1*scE,sig2*scE||0.04,sig3*scE||0.04,null,0x2255cc);
+    [[1,0,0,GOLD,sig1],[0,1,0,PINK,sig2],[0,0,1,CYAN,sig3]].forEach(([x,y,z,col,s])=>{
+      if(s>0.01) addArrow(scene,new THREE.Vector3(x,y,z),s*scE,col);
+    });
+  });
+
+  /* TR — rotated ellipsoid along u₁ u₂ u₃ */
+  makePanel('cvTR', scene=>{
+    addEllipsoid(scene,sig1*scE,sig2*scE||0.04,sig3*scE||0.04,[uc(0),uc(1),uc(2)],0x2255cc);
+    [0,1,2].forEach(i=>{
+      const s=sigmas[i]||0;
+      if(s>0.01) addArrow(scene,uc(i),s*scE,AX_COLS[i]);
+    });
+  });
+}
+/* ══════════════════════════════════════
+   MIXED PANELS  — rectangular A (m≠n)
+   TL / BL: 2D canvas (domain ℝⁿ)
+   BR / TR: 3D Three.js (range ℝᵐ, flat disc)
+   Key visual: Σ "lifts" a flat disc from ℝⁿ into ℝᵐ;
+               U tilts the disc to its final orientation.
+══════════════════════════════════════ */
+function drawAllPanelsMixed(svd){
+  const{U,sigmas,V,m,n}=svd;
+  const sig1=sigmas[0]||1, sig2=sigmas[1]||0;
+  const rank=sigmas.filter(s=>s>0.01).length;
+
+  /* ── Left panels: 2D canvas (same as pure-2D case) ── */
+  const W=200,H=200,cx=W/2,cy=H/2;
+  const scC=68, scE=Math.min(68,75/sig1);
+  const GOLD='#c8a430',PINK='#d94f8a';
+
+  const v1x=V[0]?V[0][0]||0:1, v1y=V[0]?V[0][1]||0:0;
+  const v2x=V[1]?V[1][0]||0:0, v2y=V[1]?V[1][1]||0:1;
+
+  function bg2(ctx){
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8f6f2';ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.strokeStyle='#e0dbd0';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx,4);ctx.lineTo(cx,H-4);ctx.moveTo(4,cy);ctx.lineTo(W-4,cy);ctx.stroke();ctx.restore();
+  }
+  function ellipse2(ctx,a,b,ax1,ax2,sc){
+    const N=100;ctx.save();ctx.beginPath();
+    for(let k=0;k<=N;k++){const t=2*Math.PI*k/N;
+      const px=cx+sc*(a*Math.cos(t)*ax1[0]+b*Math.sin(t)*ax2[0]);
+      const py=cy-sc*(a*Math.cos(t)*ax1[1]+b*Math.sin(t)*ax2[1]);
+      k===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+    ctx.closePath();ctx.fillStyle='rgba(34,85,204,0.14)';ctx.fill();
+    ctx.strokeStyle='#2255cc';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  }
+  function arrow2(ctx,ox,oy,dx,dy,col,lbl){
+    const len=Math.sqrt(dx*dx+dy*dy);if(len<3)return;
+    const ang=Math.atan2(dy,dx),hL=Math.min(10,len*.26),hA=.42;
+    ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+dx,oy+dy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ox+dx,oy+dy);
+    ctx.lineTo(ox+dx-hL*Math.cos(ang-hA),oy+dy-hL*Math.sin(ang-hA));
+    ctx.lineTo(ox+dx-hL*Math.cos(ang+hA),oy+dy-hL*Math.sin(ang+hA));
+    ctx.closePath();ctx.fill();
+    if(lbl){ctx.font='bold 12px Georgia,serif';
+      const lx=ox+dx+(dx>=0?7:-ctx.measureText(lbl).width-4);
+      const ly=oy+dy+(dy<=0?-4:14);ctx.fillText(lbl,lx,ly);}
+    ctx.restore();
+  }
+  function title2(ctx,t1,t2){
+    ctx.save();ctx.font='bold 11px "Crimson Pro",serif';ctx.fillStyle='#18284a';ctx.fillText(t1,6,14);
+    if(t2){ctx.font='9.5px serif';ctx.fillStyle='#999';ctx.fillText(t2,6,26);}ctx.restore();
+  }
+
+  /* TL — domain ℝⁿ, unit circle + e₁ e₂ */
+  {
+    const cv=document.getElementById('cvTL');if(!cv)return;
+    const ctx=cv.getContext('2d');bg2(ctx);
+    ellipse2(ctx,1,1,[1,0],[0,1],scC);
+    arrow2(ctx,cx,cy,scC,0,GOLD,'e₁');
+    arrow2(ctx,cx,cy,0,-scC,PINK,'e₂');
+    title2(ctx,`Input ℝ${n===2?'²':n}`,`unit circle (n=${n})`);
+  }
+
+  /* BL — after V*, still unit circle, e_k → v_k */
+  {
+    const cv=document.getElementById('cvBL');if(!cv)return;
+    const ctx=cv.getContext('2d');bg2(ctx);
+    ellipse2(ctx,1,1,[1,0],[0,1],scC);
+    arrow2(ctx,cx,cy,v1x*scC,-v1y*scC,GOLD,'v₁');
+    if(sig2>1e-10) arrow2(ctx,cx,cy,v2x*scC,-v2y*scC,PINK,'v₂');
+    title2(ctx,'After V*','pure rotation in ℝⁿ');
+  }
+
+  /* ── Right panels: 3D Three.js, flat disc ── */
+  if(window._svd3Cleanup) window._svd3Cleanup.forEach(f=>f());
+  window._svd3Cleanup=[];
+
+  const GOLD3=0xc8a430, PINK3=0xd94f8a, BLUE3=0x2255cc;
+  const AX_COLS3=[GOLD3,PINK3];
+
+  const uc=i=>new THREE.Vector3(U[i]?U[i][0]:0, U[i]?U[i][1]:0, U[i]?U[i][2]:0);
+  const u0=uc(0),u1v=uc(1);
+
+  // Normal to the image plane = u₁ × u₂ (the column space's normal)
+  const planeNormal=new THREE.Vector3().crossVectors(u0,u1v).normalize();
+
+  const scD=Math.min(1.4,1.4/sig1); // disc scale
+
+  function makePanel3(id, setupFn, initTheta=0.6, initPhi=1.0){
+    const canvas=document.getElementById(id);if(!canvas)return;
+    const W3=canvas.offsetWidth||200,H3=W3;
+    canvas.width=W3*(window.devicePixelRatio||1);
+    canvas.height=H3*(window.devicePixelRatio||1);
+    canvas.style.height=H3+'px';
+
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+    renderer.setPixelRatio(window.devicePixelRatio||1);
+    renderer.setSize(W3,H3);
+    renderer.setClearColor(0xf8f6f2);
+
+    const scene=new THREE.Scene();scene.background=new THREE.Color(0xf8f6f2);
+    scene.add(new THREE.AmbientLight(0xffffff,0.75));
+    const dl=new THREE.DirectionalLight(0xffffff,0.45);dl.position.set(2,4,3);scene.add(dl);
+
+    // Faint coord axes for ℝ³
+    [[1,0,0],[0,1,0],[0,0,1]].forEach(([x,y,z])=>{
+      const geo=new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2*x,-2*y,-2*z),new THREE.Vector3(2*x,2*y,2*z)]);
+      scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x888888,transparent:true,opacity:0.2})));
+    });
+
+    setupFn(scene);
+
+    const camera=new THREE.PerspectiveCamera(38,1,0.01,100);
+    let drag=false,px2=0,py2=0,theta=initTheta,phi=initPhi,radius=5.0;
+    function updateCam(){
+      camera.position.set(
+        radius*Math.sin(phi)*Math.sin(theta),
+        radius*Math.cos(phi),
+        radius*Math.sin(phi)*Math.cos(theta));
+      camera.lookAt(0,0,0);
+    }
+    canvas.addEventListener('mousedown',e=>{drag=true;px2=e.clientX;py2=e.clientY;canvas.style.cursor='grabbing';});
+    window.addEventListener('mouseup',()=>{drag=false;canvas.style.cursor='grab';});
+    window.addEventListener('mousemove',e=>{
+      if(!drag)return;
+      theta-=(e.clientX-px2)*0.013;phi-=(e.clientY-py2)*0.013;
+      phi=Math.max(0.07,Math.min(Math.PI-0.07,phi));
+      px2=e.clientX;py2=e.clientY;
+    });
+    canvas.addEventListener('touchstart',e=>{drag=true;px2=e.touches[0].clientX;py2=e.touches[0].clientY;e.preventDefault();},{passive:false});
+    canvas.addEventListener('touchend',()=>drag=false);
+    canvas.addEventListener('touchmove',e=>{
+      if(!drag)return;
+      theta-=(e.touches[0].clientX-px2)*0.013;phi-=(e.touches[0].clientY-py2)*0.013;
+      phi=Math.max(0.07,Math.min(Math.PI-0.07,phi));
+      px2=e.touches[0].clientX;py2=e.touches[0].clientY;e.preventDefault();
+    },{passive:false});
+    canvas.style.cursor='grab';
+    let raf;
+    function animate(){raf=requestAnimationFrame(animate);if(!drag)theta+=0.004;updateCam();renderer.render(scene,camera);}
+    animate();
+    window._svd3Cleanup.push(()=>{cancelAnimationFrame(raf);renderer.dispose();});
+  }
+
+  // Build a flat elliptic disc geometry in the xy-plane, semi-axes a,b
+  // then optionally apply a rotation matrix (from column vectors)
+  function addDisc(scene, a, b, rotCols){
+    const N=80;
+    const pts=[];
+    for(let k=0;k<=N;k++){
+      const t=2*Math.PI*k/N;
+      pts.push(new THREE.Vector2(a*Math.cos(t),b*Math.sin(t)));
+    }
+    const shape=new THREE.Shape(pts);
+    const geo=new THREE.ShapeGeometry(shape,64);
+    const mat=new THREE.MeshPhongMaterial({color:BLUE3,transparent:true,opacity:0.25,side:THREE.DoubleSide,shininess:40});
+    const mesh=new THREE.Mesh(geo,mat);
+
+    // Outline ring
+    const edgePts=[];
+    for(let k=0;k<=N;k++){
+      const t=2*Math.PI*k/N;
+      edgePts.push(new THREE.Vector3(a*Math.cos(t),b*Math.sin(t),0));
+    }
+    const edge=new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(edgePts),
+      new THREE.LineBasicMaterial({color:BLUE3,linewidth:2})
+    );
+
+    const grp=new THREE.Group();grp.add(mesh);grp.add(edge);
+
+    if(rotCols){
+      const[c1,c2,c3]=rotCols;
+      const rm=new THREE.Matrix4().set(
+        c1.x,c2.x,c3.x,0,
+        c1.y,c2.y,c3.y,0,
+        c1.z,c2.z,c3.z,0,
+        0,0,0,1);
+      grp.applyMatrix4(rm);
+    }
+    scene.add(grp);
+  }
+
+  function addArrow3(scene,dir,length,color){
+    if(length<0.05)return;
+    const d=dir.clone().normalize();
+    const hL=Math.min(0.26,length*0.22),hW=hL*0.55;
+    scene.add(new THREE.ArrowHelper(d,new THREE.Vector3(0,0,0),length,color,hL,hW));
+  }
+
+  // Normal arrow showing the disc's normal direction
+  function addNormalArrow(scene,normal,color){
+    const len=0.65;
+    scene.add(new THREE.ArrowHelper(normal.clone().normalize(),new THREE.Vector3(0,0,0),len,color,0.15,0.08));
+    scene.add(new THREE.ArrowHelper(normal.clone().negate().normalize(),new THREE.Vector3(0,0,0),len,color,0.15,0.08));
+  }
+
+  /* BR — flat disc in xy-plane: Σ stretches circle → axis-aligned disc in ℝᵐ */
+  makePanel3('cvBR', scene=>{
+    // Disc lies flat in xy-plane (z=0)
+    addDisc(scene, sig1*scD, Math.max(sig2*scD,0.06), null);
+    // Axis arrows along x and y
+    addArrow3(scene,new THREE.Vector3(1,0,0),sig1*scD,GOLD3);
+    if(sig2>0.01) addArrow3(scene,new THREE.Vector3(0,1,0),sig2*scD,PINK3);
+    // Show z-axis (normal direction) with dashed look
+    addNormalArrow(scene,new THREE.Vector3(0,0,1),0x888888);
+    // Label the normal
+    const lblGeo=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,0.8)]);
+    scene.add(new THREE.Line(lblGeo,new THREE.LineBasicMaterial({color:0xbbbbbb,transparent:true,opacity:0.5})));
+  }, 0.5, 1.2); // slight angle to show flatness
+
+  /* TR — same disc tilted by U into ℝᵐ */
+  // The rotation that U applies: in the xy-plane axes are now u₁ and u₂
+  // The disc normal is now planeNormal = u₁ × u₂
+  makePanel3('cvTR', scene=>{
+    // u₁ and u₂ are the new x/y axes of the disc
+    addDisc(scene, sig1*scD, Math.max(sig2*scD,0.06), [u0,u1v,planeNormal]);
+    // Semi-axis arrows along u₁ and u₂
+    addArrow3(scene,u0,sig1*scD,GOLD3);
+    if(sig2>0.01) addArrow3(scene,u1v,sig2*scD,PINK3);
+    // Normal to the tilted plane (u₁×u₂)
+    addNormalArrow(scene,planeNormal,0x888888);
+  }, 0.7, 1.0);
+}
+/* ══════════════════════════════════════
+   WIDE PANELS  — A is m×n with m < n  (e.g. 2×3)
+   TL / BL: 3D Three.js (domain ℝⁿ — sphere, then rotated sphere)
+   BR / TR: 2D canvas  (range ℝᵐ — Σ collapses a dimension)
+   Key visual: Σ squashes the sphere to a flat disc then projects
+               it down to ℝᵐ; U rotates the resulting ellipse in ℝᵐ.
+══════════════════════════════════════ */
+function drawAllPanelsWide(svd){
+  const{U,sigmas,V,m,n}=svd;
+  const sig1=sigmas[0]||1, sig2=(sigmas[1]||0);
+
+  /* ── Right panels (BR, TR): 2D canvas in ℝᵐ ── */
+  const W=200,H=200,cx=W/2,cy=H/2;
+  const scE=Math.min(68,75/sig1);
+  const GOLD='#c8a430', PINK='#d94f8a';
+
+  // u columns projected to 2D (first 2 components of ℝᵐ)
+  const u1x=U[0]?U[0][0]||0:1, u1y=U[0]?U[0][1]||0:0;
+  const u2x=U[1]?U[1][0]||0:0, u2y=U[1]?U[1][1]||0:1;
+
+  function bg2(ctx){
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8f6f2';ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.strokeStyle='#e0dbd0';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx,4);ctx.lineTo(cx,H-4);ctx.moveTo(4,cy);ctx.lineTo(W-4,cy);ctx.stroke();ctx.restore();
+  }
+  function ellipse2(ctx,a,b,ax1,ax2,sc){
+    const N=100;ctx.save();ctx.beginPath();
+    for(let k=0;k<=N;k++){const t=2*Math.PI*k/N;
+      const px=cx+sc*(a*Math.cos(t)*ax1[0]+b*Math.sin(t)*ax2[0]);
+      const py=cy-sc*(a*Math.cos(t)*ax1[1]+b*Math.sin(t)*ax2[1]);
+      k===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+    ctx.closePath();ctx.fillStyle='rgba(34,85,204,0.14)';ctx.fill();
+    ctx.strokeStyle='#2255cc';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  }
+  function arrow2(ctx,ox,oy,dx,dy,col,lbl){
+    const len=Math.sqrt(dx*dx+dy*dy);if(len<3)return;
+    const ang=Math.atan2(dy,dx),hL=Math.min(10,len*.26),hA=.42;
+    ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+dx,oy+dy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ox+dx,oy+dy);
+    ctx.lineTo(ox+dx-hL*Math.cos(ang-hA),oy+dy-hL*Math.sin(ang-hA));
+    ctx.lineTo(ox+dx-hL*Math.cos(ang+hA),oy+dy-hL*Math.sin(ang+hA));
+    ctx.closePath();ctx.fill();
+    if(lbl){ctx.font='bold 12px Georgia,serif';
+      const lx=ox+dx+(dx>=0?7:-ctx.measureText(lbl).width-4);
+      const ly=oy+dy+(dy<=0?-4:14);ctx.fillText(lbl,lx,ly);}
+    ctx.restore();
+  }
+  function title2(ctx,t1,t2){
+    ctx.save();ctx.font='bold 11px "Crimson Pro",serif';ctx.fillStyle='#18284a';ctx.fillText(t1,6,14);
+    if(t2){ctx.font='9.5px serif';ctx.fillStyle='#999';ctx.fillText(t2,6,26);}ctx.restore();
+  }
+  function scaleNote2(ctx,txt){
+    ctx.save();ctx.font='9px serif';ctx.fillStyle='#bbb';
+    ctx.fillText(txt,W-ctx.measureText(txt).width-5,H-5);ctx.restore();
+  }
+
+  /* BR — axis-aligned ellipse in ℝᵐ  (Σ collapsed the last dimension) */
+  {
+    const cv=document.getElementById('cvBR');if(!cv)return;
+    const ctx=cv.getContext('2d');bg2(ctx);
+    ellipse2(ctx,sig1,Math.max(sig2,0.01),[1,0],[0,1],scE);
+    arrow2(ctx,cx,cy,sig1*scE,0,GOLD,`σ₁≈${sig1.toFixed(2)}`);
+    if(sig2>1e-10) arrow2(ctx,cx,cy,0,-sig2*scE,PINK,`σ₂≈${sig2.toFixed(2)}`);
+    title2(ctx,'After Σ — output ℝ²',`Σ collapses ℝ${n}→ℝ${m}`);
+    scaleNote2(ctx,`unit=${(1/scE).toFixed(2)}`);
+  }
+
+  /* TR — rotated ellipse in ℝᵐ, axes along u₁, u₂ */
+  {
+    const cv=document.getElementById('cvTR');if(!cv)return;
+    const ctx=cv.getContext('2d');bg2(ctx);
+    ellipse2(ctx,sig1,Math.max(sig2,0.01),[u1x,u1y],[u2x,u2y],scE);
+    arrow2(ctx,cx,cy,u1x*sig1*scE,-u1y*sig1*scE,GOLD,'σ₁u₁');
+    if(sig2>1e-10) arrow2(ctx,cx,cy,u2x*sig2*scE,-u2y*sig2*scE,PINK,'σ₂u₂');
+    title2(ctx,'Output ℝ² = A(sphere)','U rotates ellipse');
+    scaleNote2(ctx,`unit=${(1/scE).toFixed(2)}`);
+  }
+
+  /* ── Left panels (TL, BL): 3D Three.js in ℝⁿ ── */
+  if(window._svd3Cleanup) window._svd3Cleanup.forEach(f=>f());
+  window._svd3Cleanup=[];
+
+  const GOLD3=0xc8a430, PINK3=0xd94f8a, CYAN3=0x3a9ad9;
+  const AX_COLS3=[GOLD3,PINK3,CYAN3];
+
+  const vc=i=>new THREE.Vector3(V[i]?V[i][0]:0, V[i]?V[i][1]:0, V[i]?V[i][2]:0);
+
+  function makePanel3(id, setupFn, initTheta=0.6, initPhi=1.1){
+    const canvas=document.getElementById(id);if(!canvas)return;
+    const W3=canvas.offsetWidth||200, H3=W3;
+    canvas.width=W3*(window.devicePixelRatio||1);
+    canvas.height=H3*(window.devicePixelRatio||1);
+    canvas.style.height=H3+'px';
+
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+    renderer.setPixelRatio(window.devicePixelRatio||1);
+    renderer.setSize(W3,H3);
+    renderer.setClearColor(0xf8f6f2);
+
+    const scene=new THREE.Scene();scene.background=new THREE.Color(0xf8f6f2);
+    scene.add(new THREE.AmbientLight(0xffffff,0.75));
+    const dl=new THREE.DirectionalLight(0xffffff,0.45);dl.position.set(2,4,3);scene.add(dl);
+
+    [[1,0,0],[0,1,0],[0,0,1]].forEach(([x,y,z])=>{
+      const geo=new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2*x,-2*y,-2*z),new THREE.Vector3(2*x,2*y,2*z)]);
+      scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x888888,transparent:true,opacity:0.2})));
+    });
+
+    setupFn(scene);
+
+    const camera=new THREE.PerspectiveCamera(38,1,0.01,100);
+    let drag=false,px=0,py=0,theta=initTheta,phi=initPhi,radius=5.2;
+    function updateCam(){
+      camera.position.set(radius*Math.sin(phi)*Math.sin(theta),radius*Math.cos(phi),radius*Math.sin(phi)*Math.cos(theta));
+      camera.lookAt(0,0,0);
+    }
+    canvas.addEventListener('mousedown',e=>{drag=true;px=e.clientX;py=e.clientY;canvas.style.cursor='grabbing';});
+    window.addEventListener('mouseup',()=>{drag=false;canvas.style.cursor='grab';});
+    window.addEventListener('mousemove',e=>{
+      if(!drag)return;
+      theta-=(e.clientX-px)*0.013;phi-=(e.clientY-py)*0.013;
+      phi=Math.max(0.07,Math.min(Math.PI-0.07,phi));
+      px=e.clientX;py=e.clientY;
+    });
+    canvas.addEventListener('touchstart',e=>{drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();},{passive:false});
+    canvas.addEventListener('touchend',()=>drag=false);
+    canvas.addEventListener('touchmove',e=>{
+      if(!drag)return;
+      theta-=(e.touches[0].clientX-px)*0.013;phi-=(e.touches[0].clientY-py)*0.013;
+      phi=Math.max(0.07,Math.min(Math.PI-0.07,phi));
+      px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();
+    },{passive:false});
+    canvas.style.cursor='grab';
+    let raf;
+    function animate(){raf=requestAnimationFrame(animate);if(!drag)theta+=0.004;updateCam();renderer.render(scene,camera);}
+    animate();
+    window._svd3Cleanup.push(()=>{cancelAnimationFrame(raf);renderer.dispose();});
+  }
+
+  // Unit sphere (wireframe + transparent)
+  function addSphere(scene){
+    const geo=new THREE.SphereGeometry(1,40,28);
+    scene.add(new THREE.Mesh(geo,new THREE.MeshPhongMaterial({color:0x2255cc,transparent:true,opacity:0.15,side:THREE.DoubleSide})));
+    scene.add(new THREE.Mesh(geo.clone(),new THREE.MeshBasicMaterial({color:0x2255cc,wireframe:true,transparent:true,opacity:0.12})));
+  }
+
+  function addArrow3(scene,dir,length,color){
+    if(length<0.05)return;
+    const d=dir.clone().normalize();
+    const hL=Math.min(0.25,length*0.22),hW=hL*0.55;
+    scene.add(new THREE.ArrowHelper(d,new THREE.Vector3(0,0,0),length,color,hL,hW));
+  }
+
+  /* TL — unit sphere in ℝⁿ with e₁ e₂ e₃ */
+  makePanel3('cvTL', scene=>{
+    addSphere(scene);
+    addArrow3(scene,new THREE.Vector3(1,0,0),1.35,GOLD3);
+    addArrow3(scene,new THREE.Vector3(0,1,0),1.35,PINK3);
+    if(n>=3) addArrow3(scene,new THREE.Vector3(0,0,1),1.35,CYAN3);
+  });
+
+  /* BL — same sphere, arrows now along v₁ v₂ v₃ */
+  makePanel3('cvBL', scene=>{
+    addSphere(scene);
+    for(let i=0;i<Math.min(n,3);i++) addArrow3(scene,vc(i),1.35,AX_COLS3[i]);
+  });
+}
+
+function renderDiagram(svd, mode='2d'){
+  // mode: '2d' | '3d' | 'mixed' (tall: left2D+right3D) | 'wide' (left3D+right2D)
+  const is3D=(mode==='3d'), isMixed=(mode==='mixed'), isWide=(mode==='wide');
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge';
+  badge.style.background='#3a6eb5';badge.style.color='#fff';badge.style.fontSize='.65rem';
+  badge.textContent=is3D?'3D':isMixed?'↑3D':isWide?'↓2D':'geo';
+  const desc=document.createElement('span');desc.className='sdesc';
+  const note=is3D
+    ? '\\text{ — drag each panel to rotate}'
+    : isMixed
+    ? `\\text{ — left: }\\mathbb{R}^{${svd.n}}\\text{ domain; right: }\\mathbb{R}^{${svd.m}}\\text{ range (3D, drag)}`
+    : isWide
+    ? `\\text{ — left: }\\mathbb{R}^{${svd.n}}\\text{ domain (3D, drag); right: }\\mathbb{R}^{${svd.m}}\\text{ range}`
+    : ((svd.m>2||svd.n>2)?'\\text{ — 2D projection}':'');
+  desc.innerHTML=rk(`A = U \\cdot \\Sigma \\cdot V^T${note}`);
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const PH=(is3D||isMixed||isWide)?'260':'200';
+
+  const tlCap=isWide
+    ? `Input &#8477;<sup>${svd.n}</sup> &#8212; unit sphere<br><b style="color:#c8a430">e&#8321;</b>, <b style="color:#d94f8a">e&#8322;</b> and <b style="color:#3a9ad9">e&#8323;</b> (drag to rotate)`
+    : isMixed
+    ? `Input &#8477;<sup>${svd.n}</sup> &#8212; unit circle<br><b style="color:#c8a430">e&#8321;</b> and <b style="color:#d94f8a">e&#8322;</b> (standard basis)`
+    : is3D
+    ? `Input &#8477;&#179; &#8212; unit sphere<br><b style="color:#c8a430">e&#8321;</b>, <b style="color:#d94f8a">e&#8322;</b> and <b style="color:#3a9ad9">e&#8323;</b>`
+    : `Input space &#8212; unit ball<br><b style="color:#c8a430">e&#8321;</b>, <b style="color:#d94f8a">e&#8322;</b> (standard basis)`;
+
+  const trCap=isWide
+    ? `Output &#8477;<sup>${svd.m}</sup> &#8212; U rotates ellipse<br>axes <b style="color:#c8a430">&#963;&#8321;u&#8321;</b> and <b style="color:#d94f8a">&#963;&#8322;u&#8322;</b>`
+    : isMixed
+    ? `Output &#8477;<sup>${svd.m}</sup> &#8212; tilted flat disc<br>U tilts disc: axes <b style="color:#c8a430">&#963;&#8321;u&#8321;</b>, <b style="color:#d94f8a">&#963;&#8322;u&#8322;</b>; grey=normal`
+    : is3D
+    ? `Output &#8477;&#179; &#8212; rotated ellipsoid<br><b style="color:#c8a430">&#963;&#8321;u&#8321;</b>, <b style="color:#d94f8a">&#963;&#8322;u&#8322;</b> and <b style="color:#3a9ad9">&#963;&#8323;u&#8323;</b>`
+    : `Output space &#8212; ellipsoid<br><b style="color:#c8a430">&#963;&#8321;u&#8321;</b> and <b style="color:#d94f8a">&#963;&#8322;u&#8322;</b>`;
+
+  const blCap=isWide
+    ? `After V* &#8212; same sphere in &#8477;<sup>${svd.n}</sup><br><b style="color:#c8a430">v&#8321;</b>, <b style="color:#d94f8a">v&#8322;</b> and <b style="color:#3a9ad9">v&#8323;</b> replace e&#8321;, e&#8322;, e&#8323;`
+    : isMixed
+    ? `After V* &#8212; same circle in &#8477;<sup>${svd.n}</sup><br><b style="color:#c8a430">v&#8321;</b> and <b style="color:#d94f8a">v&#8322;</b> replace e&#8321;, e&#8322; (rotation)`
+    : is3D
+    ? `After V* &#8212; same sphere<br><b style="color:#c8a430">v&#8321;</b>, <b style="color:#d94f8a">v&#8322;</b> and <b style="color:#3a9ad9">v&#8323;</b> replace e&#8321;, e&#8322;, e&#8323;`
+    : `After V* &#8212; same ball<br><b style="color:#c8a430">v&#8321;</b> and <b style="color:#d94f8a">v&#8322;</b> replace e&#8321;, e&#8322; (rotation)`;
+
+  const brCap=isWide
+    ? `After &#931; &#8212; ellipse in &#8477;<sup>${svd.m}</sup><br>&#931; <em>collapses</em> &#8477;<sup>${svd.n}</sup>&#8594;&#8477;<sup>${svd.m}</sup>: axes <b style="color:#c8a430">&#963;&#8321;</b>, <b style="color:#d94f8a">&#963;&#8322;</b>`
+    : isMixed
+    ? `After &#931; &#8212; flat disc in &#8477;<sup>${svd.m}</sup> (xy-plane)<br>&#931; lifts &#8477;<sup>${svd.n}</sup>&#8594;&#8477;<sup>${svd.m}</sup>: axes <b style="color:#c8a430">&#963;&#8321;</b>, <b style="color:#d94f8a">&#963;&#8322;</b>; grey=normal`
+    : is3D
+    ? `After &#931; &#8212; axis-aligned ellipsoid<br><b style="color:#c8a430">&#963;&#8321;</b>, <b style="color:#d94f8a">&#963;&#8322;</b> and <b style="color:#3a9ad9">&#963;&#8323;</b> along x,y,z`
+    : `After &#931; &#8212; axis-aligned ellipse<br><b style="color:#c8a430">&#963;&#8321;</b>, <b style="color:#d94f8a">&#963;&#8322;</b> along coordinate axes`;
+
+  const midNote=isWide
+    ? `&#931; collapses &#8477;<sup>${svd.n}</sup>&#8594;&#8477;<sup>${svd.m}</sup>: sphere squashes to a flat disc then projects to &#8477;<sup>${svd.m}</sup>`
+    : isMixed
+    ? `&#931; maps &#8477;<sup>${svd.n}</sup>&#8594;&#8477;<sup>${svd.m}</sup>: a flat disc appears in 3D; U then tilts it`
+    : is3D?'Drag any panel to rotate freely in 3D'
+    : 'Each step is reversible: V* and U are orthogonal';
+
+  const leg3=(is3D||isWide)?`<span><span style="display:inline-block;width:14px;height:3px;background:#3a9ad9;vertical-align:middle;margin-right:4px;border-radius:1px"></span>&#963;&#8323;/e&#8323;/v&#8323;/u&#8323;</span>`:'';
+  const legNorm=isMixed?`<span><span style="display:inline-block;width:14px;height:3px;background:#888;vertical-align:middle;margin-right:4px;border-radius:1px"></span>disc normal (&#8869; col space)</span>`:'';
+  const surfLbl=isMixed?'flat elliptic disc':is3D?'ellipsoid surface':(isWide?'ellipse':'image region');
+
+
+  const outer=document.createElement('div');outer.className='diagram-outer';
+  outer.innerHTML=`
+  <div class="diagram-wrap">
+    <div class="diagram-row">
+      <div class="panel-cell">
+        <canvas id="cvTL" width="200" height="${PH}" style="border:1px solid var(--border);border-radius:6px;display:block;height:${PH}px;"></canvas>
+        <div class="panel-lbl">${tlCap}</div>
+      </div>
+      <div class="h-arr">
+        <div class="h-arr-name" style="margin-bottom:3px">A</div>
+        <div class="h-arr-line"></div>
+      </div>
+      <div class="panel-cell">
+        <canvas id="cvTR" width="200" height="${PH}" style="border:1px solid var(--border);border-radius:6px;display:block;height:${PH}px;"></canvas>
+        <div class="panel-lbl">${trCap}</div>
+      </div>
+    </div>
+    <div class="mid-row">
+      <div class="v-arr-wrap"><div class="v-arr-name">V*</div><div class="v-arr-line v-arr-down"></div></div>
+      <div class="mid-center">
+        <div class="diagram-formula">${rk('A = U \\cdot \\Sigma \\cdot V^*',{displayMode:false})}</div>
+        <div style="font-size:.78rem;color:var(--gray);margin-top:.3rem;">${midNote}</div>
+      </div>
+      <div class="v-arr-wrap"><div class="v-arr-line v-arr-up"></div><div class="v-arr-name">U</div></div>
+    </div>
+    <div class="diagram-row">
+      <div class="panel-cell">
+        <canvas id="cvBL" width="200" height="${PH}" style="border:1px solid var(--border);border-radius:6px;display:block;height:${PH}px;"></canvas>
+        <div class="panel-lbl">${blCap}</div>
+      </div>
+      <div class="h-arr">
+        <div class="h-arr-name" style="margin-bottom:3px">&#931;</div>
+        <div class="h-arr-line"></div>
+      </div>
+      <div class="panel-cell">
+        <canvas id="cvBR" width="200" height="${PH}" style="border:1px solid var(--border);border-radius:6px;display:block;height:${PH}px;"></canvas>
+        <div class="panel-lbl">${brCap}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:1.1rem;flex-wrap:wrap;margin-top:.8rem;font-size:.82rem;color:var(--navy2);">
+      <span><span style="display:inline-block;width:14px;height:3px;background:#c8a430;vertical-align:middle;margin-right:4px;border-radius:1px"></span>&#963;&#8321;/e&#8321;/v&#8321;/u&#8321;</span>
+      <span><span style="display:inline-block;width:14px;height:3px;background:#d94f8a;vertical-align:middle;margin-right:4px;border-radius:1px"></span>&#963;&#8322;/e&#8322;/v&#8322;/u&#8322;</span>
+      ${leg3}${legNorm}
+      <span><span style="display:inline-block;width:14px;height:14px;background:rgba(34,85,204,0.14);border:1.5px solid #2255cc;vertical-align:middle;margin-right:4px;border-radius:2px"></span>${surfLbl}</span>
+    </div>
+  </div>`;
+  block.appendChild(outer);
+  return block;
+}
+
+/* ══════════════════════════════════════
+   KEYBOX
+══════════════════════════════════════ */
+function renderKey(isSym){
+  const k=document.createElement('div');k.className='keybox';
+  k.innerHTML=`
+    <strong>Reading the four-panel diagram</strong> (following the bottom path M = U·Σ·V*):
+    <ul style="margin:.4rem 0 .4rem 1.2rem;line-height:1.8">
+      <li><strong>V*</strong> (top-left → bottom-left): a pure rotation/reflection in the domain ℝⁿ.
+          It rotates the right singular vectors v₁, v₂, … to align with the coordinate axes.
+          The unit ball is unchanged in shape.</li>
+      <li><strong>Σ</strong> (bottom-left → bottom-right): pure stretching along the axes.
+          Each axis i is scaled by σᵢ. A sphere becomes an <em>axis-aligned</em> ellipsoid.</li>
+      <li><strong>U</strong> (bottom-right → top-right): another pure rotation/reflection in ℝᵐ.
+          It rotates the axis-aligned ellipsoid to the final position, with axes along u₁, u₂, …</li>
+    </ul>
+    <strong>Conclusion:</strong> <em>Every</em> linear map decomposes as: rotate input → scale axes → rotate output.
+    The singular values σᵢ measure the stretching; U and V contain only geometric information (orientation).
+    ${isSym?'<br><br><strong>Symmetric case:</strong> Since A = Aᵀ, the eigenvector matrix serves as both U and V. The SVD becomes A = Q|Λ|Qᵀ where Q are the eigenvectors and |Λ| the absolute eigenvalues. Negative eigenvalues flip the sign of the corresponding U column relative to V.':''}
+    <br><br>
+    <strong>Geometric insight:</strong> The <em>largest</em> singular value σ₁ is the maximum stretching factor — it equals ‖A‖₂ (the spectral norm).
+    The ratio σ₁/σ_min is the condition number, measuring how close A is to being singular.
+  `;
+  return k;
+}
+
+/* ══════════════════════════════════════
+   MAIN DRIVER
+══════════════════════════════════════ */
+let m_global=2,n_global=2;
+
+function doSolve(){
+  const out=document.getElementById('out');out.innerHTML='';
+  try{
+    const m=cM,n=cN;
+    m_global=m;n_global=n;
+    const A=Array.from({length:m},(_,i)=>
+      Array.from({length:n},(_,j)=>parseFloat(document.getElementById(`a${i}_${j}`)?.value||'0')||0)
+    );
+
+    const isSym=checkSymmetric(A,m,n);
+    const svd=computeSVD(A,m,n);
+
+    const wrap=document.createElement('div');wrap.className='steps-wrap';
+
+    const lbl1=document.createElement('div');lbl1.className='phase-lbl';lbl1.textContent='Factorization: A = UΣVᵀ';
+    wrap.appendChild(lbl1);
+    wrap.appendChild(renderMatrices(svd,m,n,isSym));
+
+    const lbl2=document.createElement('div');lbl2.className='phase-lbl';lbl2.textContent='Singular Values';
+    wrap.appendChild(lbl2);
+    wrap.appendChild(renderSVInfo(svd,m,n,isSym));
+
+    const lbl3=document.createElement('div');lbl3.className='phase-lbl';
+    const is3D=(m===3&&n===3);
+    const isMixed=!is3D&&(m>n)&&(m<=3&&n>=2); // tall: 3×2
+    const isWide=!is3D&&(n>m)&&(n<=3&&m>=2);  // wide: 2×3
+    const diagMode=is3D?'3d':isMixed?'mixed':isWide?'wide':'2d';
+    lbl3.textContent=is3D
+      ? 'Geometric Interpretation: unit sphere → ellipsoid (3D — drag to rotate)'
+      : isMixed
+      ? `Geometric Interpretation: ℝ${n}→ℝ${m} — domain circle, range flat 3D disc (drag)`
+      : isWide
+      ? `Geometric Interpretation: ℝ${n}→ℝ${m} — domain 3D sphere collapses to ellipse (drag)`
+      : 'Geometric Interpretation: unit ball → ellipsoid';
+    wrap.appendChild(lbl3);
+    wrap.appendChild(renderDiagram(svd,diagMode));
+
+    wrap.appendChild(renderKey(isSym));
+    out.appendChild(wrap);
+
+    if(is3D){
+      setTimeout(()=>drawAllPanels3D(svd), 80);
+    } else if(isMixed){
+      setTimeout(()=>drawAllPanelsMixed(svd), 80);
+    } else if(isWide){
+      setTimeout(()=>drawAllPanelsWide(svd), 80);
+    } else {
+      setTimeout(()=>drawAllPanels(svd), 80);
+    }
+    out.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    out.innerHTML=`<div class="err-msg" style="padding:1rem">${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════
+   UI
+══════════════════════════════════════ */
+let cM=2,cN=2;
+
+const EXAMPLES=[
+  {m:2,n:2,A:[[3,1],[1,3]],           label:'2×2 symmetric'},
+  {m:2,n:2,A:[[1,2],[3,4]],           label:'2×2 general'},
+  {m:2,n:2,A:[[Math.cos(.8),-Math.sin(.8)],[Math.sin(.8),Math.cos(.8)]].map(r=>r.map(v=>+v.toFixed(4))), label:'2×2 rotation'},
+  {m:3,n:3,A:[[4,2,1],[2,4,2],[1,2,4]],label:'3×3 symmetric'},
+  {m:3,n:2,A:[[1,0],[0,1],[1,1]],     label:'3×2 tall'},
+  {m:2,n:3,A:[[1,2,0],[0,1,2]],       label:'2×3 wide'},
+  {m:3,n:3,A:[[1,2,3],[4,5,6],[7,8,9]],label:'3×3 rank-2'},
+];
+
+function rebuildAll(){
+  cM=Math.min(Math.max(parseInt(document.getElementById('nRows').value)||1,1),5);
+  cN=Math.min(Math.max(parseInt(document.getElementById('nCols').value)||1,1),5);
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrid();
+}
+
+function buildGrid(){
+  const cont=document.getElementById('mxA');cont.innerHTML='';
+  cont.style.gridTemplateColumns=`auto ${Array(cN).fill('62px').join(' ')}`;
+  const empty=document.createElement('div');cont.appendChild(empty);
+  for(let j=0;j<cN;j++){const d=document.createElement('div');d.className='clbl';d.innerHTML=rk(`c_{${j+1}}`);cont.appendChild(d);}
+  for(let i=0;i<cM;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`R_{${i+1}}`);cont.appendChild(rl);
+    for(let j=0;j<cN;j++){
+      const inp=document.createElement('input');inp.type='text';inp.id=`a${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      cont.appendChild(inp);
+    }
+  }
+}
+
+function loadEx(ex){
+  cM=ex.m;cN=ex.n;
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrid();
+  ex.A.forEach((row,i)=>row.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+}
+
+function buildExamples(){
+  const row=document.getElementById('exRow');row.innerHTML='';
+  EXAMPLES.forEach(ex=>{
+    const btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);row.appendChild(btn);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{buildExamples();buildGrid();loadEx(EXAMPLES[0]);});
+</script>
+</body>
+</html>

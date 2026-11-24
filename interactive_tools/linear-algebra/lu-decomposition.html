@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LU Decomposition — Accounting Method</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --L-bg:#edf6ee;--L2:#267048;
+  --U-bg:#edf1fb;--U2:#3a5aa8;
+  --mod-bg:#fff9f5;--done-bg:#f5f5f4;--done-c:#aaa;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+/* controls */
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--U-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+/* matrix+b grid */
+.input-grid-wrap{display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap;margin:.7rem 0;}
+.sub-lbl{font-size:.82rem;color:var(--gray);margin-bottom:.35rem;font-style:italic;}
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:58px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid input.b-inp{background:#f4f8ff;border-color:#b8caec;}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+/* steps */
+.steps-wrap{display:flex;flex-direction:column;gap:1.3rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.65rem;}
+.sbadge.fwd-b{background:var(--L2);color:#fff;font-size:.8rem;}
+.sbadge.back-b{background:var(--U2);color:#fff;font-size:.8rem;}
+.sbadge.sol-b{background:#7a3ab5;color:#fff;font-size:.8rem;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;}
+
+.twrap{overflow-x:auto;padding:.55rem .6rem .7rem;}
+
+/* elimination tableau */
+.tab{border-collapse:collapse;font-size:.9rem;}
+.tab th,.tab td{padding:.35rem .68rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+.tab thead th{font-size:.74rem;font-weight:400;text-transform:uppercase;letter-spacing:.055em;padding:.22rem .68rem;}
+.tab th.op-hd{background:#f5f5f3;color:#666;text-align:left;padding-left:.9rem;}
+.tab th.L-hd{background:var(--L-bg);color:var(--L2);}
+.tab th.U-hd{background:var(--U-bg);color:var(--U2);}
+.tab th.sepr{border-right:2.5px solid #aaa !important;}
+.tab td.op-c{text-align:left;padding-left:.9rem;font-size:.87rem;color:var(--navy2);background:#fafafa;min-width:170px;}
+.tab td.L-c{background:var(--L-bg);color:var(--L2);font-size:.9rem;}
+.tab td.L-c.new{font-weight:700;color:#1a5a38;}
+.tab td.U-c{}
+.tab td.piv-c{background:var(--red-bg);}
+.pbox{display:inline-block;border:2px solid var(--red);border-radius:3px;padding:0 5px;color:var(--red);font-weight:700;}
+.tab tr.mod-r td.U-c{background:var(--mod-bg);}
+.tab tr.mod-r td.op-c{background:#fff4ee;}
+.tab tr.mod-r td.L-c{background:#e8f5e4;}
+.tab tr.done-r td.U-c{background:var(--done-bg);color:var(--done-c);}
+.tab tr.done-r td.L-c{background:#f0f5f1;color:#8ab89a;}
+.tab tr.done-r td.op-c{background:#f8f8f7;color:#bbb;}
+
+/* LU display */
+.lu-display{padding:1rem 1.5rem;}
+.lu-eq{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;overflow-x:auto;padding:.5rem 0;}
+.lu-eq .mx-label{font-size:.85rem;color:var(--gray);font-style:italic;margin-bottom:.2rem;text-align:center;}
+.lu-matrix-block{display:flex;flex-direction:column;align-items:center;}
+.lu-op{font-size:1.4rem;color:var(--navy2);padding:0 .3rem;align-self:center;}
+.lu-check{margin-top:.6rem;font-style:italic;font-size:.88rem;color:#2a7050;}
+
+/* solve panels */
+.solve-section{padding:1rem 1.5rem;}
+.solve-section h3{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--navy);margin-bottom:.8rem;}
+.solve-aug{overflow-x:auto;margin-bottom:1rem;}
+.solve-steps-list{display:flex;flex-direction:column;gap:.55rem;}
+.solve-step{display:flex;align-items:baseline;gap:.7rem;padding:.3rem .5rem;border-radius:4px;}
+.solve-step.fwd{background:var(--L-bg);}
+.solve-step.back{background:var(--U-bg);}
+.solve-step .step-idx{font-size:.78rem;color:var(--gray);min-width:50px;text-align:right;flex-shrink:0;}
+.solve-step .step-tex{flex:1;overflow-x:auto;}
+
+/* solution card */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.25rem;margin-bottom:.85rem;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.6rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.3rem .9rem;font-size:1.1rem;}
+
+.keybox{background:var(--U-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:var(--navy2);line-height:1.6;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+/* divider label */
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+
+@media(max-width:650px){
+  header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}
+  main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LU Decomposition</h1>
+  <p>Record multipliers ℓᵢⱼ during elimination, then forward-solve <em>Lc = b</em> and back-solve <em>Ux = c</em></p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter Square Matrix A and Right-Hand Side b</h2>
+  <div class="ctrl-row">
+    <label>Size n×n: <input type="number" id="nSz" min="2" max="5" value="3"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.6rem;">
+    Enter integers or fractions like <code>2/3</code>. A must be square and non-singular (no row swaps needed).
+  </p>
+  <div class="input-grid-wrap">
+    <div>
+      <div class="sub-lbl">Matrix A</div>
+      <div class="mx-wrap" id="mxA"></div>
+    </div>
+    <div style="align-self:center;font-size:1.6rem;color:var(--navy2);padding-top:1.2rem;">→</div>
+    <div>
+      <div class="sub-lbl">Right-hand side b</div>
+      <div class="mx-wrap" id="mxB"></div>
+    </div>
+  </div>
+  <button class="btn-solve" onclick="doSolve()">Factor A = LU and Solve →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ═══════════════════════════════
+   FRACTION CLASS
+═══════════════════════════════ */
+function gcd(a,b){a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));while(b){const t=b;b=a%b;a=t;}return a||1;}
+class Frac{
+  constructor(n,d=1){
+    if(d===0){this.n=0;this.d=1;this.bad=true;return;}
+    if(d<0){n=-n;d=-d;}
+    const g=gcd(Math.abs(n),d);
+    this.n=Math.round(n/g);this.d=Math.round(d/g);
+  }
+  static parse(s){
+    s=(s||'').trim();if(!s||s==='-')return new Frac(0);
+    if(s.includes('/')){const[a,b]=s.split('/');return new Frac(+a,+b);}
+    if(s.includes('.')){const p=s.replace(/^-/,'').split('.'),dec=p[1]?p[1].length:0,dn=10**dec;return new Frac(Math.round(parseFloat(s)*dn),dn);}
+    return new Frac(+s||0);
+  }
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  div(o){return new Frac(this.n*o.d,this.d*o.n);}
+  neg(){return new Frac(-this.n,this.d);}
+  abs(){return new Frac(Math.abs(this.n),this.d);}
+  isZero(){return this.n===0;}
+  isOne(){return this.n>0&&this.n===this.d;}
+  isNegOne(){return this.n===-this.d;}
+  eq(o){return this.n===o.n&&this.d===o.d;}
+  toTeX(){
+    if(this.d===1)return String(this.n);
+    const sg=this.n<0?'-':'';
+    return`${sg}\\tfrac{${Math.abs(this.n)}}{${this.d}}`;
+  }
+}
+
+function rk(t){try{return katex.renderToString(t,{throwOnError:false});}catch(e){return t;}}
+
+function varName(i,m){return m<=4?['x','y','z','w'][i]:`x_{${i+1}}`;}
+function varNames(m){return Array.from({length:m},(_,i)=>varName(i,m));}
+
+/* ═══════════════════════════════
+   MATRIX HELPERS
+═══════════════════════════════ */
+function matToTeX(M,n,m,highlight){
+  // highlight: set of {r,c} that get \boxed
+  const rows=M.map((row,i)=>row.slice(0,m||row.length).map((f,j)=>{
+    const t=f.toTeX();
+    if(highlight&&highlight.some(h=>h.r===i&&h.c===j))return`\\boxed{${t}}`;
+    return t;
+  }).join('&'));
+  return`\\begin{pmatrix}${rows.join('\\\\')}\\end{pmatrix}`;
+}
+
+function bToTeX(b){
+  return`\\begin{pmatrix}${b.map(f=>f.toTeX()).join('\\\\')}\\end{pmatrix}`;
+}
+
+/* ═══════════════════════════════
+   LU DECOMPOSITION
+═══════════════════════════════ */
+function computeLU(inputA){
+  const n=inputA.length;
+  let U=inputA.map(r=>r.map(f=>f.clone()));
+  let L=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>new Frac(i===j?1:0)));
+  const steps=[];
+
+  // snapshot: deep-copy U and L at this point
+  function snap(col,ops){
+    steps.push({
+      col,ops,
+      U:U.map(r=>r.map(f=>f.clone())),
+      L:L.map(r=>r.map(f=>f.clone())),
+    });
+  }
+
+  snap(-1,[]); // initial
+
+  for(let k=0;k<n-1;k++){
+    if(U[k][k].isZero()){
+      throw new Error(`Zero pivot at position (${k+1},${k+1}). Reorder the equations or choose a different matrix.`);
+    }
+    const ops=[];
+    for(let i=k+1;i<n;i++){
+      if(!U[i][k].isZero()){
+        const mult=U[i][k].div(U[k][k]);
+        L[i][k]=mult.clone();
+        for(let c=0;c<n;c++) U[i][c]=U[i][c].sub(mult.mul(U[k][c]));
+        ops.push({row:i,pivRow:k,mult:mult.clone()});
+      }
+    }
+    snap(k,ops);
+  }
+
+  return{steps,L,U,n};
+}
+
+/* ═══════════════════════════════
+   FORWARD SOLVE  Lc = b
+═══════════════════════════════ */
+function forwardSolve(L,b){
+  const n=L.length;
+  const c=Array.from({length:n},()=>new Frac(0));
+  const solveSteps=[];
+  for(let i=0;i<n;i++){
+    let val=b[i].clone();
+    const terms=[];
+    for(let j=0;j<i;j++){
+      if(!L[i][j].isZero()){
+        terms.push({j,lij:L[i][j].clone(),cj:c[j].clone()});
+        val=val.sub(L[i][j].mul(c[j]));
+      }
+    }
+    c[i]=val.clone();
+    solveSteps.push({i,bi:b[i].clone(),terms,ci:val.clone()});
+  }
+  return{c,solveSteps};
+}
+
+/* ═══════════════════════════════
+   BACKWARD SOLVE  Ux = c
+═══════════════════════════════ */
+function backwardSolve(U,c){
+  const n=U.length;
+  const x=Array.from({length:n},()=>new Frac(0));
+  const solveSteps=[];
+  for(let i=n-1;i>=0;i--){
+    let val=c[i].clone();
+    const terms=[];
+    for(let j=i+1;j<n;j++){
+      if(!U[i][j].isZero()){
+        terms.push({j,uij:U[i][j].clone(),xj:x[j].clone()});
+        val=val.sub(U[i][j].mul(x[j]));
+      }
+    }
+    x[i]=val.div(U[i][i]);
+    solveSteps.push({i,ci:c[i].clone(),terms,uii:U[i][i].clone(),xi:x[i].clone()});
+  }
+  return{x,solveSteps};
+}
+
+/* ═══════════════════════════════
+   TEX FOR ROW OP LABEL
+═══════════════════════════════ */
+function rowOpTeX(i,k,mult){
+  const ri=i+1,rk=k+1;
+  if(mult.n<0){
+    const a=mult.neg();
+    if(a.isOne()) return`R_{${ri}} + R_{${rk}} \\to R_{${ri}}`;
+    return`R_{${ri}} + ${a.toTeX()}\\,R_{${rk}} \\to R_{${ri}}`;
+  }else{
+    if(mult.isOne()) return`R_{${ri}} - R_{${rk}} \\to R_{${ri}}`;
+    return`R_{${ri}} - ${mult.toTeX()}\\,R_{${rk}} \\to R_{${ri}}`;
+  }
+}
+
+/* ═══════════════════════════════
+   RENDER ELIMINATION STEPS
+═══════════════════════════════ */
+function renderElimSteps(steps,n,vn){
+  const frag=document.createDocumentFragment();
+  const phaseLbl=document.createElement('div');phaseLbl.className='phase-lbl';
+  phaseLbl.textContent='Phase 1 — Gaussian Elimination (recording L multipliers)';
+  frag.appendChild(phaseLbl);
+
+  steps.forEach((step,si)=>{
+    const block=document.createElement('div');block.className='scard';
+
+    // header
+    const hd=document.createElement('div');hd.className='shd';
+    const badge=document.createElement('span');
+    if(step.col===-1){badge.className='sbadge init-b';badge.textContent='init';}
+    else{badge.className='sbadge';badge.textContent=si;}
+    const desc=document.createElement('span');desc.className='sdesc';
+    if(step.col===-1) desc.innerHTML=rk('\\text{Initial matrix }A\\text{ — elimination has not yet begun}');
+    else desc.innerHTML=rk(`\\text{Eliminate column }${step.col+1}\\text{ below pivot — recording }\\ell_{i,${step.col+1}}\\text{ entries}`);
+    hd.append(badge,desc);block.appendChild(hd);
+
+    // table
+    const tw=document.createElement('div');tw.className='twrap';
+    const tbl=document.createElement('table');tbl.className='tab';
+
+    // thead
+    const thead=document.createElement('thead');
+    const hr=document.createElement('tr');
+    const thOp=document.createElement('th');thOp.className='op-hd sepr';thOp.rowSpan=2;thOp.style.verticalAlign='middle';thOp.textContent='Row operation';hr.appendChild(thOp);
+    const thL=document.createElement('th');thL.className='L-hd sepr';thL.colSpan=1;thL.innerHTML='Multiplier recorded in L';hr.appendChild(thL);
+    const thU=document.createElement('th');thU.className='U-hd';thU.colSpan=n;thU.textContent='Current matrix (→ becomes U)';hr.appendChild(thU);
+    thead.appendChild(hr);
+    const sr=document.createElement('tr');
+    const thLsub=document.createElement('th');thLsub.className='L-hd sepr';thLsub.innerHTML=rk('\\ell_{ij}');sr.appendChild(thLsub);
+    for(let j=0;j<n;j++){const th=document.createElement('th');th.className='U-hd';th.innerHTML=rk(vn[j]);sr.appendChild(th);}
+    thead.appendChild(sr);
+    tbl.appendChild(thead);
+
+    // tbody
+    const tbody=document.createElement('tbody');
+    const op=step.op||(step.ops&&step.ops.length>0?step.ops[0]:null);
+    const modRows=new Set((step.ops||[]).map(o=>o.row));
+    const doneRows=new Set();
+    if(step.col>=0) for(let r=0;r<step.col;r++) doneRows.add(r);
+
+    for(let i=0;i<n;i++){
+      const tr=document.createElement('tr');
+      if(modRows.has(i)) tr.classList.add('mod-r');
+      else if(doneRows.has(i)) tr.classList.add('done-r');
+
+      // op label
+      const tdOp=document.createElement('td');tdOp.className='op-c sepr';
+      const thisOp=step.ops&&step.ops.find(o=>o.row===i);
+      if(thisOp) tdOp.innerHTML=rk(rowOpTeX(i,thisOp.pivRow,thisOp.mult));
+      else tdOp.innerHTML=rk(`R_{${i+1}}`);
+      tr.appendChild(tdOp);
+
+      // L multiplier entry
+      const tdL=document.createElement('td');
+      if(thisOp){
+        tdL.className='L-c sepr new';
+        tdL.innerHTML=rk(`\\ell_{${i+1}${thisOp.pivRow+1}} = ${thisOp.mult.toTeX()}`);
+      } else {
+        // show existing L entries in this row (non-trivial ones, grayed)
+        const Lentries=[];
+        for(let j=0;j<i;j++){
+          if(!step.L[i][j].isZero()&&!step.L[i][j].isOne()) Lentries.push(`\\ell_{${i+1}${j+1}}=${step.L[i][j].toTeX()}`);
+        }
+        tdL.className='L-c sepr';
+        tdL.style.color='#999';tdL.style.fontSize='.82rem';
+        tdL.innerHTML=Lentries.length?rk(Lentries.join(',\\;')):'—';
+      }
+      tr.appendChild(tdL);
+
+      // matrix entries
+      for(let j=0;j<n;j++){
+        const td=document.createElement('td');
+        const isPiv=step.col>=0&&i===step.col&&j===step.col;
+        if(isPiv){td.className='U-c piv-c';td.innerHTML=`<span class="pbox">${rk(step.U[i][j].toTeX())}</span>`;}
+        else{td.className='U-c';td.innerHTML=rk(step.U[i][j].toTeX());}
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    tw.appendChild(tbl);block.appendChild(tw);
+    frag.appendChild(block);
+  });
+  return frag;
+}
+
+/* ═══════════════════════════════
+   RENDER LU = A DISPLAY
+═══════════════════════════════ */
+function renderLUBlock(L,U,A,n){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge';badge.style.background='var(--gold)';badge.textContent='=';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('A = L\\,U \\text{ — the factorization}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const div=document.createElement('div');div.className='lu-display';
+
+  // L matrix
+  const Ltex=`L = \\begin{pmatrix}${L.map((row,i)=>row.map((f,j)=>{
+    if(j>i)return'0';
+    if(j===i)return'1';
+    return f.toTeX();
+  }).join('&')).join('\\\\')}\\end{pmatrix}`;
+
+  const Utex=`U = \\begin{pmatrix}${U.map((row,i)=>row.map((f,j)=>{
+    if(j<i)return'0';
+    return f.toTeX();
+  }).join('&')).join('\\\\')}\\end{pmatrix}`;
+
+  const Atex=`A = \\begin{pmatrix}${A.map(row=>row.map(f=>f.toTeX()).join('&')).join('\\\\')}\\end{pmatrix}`;
+
+  const eqDiv=document.createElement('div');eqDiv.className='lu-eq';
+  const lBlock=document.createElement('div');lBlock.className='lu-matrix-block';
+  lBlock.innerHTML=`<div class="mx-label">L (lower triangular)</div>${rk(Ltex,{displayMode:true})}`;
+  const mulOp=document.createElement('span');mulOp.className='lu-op';mulOp.innerHTML=rk('\\cdot');
+  const uBlock=document.createElement('div');uBlock.className='lu-matrix-block';
+  uBlock.innerHTML=`<div class="mx-label">U (upper triangular)</div>${rk(Utex,{displayMode:true})}`;
+  const eqOp=document.createElement('span');eqOp.className='lu-op';eqOp.innerHTML=rk('=');
+  const aBlock=document.createElement('div');aBlock.className='lu-matrix-block';
+  aBlock.innerHTML=`<div class="mx-label">A (original matrix)</div>${rk(Atex,{displayMode:true})}`;
+  eqDiv.append(lBlock,mulOp,uBlock,eqOp,aBlock);
+
+  const note=document.createElement('div');note.className='lu-check';
+  note.innerHTML=`✓ All arithmetic is exact. Off-diagonal entries of L are the multipliers ℓᵢⱼ recorded above.`;
+  div.append(eqDiv,note);
+  block.appendChild(div);
+  return block;
+}
+
+/* ═══════════════════════════════
+   FORWARD SOLVE DISPLAY  Lc = b
+═══════════════════════════════ */
+function renderForwardSolve(L,b,c,solveSteps,n){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge fwd-b';badge.textContent='L';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Forward substitution: solve }L\\mathbf{c}=\\mathbf{b}\\text{ (top to bottom)}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='solve-section';
+
+  // Show augmented [L|b]
+  const Laug=`\\left(\\begin{array}{${'c'.repeat(n)}|c}${L.map((row,i)=>row.map((f,j)=>{
+    if(j>i)return'0';if(j===i)return'1';return f.toTeX();
+  }).join('&')+'&'+b[i].toTeX()).join('\\\\')}\\end{array}\\right)`;
+  const augDiv=document.createElement('div');augDiv.className='solve-aug';
+  augDiv.innerHTML=rk(Laug,{displayMode:true});
+  sec.appendChild(augDiv);
+
+  // Step-by-step
+  const vn=['c_1','c_2','c_3','c_4','c_5'];
+  const list=document.createElement('div');list.className='solve-steps-list';
+
+  solveSteps.forEach(step=>{
+    const {i,bi,terms,ci}=step;
+    const row=document.createElement('div');row.className='solve-step fwd';
+    const idx=document.createElement('span');idx.className='step-idx';
+    idx.innerHTML=rk(`\\text{Row }${i+1}:`);
+    const tex=document.createElement('div');tex.className='step-tex';
+
+    let symbolic=`c_{${i+1}} = b_{${i+1}}`;
+    let numeric =bi.toTeX();
+    terms.forEach(({j,lij,cj})=>{
+      const prod=lij.mul(cj);
+      if(lij.n<0){
+        symbolic+=`+${lij.neg().toTeX()}\\,c_{${j+1}}`;
+        numeric +=`+${lij.neg().toTeX()}\\cdot(${cj.toTeX()})`;
+      }else{
+        symbolic+=`-${lij.isOne()?'':lij.toTeX()+'\\,'}c_{${j+1}}`;
+        numeric +=`-${lij.isOne()?'':lij.toTeX()+'\\cdot'}(${cj.toTeX()})`;
+      }
+    });
+
+    let fullTeX;
+    if(terms.length===0){
+      fullTeX=`c_{${i+1}} = b_{${i+1}} = ${bi.toTeX()} = ${ci.toTeX()}`;
+    } else {
+      fullTeX=`${symbolic} \\;=\\; ${numeric} \\;=\\; ${ci.toTeX()}`;
+    }
+    tex.innerHTML=rk(fullTeX);
+    row.append(idx,tex);list.appendChild(row);
+  });
+  sec.appendChild(list);
+
+  // Show resulting c
+  const cTex=`\\mathbf{c} = ${bToTeX(c)}`;
+  const cDiv=document.createElement('div');cDiv.style.cssText='margin-top:.9rem;padding:.5rem .2rem;';
+  cDiv.innerHTML=rk(cTex,{displayMode:false});
+  sec.appendChild(cDiv);
+  block.appendChild(sec);
+  return block;
+}
+
+/* ═══════════════════════════════
+   BACKWARD SOLVE DISPLAY  Ux = c
+═══════════════════════════════ */
+function renderBackSolve(U,c,x,solveSteps,n,vn){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge back-b';badge.textContent='U';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Back substitution: solve }U\\mathbf{x}=\\mathbf{c}\\text{ (bottom to top)}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='solve-section';
+
+  // Augmented [U|c]
+  const Uaug=`\\left(\\begin{array}{${'c'.repeat(n)}|c}${U.map((row,i)=>row.map((f,j)=>{
+    if(j<i)return'0';return f.toTeX();
+  }).join('&')+'&'+c[i].toTeX()).join('\\\\')}\\end{array}\\right)`;
+  const augDiv=document.createElement('div');augDiv.className='solve-aug';
+  augDiv.innerHTML=rk(Uaug,{displayMode:true});
+  sec.appendChild(augDiv);
+
+  // Steps (bottom to top)
+  const list=document.createElement('div');list.className='solve-steps-list';
+
+  // solveSteps are ordered bottom-to-top already
+  solveSteps.forEach(step=>{
+    const{i,ci,terms,uii,xi}=step;
+    const row=document.createElement('div');row.className='solve-step back';
+    const idx=document.createElement('span');idx.className='step-idx';
+    idx.innerHTML=rk(`\\text{Row }${i+1}:`);
+    const tex=document.createElement('div');tex.className='step-tex';
+
+    const vname=vn[i];
+    let numPart=ci.toTeX();
+    let symPart=`c_{${i+1}}`;
+    terms.forEach(({j,uij,xj})=>{
+      const prod=uij.mul(xj);
+      if(uij.n<0){
+        symPart+=`+${uij.neg().toTeX()}\\,${vn[j]}`;
+        numPart+=`+${uij.neg().toTeX()}\\cdot(${xj.toTeX()})`;
+      }else{
+        symPart+=`-${uij.isOne()?'':uij.toTeX()+'\\,'}${vn[j]}`;
+        numPart+=`-${uij.isOne()?'':uij.toTeX()+'\\cdot'}(${xj.toTeX()})`;
+      }
+    });
+
+    let fullTeX;
+    if(uii.isOne()&&terms.length===0){
+      fullTeX=`${vname} = c_{${i+1}} = ${xi.toTeX()}`;
+    } else if(uii.isOne()&&terms.length>0){
+      fullTeX=`${vname} = ${symPart} = ${numPart} = ${xi.toTeX()}`;
+    } else if(terms.length===0){
+      fullTeX=`${vname} = c_{${i+1}} / u_{${i+1}${i+1}} = ${ci.toTeX()} / (${uii.toTeX()}) = ${xi.toTeX()}`;
+    } else {
+      fullTeX=`${vname} = \\frac{${symPart}}{u_{${i+1}${i+1}}} = \\frac{${numPart}}{${uii.toTeX()}} = ${xi.toTeX()}`;
+    }
+    tex.innerHTML=rk(fullTeX);
+    row.append(idx,tex);list.appendChild(row);
+  });
+  sec.appendChild(list);
+
+  // Show resulting x
+  const xTex=`\\mathbf{x} = ${bToTeX(x)}`;
+  const xDiv=document.createElement('div');xDiv.style.cssText='margin-top:.9rem;padding:.5rem .2rem;';
+  xDiv.innerHTML=rk(xTex,{displayMode:false});
+  sec.appendChild(xDiv);
+  block.appendChild(sec);
+  return block;
+}
+
+/* ═══════════════════════════════
+   SOLUTION CARD
+═══════════════════════════════ */
+function renderSolution(x,vn){
+  const card=document.createElement('div');card.className='sol-card';
+  card.innerHTML=`<h3>Solution</h3>`;
+  const vals=document.createElement('div');vals.className='sol-vals';
+  x.forEach((xi,i)=>{
+    const item=document.createElement('div');item.className='sol-item';
+    item.innerHTML=rk(`${vn[i]} = ${xi.toTeX()}`);
+    vals.appendChild(item);
+  });
+  card.appendChild(vals);
+  return card;
+}
+
+/* ═══════════════════════════════
+   KEY BOX
+═══════════════════════════════ */
+function renderKey(n){
+  const k=document.createElement('div');k.className='keybox';
+  k.innerHTML=`
+    <strong>How LU decomposition works:</strong>
+    Gaussian elimination on A (without touching b) records each row multiplier 
+    ℓᵢⱼ = (pivot row entry)/(pivot) in the lower triangular matrix L, 
+    while the evolving upper part becomes U.
+    <br><br>
+    <strong>Why two triangular solves?</strong>
+    Once A = LU, any right-hand side b is solved in two O(n²) sweeps instead of 
+    re-doing elimination. Forward substitution Lc = b exploits the 1s on L's diagonal 
+    (no division needed). Back substitution Ux = c exploits the zeros below U's diagonal.
+    <br><br>
+    <strong>Cost:</strong> Factorisation is O(n³); each subsequent solve for a new b costs only O(n²) — 
+    ideal when solving Ax = b for many different right-hand sides.
+  `;
+  return k;
+}
+
+/* ═══════════════════════════════
+   MAIN SOLVER + RENDERER
+═══════════════════════════════ */
+function doSolve(){
+  const out=document.getElementById('out');out.innerHTML='';
+  try{
+    const n=cN;
+    const A=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>Frac.parse(document.getElementById(`a${i}_${j}`)?.value||'0')));
+    const b=Array.from({length:n},(_,i)=>Frac.parse(document.getElementById(`b${i}`)?.value||'0'));
+    const vn=varNames(n);
+
+    // LU
+    const{steps,L,U}=computeLU(A.map(r=>r.map(f=>f.clone())));
+
+    // Solve
+    const{c,solveSteps:fwdSteps}=forwardSolve(L,b);
+    const{x,solveSteps:backSteps}=backwardSolve(U,c);
+
+    const wrap=document.createElement('div');wrap.className='steps-wrap';
+
+    // Phase 1: elimination
+    wrap.appendChild(renderElimSteps(steps,n,vn));
+
+    // Phase 2: LU display
+    const luLbl=document.createElement('div');luLbl.className='phase-lbl';luLbl.textContent='Phase 2 — Factorization Result';
+    wrap.appendChild(luLbl);
+    wrap.appendChild(renderLUBlock(L,U,A,n));
+
+    // Phase 3: forward solve
+    const fwdLbl=document.createElement('div');fwdLbl.className='phase-lbl';fwdLbl.textContent='Phase 3 — Forward Substitution: Lc = b';
+    wrap.appendChild(fwdLbl);
+    wrap.appendChild(renderForwardSolve(L,b,c,fwdSteps,n));
+
+    // Phase 4: back solve
+    const backLbl=document.createElement('div');backLbl.className='phase-lbl';backLbl.textContent='Phase 4 — Back Substitution: Ux = c';
+    wrap.appendChild(backLbl);
+    wrap.appendChild(renderBackSolve(U,c,x,backSteps,n,vn));
+
+    // Solution
+    wrap.appendChild(renderSolution(x,vn));
+    wrap.appendChild(renderKey(n));
+
+    out.appendChild(wrap);
+    out.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    out.innerHTML=`<div class="err-msg" style="padding:1rem">${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ═══════════════════════════════
+   UI — MATRIX INPUT
+═══════════════════════════════ */
+let cN=3;
+
+const EXAMPLES=[
+  {n:3,A:[[2,1,1],[4,-6,0],[-2,7,2]],b:[5,-2,9],label:'3×3 from lecture'},
+  {n:2,A:[[2,4],[1,3]],b:[8,5],label:'2×2 simple'},
+  {n:3,A:[[1,1,1],[2,4,2],[3,5,4]],b:[3,8,12],label:'3×3 unit solution'},
+  {n:4,A:[[2,1,0,0],[4,3,1,0],[0,2,3,1],[0,0,2,3]],b:[1,3,7,11],label:'4×4 banded'},
+];
+
+function rebuildAll(){
+  cN=Math.min(Math.max(parseInt(document.getElementById('nSz').value)||2,2),5);
+  document.getElementById('nSz').value=cN;
+  buildGrids();
+}
+
+function buildGrids(){
+  buildA(); buildB();
+}
+
+function buildA(){
+  const cont=document.getElementById('mxA');cont.innerHTML='';
+  const g=document.createElement('div');g.className='mx-grid';
+  g.style.gridTemplateColumns=`auto ${Array(cN).fill('58px').join(' ')}`;
+  const empty=document.createElement('div');g.appendChild(empty);
+  for(let j=0;j<cN;j++){const d=document.createElement('div');d.className='clbl';d.innerHTML=rk(varName(j,cN));g.appendChild(d);}
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`R_{${i+1}}`);g.appendChild(rl);
+    for(let j=0;j<cN;j++){
+      const inp=document.createElement('input');inp.type='text';inp.id=`a${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      g.appendChild(inp);
+    }
+  }
+  cont.appendChild(g);
+}
+
+function buildB(){
+  const cont=document.getElementById('mxB');cont.innerHTML='';
+  const g=document.createElement('div');g.className='mx-grid';
+  g.style.gridTemplateColumns='auto 58px';
+  const empty=document.createElement('div');g.appendChild(empty);
+  const bh=document.createElement('div');bh.className='clbl';bh.innerHTML=rk('b_i');g.appendChild(bh);
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`R_{${i+1}}`);g.appendChild(rl);
+    const inp=document.createElement('input');inp.type='text';inp.id=`b${i}`;inp.placeholder='0';inp.className='b-inp';inp.autocomplete='off';
+    g.appendChild(inp);
+  }
+  cont.appendChild(g);
+}
+
+function loadEx(ex){
+  cN=ex.n;document.getElementById('nSz').value=cN;
+  buildGrids();
+  ex.A.forEach((row,i)=>row.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+  ex.b.forEach((v,i)=>{const el=document.getElementById(`b${i}`);if(el)el.value=v;});
+}
+
+function buildExamples(){
+  const row=document.getElementById('exRow');row.innerHTML='';
+  EXAMPLES.forEach(ex=>{
+    const btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);row.appendChild(btn);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  buildExamples();buildGrids();loadEx(EXAMPLES[0]);
+});
+</script>
+</body>
+</html>

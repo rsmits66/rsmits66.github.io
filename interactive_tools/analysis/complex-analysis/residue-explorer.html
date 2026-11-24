@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Path Deformation and Residues</title>
+<style>
+/* Layout: the z-plane with a draggable closed contour on the left; controls, readouts and a small
+   "value of the integral" plane on the right. Two modes share the same contour and integrator:
+   deformation (compare C with a reference contour C0) and residue theorem (table of residues). */
+:root {
+  --bg: #F3F4F0; --pane: #FFFFFF; --ink: #1C2321; --ink-2: #5C6663; --rule: #D8DCD6;
+  --grid: #E6E9E4; --axis: #B3BAB5; --accent: #0B6E6A; --center: #B23A2E; --warn: #A04A00; --good: #1E7A3C;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+    --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; --warn: #F0B070; --good: #7FD39A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+  --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; --warn: #F0B070; --good: #7FD39A; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); }
+.wrap { max-width: 78rem; margin-inline: auto; padding: 1.25rem 16px 2rem; display: grid; gap: 1rem; }
+h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+.sub { margin: 0.2rem 0 0; color: var(--ink-2); max-width: 72ch; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--pane); }
+.seg button { border: 0; border-radius: 0; background: transparent; padding: 0.45rem 0.9rem; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--pane); font-weight: 600; }
+.main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 54rem) { .main { grid-template-columns: 1fr; } }
+.pane { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; min-width: 0; display: grid; gap: 0.6rem; align-content: start; }
+.pane h2 { margin: 0; font-size: 1rem; font-weight: 600; display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
+.pane h2 small { font-weight: 400; color: var(--ink-2); font-size: 0.82rem; }
+.view { width: 100%; aspect-ratio: 1; }
+.view.mini { aspect-ratio: 1.6; }
+canvas { display: block; width: 100%; height: 100%; border-radius: 4px; touch-action: none; }
+#pl { cursor: grab; }
+aside { display: grid; gap: 1rem; min-width: 0; }
+.bar { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: end; }
+.field { display: grid; gap: 0.25rem; min-width: 0; }
+.field > span { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+select, button { font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule); border-radius: 6px; padding: 0.35rem 0.6rem; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+select { min-width: 11rem; max-width: 100%; }
+input[type="range"] { width: 11rem; max-width: 100%; accent-color: var(--accent); margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.read { font-family: var(--mono); font-size: 0.86rem; font-variant-numeric: tabular-nums; color: var(--ink-2); display: grid; gap: 0.2rem; }
+.read b { color: var(--ink); font-weight: 600; }
+.big { font-size: 1.05rem; }
+.key { display: inline-block; width: 1.4em; height: 0; vertical-align: 0.3em; margin-right: 0.4em; border-top: 3px solid var(--accent); }
+.key.ghost { border-top: 2px dashed var(--ink-2); }
+.verdict { margin: 0; padding: 0.5rem 0.65rem; border-left: 3px solid var(--good); background: var(--bg); border-radius: 0 6px 6px 0; }
+.verdict.bad { border-left-color: var(--warn); }
+.hint { color: var(--ink-2); font-size: 0.86rem; margin: 0; }
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+th { text-align: left; font: 600 0.74rem var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-2); }
+th, td { padding: 0.3rem 0.5rem 0.3rem 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+tr.in td { color: var(--ink); font-weight: 600; }
+tr.out td { color: var(--ink-2); }
+tr.tot td { border-bottom: 0; border-top: 2px solid var(--ink-2); font-weight: 600; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Path Deformation and Residues</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Mode">
+      <button type="button" id="mDef" aria-pressed="true">1 · Deformation of paths</button>
+      <button type="button" id="mRes" aria-pressed="false">2 · Residue theorem</button>
+    </div>
+    <label class="field"><span>Function f(z)</span><select id="fn"></select></label>
+    <label class="field"><span>Contour</span>
+      <select id="shape">
+        <option value="free">Free loop (drag the handles)</option>
+        <option value="semi">Semicircle on the real axis</option>
+      </select>
+    </label>
+    <label class="field" id="Rfield" hidden><span>Radius R = <output id="Rv"></output></span>
+      <input type="range" id="R" min="0.2" max="10" step="0.05" value="2">
+    </label>
+  </div>
+
+  <div class="main">
+    <section class="pane">
+      <h2>z-plane <small id="how"></small></h2>
+      <div class="view"><canvas id="pl"></canvas></div>
+      <div class="bar">
+        <button type="button" id="shrink">Shrink</button>
+        <button type="button" id="grow">Grow</button>
+        <button type="button" id="rev">Reverse direction</button>
+        <button type="button" id="reset">Reset contour</button>
+        <button type="button" id="setRef">Set C₀ to the current contour</button>
+      </div>
+    </section>
+
+    <aside>
+      <section class="pane">
+        <h2>The integral</h2>
+        <div class="read big">
+          <div><span class="key"></span>∮<sub>C</sub> f dz = <b id="I"></b></div>
+          <div id="rowI0"><span class="key ghost"></span>∮<sub>C₀</sub> f dz = <b id="I0"></b></div>
+        </div>
+        <div class="read" id="parts" hidden></div>
+        <p class="verdict" id="verdict"></p>
+        <div class="tw" id="tw" hidden><table id="tbl"></table></div>
+      </section>
+      <section class="pane">
+        <h2>Value of ∮<sub>C</sub> f dz <small>plotted as a point; the trail shows where it has been</small></h2>
+        <div class="view mini"><canvas id="val"></canvas></div>
+        <p class="hint" id="note"></p>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------- complex arithmetic ----------
+const C = (re, im) => ({ re, im });
+const add = (a, b) => C(a.re + b.re, a.im + b.im);
+const sub = (a, b) => C(a.re - b.re, a.im - b.im);
+const mul = (a, b) => C(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+const div = (a, b) => { const d = b.re * b.re + b.im * b.im; return C((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+const exp = z => { const m = Math.exp(z.re); return C(m * Math.cos(z.im), m * Math.sin(z.im)); };
+const sin = z => C(Math.sin(z.re) * Math.cosh(z.im), Math.cos(z.re) * Math.sinh(z.im));
+const abs = z => Math.hypot(z.re, z.im);
+const ONE = C(1, 0), I = C(0, 1), TWO_PI_I = C(0, 2 * Math.PI);
+const finite = w => Number.isFinite(w.re) && Number.isFinite(w.im);
+
+// ---------- formatting ----------
+const clean = x => Math.abs(x) < 5e-5 ? 0 : x;
+const fmt = z => { const a = clean(z.re), b = clean(z.im); return `${a < 0 ? '−' : ''}${Math.abs(a).toFixed(4)} ${b < 0 ? '−' : '+'} ${Math.abs(b).toFixed(4)}i`; };
+const num = x => (+x.toFixed(3)).toString().replace('-', '−');
+function cf(z) {   // compact: 0, −0.5i, 0.707 + 0.707i
+  const a = Math.abs(z.re) < 5e-4 ? 0 : z.re, b = Math.abs(z.im) < 5e-4 ? 0 : z.im;
+  if (!b) return num(a);
+  const bi = Math.abs(Math.abs(b) - 1) < 5e-4 ? (b < 0 ? '−i' : 'i') : num(b) + 'i';
+  if (!a) return bi;
+  return num(a) + (b < 0 ? ' − ' : ' + ') + bi.replace('−', '');
+}
+
+// ---------- functions: f, its isolated singular points with residues, and teaching notes ----------
+// sing: { z, res, kind, label?, guard? }.  lim: the improper integral over the real line, when it exists.
+const quartic = [0, 1, 2, 3].map(k => { const t = Math.PI / 4 + k * Math.PI / 2, z = C(Math.cos(t), Math.sin(t)); return { z, res: C(-z.re / 4, -z.im / 4), kind: 'simple pole' }; });
+const sines = []; for (let k = -6; k <= 6; k++) sines.push({ z: C(k * Math.PI, 0), res: C(k % 2 ? -1 : 1, 0), kind: 'simple pole', label: k === 0 ? '0' : (k === 1 ? 'π' : k === -1 ? '−π' : (k + 'π').replace('-', '−')) });
+const FUNCS = [
+  { name: '1/(z² + 1)', f: z => div(ONE, add(mul(z, z), ONE)),
+    sing: [{ z: C(0, 1), res: C(0, -0.5), kind: 'simple pole' }, { z: C(0, -1), res: C(0, 0.5), kind: 'simple pole' }],
+    lim: { v: Math.PI, t: 'π' },
+    note: 'Two simple poles at ±i with opposite residues. A loop around both gives 0; a loop around one gives ±π.' },
+  { name: '1/z', f: z => div(ONE, z), sing: [{ z: C(0, 0), res: ONE, kind: 'simple pole' }],
+    note: 'The basic example: 2πi for any positively oriented loop around 0, and 0 for any loop that leaves 0 outside.' },
+  { name: 'z²  (entire)', f: z => mul(z, z), sing: [],
+    note: 'Analytic everywhere, so every closed contour gives 0 (Cauchy–Goursat). There is nothing to cross.' },
+  { name: '1/z²', f: z => div(ONE, mul(z, z)), sing: [{ z: C(0, 0), res: C(0, 0), kind: 'pole of order 2' }],
+    note: 'A singular point whose residue is 0: the integral is 0 whether or not the loop surrounds it. 1/z² has the antiderivative −1/z.' },
+  { name: '1/(z⁴ + 1)', f: z => { const z2 = mul(z, z); return div(ONE, add(mul(z2, z2), ONE)); }, sing: quartic,
+    lim: { v: Math.PI / Math.SQRT2, t: 'π/√2' },
+    note: 'Four simple poles on the unit circle. The semicircle encloses the two in the upper half plane once R > 1.' },
+  { name: 'eᶻ/z²', f: z => div(exp(z), mul(z, z)), sing: [{ z: C(0, 0), res: ONE, kind: 'pole of order 2' }],
+    note: 'A pole of order 2 whose residue is 1, the coefficient of 1/z in (1 + z + z²/2 + …)/z².' },
+  { name: 'e^(1/z)', f: z => exp(div(ONE, z)), sing: [{ z: C(0, 0), res: ONE, kind: 'essential', guard: 0.22 }],
+    note: 'An essential singular point. The residue theorem still applies: the 1/z coefficient of 1 + 1/z + 1/(2z²) + … is 1.' },
+  { name: '1/sin z', f: z => div(ONE, sin(z)), sing: sines,
+    note: 'Simple poles at every multiple of π, with residues alternating +1, −1. Stretch the loop along the real axis and watch the total alternate.' },
+  { name: 'e^(iz)/(z² + 1)', f: z => div(exp(mul(I, z)), add(mul(z, z), ONE)),
+    sing: [{ z: C(0, 1), res: C(0, -Math.exp(-1) / 2), kind: 'simple pole' }, { z: C(0, -1), res: C(0, Math.E / 2), kind: 'simple pole' }],
+    lim: { v: Math.PI / Math.E, t: 'π/e' },
+    note: 'The Fourier-type integrand: e^(iz) is small in the upper half plane, so the arc dies off; the real part of the segment integral is ∫ cos x/(x² + 1) dx.' },
+  { name: 'z̄  (not analytic)', f: z => C(z.re, -z.im), sing: [], analytic: false,
+    note: 'Not analytic anywhere: the integral is 2i × (enclosed area), so it changes with every deformation. Path independence is special to analytic functions.' },
+];
+FUNCS.forEach((F, i) => { const o = document.createElement('option'); o.value = i; o.textContent = F.name; $('fn').appendChild(o); });
+
+// ---------- state ----------
+const NH = 10, SUB = 300;                       // handles on the free loop, samples per spline span
+const S = { mode: 'def', fi: 0, shape: 'free', R: 2, rev: false, H: [], ghost: null, trail: [] };
+const pl = { cvs: $('pl'), x: 0, y: 0, half: 3.2 };
+const vl = { cvs: $('val'), x: 0, y: 0, half: 4 };
+function circleHandles() { S.H = []; for (let k = 0; k < NH; k++) { const t = 2 * Math.PI * k / NH; S.H.push(C(0.5 + 1.2 * Math.cos(t), 0.3 + 1.2 * Math.sin(t))); } }
+
+// ---------- contour ----------
+function freePts() {             // closed uniform Catmull–Rom spline through the handles
+  const pts = [], n = S.H.length;
+  for (let i = 0; i < n; i++) {
+    const p0 = S.H[(i + n - 1) % n], p1 = S.H[i], p2 = S.H[(i + 1) % n], p3 = S.H[(i + 2) % n];
+    for (let j = 0; j < SUB; j++) {
+      const t = j / SUB, t2 = t * t, t3 = t2 * t;
+      const q = (a, b, c, d) => 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
+      pts.push(C(q(p0.re, p1.re, p2.re, p3.re), q(p0.im, p1.im, p2.im, p3.im)));
+    }
+  }
+  pts.push(pts[0]);
+  return pts;
+}
+function semiParts() {
+  const seg = [], arc = [];
+  for (let i = 0; i <= 900; i++) seg.push(C(-S.R + 2 * S.R * i / 900, 0));
+  for (let i = 0; i <= 2400; i++) { const t = Math.PI * i / 2400; arc.push(C(S.R * Math.cos(t), S.R * Math.sin(t))); }
+  return { seg, arc };
+}
+function contour() {
+  let pts, parts = null;
+  if (S.shape === 'semi') { parts = semiParts(); pts = parts.seg.concat(parts.arc.slice(1)); }
+  else pts = freePts();
+  if (S.rev) pts.reverse();
+  return { pts, parts };
+}
+function integrate(f, pts) {     // midpoint rule along the polyline
+  let re = 0, im = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], w = f(C((a.re + b.re) / 2, (a.im + b.im) / 2));
+    const dx = b.re - a.re, dy = b.im - a.im;
+    re += w.re * dx - w.im * dy; im += w.re * dy + w.im * dx;
+  }
+  return C(re, im);
+}
+function wind(pts, p) {          // winding number of the polyline about p
+  let s = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const ax = pts[i - 1].re - p.re, ay = pts[i - 1].im - p.im, bx = pts[i].re - p.re, by = pts[i].im - p.im;
+    s += Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+  }
+  return Math.round(s / (2 * Math.PI));
+}
+function dist(pts, p) { let m = Infinity; for (const q of pts) { const d = Math.hypot(q.re - p.re, q.im - p.im); if (d < m) m = d; } return m; }
+const sLabel = s => s.label || cf(s.z);
+
+// everything about one contour for the current function
+function analyse(pts) {
+  const F = FUNCS[S.fi];
+  const n = F.sing.map(s => wind(pts, s.z));
+  const hit = F.sing.filter(s => dist(pts, s.z) < (s.guard || 0.03));
+  let theory = C(0, 0);
+  F.sing.forEach((s, k) => { theory = add(theory, mul(TWO_PI_I, C(n[k] * s.res.re, n[k] * s.res.im))); });
+  const val = integrate(F.f, pts);
+  return { n, hit, theory, val, ok: !hit.length && finite(val) };
+}
+
+// ---------- canvas plumbing ----------
+function setup(v) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = v.cvs.clientWidth, h = v.cvs.clientHeight;
+  if (v.cvs.width !== Math.round(w * dpr) || v.cvs.height !== Math.round(h * dpr)) { v.cvs.width = Math.round(w * dpr); v.cvs.height = Math.round(h * dpr); }
+  const g = v.cvs.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  v.w = w; v.h = h; v.scale = Math.min(w, h) / (2 * v.half);
+  v.toPx = z => [w / 2 + (z.re - v.x) * v.scale, h / 2 - (z.im - v.y) * v.scale];
+  v.toZ = (px, py) => C(v.x + (px - w / 2) / v.scale, v.y - (py - h / 2) / v.scale);
+  return g;
+}
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function niceStep(half) { const raw = half / 3, p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+function drawGrid(g, v) {
+  g.clearRect(0, 0, v.w, v.h);
+  const step = niceStep(v.half), z0 = v.toZ(0, v.h), z1 = v.toZ(v.w, 0);
+  g.lineWidth = 1; g.strokeStyle = cssVar('--grid');
+  g.font = '11px ' + cssVar('--sans'); g.fillStyle = cssVar('--ink-2'); g.textAlign = 'left'; g.textBaseline = 'top';
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) { const [px] = v.toPx(C(x, 0)); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, v.h); g.stroke(); }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) { const [, py] = v.toPx(C(0, y)); g.beginPath(); g.moveTo(0, py); g.lineTo(v.w, py); g.stroke(); }
+  g.strokeStyle = cssVar('--axis');
+  const [ox, oy] = v.toPx(C(0, 0));
+  g.beginPath(); g.moveTo(ox, 0); g.lineTo(ox, v.h); g.moveTo(0, oy); g.lineTo(v.w, oy); g.stroke();
+  const dec = step < 1 ? Math.ceil(-Math.log10(step)) : 0;
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) { if (Math.abs(x) < 1e-9) continue; const [px] = v.toPx(C(x, 0)); g.fillText(x.toFixed(dec), px + 3, Math.min(Math.max(oy + 3, 2), v.h - 14)); }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) { if (Math.abs(y) < 1e-9) continue; const [, py] = v.toPx(C(0, y)); g.fillText(y.toFixed(dec) + 'i', Math.min(Math.max(ox + 3, 2), v.w - 34), py + 2); }
+}
+function tracePath(g, v, pts) { g.beginPath(); pts.forEach((z, i) => { const [x, y] = v.toPx(z); if (i) g.lineTo(x, y); else g.moveTo(x, y); }); }
+
+// ---------- render ----------
+let last = null;   // the latest contour, for hit-testing
+function render() {
+  const F = FUNCS[S.fi], res = S.mode === 'res';
+  if (S.shape === 'semi' && S.R * 1.15 > pl.half) pl.half = S.R * 1.15;
+  const { pts, parts } = contour();
+  if (!S.ghost) S.ghost = pts.slice();
+  const A = analyse(pts), G = analyse(S.ghost);
+  last = pts;
+
+  // ----- z-plane -----
+  const g = setup(pl);
+  drawGrid(g, pl);
+  const accent = cssVar('--accent'), ink = cssVar('--ink'), ink2 = cssVar('--ink-2'), red = cssVar('--center'), pane = cssVar('--pane');
+  if (!res) { tracePath(g, pl, S.ghost); g.setLineDash([6, 5]); g.lineWidth = 1.5; g.strokeStyle = ink2; g.stroke(); g.setLineDash([]); }
+  tracePath(g, pl, pts);
+  g.globalAlpha = 0.1; g.fillStyle = accent; g.fill('nonzero'); g.globalAlpha = 1;
+  g.lineWidth = 2.5; g.strokeStyle = accent; g.lineJoin = 'round'; g.stroke();
+  for (let k = 0; k < 8; k++) {            // direction arrows
+    const j = Math.floor((k + 0.5) * (pts.length - 1) / 8), [x, y] = pl.toPx(pts[j]), [x2, y2] = pl.toPx(pts[j + 1]);
+    const a = Math.atan2(y2 - y, x2 - x);
+    g.save(); g.translate(x, y); g.rotate(a); g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -5.5); g.lineTo(-5, 5.5); g.closePath(); g.fillStyle = accent; g.fill(); g.restore();
+  }
+  if (S.shape === 'free') for (const h of S.H) { const [x, y] = pl.toPx(h); g.beginPath(); g.arc(x, y, 5, 0, 7); g.fillStyle = pane; g.fill(); g.lineWidth = 2; g.strokeStyle = accent; g.stroke(); }
+  else { const [x, y] = pl.toPx(C(S.R, 0)); g.beginPath(); g.arc(x, y, 6, 0, 7); g.fillStyle = pane; g.fill(); g.lineWidth = 2; g.strokeStyle = accent; g.stroke(); }
+  // singular points
+  g.font = '12px ' + cssVar('--mono'); g.textBaseline = 'middle'; g.textAlign = 'left';
+  F.sing.forEach((s, k) => {
+    const [x, y] = pl.toPx(s.z);
+    if (x < -40 || y < -40 || x > pl.w + 40 || y > pl.h + 40) return;
+    if (A.n[k]) { g.beginPath(); g.arc(x, y, 11, 0, 7); g.lineWidth = 1.5; g.strokeStyle = red; g.stroke(); }
+    g.lineWidth = 2.5; g.strokeStyle = red; g.beginPath(); g.moveTo(x - 5, y - 5); g.lineTo(x + 5, y + 5); g.moveTo(x - 5, y + 5); g.lineTo(x + 5, y - 5); g.stroke();
+    if (res) {
+      const t = 'Res = ' + cf(s.res), w = g.measureText(t).width;
+      g.fillStyle = pane; g.globalAlpha = 0.85; g.fillRect(x + 13, y - 20, w + 6, 16); g.globalAlpha = 1;
+      g.fillStyle = A.n[k] ? ink : ink2; g.fillText(t, x + 16, y - 12);
+    }
+  });
+
+  // ----- readouts -----
+  const show = a => a.hit.length ? 'undefined' : (finite(a.val) ? fmt(a.val) : 'undefined');
+  $('I').textContent = show(A); $('I0').textContent = show(G);
+  $('rowI0').hidden = res; $('setRef').hidden = res; $('tw').hidden = !res || F.analytic === false;
+
+  // semicircle: split into the real segment and the arc
+  if (parts) {
+    const sgn = S.rev ? -1 : 1, a = integrate(F.f, parts.seg), b = integrate(F.f, parts.arc);
+    const sc = z => fmt(C(sgn * z.re, sgn * z.im));
+    let h = A.ok ? `<div>segment [−R, R]: <b>${sc(a)}</b></div><div>arc |z| = R: <b>${sc(b)}</b></div>` : '';
+    if (F.lim && res) h += `<div>∫<sub>−∞</sub><sup>∞</sup> f(x) dx = ${F.lim.t} ≈ <b>${F.lim.v.toFixed(4)}</b> — as R grows the arc term → 0</div>`;
+    $('parts').innerHTML = h; $('parts').hidden = !h;
+  } else $('parts').hidden = true;
+
+  // verdict
+  let msg, bad = false;
+  const names = list => list.map(s => 'z = ' + sLabel(s)).join(', ');
+  if (A.hit.length) { msg = `The contour passes through the singular point ${names(A.hit)}, where f is not defined, so the integral does not exist. Move the contour off it.`; bad = true; }
+  else if (F.analytic === false) { msg = 'f is not analytic, so neither theorem applies: the integral changes continuously as the contour moves. Watch the point below slide instead of jump.'; bad = true; }
+  else if (!res) {
+    if (G.hit.length) { msg = 'C₀ passes through a singular point. Press “Set C₀ to the current contour”.'; bad = true; }
+    else {
+      const crossed = F.sing.filter((s, k) => A.n[k] !== G.n[k]);
+      const d = abs(sub(A.val, G.val));
+      if (!crossed.length) {
+        msg = 'f is analytic at every point between C₀ and C, so the two integrals are equal (principle of deformation of paths).';
+        if (A.n.every(n => n === 0)) msg += ' Both are 0 because f is analytic on and inside C (Cauchy–Goursat).';
+      } else if (d < 2e-3) {
+        msg = `C has been moved across ${names(crossed)}, where f is not analytic, yet the integrals still agree. The theorem does not promise this; Chapter 6 explains it (switch to mode 2).`; bad = true;
+      } else {
+        msg = `C has been moved across ${names(crossed)}, where f is not analytic. The deformation principle no longer applies, and the integral jumped by ${fmt(sub(A.val, G.val))}.`; bad = true;
+      }
+    }
+  } else {
+    const inside = F.sing.filter((s, k) => A.n[k]);
+    const ok = abs(sub(A.val, A.theory)) < 5e-3 * Math.max(1, abs(A.theory));
+    msg = inside.length
+      ? `2πi × (sum of the residues inside C) = ${fmt(A.theory)}. ` + (ok ? 'Direct numerical integration along C gives the same value.' : 'Numerical integration is slightly off because C runs very close to a singular point.')
+      : 'No singular point lies inside C, so the residue sum is empty and the integral is 0.';
+    bad = !ok;
+  }
+  $('verdict').textContent = msg; $('verdict').className = bad ? 'verdict bad' : 'verdict';
+
+  // residue table
+  if (res) {
+    const rows = F.sing.map((s, k) => ({ s, n: A.n[k] })).filter(r => F.sing.length <= 4 || r.n);
+    const hidden = F.sing.length - rows.length;
+    let h = '<tr><th>Singular point</th><th>Type</th><th>Res</th><th>Winding n</th><th>2πi · n · Res</th></tr>';
+    for (const r of rows) {
+      const c = mul(TWO_PI_I, C(r.n * r.s.res.re, r.n * r.s.res.im));
+      h += `<tr class="${r.n ? 'in' : 'out'}"><td>${sLabel(r.s)}</td><td>${r.s.kind}</td><td>${cf(r.s.res)}</td><td>${String(r.n).replace('-', '−')}</td><td>${r.n ? fmt(c) : '0 (outside)'}</td></tr>`;
+    }
+    if (!F.sing.length) h += '<tr class="out"><td colspan="5">f has no singular points</td></tr>';
+    if (hidden) h += `<tr class="out"><td colspan="5">${hidden} more singular point${hidden > 1 ? 's' : ''} outside C, contributing 0</td></tr>`;
+    h += `<tr class="tot"><td colspan="4">Total = ∮ f dz</td><td>${fmt(A.theory)}</td></tr>`;
+    $('tbl').innerHTML = h;
+  }
+
+  // ----- value plane -----
+  if (A.ok) { const t = S.trail, p = t[t.length - 1]; if (!p || abs(sub(p, A.val)) > 1e-7) { t.push(A.val); if (t.length > 400) t.shift(); } }
+  let m = 3;
+  if (A.ok) m = Math.max(m, abs(A.val)); if (!res && G.ok) m = Math.max(m, abs(G.val));
+  vl.half = m * 1.35;
+  const gv = setup(vl);
+  drawGrid(gv, vl);
+  gv.fillStyle = accent;
+  S.trail.forEach((z, i) => { const [x, y] = vl.toPx(z); gv.globalAlpha = 0.12 + 0.3 * i / S.trail.length; gv.beginPath(); gv.arc(x, y, 2.5, 0, 7); gv.fill(); });
+  gv.globalAlpha = 1;
+  if (!res && G.ok) { const [x, y] = vl.toPx(G.val); gv.beginPath(); gv.arc(x, y, 10, 0, 7); gv.setLineDash([4, 3]); gv.lineWidth = 1.5; gv.strokeStyle = ink2; gv.stroke(); gv.setLineDash([]); }
+  if (A.ok) { const [x, y] = vl.toPx(A.val); gv.beginPath(); gv.arc(x, y, 6, 0, 7); gv.fillStyle = accent; gv.fill(); gv.lineWidth = 2; gv.strokeStyle = pane; gv.stroke(); }
+
+  // ----- static text -----
+  $('sub').textContent = res
+    ? 'Cauchy’s residue theorem: the integral around C is 2πi times the sum of the residues at the singular points inside. Drag the contour over a singular point and its row joins the total.'
+    : 'Principle of deformation of paths: a closed contour can be reshaped without changing ∮ f dz, as long as it never crosses a point where f fails to be analytic. Compare C with the dashed starting contour C₀.';
+  $('how').textContent = S.shape === 'free' ? 'drag a handle to reshape · drag inside to move · drag outside to pan · scroll to zoom' : 'drag the handle at R or use the slider · drag to pan · scroll to zoom';
+  $('note').textContent = F.note;
+  $('Rfield').hidden = S.shape !== 'semi'; $('Rv').textContent = S.R.toFixed(2); $('R').value = S.R;
+  $('mDef').setAttribute('aria-pressed', String(!res)); $('mRes').setAttribute('aria-pressed', String(res));
+}
+
+// ---------- controls ----------
+function fresh(keepGhost) { if (!keepGhost) S.ghost = null; S.trail = []; render(); }
+$('mDef').addEventListener('click', () => { S.mode = 'def'; render(); });
+$('mRes').addEventListener('click', () => { S.mode = 'res'; render(); });
+$('fn').addEventListener('change', e => { S.fi = +e.target.value; fresh(); });
+$('shape').addEventListener('change', e => { S.shape = e.target.value; if (S.shape === 'semi') { pl.x = 0; pl.y = Math.max(pl.y, 0); } fresh(); });
+$('R').addEventListener('input', e => { S.R = +e.target.value; render(); });
+$('rev').addEventListener('click', () => { S.rev = !S.rev; if (S.ghost) S.ghost.reverse(); S.trail = []; render(); });
+$('reset').addEventListener('click', () => { circleHandles(); S.R = 2; S.rev = false; pl.x = 0; pl.y = 0; pl.half = 3.2; fresh(); });
+$('setRef').addEventListener('click', () => fresh());
+function scaleBy(k) {
+  if (S.shape === 'semi') S.R = Math.min(10, Math.max(0.2, S.R * k));
+  else { const n = S.H.length, cx = S.H.reduce((a, h) => a + h.re, 0) / n, cy = S.H.reduce((a, h) => a + h.im, 0) / n; S.H = S.H.map(h => C(cx + (h.re - cx) * k, cy + (h.im - cy) * k)); }
+  render();
+}
+$('shrink').addEventListener('click', () => scaleBy(1 / 1.15));
+$('grow').addEventListener('click', () => scaleBy(1.15));
+
+// pointer: handle / move whole loop / radius / pan
+let drag = null;
+const pos = e => { const r = pl.cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+pl.cvs.addEventListener('pointerdown', e => {
+  const [px, py] = pos(e), z = pl.toZ(px, py);
+  drag = { kind: 'pan', px, py, x: pl.x, y: pl.y };
+  if (S.shape === 'free') {
+    let best = -1, bd = 14;
+    S.H.forEach((h, i) => { const [x, y] = pl.toPx(h), d = Math.hypot(x - px, y - py); if (d < bd) { bd = d; best = i; } });
+    if (best >= 0) drag = { kind: 'handle', i: best };
+    else if (last && wind(last, z) !== 0) drag = { kind: 'move', z };
+  } else if (last && dist(last, z) * pl.scale < 14) drag = { kind: 'radius' };
+  pl.cvs.setPointerCapture(e.pointerId); pl.cvs.style.cursor = 'grabbing';
+});
+pl.cvs.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [px, py] = pos(e), z = pl.toZ(px, py);
+  if (drag.kind === 'handle') S.H[drag.i] = z;
+  else if (drag.kind === 'move') { const d = sub(z, drag.z); S.H = S.H.map(h => add(h, d)); drag.z = z; }
+  else if (drag.kind === 'radius') S.R = Math.min(10, Math.max(0.2, Math.round(abs(z) * 100) / 100));
+  else { pl.x = drag.x - (px - drag.px) / pl.scale; pl.y = drag.y + (py - drag.py) / pl.scale; }
+  render();
+});
+const stop = () => { drag = null; pl.cvs.style.cursor = 'grab'; };
+pl.cvs.addEventListener('pointerup', stop); pl.cvs.addEventListener('pointercancel', stop);
+pl.cvs.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [px, py] = pos(e), before = pl.toZ(px, py);
+  pl.half = Math.min(60, Math.max(0.2, pl.half * Math.exp(e.deltaY * 0.0015)));
+  setup(pl);
+  const after = pl.toZ(px, py);
+  pl.x += before.re - after.re; pl.y += before.im - after.im;
+  render();
+}, { passive: false });
+
+new ResizeObserver(render).observe(pl.cvs);
+new ResizeObserver(render).observe(vl.cvs);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+circleHandles(); render();
+})();
+</script>
+</body>
+</html>

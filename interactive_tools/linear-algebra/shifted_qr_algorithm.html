@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shifted QR Algorithm — Interactive 4×4</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$','$$']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+  :root {
+    --purple: #4B2E83; --purple-dark: #32145A; --purple-soft: #F0EBF6; --purple-line: #C5B4E3;
+    --gold: #B7A57A; --gold-dark: #85754D; --gold-soft: #F5F0E0;
+    --ink: #1A1A1A; --ink-mid: #4A4A4A; --ink-soft: #6B6B6B;
+    --bg: #FAFAF8; --card: #FFFFFF; --line: #E5E2DC;
+    --good: #2E7D5B; --good-soft: #DDEDE3;
+    --warn: #C97A2A; --bad: #B94A48;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Source Sans 3', sans-serif; font-size: 16px; line-height: 1.55; color: var(--ink); background: var(--bg); }
+  .top-bar { height: 6px; background: linear-gradient(90deg, var(--purple) 0%, var(--purple) 60%, var(--gold) 60%, var(--gold) 100%); }
+  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 32px 0 26px; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+  .kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--purple); margin-bottom: 10px; }
+  h1 { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin-bottom: 6px; }
+  .subtitle { font-family: 'Source Serif 4', serif; font-size: 17px; color: var(--ink-mid); max-width: 760px; }
+  main { padding: 30px 0 80px; }
+  section { margin-bottom: 36px; }
+  h2 { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 4px; padding-bottom: 6px; border-bottom: 2px solid var(--purple); display: inline-block; }
+  h3 { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 16px; margin: 14px 0 6px; }
+  .section-intro { color: var(--ink-mid); margin: 12px 0 16px; max-width: 800px; }
+  p { margin-bottom: 10px; }
+  .algo { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 16px 22px; margin: 14px 0 0; font-size: 15px; }
+  .algo ol { list-style: none; padding: 0; counter-reset: algo; }
+  .algo ol li { counter-increment: algo; padding: 5px 0 5px 34px; position: relative; }
+  .algo ol li::before { content: counter(algo); position: absolute; left: 0; top: 4px; width: 22px; height: 22px; background: var(--purple); color: white; border-radius: 50%; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .algo ol li.alt::before { background: var(--gold-dark); }
+  .stage { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 20px 24px 24px; }
+  .controls { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; align-items: center; }
+  button { font-family: 'Source Sans 3', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; transition: all 0.15s ease; }
+  button.primary { background: var(--purple); color: white; }
+  button.primary:hover { background: var(--purple-dark); }
+  button.secondary { background: var(--gold-dark); color: white; }
+  button.secondary:hover { background: var(--gold); }
+  button.ghost { background: transparent; color: var(--ink-mid); border: 1px solid var(--line); }
+  button.ghost:hover { background: var(--bg); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .preset-row { margin-bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .preset-label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-right: 4px; }
+  .preset-btn { background: var(--bg); border: 1px solid var(--line); padding: 5px 11px; border-radius: 3px; font-size: 13px; cursor: pointer; color: var(--ink-mid); font-family: 'Source Sans 3', sans-serif; }
+  .preset-btn:hover { background: var(--purple-soft); color: var(--purple); border-color: var(--purple-line); }
+  .matrix-input { display: inline-grid; grid-template-columns: repeat(4, 72px); gap: 4px; padding: 10px 12px; background: var(--bg); border: 2px solid var(--ink); border-radius: 3px; margin: 6px 0; position: relative; }
+  .matrix-input::before, .matrix-input::after { content: ''; position: absolute; top: 6px; bottom: 6px; width: 8px; border: 2px solid var(--ink); }
+  .matrix-input::before { left: -3px; border-right: none; border-radius: 3px 0 0 3px; }
+  .matrix-input::after { right: -3px; border-left: none; border-radius: 0 3px 3px 0; }
+  .matrix-input input { width: 100%; padding: 6px 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px; text-align: center; border: 1px solid var(--line); border-radius: 2px; background: white; outline: none; color: var(--ink); }
+  .matrix-input input:focus { border-color: var(--purple); box-shadow: 0 0 0 2px var(--purple-soft); }
+  .iterations { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .iter-card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 14px 18px 16px; animation: slideIn 0.25s ease; }
+  .iter-card.initial { border-left: 4px solid var(--ink); }
+  .iter-card.hessen { border-left: 4px solid var(--gold-dark); }
+  .iter-card.step { border-left: 4px solid var(--purple); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .iter-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+  .iter-title { font-family: 'Source Serif 4', serif; font-size: 16px; font-weight: 600; color: var(--ink); }
+  .iter-meta { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--ink-soft); display: flex; gap: 14px; flex-wrap: wrap; }
+  .iter-meta b { color: var(--purple); font-weight: 600; }
+  table.matrix-display { border-collapse: separate; border-spacing: 0; margin: 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  table.matrix-display td { width: 82px; padding: 6px 4px; text-align: center; border: 1px solid var(--line); background: white; }
+  table.matrix-display td.diag { background: var(--purple-soft); font-weight: 600; color: var(--purple-dark); }
+  table.matrix-display td.subd-converged { background: var(--good-soft); color: var(--good); font-weight: 500; }
+  table.matrix-display td.subd-small { background: #FFF8E6; color: var(--warn); }
+  table.matrix-display td.subd-med { background: #FCE9DA; color: #B5683A; }
+  table.matrix-display td.subd-large { background: #F9D9D7; color: var(--bad); font-weight: 600; }
+  table.matrix-display td.zero { color: var(--ink-soft); opacity: 0.4; }
+  table.matrix-display td.locked { background: var(--good-soft); color: var(--good); font-weight: 700; }
+  table.matrix-display td.inactive { opacity: 0.35; }
+  .subdiag-bar { display: flex; gap: 12px; margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; flex-wrap: wrap; }
+  .subdiag-item { display: flex; align-items: center; gap: 6px; padding: 3px 9px; background: var(--bg); border-radius: 12px; border: 1px solid var(--line); }
+  .subdiag-item .label { color: var(--ink-soft); font-size: 11px; }
+  .subdiag-item .val { color: var(--ink); font-weight: 600; }
+  .subdiag-item.converged { background: var(--good-soft); border-color: var(--good); }
+  .subdiag-item.converged .label, .subdiag-item.converged .val { color: var(--good); }
+  .lock-banner { margin-top: 10px; padding: 8px 14px; background: var(--good-soft); border-left: 3px solid var(--good); border-radius: 2px; font-size: 13.5px; color: var(--good); }
+  .lock-banner b { font-family: 'JetBrains Mono', monospace; }
+  .eigenvalues-final { background: var(--purple); color: white; padding: 22px 26px; border-radius: 4px; margin-top: 16px; }
+  .eigenvalues-final h3 { color: white; margin-top: 0; font-size: 17px; }
+  .eigenvalues-final .e-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+  .eigenvalues-final .e-item { background: rgba(255,255,255,0.08); padding: 10px 14px; border-radius: 3px; border-left: 3px solid var(--gold); }
+  .eigenvalues-final .e-label { font-size: 11px; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; }
+  .eigenvalues-final .e-val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; margin-top: 3px; }
+  .detail-toggle { margin-top: 8px; font-size: 12.5px; color: var(--purple); cursor: pointer; user-select: none; }
+  .detail-toggle:hover { text-decoration: underline; }
+  .detail-content { margin-top: 6px; display: none; padding: 10px 14px; background: var(--bg); border-radius: 3px; font-size: 12px; }
+  .detail-content.open { display: block; }
+  .detail-content h4 { font-family: 'Source Serif 4', serif; font-size: 12.5px; margin: 6px 0 3px; color: var(--ink); }
+  .detail-content table { border-collapse: collapse; margin: 3px 0 6px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+  .detail-content td { padding: 3px 6px; border: 1px solid var(--line); text-align: center; background: white; min-width: 58px; }
+  .status-note { padding: 9px 14px; background: var(--purple-soft); color: var(--purple-dark); border-radius: 3px; font-size: 13.5px; margin: 10px 0; }
+  .notes { background: var(--ink); color: white; padding: 22px 26px; border-radius: 3px; }
+  .notes h3 { color: white; margin-top: 0; }
+  .notes ul { list-style: none; padding: 0; margin-top: 10px; }
+  .notes li { padding: 7px 0 7px 22px; position: relative; border-top: 1px solid rgba(255,255,255,0.12); font-size: 14px; line-height: 1.5; }
+  .notes li:first-child { border-top: none; }
+  .notes li::before { content: '◆'; position: absolute; left: 0; top: 7px; color: var(--gold); font-size: 11px; }
+  .notes li b { color: var(--gold); }
+  .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 12px 0; }
+  .legend-item { padding: 8px 12px; border-left: 3px solid; border-radius: 2px; font-size: 13px; }
+  footer { text-align: center; font-size: 12px; color: var(--ink-soft); padding: 24px 0; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+
+<header>
+  <div class="container">
+    <div class="kicker">AMath 584 · Numerical Linear Algebra</div>
+    <h1>The Shifted QR Algorithm</h1>
+    <p class="subtitle">The standard method for finding all eigenvalues of a dense matrix. Enter a 4×4 matrix, step through iterations to watch the subdiagonals collapse, then let the computer finish.</p>
+  </div>
+</header>
+
+<main class="container">
+
+<section>
+  <h2>1. The Algorithm</h2>
+  <p class="section-intro">Reduce $A$ to upper Hessenberg form first, then iterate shifted QR until the subdiagonals decay.</p>
+  <div class="algo">
+    <p><strong>Setup:</strong> Reduce $A_0 = A$ to upper Hessenberg form $H_0 = Q_0^\top A_0 Q_0$ via two Householder similarity transforms. Eigenvalues are preserved; the matrix now has zeros below the subdiagonal.</p>
+    <p style="margin-top:10px;"><strong>Iterate</strong> for $k = 0, 1, 2, \ldots$:</p>
+    <ol>
+      <li><strong>Choose shift</strong> $\mu_k$ — Wilkinson shift, the eigenvalue of the bottom-right $2 \times 2$ block of $H_k$ closer to $(H_k)_{nn}$.</li>
+      <li><strong>Factor</strong> $H_k - \mu_k I = Q_k R_k$ via Householder reflectors.</li>
+      <li class="alt"><strong>Reassemble</strong> $H_{k+1} = R_k Q_k + \mu_k I$ — preserves Hessenberg structure.</li>
+      <li class="alt"><strong>Deflate</strong> when a subdiagonal entry becomes negligible. Lock the eigenvalue and shrink the active block.</li>
+    </ol>
+  </div>
+  <p style="margin-top: 12px;">Each step is a similarity: $H_{k+1} = Q_k^\top H_k Q_k$. Subdiagonals shrink cubically (symmetric case) or quadratically (general case).</p>
+</section>
+
+<section>
+  <h2>2. Enter Your Matrix</h2>
+  <p class="section-intro">Type entries into the 4×4 grid, or use a preset. Click <em>Load matrix</em> to apply, then <em>Run iteration</em> to step through.</p>
+
+  <div class="stage">
+
+    <div class="preset-row">
+      <span class="preset-label">Presets:</span>
+      <button class="preset-btn" data-preset="default">symmetric (4 real)</button>
+      <button class="preset-btn" data-preset="symm2">symmetric · spread</button>
+      <button class="preset-btn" data-preset="nonsymm">non-symmetric · real</button>
+      <button class="preset-btn" data-preset="complex">complex eigenvalues</button>
+      <button class="preset-btn" data-preset="random">random symmetric</button>
+    </div>
+
+    <div class="matrix-input" id="matrixInput"></div>
+
+    <div class="controls">
+      <button class="primary" id="loadBtn">Load matrix</button>
+      <button class="primary" id="stepBtn">Run iteration</button>
+      <button class="secondary" id="autoBtn">Auto-complete</button>
+      <button class="ghost" id="resetBtn">Reset</button>
+    </div>
+
+    <div class="status-note" id="statusNote" style="display:none;"></div>
+
+    <div class="iterations" id="iterations"></div>
+
+    <div id="eigenContainer"></div>
+
+  </div>
+</section>
+
+<section>
+  <h2>3. Reading the Display</h2>
+  <p class="section-intro">Cells are color-coded by role:</p>
+  <div class="legend-grid">
+    <div class="legend-item" style="background:var(--purple-soft);border-color:var(--purple);color:var(--purple-dark);"><b>Purple</b>: diagonal (eigenvalue estimates)</div>
+    <div class="legend-item" style="background:#F9D9D7;border-color:var(--bad);color:var(--bad);"><b>Red</b>: subdiagonal &gt; 0.1</div>
+    <div class="legend-item" style="background:#FCE9DA;border-color:#B5683A;color:#B5683A;"><b>Orange</b>: subdiagonal 0.01 – 0.1</div>
+    <div class="legend-item" style="background:#FFF8E6;border-color:var(--warn);color:var(--warn);"><b>Yellow</b>: subdiagonal 1e-6 – 0.01</div>
+    <div class="legend-item" style="background:var(--good-soft);border-color:var(--good);color:var(--good);"><b>Green</b>: subdiagonal &lt; 1e-6 (converged)</div>
+  </div>
+  <p>When a subdiagonal goes green, the matrix block-decouples at that row. We lock in the eigenvalue (or a $2 \times 2$ complex-conjugate block) and continue on the smaller active region — <em>deflation</em>.</p>
+</section>
+
+<section>
+  <h2>4. Practical Notes</h2>
+  <div class="notes">
+    <ul>
+      <li><b>Hessenberg reduction first.</b> Without it, each QR step costs $O(n^3)$. After reduction to Hessenberg (or tridiagonal for symmetric $A$), each step is $O(n^2)$ — the algorithm's key optimization.</li>
+      <li><b>Implicit shifts (bulge chasing).</b> Production implementations never form $A - \mu I$ explicitly. They introduce a "bulge" via the first column of $(A - \mu_1 I)(A - \mu_2 I)$ and chase it down the Hessenberg form, supporting complex shifts in real arithmetic via Francis double-shifts.</li>
+      <li><b>Wilkinson shift.</b> Choosing $\mu_k$ as the bottom-2×2 eigenvalue closer to $(A_k)_{nn}$ guarantees convergence and gives cubic rates for symmetric matrices. The naïve Rayleigh shift $\mu_k = (A_k)_{nn}$ can fail on some matrices.</li>
+      <li><b>Real Schur form.</b> Complex eigenvalues of real matrices appear as $2 \times 2$ diagonal blocks. Trace and determinant of the block recover the conjugate pair, all in real arithmetic.</li>
+      <li><b>Connection to RQI.</b> The Wilkinson shift is essentially a Rayleigh quotient on the bottom rows. Each QR step is one Rayleigh Quotient Iteration applied <em>simultaneously to all eigenpairs</em>. That's why the convergence rates match.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>QR via Householder reflectors · double precision · Wilkinson shift</footer>
+
+<script>
+function identity(n){const I=Array(n).fill().map(()=>Array(n).fill(0));for(let i=0;i<n;i++)I[i][i]=1;return I;}
+function matmul(A,B){const n=A.length,m=B[0].length,k=B.length;const C=Array(n).fill().map(()=>Array(m).fill(0));for(let i=0;i<n;i++)for(let j=0;j<m;j++)for(let p=0;p<k;p++)C[i][j]+=A[i][p]*B[p][j];return C;}
+function copyM(A){return A.map(r=>[...r]);}
+
+function hessenbergReduce(A){
+  const n=A.length;
+  const H=copyM(A);
+  for(let k=0;k<n-2;k++){
+    const len=n-k-1;
+    const x=[];for(let i=k+1;i<n;i++)x.push(H[i][k]);
+    const normx=Math.sqrt(x.reduce((s,v)=>s+v*v,0));
+    if(normx<1e-15)continue;
+    const sign=x[0]>=0?1:-1;
+    const u=[...x];u[0]+=sign*normx;
+    const nusq=u.reduce((s,v)=>s+v*v,0);
+    if(nusq<1e-30)continue;
+    for(let j=0;j<n;j++){
+      let dot=0;for(let i=0;i<len;i++)dot+=u[i]*H[k+1+i][j];
+      const f=2*dot/nusq;
+      for(let i=0;i<len;i++)H[k+1+i][j]-=f*u[i];
+    }
+    for(let i=0;i<n;i++){
+      let dot=0;for(let j=0;j<len;j++)dot+=u[j]*H[i][k+1+j];
+      const f=2*dot/nusq;
+      for(let j=0;j<len;j++)H[i][k+1+j]-=f*u[j];
+    }
+  }
+  for(let i=2;i<n;i++)for(let j=0;j<i-1;j++)if(Math.abs(H[i][j])<1e-14)H[i][j]=0;
+  return H;
+}
+
+function qrDecomp(A){
+  const n=A.length;
+  const R=copyM(A);
+  let Q=identity(n);
+  for(let k=0;k<n-1;k++){
+    const len=n-k;
+    const x=[];for(let i=k;i<n;i++)x.push(R[i][k]);
+    const normx=Math.sqrt(x.reduce((s,v)=>s+v*v,0));
+    if(normx<1e-15)continue;
+    const sign=x[0]>=0?1:-1;
+    const u=[...x];u[0]+=sign*normx;
+    const nusq=u.reduce((s,v)=>s+v*v,0);
+    if(nusq<1e-30)continue;
+    for(let j=k;j<n;j++){
+      let dot=0;for(let i=0;i<len;i++)dot+=u[i]*R[k+i][j];
+      const f=2*dot/nusq;
+      for(let i=0;i<len;i++)R[k+i][j]-=f*u[i];
+    }
+    for(let i=0;i<n;i++){
+      let dot=0;for(let j=0;j<len;j++)dot+=u[j]*Q[i][k+j];
+      const f=2*dot/nusq;
+      for(let j=0;j<len;j++)Q[i][k+j]-=f*u[j];
+    }
+  }
+  return {Q,R};
+}
+
+function wilkinsonShift(A,p){
+  if(p<1)return A[p][p];
+  const a=A[p-1][p-1],b=A[p-1][p],c=A[p][p-1],d=A[p][p];
+  const delta=(a-d)/2;
+  const sD=delta>=0?1:-1;
+  const disc=delta*delta+b*c;
+  if(disc<0)return(a+d)/2;
+  const denom=Math.abs(delta)+Math.sqrt(disc);
+  if(Math.abs(denom)<1e-15)return d;
+  return d-sD*b*c/denom;
+}
+
+function shiftedQrStepOnBlock(A,p){
+  const sub=[];
+  for(let i=0;i<=p;i++){const row=[];for(let j=0;j<=p;j++)row.push(A[i][j]);sub.push(row);}
+  const mu=wilkinsonShift(sub,p);
+  const Amu=sub.map((row,i)=>row.map((v,j)=>i===j?v-mu:v));
+  const {Q,R}=qrDecomp(Amu);
+  const RQ=matmul(R,Q);
+  for(let i=0;i<=p;i++)RQ[i][i]+=mu;
+  const Anew=copyM(A);
+  for(let i=0;i<=p;i++)for(let j=0;j<=p;j++)Anew[i][j]=RQ[i][j];
+  return {Anew,Q,R,mu};
+}
+
+function eigOf2x2(a,b,c,d){
+  const t=a+d,det=a*d-b*c;
+  const disc=t*t-4*det;
+  if(disc>=0){const s=Math.sqrt(disc);return[{real:(t+s)/2,imag:0},{real:(t-s)/2,imag:0}];}
+  const s=Math.sqrt(-disc);
+  return[{real:t/2,imag:s/2},{real:t/2,imag:-s/2}];
+}
+
+const PRESETS={
+  default:[[4,1,0,1],[1,3,2,0],[0,2,4,-1],[1,0,-1,2]],
+  symm2:[[6,2,1,0],[2,4,1,1],[1,1,2,2],[0,1,2,5]],
+  nonsymm:[[5,1,2,-1],[0,3,1,2],[1,0,4,0],[0,1,0,2]],
+  complex:[[2,1,1,0],[-1,2,0,1],[1,0,1,2],[0,1,-2,1]],
+  random:null
+};
+
+function generateRandomSymm(){
+  const M=Array(4).fill().map(()=>Array(4).fill(0));
+  for(let i=0;i<4;i++)for(let j=i;j<4;j++){
+    const v=Math.round((Math.random()*10-5)*10)/10;
+    M[i][j]=v;M[j][i]=v;
+  }
+  return M;
+}
+
+let state={A0:null,H0:null,A:null,p:3,iter:0,eigenvalues:[],done:false};
+
+const inputs=[];
+const grid=document.getElementById('matrixInput');
+for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+  const inp=document.createElement('input');
+  inp.type='text';inp.value='0';inp.dataset.row=i;inp.dataset.col=j;
+  grid.appendChild(inp);inputs.push(inp);
+}
+function setMatrixInputs(M){for(let i=0;i<4;i++)for(let j=0;j<4;j++)inputs[i*4+j].value=M[i][j].toString();}
+function readMatrixInputs(){
+  const M=[];
+  for(let i=0;i<4;i++){const row=[];for(let j=0;j<4;j++){const v=parseFloat(inputs[i*4+j].value.trim());row.push(isNaN(v)?0:v);}M.push(row);}
+  return M;
+}
+
+function fmt(v,d=4){
+  if(Math.abs(v)<1e-12)return '0';
+  if(Math.abs(v)<1e-4)return v.toExponential(2);
+  return v.toFixed(d);
+}
+function subdiagClass(av){
+  if(av<1e-6)return 'subd-converged';
+  if(av<1e-2)return 'subd-small';
+  if(av<0.1)return 'subd-med';
+  return 'subd-large';
+}
+function renderMatrix(A,p){
+  const n=A.length;let html='<table class="matrix-display">';
+  for(let i=0;i<n;i++){
+    html+='<tr>';
+    for(let j=0;j<n;j++){
+      const v=A[i][j];let cls='';
+      if(i===j&&i>p)cls+=' locked';
+      else if(i===j)cls+=' diag';
+      else if(i===j+1&&i<=p)cls+=' '+subdiagClass(Math.abs(v));
+      else if(i>j+1||(i>j&&i>p)){if(Math.abs(v)<1e-8)cls+=' zero';}
+      else if(i>p||j>p)cls+=' inactive';
+      html+=`<td class="${cls.trim()}">${fmt(v)}</td>`;
+    }
+    html+='</tr>';
+  }
+  return html+'</table>';
+}
+function renderSubdiagBar(A,p){
+  let html='<div class="subdiag-bar">';
+  for(let i=1;i<A.length;i++){
+    const v=Math.abs(A[i][i-1]);
+    const conv=i>p||v<1e-6;
+    html+=`<div class="subdiag-item${conv?' converged':''}"><span class="label">|H[${i+1},${i}]|</span><span class="val">${conv&&i>p?'—':v.toExponential(2)}</span></div>`;
+  }
+  return html+'</div>';
+}
+function renderSmallMatrix(M){
+  let html='<table>';
+  for(const row of M){html+='<tr>';for(const v of row)html+=`<td>${fmt(v,3)}</td>`;html+='</tr>';}
+  return html+'</table>';
+}
+
+const TOL=1e-10;
+
+function deflate(){
+  const events=[];
+  let changed=true;
+  while(changed){
+    changed=false;
+    while(state.p>=1){
+      const v=Math.abs(state.A[state.p][state.p-1]);
+      const sc=Math.abs(state.A[state.p-1][state.p-1])+Math.abs(state.A[state.p][state.p]);
+      if(v<TOL*Math.max(sc,1)){
+        const lam=state.A[state.p][state.p];
+        state.eigenvalues.unshift({real:lam,imag:0});
+        events.push({kind:'single',value:lam,position:state.p});
+        state.A[state.p][state.p-1]=0;
+        state.p-=1;changed=true;
+      }else break;
+    }
+    if(state.p>=2){
+      const v=Math.abs(state.A[state.p-1][state.p-2]);
+      const sc=Math.abs(state.A[state.p-2][state.p-2])+Math.abs(state.A[state.p-1][state.p-1]);
+      if(v<TOL*Math.max(sc,1)){
+        const pr=eigOf2x2(state.A[state.p-1][state.p-1],state.A[state.p-1][state.p],state.A[state.p][state.p-1],state.A[state.p][state.p]);
+        if(Math.abs(pr[0].imag)>1e-10){
+          state.eigenvalues.unshift(pr[1]);state.eigenvalues.unshift(pr[0]);
+          events.push({kind:'complex',pair:pr,position:state.p});
+          state.A[state.p-1][state.p-2]=0;
+          state.p-=2;changed=true;
+        }
+      }
+    }
+  }
+  if(state.p===1&&!state.done){
+    const pr=eigOf2x2(state.A[0][0],state.A[0][1],state.A[1][0],state.A[1][1]);
+    if(Math.abs(pr[0].imag)>1e-10){
+      state.eigenvalues.unshift(pr[1]);state.eigenvalues.unshift(pr[0]);
+      events.push({kind:'complex',pair:pr,position:1});
+      state.p=-1;state.done=true;
+    }
+  }
+  if(state.p===0&&!state.done){
+    state.eigenvalues.unshift({real:state.A[0][0],imag:0});
+    events.push({kind:'single',value:state.A[0][0],position:0});
+    state.p=-1;state.done=true;
+  }
+  return events;
+}
+
+function doStep(){
+  if(state.done||state.p<1)return null;
+  const result=shiftedQrStepOnBlock(state.A,state.p);
+  state.A=result.Anew;
+  state.iter+=1;
+  const events=deflate();
+  return {mu:result.mu,Q:result.Q,R:result.R,events,iter:state.iter};
+}
+
+function addInitialCard(){
+  const container=document.getElementById('iterations');
+  const card=document.createElement('div');
+  card.className='iter-card initial';
+  card.innerHTML=`
+    <div class="iter-header">
+      <div class="iter-title">Input matrix $A$</div>
+      <div class="iter-meta"><span>n = 4</span></div>
+    </div>
+    <table class="matrix-display">${state.A0.map(row=>'<tr>'+row.map(v=>`<td>${fmt(v)}</td>`).join('')+'</tr>').join('')}</table>
+  `;
+  container.appendChild(card);
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([card]);
+}
+
+function renderLockBanner(e){
+  if(e.kind==='single')return `<div class="lock-banner">✓ Subdiagonal collapsed at row ${e.position+1}. Locked: <b>λ = ${fmt(e.value,8)}</b>. Active block shrunk to ${state.p+1}×${state.p+1}.</div>`;
+  if(e.kind==='complex'){
+    const im=Math.abs(e.pair[0].imag);
+    return `<div class="lock-banner">✓ 2×2 block isolated. Complex pair: <b>λ = ${fmt(e.pair[0].real,6)} ± ${fmt(im,6)}i</b>. Active block shrunk to ${Math.max(0,state.p+1)}×${Math.max(0,state.p+1)}.</div>`;
+  }
+  return '';
+}
+
+function addHessenbergCard(events){
+  const container=document.getElementById('iterations');
+  const card=document.createElement('div');
+  card.className='iter-card hessen';
+  let lockHtml='';
+  for(const e of events)lockHtml+=renderLockBanner(e);
+  card.innerHTML=`
+    <div class="iter-header">
+      <div class="iter-title">Step 0: Reduce to Hessenberg form</div>
+      <div class="iter-meta"><span>2 Householder similarities</span></div>
+    </div>
+    ${renderMatrix(state.A,state.p)}
+    ${renderSubdiagBar(state.A,state.p)}
+    ${lockHtml}
+  `;
+  container.appendChild(card);
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([card]);
+}
+
+function addStepCard(step){
+  const container=document.getElementById('iterations');
+  const card=document.createElement('div');
+  card.className='iter-card step';
+  let lockHtml='';
+  for(const e of step.events)lockHtml+=renderLockBanner(e);
+  const detailId='detail-'+step.iter;
+  const detailHtml=`
+    <div class="detail-toggle" data-target="${detailId}">▸ show Q and R</div>
+    <div class="detail-content" id="${detailId}">
+      <h4>Q (orthogonal):</h4>${renderSmallMatrix(step.Q)}
+      <h4>R (upper triangular):</h4>${renderSmallMatrix(step.R)}
+    </div>
+  `;
+  card.innerHTML=`
+    <div class="iter-header">
+      <div class="iter-title">Iteration ${step.iter}</div>
+      <div class="iter-meta">
+        <span>shift <b>μ = ${fmt(step.mu,6)}</b></span>
+        <span>active: ${Math.max(0,state.p+1)}×${Math.max(0,state.p+1)}${step.events.length>0?' ↓':''}</span>
+      </div>
+    </div>
+    ${renderMatrix(state.A,state.p)}
+    ${renderSubdiagBar(state.A,state.p)}
+    ${lockHtml}
+    ${detailHtml}
+  `;
+  container.appendChild(card);
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([card]);
+  card.querySelector('.detail-toggle').addEventListener('click',e=>{
+    const tgt=document.getElementById(e.target.dataset.target);
+    tgt.classList.toggle('open');
+    e.target.textContent=tgt.classList.contains('open')?'▾ hide Q and R':'▸ show Q and R';
+  });
+  setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function addFinalCard(){
+  const container=document.getElementById('eigenContainer');
+  container.innerHTML='';
+  const card=document.createElement('div');
+  card.className='eigenvalues-final';
+  let listHtml='<div class="e-list">';
+  state.eigenvalues.forEach((e,i)=>{
+    const val=(Math.abs(e.imag)<1e-10)?fmt(e.real,8):`${fmt(e.real,6)} ${e.imag>=0?'+':'−'} ${fmt(Math.abs(e.imag),6)}i`;
+    listHtml+=`<div class="e-item"><div class="e-label">λ${i+1}</div><div class="e-val">${val}</div></div>`;
+  });
+  listHtml+='</div>';
+  card.innerHTML=`<h3>✓ Converged. Eigenvalues of A:</h3>${listHtml}<p style="margin-top:14px;font-size:13px;color:rgba(255,255,255,0.75);">Total QR iterations: ${state.iter}</p>`;
+  container.appendChild(card);
+  setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+function updateButtons(){
+  document.getElementById('stepBtn').disabled=state.done;
+  document.getElementById('autoBtn').disabled=state.done;
+}
+function showStatus(msg){
+  const note=document.getElementById('statusNote');
+  note.textContent=msg;note.style.display='block';
+  setTimeout(()=>{note.style.display='none';},3000);
+}
+
+function loadFromInputs(){
+  const M=readMatrixInputs();
+  state.A0=copyM(M);
+  state.H0=hessenbergReduce(M);
+  state.A=copyM(state.H0);
+  state.p=3;state.iter=0;state.eigenvalues=[];state.done=false;
+  document.getElementById('iterations').innerHTML='';
+  document.getElementById('eigenContainer').innerHTML='';
+  addInitialCard();
+  const events=deflate();
+  addHessenbergCard(events);
+  if(state.done)addFinalCard();
+  updateButtons();
+}
+
+function reset(){
+  state.A=copyM(state.H0);
+  state.p=3;state.iter=0;state.eigenvalues=[];state.done=false;
+  document.getElementById('iterations').innerHTML='';
+  document.getElementById('eigenContainer').innerHTML='';
+  addInitialCard();
+  const events=deflate();
+  addHessenbergCard(events);
+  if(state.done)addFinalCard();
+  updateButtons();
+}
+
+document.getElementById('loadBtn').addEventListener('click',()=>{loadFromInputs();showStatus('Matrix loaded and reduced to Hessenberg form.');});
+document.getElementById('stepBtn').addEventListener('click',()=>{
+  const step=doStep();
+  if(step)addStepCard(step);
+  if(state.done)addFinalCard();
+  updateButtons();
+});
+document.getElementById('autoBtn').addEventListener('click',()=>{
+  let safety=200;
+  while(!state.done&&safety-- >0){
+    const step=doStep();
+    if(step)addStepCard(step);
+  }
+  if(state.done)addFinalCard();
+  updateButtons();
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{reset();showStatus('Reset to initial matrix.');});
+
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const name=btn.dataset.preset;
+    const M=name==='random'?generateRandomSymm():PRESETS[name];
+    setMatrixInputs(M);
+    loadFromInputs();
+  });
+});
+
+setMatrixInputs(PRESETS.default);
+loadFromInputs();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 4 — Differentiating &amp; Integrating Fourier Series — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Playfair+Display:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --crimson:#9E1B32; --crimson-dk:#6E1322; --crimson-lt:#F2DDE0;
+  --bronze:#9A7B2E; --bronze-lt:#E6D9B8;
+  --slate:#2D343C;
+  --ink:#23191b; --muted:#857f78;
+  --cream:#f8f5f0; --panel:#f6f1ea; --border:#e0dbd2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;line-height:1.55;}
+
+header{width:100%;color:#fff;background:var(--crimson);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 9px);
+  border-bottom:4px solid var(--bronze);}
+.hdr-top{background:var(--crimson-dk);padding:.32rem 2rem;font-size:.72rem;color:#e8c9ce;
+  letter-spacing:.14em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.hdr-main{padding:.85rem 2rem .7rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:700;}
+header .sub{color:#f0d5d9;font-style:italic;margin-top:.25rem;font-size:.88rem;}
+.houndstooth{height:14px;background-color:#fff;
+  background-image:
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%),
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px;}
+
+.wrap{max-width:1220px;width:100%;padding:18px 20px 46px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 14px rgba(35,25,27,.07);margin-bottom:16px;overflow:hidden;}
+.card-hdr{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.13em;color:var(--muted);padding:7px 15px;background:var(--panel);
+  border-bottom:1px solid var(--border);display:flex;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;align-items:center;}
+
+/* the three rules */
+.rules{display:flex;flex-wrap:wrap;}
+.rule{flex:1;min-width:262px;padding:14px 18px;border-right:1px solid var(--border);}
+.rule:last-child{border-right:none;}
+.rule.warn{background:#fbf9f6;}
+.rule .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);}
+.rule h3{font-family:'Playfair Display',Georgia,serif;font-size:1.02rem;margin:3px 0 7px;}
+.rule .f{font-size:.97rem;line-height:1.7;}
+.rule .n{font-size:.81rem;color:var(--muted);margin-top:6px;}
+.rule .arrow{color:var(--crimson);font-weight:600;}
+.big{font-size:1.34em;vertical-align:-.13em;color:var(--crimson);}
+.dm{text-align:center;margin:10px 0;font-size:1.02rem;line-height:1.7;}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:9px 20px;align-items:center;padding:10px 15px;
+  background:var(--crimson-lt);border-bottom:1px solid var(--border);}
+.ctrl2{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:8px 15px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.grp{display:flex;align-items:center;gap:7px;}
+.grp label{font-size:.85rem;font-weight:600;color:var(--crimson-dk);white-space:nowrap;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.88rem;padding:3px 7px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--ink);}
+input[type=range]{accent-color:var(--crimson);cursor:pointer;width:140px;}
+.rdout{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:600;
+  color:var(--crimson);min-width:3em;}
+.chk{display:flex;align-items:center;gap:5px;font-size:.82rem;cursor:pointer;}
+.chk input{accent-color:var(--crimson);cursor:pointer;}
+button{font-family:'Crimson Pro',Georgia,serif;font-size:.82rem;padding:4px 10px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--crimson-dk);cursor:pointer;}
+button:hover{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--bronze);outline-offset:1px;}
+
+canvas{display:block;width:100%;height:auto;}
+
+/* verdict banners */
+.verdicts{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.vd{flex:1;min-width:270px;padding:11px 16px;border-right:1px solid var(--border);}
+.vd:last-child{border-right:none;}
+.vd .t{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);}
+.vd .s{font-family:'Playfair Display',Georgia,serif;font-size:1.02rem;margin-top:2px;}
+.vd .d{font-size:.82rem;color:var(--muted);margin-top:3px;}
+.vd.ok{background:var(--crimson-lt);} .vd.ok .s{color:var(--crimson-dk);}
+.vd.no{background:#eef0f2;} .vd.no .s{color:var(--slate);}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:8px 15px;
+  background:var(--panel);border-top:1px solid var(--border);font-size:.76rem;color:var(--muted);}
+.li{display:flex;align-items:center;gap:5px;}
+.swl{width:17px;height:3px;flex-shrink:0;}
+
+.stats{display:flex;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff;}
+.stat{flex:1;min-width:142px;padding:9px 15px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat .k{font-family:'IBM Plex Mono',monospace;font-size:.61rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:600;
+  color:var(--crimson);margin-top:2px;}
+.stat .v.gold{color:var(--bronze);} .stat .v.dark{color:var(--slate);}
+.stat .n{font-size:.74rem;color:var(--muted);font-style:italic;}
+
+/* coefficient table */
+.tbl{overflow-x:auto;border-top:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:.8rem;}
+th,td{padding:6px 11px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
+th{font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;background:var(--panel);text-align:right;}
+th:first-child,td:first-child{text-align:left;}
+tbody tr:last-child td{border-bottom:none;}
+td.c{color:var(--crimson);} td.g{color:var(--bronze);} td.s{color:var(--slate);}
+tr.ramp{background:#fffdf7;}
+tr.ramp td{font-weight:600;}
+.tblnote{padding:8px 15px;font-size:.8rem;color:var(--muted);font-style:italic;
+  background:#fbfaf8;border-top:1px dotted var(--border);}
+
+.notes{display:flex;gap:16px;flex-wrap:wrap;}
+.note{flex:1;min-width:290px;background:#fff;border:1px solid var(--border);border-radius:5px;
+  padding:15px 18px;box-shadow:0 2px 12px rgba(35,25,27,.06);}
+.note.warn{border-left:4px solid var(--slate);}
+.note h3{font-family:'Playfair Display',Georgia,serif;font-size:1rem;color:var(--crimson);margin-bottom:3px;}
+.note.warn h3{color:var(--slate);}
+.note .kicker{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.note p{font-size:.87rem;margin-bottom:7px;}
+.note p:last-child{margin-bottom:0;}
+.note em{color:var(--crimson-dk);font-style:normal;font-weight:600;}
+.note.warn em{color:var(--slate);}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:.82rem;}
+
+@media (max-width:760px){
+  .hdr-top{padding:.32rem 1rem;font-size:.58rem;}
+  header h1{font-size:1.06rem;} .hdr-main{padding:.7rem 1rem .6rem;}
+  .wrap{padding:12px 10px 30px;}
+  .rule,.vd{min-width:100%;border-right:none;border-bottom:1px solid var(--border);}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Alabama &ensp;·&ensp; Fourier Analysis &ensp;·&ensp; Lecture 4</div>
+  <div class="hdr-main">
+    <h1>Differentiating and Integrating Fourier Series</h1>
+    <div class="sub">One operation multiplies the coefficients by n. The other divides by it. That single difference decides everything.</div>
+  </div>
+  <div class="houndstooth"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══ the rules ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>The two operations, written on the coefficients</span>
+      <span style="text-transform:none;letter-spacing:0;font-style:italic;color:var(--muted)">
+        on (−π, π), period 2π, so d/dx cos nx = −n sin nx exactly</span></div>
+    <div class="rules">
+      <div class="rule">
+        <span class="eyebrow">term by term, differentiated</span>
+        <h3>Differentiation multiplies by n</h3>
+        <div class="f">
+          (a<sub>n</sub>, b<sub>n</sub>) <span class="arrow">↦</span> (n b<sub>n</sub>, −n a<sub>n</sub>)<br>
+          a<sub>0</sub> <span class="arrow">↦</span> 0
+        </div>
+        <div class="n">Magnitudes are scaled by n, so the spectrum tilts <em>upward</em> and the
+        high harmonics are amplified. The constant term is destroyed outright — which is a
+        problem you can see for yourself with the sawtooth.</div>
+      </div>
+      <div class="rule">
+        <span class="eyebrow">term by term, integrated</span>
+        <h3>Integration divides by n</h3>
+        <div class="f">
+          (a<sub>n</sub>, b<sub>n</sub>) <span class="arrow">↦</span> (−b<sub>n</sub>/n, a<sub>n</sub>/n)
+        </div>
+        <div class="n">Magnitudes are scaled by 1/n, so the spectrum tilts <em>downward</em>. Every
+        such series converges better than the one it came from — integration is a smoothing
+        operation, and it essentially never misbehaves.</div>
+      </div>
+      <div class="rule warn">
+        <span class="eyebrow">the term nobody expects</span>
+        <h3>A nonzero mean makes a ramp</h3>
+        <div class="f">
+          <span class="big">∫</span><sub>−π</sub><sup>x</sup> f =
+          <span style="color:var(--bronze)">a<sub>0</sub>x/2</span> + C +
+          Σ ( a<sub>n</sub>/n · sin nx − b<sub>n</sub>/n · cos nx )
+        </div>
+        <div class="n">The antiderivative of the constant a<sub>0</sub>/2 is
+        <span class="mono">a<sub>0</sub>x/2</span>, which is <em>not periodic</em>. So when
+        a<sub>0</sub> ≠ 0 the integral is a straight line plus a periodic wave, and no Fourier
+        series alone can represent it. Two periods are plotted below so you can watch it drift.</div>
+      </div>
+    </div>
+    <div class="ctrl2" style="border-top:1px solid var(--border)">
+      <span style="font-size:.86rem">The constant is
+      <span class="mono">C = a<sub>0</sub>π/2 + Σ<sub>n≤N</sub> (−1)<sup>n</sup> b<sub>n</sub>/n</span>,
+      fixed by requiring the integral to vanish at x = −π.</span>
+    </div>
+  </div>
+
+  <!-- ══ controls ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>Specimen</span>
+      <span id="specMeta" style="text-transform:none;letter-spacing:0;color:var(--crimson)"></span></div>
+    <div class="ctrl">
+      <div class="grp">
+        <label for="selF">f</label>
+        <select id="selF">
+          <option value="smooth">e^(cos x) — analytic, nonzero mean</option>
+          <option value="para">x² — corner at ±π, nonzero mean</option>
+          <option value="tri" selected>|x| — corner at 0 and ±π, nonzero mean</option>
+          <option value="saw">x — jump at ±π, zero mean</option>
+          <option value="square">sgn(x) — jump at 0 and ±π, zero mean</option>
+          <option value="pulse">1 on |x| ≤ π/2 — jumps, nonzero mean</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label for="slN">terms N</label>
+        <input type="range" id="slN" min="1" max="120" step="1" value="10">
+        <span class="rdout" id="nVal">10</span>
+      </div>
+      <label class="chk"><input type="checkbox" id="cRamp" checked> show the ramp a₀x/2 separately</label>
+      <label class="chk"><input type="checkbox" id="cTrue" checked> show the true f′ and ∫f</label>
+    </div>
+    <div class="verdicts" id="verdicts"></div>
+  </div>
+
+  <!-- ══ chart 1: the triple ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>1 — The partial sum, its derivative, and its integral</span>
+      <span>two full periods · shared x axis</span></div>
+    <canvas id="trip" width="1180" height="640"></canvas>
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#23191b"></div> the true f, f′, ∫f</div>
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> S<sub>N</sub> and its term-by-term derivative / integral</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#9A7B2E 0 5px,transparent 5px 9px)"></div> the ramp a₀x/2</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#2D343C 0 3px,transparent 3px 6px)"></div> where f′ fails to exist</div>
+    </div>
+    <div class="stats" id="stats1"></div>
+  </div>
+
+  <!-- ══ chart 2: spectra and errors ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>2 — The same three objects, seen as spectra</span>
+      <span style="text-transform:none;letter-spacing:0;font-style:italic;color:var(--muted)">
+        measured decay rates — numerical illustration, not proof</span></div>
+    <canvas id="spec" width="1180" height="350"></canvas>
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#2D343C;height:4px"></div> n·|c<sub>n</sub>| — the derivative's spectrum</div>
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> |c<sub>n</sub>| — f itself</div>
+      <div class="li"><div class="swl" style="background:#9A7B2E;height:4px"></div> |c<sub>n</sub>|/n — the integral's spectrum</div>
+    </div>
+    <div class="stats" id="stats2"></div>
+  </div>
+
+  <!-- ══ coefficient table ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>3 — The coefficients themselves, before and after</span>
+      <span>the ramp row is not a Fourier coefficient at all</span></div>
+    <div class="tbl" id="coefTbl"></div>
+    <div class="tblnote" id="tblNote"></div>
+  </div>
+
+  <!-- ══ notes ══ -->
+  <div class="notes">
+    <div class="note">
+      <div class="kicker">The asymmetry, in one sentence</div>
+      <h3>Why integration is safe</h3>
+      <p>Integration divides the n-th coefficient by n. Whatever the decay rate of f was,
+      its integral decays one power faster, so the integrated series converges at least as well
+      — and in fact <em>uniformly</em>, even when f has jumps and its own series does not.</p>
+      <p>Differentiation multiplies by n and so removes a power of decay. Coefficients like
+      <span class="mono">1/n²</span> become <span class="mono">1/n</span>: still summable in the
+      mean-square sense, still a legitimate Fourier series. But coefficients like
+      <span class="mono">1/n</span> become <span class="mono">O(1)</span>, and a series whose terms
+      do not tend to zero <em>cannot converge anywhere</em>.</p>
+      <p>That is the whole warning. The safe hypothesis is that <em>f be continuous as a periodic
+      function</em> and piecewise smooth; then term-by-term differentiation gives the Fourier series
+      of f′. A jump anywhere — including at the endpoints — voids it.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">The experiment to run</div>
+      <h3>Walk down the smoothness ladder</h3>
+      <p>Hold N = 10 and step through the specimens in order. Watch only the middle panel.</p>
+      <p><em>e^(cos x)</em>: the derivative series is indistinguishable from f′.
+      <em>x²</em> and <em>|x|</em>: the derivative is a sawtooth or a square wave, recovered
+      correctly but with Gibbs ringing — differentiating a corner produces a jump.
+      <em>x</em>, <em>sgn(x)</em>, <em>pulse</em>: the derivative series leaves the frame and keeps
+      going. Raise N and it gets worse, not better.</p>
+      <p>Then look at the bottom panel through the same sequence. It barely changes: the integral is
+      accurate for every specimen, jumps and all. Integration does not care about smoothness.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Two specimens that form a chain</div>
+      <h3>sgn and |x|</h3>
+      <p>These two are an exact derivative–antiderivative pair:
+      <span class="mono">∫<sub>−π</sub><sup>x</sup> sgn = |x| − π</span> and
+      <span class="mono">d|x|/dx = sgn(x)</span>. Both have zero mean, so no ramp appears in either
+      direction and the picture is clean.</p>
+      <p>Select <em>|x|</em> and the middle panel <em>constructs</em> the square wave from the
+      triangle's coefficients −4/(πn²) — multiply by n, get 4/(πn), which is exactly the square
+      wave's expansion. Valid, because |x| is continuous.</p>
+      <p>Select <em>sgn(x)</em> and try to go the other way. Its true derivative is zero almost
+      everywhere, so every Fourier coefficient of f′ is zero — yet the differentiated series has
+      terms of constant size 4/π. The two disagree completely, which is what "invalid" means here.</p>
+    </div>
+    <div class="note warn">
+      <div class="kicker">The one that catches people out</div>
+      <h3>The sawtooth loses its constant</h3>
+      <p>Take f(x) = x, whose series is <span class="mono">Σ 2(−1)<sup>n+1</sup> sin nx / n</span>.
+      Its derivative is the constant 1 on the whole open interval — about as tame as a function gets.</p>
+      <p>Differentiate term by term and you get
+      <span class="mono">Σ 2(−1)<sup>n+1</sup> cos nx</span>. Every term has size 2, so the series
+      diverges; but notice something worse first. Term-by-term differentiation always sends
+      a<sub>0</sub> to 0, so the resulting series has <em>no constant term</em>. The answer we want
+      is a constant. The method cannot produce it even in principle.</p>
+      <p>The culprit is not the interior — f is perfectly smooth there — but the endpoints, where the
+      periodic extension jumps from π down to −π. Endpoint behaviour again, exactly as in Lecture 3.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════
+   1. SETTING
+
+   Period 2pi on (-pi, pi], so the harmonics are cos nx and sin nx and
+   differentiation contributes a clean factor of n:
+       f  ~ a0/2 + sum (a_n cos nx + b_n sin nx)
+       f' ~        sum (n b_n cos nx - n a_n sin nx)
+   Each specimen supplies its own derivative and antiderivative in
+   closed form where one exists, so the comparison curves are exact
+   rather than differenced numerically.
+   ══════════════════════════════════════════════════════════════════ */
+
+const PI=Math.PI, NMAX=120, EPSQ=1e-9;
+
+const SPECS={
+  smooth:{ lab:'e^(cos x)',
+    f:x=>Math.exp(Math.cos(x)),
+    d:x=>-Math.sin(x)*Math.exp(Math.cos(x)),
+    F:null,                                  /* no closed form: integrated numerically */
+    breaks:[], dbreaks:[],
+    cls:'analytic, periodic', decay:'geometric',
+    cont:true, note:'differentiation is safe; the mean is nonzero so the integral ramps' },
+  para:{ lab:'x\u00B2',
+    f:x=>x*x, d:x=>2*x, F:x=>(x*x*x+PI*PI*PI)/3,
+    breaks:[-PI,PI], dbreaks:[-PI,PI],
+    cls:'continuous, corner at \u00B1\u03C0', decay:'~1/n\u00B2',
+    cont:true, note:'f\u2032 = 2x has a jump at \u00B1\u03C0, and the series finds it' },
+  tri:{ lab:'|x|',
+    f:x=>Math.abs(x), d:x=>(x>=0?1:-1),
+    F:x=>(x<=0?(PI*PI-x*x)/2:(PI*PI+x*x)/2),
+    breaks:[-PI,0,PI], dbreaks:[-PI,0,PI],
+    cls:'continuous, corners at 0 and \u00B1\u03C0', decay:'~1/n\u00B2',
+    cont:true, note:'differentiating a corner produces the square wave' },
+  saw:{ lab:'x',
+    f:x=>x, d:x=>1, F:x=>(x*x-PI*PI)/2,
+    breaks:[-PI,PI], dbreaks:[-PI,PI],
+    cls:'jump at \u00B1\u03C0 only', decay:'~1/n',
+    cont:false, note:'f\u2032 \u2261 1, but the differentiated series has no constant term' },
+  square:{ lab:'sgn(x)',
+    f:x=>(x>=0?1:-1), d:x=>0, F:x=>Math.abs(x)-PI,
+    breaks:[-PI,0,PI], dbreaks:[-PI,0,PI],
+    cls:'jumps at 0 and \u00B1\u03C0', decay:'~1/n',
+    cont:false, note:'f\u2032 = 0 a.e., yet the differentiated terms never shrink' },
+  pulse:{ lab:'1 on |x| \u2264 \u03C0/2',
+    f:x=>(Math.abs(x)<=PI/2?1:0), d:x=>0,
+    F:x=>(x<=-PI/2?0:(x<=PI/2?x+PI/2:PI)),
+    breaks:[-PI,-PI/2,PI/2,PI], dbreaks:[-PI/2,PI/2],
+    cls:'two jumps, nonzero mean', decay:'~1/n',
+    cont:false, note:'both failures at once: invalid derivative and a ramping integral' }
+};
+
+const S={ fid:'tri', N:10, ramp:true, showTrue:true };
+
+function fbase(x){ return SPECS[S.fid].f(x); }
+function wrap(x){ let t=(x+PI)%(2*PI); if(t<0)t+=2*PI; return t-PI; }
+function fper(x){ return fbase(wrap(x)); }
+function dper(x){ return SPECS[S.fid].d(wrap(x)); }
+
+/* ══════════════════════════════════════════════════════════════════
+   2. QUADRATURE AND COEFFICIENTS
+   ══════════════════════════════════════════════════════════════════ */
+
+function gradedRule(breaks,density){
+  const cuts=new Set([-PI,PI]);
+  for(const b0 of breaks){
+    const b=Math.max(-PI,Math.min(PI,b0));
+    cuts.add(b);
+    for(let k=1;k<=12;k++){
+      const d=Math.pow(10,-k);
+      if(b-d>-PI) cuts.add(b-d);
+      if(b+d< PI) cuts.add(b+d);
+    }
+  }
+  const u=Array.from(cuts).sort((a,b)=>a-b);
+  const x=[],w=[],e=[];
+  for(let i=0;i<u.length-1;i++){
+    const a=u[i], b=u[i+1], len=b-a;
+    if(len<=0) continue;
+    let K=Math.ceil(len*(density||1200)); if(K<40)K=40; if(K%2)K++;
+    const h=len/K, off=Math.min(EPSQ,h/4);
+    for(let j=0;j<=K;j++){
+      x.push(a+j*h);
+      w.push((j===0||j===K)?h/3:(j%2?4*h/3:2*h/3));
+      e.push(j===0?off:(j===K?-off:0));
+    }
+  }
+  return {x:Float64Array.from(x),w:Float64Array.from(w),e:Float64Array.from(e)};
+}
+
+let A=null,B=null;          /* coefficients of f      */
+let Ad=null,Bd=null;        /* coefficients of f' computed DIRECTLY */
+let Fnum=null;              /* numeric antiderivative table, when needed */
+
+function coefOf(fn,breaks){
+  const Q=gradedRule(breaks,1200), J=Q.x.length;
+  const V=new Float64Array(J);
+  for(let j=0;j<J;j++){
+    const v=fn(Q.x[j]+Q.e[j]);
+    V[j]=Number.isFinite(v)?v:0;
+  }
+  const a=new Float64Array(NMAX+1), b=new Float64Array(NMAX+1);
+  let s=0; for(let j=0;j<J;j++) s+=Q.w[j]*V[j];
+  a[0]=s/PI;
+  const c1=new Float64Array(J), s1=new Float64Array(J),
+        cn=new Float64Array(J), sn=new Float64Array(J);
+  for(let j=0;j<J;j++){ c1[j]=Math.cos(Q.x[j]); s1[j]=Math.sin(Q.x[j]); cn[j]=1; sn[j]=0; }
+  for(let k=1;k<=NMAX;k++){
+    let sa=0,sb=0;
+    for(let j=0;j<J;j++){
+      const c2=cn[j]*c1[j]-sn[j]*s1[j], s2=sn[j]*c1[j]+cn[j]*s1[j];
+      cn[j]=c2; sn[j]=s2;
+      const fw=Q.w[j]*V[j];
+      sa+=fw*c2; sb+=fw*s2;
+    }
+    a[k]=sa/PI; b[k]=sb/PI;
+  }
+  return {a:a,b:b};
+}
+
+/* the antiderivative on [-pi, pi], by cumulative Simpson when there is
+   no closed form to hand */
+function buildNumericF(){
+  /* 60000 panels keeps the linear interpolation below ~1e-9, so this
+     table is not what limits the integral panel's accuracy */
+  const M=60000, h=2*PI/M;
+  const xs=new Float64Array(M+1), Fs=new Float64Array(M+1);
+  for(let i=0;i<=M;i++) xs[i]=-PI+i*h;
+  Fs[0]=0;
+  /* Simpson over each pair of panels, trapezoid for the odd leftover */
+  for(let i=0;i<M;i+=2){
+    const x0=xs[i], x1=xs[i+1], x2=xs[i+2];
+    const f0=fbase(x0), f1=fbase(x1), f2=fbase(x2===undefined?x1:x2);
+    Fs[i+1]=Fs[i]+(h/12)*(5*f0+8*f1-f2);         /* Simpson half-panel */
+    if(i+2<=M) Fs[i+2]=Fs[i]+(h/3)*(f0+4*f1+f2);
+  }
+  return {xs:xs,Fs:Fs,h:h,M:M};
+}
+function Fbase(x){
+  const sp=SPECS[S.fid];
+  if(sp.F) return sp.F(x);
+  const t=(x+PI)/Fnum.h;
+  let i=Math.floor(t); if(i<0)i=0; if(i>Fnum.M-1)i=Fnum.M-1;
+  const u=t-i;
+  return Fnum.Fs[i]*(1-u)+Fnum.Fs[i+1]*u;
+}
+/* The antiderivative is NOT periodic when the mean is nonzero: over one
+   period it climbs by pi*a0. Extend it accordingly.                  */
+function Fper(x){
+  const k=Math.floor((x+PI)/(2*PI));
+  return Fbase(x-2*PI*k)+k*PI*A[0];
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3. THE THREE SERIES
+   ══════════════════════════════════════════════════════════════════ */
+
+function SN(x,N){
+  let out=A[0]/2;
+  const ct=Math.cos(x), st=Math.sin(x);
+  let c=1,s=0;
+  for(let n=1;n<=N;n++){
+    const c2=c*ct-s*st, s2=s*ct+c*st; c=c2; s=s2;
+    out+=A[n]*c+B[n]*s;
+  }
+  return out;
+}
+/* term-by-term derivative: (a_n, b_n) -> (n b_n, -n a_n), a0 -> 0 */
+function DSN(x,N){
+  let out=0;
+  const ct=Math.cos(x), st=Math.sin(x);
+  let c=1,s=0;
+  for(let n=1;n<=N;n++){
+    const c2=c*ct-s*st, s2=s*ct+c*st; c=c2; s=s2;
+    out+=n*B[n]*c-n*A[n]*s;
+  }
+  return out;
+}
+/* term-by-term integral, including the ramp and the constant that makes
+   the result vanish at x = -pi */
+function constC(N){
+  let C=A[0]*PI/2;
+  for(let n=1;n<=N;n++) C+=Math.pow(-1,n)*B[n]/n;
+  return C;
+}
+function ISNperiodic(x,N){          /* everything except the ramp */
+  let out=constC(N);
+  const ct=Math.cos(x), st=Math.sin(x);
+  let c=1,s=0;
+  for(let n=1;n<=N;n++){
+    const c2=c*ct-s*st, s2=s*ct+c*st; c=c2; s=s2;
+    out+=A[n]*s/n-B[n]*c/n;
+  }
+  return out;
+}
+function rampAt(x){ return A[0]*x/2; }
+function ISN(x,N){ return rampAt(x)+ISNperiodic(x,N); }
+
+/* ══════════════════════════════════════════════════════════════════
+   4. IS TERM-BY-TERM DIFFERENTIATION LEGITIMATE?
+
+   Compare the coefficients the rule produces, (n b_n, -n a_n), with the
+   coefficients of f' computed directly from f'. They agree exactly when
+   f is continuous as a periodic function.
+   ══════════════════════════════════════════════════════════════════ */
+
+let diffErr=0, diffScale=1, diffValid=false;
+function assessDifferentiation(){
+  const K=Math.min(NMAX,30);
+  let scale=Math.abs(Ad[0]/2);
+  for(let n=1;n<=K;n++) scale=Math.max(scale,Math.hypot(Ad[n],Bd[n]));
+  scale=Math.max(scale,1e-12);
+  let e=Math.abs(Ad[0]/2);          /* the rule can never make a constant */
+  for(let n=1;n<=K;n++){
+    e=Math.max(e,Math.abs(n*B[n]-Ad[n]),Math.abs(-n*A[n]-Bd[n]));
+  }
+  diffErr=e; diffScale=scale;
+  diffValid=(e/scale)<1e-4;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5. ERRORS AND TERM SIZES
+   ══════════════════════════════════════════════════════════════════ */
+
+const EG=2600;
+let errF=null, errD=null, errI=null;
+function sampleX(){
+  const out=[], M=EG, h=2*PI/M;
+  for(let i=0;i<M;i++) out.push(-PI+(i+0.5)*h);
+  return Float64Array.from(out);
+}
+function farFromBreaks(x,list,tol){
+  for(const b of list){
+    for(let k=-2;k<=2;k++) if(Math.abs(x-(b+2*PI*k))<tol) return false;
+  }
+  return true;
+}
+function computeErrors(){
+  const xs=sampleX();
+  errF=new Float64Array(NMAX+1); errD=new Float64Array(NMAX+1); errI=new Float64Array(NMAX+1);
+  const sp=SPECS[S.fid];
+  for(let i=0;i<xs.length;i++){
+    const x=xs[i];
+    const fv=fper(x), Fv=Fper(x);
+    const okD=farFromBreaks(x,sp.dbreaks,0.05);
+    const dv=okD?dper(x):NaN;
+    /* sweep all three series at this point in one pass */
+    const ct=Math.cos(x), st=Math.sin(x);
+    let c=1,s=0;
+    let acc=A[0]/2, accD=0, accIp=0;
+    for(let n=1;n<=NMAX;n++){
+      const c2=c*ct-s*st, s2=s*ct+c*st; c=c2; s=s2;
+      acc+=A[n]*c+B[n]*s;
+      accD+=n*B[n]*c-n*A[n]*s;
+      accIp+=A[n]*s/n-B[n]*c/n;
+      const eF=Math.abs(fv-acc); if(eF>errF[n]) errF[n]=eF;
+      if(okD){ const eD=Math.abs(dv-accD); if(eD>errD[n]) errD[n]=eD; }
+      const iv=rampAt(x)+constC(n)+accIp;
+      const eI=Math.abs(Fv-iv); if(eI>errI[n]) errI[n]=eI;
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6. CANVAS HELPERS
+   ══════════════════════════════════════════════════════════════════ */
+
+const INK='#23191b', CRIM='#9E1B32', BRZ='#9A7B2E', SLT='#2D343C', MUT='#857f78';
+function hidpi(cv,c,w,h){
+  const d=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*d; cv.height=h*d; cv.style.maxWidth=w+'px'; c.setTransform(d,0,0,d,0,0);
+}
+function niceStep(x){
+  if(!(x>0)) return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(x))), f=x/e;
+  return (f<1.5?1:f<3?2:f<7?5:10)*e;
+}
+function fmt(v,d){
+  if(v===Infinity) return '\u221E';
+  if(!Number.isFinite(v)) return '\u2014';
+  if(v!==0&&Math.abs(v)<1e-4) return v.toExponential(2);
+  return v.toFixed(d===undefined?4:d);
+}
+function yGrid(c,P,gW,gH,lo,hi){
+  const st=niceStep((hi-lo)/4);
+  c.font='500 10px "IBM Plex Mono",monospace'; c.textAlign='right'; c.textBaseline='middle';
+  for(let k=Math.ceil(lo/st);k*st<=hi;k++){
+    const y=P.t+(hi-k*st)/(hi-lo)*gH;
+    c.strokeStyle=(Math.abs(k*st)<1e-14)?'rgba(35,25,27,0.30)':'rgba(158,27,50,0.07)';
+    c.lineWidth=1; c.beginPath(); c.moveTo(P.l,y); c.lineTo(P.l+gW,y); c.stroke();
+    c.fillStyle=MUT; c.fillText(fmt(k*st,Math.abs(k*st)<1?2:1),P.l-7,y);
+  }
+}
+function xGridPi(c,P,gW,gH,lab){
+  c.font='500 10px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='top';
+  const ticks=[[-2*PI,'\u22122\u03C0'],[-PI,'\u2212\u03C0'],[0,'0'],[PI,'\u03C0'],[2*PI,'2\u03C0']];
+  for(const [v,t] of ticks){
+    const x=P.l+(v+2*PI)/(4*PI)*gW;
+    c.strokeStyle=Math.abs(v)<1e-12?'rgba(35,25,27,0.22)':'rgba(158,27,50,0.10)';
+    c.lineWidth=1; c.beginPath(); c.moveTo(x,P.t); c.lineTo(x,P.t+gH); c.stroke();
+    if(lab){ c.fillStyle=MUT; c.fillText(t,x,P.t+gH+6); }
+  }
+}
+function title(c,x,y,eyebrow,head,col){
+  c.textAlign='left'; c.textBaseline='alphabetic';
+  c.font='600 9.5px "IBM Plex Mono",monospace'; c.fillStyle=col||MUT; c.fillText(eyebrow,x,y);
+  c.font='700 13px "Playfair Display",Georgia,serif'; c.fillStyle=INK; c.fillText(head,x,y+16);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7. CHART 1 — f, f', integral of f, stacked on one x axis
+   ══════════════════════════════════════════════════════════════════ */
+
+const c1=document.getElementById('trip'), x1=c1.getContext('2d');
+const W1=1180, H1=640, NSX=1600;
+const gxs=new Float64Array(NSX);
+for(let i=0;i<NSX;i++) gxs[i]=-2*PI+4*PI*i/(NSX-1);
+
+function renderTriple(){
+  x1.clearRect(0,0,W1,H1); x1.fillStyle='#fff'; x1.fillRect(0,0,W1,H1);
+  const L=68, R=24, gW=W1-L-R;
+  const panelH=168, gap=38, top0=44;
+  const sp=SPECS[S.fid];
+
+  /* sample all six curves */
+  const fv=new Float64Array(NSX), sv=new Float64Array(NSX),
+        dv=new Float64Array(NSX), dsv=new Float64Array(NSX),
+        Fv=new Float64Array(NSX), isv=new Float64Array(NSX), rv=new Float64Array(NSX);
+  for(let i=0;i<NSX;i++){
+    const x=gxs[i];
+    fv[i]=fper(x); sv[i]=SN(x,S.N);
+    dv[i]=farFromBreaks(x,sp.dbreaks,1e-3)?dper(x):NaN;
+    dsv[i]=DSN(x,S.N);
+    Fv[i]=Fper(x); isv[i]=ISN(x,S.N); rv[i]=rampAt(x);
+  }
+  const jumpsOf=list=>{
+    const out=[];
+    for(const b of list) for(let k=-2;k<=2;k++){
+      const v=b+2*PI*k; if(v>=-2*PI-1e-9&&v<=2*PI+1e-9) out.push(v);
+    }
+    return out;
+  };
+  const fJumps=[];
+  for(const b of sp.breaks){
+    if(Math.abs(fper(b-1e-7)-fper(b+1e-7))>1e-7)
+      for(let k=-2;k<=2;k++){ const v=b+2*PI*k; if(v>=-2*PI&&v<=2*PI) fJumps.push(v); }
+  }
+
+  /* ── panel A : f and S_N ── */
+  (function(){
+    const P={l:L,t:top0};
+    let lo=Infinity,hi=-Infinity;
+    for(let i=0;i<NSX;i++){ lo=Math.min(lo,fv[i],sv[i]); hi=Math.max(hi,fv[i],sv[i]); }
+    const pad=(hi-lo)*0.12||0.5; lo-=pad; hi+=pad;
+    const X=v=>P.l+(v+2*PI)/(4*PI)*gW, Y=v=>P.t+(hi-v)/(hi-lo)*panelH;
+    yGrid(x1,P,gW,panelH,lo,hi); xGridPi(x1,P,gW,panelH,false);
+    x1.save(); x1.beginPath(); x1.rect(P.l,P.t,gW,panelH); x1.clip();
+    drawBroken(x1,gxs,fv,X,Y,fJumps,INK,2.4);
+    drawPlain(x1,gxs,sv,X,Y,CRIM,2.8);
+    x1.restore();
+    x1.strokeStyle='rgba(35,25,27,0.35)'; x1.lineWidth=1; x1.strokeRect(P.l,P.t,gW,panelH);
+    title(x1,P.l,P.t-24,'THE FUNCTION','f  and  S\u2099  \u00B7  N = '+S.N);
+  })();
+
+  /* ── panel B : f' and the differentiated series ── */
+  (function(){
+    const P={l:L,t:top0+panelH+gap};
+    /* frame on the TRUE derivative, so a diverging series simply leaves */
+    let lo=Infinity,hi=-Infinity;
+    for(let i=0;i<NSX;i++) if(Number.isFinite(dv[i])){ lo=Math.min(lo,dv[i]); hi=Math.max(hi,dv[i]); }
+    if(!(hi>lo)){ lo=-1; hi=1; }
+    if(diffValid){
+      for(let i=0;i<NSX;i++){ lo=Math.min(lo,dsv[i]); hi=Math.max(hi,dsv[i]); }
+    }
+    const pad=(hi-lo)*0.18||0.5; lo-=pad; hi+=pad;
+    const X=v=>P.l+(v+2*PI)/(4*PI)*gW, Y=v=>P.t+(hi-v)/(hi-lo)*panelH;
+    yGrid(x1,P,gW,panelH,lo,hi); xGridPi(x1,P,gW,panelH,false);
+    /* where f' does not exist */
+    x1.strokeStyle='rgba(45,52,60,0.45)'; x1.lineWidth=1; x1.setLineDash([3,3]);
+    for(const v of jumpsOf(sp.dbreaks)){
+      x1.beginPath(); x1.moveTo(X(v),P.t); x1.lineTo(X(v),P.t+panelH); x1.stroke();
+    }
+    x1.setLineDash([]);
+    x1.save(); x1.beginPath(); x1.rect(P.l,P.t,gW,panelH); x1.clip();
+    drawPlain(x1,gxs,dsv,X,Y,CRIM,2.8);
+    if(S.showTrue) drawBroken(x1,gxs,dv,X,Y,jumpsOf(sp.dbreaks),INK,2.4);
+    x1.restore();
+    x1.strokeStyle='rgba(35,25,27,0.35)'; x1.lineWidth=1; x1.strokeRect(P.l,P.t,gW,panelH);
+    title(x1,P.l,P.t-24,
+      diffValid?'THE DERIVATIVE \u00B7 TERM-BY-TERM IS VALID':'THE DERIVATIVE \u00B7 TERM-BY-TERM IS INVALID',
+      'f\u2032  and  \u03A3 n(b\u2099cos nx \u2212 a\u2099sin nx)',
+      diffValid?CRIM:SLT);
+    if(!diffValid){
+      let mx=0; for(let i=0;i<NSX;i++) mx=Math.max(mx,Math.abs(dsv[i]));
+      x1.font='600 9.5px "IBM Plex Mono",monospace'; x1.textAlign='right';
+      x1.textBaseline='alphabetic'; x1.fillStyle=SLT;
+      x1.fillText('series peaks at \u00B1'+fmt(mx,1)+' \u2014 off the frame, and growing with N',
+        P.l+gW-6,P.t+14);
+    }
+  })();
+
+  /* ── panel C : the integral ── */
+  (function(){
+    const P={l:L,t:top0+2*(panelH+gap)};
+    let lo=Infinity,hi=-Infinity;
+    for(let i=0;i<NSX;i++){ lo=Math.min(lo,Fv[i],isv[i]); hi=Math.max(hi,Fv[i],isv[i]); }
+    if(S.ramp) for(let i=0;i<NSX;i++){ lo=Math.min(lo,rv[i]); hi=Math.max(hi,rv[i]); }
+    const pad=(hi-lo)*0.12||0.5; lo-=pad; hi+=pad;
+    const X=v=>P.l+(v+2*PI)/(4*PI)*gW, Y=v=>P.t+(hi-v)/(hi-lo)*panelH;
+    yGrid(x1,P,gW,panelH,lo,hi); xGridPi(x1,P,gW,panelH,true);
+    x1.save(); x1.beginPath(); x1.rect(P.l,P.t,gW,panelH); x1.clip();
+    if(S.ramp&&Math.abs(A[0])>1e-10){
+      x1.strokeStyle=BRZ; x1.lineWidth=2; x1.setLineDash([6,4]);
+      drawPlain(x1,gxs,rv,X,Y,BRZ,2);
+      x1.setLineDash([]);
+    }
+    if(S.showTrue) drawPlain(x1,gxs,Fv,X,Y,INK,2.4);
+    drawPlain(x1,gxs,isv,X,Y,CRIM,2.8);
+    x1.restore();
+    x1.strokeStyle='rgba(35,25,27,0.35)'; x1.lineWidth=1; x1.strokeRect(P.l,P.t,gW,panelH);
+    const ramped=Math.abs(A[0])>1e-10;
+    title(x1,P.l,P.t-24,
+      ramped?'THE INTEGRAL \u00B7 a\u2080 \u2260 0, SO A RAMP APPEARS':'THE INTEGRAL \u00B7 a\u2080 = 0, SO IT STAYS PERIODIC',
+      '\u222B f  and  a\u2080x/2 + C + \u03A3 (a\u2099/n sin nx \u2212 b\u2099/n cos nx)',
+      ramped?BRZ:CRIM);
+    x1.font='italic 700 11px "Crimson Pro",Georgia,serif'; x1.textAlign='center';
+    x1.fillStyle='rgba(35,25,27,0.78)'; x1.fillText('x',P.l+gW/2,P.t+panelH+20);
+  })();
+}
+function drawPlain(c,xs,ys,X,Y,col,lw){
+  c.strokeStyle=col; c.lineWidth=lw; c.beginPath();
+  let open=false;
+  for(let i=0;i<xs.length;i++){
+    const v=ys[i];
+    if(!Number.isFinite(v)){ open=false; continue; }
+    const px=X(xs[i]), py=Y(v);
+    open?c.lineTo(px,py):c.moveTo(px,py); open=true;
+  }
+  c.stroke();
+}
+/* break the path at each listed jump so a leap is never drawn as a line */
+function drawBroken(c,xs,ys,X,Y,cuts,col,lw){
+  c.strokeStyle=col; c.lineWidth=lw;
+  const sorted=cuts.slice().sort((a,b)=>a-b);
+  let start=0;
+  const run=(i0,i1)=>{
+    if(i1<=i0) return;
+    c.beginPath(); let open=false;
+    for(let i=i0;i<i1;i++){
+      const v=ys[i];
+      if(!Number.isFinite(v)){ open=false; continue; }
+      const px=X(xs[i]), py=Y(v);
+      open?c.lineTo(px,py):c.moveTo(px,py); open=true;
+    }
+    c.stroke();
+  };
+  for(const cx of sorted){
+    let idx=start; while(idx<xs.length&&xs[idx]<cx) idx++;
+    run(start,idx); start=idx;
+  }
+  run(start,xs.length);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   8. CHART 2 — the three spectra, and the three errors
+   ══════════════════════════════════════════════════════════════════ */
+
+const c2=document.getElementById('spec'), x2=c2.getContext('2d');
+const W2=1180, H2=350;
+
+function magF(n){ return Math.hypot(A[n],B[n]); }
+
+function renderSpec(){
+  x2.clearRect(0,0,W2,H2); x2.fillStyle='#fff'; x2.fillRect(0,0,W2,H2);
+  const half=W2*0.5;
+
+  /* ── left: |c_n| scaled by n, 1, 1/n ── */
+  const P={l:66,t:48}, gW=half-P.l-32, gH=H2-P.t-52;
+  const mags=[];
+  for(let n=1;n<=NMAX;n++) mags.push(magF(n));
+  let mn=Infinity,mx=0;
+  for(let n=1;n<=NMAX;n++){
+    for(const v of [n*mags[n-1],mags[n-1],mags[n-1]/n])
+      if(v>0&&Number.isFinite(v)){ mn=Math.min(mn,v); mx=Math.max(mx,v); }
+  }
+  if(!(mx>0)){ mx=1; mn=1e-6; }
+  mn=Math.max(mn,mx*1e-12);
+  const top=Math.pow(10,Math.ceil(Math.log10(mx))), bot=Math.pow(10,Math.floor(Math.log10(mn)));
+  const dec=Math.max(1,Math.round(Math.log10(top/bot)));
+  const XN=v=>P.l+Math.log(v)/Math.log(NMAX)*gW;
+  const YL=v=>P.t+gH-(Math.log10(Math.max(v,bot)/bot)/dec)*gH;
+  x2.font='500 10px "IBM Plex Mono",monospace'; x2.textAlign='right'; x2.textBaseline='middle';
+  for(let k=0;k<=dec;k++){
+    const v=bot*Math.pow(10,k), y=YL(v);
+    x2.strokeStyle='rgba(158,27,50,0.07)'; x2.lineWidth=1;
+    x2.beginPath(); x2.moveTo(P.l,y); x2.lineTo(P.l+gW,y); x2.stroke();
+    x2.fillStyle=MUT; x2.fillText(v.toExponential(0),P.l-7,y);
+  }
+  x2.save(); x2.beginPath(); x2.rect(P.l,P.t,gW,gH); x2.clip();
+  const spec=(scale,col,lw)=>{
+    x2.strokeStyle=col; x2.lineWidth=lw; x2.beginPath(); let op=false;
+    for(let n=1;n<=NMAX;n++){
+      const v=scale(n,mags[n-1]);
+      if(!(v>0)||!Number.isFinite(v)){ op=false; continue; }
+      const px=XN(n), py=YL(v);
+      op?x2.lineTo(px,py):x2.moveTo(px,py); op=true;
+    }
+    x2.stroke();
+  };
+  spec((n,m)=>n*m,SLT,2.2);
+  spec((n,m)=>m,CRIM,2.8);
+  spec((n,m)=>m/n,BRZ,2.2);
+  /* mark the cut-off at N */
+  x2.strokeStyle='rgba(35,25,27,0.35)'; x2.lineWidth=1.2; x2.setLineDash([5,4]);
+  x2.beginPath(); x2.moveTo(XN(S.N),P.t); x2.lineTo(XN(S.N),P.t+gH); x2.stroke(); x2.setLineDash([]);
+  x2.restore();
+  logTicksN(x2,P,gW,gH,XN,'n');
+  x2.strokeStyle='rgba(35,25,27,0.35)'; x2.lineWidth=1; x2.strokeRect(P.l,P.t,gW,gH);
+  title(x2,P.l,P.t-28,'THREE SPECTRA, ONE SHAPE',
+    'differentiation lifts the line; integration drops it');
+
+  /* ── right: sup errors against N ── */
+  const P2={l:half+72,t:48}, g2W=W2-P2.l-30, g2H=gH;
+  let mn2=Infinity,mx2=0;
+  for(let n=1;n<=NMAX;n++) for(const v of [errF[n],errD[n],errI[n]])
+    if(v>0&&Number.isFinite(v)){ mn2=Math.min(mn2,v); mx2=Math.max(mx2,v); }
+  if(!(mx2>0)){ mx2=1; mn2=1e-6; }
+  mn2=Math.max(mn2,mx2*1e-10);
+  const t2=Math.pow(10,Math.ceil(Math.log10(mx2))), b2=Math.pow(10,Math.floor(Math.log10(mn2)));
+  const d2=Math.max(1,Math.round(Math.log10(t2/b2)));
+  const XN2=v=>P2.l+Math.log(v)/Math.log(NMAX)*g2W;
+  const YL2=v=>P2.t+g2H-(Math.log10(Math.max(v,b2)/b2)/d2)*g2H;
+  x2.font='500 10px "IBM Plex Mono",monospace'; x2.textAlign='right'; x2.textBaseline='middle';
+  for(let k=0;k<=d2;k++){
+    const v=b2*Math.pow(10,k), y=YL2(v);
+    x2.strokeStyle='rgba(158,27,50,0.07)'; x2.lineWidth=1;
+    x2.beginPath(); x2.moveTo(P2.l,y); x2.lineTo(P2.l+g2W,y); x2.stroke();
+    x2.fillStyle=MUT; x2.fillText(v.toExponential(0),P2.l-7,y);
+  }
+  x2.save(); x2.beginPath(); x2.rect(P2.l,P2.t,g2W,g2H); x2.clip();
+  const eseq=(arr,col,lw)=>{
+    x2.strokeStyle=col; x2.lineWidth=lw; x2.beginPath(); let op=false;
+    for(let n=1;n<=NMAX;n++){
+      const v=arr[n];
+      if(!(v>0)||!Number.isFinite(v)){ op=false; continue; }
+      const px=XN2(n), py=YL2(v);
+      op?x2.lineTo(px,py):x2.moveTo(px,py); op=true;
+    }
+    x2.stroke();
+  };
+  eseq(errD,SLT,2.2);
+  eseq(errF,CRIM,2.8);
+  eseq(errI,BRZ,2.2);
+  x2.restore();
+  logTicksN(x2,P2,g2W,g2H,XN2,'N');
+  x2.strokeStyle='rgba(35,25,27,0.35)'; x2.lineWidth=1; x2.strokeRect(P2.l,P2.t,g2W,g2H);
+  title(x2,P2.l,P2.t-28,'AND THE ERRORS THEY PRODUCE',
+    'sup|f\u2032\u2212(S\u2099)\u2032|  \u00B7  sup|f\u2212S\u2099|  \u00B7  sup|\u222Bf\u2212\u222BS\u2099|');
+  x2.font='600 9px "IBM Plex Mono",monospace'; x2.textAlign='left'; x2.textBaseline='alphabetic';
+  x2.fillStyle=SLT;  x2.fillText('derivative',P2.l+5,P2.t+12);
+  x2.fillStyle=CRIM; x2.fillText('f itself',P2.l+5,P2.t+24);
+  x2.fillStyle=BRZ;  x2.fillText('integral \u2014 always the lowest curve',P2.l+5,P2.t+36);
+  x2.strokeStyle='#e0dbd2'; x2.lineWidth=1;
+  x2.beginPath(); x2.moveTo(half+8,14); x2.lineTo(half+8,H2-14); x2.stroke();
+}
+function logTicksN(c,P,gW,gH,XF,lab){
+  c.font='500 10px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='top';
+  for(const n of [1,2,5,10,20,50,120]){
+    if(n>NMAX) continue;
+    const x=XF(n);
+    c.strokeStyle='rgba(35,25,27,0.20)'; c.lineWidth=1;
+    c.beginPath(); c.moveTo(x,P.t+gH); c.lineTo(x,P.t+gH+4); c.stroke();
+    c.fillStyle=MUT; c.fillText(n,x,P.t+gH+7);
+  }
+  c.font='italic 700 11px "Crimson Pro",Georgia,serif'; c.fillStyle='rgba(35,25,27,0.78)';
+  c.fillText(lab,P.l+gW/2,P.t+gH+21);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   9. READOUTS
+   ══════════════════════════════════════════════════════════════════ */
+
+function stat(k,v,n,cls){
+  return '<div class="stat"><div class="k">'+k+'</div><div class="v'+(cls?' '+cls:'')+'">'+v+
+         '</div><div class="n">'+n+'</div></div>';
+}
+/* Fitting a decay rate to a lacunary spectrum needs care. For the
+   triangle every even coefficient is analytically zero, but quadrature
+   returns noise there that GROWS with n (~1e-11 at n = 20, ~1e-8 at
+   n = 120, since the integrand oscillates faster). Including those
+   numerically-zero points dragged the fitted slope from -2 to +1.1.
+
+   So fit the ENVELOPE instead: split the range into logarithmic blocks
+   and take the largest coefficient in each. Noise never wins a maximum
+   against a genuine coefficient, so the lacunary gaps do no harm.     */
+function fitSlope(get,lo,hi){
+  const NB=10, pts=[];
+  for(let b=0;b<NB;b++){
+    const n0=Math.round(lo*Math.pow(hi/lo,b/NB)),
+          n1=Math.round(lo*Math.pow(hi/lo,(b+1)/NB));
+    let mx=0, at=0;
+    for(let n=Math.max(lo,n0);n<=Math.min(hi,n1);n++){
+      const v=get(n);
+      if(Number.isFinite(v)&&v>mx){ mx=v; at=n; }
+    }
+    if(mx>0&&at>0) pts.push([Math.log(at),Math.log(mx),mx]);
+  }
+  if(pts.length<5) return null;
+  /* If the whole window sits below the quadrature floor there is nothing
+     left to fit but noise. Geometric decay does exactly this — e^(cos x)
+     reaches zero by n = 16 — and fitting the residue returns a positive
+     exponent, which is meaningless. Compare the window against the full
+     spectrum and report "faster than any power" instead. */
+  let gmax=0;
+  for(let n=1;n<=hi;n++){ const v=get(n); if(Number.isFinite(v)&&v>gmax) gmax=v; }
+  let wmax=0;
+  for(const q of pts) wmax=Math.max(wmax,q[2]);
+  if(gmax>0 && wmax<gmax*1e-8) return null;
+  let sx=0,sy=0,sxx=0,sxy=0;
+  for(const q of pts){ sx+=q[0]; sy+=q[1]; sxx+=q[0]*q[0]; sxy+=q[0]*q[1]; }
+  const m=pts.length, den=m*sxx-sx*sx;
+  return Math.abs(den)<1e-12?null:(m*sxy-sx*sy)/den;
+}
+
+function renderVerdicts(){
+  const sp=SPECS[S.fid];
+  const ramped=Math.abs(A[0])>1e-10;
+  /* does the differentiated series even have a chance? its n-th term is n|c_n| */
+  let termMax=0;
+  for(let n=Math.max(1,NMAX-20);n<=NMAX;n++) termMax=Math.max(termMax,n*magF(n));
+  document.getElementById('verdicts').innerHTML=
+    '<div class="vd '+(sp.cont?'ok':'no')+'"><div class="t">periodic continuity of f</div>'+
+    '<div class="s">'+(sp.cont?'continuous \u2014 differentiation permitted':'has a jump \u2014 differentiation not permitted')+'</div>'+
+    '<div class="d">'+(sp.cont
+      ? 'f is continuous as a periodic function and piecewise smooth, so term-by-term differentiation gives the Fourier series of f\u2032.'
+      : 'A jump in the periodic extension voids the theorem, whether the jump is inside the interval or only at \u00B1\u03C0.')+'</div></div>'+
+    '<div class="vd '+(diffValid?'ok':'no')+'"><div class="t">measured agreement of coefficients</div>'+
+    '<div class="s">'+(diffValid?'(n b\u2099, \u2212n a\u2099) matches f\u2032':'(n b\u2099, \u2212n a\u2099) does not match f\u2032')+'</div>'+
+    '<div class="d">'+(diffScale<1e-6
+      ? 'f\u2032 = 0 almost everywhere, so every Fourier coefficient of f\u2032 is zero.'
+      : 'Largest discrepancy '+fmt(diffErr,4)+' against a coefficient scale of '+fmt(diffScale,4)+'.')+
+    ' The n-th term of the differentiated series is still about '+
+    fmt(termMax,3)+' at n = '+NMAX+
+    (diffValid?', and shrinking.':' \u2014 terms that do not vanish cannot sum to anything.')+'</div></div>'+
+    '<div class="vd '+(ramped?'no':'ok')+'"><div class="t">the mean of f</div>'+
+    '<div class="s">a\u2080/2 = '+fmt(A[0]/2,5)+(ramped?' \u2014 a ramp appears':' \u2014 no ramp')+'</div>'+
+    '<div class="d">'+(ramped
+      ? 'The integral contains a\u2080x/2, a straight line of slope '+fmt(A[0]/2,4)+
+        '. It is not periodic, so it can never be produced by a Fourier series on its own.'
+      : 'With zero mean the antiderivative is itself periodic, and term-by-term integration needs no correction beyond the constant C.')+'</div></div>';
+}
+
+function renderStats(){
+  const N=S.N;
+  document.getElementById('stats1').innerHTML=
+    stat('sup|f \u2212 S\u2099|', fmt(errF[N],5),'away from the jumps')+
+    stat('sup|f\u2032 \u2212 (S\u2099)\u2032|', fmt(errD[N],5),
+         diffValid?'converging':'diverging with N','dark')+
+    stat('sup|\u222Bf \u2212 \u222BS\u2099|', fmt(errI[N],5),'the best of the three','gold')+
+    stat('C at this N', fmt(constC(N),5),'chosen so the integral vanishes at \u2212\u03C0')+
+    stat('slope of the ramp', fmt(A[0]/2,5),
+         Math.abs(A[0])>1e-10?'per unit x':'zero \u2014 integral is periodic',
+         Math.abs(A[0])>1e-10?'gold':'');
+  const sF=fitSlope(n=>magF(n),20,NMAX);
+  const sD=fitSlope(n=>n*magF(n),20,NMAX);
+  const sI=fitSlope(n=>magF(n)/n,20,NMAX);
+  const eF=fitSlope(n=>errF[n],20,NMAX);
+  const eI=fitSlope(n=>errI[n],20,NMAX);
+  document.getElementById('stats2').innerHTML=
+    stat('|c\u2099| decay', sF===null?'faster than any power':'~n^'+sF.toFixed(2),
+         'smoothness of f, read off the spectrum')+
+    stat('n|c\u2099| decay', sD===null?'still geometric':'~n^'+sD.toFixed(2),
+         'exactly one power higher','dark')+
+    stat('|c\u2099|/n decay', sI===null?'still geometric':'~n^'+sI.toFixed(2),
+         'exactly one power lower','gold')+
+    stat('error of S\u2099', eF===null?'\u2014':'~N^'+eF.toFixed(2),'fitted over n \u2265 20')+
+    stat('error of \u222BS\u2099', eI===null?'\u2014':'~N^'+eI.toFixed(2),'fitted over n \u2265 20','gold');
+}
+
+function renderTable(){
+  const rows=[];
+  rows.push('<tr><td>0</td><td class="c">'+fmt(A[0],5)+'</td><td class="c">\u2014</td>'+
+    '<td class="s">0</td><td class="s">0</td>'+
+    '<td class="g">ramp + C</td><td class="g">\u2014</td></tr>');
+  for(let n=1;n<=8;n++){
+    rows.push('<tr><td>'+n+'</td>'+
+      '<td class="c">'+fmt(A[n],5)+'</td><td class="c">'+fmt(B[n],5)+'</td>'+
+      '<td class="s">'+fmt(n*B[n],5)+'</td><td class="s">'+fmt(-n*A[n],5)+'</td>'+
+      '<td class="g">'+fmt(-B[n]/n,5)+'</td><td class="g">'+fmt(A[n]/n,5)+'</td></tr>');
+  }
+  const ramped=Math.abs(A[0])>1e-10;
+  rows.push('<tr class="ramp"><td>ramp</td><td>\u2014</td><td>\u2014</td>'+
+    '<td class="s">\u2014</td><td class="s">\u2014</td>'+
+    '<td class="g" colspan="2">a\u2080x/2 = '+fmt(A[0]/2,5)+' \u00B7 x'+
+    (ramped?'':'  (vanishes)')+'</td></tr>');
+  document.getElementById('coefTbl').innerHTML=
+    '<table><thead><tr>'+
+    '<th>n</th>'+
+    '<th>a\u2099 of f</th><th>b\u2099 of f</th>'+
+    '<th>a\u2099 of f\u2032</th><th>b\u2099 of f\u2032</th>'+
+    '<th>a\u2099 of \u222Bf</th><th>b\u2099 of \u222Bf</th>'+
+    '</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+  document.getElementById('tblNote').innerHTML=
+    'Columns four and five are (n b<sub>n</sub>, \u2212n a<sub>n</sub>); columns six and seven are '+
+    '(\u2212b<sub>n</sub>/n, a<sub>n</sub>/n). Row n = 0 shows the two fates of the constant: '+
+    'differentiation annihilates it, integration turns it into the non-periodic ramp in the last row. '+
+    (diffValid
+      ? 'For this f the derivative columns really are the Fourier coefficients of f\u2032.'
+      : 'For this f they are <b>not</b> the Fourier coefficients of f\u2032 \u2014 those are all '+
+        (Math.abs(Ad[0])>1e-6?('a\u2080 = '+fmt(Ad[0],4)+' with the rest near zero'):'essentially zero')+
+        ', which the rule cannot reproduce.');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   10. WIRE-UP
+   ══════════════════════════════════════════════════════════════════ */
+
+const $=id=>document.getElementById(id);
+
+function heavy(){
+  const sp=SPECS[S.fid];
+  const cf=coefOf(x=>sp.f(x),sp.breaks);
+  A=cf.a; B=cf.b;
+  const cd=coefOf(x=>sp.d(x),sp.dbreaks.concat(sp.breaks));
+  Ad=cd.a; Bd=cd.b;
+  Fnum=sp.F?null:buildNumericF();
+  assessDifferentiation();
+  computeErrors();
+}
+function draw(){
+  renderTriple(); renderSpec(); renderVerdicts(); renderStats(); renderTable();
+  $('specMeta').textContent=SPECS[S.fid].cls+'  \u00B7  coefficients '+
+    SPECS[S.fid].decay+'  \u00B7  '+SPECS[S.fid].note;
+}
+function all(){ heavy(); draw(); }
+
+$('selF').addEventListener('change',function(){ S.fid=this.value; all(); });
+$('slN').addEventListener('input',function(){
+  S.N=parseInt(this.value,10); $('nVal').textContent=S.N; draw();
+});
+$('cRamp').addEventListener('change',function(){ S.ramp=this.checked; renderTriple(); });
+$('cTrue').addEventListener('change',function(){ S.showTrue=this.checked; renderTriple(); });
+
+function sizeAll(){ hidpi(c1,x1,W1,H1); hidpi(c2,x2,W2,H2); }
+window.addEventListener('resize',function(){ sizeAll(); draw(); });
+document.fonts && document.fonts.ready.then(draw);
+
+sizeAll();
+$('nVal').textContent=S.N;
+$('selF').value=S.fid;
+all();
+</script>
+</body>
+</html>

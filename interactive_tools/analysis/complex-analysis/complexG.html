@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Complex addition and multiplication</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --ink: #1d2330; --muted: #6a7182;
+    --line: #dcd8cf; --ref: #cfcbc0; --axis: #8d8a82;
+    --gh: #2f6fb7; --gv: #b8563a; --c: #c2185b; --z: #1b8a5a; --fill: rgba(47,111,183,.16);
+    --accent: #1d2330; --accent-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171d; --panel: #1c2028; --ink: #e9ebf0; --muted: #98a0b0;
+      --line: #2e3440; --ref: #2b303a; --axis: #5d6472;
+      --gh: #6aa9ee; --gv: #ee9272; --c: #ff6fa5; --z: #5fd6a0; --fill: rgba(106,169,238,.18);
+      --accent: #e9ebf0; --accent-ink: #14171d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 20px; display: grid; gap: 18px;
+    grid-template-columns: minmax(0,1fr) 320px; align-items: start; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 12px; } }
+  header { grid-column: 1 / -1; }
+  h1 { font-size: 22px; margin: 0 0 2px; letter-spacing: -.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .stage { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: min(72vh, 680px); touch-action: none; cursor: grab; }
+  .step { position: absolute; left: 12px; top: 10px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 4px 10px; font-weight: 600; font-size: 14px; }
+  aside { display: grid; gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; background: transparent; color: var(--ink); padding: 9px 6px; font: inherit; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  label { color: var(--muted); font-size: 13px; }
+  input[type=number] { width: 78px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px;
+    background: var(--bg); color: var(--ink); font: inherit; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--gh); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .chips button, .play { border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 13px; cursor: pointer; }
+  .play { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); padding: 7px 16px; font-weight: 600; font-size: 14px; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--gh); outline-offset: 2px; }
+  .math { font-variant-numeric: tabular-nums; display: grid; gap: 4px; }
+  .math b.c { color: var(--c); } .math b.z { color: var(--z); }
+  .explain { color: var(--muted); font-size: 14px; margin: 0; }
+  .explain strong { color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Adding and multiplying by a fixed complex number</h1>
+    <p>Every point of the plane is sent through the same operation. Drag <b style="color:var(--c)">c</b> or <b style="color:var(--z)">z</b> on the plane.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv" aria-label="Complex plane showing the transformation"></canvas>
+    <div class="step" id="step"></div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>Operation</h2>
+      <div class="seg">
+        <button id="mAdd" aria-pressed="true">z + c</button>
+        <button id="mMul" aria-pressed="false">z · c</button>
+      </div>
+      <p class="explain" id="explain" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card">
+      <h2>Animation</h2>
+      <div class="row" style="margin-bottom:8px">
+        <button class="play" id="play">Play</button>
+        <span id="pct" style="color:var(--muted);font-variant-numeric:tabular-nums"></span>
+      </div>
+      <input type="range" id="t" min="0" max="1000" value="0" aria-label="Animation progress">
+    </div>
+
+    <div class="card">
+      <h2>Fixed number c</h2>
+      <div class="row">
+        <label for="re">Re</label><input type="number" id="re" step="0.1">
+        <label for="im">Im</label><input type="number" id="im" step="0.1">
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="card">
+      <h2>Values</h2>
+      <div class="math" id="math"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(() => {
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const S = { mode: 'add', c: {x: 1.5, y: 1}, z: {x: 2, y: 1}, t: 0, playing: false };
+  let W = 0, H = 0, U = 60, CX = 0, CY = 0, col = {};
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function readColors() {
+    for (const k of ['ref','axis','gh','gv','c','z','fill','ink','muted','panel']) col[k] = css('--' + k);
+  }
+  function resize() {
+    const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * d); cv.height = Math.round(H * d);
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    U = Math.min(W, H) / 9; CX = W / 2; CY = H / 2;
+    draw();
+  }
+  const sx = x => CX + x * U, sy = y => CY - y * U;
+  const ease = u => u < 0 ? 0 : u > 1 ? 1 : u * u * (3 - 2 * u);
+  const mod = p => Math.hypot(p.x, p.y), arg = p => Math.atan2(p.y, p.x);
+
+  // Current transform parameters at animation time t
+  function params() {
+    if (S.mode === 'add') {
+      const u = ease(S.t);
+      return { s: 1, th: 0, dx: S.c.x * u, dy: S.c.y * u };
+    }
+    const u1 = ease(S.t * 2), u2 = ease(S.t * 2 - 1);
+    return { s: 1 + (mod(S.c) - 1) * u1, th: arg(S.c) * u2, dx: 0, dy: 0 };
+  }
+  function T(p, q) {
+    const cs = Math.cos(q.th), sn = Math.sin(q.th);
+    return { x: q.s * (p.x * cs - p.y * sn) + q.dx, y: q.s * (p.x * sn + p.y * cs) + q.dy };
+  }
+
+  function line(a, b) { ctx.beginPath(); ctx.moveTo(sx(a.x), sy(a.y)); ctx.lineTo(sx(b.x), sy(b.y)); ctx.stroke(); }
+  function arrow(a, b, color, width, dash) {
+    const x1 = sx(a.x), y1 = sy(a.y), x2 = sx(b.x), y2 = sy(b.y);
+    const L = Math.hypot(x2 - x1, y2 - y1); if (L < 2) return;
+    const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(11, L * .5);
+    ctx.strokeStyle = ctx.fillStyle = color; ctx.lineWidth = width;
+    ctx.setLineDash(dash || []);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * h * .8, y2 - uy * h * .8); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux * h - uy * h * .45, y2 - uy * h + ux * h * .45);
+    ctx.lineTo(x2 - ux * h + uy * h * .45, y2 - uy * h - ux * h * .45);
+    ctx.closePath(); ctx.fill();
+  }
+  function dot(p, color, r, label) {
+    const x = sx(p.x), y = sy(p.y);
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.strokeStyle = col.panel; ctx.lineWidth = 2; ctx.stroke();
+    if (label) {
+      ctx.font = '600 14px system-ui, sans-serif';
+      ctx.lineWidth = 4; ctx.strokeStyle = col.panel; ctx.strokeText(label, x + 10, y - 9);
+      ctx.fillStyle = color; ctx.fillText(label, x + 10, y - 9);
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const nx = Math.ceil(W / 2 / U), ny = Math.ceil(H / 2 / U);
+
+    // Fixed reference grid and axes
+    ctx.lineWidth = 1; ctx.strokeStyle = col.ref;
+    for (let k = -nx; k <= nx; k++) line({x: k, y: -ny}, {x: k, y: ny});
+    for (let k = -ny; k <= ny; k++) line({x: -nx, y: k}, {x: nx, y: k});
+    ctx.strokeStyle = col.axis; ctx.lineWidth = 1.5;
+    line({x: -nx, y: 0}, {x: nx, y: 0}); line({x: 0, y: -ny}, {x: 0, y: ny});
+    ctx.fillStyle = col.muted; ctx.font = '11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    for (let k = -nx; k <= nx; k++) if (k) ctx.fillText(k, sx(k), CY + 14);
+    ctx.textAlign = 'right';
+    for (let k = -ny; k <= ny; k++) if (k) ctx.fillText(k === 1 ? 'i' : k === -1 ? '−i' : k + 'i', CX - 6, sy(k) + 4);
+    ctx.textAlign = 'left';
+    ctx.fillText('Re', W - 22, CY - 8); ctx.fillText('Im', CX + 8, 14);
+
+    // Transformed grid
+    const q = params(), N = 40;
+    ctx.globalAlpha = .55;
+    for (let k = -N; k <= N; k++) {
+      ctx.lineWidth = k === 0 ? 2.5 : 1;
+      ctx.strokeStyle = col.gv; line(T({x: k, y: -N}, q), T({x: k, y: N}, q));
+      ctx.strokeStyle = col.gh; line(T({x: -N, y: k}, q), T({x: N, y: k}, q));
+    }
+    ctx.globalAlpha = 1;
+
+    // Unit square carried along
+    const sq = [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}].map(p => T(p, q));
+    ctx.beginPath(); sq.forEach((p, i) => i ? ctx.lineTo(sx(p.x), sy(p.y)) : ctx.moveTo(sx(p.x), sy(p.y)));
+    ctx.closePath(); ctx.fillStyle = col.fill; ctx.fill();
+    ctx.strokeStyle = col.gh; ctx.lineWidth = 2; ctx.stroke();
+
+    const zi = T(S.z, q);
+    if (S.mode === 'add') {
+      arrow({x: 0, y: 0}, S.c, col.c, 2.5);
+      arrow(S.z, {x: S.z.x + S.c.x, y: S.z.y + S.c.y}, col.c, 1.5, [5, 4]);
+      dot(T({x: 0, y: 0}, q), col.ink, 4, S.t > .02 ? '0 → c' : '');
+    } else {
+      const r = mod(S.c), a = arg(S.c);
+      arrow({x: 0, y: 0}, S.c, col.c, 2.5);
+      // rotation angle swept so far
+      if (Math.abs(q.th) > .005) {
+        ctx.strokeStyle = col.c; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(CX, CY, U * .6, 0, -q.th, q.th > 0); ctx.stroke();
+      }
+      // path of z: outward along its ray, then around the circle
+      const zr = mod(S.z), za = arg(S.z);
+      ctx.strokeStyle = col.z; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      line(S.z, {x: S.z.x * r, y: S.z.y * r});
+      ctx.beginPath(); ctx.arc(CX, CY, zr * r * U, -za, -(za + a), a > 0); ctx.stroke();
+      ctx.setLineDash([]);
+      dot(T({x: 1, y: 0}, q), col.ink, 4, S.t > .02 ? '1 → c' : '1');
+    }
+    arrow({x: 0, y: 0}, zi, col.z, 2);
+    dot(S.z, col.z, 5, 'z');
+    if (S.t > .02) dot(zi, col.z, 6, S.mode === 'add' ? 'z + c' : 'z · c');
+    dot(S.c, col.c, 7, 'c');
+  }
+
+  const f = n => (Math.abs(n) < .005 ? 0 : n).toFixed(2);
+  const cx = p => `${f(p.x)} ${p.y < -.005 ? '−' : '+'} ${f(Math.abs(p.y))}i`;
+  function updateUI() {
+    const add = S.mode === 'add', r = mod(S.c), a = arg(S.c) * 180 / Math.PI;
+    $('mAdd').setAttribute('aria-pressed', add); $('mMul').setAttribute('aria-pressed', !add);
+    $('explain').innerHTML = add
+      ? 'Adding c <strong>shifts</strong> the whole plane by the arrow c, exactly like vector addition. Nothing stretches or turns.'
+      : 'Multiplying by c first <strong>scales</strong> the plane by |c|, then <strong>rotates</strong> it by arg c, both about 0. The point 1 lands on c.';
+    $('step').textContent = add
+      ? `Shift by c = ${cx(S.c)}`
+      : (S.t <= .5 ? `Step 1 of 2: scale by |c| = ${f(r)}` : `Step 2 of 2: rotate by arg c = ${a.toFixed(1)}°`);
+    $('pct').textContent = Math.round(S.t * 100) + '%';
+    $('t').value = Math.round(S.t * 1000);
+    $('play').textContent = S.playing ? 'Pause' : (S.t >= 1 ? 'Replay' : 'Play');
+    if (document.activeElement !== $('re')) $('re').value = +S.c.x.toFixed(2);
+    if (document.activeElement !== $('im')) $('im').value = +S.c.y.toFixed(2);
+    const res = add ? {x: S.z.x + S.c.x, y: S.z.y + S.c.y}
+                    : {x: S.z.x * S.c.x - S.z.y * S.c.y, y: S.z.x * S.c.y + S.z.y * S.c.x};
+    $('math').innerHTML =
+      `<div><b class="c">c</b> = ${cx(S.c)}</div>` +
+      `<div>|c| = ${f(r)}, &nbsp;arg c = ${a.toFixed(1)}°</div>` +
+      `<div><b class="z">z</b> = ${cx(S.z)}</div>` +
+      `<div><b class="z">${add ? 'z + c' : 'z · c'}</b> = ${cx(res)}</div>` +
+      (add ? '' : `<div>|z·c| = ${f(mod(S.z))} × ${f(r)} = ${f(mod(res))}</div>`);
+  }
+  function refresh() { updateUI(); draw(); }
+
+  // Animation
+  let last = 0;
+  function tick(now) {
+    if (!S.playing) return;
+    const dur = S.mode === 'add' ? 1600 : 3200;
+    S.t = Math.min(1, S.t + (now - last) / dur); last = now;
+    if (S.t >= 1) S.playing = false;
+    refresh();
+    if (S.playing) requestAnimationFrame(tick);
+  }
+  function play() {
+    if (S.t >= 1) S.t = 0;
+    S.playing = true; last = performance.now(); requestAnimationFrame(tick);
+  }
+  $('play').onclick = () => { if (S.playing) { S.playing = false; refresh(); } else play(); };
+  $('t').oninput = e => { S.playing = false; S.t = e.target.value / 1000; refresh(); };
+  function setMode(m) { S.mode = m; S.t = 0; refresh(); play(); }
+  $('mAdd').onclick = () => setMode('add');
+  $('mMul').onclick = () => setMode('mul');
+  $('re').oninput = e => { const v = parseFloat(e.target.value); if (isFinite(v)) { S.c.x = v; refresh(); } };
+  $('im').oninput = e => { const v = parseFloat(e.target.value); if (isFinite(v)) { S.c.y = v; refresh(); } };
+
+  const presets = [['i', 0, 1], ['−1', -1, 0], ['2', 2, 0], ['½', .5, 0], ['1 + i', 1, 1], ['−i', 0, -1], ['1.5 + i', 1.5, 1]];
+  for (const [name, x, y] of presets) {
+    const b = document.createElement('button'); b.textContent = name;
+    b.onclick = () => { S.c = {x, y}; S.t = 0; refresh(); play(); };
+    $('chips').appendChild(b);
+  }
+
+  // Dragging c and z
+  let drag = null;
+  const pos = e => { const r = cv.getBoundingClientRect(); return { px: e.clientX - r.left, py: e.clientY - r.top }; };
+  cv.addEventListener('pointerdown', e => {
+    const { px, py } = pos(e);
+    const d = p => Math.hypot(sx(p.x) - px, sy(p.y) - py);
+    const dc = d(S.c), dz = d(S.z);
+    if (Math.min(dc, dz) > 28) return;
+    drag = dc <= dz ? S.c : S.z;
+    cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing';
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const { px, py } = pos(e);
+    drag.x = Math.round((px - CX) / U * 20) / 20;
+    drag.y = Math.round((CY - py) / U * 20) / 20;
+    refresh();
+  });
+  const end = () => { drag = null; cv.style.cursor = 'grab'; };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+
+  window.addEventListener('resize', resize);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); draw(); });
+  readColors(); resize(); updateUI(); play();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Two-Step Shear to Rectangle</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(145deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  input[type="range"] { cursor: pointer; accent-color: #6366f1; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+function vadd(u, v) { return [u[0]+v[0], u[1]+v[1]]; }
+function vsub(u, v) { return [u[0]-v[0], u[1]-v[1]]; }
+function vscale(s, v) { return [s*v[0], s*v[1]]; }
+function vlen(v) { return Math.sqrt(v[0]*v[0] + v[1]*v[1]); }
+function vdot(u, v) { return u[0]*v[0] + u[1]*v[1]; }
+function cross2d(u, v) { return u[0]*v[1] - u[1]*v[0]; }
+
+function perpComponent(v, u) {
+  const uL = vlen(u);
+  if (uL < 1e-9) return v;
+  return vsub(v, vscale(vdot(v, u) / (uL * uL), u));
+}
+
+function App() {
+  const [a, setA] = useState(3);
+  const [b, setB] = useState(1.5);
+  const [c, setC] = useState(1);
+  const [d, setD] = useState(3);
+  const [t1, setT1] = useState(0); // column shear param
+  const [t2, setT2] = useState(0); // row shear param
+  const [playing, setPlaying] = useState(false);
+  const animRef = useRef(null);
+  const lastRef = useRef(null);
+
+  const det = a * d - b * c;
+  const canColShear = Math.abs(a) > 0.01;
+
+  // Step 1: Column op — C₂ − t1*(b/a)*C₁ → C₂
+  // Original columns
+  const col1Orig = [a, c];
+  const col2Orig = [b, d];
+  // After full column shear: [a, 0; c, d-bc/a]
+  const col2FullShear = canColShear ? [0, d - (b * c) / a] : [b, d];
+  // Interpolated column shear
+  const shearAmt1 = canColShear ? t1 * (b / a) : 0;
+  const col1_s1 = col1Orig; // col1 never changes under column ops
+  const col2_s1 = vsub(col2Orig, vscale(shearAmt1, col1Orig));
+
+  // Step 2: Row op — R₂ − t2*(c/a)*R₁ → R₂  (applied to the step-1 result)
+  // After step 1: matrix is [a, col2_s1[0]; c, col2_s1[1]]
+  // Row op on rows: new_row2 = row2 - t2*(c/a)*row1
+  // row1 = [a, col2_s1[0]], row2 = [c, col2_s1[1]]
+  // new_row2 = [c - t2*(c/a)*a, col2_s1[1] - t2*(c/a)*col2_s1[0]]
+  //          = [c*(1 - t2), col2_s1[1] - t2*(c/a)*col2_s1[0]]
+  const canRowShear = Math.abs(a) > 0.01;
+  const row1_x = a;
+  const row1_y = col2_s1[0]; // top-right entry after step 1
+  const row2_x_orig = c;
+  const row2_y_orig = col2_s1[1];
+
+  const rowShearFrac = canRowShear ? t2 * (c / a) : 0;
+  const row2_x = row2_x_orig - rowShearFrac * row1_x;
+  const row2_y = row2_y_orig - rowShearFrac * row1_y;
+
+  // Final columns after both operations
+  const col1Final = [row1_x, row2_x];
+  const col2Final = [row1_y, row2_y];
+
+  // All four parallelogram stages
+  const vertsOrig = [[0,0], col1Orig, vadd(col1Orig, col2Orig), col2Orig];
+  const vertsS1 = [[0,0], col1_s1, vadd(col1_s1, col2_s1), col2_s1];
+  const vertsFinal = [[0,0], col1Final, vadd(col1Final, col2Final), col2Final];
+
+  // The matrix entries after both ops
+  const mA = row1_x;
+  const mB = row1_y;
+  const mC = row2_x;
+  const mD = row2_y;
+
+  // SVG coordinate system
+  const S = 56;
+  const cx = 310, cy = 290;
+  const toSVG = ([x, y]) => [cx + x * S, cy - y * S];
+
+  const gridLines = [];
+  for (let i = -6; i <= 6; i++) {
+    gridLines.push({ x1: cx + i * S, y1: cy - 6 * S, x2: cx + i * S, y2: cy + 3 * S });
+    gridLines.push({ x1: cx - 6 * S, y1: cy + i * S, x2: cx + 6 * S, y2: cy + i * S });
+  }
+
+  // Height lines
+  const base1 = vlen(col1_s1);
+  const h1 = vlen(perpComponent(col2_s1, col1_s1));
+  const baseFinal = vlen(col1Final);
+  const h2Final = vlen(perpComponent(col2Final, col1Final));
+
+  // Perp foot for current state
+  const currentCol1 = col1Final;
+  const currentCol2 = col2Final;
+  const projLen = vlen(currentCol1) > 1e-9 ? vdot(currentCol2, currentCol1) / (vlen(currentCol1) ** 2) : 0;
+  const projPt = vscale(projLen, currentCol1);
+  const hStart = toSVG(currentCol2);
+  const hEnd = toSVG(projPt);
+
+  // Animation
+  const animate = useCallback((ts) => {
+    if (!lastRef.current) lastRef.current = ts;
+    const dt = (ts - lastRef.current) / 1000;
+    lastRef.current = ts;
+    const speed = 0.5; // full cycle in ~2s per phase
+
+    setT1(prev => {
+      if (prev < 1) {
+        const next = Math.min(1, prev + dt * speed);
+        if (next >= 1) setT2(0); // ensure t2 starts at 0
+        return next;
+      }
+      return 1;
+    });
+
+    setT1(prev => {
+      if (prev >= 1) {
+        setT2(prev2 => {
+          if (prev2 < 1) return Math.min(1, prev2 + dt * speed);
+          setPlaying(false);
+          return 1;
+        });
+      }
+      return prev;
+    });
+
+    animRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  useEffect(() => {
+    if (playing) {
+      lastRef.current = null;
+      animRef.current = requestAnimationFrame(animate);
+    } else if (animRef.current) cancelAnimationFrame(animRef.current);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [playing, animate]);
+
+  const resetAll = () => { setPlaying(false); setT1(0); setT2(0); };
+  const playAnimation = () => { setT1(0); setT2(0); setPlaying(true); };
+
+  // Phase indicator
+  const phase = t1 < 1 ? 1 : t2 < 1 ? 2 : 3;
+  const phaseLabel = phase === 1 ? "Step 1: Column shear" : phase === 2 ? "Step 2: Row shear" : "Done — Rectangle!";
+  const phaseColor = phase === 1 ? "#22d3ee" : phase === 2 ? "#f59e0b" : "#4ade80";
+
+  // Check if final is (approx) a rectangle
+  const isRect = Math.abs(mB) < 0.05 && Math.abs(mC) < 0.05;
+
+  return (
+    <div style={{ maxWidth: "950px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "14px" }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "26px", fontWeight: 900,
+          background: "linear-gradient(135deg, #22d3ee, #f59e0b, #4ade80)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>
+          Parallelogram → Triangle → Rectangle
+        </h1>
+        <p style={{ color: "#64748b", fontSize: "12px", margin: "5px 0 0" }}>
+          Two shears reduce any parallelogram to an axis-aligned rectangle with the same area
+        </p>
+      </div>
+
+      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center" }}>
+        {/* Controls */}
+        <div style={{ background: "rgba(15,23,42,0.8)", border: "1px solid #1e293b", borderRadius: "12px", padding: "14px", width: "230px", flexShrink: 0 }}>
+          <h3 style={{ margin: "0 0 10px", fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.5px" }}>Matrix [a b; c d]</h3>
+          {[
+            { label: "a", val: a, set: setA, color: "#f59e0b" },
+            { label: "b", val: b, set: setB, color: "#60a5fa" },
+            { label: "c", val: c, set: setC, color: "#f59e0b" },
+            { label: "d", val: d, set: setD, color: "#60a5fa" },
+          ].map(({ label, val, set, color }) => (
+            <div key={label} style={{ marginBottom: "7px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>
+                <span style={{ color }}>{label}</span>
+                <span style={{ color, fontWeight: 600 }}>{val.toFixed(1)}</span>
+              </div>
+              <input type="range" min={-4} max={4} step={0.1} value={val} onChange={e => { set(Number(e.target.value)); resetAll(); }} style={{ width: "100%" }} />
+            </div>
+          ))}
+
+          {/* Step 1 slider */}
+          <div style={{ margin: "14px 0 0", padding: "10px", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: "10px" }}>
+            <div style={{ fontSize: "10px", color: "#22d3ee", fontWeight: 600, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "1px" }}>
+              Step 1: Column shear (t₁)
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#67e8f9", marginBottom: "3px" }}>
+              <span>[a b; c d]</span>
+              <span style={{ fontWeight: 700 }}>{t1.toFixed(2)}</span>
+              <span>[a 0; c d']</span>
+            </div>
+            <input type="range" min={0} max={1} step={0.005} value={t1}
+              onChange={e => { setPlaying(false); setT1(Number(e.target.value)); if (Number(e.target.value) < 1) setT2(0); }}
+              style={{ width: "100%", accentColor: "#22d3ee" }} />
+            <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "3px" }}>C₂ − t₁·(b/a)·C₁ → C₂</div>
+          </div>
+
+          {/* Step 2 slider */}
+          <div style={{ margin: "10px 0 0", padding: "10px",
+            background: t1 >= 0.99 ? "rgba(245,158,11,0.06)" : "rgba(30,41,59,0.3)",
+            border: `1px solid ${t1 >= 0.99 ? "rgba(245,158,11,0.2)" : "#1e293b"}`,
+            borderRadius: "10px", opacity: t1 >= 0.99 ? 1 : 0.4, transition: "all 0.3s" }}>
+            <div style={{ fontSize: "10px", color: "#f59e0b", fontWeight: 600, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "1px" }}>
+              Step 2: Row shear (t₂)
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#fbbf24", marginBottom: "3px" }}>
+              <span>[a 0; c d']</span>
+              <span style={{ fontWeight: 700 }}>{t2.toFixed(2)}</span>
+              <span>[a 0; 0 d']</span>
+            </div>
+            <input type="range" min={0} max={1} step={0.005} value={t2}
+              disabled={t1 < 0.99}
+              onChange={e => { setPlaying(false); setT2(Number(e.target.value)); }}
+              style={{ width: "100%", accentColor: "#f59e0b" }} />
+            <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "3px" }}>R₂ − t₂·(c/a)·R₁ → R₂</div>
+          </div>
+
+          {/* Playback */}
+          <div style={{ display: "flex", gap: "6px", marginTop: "14px" }}>
+            <button onClick={playAnimation}
+              onMouseEnter={e => e.target.style.background = "rgba(99,102,241,0.35)"}
+              onMouseLeave={e => e.target.style.background = "rgba(99,102,241,0.2)"}
+              style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "2px solid #6366f1",
+                background: "rgba(99,102,241,0.2)", color: "#a5b4fc", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+              ▶ Animate
+            </button>
+            <button onClick={resetAll}
+              onMouseEnter={e => e.target.style.background = "rgba(51,65,85,0.5)"}
+              onMouseLeave={e => e.target.style.background = "rgba(51,65,85,0.3)"}
+              style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #334155",
+                background: "rgba(51,65,85,0.3)", color: "#94a3b8", fontSize: "12px", cursor: "pointer" }}>
+              Reset
+            </button>
+          </div>
+
+          {/* Presets */}
+          <div style={{ marginTop: "12px" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.5px" }}>Presets</h3>
+            {[
+              { name: "[3  1.5 ; 1  3]", a: 3, b: 1.5, c: 1, d: 3 },
+              { name: "[2  −1 ; 1  2]", a: 2, b: -1, c: 1, d: 2 },
+              { name: "[1  3 ; 2  1]  (neg det)", a: 1, b: 3, c: 2, d: 1 },
+              { name: "[4  2 ; 1  3]", a: 4, b: 2, c: 1, d: 3 },
+              { name: "[2  1 ; 4  2]  (singular)", a: 2, b: 1, c: 4, d: 2 },
+            ].map(p => (
+              <button key={p.name}
+                onClick={() => { setA(p.a); setB(p.b); setC(p.c); setD(p.d); resetAll(); }}
+                onMouseEnter={e => e.target.style.background = "rgba(99,102,241,0.3)"}
+                onMouseLeave={e => e.target.style.background = "rgba(99,102,241,0.15)"}
+                style={{ display: "block", width: "100%", padding: "5px 8px", marginBottom: "4px",
+                  background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
+                  borderRadius: "6px", color: "#a5b4fc", fontSize: "10px", cursor: "pointer", textAlign: "left" }}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main visualization */}
+        <div style={{ flex: "1 1 580px", maxWidth: "680px" }}>
+          {/* Phase badge */}
+          <div style={{ textAlign: "center", marginBottom: "8px" }}>
+            <span style={{ display: "inline-block", padding: "5px 18px", borderRadius: "20px",
+              background: `${phaseColor}18`, border: `1.5px solid ${phaseColor}50`,
+              color: phaseColor, fontSize: "13px", fontWeight: 700, letterSpacing: "0.5px" }}>
+              {phaseLabel}
+            </span>
+          </div>
+
+          <div style={{ background: "rgba(15,23,42,0.6)", border: "1px solid #1e293b", borderRadius: "12px", padding: "8px" }}>
+            <svg viewBox="0 0 620 440" width="100%" style={{ display: "block" }}>
+              {/* Grid */}
+              {gridLines.map((l, i) => (
+                <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#1e293b" strokeWidth="0.5" />
+              ))}
+              <line x1={cx - 340} y1={cy} x2={cx + 310} y2={cy} stroke="#334155" strokeWidth="1.5" />
+              <line x1={cx} y1={cy - 340} x2={cx} y2={cy + 160} stroke="#334155" strokeWidth="1.5" />
+              {[-5,-4,-3,-2,-1,1,2,3,4,5].map(i => (
+                <g key={`xl${i}`}>
+                  <line x1={cx+i*S} y1={cy-3} x2={cx+i*S} y2={cy+3} stroke="#475569" strokeWidth="1" />
+                  <text x={cx+i*S} y={cy+16} textAnchor="middle" fill="#475569" fontSize="8" fontFamily="'JetBrains Mono', monospace">{i}</text>
+                </g>
+              ))}
+              {[-4,-3,-2,-1,1,2,3,4,5].map(i => (
+                <g key={`yl${i}`}>
+                  <line x1={cx-3} y1={cy-i*S} x2={cx+3} y2={cy-i*S} stroke="#475569" strokeWidth="1" />
+                  <text x={cx-12} y={cy-i*S+4} textAnchor="end" fill="#475569" fontSize="8" fontFamily="'JetBrains Mono', monospace">{i}</text>
+                </g>
+              ))}
+
+              <defs>
+                <marker id="a1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                  <polygon points="0,0 10,4 0,8" fill="#f59e0b" />
+                </marker>
+                <marker id="a2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                  <polygon points="0,0 10,4 0,8" fill="#60a5fa" />
+                </marker>
+                <marker id="ag" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                  <polygon points="0,0 8,3 0,6" fill="#6366f1" opacity="0.35" />
+                </marker>
+              </defs>
+
+              {/* Ghost: original parallelogram */}
+              {(t1 > 0.01 || t2 > 0.01) && (
+                <polygon
+                  points={vertsOrig.map(toSVG).map(p => p.join(",")).join(" ")}
+                  fill="rgba(99,102,241,0.04)" stroke="#6366f1" strokeWidth="1" strokeDasharray="5,4" opacity="0.45" />
+              )}
+
+              {/* Ghost: step-1 result (when doing step 2) */}
+              {t1 >= 0.99 && t2 > 0.01 && (
+                <polygon
+                  points={vertsS1.map(toSVG).map(p => p.join(",")).join(" ")}
+                  fill="rgba(34,211,238,0.04)" stroke="#22d3ee" strokeWidth="1" strokeDasharray="5,4" opacity="0.4" />
+              )}
+
+              {/* Current parallelogram */}
+              <polygon
+                points={vertsFinal.map(toSVG).map(p => p.join(",")).join(" ")}
+                fill={isRect ? "rgba(74,222,128,0.15)" : det >= 0 ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)"}
+                stroke={isRect ? "#4ade80" : det >= 0 ? "#34d399" : "#f87171"} strokeWidth="2.5" />
+
+              {/* Perpendicular height line */}
+              {vlen(currentCol1) > 0.1 && vlen(currentCol2) > 0.1 && (
+                <g>
+                  <line x1={hStart[0]} y1={hStart[1]} x2={hEnd[0]} y2={hEnd[1]}
+                    stroke="#a78bfa" strokeWidth="1.5" strokeDasharray="5,3" opacity="0.7" />
+                  {/* Right angle marker */}
+                  {(() => {
+                    const hV = perpComponent(currentCol2, currentCol1);
+                    const hL = vlen(hV);
+                    if (hL < 0.15 || baseFinal < 0.15) return null;
+                    const hN = vscale(1/hL, hV);
+                    const bN = vscale(1/baseFinal, currentCol1);
+                    const sz = 0.18;
+                    const p1 = toSVG(vadd(projPt, vscale(sz, hN)));
+                    const p2 = toSVG(vadd(vadd(projPt, vscale(sz, hN)), vscale(sz, bN)));
+                    const p3 = toSVG(vadd(projPt, vscale(sz, bN)));
+                    return <polyline points={`${p1} ${p2} ${p3}`} fill="none" stroke="#a78bfa" strokeWidth="1" opacity="0.6" />;
+                  })()}
+                </g>
+              )}
+
+              {/* Shear path traces */}
+              {/* Step 1: col2 tip slides along col1 direction */}
+              {t1 > 0.01 && (
+                <line x1={toSVG(col2Orig)[0]} y1={toSVG(col2Orig)[1]}
+                  x2={toSVG(col2_s1)[0]} y2={toSVG(col2_s1)[1]}
+                  stroke="#22d3ee" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.5" />
+              )}
+              {/* Step 2: col1 tip slides along row direction (col2 direction of step-1 result) */}
+              {t2 > 0.01 && t1 >= 0.99 && (
+                <line x1={toSVG(col1_s1)[0]} y1={toSVG(col1_s1)[1]}
+                  x2={toSVG(col1Final)[0]} y2={toSVG(col1Final)[1]}
+                  stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.5" />
+              )}
+
+              {/* Column 1 vector */}
+              <line x1={cx} y1={cy} x2={toSVG(col1Final)[0]} y2={toSVG(col1Final)[1]}
+                stroke="#f59e0b" strokeWidth="3" markerEnd="url(#a1)" />
+              <text x={toSVG(col1Final)[0] + 10} y={toSVG(col1Final)[1] - 6}
+                fill="#f59e0b" fontSize="13" fontWeight="700" fontFamily="'JetBrains Mono', monospace">C₁</text>
+              <text x={toSVG(col1Final)[0] + 10} y={toSVG(col1Final)[1] + 10}
+                fill="#f59e0b" fontSize="9" fontFamily="'JetBrains Mono', monospace" opacity="0.7">
+                ({mA.toFixed(2)}, {mC.toFixed(2)})
+              </text>
+
+              {/* Column 2 vector */}
+              <line x1={cx} y1={cy} x2={toSVG(col2Final)[0]} y2={toSVG(col2Final)[1]}
+                stroke="#60a5fa" strokeWidth="3" markerEnd="url(#a2)" />
+              <text x={toSVG(col2Final)[0] + 10} y={toSVG(col2Final)[1] - 6}
+                fill="#60a5fa" fontSize="13" fontWeight="700" fontFamily="'JetBrains Mono', monospace">C₂</text>
+              <text x={toSVG(col2Final)[0] + 10} y={toSVG(col2Final)[1] + 10}
+                fill="#60a5fa" fontSize="9" fontFamily="'JetBrains Mono', monospace" opacity="0.7">
+                ({mB.toFixed(2)}, {mD.toFixed(2)})
+              </text>
+
+              {/* Ghost arrows for original positions */}
+              {(t1 > 0.01 || t2 > 0.01) && (
+                <g opacity="0.3">
+                  <line x1={cx} y1={cy} x2={toSVG(col1Orig)[0]} y2={toSVG(col1Orig)[1]}
+                    stroke="#6366f1" strokeWidth="1.5" strokeDasharray="5,4" markerEnd="url(#ag)" />
+                  <line x1={cx} y1={cy} x2={toSVG(col2Orig)[0]} y2={toSVG(col2Orig)[1]}
+                    stroke="#6366f1" strokeWidth="1.5" strokeDasharray="5,4" markerEnd="url(#ag)" />
+                </g>
+              )}
+
+              {/* Area label in centroid */}
+              {(() => {
+                const cent = vscale(0.25, vertsFinal.reduce((a, b) => vadd(a, b), [0,0]));
+                const [lx, ly] = toSVG(cent);
+                return (
+                  <g>
+                    <text x={lx} y={ly - 6} textAnchor="middle" fill={isRect ? "#4ade80" : "#34d399"}
+                      fontSize="15" fontWeight="700" fontFamily="'JetBrains Mono', monospace">
+                      {isRect ? "Area = |" + mA.toFixed(1) + " × " + mD.toFixed(2) + "|" : "Area = |det|"}
+                    </text>
+                    <text x={lx} y={ly + 12} textAnchor="middle" fill={isRect ? "#4ade80" : "#34d399"}
+                      fontSize="13" fontFamily="'JetBrains Mono', monospace">
+                      = {Math.abs(det).toFixed(3)}
+                    </text>
+                  </g>
+                );
+              })()}
+
+              {/* Right angle markers at corners when it's a rectangle */}
+              {isRect && (() => {
+                const sz = 8;
+                const corners = [
+                  [cx, cy],
+                  toSVG(col1Final),
+                  toSVG(vadd(col1Final, col2Final)),
+                  toSVG(col2Final)
+                ];
+                return corners.map(([px, py], i) => {
+                  // Determine which quadrant to draw the marker
+                  const dx = i === 0 || i === 3 ? 1 : -1;
+                  const dy = i === 0 || i === 1 ? -1 : 1;
+                  return (
+                    <polyline key={`ra${i}`}
+                      points={`${px},${py + dy * sz} ${px + dx * sz},${py + dy * sz} ${px + dx * sz},${py}`}
+                      fill="none" stroke="#4ade80" strokeWidth="1" opacity="0.5" />
+                  );
+                });
+              })()}
+
+              <circle cx={cx} cy={cy} r="4" fill="#e2e8f0" />
+            </svg>
+          </div>
+
+          {/* Matrix progression */}
+          <div style={{ display: "flex", gap: "6px", marginTop: "12px", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+            {/* Original */}
+            <div style={{ padding: "8px 12px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.3)",
+              borderRadius: "8px", textAlign: "center", opacity: phase >= 1 ? 1 : 0.4 }}>
+              <div style={{ fontSize: "9px", color: "#818cf8", marginBottom: "4px" }}>Original</div>
+              <div style={{ fontSize: "13px", color: "#c7d2fe", fontFamily: "'JetBrains Mono', monospace" }}>
+                [{a.toFixed(1)}&nbsp;&nbsp;{b.toFixed(1)}]
+              </div>
+              <div style={{ fontSize: "13px", color: "#c7d2fe", fontFamily: "'JetBrains Mono', monospace" }}>
+                [{c.toFixed(1)}&nbsp;&nbsp;{d.toFixed(1)}]
+              </div>
+            </div>
+
+            <span style={{ color: "#22d3ee", fontSize: "16px", fontWeight: 700 }}>→</span>
+
+            {/* After column shear */}
+            <div style={{ padding: "8px 12px", background: t1 >= 0.99 ? "rgba(34,211,238,0.1)" : "rgba(30,41,59,0.3)",
+              border: `1px solid ${t1 >= 0.99 ? "rgba(34,211,238,0.3)" : "#1e293b"}`,
+              borderRadius: "8px", textAlign: "center", opacity: t1 >= 0.99 ? 1 : 0.4, transition: "all 0.3s" }}>
+              <div style={{ fontSize: "9px", color: "#22d3ee", marginBottom: "4px" }}>Col shear</div>
+              <div style={{ fontSize: "13px", color: "#a5f3fc", fontFamily: "'JetBrains Mono', monospace" }}>
+                [{a.toFixed(1)}&nbsp;&nbsp;<span style={{ color: "#4ade80" }}>0</span>]
+              </div>
+              <div style={{ fontSize: "13px", color: "#a5f3fc", fontFamily: "'JetBrains Mono', monospace" }}>
+                [{c.toFixed(1)}&nbsp;&nbsp;{canColShear ? (d - b * c / a).toFixed(2) : d.toFixed(1)}]
+              </div>
+            </div>
+
+            <span style={{ color: "#f59e0b", fontSize: "16px", fontWeight: 700 }}>→</span>
+
+            {/* After row shear */}
+            <div style={{ padding: "8px 12px", background: isRect ? "rgba(74,222,128,0.1)" : "rgba(30,41,59,0.3)",
+              border: `1px solid ${isRect ? "rgba(74,222,128,0.3)" : "#1e293b"}`,
+              borderRadius: "8px", textAlign: "center", opacity: t2 >= 0.99 ? 1 : 0.4, transition: "all 0.3s" }}>
+              <div style={{ fontSize: "9px", color: "#4ade80", marginBottom: "4px" }}>Row shear</div>
+              <div style={{ fontSize: "13px", color: "#bbf7d0", fontFamily: "'JetBrains Mono', monospace" }}>
+                [{a.toFixed(1)}&nbsp;&nbsp;<span style={{ color: "#4ade80" }}>0</span>]
+              </div>
+              <div style={{ fontSize: "13px", color: "#bbf7d0", fontFamily: "'JetBrains Mono', monospace" }}>
+                [<span style={{ color: "#4ade80" }}>0</span>&nbsp;&nbsp;{canColShear ? (d - b * c / a).toFixed(2) : d.toFixed(1)}]
+              </div>
+            </div>
+          </div>
+
+          {/* Explanation row */}
+          <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 30%", padding: "10px", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.15)", borderRadius: "8px" }}>
+              <div style={{ fontSize: "10px", color: "#22d3ee", fontWeight: 700, marginBottom: "3px" }}>Step 1: Column shear</div>
+              <div style={{ fontSize: "10px", color: "#94a3b8", lineHeight: "1.5" }}>
+                Slides C₂'s tip along C₁ direction until the top entry of C₂ is zero. The height ⊥ to C₁ is unchanged → area preserved.
+              </div>
+            </div>
+            <div style={{ flex: "1 1 30%", padding: "10px", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: "8px" }}>
+              <div style={{ fontSize: "10px", color: "#f59e0b", fontWeight: 700, marginBottom: "3px" }}>Step 2: Row shear</div>
+              <div style={{ fontSize: "10px", color: "#94a3b8", lineHeight: "1.5" }}>
+                Slides C₁'s tip along C₂ direction until the bottom entry of C₁ is zero. Same logic — height ⊥ to C₂ is unchanged → area still preserved.
+              </div>
+            </div>
+            <div style={{ flex: "1 1 30%", padding: "10px", background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)", borderRadius: "8px" }}>
+              <div style={{ fontSize: "10px", color: "#4ade80", fontWeight: 700, marginBottom: "3px" }}>Result: Rectangle</div>
+              <div style={{ fontSize: "10px", color: "#94a3b8", lineHeight: "1.5" }}>
+                Diagonal matrix = axis-aligned rectangle. Area = |{a.toFixed(1)}| × |{canColShear ? (d - b*c/a).toFixed(2) : d.toFixed(1)}| = {Math.abs(det).toFixed(3)} = |ad − bc|.
+              </div>
+            </div>
+          </div>
+
+          {Math.abs(det) < 0.05 && (
+            <div style={{ marginTop: "10px", padding: "10px", background: "rgba(239,68,68,0.1)",
+              border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", textAlign: "center" }}>
+              <span style={{ fontSize: "12px", color: "#f87171" }}>
+                det ≈ 0 — the parallelogram collapses. No rectangle possible — the columns are linearly dependent.
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ textAlign: "center", marginTop: "14px", color: "#475569", fontSize: "10px" }}>
+        Column shear + Row shear &nbsp;=&nbsp; Parallelogram → Triangle → Rectangle &nbsp;=&nbsp; same area throughout &nbsp;=&nbsp; |det|
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

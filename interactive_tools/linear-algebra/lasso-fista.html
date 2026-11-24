@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LASSO — FISTA Solver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --crimson:#9E1B32;--crimson2:#7a1426;
+  --cream:#faf7f2;--paper:#fff;
+  --navy:#18284a;--navy2:#2c4070;
+  --gold:#c8a430;--gold2:#a07820;
+  --gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#fdf0f2;--acc-blue:#edf1fb;
+  --green:#1a6a40;--green-bg:#e8f5ec;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.65;}
+
+header{background:var(--crimson);color:#fff;border-bottom:4px solid var(--gold);}
+.hdr-top{background:var(--crimson2);padding:.4rem 2rem;font-size:.8rem;color:#f0c8d0;letter-spacing:.06em;text-transform:uppercase;}
+.hdr-main{padding:1.3rem 2rem;}
+header h1{font-family:var(--font-head);font-size:1.9rem;font-weight:700;letter-spacing:.01em;}
+header .subtitle{color:#f0c8d0;font-style:italic;margin-top:.25rem;font-size:.98rem;}
+.hdr-stripe{height:5px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+
+main{max-width:1200px;margin:0 auto;padding:1.5rem 1.4rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1rem 1.3rem;margin-bottom:1.1rem;box-shadow:0 2px 14px rgba(24,40,74,.07);}
+.card h2{font-family:var(--font-head);font-size:1.15rem;font-weight:600;color:var(--crimson);margin-bottom:.55rem;padding-bottom:.3rem;border-bottom:2px solid #f5dde2;}
+.card h3{font-family:var(--font-head);font-size:.98rem;font-weight:600;color:var(--navy2);margin:.55rem 0 .25rem;}
+.card p{margin-bottom:.5rem;line-height:1.65;}
+
+.def-box{background:var(--acc-bg);border-left:3px solid var(--crimson);border-radius:0 5px 5px 0;padding:.5rem .85rem;margin:.5rem 0;font-size:.94rem;line-height:1.65;}
+.thm-box{background:#f0f4ff;border-left:3px solid var(--navy2);border-radius:0 5px 5px 0;padding:.5rem .85rem;margin:.5rem 0;font-size:.94rem;line-height:1.65;}
+.thm-box strong{color:var(--navy2);}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:5px;padding:.5rem .85rem;margin:.5rem 0;font-size:.9rem;line-height:1.62;color:#4a3800;}
+.math-block{overflow-x:auto;margin:.6rem 0;text-align:center;}
+
+/* Input grid */
+.input-layout{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;}
+.mat-panel{flex:1;min-width:260px;}
+.ctrl-panel{flex:0 0 240px;min-width:200px;display:flex;flex-direction:column;gap:.5rem;}
+.ctrl-group{background:#f8f5f0;border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;}
+.ctrl-group label{display:block;font-size:.85rem;font-weight:600;color:var(--navy2);margin-bottom:.2rem;}
+.ctrl-group p{font-size:.8rem;color:var(--gray);margin-top:.15rem;line-height:1.4;}
+.val-badge{display:inline-block;background:var(--crimson);color:#fff;border-radius:4px;padding:.02rem .42rem;font-size:.85rem;font-weight:700;min-width:38px;text-align:center;margin-left:.2rem;}
+input[type=range]{width:100%;accent-color:var(--crimson);cursor:pointer;margin:.1rem 0;}
+input[type=text]{width:100%;padding:.25rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.92rem;background:#fff;color:var(--navy);}
+input[type=text]:focus{outline:none;border-color:var(--crimson);}
+textarea{width:100%;padding:.3rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:'Courier New',monospace;font-size:.88rem;background:#fff;color:var(--navy);resize:vertical;}
+textarea:focus{outline:none;border-color:var(--crimson);}
+select{width:100%;padding:.25rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.92rem;background:#fff;color:var(--navy);}
+select:focus{outline:none;border-color:var(--crimson);}
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:5px;padding:.3rem .8rem;font-size:.9rem;transition:all .13s;}
+button:active{transform:scale(.97);}
+.btn-primary{background:var(--crimson);color:#fff;}
+.btn-primary:hover{background:var(--crimson2);}
+.btn-secondary{background:var(--acc-blue);color:var(--navy2);border:1px solid #b0c4e8;}
+.btn-secondary:hover{background:#c8daff;}
+.btn-row{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+.err-msg{color:var(--crimson);font-size:.82rem;margin-top:.25rem;font-style:italic;}
+
+/* Matrix display */
+.mat-display{display:flex;gap:.4rem;align-items:flex-start;overflow-x:auto;padding:.3rem 0;}
+.mat-bracket{display:inline-flex;flex-direction:column;font-size:1.8rem;color:var(--gray);line-height:1;padding:0 .1rem;align-self:stretch;justify-content:space-between;}
+.mat-inner{display:inline-grid;gap:2px 8px;align-items:center;font-size:.88rem;}
+.mat-cell-inp{width:56px;padding:.18rem .2rem;border:1px solid var(--border);border-radius:3px;font-family:'Courier New',monospace;font-size:.85rem;text-align:center;background:#fafafa;}
+.mat-cell-inp:focus{outline:none;border-color:var(--crimson);background:#fff;}
+.mat-cell-inp.b-col{background:#fff8e8;border-color:#d4b440;}
+.mat-label{font-size:.8rem;color:var(--gray);text-align:center;margin-top:.2rem;font-style:italic;}
+.eq-sep{display:flex;align-items:center;font-size:1.2rem;color:var(--navy2);padding:0 .3rem;margin-top:.5rem;}
+
+/* Results layout */
+.results-layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;}
+@media(max-width:800px){.results-layout{grid-template-columns:1fr 1fr;}}
+@media(max-width:500px){.results-layout{grid-template-columns:1fr;}}
+.result-panel{background:#f8f5f0;border:1px solid var(--border);border-radius:6px;padding:.6rem .85rem;}
+.result-panel h3{font-size:.9rem;font-weight:600;color:var(--navy2);margin-bottom:.35rem;font-family:var(--font-head);}
+
+/* Bar chart for x */
+.bar-chart{display:flex;flex-direction:column;gap:4px;margin-top:.3rem;}
+.bar-row{display:flex;align-items:center;gap:.4rem;font-size:.83rem;}
+.bar-lbl{min-width:28px;color:var(--gray);text-align:right;font-variant-numeric:tabular-nums;}
+.bar-bg{flex:1;height:14px;background:#e8e4de;border-radius:2px;position:relative;overflow:visible;}
+.bar-fill{height:100%;border-radius:2px;position:absolute;top:0;transition:width .35s,left .35s;}
+.bar-val{min-width:58px;font-variant-numeric:tabular-nums;font-size:.82rem;color:var(--navy);}
+.bar-zero{position:absolute;top:-2px;height:18px;width:1.5px;background:#18284a;opacity:0.5;}
+
+/* Convergence plot */
+canvas{display:block;border-radius:5px;border:1px solid var(--border);background:#fff;}
+.cv-label{text-align:center;font-size:.8rem;color:var(--gray);margin-top:.25rem;font-style:italic;}
+
+/* Lambda path */
+.path-layout{display:flex;gap:.8rem;flex-wrap:wrap;}
+.path-plot{flex:1;min-width:250px;}
+.path-table{flex:0 0 200px;min-width:180px;}
+table.sol-tbl{border-collapse:collapse;font-size:.82rem;width:100%;}
+table.sol-tbl th{background:var(--navy);color:#fff;padding:.22rem .5rem;font-weight:400;font-size:.78rem;text-align:center;}
+table.sol-tbl td{padding:.22rem .5rem;border:1px solid #e8e4de;text-align:center;font-variant-numeric:tabular-nums;}
+table.sol-tbl tr:nth-child(even) td{background:#f8f6f2;}
+table.sol-tbl td.zero{color:#ccc;}
+table.sol-tbl td.nonzero{color:var(--crimson);font-weight:600;}
+
+/* Step tracker */
+.step-box{display:flex;gap:.5rem;align-items:flex-start;margin:.4rem 0;font-size:.87rem;}
+.step-num{background:var(--gold);color:var(--navy);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.prog-bar{height:3px;background:#e8e4de;border-radius:2px;margin:.3rem 0;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--crimson));border-radius:2px;transition:width .08s;}
+
+@media(max-width:650px){.hdr-main{padding:1rem 1rem;}main{padding:1rem .7rem;}.card{padding:.8rem .9rem;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr-top">🐘 &nbsp;The University of Alabama — Numerical Optimization</div>
+  <div class="hdr-main">
+    <h1>LASSO Regression — FISTA Solver</h1>
+    <div class="subtitle">Fast Iterative Shrinkage-Thresholding Algorithm for ℓ₁-regularized least squares</div>
+  </div>
+  <div class="hdr-stripe"></div>
+</header>
+<main>
+
+<!-- §1 Theory -->
+<div class="card">
+  <h2>§1 — The LASSO Problem</h2>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+    <div style="flex:1;min-width:240px;">
+      <p>Given a design matrix <span id="th_A"></span> and response <span id="th_b"></span>, the LASSO minimizes:</p>
+      <div class="math-block" id="th_obj"></div>
+      <div class="def-box">
+        The <span id="th_l1"></span> penalty drives small coefficients exactly to zero, producing a <strong>sparse solution</strong>.
+        The parameter <span id="th_lam"></span> controls the trade-off: larger λ → more sparsity.
+      </div>
+    </div>
+    <div style="flex:1;min-width:240px;">
+      <div class="thm-box">
+        <strong>FISTA — Fast ISTA.</strong>
+        Each iteration applies: (1) a gradient step on the smooth part
+        <span id="th_grad"></span>, (2) a <em>soft-thresholding</em> proximal step
+        <span id="th_prox"></span>, and (3) a <strong>Nesterov momentum</strong> update.
+        Step size = <span id="th_step"></span>, where L = λ<sub>max</sub>(AᵀA).
+        Convergence rate: <span id="th_rate"></span>.
+      </div>
+      <div class="key-box">
+        <strong>Soft threshold:</strong> <span id="th_soft"></span> — sets entries with <span id="th_small"></span>
+        exactly to zero; shrinks the rest toward zero by τ.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- §2 Input -->
+<div class="card">
+  <h2>§2 — Enter Problem A, b and λ</h2>
+  <div class="input-layout">
+
+    <!-- Matrix entry -->
+    <div class="mat-panel">
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem;flex-wrap:wrap;">
+        <div class="ctrl-group" style="padding:.3rem .6rem;">
+          <label style="display:inline;">Rows m <span class="val-badge" id="mBadge">4</span></label>
+          <input type="range" id="sliderM" min="2" max="8" value="4" style="width:80px;display:inline;vertical-align:middle;">
+        </div>
+        <div class="ctrl-group" style="padding:.3rem .6rem;">
+          <label style="display:inline;">Cols n <span class="val-badge" id="nBadge">3</span></label>
+          <input type="range" id="sliderN" min="1" max="8" value="3" style="width:80px;display:inline;vertical-align:middle;">
+        </div>
+        <button class="btn-secondary" onclick="loadPreset('signal')">Signal recovery</button>
+        <button class="btn-secondary" onclick="loadPreset('underd')">Underdetermined</button>
+        <button class="btn-secondary" onclick="loadPreset('random')">Random</button>
+      </div>
+      <div id="matGrid"></div>
+      <div class="err-msg" id="matErr"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="ctrl-panel">
+      <div class="ctrl-group">
+        <label>λ (regularization) <span class="val-badge" id="lamBadge">0.50</span></label>
+        <input type="range" id="sliderLam" min="-3" max="2" step="0.05" value="-0.3">
+        <p>Shown: 10<sup>slider</sup>. Move right → more sparsity.</p>
+      </div>
+      <div class="ctrl-group">
+        <label>Max iterations <span class="val-badge" id="iterBadge">500</span></label>
+        <input type="range" id="sliderIter" min="50" max="2000" step="50" value="500">
+      </div>
+      <div class="ctrl-group">
+        <label>Tolerance (log₁₀) <span class="val-badge" id="tolBadge">-5</span></label>
+        <input type="range" id="sliderTol" min="-8" max="-2" step="1" value="-5">
+      </div>
+      <div class="btn-row" style="margin-top:.2rem;">
+        <button class="btn-primary" onclick="runFista()">▶ Solve LASSO</button>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <div style="font-size:.79rem;color:var(--gray);" id="statusLine">Ready.</div>
+    </div>
+  </div>
+</div>
+
+<!-- §3 Results -->
+<div class="card" id="resultsCard" style="display:none;">
+  <h2>§3 — Solution</h2>
+  <div class="results-layout">
+
+    <div class="result-panel">
+      <h3>Solution x*</h3>
+      <div id="barChart" class="bar-chart"></div>
+      <div style="margin-top:.4rem;font-size:.8rem;color:var(--gray);" id="sparseNote"></div>
+    </div>
+
+    <div class="result-panel">
+      <h3>Residual Ax* − b</h3>
+      <div id="residChart" class="bar-chart"></div>
+      <div style="margin-top:.4rem;" id="normSummary"></div>
+    </div>
+
+    <div class="result-panel">
+      <h3>FISTA Convergence</h3>
+      <canvas id="cvConv" height="160" style="width:100%;"></canvas>
+      <div class="cv-label" id="convLabel">Objective vs iteration</div>
+    </div>
+  </div>
+
+  <!-- Objective decomposition -->
+  <div style="margin-top:.6rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
+    <div class="thm-box" style="flex:1;min-width:200px;">
+      <strong>Objective breakdown:</strong><br>
+      <span id="objBreakdown"></span>
+    </div>
+    <div class="key-box" style="flex:1;min-width:200px;">
+      <span id="fistaStats"></span>
+    </div>
+  </div>
+</div>
+
+<!-- §4 Lambda path -->
+<div class="card">
+  <h2>§4 — Regularization Path (λ sweep)</h2>
+  <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;">
+    <div class="ctrl-group" style="padding:.3rem .6rem;display:inline-flex;align-items:center;gap:.4rem;">
+      <label style="margin:0;">λ points</label>
+      <select id="selPathN" style="width:70px;">
+        <option>10</option><option selected>20</option><option>40</option>
+      </select>
+    </div>
+    <button class="btn-secondary" onclick="runPath()">▶ Compute Path</button>
+    <span style="font-size:.8rem;color:var(--gray);" id="pathStatus"></span>
+  </div>
+  <div class="path-layout">
+    <div class="path-plot">
+      <canvas id="cvPath" height="200" style="width:100%;"></canvas>
+      <div class="cv-label">Coefficient paths — each line is one component of x*(λ)</div>
+    </div>
+    <div class="path-table">
+      <canvas id="cvSparsity" height="200" style="width:100%;"></canvas>
+      <div class="cv-label">‖x*(λ)‖₀ (number of nonzeros) vs log λ</div>
+    </div>
+  </div>
+</div>
+
+<!-- §5 Algorithm steps -->
+<div class="card">
+  <h2>§5 — Algorithm: FISTA Step by Step</h2>
+  <div style="display:flex;flex-direction:column;gap:.35rem;">
+    <div class="step-box">
+      <span class="step-num">0</span>
+      <span><strong>Initialize:</strong> <span id="alg0"></span>. Compute <span id="alg0b"></span> (max eigenvalue of AᵀA via power iteration). Step size <span id="alg0c"></span>.</span>
+    </div>
+    <div class="step-box">
+      <span class="step-num">1</span>
+      <span><strong>Gradient step</strong> on the momentum variable y: <span id="alg1"></span>. The gradient of <span id="alg1b"></span> is <span id="alg1c"></span>.</span>
+    </div>
+    <div class="step-box">
+      <span class="step-num">2</span>
+      <span><strong>Proximal step</strong> — soft thresholding with threshold <span id="alg2a"></span>: <span id="alg2"></span>. This is the exact minimizer of <span id="alg2b"></span>.</span>
+    </div>
+    <div class="step-box">
+      <span class="step-num">3</span>
+      <span><strong>Nesterov momentum</strong> update (accelerates O(1/k) → O(1/k²)): <span id="alg3"></span>.</span>
+    </div>
+    <div class="step-box">
+      <span class="step-num">✓</span>
+      <span><strong>Convergence</strong>: stop when <span id="alg4"></span>.</span>
+    </div>
+  </div>
+</div>
+
+</main>
+<script>
+/* ══════════════════════════════════════════
+   KaTeX
+══════════════════════════════════════════ */
+function rk(t,disp){
+  t=String(t).replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/g,'');
+  try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}
+}
+function setK(id,t,disp){var el=document.getElementById(id);if(el)el.innerHTML=rk(t,disp);}
+
+/* ══════════════════════════════════════════
+   THEORY
+══════════════════════════════════════════ */
+function populateTheory(){
+  setK('th_A','A\\in\\mathbb{R}^{m\\times n}');
+  setK('th_b','b\\in\\mathbb{R}^m');
+  setK('th_obj','\\min_{x\\in\\mathbb{R}^n}\\;F(x)=\\underbrace{\\tfrac{1}{2}\\|Ax-b\\|_2^2}_{\\text{data fidelity}}+\\underbrace{\\lambda\\|x\\|_1}_{\\text{sparsity}}',true);
+  setK('th_l1','\\ell_1');
+  setK('th_lam','\\lambda>0');
+  setK('th_grad','\\nabla\\!\\left(\\tfrac{1}{2}\\|Ay-b\\|^2\\right)=A^\\top\\!(Ay-b)');
+  setK('th_prox','\\operatorname{prox}_{\\tau\\lambda\\|\\cdot\\|_1}(z)=\\mathcal{S}_{\\tau\\lambda}(z)');
+  setK('th_step','\\tau=1/L');
+  setK('th_rate','O(1/k^2)');
+  setK('th_soft','\\mathcal{S}_\\tau(z)_i=\\operatorname{sign}(z_i)\\max(|z_i|-\\tau,\\,0)');
+  setK('th_small','|z_i|\\le\\tau');
+  // Algorithm steps
+  setK('alg0','x^{(0)}=y^{(0)}=0,\\;t_0=1');
+  setK('alg0b','L=\\lambda_{\\max}(A^\\top A)');
+  setK('alg0c','\\tau=1/L');
+  setK('alg1','z=y-\\tau\\,A^\\top(Ay-b)');
+  setK('alg1b','\\tfrac{1}{2}\\|Ay-b\\|^2');
+  setK('alg1c','A^\\top(Ay-b)=A^\\top Ay-A^\\top b');
+  setK('alg2a','\\tau\\lambda');
+  setK('alg2','x^{(k+1)}=\\mathcal{S}_{\\tau\\lambda}(z)');
+  setK('alg2b','\\tau\\lambda\\|x\\|_1+\\tfrac{1}{2}\\|x-z\\|^2');
+  setK('alg3','t_{k+1}=\\tfrac{1+\\sqrt{1+4t_k^2}}{2},\\quad y^{(k+1)}=x^{(k+1)}+\\tfrac{t_k-1}{t_{k+1}}(x^{(k+1)}-x^{(k)})');
+  setK('alg4','\\|x^{(k+1)}-x^{(k)}\\|_2<\\text{tol}');
+}
+
+/* ══════════════════════════════════════════
+   MATRIX INPUT UI
+══════════════════════════════════════════ */
+var cM=4,cN=3;
+function buildGrid(){
+  var cont=document.getElementById('matGrid');cont.innerHTML='';
+  var wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;gap:.5rem;align-items:flex-start;overflow-x:auto;';
+
+  // A bracket + grid
+  var Awrap=document.createElement('div');
+  var Albl=document.createElement('div');Albl.className='mat-label';Albl.innerHTML=rk('A\\;('+cM+'\\times'+cN+')');
+  var Agrid=document.createElement('div');
+  Agrid.className='mat-inner';
+  Agrid.style.gridTemplateColumns='repeat('+cN+',56px)';
+  for(var i=0;i<cM;i++) for(var j=0;j<cN;j++){
+    var inp=document.createElement('input');
+    inp.type='text';inp.className='mat-cell-inp';
+    inp.id='a'+i+'_'+j;inp.placeholder='0';inp.autocomplete='off';
+    Agrid.appendChild(inp);
+  }
+  Awrap.appendChild(makeLabel('A'));Awrap.appendChild(Agrid);Awrap.appendChild(Albl);
+
+  // = x (fixed placeholder)
+  var eqDiv=document.createElement('div');eqDiv.className='eq-sep';eqDiv.innerHTML='= ';
+
+  // b column
+  var Bwrap=document.createElement('div');
+  var Blbl=document.createElement('div');Blbl.className='mat-label';Blbl.innerHTML=rk('b\\;('+cM+'\\times 1)');
+  var Bgrid=document.createElement('div');Bgrid.className='mat-inner';Bgrid.style.gridTemplateColumns='56px';
+  for(var i=0;i<cM;i++){
+    var inp=document.createElement('input');
+    inp.type='text';inp.className='mat-cell-inp b-col';
+    inp.id='b'+i;inp.placeholder='0';inp.autocomplete='off';
+    Bgrid.appendChild(inp);
+  }
+  Bwrap.appendChild(makeLabel('b'));Bwrap.appendChild(Bgrid);Bwrap.appendChild(Blbl);
+
+  wrap.appendChild(Awrap);wrap.appendChild(eqDiv);wrap.appendChild(Bwrap);
+  cont.appendChild(wrap);
+}
+
+function makeLabel(ch){
+  var d=document.createElement('div');
+  d.style.cssText='font-size:.9rem;font-weight:600;color:var(--navy2);text-align:center;margin-bottom:.15rem;';
+  d.innerHTML=rk(ch);return d;
+}
+
+function parseMatrix(){
+  var A=[],b=[];
+  for(var i=0;i<cM;i++){
+    var row=[];
+    for(var j=0;j<cN;j++){
+      var v=parseFloat(document.getElementById('a'+i+'_'+j).value)||0;row.push(v);
+    }
+    A.push(row);
+    b.push(parseFloat(document.getElementById('b'+i).value)||0);
+  }
+  return{A:A,b:b};
+}
+
+function setMatrix(A,b){
+  cM=A.length;cN=A[0].length;
+  document.getElementById('sliderM').value=cM;
+  document.getElementById('sliderN').value=cN;
+  document.getElementById('mBadge').textContent=cM;
+  document.getElementById('nBadge').textContent=cN;
+  buildGrid();
+  A.forEach(function(row,i){row.forEach(function(v,j){
+    var el=document.getElementById('a'+i+'_'+j);if(el)el.value=v;
+  });});
+  b.forEach(function(v,i){var el=document.getElementById('b'+i);if(el)el.value=v;});
+}
+
+var PRESETS={
+  signal:{
+    A:[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,1,0]],
+    b:[1.5, 0.1, -2.1, 0.05, 1.6, -2.0, -2.05, -0.6],
+    lam:0.3
+  },
+  underd:{
+    A:[[1,2,-1,0,1],[0,1,3,-2,0],[2,-1,0,1,3]],
+    b:[3,-1,5],
+    lam:0.5
+  },
+  random:null
+};
+
+function loadPreset(name){
+  if(name==='random'){
+    var m=parseInt(document.getElementById('sliderM').value);
+    var n=parseInt(document.getElementById('sliderN').value);
+    var A=[],b=[];
+    for(var i=0;i<m;i++){
+      var row=[];for(var j=0;j<n;j++) row.push(Math.round((Math.random()*4-2)*10)/10);
+      A.push(row);b.push(Math.round((Math.random()*6-3)*10)/10);
+    }
+    setMatrix(A,b);
+  } else {
+    var p=PRESETS[name];
+    setMatrix(p.A,p.b);
+    var logLam=Math.log10(p.lam);
+    document.getElementById('sliderLam').value=logLam;
+    updateLamBadge();
+  }
+}
+
+/* ══════════════════════════════════════════
+   FISTA (pure JS, flat arrays)
+══════════════════════════════════════════ */
+function matMul(A,B,mA,nA,nB){
+  // A: mA x nA, B: nA x nB -> C: mA x nB (all flat row-major)
+  var C=new Float64Array(mA*nB);
+  for(var i=0;i<mA;i++) for(var k=0;k<nA;k++) for(var j=0;j<nB;j++)
+    C[i*nB+j]+=A[i*nA+k]*B[k*nB+j];
+  return C;
+}
+function matVec(A,x,m,n){
+  var y=new Float64Array(m);
+  for(var i=0;i<m;i++) for(var j=0;j<n;j++) y[i]+=A[i*n+j]*x[j];
+  return y;
+}
+function transpose(A,m,n){
+  var At=new Float64Array(n*m);
+  for(var i=0;i<m;i++) for(var j=0;j<n;j++) At[j*m+i]=A[i*n+j];
+  return At;
+}
+function vecNorm(v){var s=0;for(var i=0;i<v.length;i++) s+=v[i]*v[i];return Math.sqrt(s);}
+function vecNorm1(v){var s=0;for(var i=0;i<v.length;i++) s+=Math.abs(v[i]);return s;}
+function vecSub(a,b){var c=new Float64Array(a.length);for(var i=0;i<a.length;i++) c[i]=a[i]-b[i];return c;}
+function vecScale(a,s){var c=new Float64Array(a.length);for(var i=0;i<a.length;i++) c[i]=a[i]*s;return c;}
+function vecAdd(a,b){var c=new Float64Array(a.length);for(var i=0;i<a.length;i++) c[i]=a[i]+b[i];return c;}
+
+function softThreshold(z,tau){
+  var x=new Float64Array(z.length);
+  for(var i=0;i<z.length;i++){
+    var v=z[i];
+    x[i]=v>tau?v-tau:(v<-tau?v+tau:0);
+  }
+  return x;
+}
+
+// Power iteration for max eigenvalue of symmetric M (n x n flat)
+function maxEig(M,n){
+  var v=new Float64Array(n);for(var i=0;i<n;i++) v[i]=1/Math.sqrt(n);
+  for(var iter=0;iter<120;iter++){
+    var w=matVec(M,v,n,n);
+    var nrm=vecNorm(w);
+    if(nrm<1e-14) break;
+    var scale=1/nrm;
+    for(var i=0;i<n;i++) v[i]=w[i]*scale;
+  }
+  var w=matVec(M,v,n,n);
+  var lam=0;for(var i=0;i<n;i++) lam+=v[i]*w[i];
+  return lam;
+}
+
+function fista(Aarr,barr,m,n,lambda,maxIter,tol){
+  // Convert input to flat arrays
+  var A=new Float64Array(m*n);
+  for(var i=0;i<m;i++) for(var j=0;j<n;j++) A[i*n+j]=Aarr[i][j];
+  var b=new Float64Array(barr);
+
+  var At=transpose(A,m,n);
+  var AtA=matMul(At,A,n,m,n);
+  var Atb=matVec(At,b,n,m);
+  var L=maxEig(AtA,n);
+  if(L<1e-12) return null;
+  var tau=1/L;
+
+  var x=new Float64Array(n);
+  var y=new Float64Array(n);
+  var t=1;
+  var objHistory=[];
+  var convergedAt=-1;
+
+  for(var k=0;k<maxIter;k++){
+    var xOld=x.slice();
+    // Gradient: AtA*y - Atb
+    var grad=vecSub(matVec(AtA,y,n,n),Atb);
+    // Gradient step
+    var z=vecSub(y,vecScale(grad,tau));
+    // Soft threshold
+    x=softThreshold(z,tau*lambda);
+    // Objective
+    var Ax=matVec(A,x,m,n);
+    var res=vecSub(Ax,b);
+    var obj=0.5*vecNorm(res)*vecNorm(res)+lambda*vecNorm1(x);
+    objHistory.push(obj);
+    // Convergence
+    if(vecNorm(vecSub(x,xOld))<tol){convergedAt=k+1;break;}
+    // Nesterov
+    var tNext=(1+Math.sqrt(1+4*t*t))/2;
+    var mom=(t-1)/tNext;
+    var dx=vecSub(x,xOld);
+    y=vecAdd(x,vecScale(dx,mom));
+    t=tNext;
+  }
+
+  var Axfinal=matVec(A,x,m,n);
+  var residual=vecSub(Axfinal,b);
+  var nnz=0;for(var i=0;i<n;i++) if(Math.abs(x[i])>1e-6) nnz++;
+
+  return{
+    x:Array.from(x),
+    residual:Array.from(residual),
+    objHistory:objHistory,
+    convergedAt:convergedAt,
+    L:L,tau:tau,nnz:nnz,
+    normRes:vecNorm(residual),
+    normX1:vecNorm1(x)
+  };
+}
+
+/* ══════════════════════════════════════════
+   CANVAS UTILITIES
+══════════════════════════════════════════ */
+function setupCV(cv){
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.offsetWidth||400,cssH=cv.offsetHeight||160;
+  cv.width=Math.round(cssW*dpr);cv.height=Math.round(cssH*dpr);
+  cv.style.width=cssW+'px';cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  return{ctx:ctx,W:cssW,H:cssH};
+}
+
+function drawConvPlot(history){
+  var cv=document.getElementById('cvConv');
+  var s=setupCV(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:44,r:10,t:10,b:26};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  if(!history||!history.length) return;
+  var logH=history.map(function(v){return v>0?Math.log10(v):-15;});
+  var yMin=Math.min.apply(null,logH)-0.5,yMax=Math.max.apply(null,logH)+0.5;
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  function px(i){return pad.l+i/(logH.length-1)*gW;}
+  function py(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*gH;}
+  // Grid
+  ctx.strokeStyle='#edebe8';ctx.lineWidth=0.7;
+  for(var y=Math.ceil(yMin);y<=Math.floor(yMax);y++){
+    ctx.beginPath();ctx.moveTo(pad.l,py(y));ctx.lineTo(pad.l+gW,py(y));ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='9px "Crimson Pro",serif';ctx.textAlign='right';
+    ctx.fillText('10^'+y,pad.l-2,py(y)+3);
+  }
+  // Axes
+  ctx.strokeStyle='#18284a';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);ctx.stroke();
+  // Curve
+  ctx.strokeStyle='#9E1B32';ctx.lineWidth=1.8;
+  ctx.beginPath();
+  for(var i=0;i<logH.length;i++){
+    var v=logH[i];if(!isFinite(v)) continue;
+    i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));
+  }
+  ctx.stroke();
+  // Axis labels
+  ctx.fillStyle='#18284a';ctx.font='10px "Crimson Pro",serif';ctx.textAlign='center';
+  ctx.fillText('iteration',pad.l+gW/2,H-4);
+  ctx.save();ctx.translate(10,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('F(x)',0,0);ctx.restore();
+}
+
+/* ══════════════════════════════════════════
+   BAR CHARTS (solution and residual)
+══════════════════════════════════════════ */
+function drawBars(containerId,vals,labels,colors){
+  var cont=document.getElementById(containerId);cont.innerHTML='';
+  if(!vals||!vals.length) return;
+  var maxAbs=Math.max.apply(null,vals.map(Math.abs))||1;
+  vals.forEach(function(v,i){
+    var row=document.createElement('div');row.className='bar-row';
+    var lbl=document.createElement('span');lbl.className='bar-lbl';
+    lbl.innerHTML=labels?labels[i]:(rk('x_{'+(i+1)+'}'));
+    var bg=document.createElement('div');bg.className='bar-bg';
+    // zero line position
+    var zeroFrac=0.5; // center = zero
+    var zeroPx=document.createElement('div');zeroPx.className='bar-zero';
+    zeroPx.style.left=(zeroFrac*100)+'%';bg.appendChild(zeroPx);
+    // bar
+    var fill=document.createElement('div');fill.className='bar-fill';
+    var frac=v/maxAbs*0.48; // ±48% of width
+    if(v>=0){fill.style.left=(zeroFrac*100)+'%';fill.style.width=(frac*100)+'%';}
+    else{fill.style.left=((zeroFrac+frac)*100)+'%';fill.style.width=((-frac)*100)+'%';}
+    fill.style.background=colors?colors[i]:(Math.abs(v)>1e-4?'#9E1B32':'#ccc');
+    bg.appendChild(fill);
+    var val=document.createElement('span');val.className='bar-val';
+    val.textContent=v.toFixed(4);
+    val.style.color=Math.abs(v)<1e-4?'#bbb':'var(--navy)';
+    row.appendChild(lbl);row.appendChild(bg);row.appendChild(val);
+    cont.appendChild(row);
+  });
+}
+
+/* ══════════════════════════════════════════
+   REGULARIZATION PATH
+══════════════════════════════════════════ */
+function drawPathPlot(lams,allX,n){
+  var cv=document.getElementById('cvPath');
+  var s=setupCV(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:44,r:12,t:12,b:32};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var logLams=lams.map(Math.log10);
+  var xMin=Math.min.apply(null,logLams),xMax=Math.max.apply(null,logLams);
+  var yAll=allX.reduce(function(a,b){return a.concat(b);},[]);
+  var yMin=Math.min.apply(null,yAll),yMax=Math.max.apply(null,yAll);
+  var yPad=(yMax-yMin)*0.1||0.2;yMin-=yPad;yMax+=yPad;
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  function px(l){return pad.l+(l-xMin)/(xMax-xMin)*gW;}
+  function py(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*gH;}
+  // Grid
+  ctx.strokeStyle='#edebe8';ctx.lineWidth=0.7;
+  var y0=Math.max(pad.t,Math.min(pad.t+gH,py(0)));
+  ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(pad.l+gW,y0);ctx.stroke();
+  // Axes
+  ctx.strokeStyle='#18284a';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);ctx.stroke();
+  // Coefficient lines
+  var COLS=['#9E1B32','#3a6eb5','#1a6a40','#c8a430','#6b21a8','#b36a00','#2c7070','#8a3a60'];
+  for(var j=0;j<n;j++){
+    ctx.strokeStyle=COLS[j%COLS.length];ctx.lineWidth=1.6;
+    ctx.beginPath();
+    for(var i=0;i<lams.length;i++){
+      var xv=allX[i][j],xl=logLams[i];
+      i===0?ctx.moveTo(px(xl),py(xv)):ctx.lineTo(px(xl),py(xv));
+    }
+    ctx.stroke();
+  }
+  // x-axis labels
+  ctx.fillStyle='#7a7a8a';ctx.font='9px "Crimson Pro",serif';ctx.textAlign='center';
+  for(var l=Math.ceil(xMin);l<=Math.floor(xMax);l++){
+    ctx.fillText('10^'+l,px(l),pad.t+gH+16);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.7;
+    ctx.beginPath();ctx.moveTo(px(l),pad.t+gH-3);ctx.lineTo(px(l),pad.t+gH+3);ctx.stroke();
+  }
+  ctx.fillStyle='#18284a';ctx.font='10px "Crimson Pro",serif';
+  ctx.fillText('log₁₀ λ',pad.l+gW/2,H-4);
+  ctx.save();ctx.translate(12,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('xⱼ*(λ)',0,0);ctx.restore();
+}
+
+function drawSparsityPlot(lams,nnzArr){
+  var cv=document.getElementById('cvSparsity');
+  var s=setupCV(cv);var ctx=s.ctx,W=s.W,H=s.H;
+  var pad={l:28,r:8,t:12,b:32};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  var logLams=lams.map(Math.log10);
+  var xMin=Math.min.apply(null,logLams),xMax=Math.max.apply(null,logLams);
+  var yMax=Math.max.apply(null,nnzArr)+0.5;
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  function px(l){return pad.l+(l-xMin)/(xMax-xMin)*gW;}
+  function py(v){return pad.t+(1-v/yMax)*gH;}
+  // bars
+  var bw=gW/nnzArr.length*0.75;
+  nnzArr.forEach(function(nz,i){
+    var xl=px(logLams[i])-bw/2;
+    ctx.fillStyle='rgba(158,27,50,0.75)';
+    ctx.fillRect(xl,py(nz),bw,py(0)-py(nz));
+  });
+  // axes
+  ctx.strokeStyle='#18284a';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);ctx.stroke();
+  // y ticks
+  ctx.fillStyle='#7a7a8a';ctx.font='9px "Crimson Pro",serif';ctx.textAlign='right';
+  for(var y=0;y<=Math.floor(yMax);y++){
+    ctx.fillText(y,pad.l-2,py(y)+3);
+    ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.6;ctx.beginPath();ctx.moveTo(pad.l,py(y));ctx.lineTo(pad.l+gW,py(y));ctx.stroke();
+  }
+  ctx.fillStyle='#18284a';ctx.font='10px "Crimson Pro",serif';ctx.textAlign='center';
+  ctx.fillText('log₁₀ λ',pad.l+gW/2,H-4);
+  ctx.save();ctx.translate(8,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('nnz',0,0);ctx.restore();
+}
+
+/* ══════════════════════════════════════════
+   RUN
+══════════════════════════════════════════ */
+function runFista(){
+  var data=parseMatrix();
+  var lam=Math.pow(10,parseFloat(document.getElementById('sliderLam').value));
+  var maxIter=parseInt(document.getElementById('sliderIter').value);
+  var tol=Math.pow(10,parseInt(document.getElementById('sliderTol').value));
+  document.getElementById('matErr').textContent='';
+  document.getElementById('statusLine').textContent='Running FISTA…';
+  document.getElementById('progFill').style.width='30%';
+
+  setTimeout(function(){
+    var res=fista(data.A,data.b,cM,cN,lam,maxIter,tol);
+    document.getElementById('progFill').style.width='100%';
+    if(!res){
+      document.getElementById('matErr').textContent='Matrix is rank-deficient or all zeros.';
+      document.getElementById('statusLine').textContent='Failed.';
+      return;
+    }
+    var iters=res.convergedAt>0?res.convergedAt:maxIter;
+    document.getElementById('statusLine').textContent=
+      (res.convergedAt>0?'Converged in '+iters+' iterations.':'Did not fully converge in '+maxIter+' iterations.')+
+      '  L='+res.L.toFixed(3)+', τ='+res.tau.toFixed(5);
+
+    // Show results card
+    document.getElementById('resultsCard').style.display='block';
+
+    // Bar chart: solution
+    drawBars('barChart',res.x,null,res.x.map(function(v){return Math.abs(v)>1e-4?'#9E1B32':'#d0c8c0';}));
+    var nnz=res.nnz;
+    document.getElementById('sparseNote').textContent=
+      nnz+' nonzero of '+cN+' ('+Math.round(nnz/cN*100)+'% dense, '+(cN-nnz)+' exactly zero)';
+
+    // Bar chart: residual
+    var rLabels=[];for(var i=0;i<cM;i++) rLabels.push(rk('r_{'+(i+1)+'}'));
+    drawBars('residChart',res.residual,rLabels,res.residual.map(function(){return'#3a6eb5';}));
+
+    // Norms
+    document.getElementById('normSummary').innerHTML=
+      rk('\\|Ax^*-b\\|_2='+res.normRes.toFixed(4))+' &nbsp; '+
+      rk('\\|x^*\\|_1='+res.normX1.toFixed(4));
+
+    // Objective breakdown
+    var ls=0.5*res.normRes*res.normRes;
+    var pen=Math.pow(10,parseFloat(document.getElementById('sliderLam').value))*res.normX1;
+    document.getElementById('objBreakdown').innerHTML=
+      rk('\\tfrac{1}{2}\\|Ax^*-b\\|^2 = '+ls.toFixed(5))+
+      '&ensp;+&ensp;'+rk('\\lambda\\|x^*\\|_1 = '+pen.toFixed(5))+
+      '&ensp;=&ensp;'+rk('F^* = '+(ls+pen).toFixed(5));
+
+    document.getElementById('fistaStats').innerHTML=
+      '<strong>Iterations:</strong> '+iters+'<br>'+
+      '<strong>L = λ<sub>max</sub>(AᵀA):</strong> '+res.L.toFixed(4)+'<br>'+
+      '<strong>Step size τ = 1/L:</strong> '+res.tau.toFixed(6)+'<br>'+
+      '<strong>Nonzeros:</strong> '+nnz+' / '+cN;
+
+    drawConvPlot(res.objHistory);
+    setTimeout(function(){document.getElementById('progFill').style.width='0%';},600);
+  },10);
+}
+
+function runPath(){
+  var data=parseMatrix();
+  var nPath=parseInt(document.getElementById('selPathN').value)||20;
+  document.getElementById('pathStatus').textContent='Computing…';
+  setTimeout(function(){
+    var lamMax=1.0,lamMin=0.01;
+    var lams=[];
+    for(var i=0;i<nPath;i++){
+      var t=i/(nPath-1);
+      lams.push(Math.pow(10,Math.log10(lamMax)*(1-t)+Math.log10(lamMin)*t));
+    }
+    var allX=[],nnzArr=[];
+    var tol=1e-5,maxIter=500;
+    for(var i=0;i<nPath;i++){
+      var res=fista(data.A,data.b,cM,cN,lams[i],maxIter,tol);
+      allX.push(res?res.x:new Array(cN).fill(0));
+      nnzArr.push(res?res.nnz:0);
+    }
+    document.getElementById('pathStatus').textContent='Done ('+nPath+' λ values).';
+    requestAnimationFrame(function(){
+      drawPathPlot(lams,allX,cN);
+      drawSparsityPlot(lams,nnzArr);
+    });
+  },10);
+}
+
+/* ══════════════════════════════════════════
+   SLIDER CALLBACKS
+══════════════════════════════════════════ */
+function updateLamBadge(){
+  var v=Math.pow(10,parseFloat(document.getElementById('sliderLam').value));
+  document.getElementById('lamBadge').textContent=v<0.01?v.toExponential(2):v.toFixed(v<1?3:2);
+}
+document.getElementById('sliderM').addEventListener('input',function(){
+  cM=parseInt(this.value);document.getElementById('mBadge').textContent=cM;buildGrid();
+});
+document.getElementById('sliderN').addEventListener('input',function(){
+  cN=parseInt(this.value);document.getElementById('nBadge').textContent=cN;buildGrid();
+});
+document.getElementById('sliderLam').addEventListener('input',updateLamBadge);
+document.getElementById('sliderIter').addEventListener('input',function(){
+  document.getElementById('iterBadge').textContent=this.value;
+});
+document.getElementById('sliderTol').addEventListener('input',function(){
+  document.getElementById('tolBadge').textContent=this.value;
+});
+
+var resizeTimer;
+window.addEventListener('resize',function(){
+  clearTimeout(resizeTimer);resizeTimer=setTimeout(function(){
+    // Redraw canvases at new size — data already in DOM result elements
+  },200);
+});
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  populateTheory();
+  buildGrid();
+  loadPreset('signal');
+  updateLamBadge();
+});
+</script>
+</body>
+</html>

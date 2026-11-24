@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Fast Fourier Transform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+:root {
+  --crimson: #9E1B32;
+  --crimson-dark: #6E0E20;
+  --crimson-light: #C84257;
+  --cream: #F7F3EC;
+  --paper: #FBF8F2;
+  --ink: #1A1614;
+  --ink-soft: #4A423D;
+  --rule: #D8CFC0;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(at 15% 10%, rgba(158,27,50,0.04) 0%, transparent 50%),
+    radial-gradient(at 85% 90%, rgba(158,27,50,0.03) 0%, transparent 50%);
+  min-height: 100vh;
+}
+
+/* Houndstooth decorative band at top */
+.houndstooth {
+  height: 14px;
+  background-color: var(--crimson);
+  background-image:
+    linear-gradient(45deg, transparent 25%, #fff 25%, #fff 50%, transparent 50%, transparent 75%, #fff 75%),
+    linear-gradient(135deg, var(--crimson) 25%, transparent 25%, transparent 75%, var(--crimson) 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 0;
+  opacity: 0.85;
+}
+
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 60px 40px 100px;
+}
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 72px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+}
+
+header::after {
+  content: "✦";
+  position: absolute;
+  bottom: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  padding: 0 16px;
+  color: var(--crimson);
+  font-size: 18px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  font-weight: 600;
+  margin-bottom: 20px;
+  font-family: var(--mono);
+}
+
+h1 {
+  font-family: 'Crimson Pro', serif;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+  color: var(--ink);
+}
+
+h1 em {
+  color: var(--crimson);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.subtitle {
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 400;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* Sections */
+section {
+  margin-bottom: 80px;
+}
+
+.section-num {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--crimson);
+  margin-bottom: 14px;
+}
+
+h2 {
+  font-family: 'Crimson Pro', serif;
+  font-weight: 500;
+  font-size: 38px;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin-bottom: 28px;
+  color: var(--ink);
+}
+
+h3 {
+  font-family: 'Crimson Pro', serif;
+  font-weight: 600;
+  font-size: 22px;
+  margin: 28px 0 14px;
+  color: var(--ink);
+}
+
+p {
+  margin-bottom: 18px;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+p strong { color: var(--ink); font-weight: 600; }
+
+/* Math display */
+.math-display {
+  margin: 28px 0;
+  padding: 24px 20px;
+  background: var(--cream);
+  border-left: 3px solid var(--crimson);
+  overflow-x: auto;
+}
+
+.math-display.boxed {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--crimson);
+  text-align: center;
+}
+
+/* Cards (interactive sections) */
+.card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  padding: 36px 32px;
+  margin: 28px 0;
+  position: relative;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 60px;
+  height: 3px;
+  background: var(--crimson);
+}
+
+.card-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--crimson);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.card h3 {
+  margin-top: 0;
+  font-size: 24px;
+}
+
+/* Input controls */
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+
+.input-label {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 80px;
+}
+
+.vec-input {
+  font-family: var(--mono);
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  width: 100%;
+  max-width: 420px;
+  border-radius: 2px;
+  transition: border-color 0.15s;
+}
+
+.vec-input:focus {
+  outline: none;
+  border-color: var(--crimson);
+  background: #fff;
+}
+
+button {
+  font-family: 'Crimson Pro', serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 11px 24px;
+  background: var(--crimson);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, transform 0.1s;
+  border-radius: 2px;
+}
+
+button:hover { background: var(--crimson-dark); }
+button:active { transform: translateY(1px); }
+
+button.secondary {
+  background: #fff;
+  color: var(--crimson);
+  border: 1px solid var(--crimson);
+}
+button.secondary:hover { background: var(--crimson); color: #fff; }
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+
+/* Output displays */
+.output-block {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--cream);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-left: 2px solid var(--crimson-light);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.7;
+}
+
+.step {
+  margin: 22px 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--rule);
+}
+
+.step-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.step-body {
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+/* Comparison */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .compare { grid-template-columns: 1fr; }
+  .container { padding: 40px 20px 80px; }
+  h1 { font-size: 44px; }
+  h2 { font-size: 30px; }
+}
+
+.compare-box {
+  background: var(--cream);
+  padding: 18px;
+  border-left: 2px solid var(--crimson-light);
+}
+
+.compare-box h4 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.compare-box .nums {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.match-indicator {
+  text-align: center;
+  margin-top: 18px;
+  padding: 12px;
+  font-style: italic;
+  color: var(--crimson);
+  font-size: 17px;
+}
+
+.match-indicator.match::before { content: "✓ "; font-weight: 700; }
+
+/* Polynomial display */
+.poly-display {
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  padding: 14px 0;
+  color: var(--ink);
+  line-height: 1.8;
+}
+
+.poly-display .coef { font-weight: 500; }
+.poly-display sup { font-size: 0.75em; }
+
+.poly-result {
+  background: var(--cream);
+  padding: 20px;
+  border-left: 3px solid var(--crimson);
+  margin: 16px 0;
+}
+
+.poly-result-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 80px;
+  padding-top: 32px;
+  border-top: 1px solid var(--rule);
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+footer .tide {
+  display: block;
+  margin-top: 8px;
+  color: var(--crimson);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.2em;
+}
+
+/* Small text helpers */
+.note {
+  font-size: 16px;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 12px 0;
+}
+
+.complexity-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--crimson);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 2px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* KaTeX size adjustment */
+.katex { font-size: 1.05em; }
+.katex-display { margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="houndstooth"></div>
+
+<div class="container">
+
+<header>
+  <div class="eyebrow">Applied Linear Algebra · Lecture Notes</div>
+  <h1>The <em>Fast</em> Fourier Transform</h1>
+  <p class="subtitle">A matrix-factorization view, with applications to convolution and polynomial multiplication.</p>
+</header>
+
+<!-- ============ SECTION 1: THEORY ============ -->
+<section>
+  <div class="section-num">§ 1 — Theory</div>
+  <h2>The DFT matrix and its factorization</h2>
+
+  <p>Define the <strong>discrete Fourier transform matrix</strong> $F_n$ of size $n \times n$ by</p>
+  <div class="math-display">$$ (F_n)_{jk} \;=\; \omega^{jk}, \qquad \omega \;=\; e^{-2\pi i / n} \;=\; \cos\!\tfrac{2\pi}{n} \;-\; i\sin\!\tfrac{2\pi}{n}, \qquad j, k = 0, 1, \ldots, n-1. $$</div>
+
+  <p>The number $\omega$ is a primitive $n$-th root of unity: a point on the unit circle, stepping $1/n$ of the way around for each power. In particular $\omega^n = 1$, so all powers $\omega^{jk}$ reduce modulo $n$. For $n = 8$ for instance,</p>
+  <div class="math-display">$$ \omega \;=\; \cos\!\tfrac{\pi}{4} - i\sin\!\tfrac{\pi}{4} \;=\; \tfrac{\sqrt 2}{2}\,(1 - i), \qquad \omega^2 = -i, \quad \omega^4 = -1, \quad \omega^6 = i. $$</div>
+
+  <p>To make the matrix concrete, here is $F_8$ written out. Each entry $\omega^{jk}$ has been reduced using $\omega^8 = 1$:</p>
+
+  <div class="math-display">
+  $$ F_8 \;=\; \begin{pmatrix}
+  1 & 1        & 1        & 1        & 1        & 1        & 1        & 1        \\
+  1 & \omega   & \omega^2 & \omega^3 & \omega^4 & \omega^5 & \omega^6 & \omega^7 \\
+  1 & \omega^2 & \omega^4 & \omega^6 & 1        & \omega^2 & \omega^4 & \omega^6 \\
+  1 & \omega^3 & \omega^6 & \omega   & \omega^4 & \omega^7 & \omega^2 & \omega^5 \\
+  1 & \omega^4 & 1        & \omega^4 & 1        & \omega^4 & 1        & \omega^4 \\
+  1 & \omega^5 & \omega^2 & \omega^7 & \omega^4 & \omega   & \omega^6 & \omega^3 \\
+  1 & \omega^6 & \omega^4 & \omega^2 & 1        & \omega^6 & \omega^4 & \omega^2 \\
+  1 & \omega^7 & \omega^6 & \omega^5 & \omega^4 & \omega^3 & \omega^2 & \omega
+  \end{pmatrix} $$
+  </div>
+
+  <p>Notice the patterns. Row 0 is all ones (the constant mode). Row 4, using $\omega^4 = -1$, becomes $(1, -1, 1, -1, 1, -1, 1, -1)$ — the highest-frequency mode. Rows $j$ and $n - j$ are complex conjugates of one another. Every entry has modulus one, so the matrix is <em>completely dense</em> — no zeros to exploit.</p>
+
+  <p>Computing $F_n x$ in the obvious way — multiplying a fully dense $n \times n$ matrix by a vector — takes about $n^2$ multiplications and additions. The Fast Fourier Transform is the observation that, when $n$ is a power of two, $F_n$ can be written as a product of simpler matrices, each having only <em>two nonzero entries per row</em>. Multiplying by such a matrix is fast, and the total work drops to roughly $2n \log_2 n$ operations.</p>
+
+  <h3>The key identity</h3>
+  <p>Two facts about $\omega = e^{-2\pi i / n}$ do all of the work:</p>
+  <div class="math-display">$$ \omega^2 \;=\; \omega_{n/2}, \qquad \omega^{n/2} \;=\; -1. $$</div>
+
+  <p>Permute the columns of $F_n$ into even-then-odd order $(0,2,4,\ldots,1,3,5,\ldots)$. Call this permutation $P$. A direct calculation then gives</p>
+  <div class="math-display boxed">$$ F_n \;=\; \begin{pmatrix} I & D \\ I & -D \end{pmatrix} \begin{pmatrix} F_{n/2} & 0 \\ 0 & F_{n/2} \end{pmatrix} P^{T} $$</div>
+
+  <p>where $D = \mathrm{diag}(1, \omega, \omega^2, \ldots, \omega^{n/2-1})$ is the diagonal of <em>twiddle factors</em>. This is the entire FFT in one equation — everything else is recursion.</p>
+
+  <h3>The factorization written out for $n = 8$</h3>
+
+  <p>Let's make this concrete. With $\omega = e^{-2\pi i / 8}$, the boxed equation above says</p>
+
+  <div class="math-display">$$ F_8 \;=\; B_8 \;\cdot\; M_8 \;\cdot\; P_8^{T}, $$</div>
+
+  <p>where each of the three matrices on the right is given explicitly below.</p>
+
+  <p><strong>The first factor $B_8$</strong> combines the even and odd half-results using the twiddle factors $1, \omega, \omega^2, \omega^3$:</p>
+
+  <div class="math-display">$$ B_8 \;=\; \begin{pmatrix}
+  1 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+  0 & 1 & 0 & 0 & 0 & \omega & 0 & 0 \\
+  0 & 0 & 1 & 0 & 0 & 0 & \omega^2 & 0 \\
+  0 & 0 & 0 & 1 & 0 & 0 & 0 & \omega^3 \\
+  1 & 0 & 0 & 0 & -1 & 0 & 0 & 0 \\
+  0 & 1 & 0 & 0 & 0 & -\omega & 0 & 0 \\
+  0 & 0 & 1 & 0 & 0 & 0 & -\omega^2 & 0 \\
+  0 & 0 & 0 & 1 & 0 & 0 & 0 & -\omega^3
+  \end{pmatrix} $$</div>
+
+  <p>Look at how few nonzero entries it has: exactly <em>two per row</em>. Multiplying $B_8$ by a length-$8$ vector takes only $16$ scalar operations — far fewer than the $64$ a generic $8 \times 8$ matrix would need.</p>
+
+  <p><strong>The middle factor $M_8$</strong> is block-diagonal, with two copies of $F_4$ on the diagonal:</p>
+
+  <div class="math-display">$$ M_8 \;=\; \begin{pmatrix} F_4 & 0 \\ 0 & F_4 \end{pmatrix} \;=\; \begin{pmatrix}
+  1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 \\
+  1 & \omega^2 & \omega^4 & \omega^6 & 0 & 0 & 0 & 0 \\
+  1 & \omega^4 & 1 & \omega^4 & 0 & 0 & 0 & 0 \\
+  1 & \omega^6 & \omega^4 & \omega^2 & 0 & 0 & 0 & 0 \\
+  0 & 0 & 0 & 0 & 1 & 1 & 1 & 1 \\
+  0 & 0 & 0 & 0 & 1 & \omega^2 & \omega^4 & \omega^6 \\
+  0 & 0 & 0 & 0 & 1 & \omega^4 & 1 & \omega^4 \\
+  0 & 0 & 0 & 0 & 1 & \omega^6 & \omega^4 & \omega^2
+  \end{pmatrix} $$</div>
+
+  <p>Applying $M_8$ amounts to two independent smaller Fourier transforms — one on the top four entries, one on the bottom four. And each $F_4$ block factors the very same way using $F_2$, and each $F_2$ is the small base case. <strong>The FFT is this single trick applied recursively until you bottom out at length one.</strong></p>
+
+  <p><strong>The third factor $P_8^T$</strong> is the permutation that places the even-indexed entries first, then the odd-indexed ones:</p>
+
+  <div class="math-display">$$ P_8^T \;=\; \begin{pmatrix}
+  1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+  0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+  0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+  0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+  0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+  0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+  0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
+  \end{pmatrix},
+  \qquad
+  P_8^T \begin{pmatrix} x_0 \\ x_1 \\ x_2 \\ x_3 \\ x_4 \\ x_5 \\ x_6 \\ x_7 \end{pmatrix} \;=\; \begin{pmatrix} x_0 \\ x_2 \\ x_4 \\ x_6 \\ x_1 \\ x_3 \\ x_5 \\ x_7 \end{pmatrix}. $$</div>
+
+  <p>Multiplying by $P_8^T$ does no arithmetic at all — it just shuffles the order of the entries. So the whole cost of computing $F_8 x$ comes from $B_8$ (which is cheap) plus two half-sized FFTs (which we recurse on).</p>
+
+  <h3>Counting the operations <span class="complexity-tag">≈ 2n · log₂(n)</span></h3>
+  <p>The first matrix on the right has only two nonzero entries in each row (one from $I$, one from $\pm D$), so multiplying it by a length-$n$ vector costs about $2n$ operations. The middle matrix is block-diagonal: applying it just means doing two smaller Fourier transforms, each of length $n/2$. The permutation $P^T$ costs nothing — it just relabels entries.</p>
+
+  <p>So if $T(n)$ is the number of operations needed to compute $F_n x$, the factorization gives</p>
+  <div class="math-display">$$ T(n) \;=\; \underbrace{2\,T(n/2)}_{\text{two half-size FFTs}} \;+\; \underbrace{2n}_{\text{combine step}}. $$</div>
+
+  <p>At each level of the recursion we halve the size, and the combine step at every level costs $2n$ in total. There are $\log_2 n$ levels before we hit size $1$, so</p>
+  <div class="math-display">$$ T(n) \;\approx\; 2n \cdot \log_2 n \quad \text{operations.} $$</div>
+
+  <p>How big a deal is this? Compare $n^2$ against $2n \log_2 n$ side by side:</p>
+
+  <div class="math-display" style="text-align:center; padding:18px 14px;">
+  <table style="margin:0 auto; border-collapse:collapse; font-family: 'JetBrains Mono', monospace; font-size:14px;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--crimson);">
+        <th style="padding:8px 22px; text-align:right;">$n$</th>
+        <th style="padding:8px 22px; text-align:right;">direct: $n^2$</th>
+        <th style="padding:8px 22px; text-align:right;">FFT: $2n\log_2 n$</th>
+        <th style="padding:8px 22px; text-align:right;">speedup</th>
+      </tr>
+    </thead>
+    <tbody style="color: var(--ink-soft);">
+      <tr><td style="padding:6px 22px; text-align:right;">8</td><td style="padding:6px 22px; text-align:right;">64</td><td style="padding:6px 22px; text-align:right;">48</td><td style="padding:6px 22px; text-align:right;">1.3×</td></tr>
+      <tr><td style="padding:6px 22px; text-align:right;">64</td><td style="padding:6px 22px; text-align:right;">4,096</td><td style="padding:6px 22px; text-align:right;">768</td><td style="padding:6px 22px; text-align:right;">5×</td></tr>
+      <tr><td style="padding:6px 22px; text-align:right;">1,024</td><td style="padding:6px 22px; text-align:right;">1,048,576</td><td style="padding:6px 22px; text-align:right;">20,480</td><td style="padding:6px 22px; text-align:right;">51×</td></tr>
+      <tr><td style="padding:6px 22px; text-align:right;">$2^{20}$</td><td style="padding:6px 22px; text-align:right;">$10^{12}$</td><td style="padding:6px 22px; text-align:right;">$\approx 2 \times 10^7$</td><td style="padding:6px 22px; text-align:right;">50,000×</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>At a million entries, the FFT turns a calculation that would take an hour on a laptop into one that takes a fraction of a second. This is the entire reason it is one of the most-used algorithms in scientific computing.</p>
+</section>
+
+<!-- ============ SECTION 2: COMPUTE FFT ============ -->
+<section>
+  <div class="section-num">§ 2 — Computation</div>
+  <h2>Try it: compute the FFT</h2>
+
+  <p>Enter a real-valued vector below. Lengths must be a power of two — try $n = 4$ or $n = 8$ to keep things readable. The output is the complex vector $X = F_n x$.</p>
+
+  <div class="card">
+    <div class="card-label">Interactive · FFT</div>
+    <h3>$X = F_n x$</h3>
+
+    <div class="input-row">
+      <span class="input-label">x =</span>
+      <input class="vec-input" id="fft-input" value="1, 2, 3, 4, 5, 6, 7, 8" placeholder="1, 2, 3, 4">
+    </div>
+    <div class="btn-row">
+      <button onclick="runFFT()">Compute FFT</button>
+      <button class="secondary" onclick="document.getElementById('fft-input').value='1, 0, 0, 0'; runFFT();">Delta</button>
+      <button class="secondary" onclick="document.getElementById('fft-input').value='1, 1, 1, 1, 0, 0, 0, 0'; runFFT();">Box</button>
+      <button class="secondary" onclick="document.getElementById('fft-input').value='1, 1, 1, 1, 1, 1, 1, 1'; runFFT();">Constant</button>
+    </div>
+
+    <div id="fft-output"></div>
+  </div>
+</section>
+
+<!-- ============ SECTION 3: CONVOLUTION ============ -->
+<section>
+  <div class="section-num">§ 3 — Application I</div>
+  <h2>Linear convolution via the FFT</h2>
+
+  <p>Recall the <strong>convolution theorem</strong>: the Fourier transform turns convolution into pointwise (Hadamard) multiplication,</p>
+  <div class="math-display">$$ \widehat{a * b} \;=\; \widehat{a} \,\odot\, \widehat{b}. $$</div>
+
+  <p>This gives an algorithm: to convolve $a$ and $b$, transform both, multiply pointwise, then transform back. Computing the convolution directly from the definition takes about $m \cdot n$ operations (every entry of $a$ touches every entry of $b$); the FFT approach takes about $N \log_2 N$ operations, where $N$ is the padded length. For long vectors the FFT method is dramatically faster.</p>
+
+  <h3>Why we pad</h3>
+  <p>The FFT lives on $\mathbb{Z}/N\mathbb{Z}$, so the multiplication-then-inversion procedure naturally computes the <em>circular</em> convolution of length $N$. To recover the <em>linear</em> convolution, which has length $m + n - 1$, we zero-pad both inputs to length</p>
+  <div class="math-display">$$ N \;\geq\; m + n - 1, $$</div>
+  <p>and take $N$ to be the next power of two so the FFT applies. The zeros make the wrap-around invisible.</p>
+
+  <div class="card">
+    <div class="card-label">Interactive · Convolution</div>
+    <h3>$c = a * b$ via FFT</h3>
+
+    <div class="input-row">
+      <span class="input-label">a =</span>
+      <input class="vec-input" id="conv-a" value="1, 2, 3">
+    </div>
+    <div class="input-row">
+      <span class="input-label">b =</span>
+      <input class="vec-input" id="conv-b" value="4, 5, 6">
+    </div>
+    <div class="btn-row">
+      <button onclick="runConv()">Convolve</button>
+      <button class="secondary" onclick="setConv('1, 1, 1, 1', '1, 1, 1, 1')">Two boxes</button>
+      <button class="secondary" onclick="setConv('1, 2, 3, 4', '1, 0, -1')">Differences</button>
+      <button class="secondary" onclick="setConv('1, 0, 0, 0, 0', '1, 2, 3')">Shift</button>
+    </div>
+
+    <div id="conv-output"></div>
+  </div>
+</section>
+
+<!-- ============ SECTION 4: POLYNOMIAL MULTIPLICATION ============ -->
+<section>
+  <div class="section-num">§ 4 — Application II</div>
+  <h2>Multiplying polynomials</h2>
+
+  <p>Convolution and polynomial multiplication are the <em>same operation</em>. If $p(x) = \sum a_j x^j$ and $q(x) = \sum b_k x^k$, then</p>
+  <div class="math-display">$$ p(x)\, q(x) \;=\; \sum_\ell \Big( \sum_{j+k=\ell} a_j b_k \Big)\, x^\ell, $$</div>
+  <p>and the coefficient $\sum_{j+k=\ell} a_j b_k$ is exactly the $\ell$-th entry of $a * b$. So <strong>multiplying two polynomials of degree $m$ and $n$ reduces to convolving their coefficient vectors</strong>, which we can do in roughly $(m+n) \log_2(m+n)$ operations using the FFT.</p>
+
+  <p>This is the reason FFT-based multiplication shows up in cryptography (big-integer arithmetic), computer algebra, and competitive programming: it beats the schoolbook method (which takes about $m \cdot n$ operations) for any nontrivial size.</p>
+
+  <div class="card">
+    <div class="card-label">Interactive · Polynomial product</div>
+    <h3>$p(x) \cdot q(x)$ via FFT</h3>
+
+    <div class="input-row">
+      <span class="input-label">p(x) =</span>
+      <input class="vec-input" id="poly-p" value="1, 2, 3" placeholder="coefficients: a₀, a₁, a₂, ...">
+    </div>
+    <div class="input-row">
+      <span class="input-label">q(x) =</span>
+      <input class="vec-input" id="poly-q" value="1, -1, 1">
+    </div>
+    <p class="note">Enter coefficients lowest-degree first. The vector $(1, 2, 3)$ means $1 + 2x + 3x^2$.</p>
+
+    <div class="btn-row">
+      <button onclick="runPoly()">Multiply</button>
+      <button class="secondary" onclick="setPoly('1, 1', '1, 1')">(1+x)²</button>
+      <button class="secondary" onclick="setPoly('1, 1, 1', '1, -1')">Cubic</button>
+      <button class="secondary" onclick="setPoly('1, 2, 1', '1, -2, 1')">Diff. squares</button>
+    </div>
+
+    <div id="poly-output"></div>
+  </div>
+</section>
+
+<footer>
+  Notes for an applied linear algebra course.
+  <span class="tide">— Roll Tide —</span>
+</footer>
+
+</div>
+
+<script>
+// =========================================================
+// Complex number arithmetic
+// =========================================================
+const C = (re, im=0) => ({re, im});
+const cAdd = (a, b) => C(a.re + b.re, a.im + b.im);
+const cSub = (a, b) => C(a.re - b.re, a.im - b.im);
+const cMul = (a, b) => C(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re);
+
+// =========================================================
+// FFT (radix-2 Cooley–Tukey, recursive)
+// =========================================================
+function fft(x) {
+  const n = x.length;
+  if (n === 1) return [{...x[0]}];
+  if (n & (n - 1)) throw new Error("Length must be a power of 2");
+
+  const even = fft(x.filter((_, i) => i % 2 === 0));
+  const odd  = fft(x.filter((_, i) => i % 2 === 1));
+
+  const out = new Array(n);
+  for (let k = 0; k < n / 2; k++) {
+    const angle = -2 * Math.PI * k / n;
+    const w = C(Math.cos(angle), Math.sin(angle));
+    const t = cMul(w, odd[k]);
+    out[k]         = cAdd(even[k], t);
+    out[k + n / 2] = cSub(even[k], t);
+  }
+  return out;
+}
+
+function ifft(X) {
+  const n = X.length;
+  const conj = X.map(z => C(z.re, -z.im));
+  const Y = fft(conj);
+  return Y.map(z => C(z.re / n, -z.im / n));
+}
+
+// =========================================================
+// Convolution
+// =========================================================
+function nextPow2(n) { return 1 << Math.ceil(Math.log2(Math.max(n, 1))); }
+
+function convolveFFT(a, b) {
+  const L = a.length + b.length - 1;
+  const N = nextPow2(L);
+  const aPad = [...a, ...Array(N - a.length).fill(0)].map(v => C(v, 0));
+  const bPad = [...b, ...Array(N - b.length).fill(0)].map(v => C(v, 0));
+  const A = fft(aPad);
+  const B = fft(bPad);
+  const Cv = A.map((z, i) => cMul(z, B[i]));
+  const c = ifft(Cv);
+  return { N, aPad: aPad.map(z => z.re), bPad: bPad.map(z => z.re), A, B, C: Cv,
+           cFull: c.map(z => z.re), result: c.slice(0, L).map(z => z.re) };
+}
+
+function convolveDirect(a, b) {
+  const out = new Array(a.length + b.length - 1).fill(0);
+  for (let i = 0; i < a.length; i++)
+    for (let j = 0; j < b.length; j++)
+      out[i + j] += a[i] * b[j];
+  return out;
+}
+
+// =========================================================
+// Parsing & formatting
+// =========================================================
+function parseVec(str) {
+  return str.split(/[\s,]+/).filter(s => s.length).map(s => {
+    const n = Number(s);
+    if (Number.isNaN(n)) throw new Error(`"${s}" is not a number`);
+    return n;
+  });
+}
+
+function fmtNum(x, prec = 4) {
+  if (Math.abs(x) < 1e-10) return "0";
+  const r = +x.toFixed(prec);
+  return Number.isInteger(r) ? r.toString() : r.toString();
+}
+
+function fmtComplex(z, prec = 3) {
+  const re = Math.abs(z.re) < 1e-10 ? 0 : +z.re.toFixed(prec);
+  const im = Math.abs(z.im) < 1e-10 ? 0 : +z.im.toFixed(prec);
+  if (im === 0) return `${re}`;
+  if (re === 0) return `${im}i`;
+  return `${re}${im >= 0 ? " + " : " − "}${Math.abs(im)}i`;
+}
+
+function fmtVec(v, fmt = fmtNum) {
+  return "[ " + v.map(fmt).join(",  ") + " ]";
+}
+
+// =========================================================
+// UI handlers
+// =========================================================
+function showError(elId, msg) {
+  document.getElementById(elId).innerHTML =
+    `<div class="output-block" style="border-left-color:var(--crimson);color:var(--crimson)">Error: ${msg}</div>`;
+}
+
+function runFFT() {
+  try {
+    const x = parseVec(document.getElementById('fft-input').value);
+    if (x.length === 0) throw new Error("enter at least one number");
+    if (x.length & (x.length - 1)) throw new Error(`length ${x.length} is not a power of 2`);
+
+    const X = fft(x.map(v => C(v, 0)));
+    const html = `
+      <div class="step">
+        <div class="step-title">Input</div>
+        <div class="output-block">x = ${fmtVec(x)}    (length n = ${x.length})</div>
+      </div>
+      <div class="step">
+        <div class="step-title">FFT output  X = F<sub>n</sub> x</div>
+        <div class="output-block">${X.map((z, k) => `X[${k}] = ${fmtComplex(z)}`).join('\n')}</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Magnitudes  |X<sub>k</sub>|</div>
+        <div class="output-block">${fmtVec(X.map(z => Math.sqrt(z.re*z.re + z.im*z.im)), x => fmtNum(x, 3))}</div>
+      </div>
+    `;
+    document.getElementById('fft-output').innerHTML = html;
+  } catch (e) {
+    showError('fft-output', e.message);
+  }
+}
+
+function setConv(a, b) {
+  document.getElementById('conv-a').value = a;
+  document.getElementById('conv-b').value = b;
+  runConv();
+}
+
+function runConv() {
+  try {
+    const a = parseVec(document.getElementById('conv-a').value);
+    const b = parseVec(document.getElementById('conv-b').value);
+    if (a.length === 0 || b.length === 0) throw new Error("both vectors must be nonempty");
+
+    const r = convolveFFT(a, b);
+    const direct = convolveDirect(a, b);
+    const maxErr = Math.max(...r.result.map((v, i) => Math.abs(v - direct[i])));
+
+    const html = `
+      <div class="step">
+        <div class="step-title">Step 1 · Pad both vectors to length N</div>
+        <div class="step-body">Output length is $m + n - 1 = ${a.length} + ${b.length} - 1 = ${a.length + b.length - 1}$. The next power of two is <strong>N = ${r.N}</strong>.</div>
+        <div class="output-block">a (padded) = ${fmtVec(r.aPad)}
+b (padded) = ${fmtVec(r.bPad)}</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Step 2 · Take the FFT of each</div>
+        <div class="output-block">â = [ ${r.A.map(z => fmtComplex(z, 2)).join(",  ")} ]
+b̂ = [ ${r.B.map(z => fmtComplex(z, 2)).join(",  ")} ]</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Step 3 · Pointwise (Hadamard) product  â ⊙ b̂</div>
+        <div class="output-block">ĉ = [ ${r.C.map(z => fmtComplex(z, 2)).join(",  ")} ]</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Step 4 · Inverse FFT, then truncate to length m + n − 1</div>
+        <div class="output-block">F<sub>N</sub><sup>−1</sup> ĉ = ${fmtVec(r.cFull, x => fmtNum(x, 3))}
+↳ truncate:   ${fmtVec(r.result, x => fmtNum(x, 3))}</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Verify against direct convolution</div>
+        <div class="compare">
+          <div class="compare-box">
+            <h4>FFT method</h4>
+            <div class="nums">${fmtVec(r.result.map(v => +v.toFixed(6)))}</div>
+          </div>
+          <div class="compare-box">
+            <h4>Direct sum  ∑ aⱼ bₗ₋ⱼ</h4>
+            <div class="nums">${fmtVec(direct)}</div>
+          </div>
+        </div>
+        <div class="match-indicator ${maxErr < 1e-6 ? 'match' : ''}">
+          ${maxErr < 1e-6 ? 'results agree (max error ≈ ' + maxErr.toExponential(2) + ')' : 'mismatch — check inputs'}
+        </div>
+      </div>
+    `;
+    document.getElementById('conv-output').innerHTML = html;
+    if (window.renderMathInElement) {
+      renderMathInElement(document.getElementById('conv-output'),
+        { delimiters: [{left: '$', right: '$', display: false}] });
+    }
+  } catch (e) {
+    showError('conv-output', e.message);
+  }
+}
+
+function setPoly(p, q) {
+  document.getElementById('poly-p').value = p;
+  document.getElementById('poly-q').value = q;
+  runPoly();
+}
+
+function polyToHTML(coefs) {
+  const parts = [];
+  coefs.forEach((c, k) => {
+    const rc = +c.toFixed(6);
+    if (Math.abs(rc) < 1e-10) return;
+    const absC = Math.abs(rc);
+    let sign = rc < 0 ? " − " : (parts.length === 0 ? "" : " + ");
+    let coef;
+    if (k === 0) coef = `${absC}`;
+    else if (absC === 1) coef = "";
+    else coef = `${absC}`;
+    let term;
+    if (k === 0) term = coef;
+    else if (k === 1) term = `${coef}x`;
+    else term = `${coef}x<sup>${k}</sup>`;
+    parts.push(sign + term);
+  });
+  return parts.length ? parts.join("") : "0";
+}
+
+function runPoly() {
+  try {
+    const p = parseVec(document.getElementById('poly-p').value);
+    const q = parseVec(document.getElementById('poly-q').value);
+    if (p.length === 0 || q.length === 0) throw new Error("both polynomials must be nonempty");
+
+    const r = convolveFFT(p, q);
+    const cleaned = r.result.map(v => Math.abs(v - Math.round(v)) < 1e-6 ? Math.round(v) : +v.toFixed(6));
+
+    const html = `
+      <div class="step">
+        <div class="step-title">The polynomials</div>
+        <div class="poly-display">
+          p(x) = ${polyToHTML(p)}<br>
+          q(x) = ${polyToHTML(q)}
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-title">Coefficient vectors → convolve via FFT</div>
+        <div class="output-block">p coefficients = ${fmtVec(p)}
+q coefficients = ${fmtVec(q)}
+                 ↓ (FFT · pointwise multiply · inverse FFT)
+p*q coefficients = ${fmtVec(cleaned)}</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Product polynomial</div>
+        <div class="poly-result">
+          <div class="poly-result-label">p(x) · q(x)</div>
+          <div class="poly-display" style="margin:0">= ${polyToHTML(cleaned)}</div>
+        </div>
+      </div>
+    `;
+    document.getElementById('poly-output').innerHTML = html;
+  } catch (e) {
+    showError('poly-output', e.message);
+  }
+}
+
+// =========================================================
+// Render math after KaTeX loads, then run defaults
+// =========================================================
+window.addEventListener('load', () => {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$',  right: '$',  display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  runFFT();
+  runConv();
+  runPoly();
+});
+</script>
+
+</body>
+</html>

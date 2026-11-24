@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discrete Convolution — h(n) * x(n)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0; --red:#b33a2f;
+  --h-col:#2255cc;   --h-bg:#edf1fb;    /* h(n) — blue */
+  --x-col:#b33a2f;   --x-bg:#fef0ee;    /* x(n) — red  */
+  --y-col:#1a6a40;   --y-bg:#e8f5ec;    /* y(n) — green */
+  --now-col:#c8a430; --past-col:#7a7a8a; --future-col:#2c4070;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.6rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.5rem 2rem;margin-bottom:1.4rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:600;margin-bottom:.9rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.32rem .9rem;font-size:.92rem;transition:background .14s;}
+.btn-ghost{background:var(--h-bg);color:var(--h-col);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-go{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:.9rem;}
+.btn-go:hover{background:#952e24;}
+.btn-sm{padding:.22rem .65rem;font-size:.86rem;}
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;}
+
+/* ── Sequence editor ── */
+.seq-editor{display:flex;flex-direction:column;gap:.6rem;}
+.seq-tokens{display:flex;align-items:flex-end;gap:0;flex-wrap:wrap;min-height:80px;padding:.5rem .3rem;
+  background:#f8f6f2;border:1px solid var(--border);border-radius:6px;position:relative;}
+.seq-token{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:0 6px;min-width:52px;position:relative;}
+.tok-val{width:46px;padding:.25rem .2rem;text-align:center;border:1px solid var(--border);
+  border-radius:4px;font-family:inherit;font-size:1rem;background:var(--paper);}
+.tok-val.h-tok{border-color:var(--h-col);background:var(--h-bg);color:var(--h-col);}
+.tok-val.x-tok{border-color:var(--x-col);background:var(--x-bg);color:var(--x-col);}
+.tok-val:focus{outline:none;}
+.tok-index{font-size:.75rem;color:var(--gray);}
+.tok-index.is-now{color:var(--now-col);font-weight:700;}
+.tok-arrow{font-size:.9rem;color:var(--now-col);line-height:1;margin-top:1px;}
+.tok-past{font-size:.7rem;color:var(--past-col);position:absolute;top:-18px;left:50%;
+  transform:translateX(-50%);white-space:nowrap;}
+.tok-future{font-size:.7rem;color:var(--future-col);position:absolute;top:-18px;left:50%;
+  transform:translateX(-50%);white-space:nowrap;}
+
+/* add/remove buttons */
+.seq-btns{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.2rem;}
+
+/* ── Timeline display (output) ── */
+.timeline{display:flex;align-items:flex-end;gap:0;overflow-x:auto;padding:.5rem 0;margin:.4rem 0;}
+.tl-cell{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:52px;padding:0 4px;}
+.tl-val{font-size:1rem;font-variant-numeric:tabular-nums;font-weight:600;min-height:1.4rem;text-align:center;}
+.tl-now{font-size:.9rem;color:var(--now-col);}
+.tl-index{font-size:.72rem;color:var(--gray);}
+.tl-index.now{color:var(--now-col);font-weight:700;}
+.tl-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px;}
+.tl-bracket{font-size:1.5rem;color:#bbb;line-height:1;align-self:center;}
+
+/* ── Partial products table ── */
+.conv-table-wrap{overflow-x:auto;margin:.6rem 0;}
+table.conv-tbl{border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums;}
+table.conv-tbl th{background:var(--navy);color:#fff;padding:.3rem .6rem;font-weight:400;font-size:.8rem;text-align:center;min-width:48px;}
+table.conv-tbl td{padding:.28rem .6rem;border:1px solid #e8e4de;text-align:center;min-width:48px;}
+table.conv-tbl td.now-col{background:#fff8e8;border-top:2px solid var(--now-col);border-bottom:2px solid var(--now-col);}
+table.conv-tbl td.now-hdr{background:var(--now-col);color:var(--navy);font-weight:700;}
+table.conv-tbl td.h-part{color:var(--h-col);}
+table.conv-tbl td.x-part{color:var(--x-col);font-weight:600;}
+table.conv-tbl td.partial{color:var(--navy2);}
+table.conv-tbl td.partial.pos{color:#1a6a40;}
+table.conv-tbl td.partial.neg{color:var(--red);}
+table.conv-tbl td.zero{color:#ccc;}
+table.conv-tbl td.sum-row{font-weight:700;border-top:2.5px solid var(--navy);}
+table.conv-tbl td.sum-row.h-col{color:var(--h-col);}
+table.conv-tbl td.sum-row.y-col{background:var(--y-bg);color:var(--y-col);font-weight:700;}
+table.conv-tbl tr.partial-row:hover td{background:#f5f3ef;}
+table.conv-tbl td.row-lbl{text-align:right;font-size:.82rem;color:var(--gray);background:#fafafa;padding-right:.8rem;}
+
+/* ── Separator ── */
+.past-future-bar{display:flex;align-items:center;gap:0;margin:.5rem 0 1rem;overflow-x:auto;}
+.pf-past{flex:1;height:2px;background:linear-gradient(to right,transparent,var(--past-col));}
+.pf-now{display:flex;flex-direction:column;align-items:center;gap:1px;padding:0 .5rem;}
+.pf-now span{font-size:.72rem;color:var(--now-col);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.pf-now .pf-tick{width:2px;height:12px;background:var(--now-col);}
+.pf-future{flex:1;height:2px;background:linear-gradient(to left,transparent,var(--future-col));}
+
+/* Sections */
+.sec{border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.07);margin-bottom:1.4rem;}
+.shd{padding:.52rem 1.1rem;display:flex;align-items:center;gap:.7rem;color:#fff;}
+.shd h3{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:400;}
+.sbody{background:var(--paper);padding:1.1rem 1.5rem;border:1px solid var(--border);border-top:none;overflow-x:auto;}
+.sec-h .shd{background:var(--h-col);}
+.sec-x .shd{background:var(--x-col);}
+.sec-y .shd{background:var(--y-col);}
+.sec-c .shd{background:var(--navy);}
+
+.formula-row{overflow-x:auto;margin:.4rem 0;}
+.kb{border-radius:6px;padding:.75rem 1rem;font-size:.87rem;line-height:1.65;margin:.5rem 0;}
+.kb-h{background:var(--h-bg);border:1px solid #b8ccee;color:#1a2860;}
+.kb-y{background:var(--y-bg);border:1px solid #90c8a0;color:#0a3a18;}
+
+.step-row{display:grid;align-items:baseline;gap:.5rem;font-size:.9rem;margin:.25rem 0;padding:.22rem .6rem;border-radius:4px;}
+
+/* ── Stem plot canvases ── */
+.stem-row{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:.6rem;}
+.stem-panel{flex:1;min-width:260px;max-width:420px;}
+.stem-panel canvas{width:100%;border-radius:6px;border:1px solid var(--border);background:var(--paper);display:block;}
+.stem-panel .stem-lbl{font-size:.82rem;font-weight:600;text-align:center;margin-top:.3rem;letter-spacing:.04em;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .7rem;}}
+
+</style>
+</head>
+<body>
+<header>
+  <h1>Discrete Convolution — h(n) * x(n)</h1>
+  <p>Enter impulse response and input signal; the arrow marks n = 0 (now)</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter Sequences</h2>
+  <div class="ex-row" id="exRow"></div>
+
+  <!-- h(n) editor -->
+  <div style="margin-bottom:1.2rem;">
+    <div style="font-size:.85rem;font-weight:600;color:var(--h-col);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.05em;">
+      h(n) — Impulse Response
+    </div>
+    <div class="seq-tokens" id="hTokens"></div>
+    <div class="seq-btns">
+      <button class="btn-ghost btn-sm" onclick="addBefore('h')">+ Before</button>
+      <button class="btn-ghost btn-sm" onclick="addAfter('h')">+ After</button>
+      <button class="btn-ghost btn-sm" onclick="removeLast('h')">− Remove last</button>
+      <button class="btn-ghost btn-sm" onclick="moveNowLeft('h')">← Now left</button>
+      <button class="btn-ghost btn-sm" onclick="moveNowRight('h')">→ Now right</button>
+    </div>
+  </div>
+
+  <!-- x(n) editor -->
+  <div style="margin-bottom:1rem;">
+    <div style="font-size:.85rem;font-weight:600;color:var(--x-col);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.05em;">
+      x(n) — Input Signal
+    </div>
+    <div class="seq-tokens" id="xTokens"></div>
+    <div class="seq-btns">
+      <button class="btn-ghost btn-sm" style="border-color:#e8b0a8;color:var(--x-col)" onclick="addBefore('x')">+ Before</button>
+      <button class="btn-ghost btn-sm" style="border-color:#e8b0a8;color:var(--x-col)" onclick="addAfter('x')">+ After</button>
+      <button class="btn-ghost btn-sm" style="border-color:#e8b0a8;color:var(--x-col)" onclick="removeLast('x')">− Remove last</button>
+      <button class="btn-ghost btn-sm" style="border-color:#e8b0a8;color:var(--x-col)" onclick="moveNowLeft('x')">← Now left</button>
+      <button class="btn-ghost btn-sm" style="border-color:#e8b0a8;color:var(--x-col)" onclick="moveNowRight('x')">→ Now right</button>
+    </div>
+  </div>
+
+  <button class="btn-go" onclick="compute()">Convolve →</button>
+</div>
+
+<div id="output"></div>
+</main>
+
+<script>
+/* ════════════════════════════════════════
+   KaTeX
+════════════════════════════════════════ */
+function rk(t,opts){
+  try{return katex.renderToString(t,Object.assign({throwOnError:false},opts||{}));}
+  catch(e){return t;}
+}
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+// Each sequence: array of numbers + index of "now" element
+var hSeq={vals:[1,2,1,-1], now:1};   // h(n): arrow at index 1 (value=2)
+var xSeq={vals:[1,2,3,1],  now:0};   // x(n): arrow at index 0 (value=1)
+
+/* ════════════════════════════════════════
+   SEQUENCE EDITOR
+════════════════════════════════════════ */
+function buildTokens(id, seq, cls){
+  var cont=document.getElementById(id);
+  cont.innerHTML='';
+
+  // Past / Future labels above the first/last element
+  var n=seq.vals.length;
+  var hasP=seq.now>0, hasF=seq.now<n-1;
+
+  seq.vals.forEach(function(v,i){
+    var tok=document.createElement('div');tok.className='seq-token';
+
+    // Past/Future micro-label for first and last
+    var zone='';
+    if(i<seq.now) zone='past';
+    else if(i>seq.now) zone='future';
+
+    // small relative-time label
+    var relN=i-seq.now;
+    var idxSpan=document.createElement('div');
+    idxSpan.className='tok-index'+(i===seq.now?' is-now':'');
+    idxSpan.textContent='n='+(relN>=0?'+':'')+relN;
+    if(i===seq.now) idxSpan.textContent='n=0 ★';
+    tok.appendChild(idxSpan);
+
+    var inp=document.createElement('input');
+    inp.type='text';inp.className='tok-val '+cls+'-tok';inp.value=v;inp.autocomplete='off';
+    (function(ii){inp.addEventListener('input',function(){
+      var parsed=parseFloat(inp.value);
+      if(!isNaN(parsed)) seq.vals[ii]=parsed;
+      scheduleCompute();
+    });})(i);
+    tok.appendChild(inp);
+
+    // Arrow indicator for now=0
+    if(i===seq.now){
+      var arr=document.createElement('div');arr.className='tok-arrow';arr.textContent='↑';
+      tok.appendChild(arr);
+    }
+    cont.appendChild(tok);
+  });
+
+  // Past/Future end labels — printed once above the strip
+  if(n>0){
+    var bar=cont.parentElement.querySelector('.pf-strip');
+    if(!bar){
+      bar=document.createElement('div');bar.className='pf-strip';
+      bar.style.cssText='display:flex;justify-content:space-between;font-size:.73rem;padding:0 4px;margin-bottom:2px;';
+      cont.parentElement.insertBefore(bar,cont);
+    }
+    bar.innerHTML='<span style="color:var(--past-col)">◄ past</span>'+
+      '<span style="color:var(--now-col);font-weight:700;">now (n=0) ↑</span>'+
+      '<span style="color:var(--future-col)">future ►</span>';
+  }
+}
+
+function rebuildAll(){
+  buildTokens('hTokens',hSeq,'h');
+  buildTokens('xTokens',xSeq,'x');
+}
+
+function addBefore(which){
+  var s=which==='h'?hSeq:xSeq;
+  s.vals.unshift(0); s.now++;
+  rebuildAll();scheduleCompute();
+}
+function addAfter(which){
+  var s=which==='h'?hSeq:xSeq;
+  s.vals.push(0);
+  rebuildAll();scheduleCompute();
+}
+function removeLast(which){
+  var s=which==='h'?hSeq:xSeq;
+  if(s.vals.length<=1)return;
+  s.vals.pop();
+  if(s.now>=s.vals.length)s.now=s.vals.length-1;
+  rebuildAll();scheduleCompute();
+}
+function moveNowLeft(which){
+  var s=which==='h'?hSeq:xSeq;
+  if(s.now>0)s.now--;
+  rebuildAll();scheduleCompute();
+}
+function moveNowRight(which){
+  var s=which==='h'?hSeq:xSeq;
+  if(s.now<s.vals.length-1)s.now++;
+  rebuildAll();scheduleCompute();
+}
+
+/* ════════════════════════════════════════
+   CONVOLUTION
+════════════════════════════════════════ */
+function convolve(h,hNow,x,xNow){
+  var nh=h.length, nx=x.length;
+  // Output length = nh + nx - 1
+  // Output starts at index: -(hNow) + -(xNow)  ... relative to n=0
+  var outStart=(-hNow)+(-xNow);
+  var outLen=nh+nx-1;
+  var y=new Array(outLen).fill(0);
+  // partial products[k] = x[k]*h  shifted by (k-xNow) - hNow
+  var partials=[];
+  for(var k=0;k<nx;k++){
+    var row=new Array(outLen).fill(null);
+    var shift=k-xNow; // time shift of this partial (in output-index space, offset from outStart)
+    for(var j=0;j<nh;j++){
+      var outIdx=(j-hNow)+(k-xNow)-outStart;
+      if(outIdx>=0&&outIdx<outLen){
+        var val=x[k]*h[j];
+        row[outIdx]=val;
+        y[outIdx]+=val;
+      }
+    }
+    partials.push({xVal:x[k],xN:k-xNow,row:row});
+  }
+  return{y:y,outStart:outStart,outLen:outLen,partials:partials};
+}
+
+/* ════════════════════════════════════════
+   RENDERING
+════════════════════════════════════════ */
+function fmt(x){
+  if(Math.abs(x)<1e-12)return'0';
+  return parseFloat(x.toFixed(6)).toString();
+}
+
+function renderTimeline(vals,nowOffset,cls,color){
+  var tl=document.createElement('div');tl.className='timeline';
+  var lb=document.createElement('div');lb.className='tl-bracket';lb.textContent='{';tl.appendChild(lb);
+  vals.forEach(function(v,i){
+    var n=i+nowOffset;
+    var cell=document.createElement('div');cell.className='tl-cell';
+    var vd=document.createElement('div');
+    vd.className='tl-val';vd.style.color=color;vd.textContent=fmt(v);
+    var nd=document.createElement('div');nd.className='tl-index'+(n===0?' now':'');
+    nd.textContent='n='+(n>=0?'+':'')+n;
+    if(n===0){
+      var arr=document.createElement('div');arr.className='tl-now';arr.textContent='↑';
+      cell.appendChild(vd);cell.appendChild(arr);cell.appendChild(nd);
+    } else {
+      cell.appendChild(vd);cell.appendChild(nd);
+    }
+    tl.appendChild(cell);
+  });
+  var rb=document.createElement('div');rb.className='tl-bracket';rb.textContent='}';tl.appendChild(rb);
+  return tl;
+}
+
+function compute(){
+  var h=hSeq.vals.slice(), hNow=hSeq.now;
+  var x=xSeq.vals.slice(), xNow=xSeq.now;
+  var res=convolve(h,hNow,x,xNow);
+  renderOutput(h,hNow,x,xNow,res);
+}
+
+/* ════════════════════════════════════════
+   STEM PLOT  — MATLAB-style discrete signal
+   vals: array of numbers
+   nowIdx: index in vals that is n=0
+   color: CSS color string
+   label: axis label string e.g. "h(n)"
+════════════════════════════════════════ */
+function drawStemPlot(canvas, vals, nowIdx, color, label){
+  var dpr=window.devicePixelRatio||1;
+  var cssW=canvas.offsetWidth||380;
+  var cssH=160;
+  canvas.style.height=cssH+'px';
+  canvas.width=Math.round(cssW*dpr);
+  canvas.height=Math.round(cssH*dpr);
+  var ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  var W=cssW, H=cssH;
+
+  /* padding */
+  var pad={l:46,r:16,t:18,b:36};
+  var gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+
+  /* extend view 1 sample either side for context */
+  var nMin=0-nowIdx-1;          // one before first sample
+  var nMax=vals.length-1-nowIdx+1; // one after last sample
+  /* ensure n=0 is always visible */
+  if(nMin>-1) nMin=-1;
+  if(nMax<1)  nMax=1;
+  var nSpan=nMax-nMin;
+
+  /* data range */
+  var maxAbs=Math.max(1, Math.max.apply(null,vals.map(Math.abs)));
+  var yMin=-maxAbs*1.35, yMax=maxAbs*1.35;
+  var ySpan=yMax-yMin;
+
+  function xPx(n){ return pad.l + (n-nMin)/nSpan*gW; }
+  function yPx(v){ return pad.t + (1-(v-yMin)/ySpan)*gH; }
+  var y0=yPx(0);   /* pixel y of the x-axis */
+
+  /* ── background ── */
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  /* ── grid lines ── */
+  ctx.strokeStyle='#e8e4de'; ctx.lineWidth=0.8;
+  /* horizontal grid at nice y values */
+  var yStep=maxAbs<=1?0.5:(maxAbs<=3?1:Math.ceil(maxAbs/3));
+  for(var yv=-Math.ceil(maxAbs/yStep)*yStep; yv<=Math.ceil(maxAbs/yStep)*yStep+1e-9; yv+=yStep){
+    var yp=yPx(yv);
+    if(yp<pad.t-2||yp>pad.t+gH+2) continue;
+    ctx.beginPath();ctx.moveTo(pad.l,yp);ctx.lineTo(pad.l+gW,yp);ctx.stroke();
+  }
+
+  /* ── n=0 gold dashed reference line ── */
+  var x0=xPx(0);
+  ctx.save();
+  ctx.strokeStyle='#c8a430'; ctx.lineWidth=1.2;
+  ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+gH);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  /* ── past / future labels ── */
+  ctx.font='10px "Crimson Pro",Georgia,serif';
+  ctx.fillStyle='#7a7a8a';
+  if(x0>pad.l+20){
+    ctx.textAlign='right';
+    ctx.fillText('past',x0-5,pad.t+10);
+  }
+  if(x0<pad.l+gW-20){
+    ctx.textAlign='left';
+    ctx.fillText('future',x0+5,pad.t+10);
+  }
+  /* n=0 label below axis */
+  ctx.fillStyle='#c8a430'; ctx.textAlign='center'; ctx.font='bold 10px "Crimson Pro",Georgia,serif';
+  ctx.fillText('0',x0,pad.t+gH+14);
+
+  /* ── axes ── */
+  ctx.strokeStyle='#18284a'; ctx.lineWidth=1.5;
+  /* x-axis */
+  ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(pad.l+gW,y0);ctx.stroke();
+  /* y-axis */
+  ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+gH);ctx.stroke();
+
+  /* arrow on x-axis */
+  ctx.fillStyle='#18284a';
+  ctx.beginPath();ctx.moveTo(pad.l+gW,y0);
+  ctx.lineTo(pad.l+gW-7,y0-4);ctx.lineTo(pad.l+gW-7,y0+4);ctx.closePath();ctx.fill();
+
+  /* ── n tick labels ── */
+  ctx.fillStyle='#7a7a8a'; ctx.font='11px "Crimson Pro",Georgia,serif'; ctx.textAlign='center';
+  for(var ni=Math.ceil(nMin);ni<=Math.floor(nMax);ni++){
+    if(ni===0) continue; /* already labelled gold */
+    var xp=xPx(ni);
+    ctx.fillText(ni,xp,pad.t+gH+14);
+    /* small tick */
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(xp,y0-3);ctx.lineTo(xp,y0+3);ctx.stroke();
+  }
+
+  /* ── y tick labels ── */
+  ctx.fillStyle='#7a7a8a'; ctx.textAlign='right'; ctx.font='11px "Crimson Pro",Georgia,serif';
+  for(var yv2=-Math.ceil(maxAbs/yStep)*yStep; yv2<=Math.ceil(maxAbs/yStep)*yStep+1e-9; yv2+=yStep){
+    var yp2=yPx(yv2);
+    if(yp2<pad.t-4||yp2>pad.t+gH+4) continue;
+    if(Math.abs(yv2)<1e-9) continue; /* 0 on axis, skip */
+    ctx.fillText(yv2,pad.l-5,yp2+4);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(pad.l-3,yp2);ctx.lineTo(pad.l+3,yp2);ctx.stroke();
+  }
+  /* 0 label on y-axis */
+  ctx.fillStyle='#7a7a8a'; ctx.textAlign='right';
+  ctx.fillText('0',pad.l-5,y0+4);
+
+  /* ── axis label "n" ── */
+  ctx.fillStyle='#18284a'; ctx.textAlign='left'; ctx.font='13px "Crimson Pro",Georgia,serif';
+  ctx.fillText('n',pad.l+gW+4,y0+4);
+  /* y-axis label */
+  ctx.save();
+  ctx.translate(11,pad.t+gH/2);ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.font='12px "Crimson Pro",Georgia,serif';
+  ctx.fillStyle='#18284a';
+  ctx.fillText(label,0,0);
+  ctx.restore();
+
+  /* ── stems + dots ── */
+  vals.forEach(function(v,i){
+    var n=i-nowIdx;
+    var xp=xPx(n);
+    var vp=yPx(v);
+    var isNow=(n===0);
+
+    /* stem line */
+    ctx.strokeStyle=isNow?'#c8a430':color;
+    ctx.lineWidth=isNow?2:1.6;
+    ctx.beginPath();ctx.moveTo(xp,y0);ctx.lineTo(xp,vp);ctx.stroke();
+
+    /* dot */
+    var r=isNow?5:4.5;
+    ctx.beginPath();ctx.arc(xp,vp,r,0,2*Math.PI);
+    ctx.fillStyle=isNow?'#c8a430':color; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.2; ctx.stroke();
+  });
+
+  /* ── title ── */
+  ctx.fillStyle='#18284a'; ctx.textAlign='center';
+  ctx.font='bold 12px "Crimson Pro",Georgia,serif';
+  ctx.fillText(label,W/2,pad.t-4);
+}
+
+function makeStemPanel(vals, nowIdx, color, label){
+  var panel=document.createElement('div'); panel.className='stem-panel';
+  var cv=document.createElement('canvas');
+  panel.appendChild(cv);
+  /* draw after layout — use rAF so the canvas has a measured width */
+  requestAnimationFrame(function(){drawStemPlot(cv,vals,nowIdx,color,label);});
+  /* redraw on resize */
+  var ro=new ResizeObserver(function(){drawStemPlot(cv,vals,nowIdx,color,label);});
+  ro.observe(cv);
+  return panel;
+}
+
+
+function renderOutput(h,hNow,x,xNow,res){
+  var out=document.getElementById('output');out.innerHTML='';
+  var outStart=res.outStart, yLen=res.outLen, y=res.y;
+  var nh=h.length, nx=x.length;
+
+  /* ── Stem plot section: h(n) and x(n) side by side ── */
+  var stemSec=document.createElement('div');stemSec.className='sec sec-h';
+  stemSec.innerHTML='<div class="shd"><h3>Signal Graphs</h3></div>';
+  var stemBody=document.createElement('div');stemBody.className='sbody';
+  var stemRow=document.createElement('div');stemRow.className='stem-row';
+  stemRow.appendChild(makeStemPanel(h,hNow,'#2255cc','h(n)'));
+  stemRow.appendChild(makeStemPanel(x,xNow,'#b33a2f','x(n)'));
+  stemBody.appendChild(stemRow);
+  stemSec.appendChild(stemBody);
+  out.appendChild(stemSec);
+
+  /* ── Card: Long-multiplication layout ── */
+  var card=document.createElement('div');card.className='card';
+  var title=document.createElement('h2');title.textContent='Convolution as Long Multiplication';
+  card.appendChild(title);
+
+  var note=document.createElement('p');
+  note.style.cssText='font-size:.88rem;color:var(--gray);margin-bottom:1.1rem;line-height:1.6;';
+  note.innerHTML=
+    'Write <strong style="color:var(--h-col)">h(n)</strong> on top, then '+
+    '<strong style="color:var(--x-col)">* x(n)</strong> below — just like multiplying integers. '+
+    'Work through <strong style="color:var(--x-col)">x</strong> from right to left: multiply h by each '+
+    'x-value and shift one column left for each step. '+
+    'The <strong style="color:var(--now-col)">gold column</strong> is n = 0 (now). '+
+    'Sum the columns to get y(n).';
+  card.appendChild(note);
+
+  /* helper: cell style for a given column index ci */
+  var CW=52;
+  function cStyle(ci,extra){
+    var n=outStart+ci;
+    var s='width:'+CW+'px;min-width:'+CW+'px;text-align:center;'+
+          'border:1px solid #e0dcd6;padding:5px 3px;vertical-align:middle;';
+    if(n===0) s+='background:#fff8e8;'+
+      'border-left:2px solid var(--now-col);border-right:2px solid var(--now-col);';
+    return s+(extra||'');
+  }
+  /* label cell (left column) */
+  function lbl(html,color){
+    var td=document.createElement('td');
+    td.style.cssText='text-align:right;padding-right:10px;white-space:nowrap;'+
+      'font-size:.88rem;min-width:96px;vertical-align:middle;color:'+(color||'var(--gray)')+';';
+    td.innerHTML=html;return td;
+  }
+  /* blank rule cell */
+  function ruleCell(ci,thick){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    td.style.cssText='width:'+CW+'px;border:none;height:'+(thick?'5px':'2px')+';'+
+      'border-top:'+(thick?'3':'1.5')+'px solid var(--navy);'+
+      (n===0?'background:#fff8e8;':'background:transparent;');
+    return td;
+  }
+
+  var tbl=document.createElement('table');
+  tbl.style.cssText='border-collapse:collapse;font-size:1rem;font-variant-numeric:tabular-nums;';
+
+  /* ──────────────────────────────────────
+     ROW 1: time-index labels (n = …)
+  ────────────────────────────────────── */
+  var trIdx=document.createElement('tr');
+  trIdx.appendChild(lbl('n &nbsp;='));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    td.style.cssText=cStyle(ci,'border:none;font-size:.76rem;font-weight:'+(n===0?'700':'400')+';'+
+      'color:'+(n===0?'var(--now-col)':'var(--gray)')+';padding-bottom:1px;');
+    td.textContent=(n===0?'0':(n>0?'+':'')+n);
+    trIdx.appendChild(td);
+  }
+  tbl.appendChild(trIdx);
+
+  /* ──────────────────────────────────────
+     ROW 2: ↑ arrow at n=0 (shared for whole table)
+  ────────────────────────────────────── */
+  var trArrow0=document.createElement('tr');
+  trArrow0.appendChild(lbl(''));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    td.style.cssText=cStyle(ci,'border:none;font-size:.9rem;line-height:1;padding:0 0 2px;'+
+      'color:var(--now-col);');
+    td.textContent=(n===0?'↑':'');
+    trArrow0.appendChild(td);
+  }
+  tbl.appendChild(trArrow0);
+
+  /* ──────────────────────────────────────
+     ROW 3: past / now / future labels
+  ────────────────────────────────────── */
+  var trZone=document.createElement('tr');
+  trZone.appendChild(lbl(''));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    var txt='', clr='transparent';
+    if(ci===0){txt='◄ past';clr='var(--past-col)';}
+    else if(ci===yLen-1){txt='future ►';clr='var(--future-col)';}
+    else if(n===0){txt='now';clr='var(--now-col)';}
+    td.style.cssText=cStyle(ci,'border:none;font-size:.67rem;text-transform:uppercase;'+
+      'letter-spacing:.04em;color:'+clr+';padding:0 1px 3px;');
+    td.textContent=txt;
+    trZone.appendChild(td);
+  }
+  tbl.appendChild(trZone);
+
+  /* ──────────────────────────────────────
+     ROW 4: h(n) — top of multiplication
+  ────────────────────────────────────── */
+  var trH=document.createElement('tr');
+  trH.appendChild(lbl(rk('h(n)\\;='),'var(--h-col)'));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var hIdx=n+hNow;
+    var hasH=(hIdx>=0&&hIdx<nh);
+    var td=document.createElement('td');
+    var isH0=(hasH&&hIdx===hNow); /* h's own n=0 marker */
+    td.style.cssText=cStyle(ci,
+      'font-weight:600;font-size:1.05rem;'+
+      'color:'+(hasH?'var(--h-col)':'transparent')+';'+
+      'background:'+(n===0?'#dce8ff':(hasH?'var(--h-bg)':'transparent'))+';'+
+      (isH0?'border-bottom:2.5px solid var(--h-col);':''));
+    td.textContent=hasH?fmt(h[hIdx]):'';
+    trH.appendChild(td);
+  }
+  tbl.appendChild(trH);
+
+  /* ──────────────────────────────────────
+     ROW 5: * x(n)
+  ────────────────────────────────────── */
+  var trX=document.createElement('tr');
+  var xLbl=lbl('');
+  xLbl.innerHTML='<span style="font-size:1.1rem;margin-right:3px;color:var(--navy)">*</span>'+
+    rk('x(n)\\;=');
+  xLbl.style.color='var(--x-col)';
+  trX.appendChild(xLbl);
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var xIdx=n+xNow;
+    var hasX=(xIdx>=0&&xIdx<nx);
+    var td=document.createElement('td');
+    var isX0=(hasX&&xIdx===xNow);
+    td.style.cssText=cStyle(ci,
+      'font-weight:600;font-size:1.05rem;'+
+      'color:'+(hasX?'var(--x-col)':'transparent')+';'+
+      'background:'+(n===0?'#ffe0e0':(hasX?'var(--x-bg)':'transparent'))+';'+
+      (isX0?'border-bottom:2.5px solid var(--x-col);':''));
+    td.textContent=hasX?fmt(x[xIdx]):'';
+    trX.appendChild(td);
+  }
+  tbl.appendChild(trX);
+
+  /* ──────────────────────────────────────
+     TOP RULE
+  ────────────────────────────────────── */
+  var trR1=document.createElement('tr');
+  trR1.appendChild(lbl(''));
+  for(var ci=0;ci<yLen;ci++) trR1.appendChild(ruleCell(ci,true));
+  tbl.appendChild(trR1);
+
+  /* ──────────────────────────────────────
+     PARTIAL ROWS — rightmost x first (3rd-grade order)
+     ki goes from nx-1 down to 0
+  ────────────────────────────────────── */
+  for(var ki=nx-1;ki>=0;ki--){
+    var xVal=x[ki];
+    var xTime=ki-xNow;
+    var tr=document.createElement('tr');
+
+    /* label: show multiplier */
+    var pLbl=lbl('');
+    pLbl.innerHTML='<span style="color:var(--x-col);font-weight:600">'+fmt(xVal)+'</span>'+
+      '<span style="color:var(--gray);font-size:.78rem"> &times; h</span>';
+    tr.appendChild(pLbl);
+
+    for(var ci=0;ci<yLen;ci++){
+      var n=outStart+ci;
+      /* j is the index into h for this (n, ki) combination */
+      var j=n-xTime+hNow;          /* = n - (ki-xNow) + hNow */
+      var has=(j>=0&&j<nh);
+      var val=has?xVal*h[j]:null;
+      var isEmpty=(val===null||Math.abs(val)<1e-12);
+      var td=document.createElement('td');
+      td.style.cssText=cStyle(ci,
+        'color:'+(isEmpty?'#ccc':(val>0?'var(--navy2)':'var(--red)'))+';'+
+        'font-weight:'+(isEmpty?'400':'500')+';');
+      td.textContent=isEmpty?(has?'0':''):fmt(val);
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+
+  /* ──────────────────────────────────────
+     BOTTOM RULE
+  ────────────────────────────────────── */
+  var trR2=document.createElement('tr');
+  trR2.appendChild(lbl(''));
+  for(var ci=0;ci<yLen;ci++) trR2.appendChild(ruleCell(ci,true));
+  tbl.appendChild(trR2);
+
+  /* ──────────────────────────────────────
+     y(n) SUM ROW
+  ────────────────────────────────────── */
+  var trY=document.createElement('tr');
+  trY.appendChild(lbl(rk('y(n)\\;='),'var(--y-col)'));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    td.style.cssText=cStyle(ci,
+      'font-weight:700;font-size:1.1rem;'+
+      'color:var(--y-col);'+
+      'background:'+(n===0?'var(--y-bg)':'#f4fbf5')+';'+
+      (n===0?'border:2.5px solid var(--y-col);':''));
+    td.textContent=fmt(y[ci]);
+    trY.appendChild(td);
+  }
+  tbl.appendChild(trY);
+
+  /* ──────────────────────────────────────
+     ↑ and n=0 label under y
+  ────────────────────────────────────── */
+  var trYA=document.createElement('tr');trYA.appendChild(lbl(''));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    td.style.cssText='width:'+CW+'px;text-align:center;border:none;font-size:.88rem;'+
+      'color:var(--y-col);line-height:1;padding-top:2px;';
+    td.textContent=(n===0?'↑':'');trYA.appendChild(td);
+  }
+  tbl.appendChild(trYA);
+
+  var trYN=document.createElement('tr');trYN.appendChild(lbl(''));
+  for(var ci=0;ci<yLen;ci++){
+    var n=outStart+ci;
+    var td=document.createElement('td');
+    td.style.cssText='width:'+CW+'px;text-align:center;border:none;font-size:.73rem;'+
+      'font-weight:700;color:var(--now-col);padding:0;';
+    td.textContent=(n===0?'n = 0':'');trYN.appendChild(td);
+  }
+  tbl.appendChild(trYN);
+
+  var wrap=document.createElement('div');
+  wrap.style.overflowX='auto';
+  wrap.appendChild(tbl);
+  card.appendChild(wrap);
+
+  /* ── Key box ── */
+  card.appendChild(mkKB('kb-h',
+    '<strong>Reading the layout:</strong><br>'+
+    '&#9679; <span style="color:var(--h-col)">Blue row</span> = h(n) values placed at their correct times. '+
+    'Underline marks h\'s own n=0.<br>'+
+    '&#9679; <span style="color:var(--x-col)">Red row</span> = x(n) values. Underline marks x\'s n=0.<br>'+
+    '&#9679; <strong>Partial rows</strong> (right to left through x): multiply h by x[last], '+
+    'then x[last-1] shifted left by 1, etc. — exactly like multiplying integers.<br>'+
+    '&#9679; <span style="color:var(--now-col)">Gold column</span> = n=0. &nbsp;'+
+    '&#9679; <span style="color:var(--y-col)">Green row</span> = y(n). &nbsp;'+
+    'Length: '+nh+' + '+nx+' &minus; 1 = '+yLen+'.<br>'+
+    '&#9679; <strong>Output origin:</strong> y starts at n='+outStart+
+    ' (= &minus;'+hNow+' + &minus;'+xNow+' from the two now-positions).'));
+
+  out.appendChild(card);
+
+  /* ── Result timeline ── */
+  var secY=document.createElement('div');secY.className='sec sec-y';
+  secY.innerHTML='<div class="shd"><h3>Result &nbsp; y(n) = h(n) * x(n)</h3></div>';
+  var bY=document.createElement('div');bY.className='sbody';
+  /* y stem plot */
+  var yRow=document.createElement('div');yRow.className='stem-row';
+  yRow.appendChild(makeStemPanel(y,(-outStart),'#1a6a40','y(n)'));
+  bY.appendChild(yRow);
+  var resLbl=document.createElement('div');
+  resLbl.style.cssText='font-size:.85rem;font-weight:600;color:var(--y-col);margin-bottom:.4rem;margin-top:.4rem;';
+  resLbl.innerHTML=rk('y(n)')+'&nbsp;&mdash; output signal, arrow at n=0';
+  bY.appendChild(resLbl);
+  bY.appendChild(renderTimeline(y,outStart,'y','var(--y-col)'));
+  secY.appendChild(bY);
+  out.appendChild(secY);
+}
+
+function mkKB(cls,html){var d=document.createElement('div');d.className='kb '+cls;d.innerHTML=html;return d;}
+
+/* ════════════════════════════════════════
+   DEBOUNCE COMPUTE
+════════════════════════════════════════ */
+var debTimer;
+function scheduleCompute(){
+  clearTimeout(debTimer);
+  debTimer=setTimeout(function(){
+    if(document.getElementById('output').innerHTML!=='') compute();
+  },150);
+}
+
+/* ════════════════════════════════════════
+   PRESETS / EXAMPLES
+════════════════════════════════════════ */
+var EXAMPLES=[
+  {label:'From photo',       h:{vals:[1,2,1,-1],now:1},   x:{vals:[1,2,3,1],  now:0}},
+  {label:'Simple (causal)',  h:{vals:[1,1,1],   now:0},   x:{vals:[1,2,3],    now:0}},
+  {label:'Symmetric h',     h:{vals:[1,2,1],   now:1},   x:{vals:[1,0,-1,0,1],now:0}},
+  {label:'Delta input',     h:{vals:[3,1,-2,1],now:0},   x:{vals:[1],         now:0}},
+  {label:'Past & future',   h:{vals:[1,2,1,-1],now:2},   x:{vals:[1,-1,2],   now:1}},
+];
+
+function loadEx(ex){
+  hSeq={vals:ex.h.vals.slice(),now:ex.h.now};
+  xSeq={vals:ex.x.vals.slice(),now:ex.x.now};
+  rebuildAll();
+  compute();
+}
+
+function buildExamples(){
+  var row=document.getElementById('exRow');
+  EXAMPLES.forEach(function(ex){
+    var btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent=ex.label;
+    btn.addEventListener('click',function(){loadEx(ex);});
+    row.appendChild(btn);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  buildExamples();
+  rebuildAll();
+  compute();
+});
+</script>
+</body>
+</html>

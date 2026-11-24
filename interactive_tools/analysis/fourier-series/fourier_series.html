@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fourier Series — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Playfair+Display:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --crimson:#9E1B32; --crimson-dk:#6E1322; --crimson-lt:#F2DDE0;
+  --bronze:#9A7B2E;  --bronze-lt:#E6D9B8;
+  --slate:#2D343C;
+  --ink:#23191b; --muted:#857f78;
+  --cream:#f8f5f0; --panel:#f6f1ea; --border:#e0dbd2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;line-height:1.5;}
+
+header{width:100%;color:#fff;background:var(--crimson);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 9px);
+  border-bottom:4px solid var(--bronze);}
+.hdr-top{background:var(--crimson-dk);padding:.32rem 2rem;font-size:.72rem;color:#e8c9ce;
+  letter-spacing:.14em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.hdr-main{padding:.85rem 2rem .7rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.55rem;font-weight:700;}
+header .sub{color:#f0d5d9;font-style:italic;margin-top:.25rem;font-size:.88rem;}
+.houndstooth{height:14px;background-color:#fff;
+  background-image:
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%),
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px;}
+
+.wrap{max-width:1220px;width:100%;padding:18px 20px 46px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 14px rgba(35,25,27,.07);margin-bottom:16px;overflow:hidden;}
+.card-hdr{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.13em;color:var(--muted);padding:7px 15px;background:var(--panel);
+  border-bottom:1px solid var(--border);}
+
+/* ── the three formula cards double as the tab control ── */
+.tabs{display:flex;gap:0;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.tab{flex:1;min-width:270px;border:none;border-right:1px solid var(--border);
+  background:#fff;padding:13px 17px 15px;text-align:left;cursor:pointer;
+  font-family:'Crimson Pro',Georgia,serif;position:relative;transition:background .12s;}
+.tab:last-child{border-right:none;}
+.tab:hover{background:#fdfaf9;}
+.tab .bar{position:absolute;top:0;left:0;right:0;height:4px;background:transparent;}
+.tab[aria-selected="true"]{background:var(--crimson-lt);}
+.tab[aria-selected="true"] .bar{background-color:#fff;
+  background-image:
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%),
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%);
+  background-size:8px 8px;background-position:0 0,4px 4px;}
+.tab .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);}
+.tab[aria-selected="true"] .eyebrow{color:var(--crimson);}
+.tab h3{font-family:'Playfair Display',Georgia,serif;font-size:.98rem;margin:3px 0 6px;color:var(--ink);}
+.tab .ser{font-size:.9rem;line-height:1.5;}
+.tab .cf{font-size:.79rem;color:var(--muted);margin-top:5px;line-height:1.55;}
+.tab .need{font-family:'IBM Plex Mono',monospace;font-size:.63rem;margin-top:7px;
+  color:var(--crimson-dk);letter-spacing:.04em;}
+.tab:focus-visible{outline:2px solid var(--bronze);outline-offset:-2px;}
+
+/* ── controls ── */
+.ctrl{display:flex;flex-wrap:wrap;gap:9px 20px;align-items:center;padding:10px 15px;
+  background:var(--crimson-lt);border-bottom:1px solid var(--border);}
+.ctrl2{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:8px 15px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.grp{display:flex;align-items:center;gap:7px;}
+.grp label{font-size:.85rem;font-weight:600;color:var(--crimson-dk);white-space:nowrap;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.88rem;padding:3px 7px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--ink);}
+input[type=range]{accent-color:var(--crimson);cursor:pointer;width:130px;}
+.rdout{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:600;
+  color:var(--crimson);min-width:2.6em;}
+.chk{display:flex;align-items:center;gap:5px;font-size:.82rem;cursor:pointer;}
+.chk input{accent-color:var(--crimson);cursor:pointer;}
+button{font-family:'Crimson Pro',Georgia,serif;font-size:.84rem;padding:4px 12px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--crimson-dk);cursor:pointer;}
+button:hover{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--bronze);outline-offset:1px;}
+
+canvas{display:block;width:100%;height:auto;touch-action:none;}
+#main.draw{cursor:ns-resize;}
+
+.legend{display:flex;gap:15px;flex-wrap:wrap;align-items:center;padding:8px 15px;
+  background:var(--panel);border-top:1px solid var(--border);font-size:.77rem;color:var(--muted);}
+.li{display:flex;align-items:center;gap:5px;}
+.swl{width:17px;height:3px;flex-shrink:0;}
+.sw{width:15px;height:11px;flex-shrink:0;border-radius:1px;}
+
+/* ── live series line ── */
+.live{padding:11px 15px;border-top:1px solid var(--border);background:#fff;
+  font-family:'IBM Plex Mono',monospace;font-size:.83rem;line-height:1.75;
+  overflow-x:auto;white-space:nowrap;}
+.live .lbl{color:var(--muted);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  display:block;white-space:normal;margin-bottom:3px;}
+.live .cf{color:var(--crimson);font-weight:600;}
+.live .bs{color:var(--slate);}
+.live .tail{color:var(--muted);}
+
+.stats{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--border);background:#fff;}
+.stat{flex:1;min-width:150px;padding:9px 15px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat .k{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:1.02rem;font-weight:600;
+  color:var(--crimson);margin-top:2px;}
+.stat .n{font-size:.75rem;color:var(--muted);font-style:italic;}
+
+.notes{display:flex;gap:16px;flex-wrap:wrap;}
+.note{flex:1;min-width:290px;background:#fff;border:1px solid var(--border);border-radius:5px;
+  padding:15px 18px;box-shadow:0 2px 12px rgba(35,25,27,.06);}
+.note h3{font-family:'Playfair Display',Georgia,serif;font-size:1rem;color:var(--crimson);margin-bottom:3px;}
+.note .kicker{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.note p{font-size:.87rem;margin-bottom:7px;}
+.note p:last-child{margin-bottom:0;}
+.note em{color:var(--crimson-dk);font-style:normal;font-weight:600;}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:.82rem;}
+
+@media (max-width:760px){
+  .hdr-top{padding:.32rem 1rem;font-size:.6rem;}
+  header h1{font-size:1.12rem;} .hdr-main{padding:.7rem 1rem .6rem;}
+  .wrap{padding:12px 10px 30px;}
+  .tab{min-width:100%;border-right:none;border-bottom:1px solid var(--border);}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Alabama &ensp;·&ensp; Fourier Analysis &ensp;·&ensp; Part I of the Fourier sequence</div>
+  <div class="hdr-main">
+    <h1>Fourier Series: a Function, its Coefficients, its Approximation</h1>
+    <div class="sub">One function on [0, L]. Three different series. All three are right.</div>
+  </div>
+  <div class="houndstooth"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══ tabs = formula cards ══ -->
+  <div class="card">
+    <div class="card-hdr">Pick an expansion — the card you choose is the formula being applied</div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-full" data-tab="full" aria-selected="true">
+        <span class="bar"></span>
+        <span class="eyebrow">uses f on all of [−L, L]</span>
+        <h3>Full Fourier series</h3>
+        <div class="ser">f ~ <i>a</i><sub>0</sub>/2 + Σ [ <i>a<sub>n</sub></i> cos(<i>nπx</i>/L) + <i>b<sub>n</sub></i> sin(<i>nπx</i>/L) ]</div>
+        <div class="cf">
+          <i>a<sub>n</sub></i> = (1/L) ∫<sub>−L</sub><sup>L</sup> f cos(<i>nπx</i>/L) dx<br>
+          <i>b<sub>n</sub></i> = (1/L) ∫<sub>−L</sub><sup>L</sup> f sin(<i>nπx</i>/L) dx
+        </div>
+        <div class="need">period 2L · both sines and cosines</div>
+      </button>
+      <button class="tab" role="tab" id="tab-sine" data-tab="sine" aria-selected="false">
+        <span class="bar"></span>
+        <span class="eyebrow">uses f on [0, L] only</span>
+        <h3>Sine series — odd extension</h3>
+        <div class="ser">f ~ Σ <i>b<sub>n</sub></i> sin(<i>nπx</i>/L)</div>
+        <div class="cf">
+          <i>b<sub>n</sub></i> = (2/L) ∫<sub>0</sub><sup>L</sup> f sin(<i>nπx</i>/L) dx<br>
+          every <i>a<sub>n</sub></i> = 0, by oddness
+        </div>
+        <div class="need">forces f(0) = f(L) = 0</div>
+      </button>
+      <button class="tab" role="tab" id="tab-cos" data-tab="cos" aria-selected="false">
+        <span class="bar"></span>
+        <span class="eyebrow">uses f on [0, L] only</span>
+        <h3>Cosine series — even extension</h3>
+        <div class="ser">f ~ <i>a</i><sub>0</sub>/2 + Σ <i>a<sub>n</sub></i> cos(<i>nπx</i>/L)</div>
+        <div class="cf">
+          <i>a<sub>n</sub></i> = (2/L) ∫<sub>0</sub><sup>L</sup> f cos(<i>nπx</i>/L) dx<br>
+          every <i>b<sub>n</sub></i> = 0, by evenness
+        </div>
+        <div class="need">forces f′(0) = f′(L) = 0</div>
+      </button>
+    </div>
+
+    <div class="ctrl">
+      <div class="grp">
+        <label for="selF">Function</label>
+        <select id="selF">
+          <option value="square">Square wave — sgn(x)</option>
+          <option value="saw" selected>Sawtooth — x</option>
+          <option value="tri">Triangle — 1 − 2|x|</option>
+          <option value="para">Parabola — x²</option>
+          <option value="bump">Smooth bump — e^(−8x²)</option>
+          <option value="pulse">Rectangular pulse — 1 on |x| ≤ ½</option>
+          <option value="draw">Draw your own (piecewise linear)</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label for="slN">terms N</label>
+        <input type="range" id="slN" min="1" max="60" step="1" value="6">
+        <span class="rdout" id="nVal">6</span>
+      </div>
+      <div class="grp">
+        <label for="slH">inspect harmonic</label>
+        <input type="range" id="slH" min="0" max="60" step="1" value="0">
+        <span class="rdout" id="hVal">none</span>
+      </div>
+      <button id="btnReset" style="display:none">Reset drawing</button>
+    </div>
+
+    <div class="ctrl2">
+      <label class="chk"><input type="checkbox" id="cTarget" checked> the function &amp; its extension</label>
+      <label class="chk"><input type="checkbox" id="cSum" checked> partial sum S<sub>N</sub></label>
+      <label class="chk"><input type="checkbox" id="cHarm" checked> individual harmonics</label>
+      <label class="chk"><input type="checkbox" id="cAll"> overlay all three series</label>
+      <label class="chk"><input type="checkbox" id="cPer" checked> periodic copies</label>
+    </div>
+
+    <canvas id="main" width="1180" height="430"></canvas>
+
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#23191b"></div> f, where it is given data</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#23191b 0 4px,transparent 4px 7px)"></div> the extension you implied</div>
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> partial sum S<sub>N</sub></div>
+      <div class="li"><div class="swl" style="background:rgba(158,27,50,.3)"></div> one harmonic</div>
+      <div class="li"><div class="swl" style="background:#9A7B2E;height:4px"></div> harmonic under inspection</div>
+      <div class="li"><div class="sw" style="background:rgba(158,27,50,.10)"></div> the data window [0, L]</div>
+    </div>
+
+    <div class="live" id="live"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <!-- ══ coefficients ══ -->
+  <div class="card">
+    <div class="card-hdr">Fourier coefficients — the whole function, rewritten as a list of numbers</div>
+    <div class="ctrl2">
+      <label class="chk"><input type="checkbox" id="cLog"> logarithmic axis (shows the decay rate)</label>
+      <span style="font-size:.8rem;color:var(--muted);font-style:italic" id="decayNote"></span>
+    </div>
+    <canvas id="coef" width="1180" height="260"></canvas>
+  </div>
+
+  <!-- ══ error ══ -->
+  <div class="card">
+    <div class="card-hdr">What is left over — the error f(x) − S<sub>N</sub>(x)</div>
+    <canvas id="err" width="1180" height="180"></canvas>
+  </div>
+
+  <!-- ══ notes ══ -->
+  <div class="notes">
+    <div class="note">
+      <div class="kicker">The central puzzle</div>
+      <h3>Why one function has three series</h3>
+      <p>A Fourier series is periodic, so before you can expand anything you must say what the
+      function does <em>everywhere</em> — and f was only ever handed to you on [0, L].</p>
+      <p>Choosing sines commits you to the <em>odd</em> extension, f(−x) = −f(x). Choosing cosines
+      commits you to the <em>even</em> one, f(−x) = f(x). You did not change f; you chose how to
+      continue it past the left edge, and each choice has its own coefficients.</p>
+      <p>Tick <b>overlay all three series</b>. Inside the shaded window the three curves lie on top
+      of one another — every one of them is converging to the same f. To the left of 0 they split
+      apart, because there they are drawing three different functions.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Reading the coefficient panel</div>
+      <h3>Smoothness sets the decay rate</h3>
+      <p>Choose <span class="mono">Sawtooth — x</span> and compare the two half-range tabs, watching
+      the coefficient bars.</p>
+      <p>The <em>sine</em> series has b<sub>n</sub> ~ 2/(nπ): the odd extension of x is x, whose
+      periodic copy jumps from 1 down to −1 at every edge. Coefficients die off like
+      <span class="mono">1/n</span>, and S<sub>N</sub> rings near x = L no matter how large N gets.</p>
+      <p>The <em>cosine</em> series gives the even extension |x| — continuous, merely kinked. Its
+      coefficients fall like <span class="mono">1/n²</span> and the approximation is visibly better
+      with the same N. Turn on the logarithmic axis and the two slopes are unmistakable.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Worth doing in front of a class</div>
+      <h3>Four demonstrations</h3>
+      <p><em>The exact one-term series.</em> Square wave, cosine tab. On [0, L] the function is just
+      the constant 1, so a<sub>0</sub>/2 = 1 and every other coefficient vanishes: N = 1 is already
+      exact. The sine tab on the identical data needs infinitely many terms.</p>
+      <p><em>Gibbs.</em> Square wave, sine tab, then push N to 60. The overshoot near the jump
+      narrows but never shrinks — watch the error panel, not the main plot.</p>
+      <p><em>Smoothness pays.</em> The smooth bump reaches plotting accuracy in a handful of terms.</p>
+      <p><em>Build one by hand.</em> Pick <b>Draw your own</b> and drag the handles. In the half-range
+      tabs only the handles on [0, L] are live — the other half is no longer yours to choose.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════
+   1. SETUP — the interval, the quadrature grid, and trig tables.
+
+   Everything is built on L = 1, so the harmonics are cos(nπx) and
+   sin(nπx) and the period is 2. The view shows two full periods.
+   ══════════════════════════════════════════════════════════════════ */
+
+const L = 1;
+const VIEW = 2*L;          // plot spans [-VIEW, VIEW]
+const NMAX = 60;
+const KQ = 800;            // Simpson intervals on each half-interval
+
+/* Simpson nodes/weights on [0,L] and on [-L,0], kept separate so a
+   jump at the origin never sits inside a panel.                    */
+function simpson(a,b,K){
+  const h=(b-a)/K, x=new Float64Array(K+1), w=new Float64Array(K+1);
+  for(let j=0;j<=K;j++){
+    x[j]=a+j*h;
+    w[j]=(j===0||j===K)?h/3:(j%2?4*h/3:2*h/3);
+  }
+  return {x:x,w:w};
+}
+const QP = simpson(0,L,KQ);      // positive half
+const QN = simpson(-L,0,KQ);     // negative half
+
+/* Trig tables on those fixed nodes. The nodes never move, so this is
+   paid once and the coefficient pass becomes pure multiply-add —
+   which is what keeps live dragging smooth.                        */
+const TBL = (function(){
+  const cp=[],sp=[],cn=[],sn=[];
+  for(let n=0;n<=NMAX;n++){
+    const a=new Float64Array(KQ+1), b=new Float64Array(KQ+1),
+          c=new Float64Array(KQ+1), d=new Float64Array(KQ+1);
+    const k=n*Math.PI/L;
+    for(let j=0;j<=KQ;j++){
+      a[j]=Math.cos(k*QP.x[j]); b[j]=Math.sin(k*QP.x[j]);
+      c[j]=Math.cos(k*QN.x[j]); d[j]=Math.sin(k*QN.x[j]);
+    }
+    cp.push(a); sp.push(b); cn.push(c); sn.push(d);
+  }
+  return {cp:cp,sp:sp,cn:cn,sn:sn};
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   2. THE LIBRARY OF FUNCTIONS, each defined on [-L, L]
+
+   The half-range tabs will use only the part on [0, L]; that shared
+   restriction is what makes the three expansions comparable.
+   ══════════════════════════════════════════════════════════════════ */
+
+const DN = 16;                                   // drawing segments
+const DX = [], DY = [];
+for(let i=0;i<=DN;i++) DX.push(-L + 2*L*i/DN);
+const DY0 = [0,0,0,0,0,0.35,0.7,1,1,1,0.8,0.6,0.4,0.2,0,0,0];
+function resetDrawing(){ for(let i=0;i<=DN;i++) DY[i]=DY0[i]; }
+resetDrawing();
+function fdraw(x){
+  const t=(x+L)/(2*L)*DN;
+  let i=Math.floor(t); if(i<0)i=0; if(i>DN-1)i=DN-1;
+  const u=t-i;
+  return DY[i]*(1-u)+DY[i+1]*u;
+}
+
+const FUNCS = {
+  square:{name:'square wave', tex:'sgn(x)',  f:x=>(x>=0?1:-1),
+          onHalf:'the constant 1'},
+  saw:   {name:'sawtooth',    tex:'x',       f:x=>x,
+          onHalf:'the ramp x'},
+  tri:   {name:'triangle',    tex:'1 − 2|x|',f:x=>1-2*Math.abs(x),
+          onHalf:'the ramp 1 − 2x'},
+  para:  {name:'parabola',    tex:'x²',      f:x=>x*x,
+          onHalf:'x²'},
+  bump:  {name:'smooth bump', tex:'e^(−8x²)',f:x=>Math.exp(-8*x*x),
+          onHalf:'a half-bump'},
+  pulse: {name:'rectangular pulse', tex:'1 on |x| ≤ ½', f:x=>(Math.abs(x)<=0.5?1:0),
+          onHalf:'1 on [0, ½], then 0'},
+  draw:  {name:'your drawing', tex:'piecewise linear', f:fdraw,
+          onHalf:'whatever you drew on [0, L]'}
+};
+
+const S = {tab:'full', fid:'saw', N:6, harm:0,
+           target:true, sum:true, harmonics:true, all:false, per:true, log:false};
+
+function fbase(x){ return FUNCS[S.fid].f(x); }
+
+/* ══════════════════════════════════════════════════════════════════
+   3. COEFFICIENTS — one quadrature pass yields all three series
+   ══════════════════════════════════════════════════════════════════ */
+
+let C = {full:null, sine:null, cos:null};
+
+/* Sampling f for quadrature needs care, because the grid deliberately
+   places a node on every jump (x = 0 for the square wave, x = ±L/2 for
+   the pulse). Taking a one-sided value there costs an O(h) error.
+
+   At an interior node we use the MIDPOINT of the two one-sided limits —
+   which is also the value the Fourier series itself converges to at a
+   jump, so this is the honest choice, not a patch. At the ends of the
+   interval we must stay one-sided, or the half-range integrals over
+   [0, L] would pick up the wrong limit at x = 0 and silently change
+   which function they are expanding.                                */
+const EPS=1e-9;
+function sampleHalf(Q){
+  const out=new Float64Array(KQ+1);
+  for(let j=0;j<=KQ;j++){
+    const x=Q.x[j];
+    if(j===0)        out[j]=fbase(x+EPS);                       // right limit
+    else if(j===KQ)  out[j]=fbase(x-EPS);                       // left limit
+    else             out[j]=0.5*(fbase(x-EPS)+fbase(x+EPS));    // midpoint
+  }
+  return out;
+}
+
+function computeAll(){
+  /* sample f once on each half */
+  const fP=sampleHalf(QP), fN=sampleHalf(QN);
+
+  const full={a0:0,a:[0],b:[0]}, sine={a0:0,a:[0],b:[0]}, cosn={a0:0,a:[0],b:[0]};
+
+  /* n = 0 */
+  let I0p=0,I0n=0;
+  for(let j=0;j<=KQ;j++){ I0p+=QP.w[j]*fP[j]; I0n+=QN.w[j]*fN[j]; }
+  full.a0=(I0p+I0n)/L;      // (1/L)∫_{-L}^{L} f
+  cosn.a0=2*I0p/L;          // (2/L)∫_0^L f
+  sine.a0=0;
+
+  /* n ≥ 1 */
+  for(let n=1;n<=NMAX;n++){
+    const cp=TBL.cp[n], sp=TBL.sp[n], cn=TBL.cn[n], sn=TBL.sn[n];
+    let Cp=0,Sp=0,Cn=0,Sn=0;
+    for(let j=0;j<=KQ;j++){
+      const wp=QP.w[j]*fP[j], wn=QN.w[j]*fN[j];
+      Cp+=wp*cp[j]; Sp+=wp*sp[j];
+      Cn+=wn*cn[j]; Sn+=wn*sn[j];
+    }
+    full.a[n]=(Cp+Cn)/L;  full.b[n]=(Sp+Sn)/L;
+    sine.a[n]=0;          sine.b[n]=2*Sp/L;
+    cosn.a[n]=2*Cp/L;     cosn.b[n]=0;
+  }
+  C.full=full; C.sine=sine; C.cos=cosn;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4. THE THREE TARGET FUNCTIONS — what each series actually draws
+   ══════════════════════════════════════════════════════════════════ */
+
+function wrap(x){                       // fold into [-L, L)
+  const P=2*L; let t=(x+L)%P; if(t<0)t+=P; return t-L;
+}
+function targetOf(tab,x){
+  const u=wrap(x);
+  if(tab==='full') return fbase(u);
+  if(tab==='sine') return u>=0 ? fbase(u) : -fbase(-u);
+  return fbase(Math.abs(u));            // cosine → even
+}
+/* Partial sum, by angle-addition recurrence rather than N trig calls */
+function partial(tab,x,N){
+  const c=C[tab]; if(!c) return 0;
+  const th=Math.PI*x/L, ct=Math.cos(th), st=Math.sin(th);
+  let cn=1, sn=0, s=c.a0/2;
+  for(let n=1;n<=N;n++){
+    const c2=cn*ct-sn*st, s2=sn*ct+cn*st; cn=c2; sn=s2;
+    s+=c.a[n]*cn+c.b[n]*sn;
+  }
+  return s;
+}
+function termAt(tab,n,x){
+  const c=C[tab], th=n*Math.PI*x/L;
+  return c.a[n]*Math.cos(th)+c.b[n]*Math.sin(th);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5. PLOT PLUMBING
+   ══════════════════════════════════════════════════════════════════ */
+
+const mc=document.getElementById('main'), mx=mc.getContext('2d');
+const cc=document.getElementById('coef'), cx=cc.getContext('2d');
+const ec=document.getElementById('err'),  ex=ec.getContext('2d');
+const MW=1180, MH=430, CW=1180, CH=260, EW=1180, EH=180;
+
+function hidpi(cv,c,w,h){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*dpr; cv.height=h*dpr; cv.style.maxWidth=w+'px';
+  c.setTransform(dpr,0,0,dpr,0,0);
+}
+const INK='#23191b', CRIM='#9E1B32', BRZ='#9A7B2E', SLT='#2D343C', MUT='#857f78';
+const PADM={l:56,r:20,t:18,b:34};
+
+/* Break a polyline where the function jumps, so a discontinuity is
+   never drawn as a near-vertical connecting segment.               */
+function polyline(c,xs,ys,X,Y,jump){
+  c.beginPath(); let open=false;
+  for(let i=0;i<xs.length;i++){
+    const y=ys[i];
+    if(!Number.isFinite(y)){ open=false; continue; }
+    if(open && Math.abs(y-ys[i-1])>jump){ c.stroke(); c.beginPath(); open=false; }
+    const px=X(xs[i]), py=Y(y);
+    open?c.lineTo(px,py):c.moveTo(px,py); open=true;
+  }
+  c.stroke();
+}
+function niceStep(x){
+  if(!(x>0)) return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(x))), f=x/e;
+  return (f<1.5?1:f<3?2:f<7?5:10)*e;
+}
+function fmt(v,d){
+  if(!Number.isFinite(v)) return '—';
+  if(v!==0 && Math.abs(v)<1e-4) return v.toExponential(1);
+  return v.toFixed(d===undefined?4:d);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6. MAIN PLOT
+   ══════════════════════════════════════════════════════════════════ */
+
+const NS=1500;                       // plot resolution across the view
+const gx=new Float64Array(NS);
+for(let i=0;i<NS;i++) gx[i]=-VIEW+2*VIEW*i/(NS-1);
+
+function render(){
+  mx.clearRect(0,0,MW,MH); mx.fillStyle='#fff'; mx.fillRect(0,0,MW,MH);
+  const gW=MW-PADM.l-PADM.r, gH=MH-PADM.t-PADM.b;
+
+  /* sample everything we might draw, to fix the y range */
+  const tg=new Float64Array(NS), ps=new Float64Array(NS);
+  let lo=Infinity, hi=-Infinity;
+  for(let i=0;i<NS;i++){
+    tg[i]=targetOf(S.tab,gx[i]); ps[i]=partial(S.tab,gx[i],S.N);
+    if(tg[i]<lo)lo=tg[i]; if(tg[i]>hi)hi=tg[i];
+    if(ps[i]<lo)lo=ps[i]; if(ps[i]>hi)hi=ps[i];
+  }
+  const others=[];
+  if(S.all) for(const t of ['full','sine','cos']) if(t!==S.tab){
+    const arr=new Float64Array(NS);
+    for(let i=0;i<NS;i++){ arr[i]=partial(t,gx[i],S.N); if(arr[i]<lo)lo=arr[i]; if(arr[i]>hi)hi=arr[i]; }
+    others.push({tab:t,arr:arr});
+  }
+  if(!(hi>lo)){ hi=lo+1; }
+  if(S.fid==='draw'){
+    /* A re-fitting axis makes dragging feel slippery: the handle chases the
+       cursor because the mapping shifts underneath it. Pin the range so a
+       drag is exactly one-to-one with the pointer. */
+    lo=-2.2; hi=2.2;
+  }else{
+    const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+  }
+  const X=x=>PADM.l+(x+VIEW)/(2*VIEW)*gW;
+  const Y=y=>PADM.t+(hi-y)/(hi-lo)*gH;
+  const jump=(hi-lo)*0.35;
+
+  /* ── window shading: the data, and the half you only implied ── */
+  mx.fillStyle='rgba(158,27,50,0.10)';
+  mx.fillRect(X(0),PADM.t,X(L)-X(0),gH);
+  if(S.tab!=='full'){
+    mx.fillStyle='rgba(154,123,46,0.08)';
+    mx.fillRect(X(-L),PADM.t,X(0)-X(-L),gH);
+  }
+
+  /* ── grid ── */
+  const ys=niceStep((hi-lo)/5);
+  mx.lineWidth=1; mx.font='500 10px "IBM Plex Mono",monospace';
+  mx.textAlign='right'; mx.textBaseline='middle';
+  for(let k=Math.ceil(lo/ys);k*ys<=hi;k++){
+    const y=Y(k*ys);
+    mx.strokeStyle=(Math.abs(k*ys)<1e-12)?'rgba(35,25,27,0.30)':'rgba(158,27,50,0.07)';
+    mx.beginPath(); mx.moveTo(PADM.l,y); mx.lineTo(MW-PADM.r,y); mx.stroke();
+    mx.fillStyle=MUT; mx.fillText(fmt(k*ys,2),PADM.l-8,y);
+  }
+  /* period boundaries */
+  mx.textAlign='center'; mx.textBaseline='top';
+  for(let k=-2;k<=2;k++){
+    const x=k*L, px=X(x);
+    mx.setLineDash(k===0?[]:[5,4]);
+    mx.strokeStyle=(k===0||Math.abs(k)===1)?'rgba(35,25,27,0.45)':'rgba(35,25,27,0.2)';
+    mx.beginPath(); mx.moveTo(px,PADM.t); mx.lineTo(px,PADM.t+gH); mx.stroke();
+    mx.setLineDash([]);
+    mx.fillStyle=MUT;
+    mx.fillText(k===0?'0':(k===1?'L':(k===-1?'−L':(k>0?k+'L':k+'L'))),px,PADM.t+gH+7);
+  }
+  mx.font='italic 700 12px "Crimson Pro",Georgia,serif'; mx.fillStyle='rgba(35,25,27,0.8)';
+  mx.fillText('x',MW-PADM.r-6,PADM.t+gH+7);
+
+  /* window captions */
+  mx.font='600 9.5px "IBM Plex Mono",monospace'; mx.textBaseline='alphabetic';
+  mx.fillStyle=CRIM; mx.fillText('THE DATA: [0, L]',(X(0)+X(L))/2,PADM.t+13);
+  if(S.tab!=='full'){
+    mx.fillStyle=BRZ;
+    mx.fillText(S.tab==='sine'?'ODD EXTENSION':'EVEN EXTENSION',(X(-L)+X(0))/2,PADM.t+13);
+  }
+
+  /* everything from here on is a curve: keep it inside the frame */
+  mx.save(); mx.beginPath(); mx.rect(PADM.l,PADM.t,gW,gH); mx.clip();
+
+  /* ── individual harmonics ── */
+  if(S.harmonics){
+    const c=C[S.tab];
+    for(let n=1;n<=S.N;n++){
+      if(n===S.harm) continue;
+      const mag=Math.abs(c.a[n])+Math.abs(c.b[n]);
+      if(mag<1e-12) continue;
+      const t=(n-1)/Math.max(1,S.N-1);
+      const col=[158+(154-158)*t, 27+(123-27)*t, 50+(46-50)*t];
+      mx.strokeStyle='rgba('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+',0.34)';
+      mx.lineWidth=1;
+      const th0=n*Math.PI*(-VIEW)/L, dth=n*Math.PI*(2*VIEW/(NS-1))/L;
+      const cd=Math.cos(dth), sd=Math.sin(dth);
+      let cn=Math.cos(th0), sn=Math.sin(th0);
+      mx.beginPath();
+      for(let i=0;i<NS;i++){
+        const v=c.a[n]*cn+c.b[n]*sn;
+        i?mx.lineTo(X(gx[i]),Y(v)):mx.moveTo(X(gx[i]),Y(v));
+        const c2=cn*cd-sn*sd, s2=sn*cd+cn*sd; cn=c2; sn=s2;
+      }
+      mx.stroke();
+    }
+  }
+
+  /* ── the other two series, for the comparison ── */
+  for(const o of others){
+    mx.strokeStyle = o.tab==='sine'?'rgba(45,52,60,0.72)'
+                   : o.tab==='cos' ?'rgba(154,123,46,0.80)'
+                                   :'rgba(35,25,27,0.55)';
+    mx.lineWidth=1.7; mx.setLineDash([7,4]);
+    polyline(mx,gx,o.arr,X,Y,Infinity);
+    mx.setLineDash([]);
+  }
+
+  /* ── the target: solid where f is data, dashed where implied ── */
+  if(S.target){
+    /* periodic copies, faint */
+    if(S.per){
+      mx.strokeStyle='rgba(35,25,27,0.26)'; mx.lineWidth=1.4; mx.setLineDash([2,3]);
+      const seg=[],sv=[];
+      for(let i=0;i<NS;i++){ if(Math.abs(gx[i])>L){ seg.push(gx[i]); sv.push(tg[i]); } }
+      polyline(mx,seg,sv,X,Y,jump);
+      mx.setLineDash([]);
+    }
+    /* the extension half */
+    if(S.tab!=='full'){
+      mx.strokeStyle='rgba(35,25,27,0.75)'; mx.lineWidth=2; mx.setLineDash([6,4]);
+      const seg=[],sv=[];
+      for(let i=0;i<NS;i++){ if(gx[i]>=-L&&gx[i]<=0){ seg.push(gx[i]); sv.push(tg[i]); } }
+      polyline(mx,seg,sv,X,Y,jump);
+      mx.setLineDash([]);
+    }
+    /* the given data */
+    mx.strokeStyle=INK; mx.lineWidth=2.6;
+    const seg=[],sv=[];
+    const a=(S.tab==='full')?-L:0;
+    for(let i=0;i<NS;i++){ if(gx[i]>=a&&gx[i]<=L){ seg.push(gx[i]); sv.push(tg[i]); } }
+    polyline(mx,seg,sv,X,Y,jump);
+  }
+
+  /* ── the partial sum ── */
+  if(S.sum){
+    mx.strokeStyle=CRIM; mx.lineWidth=2.8;
+    polyline(mx,gx,ps,X,Y,Infinity);
+  }
+
+  /* ── the harmonic under inspection ── */
+  let harmLabel='';
+  if(S.harm>=1&&S.harm<=NMAX){
+    const c=C[S.tab];
+    mx.strokeStyle=BRZ; mx.lineWidth=2.6;
+    const arr=new Float64Array(NS);
+    for(let i=0;i<NS;i++) arr[i]=termAt(S.tab,S.harm,gx[i]);
+    polyline(mx,gx,arr,X,Y,Infinity);
+    harmLabel='n = '+S.harm+
+      (Math.abs(c.a[S.harm])>1e-12?'   a\u2099 = '+fmt(c.a[S.harm],4):'')+
+      (Math.abs(c.b[S.harm])>1e-12?'   b\u2099 = '+fmt(c.b[S.harm],4):'')+
+      (S.harm>S.N?'   \u2014 not yet included in S'+S.N:'');
+  }
+
+  mx.restore();
+
+  if(harmLabel){
+    mx.font='600 10px "IBM Plex Mono",monospace'; mx.fillStyle=BRZ; mx.textAlign='left';
+    mx.textBaseline='alphabetic';
+    mx.fillText(harmLabel,PADM.l+8,PADM.t+gH-8);
+  }
+
+  /* frame */
+  mx.strokeStyle='rgba(35,25,27,0.35)'; mx.lineWidth=1;
+  mx.strokeRect(PADM.l,PADM.t,gW,gH);
+  return {tg:tg,ps:ps,lo:lo,hi:hi};
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7. COEFFICIENT PLOT
+   ══════════════════════════════════════════════════════════════════ */
+
+function renderCoef(){
+  cx.clearRect(0,0,CW,CH); cx.fillStyle='#fff'; cx.fillRect(0,0,CW,CH);
+  const P={l:58,r:20,t:26,b:40}, gW=CW-P.l-P.r, gH=CH-P.t-P.b;
+  const c=C[S.tab];
+  const NS_=Math.max(S.N,12);
+  const hasA=(S.tab!=='sine'), hasB=(S.tab!=='cos');
+
+  /* magnitude range */
+  let mmax=Math.abs(c.a0/2);
+  for(let n=1;n<=NS_;n++){ mmax=Math.max(mmax,Math.abs(c.a[n]),Math.abs(c.b[n])); }
+  if(!(mmax>0)) mmax=1;
+
+  const X=n=>P.l+(n+0.5)/(NS_+1)*gW;
+  const bw=Math.max(2,Math.min(16,gW/(NS_+1)/(hasA&&hasB?2.6:1.7)));
+
+  let Y, yZero;
+  if(S.log){
+    const top=Math.pow(10,Math.ceil(Math.log10(mmax))), dec=5;
+    const bot=top/Math.pow(10,dec);
+    Y=v=>{ const a=Math.abs(v); if(a<=bot) return P.t+gH;
+           return P.t+gH-(Math.log10(a/bot)/dec)*gH; };
+    yZero=P.t+gH;
+    cx.font='500 10px "IBM Plex Mono",monospace'; cx.textAlign='right'; cx.textBaseline='middle';
+    for(let k=0;k<=dec;k++){
+      const v=bot*Math.pow(10,k), y=Y(v);
+      cx.strokeStyle='rgba(158,27,50,0.07)'; cx.beginPath();
+      cx.moveTo(P.l,y); cx.lineTo(P.l+gW,y); cx.stroke();
+      cx.fillStyle=MUT; cx.fillText(v.toExponential(0),P.l-8,y);
+    }
+    /* reference decay slopes, anchored at n = 1 */
+    const anchor=Math.max(Math.abs(c.a[1]),Math.abs(c.b[1]))||mmax;
+    for(const [pw,lab,dash] of [[1,'1/n',[6,4]],[2,'1/n²',[2,3]]]){
+      cx.strokeStyle='rgba(45,52,60,0.45)'; cx.lineWidth=1; cx.setLineDash(dash);
+      cx.beginPath();
+      for(let n=1;n<=NS_;n++){
+        const v=anchor/Math.pow(n,pw), px=X(n), py=Y(v);
+        n===1?cx.moveTo(px,py):cx.lineTo(px,py);
+      }
+      cx.stroke(); cx.setLineDash([]);
+      const py=Y(anchor/Math.pow(NS_,pw));
+      cx.fillStyle=SLT; cx.font='600 9px "IBM Plex Mono",monospace'; cx.textAlign='left';
+      cx.fillText(lab,X(NS_)+5,Math.min(py,P.t+gH-2));
+    }
+  }else{
+    const top=mmax*1.15;
+    Y=v=>P.t+gH/2-(v/top)*(gH/2);
+    yZero=Y(0);
+    const step=niceStep(top/3);
+    cx.font='500 10px "IBM Plex Mono",monospace'; cx.textAlign='right'; cx.textBaseline='middle';
+    for(let k=-4;k<=4;k++){
+      const v=k*step; if(Math.abs(v)>top) continue;
+      const y=Y(v);
+      cx.strokeStyle=(k===0)?'rgba(35,25,27,0.3)':'rgba(158,27,50,0.07)';
+      cx.beginPath(); cx.moveTo(P.l,y); cx.lineTo(P.l+gW,y); cx.stroke();
+      cx.fillStyle=MUT; cx.fillText(fmt(v,2),P.l-8,y);
+    }
+  }
+
+  /* bars */
+  function bar(px,v,col,w){
+    const y=Y(v), h=S.log?(P.t+gH-y):Math.abs(y-yZero);
+    if(h<0.4) return;
+    cx.fillStyle=col;
+    cx.fillRect(px-w/2, S.log?y:Math.min(y,yZero), w, Math.max(h,0.8));
+  }
+  /* a0/2 sits at n = 0 */
+  if(hasA && Math.abs(c.a0)>1e-14){
+    bar(X(0),c.a0/2,'rgba(158,27,50,0.85)',bw*1.2);
+  }
+  for(let n=1;n<=NS_;n++){
+    const off=(hasA&&hasB)?bw*0.62:0;
+    const dim=(n>S.N);
+    if(hasA) bar(X(n)-off,c.a[n],dim?'rgba(158,27,50,0.22)':'rgba(158,27,50,0.85)',bw);
+    if(hasB) bar(X(n)+off,c.b[n],dim?'rgba(45,52,60,0.20)':'rgba(45,52,60,0.80)',bw);
+    if(n===S.harm){
+      cx.strokeStyle=BRZ; cx.lineWidth=1.6;
+      cx.strokeRect(X(n)-bw*1.3,P.t,bw*2.6,gH);
+    }
+  }
+  /* n labels */
+  cx.font='500 10px "IBM Plex Mono",monospace'; cx.textAlign='center'; cx.textBaseline='top';
+  cx.fillStyle=MUT;
+  const lstep=NS_>30?5:(NS_>14?2:1);
+  for(let n=0;n<=NS_;n++){
+    if(n%lstep===0||n===NS_) cx.fillText(n,X(n),P.t+gH+7);
+  }
+  cx.font='italic 700 11px "Crimson Pro",Georgia,serif'; cx.fillStyle='rgba(35,25,27,0.8)';
+  cx.fillText('harmonic n',P.l+gW/2,P.t+gH+22);
+
+  /* key */
+  cx.textAlign='left'; cx.textBaseline='alphabetic';
+  cx.font='600 9.5px "IBM Plex Mono",monospace';
+  let kx=P.l;
+  const bars=S.log?'|a\u2099|':'a\u2099', barsB=S.log?'|b\u2099|':'b\u2099';
+  if(hasA){ cx.fillStyle='rgba(158,27,50,0.85)'; cx.fillRect(kx,12,11,8);
+            cx.fillStyle=MUT; cx.fillText(bars+'  (cosine)',kx+16,20); kx+=112; }
+  if(hasB){ cx.fillStyle='rgba(45,52,60,0.80)'; cx.fillRect(kx,12,11,8);
+            cx.fillStyle=MUT; cx.fillText(barsB+'  (sine)',kx+16,20); kx+=102; }
+  cx.fillStyle=MUT;
+  cx.fillText('faded bars are terms beyond N — available, not yet used',kx+6,20);
+  cx.strokeStyle='rgba(35,25,27,0.35)'; cx.lineWidth=1; cx.strokeRect(P.l,P.t,gW,gH);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   8. ERROR PLOT
+   ══════════════════════════════════════════════════════════════════ */
+
+function renderErr(){
+  ex.clearRect(0,0,EW,EH); ex.fillStyle='#fff'; ex.fillRect(0,0,EW,EH);
+  const P={l:56,r:20,t:16,b:28}, gW=EW-P.l-P.r, gH=EH-P.t-P.b;
+  const e=new Float64Array(NS); let m=0;
+  for(let i=0;i<NS;i++){
+    e[i]=targetOf(S.tab,gx[i])-partial(S.tab,gx[i],S.N);
+    const a=Math.abs(e[i]); if(a>m&&Number.isFinite(a))m=a;
+  }
+  if(!(m>0)) m=1;
+  const top=m*1.2;
+  const X=x=>P.l+(x+VIEW)/(2*VIEW)*gW;
+  const Y=v=>P.t+gH/2-(v/top)*(gH/2);
+
+  ex.fillStyle='rgba(158,27,50,0.10)'; ex.fillRect(X(0),P.t,X(L)-X(0),gH);
+  const step=niceStep(top/2);
+  ex.font='500 10px "IBM Plex Mono",monospace'; ex.textAlign='right'; ex.textBaseline='middle';
+  for(let k=-3;k<=3;k++){
+    const v=k*step; if(Math.abs(v)>top) continue;
+    const y=Y(v);
+    ex.strokeStyle=(k===0)?'rgba(35,25,27,0.3)':'rgba(158,27,50,0.07)';
+    ex.beginPath(); ex.moveTo(P.l,y); ex.lineTo(P.l+gW,y); ex.stroke();
+    ex.fillStyle=MUT; ex.fillText(fmt(v,3),P.l-8,y);
+  }
+  for(let k=-2;k<=2;k++){
+    const px=X(k*L);
+    ex.setLineDash(k===0?[]:[5,4]);
+    ex.strokeStyle='rgba(35,25,27,0.28)';
+    ex.beginPath(); ex.moveTo(px,P.t); ex.lineTo(px,P.t+gH); ex.stroke();
+    ex.setLineDash([]);
+  }
+  ex.strokeStyle=CRIM; ex.lineWidth=1.7;
+  polyline(ex,gx,e,X,Y,top*0.9);
+  ex.strokeStyle='rgba(35,25,27,0.35)'; ex.lineWidth=1; ex.strokeRect(P.l,P.t,gW,gH);
+  ex.font='600 9.5px "IBM Plex Mono",monospace'; ex.textAlign='left'; ex.textBaseline='alphabetic';
+  ex.fillStyle=MUT;
+  ex.fillText('peak |error| = '+fmt(m,4)+'   ·   the spikes sit wherever the extension is not smooth',P.l+8,P.t+12);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   9. THE LIVE SERIES LINE AND THE STAT STRIP
+   ══════════════════════════════════════════════════════════════════ */
+
+function renderLive(){
+  const c=C[S.tab], parts=[];
+  if(Math.abs(c.a0/2)>1e-10) parts.push('<span class="cf">'+fmt(c.a0/2,4)+'</span>');
+  for(let n=1;n<=S.N && parts.length<9;n++){
+    if(Math.abs(c.a[n])>1e-10)
+      parts.push('<span class="cf">'+fmt(c.a[n],4)+'</span>·<span class="bs">cos('+(n===1?'':n)+'πx)</span>');
+    if(Math.abs(c.b[n])>1e-10)
+      parts.push('<span class="cf">'+fmt(c.b[n],4)+'</span>·<span class="bs">sin('+(n===1?'':n)+'πx)</span>');
+  }
+  let body = parts.length ? parts.join('  +  ') : '<span class="tail">0 — every coefficient vanishes</span>';
+  let total=0;
+  if(Math.abs(c.a0/2)>1e-10) total++;
+  for(let n=1;n<=S.N;n++){
+    if(Math.abs(c.a[n])>1e-10) total++;
+    if(Math.abs(c.b[n])>1e-10) total++;
+  }
+  const left=total-parts.length;
+  if(left>0) body+='  <span class="tail">+ '+left+' more term'+(left>1?'s':'')+'</span>';
+  document.getElementById('live').innerHTML=
+    '<span class="lbl">The approximation you are looking at, written out</span>'+
+    '<span class="bs">S<sub>'+S.N+'</sub>(x) = </span>'+body;
+}
+
+function renderStats(){
+  const c=C[S.tab];
+  /* error measures on the data window [0, L] only — that is where the
+     three series are all claiming to represent the same f */
+  let peak=0, sse=0, cnt=0;
+  for(let i=0;i<NS;i++){
+    const x=gx[i]; if(x<0||x>L) continue;
+    const d=targetOf(S.tab,x)-partial(S.tab,x,S.N);
+    if(!Number.isFinite(d)) continue;
+    peak=Math.max(peak,Math.abs(d)); sse+=d*d; cnt++;
+  }
+  const rms=cnt?Math.sqrt(sse/cnt):0;
+  /* Parseval: share of the energy the first N terms have captured */
+  let used=c.a0*c.a0/2, all_=c.a0*c.a0/2;
+  for(let n=1;n<=NMAX;n++){
+    const e=c.a[n]*c.a[n]+c.b[n]*c.b[n];
+    all_+=e; if(n<=S.N) used+=e;
+  }
+  const share=all_>1e-14?100*used/all_:100;
+  const nz=(function(){let k=0;for(let n=1;n<=S.N;n++){
+    if(Math.abs(c.a[n])>1e-10)k++; if(Math.abs(c.b[n])>1e-10)k++;} 
+    if(Math.abs(c.a0)>1e-10)k++; return k;})();
+  const F=FUNCS[S.fid];
+  document.getElementById('stats').innerHTML=
+    stat('terms in use', S.N, nz+' of them are non-zero')+
+    stat('peak error on [0, L]', fmt(peak,4), 'the worst point in the data window')+
+    stat('rms error on [0, L]', fmt(rms,4), 'typical size of the miss')+
+    stat('energy captured', share.toFixed(3)+'%', 'by Parseval, out of 60 terms')+
+    stat('f on [0, L]', F.onHalf, 'this is all three tabs ever see');
+}
+function stat(k,v,n){
+  return '<div class="stat"><div class="k">'+k+'</div><div class="v">'+v+
+         '</div><div class="n">'+n+'</div></div>';
+}
+
+function renderDecayNote(){
+  const c=C[S.tab];
+  let msg='';
+  if(S.log){
+    /* estimate the decay exponent from the non-zero tail */
+    const pts=[];
+    for(let n=1;n<=NMAX;n++){
+      const m=Math.hypot(c.a[n],c.b[n]);
+      if(m>1e-12) pts.push([Math.log(n),Math.log(m)]);
+    }
+    if(pts.length>=6){
+      const k=pts.slice(Math.floor(pts.length/3));
+      let sx=0,sy=0,sxx=0,sxy=0;
+      for(const p of k){ sx+=p[0]; sy+=p[1]; sxx+=p[0]*p[0]; sxy+=p[0]*p[1]; }
+      const nn=k.length, den=nn*sxx-sx*sx;
+      if(Math.abs(den)>1e-12){
+        const slope=(nn*sxy-sx*sy)/den;
+        msg='measured decay over the tail ≈ 1/n^'+(-slope).toFixed(2);
+      }
+    }
+  }
+  document.getElementById('decayNote').textContent=msg;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   10. DRAWING MODE
+   ══════════════════════════════════════════════════════════════════ */
+
+let lastGeom=null, dragging=false;
+
+function drawHandles(geom){
+  if(S.fid!=='draw'||!geom) return;
+  const gW=MW-PADM.l-PADM.r, gH=MH-PADM.t-PADM.b;
+  const X=x=>PADM.l+(x+VIEW)/(2*VIEW)*gW;
+  const Y=y=>PADM.t+(geom.hi-y)/(geom.hi-geom.lo)*gH;
+  for(let i=0;i<=DN;i++){
+    const live=editable(DX[i]);
+    mx.beginPath(); mx.arc(X(DX[i]),Y(DY[i]),live?4.6:3,0,6.283);
+    mx.fillStyle=live?'#fff':'rgba(255,255,255,0.6)';
+    mx.fill();
+    mx.strokeStyle=live?CRIM:'rgba(133,127,120,0.6)';
+    mx.lineWidth=live?2:1; mx.stroke();
+  }
+  mx.font='600 9.5px "IBM Plex Mono",monospace'; mx.textAlign='left'; mx.textBaseline='alphabetic';
+  mx.fillStyle=CRIM;
+  mx.fillText(S.tab==='full'
+      ? 'DRAG ANY HANDLE — all of [−L, L] is yours to set'
+      : 'DRAG THE HANDLES ON [0, L] — the other half is now determined by the extension',
+    PADM.l+8, PADM.t+gH-8);
+}
+function editable(x){
+  return S.tab==='full' ? (x>=-L-1e-9&&x<=L+1e-9) : (x>=-1e-9&&x<=L+1e-9);
+}
+function grab(e){
+  if(S.fid!=='draw'||!lastGeom) return;
+  const r=mc.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  const px=(t.clientX-r.left)*(MW/r.width), py=(t.clientY-r.top)*(MH/r.height);
+  const gW=MW-PADM.l-PADM.r, gH=MH-PADM.t-PADM.b;
+  const xv=(px-PADM.l)/gW*(2*VIEW)-VIEW;
+  const yv=lastGeom.hi-(py-PADM.t)/gH*(lastGeom.hi-lastGeom.lo);
+  /* nearest editable handle in x */
+  let bi=-1, bd=1e9;
+  for(let i=0;i<=DN;i++){
+    if(!editable(DX[i])) continue;
+    const d=Math.abs(DX[i]-xv); if(d<bd){bd=d;bi=i;}
+  }
+  if(bi<0||bd>0.16) return;
+  DY[bi]=Math.max(-2,Math.min(2,yv));
+  refresh(); e.preventDefault();
+}
+mc.addEventListener('mousedown',function(e){ if(S.fid==='draw'){dragging=true; grab(e);} });
+window.addEventListener('mousemove',function(e){ if(dragging) grab(e); });
+window.addEventListener('mouseup',function(){ dragging=false; });
+mc.addEventListener('touchstart',function(e){ if(S.fid==='draw'){dragging=true; grab(e);} },{passive:false});
+mc.addEventListener('touchmove',function(e){ if(dragging) grab(e); },{passive:false});
+mc.addEventListener('touchend',function(){ dragging=false; });
+
+/* ══════════════════════════════════════════════════════════════════
+   11. WIRE-UP
+   ══════════════════════════════════════════════════════════════════ */
+
+function refresh(){
+  computeAll();
+  lastGeom=render();
+  drawHandles(lastGeom);
+  renderCoef(); renderErr(); renderLive(); renderStats(); renderDecayNote();
+}
+function redrawOnly(){
+  lastGeom=render(); drawHandles(lastGeom);
+  renderCoef(); renderErr(); renderLive(); renderStats(); renderDecayNote();
+}
+
+const $=id=>document.getElementById(id);
+
+for(const b of document.querySelectorAll('.tab')){
+  b.addEventListener('click',function(){
+    S.tab=this.dataset.tab;
+    for(const o of document.querySelectorAll('.tab'))
+      o.setAttribute('aria-selected', o===this ? 'true':'false');
+    redrawOnly();
+  });
+}
+$('selF').addEventListener('change',function(){
+  S.fid=this.value;
+  $('btnReset').style.display = S.fid==='draw'?'inline-block':'none';
+  mc.classList.toggle('draw', S.fid==='draw');
+  refresh();
+});
+$('btnReset').addEventListener('click',function(){ resetDrawing(); refresh(); });
+$('slN').addEventListener('input',function(){
+  S.N=parseInt(this.value,10); $('nVal').textContent=S.N;
+  redrawOnly();
+});
+$('slH').addEventListener('input',function(){
+  S.harm=parseInt(this.value,10);
+  $('hVal').textContent = S.harm===0?'none':S.harm;
+  redrawOnly();
+});
+const toggles={cTarget:'target',cSum:'sum',cHarm:'harmonics',cAll:'all',cPer:'per',cLog:'log'};
+for(const id in toggles){
+  $(id).addEventListener('change',function(){ S[toggles[id]]=this.checked; redrawOnly(); });
+}
+
+function boot(){
+  hidpi(mc,mx,MW,MH); hidpi(cc,cx,CW,CH); hidpi(ec,ex,EW,EH);
+  $('selF').value=S.fid; $('slN').value=S.N; $('nVal').textContent=S.N;
+  refresh();
+}
+window.addEventListener('resize',function(){
+  hidpi(mc,mx,MW,MH); hidpi(cc,cx,CW,CH); hidpi(ec,ex,EW,EH); redrawOnly();
+});
+document.fonts && document.fonts.ready.then(redrawOnly);
+boot();
+</script>
+</body>
+</html>

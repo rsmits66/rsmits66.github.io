@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Krylov Spaces · Arnoldi · GMRES</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --bg:#0c0c0f;--surface:#141418;--surface2:#1c1c22;--surface3:#222228;
+  --border:#2a2a34;--border-hi:#3d3d4a;
+  --text:#e8e6e3;--text2:#9b98a0;--text3:#5f5d66;
+  --accent:#6e8efb;--accent2:#a777e3;
+  --green:#4ade80;--yellow:#fbbf24;--cyan:#38bdf8;
+  --red:#f87171;--orange:#fb923c;--pink:#f472b6;
+  --q1:#4ade80;   /* q1 — green */
+  --q2:#38bdf8;   /* q2 — cyan */
+  --q3:#fbbf24;   /* q3 — gold */
+  --q4:#f472b6;   /* q4 — pink */
+  --H-col:#a777e3; /* H — purple */
+  --K-col:#fb923c; /* Krylov — orange */
+  --mono:'JetBrains Mono',monospace;
+  --sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{padding:16px 20px;max-width:1300px;margin:0 auto;}
+
+header{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--border);}
+header h1{font-family:var(--mono);font-size:16px;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+header .sub{font-size:12px;color:var(--text3);}
+
+/* Step cards */
+.step{background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.step-title{font-family:var(--mono);font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;}
+.step-num{width:22px;height:22px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.formula{overflow-x:auto;margin:6px 0;padding:2px 0;line-height:1.7;}
+.note{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.6;}
+.note b{color:var(--text2);}
+.two-col{display:flex;gap:14px;flex-wrap:wrap;}
+.two-col>*{flex:1;min-width:260px;}
+.three-col{display:flex;gap:12px;flex-wrap:wrap;}
+.three-col>*{flex:1;min-width:200px;}
+
+/* Matrix tables */
+.mat-wrap{overflow-x:auto;margin:6px 0;}
+table.mat{border-collapse:collapse;font-family:var(--mono);font-size:11px;white-space:nowrap;}
+table.mat th{background:var(--surface2);color:var(--text3);padding:3px 8px;
+  border:1px solid var(--border);font-weight:500;text-align:center;font-size:10px;}
+table.mat td{padding:3px 8px;border:1px solid var(--border);text-align:right;
+  font-variant-numeric:tabular-nums;}
+table.mat td.rh{background:var(--surface2);color:var(--text3);text-align:left;
+  font-size:10px;padding-left:6px;}
+table.mat td.zero{color:var(--text3);}
+table.mat td.q1{color:var(--q1);} table.mat td.q2{color:var(--q2);}
+table.mat td.q3{color:var(--q3);} table.mat td.q4{color:var(--q4);}
+table.mat td.H{color:var(--H-col);}   table.mat td.K{color:var(--K-col);}
+table.mat td.hi{font-weight:600;color:var(--text);}
+table.mat td.green{color:var(--green);}
+table.mat td.diag{background:rgba(167,119,227,.12);color:var(--H-col);font-weight:600;}
+
+/* Iteration accordion */
+.iter-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.iter-tab{background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+  color:var(--text3);font-family:var(--mono);font-size:10px;padding:4px 10px;
+  cursor:pointer;transition:all .12s;}
+.iter-tab:hover{border-color:var(--border-hi);color:var(--text2);}
+.iter-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(110,142,251,.08);}
+.iter-panel{display:none;}.iter-panel.show{display:block;}
+
+/* Controls */
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.pbtn{background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+  color:var(--text2);font-family:var(--mono);font-size:10px;padding:4px 9px;
+  cursor:pointer;transition:border-color .12s;}
+.pbtn:hover{border-color:var(--accent);color:var(--text);}
+.edit-cell{background:var(--surface2);border:1px solid var(--border-hi);border-radius:3px;
+  color:var(--green);font-family:var(--mono);font-size:11px;width:54px;
+  text-align:right;padding:2px 4px;outline:none;}
+.edit-cell:focus{border-color:var(--accent);}
+
+/* Arrow for Arnoldi steps */
+.arnoldi-step{display:flex;align-items:flex-start;gap:10px;
+  margin:6px 0;padding:8px 10px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:6px;font-size:11px;}
+.a-num{font-family:var(--mono);font-size:10px;font-weight:600;
+  color:var(--text3);min-width:20px;padding-top:1px;}
+.a-body{flex:1;overflow-x:auto;}
+
+/* Residual bar */
+.res-bar-wrap{margin:6px 0;}
+.res-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.res-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:40px;}
+.res-bar{height:12px;border-radius:2px;background:var(--green);transition:width .4s;}
+.res-val{font-family:var(--mono);font-size:10px;color:var(--text2);}
+
+/* Krylov column colours */
+.k0{color:var(--q1)!important;} .k1{color:var(--q2)!important;}
+.k2{color:var(--q3)!important;} .k3{color:var(--q4)!important;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Krylov Spaces · Arnoldi Iteration · GMRES</h1>
+  <span class="sub">Solving Ax=b via orthonormal Krylov bases — 4 iterations on a 6×6 system</span>
+</header>
+
+<!-- ── Input ──────────────────────────────────────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--green)">
+    <span class="step-num" style="background:rgba(74,222,128,.15);color:var(--green)">★</span>
+    System — edit A and b, then run
+  </div>
+  <div class="ctrl-row">
+    <button class="pbtn" onclick="loadPreset('diag')">Near-diagonal</button>
+    <button class="pbtn" onclick="loadPreset('tridiag')">Tridiagonal SPD</button>
+    <button class="pbtn" onclick="loadPreset('random')">Asymmetric</button>
+    <button class="pbtn" onclick="runAll()" style="border-color:var(--accent);color:var(--accent)">▶ Run</button>
+  </div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:var(--mono)">MATRIX A (6×6)</div>
+      <div class="mat-wrap"><table class="mat" id="Ainput"></table></div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:var(--mono)">VECTOR b</div>
+      <div class="mat-wrap" id="binputWrap"></div>
+      <div class="formula" id="normBdisp" style="margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Step 1: Krylov space definition ───────────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--K-col)">
+    <span class="step-num" style="background:rgba(251,146,60,.15);color:var(--K-col)">1</span>
+    The Krylov Space K<sub>m</sub>(A,b)
+  </div>
+  <div class="formula" id="krylovDef"></div>
+  <div class="mat-wrap" id="krylovCols"></div>
+  <div class="note">
+    <b>Idea:</b> Instead of solving Ax=b in all of ℝ⁶, seek the best approximate solution
+    in the Krylov subspace — spanned by b, Ab, A²b, … The Arnoldi process builds an
+    <em>orthonormal basis</em> for this space one vector at a time.
+  </div>
+</div>
+
+<!-- ── Step 2: q1 ─────────────────────────────────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--q1)">
+    <span class="step-num" style="background:rgba(74,222,128,.15);color:var(--q1)">2</span>
+    Starting vector q₁ = b / ‖b‖
+  </div>
+  <div class="formula" id="q1formula"></div>
+  <div class="mat-wrap" id="q1wrap"></div>
+  <div class="note">q₁ is the unit vector in the direction of b. It seeds the Arnoldi process.</div>
+</div>
+
+<!-- ── Step 3: Arnoldi iterations ─────────────────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--H-col)">
+    <span class="step-num" style="background:rgba(167,119,227,.15);color:var(--H-col)">3</span>
+    Arnoldi Iteration — building Q and the upper Hessenberg H
+  </div>
+
+  <div class="formula" id="arnoldScheme"></div>
+
+  <div class="iter-tabs" id="iterTabs"></div>
+  <div id="iterPanels"></div>
+
+  <div class="note" style="margin-top:8px">
+    At each step j: multiply by A, subtract projections onto all previous q's (modified Gram-Schmidt),
+    normalise to get q_{j+1}. The coefficients collected give column j of H.
+  </div>
+</div>
+
+<!-- ── Step 4: The full Hessenberg relation ───────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--H-col)">
+    <span class="step-num" style="background:rgba(167,119,227,.15);color:var(--H-col)">4</span>
+    The relation A Q₄ = Q₅ H̃ &nbsp;(and Q₄ᵀA Q₄ = H₄ approximately)
+  </div>
+  <div class="formula" id="hessRelation"></div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">H̃ — upper Hessenberg (5×4)</div>
+      <div class="mat-wrap" id="Htildewrap"></div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">H₄ = Q₄ᵀ A Q₄ (4×4, top block of H̃)</div>
+      <div class="mat-wrap" id="H4wrap"></div>
+    </div>
+  </div>
+  <div class="formula" id="projRelation"></div>
+  <div class="note" id="orthNote"></div>
+</div>
+
+<!-- ── Step 5: GMRES minimisation ─────────────────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--cyan)">
+    <span class="step-num" style="background:rgba(56,189,248,.15);color:var(--cyan)">5</span>
+    GMRES — Minimise ‖H̃y − ‖b‖e₁‖ over y ∈ ℝ⁴
+  </div>
+  <div class="formula" id="gmresSetup"></div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">Least-squares system H̃y = β e₁</div>
+      <div class="mat-wrap" id="lsSystemWrap"></div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">Optimal y₄ (least-squares solution)</div>
+      <div class="mat-wrap" id="y4wrap"></div>
+    </div>
+  </div>
+  <div class="formula" id="gmresResult"></div>
+  <div class="note" id="gmresNote"></div>
+</div>
+
+<!-- ── Step 6: Solution and residual ─────────────────── -->
+<div class="step">
+  <div class="step-title" style="color:var(--green)">
+    <span class="step-num" style="background:rgba(74,222,128,.15);color:var(--green)">6</span>
+    Solution x₄ = Q₄ y₄ and residual r₄ = b − A x₄
+  </div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">x₄ = Q₄ y₄</div>
+      <div class="mat-wrap" id="x4wrap"></div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">Residual r₄ = b − Ax₄</div>
+      <div class="mat-wrap" id="r4wrap"></div>
+    </div>
+  </div>
+  <div class="formula" id="residualForm"></div>
+  <div class="res-bar-wrap" id="resBars"></div>
+  <div class="note" id="solNote"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   KaTeX
+════════════════════════════════════════ */
+function rk(t,opts){
+  try{return katex.renderToString(t,Object.assign({throwOnError:false},opts||{}));}
+  catch(e){return t;}
+}
+
+/* ════════════════════════════════════════
+   NUMERIC UTILITIES
+════════════════════════════════════════ */
+const N=6,ITERS=4;
+
+function zeros(r,c){return Array.from({length:r},()=>new Array(c).fill(0));}
+function transpose(M){return Array.from({length:M[0].length},(_,j)=>M.map(r=>r[j]));}
+function mvmul(A,v){return A.map(r=>r.reduce((s,a,j)=>s+a*v[j],0));}
+function dot(a,b){return a.reduce((s,x,i)=>s+x*b[i],0);}
+function norm(v){return Math.sqrt(dot(v,v));}
+function vscale(v,s){return v.map(x=>x*s);}
+function vadd(a,b){return a.map((x,i)=>x+b[i]);}
+function vsub(a,b){return a.map((x,i)=>x-b[i]);}
+function mmul(A,B){
+  const R=A.length,K=A[0].length,C=B[0].length;
+  const out=zeros(R,C);
+  for(let i=0;i<R;i++)for(let k=0;k<K;k++)for(let j=0;j<C;j++)out[i][j]+=A[i][k]*B[k][j];
+  return out;
+}
+function fmt(x,d){
+  d=d===undefined?5:d;
+  if(Math.abs(x)<5e-10)return'0';
+  return parseFloat(x.toFixed(d)).toString();
+}
+function fmtS(x){
+  // sign-aware for augmented display
+  if(Math.abs(x)<5e-10)return'0';
+  return parseFloat(x.toFixed(5)).toString();
+}
+
+/* ════════════════════════════════════════
+   LEAST SQUARES  via normal equations (QR-free for small system)
+   Solve min ‖Ax-b‖ via (A^T A)^{-1} A^T b  — H̃ is 5×4
+════════════════════════════════════════ */
+function leastSquares(A,b){
+  // A is (m x n), m > n
+  const AT=transpose(A);
+  const ATA=mmul(AT,A);
+  const ATb=mmul(AT,b.map(x=>[x])).map(r=>r[0]);
+  // solve ATA x = ATb by Gaussian elimination
+  const n=ATA.length;
+  const aug=ATA.map((r,i)=>[...r,ATb[i]]);
+  for(let col=0;col<n;col++){
+    let maxRow=col;
+    for(let r=col+1;r<n;r++) if(Math.abs(aug[r][col])>Math.abs(aug[maxRow][col]))maxRow=r;
+    [aug[col],aug[maxRow]]=[aug[maxRow],aug[col]];
+    const piv=aug[col][col];
+    if(Math.abs(piv)<1e-14)continue;
+    for(let r=0;r<n;r++){
+      if(r===col)continue;
+      const f=aug[r][col]/piv;
+      for(let c=col;c<=n;c++)aug[r][c]-=f*aug[col][c];
+    }
+    for(let c=col;c<=n;c++)aug[col][c]/=piv;
+  }
+  return aug.map(r=>r[n]);
+}
+
+/* ════════════════════════════════════════
+   ARNOLDI PROCESS
+   Returns {Q, H, Htilde} where
+   Q: columns q_1..q_{m+1}  (N × m+1)
+   Htilde: (m+1) × m upper Hessenberg
+════════════════════════════════════════ */
+function arnoldi(A,b,m){
+  const beta=norm(b);
+  const Q=[vscale(b,1/beta)];  // Q[0] = q_1
+  const Htilde=[];              // Htilde[j] = column j  (length j+2)
+  const steps=[];               // detailed per-iteration data
+
+  for(let j=0;j<m;j++){
+    let w=mvmul(A,Q[j]);
+    const Aq=w.slice();
+    const hcol=new Array(j+2).fill(0);
+    const projections=[];
+    for(let i=0;i<=j;i++){
+      const h=dot(Q[i],w);
+      hcol[i]=h;
+      projections.push({qi:i+1,h,proj:vscale(Q[i],h)});
+      w=vsub(w,vscale(Q[i],h));
+    }
+    const h_next=norm(w);
+    hcol[j+1]=h_next;
+    Htilde.push(hcol);
+    const q_next=h_next>1e-14?vscale(w,1/h_next):new Array(N).fill(0);
+    Q.push(q_next);
+    steps.push({j,Aq,projections,w_before:vsub(Aq,projections.reduce((acc,p)=>vadd(acc,p.proj),new Array(N).fill(0))),w,h_next,q_next:q_next.slice()});
+  }
+
+  // Build full Htilde matrix (m+1 rows × m cols)
+  const Hmat=zeros(m+1,m);
+  for(let j=0;j<m;j++){
+    for(let i=0;i<Htilde[j].length;i++) Hmat[i][j]=Htilde[j][i];
+  }
+
+  return{Q,Hmat,beta,steps};
+}
+
+/* ════════════════════════════════════════
+   PRESETS
+════════════════════════════════════════ */
+const PRESETS={
+  diag:{
+    A:[[4,1,0,0,0,0],[1,4,1,0,0,0],[0,1,4,1,0,0],[0,0,1,4,1,0],[0,0,0,1,4,1],[0,0,0,0,1,4]],
+    b:[1,0,0,0,0,1]
+  },
+  tridiag:{
+    A:[[6,-2,0,0,0,0],[-2,6,-2,0,0,0],[0,-2,6,-2,0,0],[0,0,-2,6,-2,0],[0,0,0,-2,6,-2],[0,0,0,0,-2,6]],
+    b:[1,2,3,2,1,0]
+  },
+  random:{
+    A:[[5,2,-1,0,1,0],[0,6,2,-1,0,1],[1,0,7,2,-1,0],[0,1,0,5,2,-1],[0,0,1,0,6,2],[-1,0,0,1,0,5]],
+    b:[3,1,-2,4,0,2]
+  }
+};
+
+let curA=PRESETS.diag.A.map(r=>r.slice());
+let curB=PRESETS.diag.b.slice();
+
+function loadPreset(key){
+  curA=PRESETS[key].A.map(r=>r.slice());
+  curB=PRESETS[key].b.slice();
+  buildInputTable();
+  runAll();
+}
+
+/* ════════════════════════════════════════
+   BUILD INPUT TABLE
+════════════════════════════════════════ */
+function buildInputTable(){
+  const tbl=document.getElementById('Ainput');tbl.innerHTML='';
+  // header
+  const hr=document.createElement('tr');hr.appendChild(document.createElement('th'));
+  for(let j=0;j<N;j++){const th=document.createElement('th');th.textContent='col '+(j+1);hr.appendChild(th);}
+  tbl.appendChild(hr);
+  for(let i=0;i<N;i++){
+    const tr=document.createElement('tr');
+    const rh=document.createElement('td');rh.className='rh';rh.textContent='row '+(i+1);tr.appendChild(rh);
+    for(let j=0;j<N;j++){
+      const td=document.createElement('td');
+      const inp=document.createElement('input');inp.className='edit-cell';
+      inp.type='text';inp.value=curA[i][j];inp.style.width='48px';
+      inp.addEventListener('change',()=>{curA[i][j]=parseFloat(inp.value)||0;runAll();});
+      td.appendChild(inp);tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  // b vector
+  const bw=document.getElementById('binputWrap');bw.innerHTML='';
+  const btbl=document.createElement('table');btbl.className='mat';
+  const bhr=document.createElement('tr');bhr.appendChild(document.createElement('th'));
+  const bth=document.createElement('th');bth.textContent='value';bhr.appendChild(bth);
+  btbl.appendChild(bhr);
+  for(let i=0;i<N;i++){
+    const tr=document.createElement('tr');
+    const rh=document.createElement('td');rh.className='rh';rh.textContent='b['+(i+1)+']';tr.appendChild(rh);
+    const td=document.createElement('td');
+    const inp=document.createElement('input');inp.className='edit-cell';
+    inp.type='text';inp.value=curB[i];
+    inp.addEventListener('change',()=>{curB[i]=parseFloat(inp.value)||0;runAll();});
+    td.appendChild(inp);tr.appendChild(td);
+    btbl.appendChild(tr);
+  }
+  const bwrap=document.createElement('div');bwrap.className='mat-wrap';bwrap.appendChild(btbl);
+  bw.appendChild(bwrap);
+}
+
+/* ════════════════════════════════════════
+   VECTOR / MATRIX DISPLAY HELPERS
+════════════════════════════════════════ */
+function vecTable(v,label,cls){
+  const tbl=document.createElement('table');tbl.className='mat';
+  const hr=document.createElement('tr');
+  const th0=document.createElement('th');hr.appendChild(th0);
+  const th1=document.createElement('th');th1.innerHTML=label||'';hr.appendChild(th1);
+  tbl.appendChild(hr);
+  v.forEach((x,i)=>{
+    const tr=document.createElement('tr');
+    const td0=document.createElement('td');td0.className='rh';td0.textContent=i+1;tr.appendChild(td0);
+    const td1=document.createElement('td');td1.className=cls||'';td1.textContent=fmt(x);tr.appendChild(td1);
+    tbl.appendChild(tr);
+  });
+  const w=document.createElement('div');w.className='mat-wrap';w.appendChild(tbl);return w;
+}
+
+function matrixTable(M,rowLabels,colLabels,clsFn){
+  const tbl=document.createElement('table');tbl.className='mat';
+  if(colLabels){
+    const hr=document.createElement('tr');
+    if(rowLabels)hr.appendChild(document.createElement('th'));
+    colLabels.forEach(l=>{const th=document.createElement('th');th.innerHTML=l;hr.appendChild(th);});
+    tbl.appendChild(hr);
+  }
+  M.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    if(rowLabels){const td=document.createElement('td');td.className='rh';td.textContent=rowLabels[i];tr.appendChild(td);}
+    row.forEach((v,j)=>{
+      const td=document.createElement('td');
+      td.className=clsFn?clsFn(i,j,v):(Math.abs(v)<5e-10?'zero':'');
+      td.textContent=fmt(v);tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  const w=document.createElement('div');w.className='mat-wrap';w.appendChild(tbl);return w;
+}
+
+function setNode(id,node){const el=document.getElementById(id);el.innerHTML='';el.appendChild(node);}
+function setHTML(id,html){document.getElementById(id).innerHTML=html;}
+
+/* ════════════════════════════════════════
+   MAIN: RUN ALL
+════════════════════════════════════════ */
+function runAll(){
+  const A=curA,b=curB;
+  const m=ITERS;
+  const arn=arnoldi(A,b,m);
+  const {Q,Hmat,beta,steps}=arn;
+
+  const qCls=['q1','q2','q3','q4','q1'];  // cycling colours for display
+
+  /* ── Norm display ── */
+  setHTML('normBdisp',rk('\\|b\\| = '+fmt(beta,6)));
+
+  /* ── Step 1: Krylov definition ── */
+  setHTML('krylovDef',rk(
+    '\\mathcal{K}_m(A,b) = \\mathrm{span}\\{b,\\,Ab,\\,A^2b,\\,\\ldots,\\,A^{m-1}b\\}',
+    {displayMode:true}));
+
+  // Show K4 columns
+  const Kmat=[];
+  let Abj=b.slice();
+  for(let j=0;j<m;j++){Kmat.push(Abj);Abj=mvmul(A,Abj);}
+  const colCls=['k0','k1','k2','k3'];
+  const KdisplayM=Kmat[0].map((_,row)=>Kmat.map(col=>col[row]));
+  setNode('krylovCols',matrixTable(KdisplayM,
+    Array.from({length:N},(_,i)=>'row '+(i+1)),
+    ['b','Ab','A²b','A³b'],
+    (i,j)=>colCls[j]));
+
+  /* ── Step 2: q1 ── */
+  setHTML('q1formula',rk(
+    'q_1 = \\frac{b}{\\|b\\|} = \\frac{1}{'+fmt(beta,5)+'}b',{displayMode:true}));
+  setNode('q1wrap',vecTable(Q[0],'q₁','q1'));
+
+  /* ── Step 3: Arnoldi scheme ── */
+  setHTML('arnoldScheme',rk(
+    '\\text{For }j=1,\\ldots,m:\\quad '+
+    'w = Aq_j \\;-\\; \\sum_{i=1}^{j} h_{ij}q_i, \\quad h_{ij}=(q_i,Aq_j),\\quad '+
+    'h_{j+1,j}=\\|w\\|, \\quad q_{j+1}=w/h_{j+1,j}',
+    {displayMode:true}));
+
+  // Build iteration tabs
+  const tabs=document.getElementById('iterTabs');tabs.innerHTML='';
+  const panels=document.getElementById('iterPanels');panels.innerHTML='';
+  const qColors=['var(--q2)','var(--q3)','var(--q4)','var(--pink)'];
+
+  steps.forEach((st,idx)=>{
+    const j=st.j;
+    const tab=document.createElement('button');tab.className='iter-tab'+(idx===0?' active':'');
+    tab.textContent='Step '+(j+1)+': q'+(j+2);
+    tab.style.setProperty('--c',qColors[idx]);
+    tab.addEventListener('click',()=>{
+      tabs.querySelectorAll('.iter-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      panels.querySelectorAll('.iter-panel').forEach(p=>p.classList.remove('show'));
+      document.getElementById('panel_'+idx).classList.add('show');
+    });
+    tabs.appendChild(tab);
+
+    const panel=document.createElement('div');panel.className='iter-panel'+(idx===0?' show':'');
+    panel.id='panel_'+idx;
+
+    /* ── ① Compute Aq_j ── */
+    const s1=document.createElement('div');s1.className='arnoldi-step';
+    s1.innerHTML='<span class="a-num">①</span><div class="a-body">'+
+      rk('w = Aq_{'+(j+1)+'}')+
+      '<span style="color:var(--text3);font-size:10px;margin-left:8px">matrix-vector product</span>'+
+      '</div>';
+    panel.appendChild(s1);
+
+    /* ── ② Projection + normalise rows — with Aq and q_new side by side ── */
+    const s2=document.createElement('div');s2.className='arnoldi-step';
+    let projTeX='w \\leftarrow Aq_{'+(j+1)+'} ';
+    st.projections.forEach(p=>{
+      projTeX+='- \\underbrace{\\langle q_{'+p.qi+'},\\,w\\rangle}_{h_{'+p.qi+','+(j+1)+'} = '+fmt(p.h,4)+'}'+'\\,q_{'+p.qi+'} ';
+    });
+    s2.innerHTML='<span class="a-num">②</span><div class="a-body">'+rk(projTeX)+
+      '<br><span style="font-size:10px;color:var(--text3)">Modified Gram-Schmidt: subtract projections onto all previous qs</span>'+
+      '</div>';
+    panel.appendChild(s2);
+
+    const s3=document.createElement('div');s3.className='arnoldi-step';
+    s3.innerHTML='<span class="a-num">③</span><div class="a-body">'+
+      rk('h_{'+(j+2)+','+(j+1)+'} = \\|w\\| = '+fmt(st.h_next,6)+
+         ',\\qquad q_{'+(j+2)+'} = \\dfrac{w}{'+fmt(st.h_next,6)+'}')+'</div>';
+    panel.appendChild(s3);
+
+    /* ── Aq_j and q_{j+1} side by side ── */
+    const vecRow=document.createElement('div');
+    vecRow.style.cssText='display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;margin:8px 0 4px;';
+
+    const aqBlock=document.createElement('div');
+    aqBlock.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:3px;">'+
+      rk('Aq_{'+(j+1)+'}')+'&nbsp;<span style="font-size:9px">(before Gram-Schmidt)</span></div>';
+    aqBlock.appendChild(vecTable(st.Aq,'',''+qCls[j]));
+    vecRow.appendChild(aqBlock);
+
+    const qnBlock=document.createElement('div');
+    qnBlock.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:'+qColors[idx]+';margin-bottom:3px;">'+
+      rk('q_{'+(j+2)+'}')+'&nbsp;<span style="font-size:9px;color:var(--text3)">(new orthonormal vector)</span></div>';
+    qnBlock.appendChild(vecTable(st.q_next,'',qCls[j+1]));
+    vecRow.appendChild(qnBlock);
+
+    /* ── Growing Hessenberg matrix ── */
+    const hBlock=document.createElement('div');
+    hBlock.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--H-col);margin-bottom:3px;">'+
+      rk('\\tilde{H}_{'+( j+2)+','+( j+1)+'}')+'&nbsp;<span style="font-size:9px;color:var(--text3)">after step '+(j+1)+'</span></div>';
+
+    // Build the partial H: (j+2) rows × (j+1) cols filled so far
+    const partRows=j+2, partCols=j+1;
+    const partH=Array.from({length:partRows},(_,r)=>
+      Array.from({length:partCols},(_,c)=>Hmat[r][c]));
+    const partRowLbls=Array.from({length:partRows},(_,r)=>'h'+(r+1)+'·');
+    const partColLbls=Array.from({length:partCols},(_,c)=>'j='+(c+1));
+    hBlock.appendChild(matrixTable(partH,partRowLbls,partColLbls,(r,c)=>{
+      // colour the newest column distinctly
+      if(c===partCols-1){
+        if(r===partCols-1)return'diag';     // diagonal h_{j,j}
+        if(r===partCols)return'H';           // subdiagonal h_{j+1,j}
+        return'H';
+      }
+      if(r===c)return'diag';
+      if(r===c+1)return'H';
+      if(r<c+2)return'H';
+      return'zero';
+    }));
+    vecRow.appendChild(hBlock);
+    panel.appendChild(vecRow);
+
+    panels.appendChild(panel);
+  });
+
+  /* ── Step 4: Hessenberg relation ── */
+  setHTML('hessRelation',rk(
+    'A\\,Q_m = Q_{m+1}\\,\\tilde{H}_m, \\quad '+
+    '\\tilde{H}_m = \\begin{pmatrix}H_m \\\\ h_{m+1,m}e_m^T\\end{pmatrix}, \\quad '+
+    'Q_m^T A\\,Q_m = H_m',
+    {displayMode:true}));
+
+  // Show Htilde (5×4)
+  const HrLabels=['row 1','row 2','row 3','row 4','row 5'];
+  const HcLabels=['col 1','col 2','col 3','col 4'];
+  setNode('Htildewrap',matrixTable(Hmat,HrLabels,HcLabels,(i,j)=>{
+    if(i===j)return'diag';
+    if(i===j+1)return'H';  // subdiagonal
+    if(i<j+2)return'H';
+    return'zero';
+  }));
+
+  // H4 = Q4^T A Q4  (4×4 top block)
+  const Q4=Q.slice(0,m).map(q=>q.slice()); // 6×4 as array of column vectors
+  // Q4 matrix (N × m)
+  const Q4mat=zeros(N,m);
+  for(let j=0;j<m;j++) for(let i=0;i<N;i++) Q4mat[i][j]=Q4[j][i];
+  const AQ4=mmul(A,Q4mat);
+  const H4=mmul(transpose(Q4mat),AQ4);
+  setNode('H4wrap',matrixTable(H4,['q₁','q₂','q₃','q₄'],['q₁','q₂','q₃','q₄'],(i,j)=>{
+    if(i===j)return'diag';
+    return Math.abs(H4[i][j])<5e-4?'zero':'H';
+  }));
+
+  const maxOffDiag=H4.reduce((m2,r,i)=>Math.max(m2,...r.map((v,j)=>i>j+1?Math.abs(v):0)),0);
+  setHTML('projRelation',rk(
+    'Q_4^T A Q_4 \\approx H_4 \\text{ (upper Hessenberg, max subsubdiag entry: }'+fmt(maxOffDiag,2e-12?2:6)+')',
+    {displayMode:false}));
+  document.getElementById('orthNote').innerHTML=
+    '<b>Orthogonality:</b> '+rk('Q_4^TQ_4 = I_4')+' (verified: max off-diag error = '+
+    (()=>{const QQ=mmul(transpose(Q4mat),Q4mat);
+      return QQ.reduce((m2,r,i)=>Math.max(m2,...r.map((v,j)=>Math.abs(v-(i===j?1:0)))),0).toExponential(1);})()+
+    ') &nbsp; <b>Structure:</b> H₄ is upper Hessenberg — zero below the first subdiagonal — '+
+    'because Gram-Schmidt only projects onto the previous q\'s, not all previous ones twice.';
+
+  /* ── Step 5: GMRES ── */
+  const beta_e1=new Array(m+1).fill(0);beta_e1[0]=beta;
+
+  setHTML('gmresSetup',rk(
+    '\\text{GMRES seeks } x_m = Q_m y_m \\text{ minimising }'+
+    '\\|b - Ax_m\\| = \\|\\beta e_1 - \\tilde{H}_m y\\|, \\quad '+
+    'y_m = \\arg\\min_{y\\in\\mathbb{R}^m}\\|\\tilde{H}_m y - \\beta e_1\\|',
+    {displayMode:true}));
+
+  // Display the LS system
+  const rhs_vec=beta_e1.map(x=>[x]);
+  const lsDiv=document.createElement('div');lsDiv.innerHTML='';
+  // Augmented [Htilde | beta*e1]
+  const augData=Hmat.map((r,i)=>[...r,beta_e1[i]]);
+  setNode('lsSystemWrap',matrixTable(augData,HrLabels,[...HcLabels,'β e₁'],(i,j)=>{
+    if(j===m)return 'green';
+    if(i===j)return'diag';
+    if(i<j+2)return'H';
+    return'zero';
+  }));
+
+  const y4=leastSquares(Hmat,beta_e1);
+  setNode('y4wrap',vecTable(y4,'y₄','H'));
+
+  const Hy=mvmul(Hmat,y4);
+  const lsRes=vsub(Hy,beta_e1);
+  const lsResNorm=norm(lsRes);
+  setHTML('gmresResult',rk(
+    '\\|\\tilde{H}_4 y_4 - \\beta e_1\\|_2 = '+fmt(lsResNorm,6)+
+    '\\quad\\Rightarrow\\quad \\text{GMRES residual bound: }\\leq '+fmt(lsResNorm,6),
+    {displayMode:true}));
+  document.getElementById('gmresNote').innerHTML=
+    'GMRES solves a <b>small</b> (5×4) least-squares problem instead of the original 6×6 system. '+
+    'The key insight: '+rk('b - Ax_m = b - AQ_my_m = Q_{m+1}(\\beta e_1 - \\tilde{H}_my)')+
+    ' so minimising the Hessenberg residual minimises the true residual in ℝ⁶.';
+
+  /* ── Step 6: Solution ── */
+  const x4=mvmul(Q4mat,y4);
+  setNode('x4wrap',vecTable(x4,'x₄','green'));
+
+  const Ax4=mvmul(A,x4);
+  const r4=vsub(b,Ax4);
+  setNode('r4wrap',vecTable(r4,'r₄=b−Ax₄','red'));
+
+  const r4norm=norm(r4);
+  const bnorm=norm(b);
+  setHTML('residualForm',rk(
+    '\\|r_4\\| = \\|b - Ax_4\\| = '+fmt(r4norm,6)+
+    ', \\quad \\frac{\\|r_4\\|}{\\|b\\|} = '+fmt(r4norm/bnorm,6)+
+    ', \\quad \\|b\\| = '+fmt(bnorm,5),
+    {displayMode:true}));
+
+  // Residual bars — show ‖r_k‖ for each k by computing intermediate GMRES solutions
+  const resBarsEl=document.getElementById('resBars');resBarsEl.innerHTML='';
+  const maxR=bnorm;
+  const itColors=['var(--q1)','var(--q2)','var(--q3)','var(--q4)'];
+  for(let k=1;k<=m;k++){
+    const Hk=Hmat.slice(0,k+1).map(r=>r.slice(0,k));
+    const e1k=new Array(k+1).fill(0);e1k[0]=beta;
+    const yk=leastSquares(Hk,e1k);
+    const Q_k=zeros(N,k);
+    for(let j=0;j<k;j++) for(let i=0;i<N;i++) Q_k[i][j]=Q[j][i];
+    const xk=mvmul(Q_k,yk);
+    const rk2=vsub(b,mvmul(A,xk));
+    const rkn=norm(rk2);
+    const row=document.createElement('div');row.className='res-row';
+    const lbl=document.createElement('span');lbl.className='res-lbl';lbl.textContent='k='+k;
+    const bar=document.createElement('div');bar.className='res-bar';
+    bar.style.width=(Math.min(rkn/maxR,1)*280)+'px';
+    bar.style.background=itColors[k-1];
+    const val=document.createElement('span');val.className='res-val';
+    val.textContent='‖r‖ = '+fmt(rkn,6)+' ('+(rkn/bnorm*100).toFixed(2)+'% of ‖b‖)';
+    row.appendChild(lbl);row.appendChild(bar);row.appendChild(val);
+    resBarsEl.appendChild(row);
+  }
+
+  document.getElementById('solNote').innerHTML=
+    (r4norm/bnorm<0.01
+      ? '<b>Good convergence:</b> GMRES in 4 steps reduced the residual by '+fmt((1-r4norm/bnorm)*100,3)+'%.'
+      : '<b>Partial convergence:</b> 4 Krylov vectors give relative residual '+fmt(r4norm/bnorm,4)+'. More iterations would reduce this further.')+
+    ' The GMRES residual is monotonically non-increasing with each iteration.';
+}
+
+/* ════════════════════════════════════════
+   BOOT
+════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  buildInputTable();
+  runAll();
+});
+</script>
+</body>
+</html>

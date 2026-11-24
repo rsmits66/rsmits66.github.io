@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 7 — Laplace &amp; Poisson in a Rectangle — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Playfair+Display:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --crimson:#9E1B32; --crimson-dk:#6E1322; --crimson-lt:#F2DDE0;
+  --bronze:#9A7B2E; --bronze-lt:#E6D9B8;
+  --slate:#2D343C;
+  --ink:#23191b; --muted:#857f78;
+  --cream:#f8f5f0; --panel:#f6f1ea; --border:#e0dbd2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;line-height:1.55;}
+
+header{width:100%;color:#fff;background:var(--crimson);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 9px);
+  border-bottom:4px solid var(--bronze);}
+.hdr-top{background:var(--crimson-dk);padding:.32rem 2rem;font-size:.72rem;color:#e8c9ce;
+  letter-spacing:.14em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.hdr-main{padding:.85rem 2rem .7rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:700;}
+header .sub{color:#f0d5d9;font-style:italic;margin-top:.25rem;font-size:.88rem;}
+.houndstooth{height:14px;background-color:#fff;
+  background-image:
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%),
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px;}
+
+.wrap{max-width:1220px;width:100%;padding:18px 20px 46px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 14px rgba(35,25,27,.07);margin-bottom:16px;overflow:hidden;}
+.card-hdr{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.13em;color:var(--muted);padding:7px 15px;background:var(--panel);
+  border-bottom:1px solid var(--border);display:flex;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;align-items:center;}
+
+.math{padding:14px 20px;border-bottom:1px solid var(--border);}
+.math p{font-size:.9rem;max-width:94ch;margin-bottom:7px;}
+.math p:last-child{margin-bottom:0;}
+.dm{text-align:center;margin:10px 0;font-size:1.03rem;line-height:1.7;}
+.big{font-size:1.32em;vertical-align:-.13em;color:var(--crimson);}
+.cols{display:flex;flex-wrap:wrap;}
+.col{flex:1;min-width:246px;padding:13px 18px;border-right:1px solid var(--border);}
+.col:last-child{border-right:none;}
+.col.hl{background:#fbf9f6;}
+.col .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);}
+.col h3{font-family:'Playfair Display',Georgia,serif;font-size:1rem;margin:3px 0 6px;}
+.col .f{font-size:.94rem;line-height:1.6;}
+.col .n{font-size:.79rem;color:var(--muted);margin-top:5px;}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 15px;align-items:center;padding:9px 14px;
+  background:var(--crimson-lt);border-bottom:1px solid var(--border);}
+.ctrl2{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 14px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.grp{display:flex;align-items:center;gap:6px;}
+.grp label{font-size:.81rem;font-weight:600;color:var(--crimson-dk);white-space:nowrap;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.84rem;padding:2px 5px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--ink);}
+input[type=range]{accent-color:var(--crimson);cursor:pointer;width:92px;}
+.rdout{font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;
+  color:var(--crimson);min-width:2.8em;}
+.chk{display:flex;align-items:center;gap:5px;font-size:.8rem;cursor:pointer;}
+.chk input{accent-color:var(--crimson);cursor:pointer;}
+button{font-family:'Crimson Pro',Georgia,serif;font-size:.8rem;padding:4px 9px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--crimson-dk);cursor:pointer;}
+button:hover{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+button.hero{background:var(--crimson);color:#fff;border-color:var(--crimson);font-weight:600;}
+button.hero:hover{background:var(--crimson-dk);}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--bronze);outline-offset:1px;}
+fieldset{border:none;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;}
+.sideblk{display:flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid var(--border);
+  border-radius:3px;background:#fff;}
+.sideblk .nm{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);min-width:3.6em;}
+.sideblk.off{opacity:.45;}
+
+canvas{display:block;width:100%;height:auto;}
+#main{cursor:grab;} #main.drag{cursor:grabbing;}
+
+.legend{display:flex;gap:13px;flex-wrap:wrap;align-items:center;padding:8px 14px;
+  background:var(--panel);border-top:1px solid var(--border);font-size:.75rem;color:var(--muted);}
+.li{display:flex;align-items:center;gap:5px;}
+.swl{width:17px;height:3px;flex-shrink:0;}
+.sw{width:14px;height:10px;flex-shrink:0;border-radius:1px;}
+
+.stats{display:flex;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff;}
+.stat{flex:1;min-width:136px;padding:9px 13px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat .k{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:.96rem;font-weight:600;
+  color:var(--crimson);margin-top:2px;}
+.stat .v.gold{color:var(--bronze);} .stat .v.dark{color:var(--slate);}
+.stat .n{font-size:.72rem;color:var(--muted);font-style:italic;}
+
+.banner{padding:10px 15px;border-bottom:1px solid var(--border);font-size:.86rem;}
+.banner.ok{background:var(--crimson-lt);color:var(--crimson-dk);}
+.banner.no{background:#eef0f2;color:var(--slate);}
+.banner b{font-weight:600;}
+
+.notes{display:flex;gap:16px;flex-wrap:wrap;}
+.note{flex:1;min-width:290px;background:#fff;border:1px solid var(--border);border-radius:5px;
+  padding:15px 18px;box-shadow:0 2px 12px rgba(35,25,27,.06);}
+.note.warn{border-left:4px solid var(--slate);}
+.note h3{font-family:'Playfair Display',Georgia,serif;font-size:1rem;color:var(--crimson);margin-bottom:3px;}
+.note.warn h3{color:var(--slate);}
+.note .kicker{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.note p{font-size:.87rem;margin-bottom:7px;}
+.note p:last-child{margin-bottom:0;}
+.note em{color:var(--crimson-dk);font-style:normal;font-weight:600;}
+.note.warn em{color:var(--slate);}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:.82rem;}
+
+@media (max-width:760px){
+  .hdr-top{padding:.32rem 1rem;font-size:.56rem;}
+  header h1{font-size:1rem;} .hdr-main{padding:.7rem 1rem .6rem;}
+  .wrap{padding:12px 10px 30px;}
+  .col{min-width:100%;border-right:none;border-bottom:1px solid var(--border);}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Alabama &ensp;·&ensp; Applied PDE &ensp;·&ensp; Lecture 7</div>
+  <div class="hdr-main">
+    <h1>Laplace and Poisson Equations in a Rectangle</h1>
+    <div class="sub">No time variable at all — the boundary decides everything, all at once.</div>
+  </div>
+  <div class="houndstooth"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══ the model ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>The problem, and the four pieces it breaks into</span>
+      <span style="text-transform:none;letter-spacing:0;font-style:italic;color:var(--muted)">
+        rectangle 0 &lt; x &lt; a, 0 &lt; y &lt; b</span></div>
+    <div class="math">
+      <div class="dm">
+        ∇²u + F(x, y) = 0 &nbsp;&nbsp;inside, &nbsp;&nbsp; u given (or u<sub>n</sub> = 0) on each side
+      </div>
+      <p>Separating <span class="mono">u = X(x)Y(y)</span> in Laplace's equation gives
+      <span class="mono">X″/X = −Y″/Y = −μ²</span>: one factor oscillates and the other grows. So
+      the transverse factor is a <em>hyperbolic</em> function rather than a decaying exponential,
+      and its job is to carry the data from the side where it lives across to the far side, where
+      it must vanish.</p>
+      <div class="dm">
+        u = Σ c<sub>n</sub> · X<sub>n</sub>(x) ·
+        <span style="color:var(--crimson)">sinh μ<sub>n</sub>(b − y) / sinh μ<sub>n</sub>b</span>
+      </div>
+      <p>That factor is 1 on the data edge and 0 on the opposite edge, so a single side's data can be
+      handled on its own. Four sides, four such problems, and <em>superposition</em> puts them back
+      together. The strip below the main picture shows exactly that sum being formed.</p>
+    </div>
+    <div class="cols">
+      <div class="col">
+        <span class="eyebrow">Dirichlet · all four sides given</span>
+        <h3>Unique, and bounded by the data</h3>
+        <div class="f">min<sub>∂</sub> u ≤ u(x,y) ≤ max<sub>∂</sub> u</div>
+        <div class="n">The <em>maximum principle</em>: a harmonic function takes its extremes on the
+        boundary and nowhere else. Every value inside is an average of its neighbours, so nothing
+        can bulge. The readout checks it for you.</div>
+      </div>
+      <div class="col">
+        <span class="eyebrow">mixed · insulate a side</span>
+        <h3>The basis changes shape</h3>
+        <div class="f">u<sub>x</sub> = 0 at x = 0 &nbsp;⟹&nbsp; cos, not sin</div>
+        <div class="n">An insulated side carries no data at all; it changes which eigenfunctions the
+        <em>other</em> sides must be expanded in. Insulate both x-sides and λ = 0 joins the x-basis,
+        giving a term linear in y.</div>
+      </div>
+      <div class="col hl">
+        <span class="eyebrow">Poisson · a source inside</span>
+        <h3>The principle breaks</h3>
+        <div class="f">∇²u = −F, F &gt; 0 ⟹ u may peak inside</div>
+        <div class="n">Heat made in the interior has to pile up somewhere. With a source the
+        maximum can sit strictly inside, which is the sharpest way to see that
+        <em>interior forcing is not boundary forcing</em>.</div>
+      </div>
+      <div class="col">
+        <span class="eyebrow">pure Neumann · all sides insulated</span>
+        <h3>Compatibility, then a free constant</h3>
+        <div class="f">∬ F dA = 0 &nbsp;required; &nbsp; u + C also solves</div>
+        <div class="n">With no side able to pass heat, the source must produce exactly none on
+        balance or there is no steady state. And if it does balance, u is determined only up to an
+        additive constant — the same λ = 0 obstruction as in Lecture 5.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ controls ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>Set the problem</span>
+      <span id="setupMeta" style="text-transform:none;letter-spacing:0;color:var(--crimson)"></span></div>
+    <div class="ctrl">
+      <div class="grp">
+        <label for="slB">height b</label>
+        <input type="range" id="slB" min="0.4" max="2" step="0.05" value="1">
+        <span class="rdout" id="bVal">1.00</span>
+      </div>
+      <div class="grp">
+        <label for="selView">view</label>
+        <select id="selView">
+          <option value="heat" selected>heat map</option>
+          <option value="cont">contours</option>
+          <option value="both">map + contours</option>
+          <option value="surf">surface</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label for="slK">modes K</label>
+        <input type="range" id="slK" min="4" max="32" step="1" value="20">
+        <span class="rdout" id="kVal">20</span>
+      </div>
+      <div class="grp">
+        <label for="slNC">contours</label>
+        <input type="range" id="slNC" min="4" max="24" step="1" value="12">
+        <span class="rdout" id="ncVal">12</span>
+      </div>
+      <button id="pOne">One hot side</button>
+      <button id="pTwo">Two sides</button>
+      <button id="pMix">Insulated sides</button>
+      <button id="pPois">Poisson blob</button>
+      <button id="pNeu">Pure Neumann</button>
+    </div>
+    <div class="ctrl2" id="sideRow"></div>
+    <div class="ctrl2">
+      <div class="grp">
+        <label for="selSrc">source F</label>
+        <select id="selSrc">
+          <option value="none" selected>none</option>
+          <option value="uniform">uniform</option>
+          <option value="blob">blob</option>
+          <option value="dipole">dipole (zero net)</option>
+          <option value="halves">half plus, half minus</option>
+        </select>
+        <input type="range" id="slSA" min="-40" max="40" step="0.5" value="20">
+        <span class="rdout" id="saVal">20.0</span>
+      </div>
+      <div class="grp">
+        <label for="slSX">blob x</label>
+        <input type="range" id="slSX" min="0.1" max="0.9" step="0.02" value="0.5">
+        <span class="rdout" id="sxVal">0.50</span>
+      </div>
+      <div class="grp">
+        <label for="slSY">blob y</label>
+        <input type="range" id="slSY" min="0.1" max="0.9" step="0.02" value="0.5">
+        <span class="rdout" id="syVal">0.50</span>
+      </div>
+      <button id="bComp">Make F compatible</button>
+      <div class="grp">
+        <label for="selNorm">fix constant by</label>
+        <select id="selNorm">
+          <option value="mean" selected>zero mean</option>
+          <option value="corner">u = 0 at the corner</option>
+        </select>
+      </div>
+    </div>
+    <div class="banner" id="banner"></div>
+  </div>
+
+  <!-- ══ main view ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>1 — The interior solution</span>
+      <span id="viewMeta" style="text-transform:none;letter-spacing:0;color:var(--crimson)">drag to turn the surface</span></div>
+    <canvas id="main" width="1180" height="520"></canvas>
+    <div class="legend">
+      <div class="li"><div class="sw" style="background:#2D343C"></div> cold</div>
+      <div class="li"><div class="sw" style="background:#f4efe8"></div> middle</div>
+      <div class="li"><div class="sw" style="background:#9E1B32"></div> hot</div>
+      <div class="li"><div class="swl" style="background:rgba(35,25,27,.6)"></div> level curves</div>
+      <div class="li"><div class="sw" style="background:none;border:2px solid #9A7B2E"></div> where the maximum sits</div>
+      <div class="li">hatched edge = insulated</div>
+    </div>
+    <div class="stats" id="stats1"></div>
+  </div>
+
+  <!-- ══ decomposition ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>2 — Superposition: one side at a time, then the sum</span>
+      <span style="text-transform:none;letter-spacing:0;font-style:italic;color:var(--muted)">
+        each panel solves Laplace with data on one side and zero on the rest</span></div>
+    <canvas id="decomp" width="1180" height="250"></canvas>
+  </div>
+
+  <!-- ══ diagnostics ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>3 — The data you set, and the maximum principle</span>
+      <span style="text-transform:none;letter-spacing:0;font-style:italic;color:var(--muted)">
+        measured on a 161 × 161 grid — illustration, not proof</span></div>
+    <canvas id="diag" width="1180" height="320"></canvas>
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> the cross-sections of u</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#9A7B2E 0 5px,transparent 5px 9px)"></div> the boundary max and min</div>
+      <div class="li"><div class="sw" style="background:rgba(154,123,46,.13)"></div> the band the maximum principle permits</div>
+    </div>
+    <div class="stats" id="stats2"></div>
+  </div>
+
+  <!-- ══ notes ══ -->
+  <div class="notes">
+    <div class="note">
+      <div class="kicker">The first thing to try</div>
+      <h3>One side at a time</h3>
+      <p>Press <b>One hot side</b>: the bottom is held at 1, the other three at 0. The heat leaks
+      away from the hot edge and the isotherms bow outward. Note how fast it dies: the
+      <span class="mono">sinh</span> ratio falls off roughly like
+      <span class="mono">e<sup>−nπy/a</sup></span>, so the wiggly parts of the data are felt only in
+      a thin layer near their own edge. A rough boundary profile looks smooth a short way inside.</p>
+      <p>Now press <b>Two sides</b> and watch the decomposition strip. Each panel is a complete
+      solution in its own right; the last panel is their sum. That is all superposition is, and it
+      works because both the equation and the boundary conditions are linear.</p>
+      <p>Where two hot sides meet a cold one, the data is discontinuous at the corner. The series
+      rings there — genuine Gibbs, from genuinely discontinuous data.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">The maximum principle</div>
+      <h3>Nothing bulges</h3>
+      <p>With F = 0, panel 3 shows two cross-sections of u inside the bronze band running between
+      the smallest and largest boundary values. The curves never leave it, and touch the edges only
+      at the boundary itself.</p>
+      <p>The reason is the mean-value property: u at any interior point is the average of u over any
+      small circle around it. An average cannot exceed everything it averages, so an interior
+      maximum would force u to be constant nearby — and hence constant everywhere.</p>
+      <p>This is what makes the Dirichlet problem well behaved. Uniqueness follows at once: two
+      solutions differ by a harmonic function that is zero on the boundary, so its max and min are
+      both 0.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Interior source versus boundary data</div>
+      <h3>Where the principle fails</h3>
+      <p>Press <b>Poisson blob</b>: all four sides are held at 0, yet u is strictly positive inside.
+      Every boundary value is 0, so <span class="mono">max<sub>∂</sub>u = 0</span>, and the interior
+      maximum is plainly above it. The readout flags the violation.</p>
+      <p>No contradiction — the principle was only ever a statement about <em>harmonic</em> functions.
+      With ∇²u = −F and F &gt; 0, u is superharmonic: its average over a small circle is
+      <em>less</em> than the centre value, which is precisely permission to have an interior peak.</p>
+      <p>Flip the source sign and the peak becomes a pit. The correct general statement keeps a
+      one-sided bound: with F ≥ 0 the <em>minimum</em> is still on the boundary.</p>
+    </div>
+    <div class="note warn">
+      <div class="kicker">Pure Neumann</div>
+      <h3>Two things go wrong at once</h3>
+      <p>Press <b>Pure Neumann</b>: every side insulated, a uniform source inside. The banner
+      reports no solution, and the reason is conservation, not analysis. Integrating ∇²u = −F over
+      the rectangle and using the divergence theorem gives</p>
+      <p class="mono" style="color:var(--slate)">∮ u<sub>n</sub> ds = −∬ F dA</p>
+      <p>With every side insulated the left side is 0, so ∬F must vanish. In the series this is the
+      λ<sub>00</sub> = 0 mode: its coefficient would need dividing by zero. Press <b>Make F
+      compatible</b> — which just subtracts the mean — or choose the <em>dipole</em> source, and a
+      solution appears.</p>
+      <p>Even then u is fixed only up to a constant: λ<sub>00</sub> = 0 means constants are
+      homogeneous solutions. Switch <b>fix constant by</b> and the whole field shifts rigidly while
+      every contour keeps its shape.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════
+   1. SETTING
+
+   Laplace / Poisson on (0,a) x (0,b) with a = 1:
+
+       lap u + F = 0,   each side either Dirichlet (data given) or
+                        insulated (zero normal derivative).
+
+   One framework covers every case. For data living on one side:
+     - the two PERPENDICULAR sides fix the eigenbasis in that direction,
+     - the OPPOSITE side fixes whether the transverse profile is a sinh
+       ratio (opposite side Dirichlet) or a cosh ratio (insulated).
+   The profile equals 1 on the data edge, so each side can be solved on
+   its own and the four results added.
+   ══════════════════════════════════════════════════════════════════ */
+
+const PI=Math.PI;
+const NGX=161, NGY=161;            /* field grid, in unit parameters */
+
+/* sinh(A)/sinh(B) and cosh(A)/cosh(B), written so they survive large
+   arguments: sinh(n pi b/a) overflows a double by about n = 30, which
+   would turn every high mode into NaN. */
+function sinhRatio(A,B){
+  if(A<=0) return 0;
+  if(B>25) return Math.exp(A-B)*(1-Math.exp(-2*A))/(1-Math.exp(-2*B));
+  const sb=Math.sinh(B);
+  return sb===0?0:Math.sinh(A)/sb;
+}
+function coshRatio(A,B){
+  if(B>25) return Math.exp(A-B)*(1+Math.exp(-2*A))/(1+Math.exp(-2*B));
+  return Math.cosh(A)/Math.cosh(B);
+}
+
+const SHAPES={
+  zero:  {lab:'0',        f:()=>0},
+  const: {lab:'constant', f:()=>1},
+  hump:  {lab:'sin \u03C0s', f:s=>Math.sin(PI*s)},
+  ramp:  {lab:'ramp s',   f:s=>s},
+  spot:  {lab:'hot spot', f:s=>Math.exp(-Math.pow((s-0.5)/0.12,2))},
+  step:  {lab:'step',     f:s=>(s<0.5?1:0)}
+};
+const SIDES=['bottom','top','left','right'];
+
+/* A jump in the data can land exactly on a quadrature node — the step
+   profile and the half-and-half source both break at the midpoint, which
+   is a Simpson node. Taking the one-sided value there is wrong by the
+   node weight times the jump: for the half-and-half source that made a
+   genuinely compatible F report a net output of 0.067 and be rejected.
+   Averaging across the break costs nothing where the data is smooth and
+   restores the correct value where it is not. */
+const JEPS=1e-9;
+function sideSample(side,s){
+  return 0.5*(sideData(side,s-JEPS)+sideData(side,s+JEPS));
+}
+function srcSample(x,y){
+  return 0.25*(srcAt(x-JEPS,y-JEPS)+srcAt(x+JEPS,y-JEPS)
+              +srcAt(x-JEPS,y+JEPS)+srcAt(x+JEPS,y+JEPS));
+}
+
+const S={ b:1, view:'heat', K:20, nc:12,
+  type:{bottom:'D',top:'D',left:'D',right:'D'},
+  shape:{bottom:'const',top:'zero',left:'zero',right:'zero'},
+  amp:{bottom:1,top:0,left:0,right:0},
+  src:'none', sA:20, sx:0.5, sy:0.5, norm:'mean',
+  yaw:-0.6, elev:0.62 };
+
+function sideData(side,s){ return S.amp[side]*SHAPES[S.shape[side]].f(s); }
+function srcAt(x,y){
+  if(S.src==='none') return 0;
+  const a=1,b=S.b;
+  if(S.src==='uniform') return S.sA;
+  if(S.src==='blob')
+    return S.sA*Math.exp(-(Math.pow((x-S.sx*a)/0.15,2)+Math.pow((y-S.sy*b)/(0.15*b),2)));
+  if(S.src==='dipole')
+    return S.sA*(Math.exp(-(Math.pow((x-0.3*a)/0.13,2)+Math.pow((y-0.5*b)/(0.13*b),2)))
+                -Math.exp(-(Math.pow((x-0.7*a)/0.13,2)+Math.pow((y-0.5*b)/(0.13*b),2))));
+  return S.sA*(x<a/2?1:-1);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   2. ONE-DIMENSIONAL EIGENBASES
+
+   Orthonormal on (0,L): the integral of phi^2 is 1. 'D' means the
+   function vanishes at that end, 'N' means its derivative does.
+   Note that N-N admits mu = 0, which is where every degeneracy in this
+   lecture comes from.
+   ══════════════════════════════════════════════════════════════════ */
+
+function basis1D(t0,t1,L,K){
+  const out=[], s2=Math.sqrt(2/L);
+  if(t0==='D'&&t1==='D'){
+    for(let n=1;n<=K;n++) out.push({mu:n*PI/L,kind:'sin',amp:s2});
+  }else if(t0==='N'&&t1==='N'){
+    out.push({mu:0,kind:'cos',amp:Math.sqrt(1/L)});
+    for(let n=1;n<K;n++) out.push({mu:n*PI/L,kind:'cos',amp:s2});
+  }else if(t0==='D'&&t1==='N'){
+    for(let n=1;n<=K;n++) out.push({mu:(n-0.5)*PI/L,kind:'sin',amp:s2});
+  }else{
+    for(let n=1;n<=K;n++) out.push({mu:(n-0.5)*PI/L,kind:'cos',amp:s2});
+  }
+  return out;
+}
+function evalB(bs,s){
+  return bs.amp*(bs.kind==='sin'?Math.sin(bs.mu*s):Math.cos(bs.mu*s));
+}
+/* the transverse profile: 1 at the data edge (s = 0), and satisfying the
+   homogeneous condition of type tf at the far edge (s = L) */
+function profile(mu,L,tf,s){
+  if(mu===0) return tf==='D' ? (L-s)/L : 1;
+  return tf==='D' ? sinhRatio(mu*(L-s),mu*L) : coshRatio(mu*(L-s),mu*L);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3. ASSEMBLY
+
+   Five fields are built on the grid: one per side, plus the particular
+   solution for the interior source. Their sum is u. Each is formed as a
+   sum of separable products, which keeps the cost to grid x modes
+   rather than grid x modes^2.
+   ══════════════════════════════════════════════════════════════════ */
+
+let xs=null, ys=null;                    /* physical coordinates */
+let fields=null, total=null;             /* Float64Array(NGX*NGY) each */
+let bx=null, by=null;                    /* the two eigenbases */
+let pureNeumann=false, netF=0, compatible=true, srcMean=0;
+let uMin=0,uMax=1,inMin=0,inMax=0,bMin=0,bMax=0,argMax=[0,0],argMin=[0,0];
+
+function buildGrid(){
+  xs=new Float64Array(NGX); ys=new Float64Array(NGY);
+  for(let i=0;i<NGX;i++) xs[i]=i/(NGX-1);
+  for(let j=0;j<NGY;j++) ys[j]=S.b*j/(NGY-1);
+}
+
+function edgeField(side){
+  const out=new Float64Array(NGX*NGY);
+  if(S.type[side]==='N') return out;                 /* insulated: no data */
+  const K=S.K;
+  if(side==='bottom'||side==='top'){
+    /* data varies in x; perpendicular pair is left/right */
+    const bs=basis1D(S.type.left,S.type.right,1,K);
+    const far=(side==='bottom')?S.type.top:S.type.bottom;
+    /* project the data */
+    const M=400, h=1/M, co=new Float64Array(bs.length);
+    for(let k=0;k<bs.length;k++){
+      let s=0;
+      for(let m=0;m<=M;m++){
+        const w=(m===0||m===M)?h/3:(m%2?4*h/3:2*h/3);
+        const x=m*h;
+        s+=w*sideSample(side,x)*evalB(bs[k],x);
+      }
+      co[k]=s;
+    }
+    /* phi(x) and the profile in y, then the outer product */
+    for(let k=0;k<bs.length;k++){
+      if(Math.abs(co[k])<1e-15) continue;
+      const px=new Float64Array(NGX), py=new Float64Array(NGY);
+      for(let i=0;i<NGX;i++) px[i]=evalB(bs[k],xs[i]);
+      for(let j=0;j<NGY;j++){
+        const d=(side==='bottom')?ys[j]:(S.b-ys[j]);
+        py[j]=profile(bs[k].mu,S.b,far,d);
+      }
+      for(let i=0;i<NGX;i++){
+        const c=co[k]*px[i];
+        if(c===0) continue;
+        for(let j=0;j<NGY;j++) out[i*NGY+j]+=c*py[j];
+      }
+    }
+  }else{
+    /* data varies in y; perpendicular pair is bottom/top */
+    const bs=basis1D(S.type.bottom,S.type.top,S.b,K);
+    const far=(side==='left')?S.type.right:S.type.left;
+    const M=400, h=S.b/M, co=new Float64Array(bs.length);
+    for(let k=0;k<bs.length;k++){
+      let s=0;
+      for(let m=0;m<=M;m++){
+        const w=(m===0||m===M)?h/3:(m%2?4*h/3:2*h/3);
+        const y=m*h;
+        s+=w*sideSample(side,y/S.b)*evalB(bs[k],y);
+      }
+      co[k]=s;
+    }
+    for(let k=0;k<bs.length;k++){
+      if(Math.abs(co[k])<1e-15) continue;
+      const py=new Float64Array(NGY), px=new Float64Array(NGX);
+      for(let j=0;j<NGY;j++) py[j]=evalB(bs[k],ys[j]);
+      for(let i=0;i<NGX;i++){
+        const d=(side==='left')?xs[i]:(1-xs[i]);
+        px[i]=profile(bs[k].mu,1,far,d);
+      }
+      for(let i=0;i<NGX;i++){
+        const c=co[k]*px[i];
+        if(c===0) continue;
+        for(let j=0;j<NGY;j++) out[i*NGY+j]+=c*py[j];
+      }
+    }
+  }
+  return out;
+}
+
+function sourceField(){
+  const out=new Float64Array(NGX*NGY);
+  compatible=true; netF=0; srcMean=0;
+  if(S.src==='none') return out;
+  const K=S.K;
+  bx=basis1D(S.type.left,S.type.right,1,K);
+  by=basis1D(S.type.bottom,S.type.top,S.b,K);
+  /* net source, for the compatibility test */
+  const M=200, hx=1/M, hy=S.b/M;
+  for(let i=0;i<=M;i++){
+    const wx=(i===0||i===M)?hx/3:(i%2?4*hx/3:2*hx/3);
+    for(let j=0;j<=M;j++){
+      const wy=(j===0||j===M)?hy/3:(j%2?4*hy/3:2*hy/3);
+      netF+=wx*wy*srcSample(i*hx,j*hy);
+    }
+  }
+  srcMean=netF/(1*S.b);
+  pureNeumann=(bx[0].mu===0&&by[0].mu===0);
+  if(pureNeumann&&Math.abs(netF)>1e-8*Math.max(1,Math.abs(S.sA))){
+    compatible=false;
+    return out;                       /* no solution: nothing to draw */
+  }
+  /* double coefficients F_mn on a Simpson grid */
+  /* 300 panels keeps the Simpson error on F_mn near 1e-4 even for the
+     highest mode in play (mu up to 32 pi); 120 was marginal. */
+  const MQ=300, qhx=1/MQ, qhy=S.b/MQ;
+  const PX=[], PY=[];
+  for(let k=0;k<bx.length;k++){
+    const r=new Float64Array(MQ+1);
+    for(let i=0;i<=MQ;i++) r[i]=evalB(bx[k],i*qhx);
+    PX.push(r);
+  }
+  for(let k=0;k<by.length;k++){
+    const r=new Float64Array(MQ+1);
+    for(let j=0;j<=MQ;j++) r[j]=evalB(by[k],j*qhy);
+    PY.push(r);
+  }
+  const Fg=new Float64Array((MQ+1)*(MQ+1));
+  const wxA=new Float64Array(MQ+1), wyA=new Float64Array(MQ+1);
+  for(let i=0;i<=MQ;i++) wxA[i]=(i===0||i===MQ)?qhx/3:(i%2?4*qhx/3:2*qhx/3);
+  for(let j=0;j<=MQ;j++) wyA[j]=(j===0||j===MQ)?qhy/3:(j%2?4*qhy/3:2*qhy/3);
+  for(let i=0;i<=MQ;i++) for(let j=0;j<=MQ;j++)
+    Fg[i*(MQ+1)+j]=srcSample(i*qhx,j*qhy)*wxA[i]*wyA[j];
+  /* C[m][n] = F_mn / lambda_mn, skipping the degenerate mode */
+  const C=[];
+  for(let m=0;m<bx.length;m++){
+    const row=new Float64Array(by.length);
+    /* contract over x first, then y */
+    const tmp=new Float64Array(MQ+1);
+    for(let j=0;j<=MQ;j++){
+      let s=0;
+      for(let i=0;i<=MQ;i++) s+=Fg[i*(MQ+1)+j]*PX[m][i];
+      tmp[j]=s;
+    }
+    for(let n=0;n<by.length;n++){
+      let s=0;
+      for(let j=0;j<=MQ;j++) s+=tmp[j]*PY[n][j];
+      const lam=bx[m].mu*bx[m].mu+by[n].mu*by[n].mu;
+      row[n]=(lam>1e-12)?s/lam:0;        /* lambda = 0: the free constant */
+    }
+    C.push(row);
+  }
+  /* evaluate on the field grid, again contracting one direction first */
+  const GX=[], GY=[];
+  for(let m=0;m<bx.length;m++){
+    const r=new Float64Array(NGX);
+    for(let i=0;i<NGX;i++) r[i]=evalB(bx[m],xs[i]);
+    GX.push(r);
+  }
+  for(let n=0;n<by.length;n++){
+    const r=new Float64Array(NGY);
+    for(let j=0;j<NGY;j++) r[j]=evalB(by[n],ys[j]);
+    GY.push(r);
+  }
+  const T=[];
+  for(let m=0;m<bx.length;m++){
+    const r=new Float64Array(NGY);
+    for(let n=0;n<by.length;n++){
+      const c=C[m][n];
+      if(c===0) continue;
+      for(let j=0;j<NGY;j++) r[j]+=c*GY[n][j];
+    }
+    T.push(r);
+  }
+  for(let i=0;i<NGX;i++){
+    for(let m=0;m<bx.length;m++){
+      const g=GX[m][i];
+      if(g===0) continue;
+      const row=T[m];
+      for(let j=0;j<NGY;j++) out[i*NGY+j]+=g*row[j];
+    }
+  }
+  return out;
+}
+
+function buildAll(){
+  buildGrid();
+  bx=basis1D(S.type.left,S.type.right,1,S.K);
+  by=basis1D(S.type.bottom,S.type.top,S.b,S.K);
+  pureNeumann=(bx[0].mu===0&&by[0].mu===0);
+  fields={};
+  for(const sd of SIDES) fields[sd]=edgeField(sd);
+  fields.src=sourceField();
+  total=new Float64Array(NGX*NGY);
+  for(const key of SIDES.concat(['src'])){
+    const f=fields[key];
+    for(let p=0;p<total.length;p++) total[p]+=f[p];
+  }
+  /* the additive constant, when there is one to choose */
+  if(pureNeumann&&compatible){
+    if(S.norm==='mean'){
+      let m=0,w=0;
+      for(let i=0;i<NGX;i++) for(let j=0;j<NGY;j++){ m+=total[i*NGY+j]; w++; }
+      m/=w;
+      for(let p=0;p<total.length;p++) total[p]-=m;
+    }else{
+      const c=total[0];
+      for(let p=0;p<total.length;p++) total[p]-=c;
+    }
+  }
+  measure();
+}
+
+function measure(){
+  uMin=Infinity; uMax=-Infinity;
+  inMin=Infinity; inMax=-Infinity; bMin=Infinity; bMax=-Infinity;
+  for(let i=0;i<NGX;i++) for(let j=0;j<NGY;j++){
+    const v=total[i*NGY+j];
+    if(!Number.isFinite(v)) continue;
+    if(v<uMin) uMin=v;
+    if(v>uMax) uMax=v;
+    const onB=(i===0||i===NGX-1||j===0||j===NGY-1);
+    if(onB){ if(v<bMin)bMin=v; if(v>bMax)bMax=v; }
+    else{
+      if(v<inMin){inMin=v; argMin=[xs[i],ys[j]];}
+      if(v>inMax){inMax=v; argMax=[xs[i],ys[j]];}
+    }
+  }
+  if(!(uMax>uMin)){ uMax=uMin+1; }
+}
+function uAtIJ(i,j){ return total[i*NGY+j]; }
+function uAt(x,y){
+  const fi=Math.max(0,Math.min(NGX-1.001,x*(NGX-1)));
+  const fj=Math.max(0,Math.min(NGY-1.001,y/S.b*(NGY-1)));
+  const i=Math.floor(fi), j=Math.floor(fj), u=fi-i, v=fj-j;
+  return uAtIJ(i,j)*(1-u)*(1-v)+uAtIJ(i+1,j)*u*(1-v)
+        +uAtIJ(i,j+1)*(1-u)*v+uAtIJ(i+1,j+1)*u*v;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4. DRAWING HELPERS
+   ══════════════════════════════════════════════════════════════════ */
+
+const INK='#23191b', CRIM='#9E1B32', BRZ='#9A7B2E', SLT='#2D343C', MUT='#857f78';
+function hidpi(cv,c,w,h){
+  const d=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*d; cv.height=h*d; cv.style.maxWidth=w+'px'; c.setTransform(d,0,0,d,0,0);
+}
+function fmt(v,d){
+  if(!Number.isFinite(v)) return '\u2014';
+  if(v!==0&&Math.abs(v)<1e-4) return v.toExponential(2);
+  return v.toFixed(d===undefined?4:d);
+}
+function niceStep(x){
+  if(!(x>0)) return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(x))), f=x/e;
+  return (f<1.5?1:f<3?2:f<7?5:10)*e;
+}
+const RAMP=[[0,[45,52,60]],[0.28,[120,134,144]],[0.5,[244,239,232]],
+            [0.74,[200,80,106]],[0.9,[158,27,50]],[1,[92,15,29]]];
+function ramp(t){
+  const u=Math.max(0,Math.min(1,t));
+  for(let i=0;i<RAMP.length-1;i++){
+    const [p0,c0]=RAMP[i],[p1,c1]=RAMP[i+1];
+    if(u>=p0&&u<=p1){
+      const f=(u-p0)/Math.max(1e-9,p1-p0);
+      return [c0[0]+(c1[0]-c0[0])*f,c0[1]+(c1[1]-c0[1])*f,c0[2]+(c1[2]-c0[2])*f];
+    }
+  }
+  return [92,15,29];
+}
+function rampCss(t){ const c=ramp(t); return 'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')'; }
+function title(c,x,y,eyebrow,head,col){
+  c.textAlign='left'; c.textBaseline='alphabetic';
+  c.font='600 9.5px "IBM Plex Mono",monospace'; c.fillStyle=col||MUT; c.fillText(eyebrow,x,y);
+  c.font='700 13px "Playfair Display",Georgia,serif'; c.fillStyle=INK; c.fillText(head,x,y+16);
+}
+function colorBar(c,x,y,w,h,lo,hi){
+  for(let i=0;i<w;i++){ c.fillStyle=rampCss(i/w); c.fillRect(x+i,y,1,h); }
+  c.strokeStyle='rgba(35,25,27,0.4)'; c.lineWidth=1; c.strokeRect(x,y,w,h);
+  c.font='500 9.5px "IBM Plex Mono",monospace'; c.fillStyle=MUT;
+  c.textAlign='left';  c.textBaseline='top'; c.fillText(fmt(lo,2),x,y+h+4);
+  c.textAlign='right'; c.fillText(fmt(hi,2),x+w,y+h+4);
+}
+
+/* marching squares on the field grid */
+function contourPaths(field,lev,step){
+  const segs=[];
+  const N=Math.max(2,Math.floor((NGX-1)/step));
+  for(let i=0;i<NGX-step;i+=step) for(let j=0;j<NGY-step;j+=step){
+    const x0=xs[i],x1=xs[i+step],y0=ys[j],y1=ys[j+step];
+    const v00=field[i*NGY+j], v10=field[(i+step)*NGY+j],
+          v11=field[(i+step)*NGY+j+step], v01=field[i*NGY+j+step];
+    const pts=[];
+    const ip=(a,b,va,vb)=>a+(b-a)*(lev-va)/(vb-va);
+    if((v00<lev)!==(v10<lev)) pts.push([ip(x0,x1,v00,v10),y0]);
+    if((v10<lev)!==(v11<lev)) pts.push([x1,ip(y0,y1,v10,v11)]);
+    if((v11<lev)!==(v01<lev)) pts.push([ip(x1,x0,v11,v01),y1]);
+    if((v01<lev)!==(v00<lev)) pts.push([x0,ip(y1,y0,v01,v00)]);
+    if(pts.length>=2) segs.push([pts[0],pts[1]]);
+    if(pts.length===4) segs.push([pts[2],pts[3]]);
+  }
+  return segs;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5. THE MAIN VIEW
+   ══════════════════════════════════════════════════════════════════ */
+
+const c1=document.getElementById('main'), x1=c1.getContext('2d');
+const W1=1180, H1=520;
+
+function plotBox(){
+  /* a box that respects the aspect ratio, leaving room for labels */
+  const padL=92, padR=250, padT=54, padB=64;
+  const availW=W1-padL-padR, availH=H1-padT-padB;
+  let w=availW, h=w*S.b;
+  if(h>availH){ h=availH; w=h/S.b; }
+  return {x:padL+(availW-w)/2, y:padT+(availH-h)/2, w:w, h:h};
+}
+
+function renderMain(){
+  x1.clearRect(0,0,W1,H1); x1.fillStyle='#fff'; x1.fillRect(0,0,W1,H1);
+  if(pureNeumann&&!compatible){
+    drawNoSolution();
+    return;
+  }
+  const B=plotBox();
+  if(S.view==='surf') drawSurface(B);
+  else{
+    if(S.view==='heat'||S.view==='both') drawHeat(B);
+    if(S.view==='cont'||S.view==='both') drawContours(B,S.view==='cont');
+    drawFrameAndEdges(B);
+    markExtremum(B);
+  }
+  colorBar(x1,W1-206,plotBox().y+10,150,12,uMin,uMax);
+  x1.font='600 9.5px "IBM Plex Mono",monospace'; x1.textAlign='left'; x1.textBaseline='alphabetic';
+  x1.fillStyle=MUT; x1.fillText('u',W1-206,plotBox().y+4);
+  /* the boundary-versus-interior summary, beside the colour bar */
+  const tx=W1-206; let ty=plotBox().y+58;
+  const line=(k,v,col)=>{
+    x1.font='500 9px "IBM Plex Mono",monospace'; x1.fillStyle=MUT;
+    x1.fillText(k,tx,ty);
+    x1.font='600 12px "IBM Plex Mono",monospace'; x1.fillStyle=col||INK;
+    x1.fillText(v,tx,ty+14); ty+=34;
+  };
+  line('MAX ON THE BOUNDARY',fmt(bMax,4),SLT);
+  line('MAX IN THE INTERIOR',fmt(inMax,4),inMax>bMax+1e-6?BRZ:CRIM);
+  line('MIN ON THE BOUNDARY',fmt(bMin,4),SLT);
+  line('MIN IN THE INTERIOR',fmt(inMin,4),inMin<bMin-1e-6?BRZ:CRIM);
+  x1.font='italic 11px "Crimson Pro",Georgia,serif';
+  x1.fillStyle=(inMax>bMax+1e-6||inMin<bMin-1e-6)?BRZ:CRIM;
+  const msg=(S.src==='none')
+    ? (inMax<=bMax+1e-6&&inMin>=bMin-1e-6
+        ? 'Harmonic: the extremes sit on the boundary, as they must.'
+        : 'Only truncation can break this \u2014 raise K.')
+    : (inMax>bMax+1e-6||inMin<bMin-1e-6
+        ? 'A source is present, so the maximum principle need not hold \u2014 and does not.'
+        : 'A source is present, but it has not yet pushed an extremum inside.');
+  wrap(x1,msg,tx,ty+2,192,14);
+}
+function wrap(c,t,x,y,w,lh){
+  const words=t.split(' '); let line='',yy=y;
+  for(const wd of words){
+    const test=line?line+' '+wd:wd;
+    if(c.measureText(test).width>w&&line){ c.fillText(line,x,yy); line=wd; yy+=lh; }
+    else line=test;
+  }
+  if(line) c.fillText(line,x,yy);
+}
+
+function drawHeat(B){
+  const NP=Math.min(260,NGX*2);
+  const img=x1.createImageData(NP,NP);
+  for(let py=0;py<NP;py++){
+    const gy=(1-(py+0.5)/NP)*(NGY-1);
+    const j=Math.max(0,Math.min(NGY-2,Math.floor(gy))), vj=gy-j;
+    for(let px=0;px<NP;px++){
+      const gxx=((px+0.5)/NP)*(NGX-1);
+      const i=Math.max(0,Math.min(NGX-2,Math.floor(gxx))), ui=gxx-i;
+      const v=uAtIJ(i,j)*(1-ui)*(1-vj)+uAtIJ(i+1,j)*ui*(1-vj)
+             +uAtIJ(i,j+1)*(1-ui)*vj+uAtIJ(i+1,j+1)*ui*vj;
+      const c=ramp((v-uMin)/(uMax-uMin));
+      const o=4*(py*NP+px);
+      img.data[o]=c[0]; img.data[o+1]=c[1]; img.data[o+2]=c[2]; img.data[o+3]=255;
+    }
+  }
+  /* stage it at native size, then stretch to the aspect-correct box */
+  const tmp=document.createElement('canvas');
+  tmp.width=NP; tmp.height=NP;
+  tmp.getContext('2d').putImageData(img,0,0);
+  x1.imageSmoothingEnabled=true;
+  x1.drawImage(tmp,B.x,B.y,B.w,B.h);
+}
+function drawContours(B,withLabels){
+  const X=x=>B.x+x*B.w, Y=y=>B.y+B.h*(1-y/S.b);
+  if(withLabels){ x1.fillStyle='#fdfcfa'; x1.fillRect(B.x,B.y,B.w,B.h); }
+  const step=niceStep((uMax-uMin)/S.nc);
+  const k0=Math.ceil(uMin/step);
+  for(let k=k0;k*step<=uMax;k++){
+    const lev=k*step;
+    const segs=contourPaths(total,lev,2);
+    const t=(lev-uMin)/(uMax-uMin);
+    x1.strokeStyle=withLabels?rampCss(t):'rgba(35,25,27,0.55)';
+    x1.lineWidth=withLabels?2:1.2;
+    x1.beginPath();
+    for(const sg of segs){
+      x1.moveTo(X(sg[0][0]),Y(sg[0][1]));
+      x1.lineTo(X(sg[1][0]),Y(sg[1][1]));
+    }
+    x1.stroke();
+    if(withLabels&&segs.length){
+      const sg=segs[Math.floor(segs.length/2)];
+      x1.font='500 9px "IBM Plex Mono",monospace'; x1.fillStyle=INK;
+      x1.textAlign='center'; x1.textBaseline='middle';
+      const lx=X(sg[0][0]), ly=Y(sg[0][1]);
+      x1.fillStyle='rgba(255,255,255,0.85)';
+      x1.fillRect(lx-13,ly-6,26,12);
+      x1.fillStyle=INK; x1.fillText(fmt(lev,2),lx,ly);
+    }
+  }
+}
+function drawFrameAndEdges(B){
+  x1.strokeStyle='rgba(35,25,27,0.55)'; x1.lineWidth=1.4;
+  x1.strokeRect(B.x,B.y,B.w,B.h);
+  /* hatch the insulated sides, and print the data on the Dirichlet ones */
+  const info=[
+    ['bottom',B.x,B.y+B.h,B.w,0],
+    ['top',B.x,B.y,B.w,0],
+    ['left',B.x,B.y,0,B.h],
+    ['right',B.x+B.w,B.y,0,B.h]
+  ];
+  x1.font='600 9.5px "IBM Plex Mono",monospace';
+  for(const [sd,ex,ey,ew,eh] of info){
+    if(S.type[sd]==='N'){
+      x1.strokeStyle='rgba(45,52,60,0.85)'; x1.lineWidth=2;
+      const n=14;
+      for(let k=0;k<n;k++){
+        const f=k/(n-1);
+        if(ew>0){
+          const px=ex+f*ew, o=(sd==='bottom')?9:-9;
+          x1.beginPath(); x1.moveTo(px,ey); x1.lineTo(px+5,ey+o); x1.stroke();
+        }else{
+          const py=ey+f*eh, o=(sd==='left')?-9:9;
+          x1.beginPath(); x1.moveTo(ex,py); x1.lineTo(ex+o,py+5); x1.stroke();
+        }
+      }
+    }
+  }
+  /* axis ticks */
+  x1.font='500 10px "IBM Plex Mono",monospace'; x1.fillStyle=MUT;
+  x1.textAlign='center'; x1.textBaseline='top';
+  for(let k=0;k<=4;k++) x1.fillText((k/4).toFixed(2),B.x+k/4*B.w,B.y+B.h+7);
+  x1.textAlign='right'; x1.textBaseline='middle';
+  for(let k=0;k<=4;k++) x1.fillText(fmt(S.b*k/4,2),B.x-7,B.y+B.h*(1-k/4));
+  x1.font='italic 700 11px "Crimson Pro",Georgia,serif'; x1.fillStyle='rgba(35,25,27,0.78)';
+  x1.textAlign='center'; x1.textBaseline='top';
+  x1.fillText('x',B.x+B.w/2,B.y+B.h+22);
+  x1.save(); x1.translate(B.x-42,B.y+B.h/2); x1.rotate(-PI/2);
+  x1.textAlign='center'; x1.fillText('y',0,0); x1.restore();
+  /* label each side with what it is doing */
+  x1.font='600 9px "IBM Plex Mono",monospace'; x1.textBaseline='alphabetic';
+  const lab=sd=>S.type[sd]==='N'?'insulated'
+    :(SHAPES[S.shape[sd]].lab+(S.amp[sd]!==1?' \u00D7 '+fmt(S.amp[sd],2):''));
+  x1.fillStyle=MUT;
+  x1.textAlign='center'; x1.fillText(lab('top'),B.x+B.w/2,B.y-8);
+  x1.fillText(lab('bottom'),B.x+B.w/2,B.y+B.h+40);
+  x1.save(); x1.translate(B.x-58,B.y+B.h/2); x1.rotate(-PI/2);
+  x1.textAlign='center'; x1.fillText(lab('left'),0,0); x1.restore();
+  x1.save(); x1.translate(B.x+B.w+16,B.y+B.h/2); x1.rotate(PI/2);
+  x1.textAlign='center'; x1.fillText(lab('right'),0,0); x1.restore();
+}
+function markExtremum(B){
+  const X=x=>B.x+x*B.w, Y=y=>B.y+B.h*(1-y/S.b);
+  const hot=(Math.abs(inMax-uMax)<1e-12);
+  const cold=(Math.abs(inMin-uMin)<1e-12);
+  for(const [pt,on] of [[argMax,hot],[argMin,cold]]){
+    if(!on) continue;
+    x1.strokeStyle=BRZ; x1.lineWidth=2.4;
+    x1.beginPath(); x1.arc(X(pt[0]),Y(pt[1]),8,0,6.283); x1.stroke();
+    x1.beginPath(); x1.arc(X(pt[0]),Y(pt[1]),2,0,6.283); x1.fillStyle=BRZ; x1.fill();
+  }
+}
+function drawNoSolution(){
+  const B=plotBox();
+  x1.fillStyle='#f2f3f4'; x1.fillRect(B.x,B.y,B.w,B.h);
+  x1.strokeStyle='rgba(45,52,60,0.5)'; x1.lineWidth=1.4; x1.setLineDash([7,5]);
+  x1.strokeRect(B.x,B.y,B.w,B.h); x1.setLineDash([]);
+  x1.textAlign='center'; x1.textBaseline='middle';
+  x1.font='700 20px "Playfair Display",Georgia,serif'; x1.fillStyle=SLT;
+  x1.fillText('No solution exists',B.x+B.w/2,B.y+B.h/2-24);
+  x1.font='italic 13px "Crimson Pro",Georgia,serif'; x1.fillStyle=MUT;
+  x1.fillText('every side insulated, yet \u222BF dA = '+fmt(netF,4)+' \u2260 0',B.x+B.w/2,B.y+B.h/2+2);
+  x1.font='500 11px "IBM Plex Mono",monospace';
+  x1.fillText('\u222E u\u2099 ds = \u2212\u222BF dA  cannot hold',B.x+B.w/2,B.y+B.h/2+26);
+  x1.fillText('press \u201cMake F compatible\u201d',B.x+B.w/2,B.y+B.h/2+46);
+}
+
+/* ── the surface view ── */
+function proj3(cx,cy,sc,zsc,x,y,z){
+  const cw=Math.cos(S.yaw), sw=Math.sin(S.yaw);
+  const X=(x-0.5)*cw+(y-S.b/2)*sw, Y=-(x-0.5)*sw+(y-S.b/2)*cw;
+  const ce=Math.cos(S.elev), se=Math.sin(S.elev);
+  return [cx+X*sc, cy-(Y*sc*se+z*zsc*ce), Y*ce-z*zsc*se];
+}
+function drawSurface(B){
+  const cx=B.x+B.w/2, cy=B.y+B.h*0.62;
+  const sc=Math.min(B.w,B.h)*0.92, zsc=Math.min(B.w,B.h)*0.42/Math.max(1e-9,uMax-uMin);
+  const M=44, prims=[];
+  for(let i=0;i<M;i++) for(let j=0;j<M;j++){
+    const gi0=Math.round(i/M*(NGX-1)), gi1=Math.round((i+1)/M*(NGX-1));
+    const gj0=Math.round(j/M*(NGY-1)), gj1=Math.round((j+1)/M*(NGY-1));
+    const q=[[xs[gi0],ys[gj0],uAtIJ(gi0,gj0)],[xs[gi1],ys[gj0],uAtIJ(gi1,gj0)],
+             [xs[gi1],ys[gj1],uAtIJ(gi1,gj1)],[xs[gi0],ys[gj1],uAtIJ(gi0,gj1)]];
+    const P=q.map(p=>proj3(cx,cy,sc,zsc,p[0],p[1],p[2]));
+    const zc=(q[0][2]+q[1][2]+q[2][2]+q[3][2])/4;
+    const d=(P[0][2]+P[1][2]+P[2][2]+P[3][2])/4;
+    prims.push({d:d,P:P,t:(zc-uMin)/(uMax-uMin)});
+  }
+  prims.sort((p,q)=>q.d-p.d);
+  for(const pr of prims){
+    x1.beginPath(); x1.moveTo(pr.P[0][0],pr.P[0][1]);
+    for(let k=1;k<4;k++) x1.lineTo(pr.P[k][0],pr.P[k][1]);
+    x1.closePath();
+    x1.fillStyle=rampCss(pr.t); x1.fill();
+    x1.strokeStyle='rgba(255,255,255,0.22)'; x1.lineWidth=0.5; x1.stroke();
+  }
+  /* the base rectangle, so the domain is legible */
+  const base=[[0,0],[1,0],[1,S.b],[0,S.b]].map(p=>proj3(cx,cy,sc,zsc,p[0],p[1],uMin));
+  x1.strokeStyle='rgba(35,25,27,0.35)'; x1.lineWidth=1; x1.setLineDash([4,3]);
+  x1.beginPath(); x1.moveTo(base[0][0],base[0][1]);
+  for(let k=1;k<4;k++) x1.lineTo(base[k][0],base[k][1]);
+  x1.closePath(); x1.stroke(); x1.setLineDash([]);
+  x1.font='600 9.5px "IBM Plex Mono",monospace'; x1.textAlign='left'; x1.textBaseline='alphabetic';
+  x1.fillStyle=MUT; x1.fillText('DRAG TO TURN',B.x,B.y-8);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6. THE SUPERPOSITION STRIP
+   ══════════════════════════════════════════════════════════════════ */
+
+const c2=document.getElementById('decomp'), x2=c2.getContext('2d');
+const W2=1180, H2=250;
+
+function renderDecomp(){
+  x2.clearRect(0,0,W2,H2); x2.fillStyle='#fff'; x2.fillRect(0,0,W2,H2);
+  if(pureNeumann&&!compatible){
+    x2.font='italic 13px "Crimson Pro",Georgia,serif'; x2.fillStyle=MUT;
+    x2.textAlign='center'; x2.textBaseline='middle';
+    x2.fillText('Nothing to decompose until the source is made compatible.',W2/2,H2/2);
+    return;
+  }
+  const keys=SIDES.concat(S.src==='none'?[]:['src']);
+  const n=keys.length+1;
+  const gap=34, padT=48, padB=34;
+  const boxW=(W2-60-gap*(n-1))/n;
+  const boxH=Math.min(H2-padT-padB,boxW*S.b);
+  /* one shared colour scale, so the panels are comparable */
+  let lo=Infinity,hi=-Infinity;
+  for(const k of keys){
+    const f=fields[k];
+    for(let p=0;p<f.length;p++){ if(f[p]<lo)lo=f[p]; if(f[p]>hi)hi=f[p]; }
+  }
+  lo=Math.min(lo,uMin); hi=Math.max(hi,uMax);
+  if(!(hi>lo)) hi=lo+1;
+  const NAME={bottom:'bottom',top:'top',left:'left',right:'right',src:'source F'};
+  for(let q=0;q<n;q++){
+    const bxp=30+q*(boxW+gap), byp=padT+(H2-padT-padB-boxH)/2;
+    const f=(q<keys.length)?fields[keys[q]]:total;
+    drawMini(f,bxp,byp,boxW,boxH,lo,hi);
+    x2.font='600 9px "IBM Plex Mono",monospace'; x2.textAlign='center'; x2.textBaseline='alphabetic';
+    const isSum=(q===keys.length);
+    x2.fillStyle=isSum?CRIM:MUT;
+    x2.fillText(isSum?'THE SUM = u':(NAME[keys[q]]||'').toUpperCase(),bxp+boxW/2,byp-9);
+    if(!isSum&&S.type[keys[q]]==='N'){
+      x2.font='italic 10px "Crimson Pro",Georgia,serif'; x2.fillStyle=MUT;
+      x2.fillText('insulated \u2014 contributes 0',bxp+boxW/2,byp+boxH+16);
+    }
+    if(q<n-1){
+      x2.font='700 20px "Playfair Display",Georgia,serif'; x2.fillStyle=SLT;
+      x2.textAlign='center'; x2.textBaseline='middle';
+      x2.fillText(q===keys.length-1?'=':'+',bxp+boxW+gap/2,byp+boxH/2);
+    }
+  }
+  title(x2,30,24,'EACH SIDE ON ITS OWN','linear equation, linear data \u2014 so the parts add');
+}
+function drawMini(f,bxp,byp,bw,bh,lo,hi){
+  const NP=58;
+  const img=x2.createImageData(NP,NP);
+  for(let py=0;py<NP;py++){
+    const gy=(1-(py+0.5)/NP)*(NGY-1);
+    const j=Math.max(0,Math.min(NGY-2,Math.floor(gy)));
+    for(let px=0;px<NP;px++){
+      const gxx=((px+0.5)/NP)*(NGX-1);
+      const i=Math.max(0,Math.min(NGX-2,Math.floor(gxx)));
+      const v=f[i*NGY+j];
+      const c=ramp((v-lo)/(hi-lo));
+      const o=4*(py*NP+px);
+      img.data[o]=c[0]; img.data[o+1]=c[1]; img.data[o+2]=c[2]; img.data[o+3]=255;
+    }
+  }
+  const tmp=document.createElement('canvas');
+  tmp.width=NP; tmp.height=NP;
+  tmp.getContext('2d').putImageData(img,0,0);
+  x2.imageSmoothingEnabled=true;
+  x2.drawImage(tmp,bxp,byp,bw,bh);
+  x2.strokeStyle='rgba(35,25,27,0.4)'; x2.lineWidth=1; x2.strokeRect(bxp,byp,bw,bh);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7. DIAGNOSTICS — the data, and the maximum principle
+   ══════════════════════════════════════════════════════════════════ */
+
+const c3=document.getElementById('diag'), x3=c3.getContext('2d');
+const W3=1180, H3=320;
+
+function renderDiag(){
+  x3.clearRect(0,0,W3,H3); x3.fillStyle='#fff'; x3.fillRect(0,0,W3,H3);
+  const half=W3*0.46;
+
+  /* ── left: the four boundary profiles ── */
+  const P={l:60,t:46}, gW=half-P.l-28, gH=H3-P.t-52;
+  let lo=0,hi=0;
+  for(const sd of SIDES) if(S.type[sd]==='D')
+    for(let k=0;k<=40;k++){ const v=sideData(sd,k/40); lo=Math.min(lo,v); hi=Math.max(hi,v); }
+  if(!(hi>lo)){ lo-=0.5; hi+=0.5; }
+  const pad=(hi-lo)*0.14; lo-=pad; hi+=pad;
+  const X=s=>P.l+s*gW, Y=v=>P.t+(hi-v)/(hi-lo)*gH;
+  const st=niceStep((hi-lo)/4);
+  x3.font='500 10px "IBM Plex Mono",monospace'; x3.textAlign='right'; x3.textBaseline='middle';
+  for(let k=Math.ceil(lo/st);k*st<=hi;k++){
+    const y=Y(k*st);
+    x3.strokeStyle=(Math.abs(k*st)<1e-14)?'rgba(35,25,27,0.3)':'rgba(158,27,50,0.07)';
+    x3.lineWidth=1; x3.beginPath(); x3.moveTo(P.l,y); x3.lineTo(P.l+gW,y); x3.stroke();
+    x3.fillStyle=MUT; x3.fillText(fmt(k*st,2),P.l-7,y);
+  }
+  const COL={bottom:CRIM,top:SLT,left:BRZ,right:'#6E1322'};
+  x3.save(); x3.beginPath(); x3.rect(P.l,P.t,gW,gH); x3.clip();
+  for(const sd of SIDES){
+    if(S.type[sd]==='N') continue;
+    x3.strokeStyle=COL[sd]; x3.lineWidth=2.2; x3.beginPath();
+    for(let k=0;k<=200;k++){
+      const s=k/200, px=X(s), py=Y(sideData(sd,s));
+      k?x3.lineTo(px,py):x3.moveTo(px,py);
+    }
+    x3.stroke();
+  }
+  x3.restore();
+  x3.strokeStyle='rgba(35,25,27,0.35)'; x3.lineWidth=1; x3.strokeRect(P.l,P.t,gW,gH);
+  x3.font='500 10px "IBM Plex Mono",monospace'; x3.textAlign='center'; x3.textBaseline='top';
+  x3.fillStyle=MUT;
+  for(let k=0;k<=4;k++) x3.fillText((k/4).toFixed(2),X(k/4),P.t+gH+6);
+  x3.font='italic 700 11px "Crimson Pro",Georgia,serif'; x3.fillStyle='rgba(35,25,27,0.78)';
+  x3.fillText('position along the side, s',P.l+gW/2,P.t+gH+21);
+  title(x3,P.l,P.t-26,'THE BOUNDARY DATA','what you told the rectangle to do');
+  let ly=P.t+12;
+  x3.font='600 9px "IBM Plex Mono",monospace'; x3.textAlign='left'; x3.textBaseline='alphabetic';
+  for(const sd of SIDES){
+    x3.fillStyle=S.type[sd]==='N'?MUT:COL[sd];
+    x3.fillText(sd+(S.type[sd]==='N'?' \u2014 insulated':''),P.l+6,ly); ly+=12;
+  }
+
+  /* ── right: cross-sections inside the permitted band ── */
+  const P2={l:half+66,t:46}, g2W=W3-P2.l-28, g2H=gH;
+  let lo2=Math.min(bMin,uMin), hi2=Math.max(bMax,uMax);
+  const pad2=(hi2-lo2)*0.16||0.5; lo2-=pad2; hi2+=pad2;
+  const X2=s=>P2.l+s*g2W, Y2=v=>P2.t+(hi2-v)/(hi2-lo2)*g2H;
+  const st2=niceStep((hi2-lo2)/4);
+  x3.font='500 10px "IBM Plex Mono",monospace'; x3.textAlign='right'; x3.textBaseline='middle';
+  for(let k=Math.ceil(lo2/st2);k*st2<=hi2;k++){
+    const y=Y2(k*st2);
+    x3.strokeStyle=(Math.abs(k*st2)<1e-14)?'rgba(35,25,27,0.3)':'rgba(158,27,50,0.07)';
+    x3.lineWidth=1; x3.beginPath(); x3.moveTo(P2.l,y); x3.lineTo(P2.l+g2W,y); x3.stroke();
+    x3.fillStyle=MUT; x3.fillText(fmt(k*st2,2),P2.l-7,y);
+  }
+  /* the band the maximum principle allows */
+  x3.fillStyle='rgba(154,123,46,0.13)';
+  x3.fillRect(P2.l,Y2(bMax),g2W,Math.max(1,Y2(bMin)-Y2(bMax)));
+  x3.strokeStyle=BRZ; x3.lineWidth=1.6; x3.setLineDash([6,4]);
+  for(const v of [bMin,bMax]){
+    x3.beginPath(); x3.moveTo(P2.l,Y2(v)); x3.lineTo(P2.l+g2W,Y2(v)); x3.stroke();
+  }
+  x3.setLineDash([]);
+  x3.save(); x3.beginPath(); x3.rect(P2.l,P2.t,g2W,g2H); x3.clip();
+  /* a horizontal cut at mid-height, and a vertical cut at mid-width */
+  x3.strokeStyle=CRIM; x3.lineWidth=2.6; x3.beginPath();
+  for(let k=0;k<=240;k++){
+    const s=k/240, px=X2(s), py=Y2(uAt(s,S.b/2));
+    k?x3.lineTo(px,py):x3.moveTo(px,py);
+  }
+  x3.stroke();
+  x3.strokeStyle='rgba(45,52,60,0.8)'; x3.lineWidth=2; x3.setLineDash([7,4]);
+  x3.beginPath();
+  for(let k=0;k<=240;k++){
+    const s=k/240, px=X2(s), py=Y2(uAt(0.5,s*S.b));
+    k?x3.lineTo(px,py):x3.moveTo(px,py);
+  }
+  x3.stroke(); x3.setLineDash([]);
+  x3.restore();
+  x3.strokeStyle='rgba(35,25,27,0.35)'; x3.lineWidth=1; x3.strokeRect(P2.l,P2.t,g2W,g2H);
+  x3.font='500 10px "IBM Plex Mono",monospace'; x3.textAlign='center'; x3.textBaseline='top';
+  x3.fillStyle=MUT;
+  for(let k=0;k<=4;k++) x3.fillText((k/4).toFixed(2),X2(k/4),P2.t+g2H+6);
+  x3.font='italic 700 11px "Crimson Pro",Georgia,serif'; x3.fillStyle='rgba(35,25,27,0.78)';
+  x3.fillText('fraction along the cut',P2.l+g2W/2,P2.t+g2H+21);
+  const violated=(inMax>bMax+1e-6||inMin<bMin-1e-6);
+  title(x3,P2.l,P2.t-26,'TWO CUTS THROUGH THE INTERIOR',
+    violated?'a cut leaves the band \u2014 there is a source inside'
+            :'both cuts stay inside the band',
+    violated?BRZ:CRIM);
+  x3.font='600 9px "IBM Plex Mono",monospace'; x3.textAlign='left'; x3.textBaseline='alphabetic';
+  x3.fillStyle=CRIM; x3.fillText('u(x, b/2)',P2.l+6,P2.t+12);
+  x3.fillStyle=SLT;  x3.fillText('u(a/2, y)',P2.l+6,P2.t+24);
+  x3.strokeStyle='#e0dbd2'; x3.lineWidth=1;
+  x3.beginPath(); x3.moveTo(half+8,14); x3.lineTo(half+8,H3-14); x3.stroke();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   8. READOUTS
+   ══════════════════════════════════════════════════════════════════ */
+
+function stat(k,v,n,cls){
+  return '<div class="stat"><div class="k">'+k+'</div><div class="v'+(cls?' '+cls:'')+'">'+v+
+         '</div><div class="n">'+n+'</div></div>';
+}
+function nD(){ let c=0; for(const sd of SIDES) if(S.type[sd]==='D') c++; return c; }
+function renderStats(){
+  const violated=(inMax>bMax+1e-6||inMin<bMin-1e-6);
+  document.getElementById('stats1').innerHTML=
+    stat('range of u', fmt(uMin,3)+' \u2026 '+fmt(uMax,3),'over the whole rectangle')+
+    stat('u at the centre', fmt(uAt(0.5,S.b/2),5),'a single sample')+
+    stat('maximum principle', (S.src==='none')?(violated?'\u2717':'\u2713'):(violated?'broken':'intact'),
+         (S.src==='none')?'harmonic, so it must hold'
+                         :'a source may break it, legitimately',
+         violated?'gold':'')+
+    stat('interior max \u2212 boundary max', fmt(inMax-bMax,5),
+         (inMax-bMax>1e-6)?'strictly positive \u2014 an interior peak':'at most zero','dark')+
+    stat('Dirichlet sides', nD()+' of 4',
+         nD()===0?'pure Neumann \u2014 constants are free':'enough to pin u down');
+
+  const lamMin=bx&&by?(bx[0].mu*bx[0].mu+by[0].mu*by[0].mu):0;
+  document.getElementById('stats2').innerHTML=
+    stat('\u222BF dA', fmt(netF,5), S.src==='none'?'no source':'net output of the source')+
+    stat('\u03BB\u2080\u2080', fmt(lamMin,5),
+         lamMin<1e-12?'zero \u2014 the degenerate mode':'positive, so the series is safe','dark')+
+    stat('compatibility', pureNeumann?(compatible?'satisfied':'FAILS'):'not required',
+         pureNeumann?'\u222E u\u2099 = \u2212\u222BF forces \u222BF = 0':'some side can pass heat',
+         (pureNeumann&&!compatible)?'gold':'')+
+    stat('additive constant', pureNeumann&&compatible?(S.norm==='mean'?'set by zero mean':'set at a corner'):'fixed by the data',
+         pureNeumann&&compatible?'any constant also solves':'Dirichlet data removes the freedom','gold')+
+    stat('modes used', S.K+' per side',
+         'K\u00D7K = '+(S.K*S.K)+' for the source term');
+  document.getElementById('setupMeta').textContent=
+    nD()+' Dirichlet, '+(4-nD())+' insulated  \u00B7  b = '+fmt(S.b,2)+
+    (S.src==='none'?'  \u00B7  no source':'  \u00B7  source '+S.src);
+  document.getElementById('viewMeta').textContent=
+    S.view==='surf'?'drag to turn the surface':('view: '+S.view);
+}
+function renderBanner(){
+  const el=document.getElementById('banner');
+  if(pureNeumann&&!compatible){
+    el.className='banner no';
+    el.innerHTML='<b>No solution exists.</b> Every side is insulated, so no heat can leave, yet the '+
+      'source delivers <span class="mono">\u222BF dA = '+fmt(netF,4)+'</span>. Integrating the equation '+
+      'and applying the divergence theorem gives <span class="mono">\u222E u\u2099 ds = \u2212\u222BF dA</span>, '+
+      'whose left side is zero here. In the series it is the <span class="mono">\u03BB\u2080\u2080 = 0</span> '+
+      'mode that cannot be divided through. Press <b>Make F compatible</b>, or pick the dipole source.';
+  }else if(pureNeumann){
+    el.className='banner ok';
+    el.innerHTML='<b>Pure Neumann, and compatible.</b> '+
+      '<span class="mono">\u222BF dA = '+fmt(netF,4)+'</span>, so a solution exists \u2014 but only up to '+
+      'an additive constant, because constants satisfy every insulated condition. The picture below '+
+      'has had that constant fixed '+(S.norm==='mean'?'by setting the mean to zero':'by pinning u = 0 at a corner')+
+      '; switch the choice and the field shifts bodily while the contours stay put.';
+  }else if(S.src!=='none'){
+    el.className='banner ok';
+    el.innerHTML='<b>Poisson.</b> The boundary data is handled by the four side problems and the '+
+      'interior source by a double series, <span class="mono">u = \u03A3 F\u2098\u2099/\u03BB\u2098\u2099 \u03C6\u2098\u03C8\u2099</span>. '+
+      'Because <span class="mono">\u03BB\u2080\u2080 &gt; 0</span> here, every coefficient is well defined and no '+
+      'compatibility condition arises. Watch the maximum: a source is free to put it inside.';
+  }else{
+    el.className='banner ok';
+    el.innerHTML='<b>Laplace.</b> With no interior source u is harmonic, so it is the average of its '+
+      'neighbours everywhere and its extremes must sit on the boundary. '+
+      (nD()===4?'All four sides are given, so the solution is unique.'
+               :'The insulated sides carry no data; they only change which eigenfunctions the others use.');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   9. THE SIDE CONTROLS
+   ══════════════════════════════════════════════════════════════════ */
+
+function buildSideRow(){
+  const host=document.getElementById('sideRow');
+  host.innerHTML='';
+  for(const sd of SIDES){
+    const blk=document.createElement('div');
+    blk.className='sideblk'+(S.type[sd]==='N'?' off':'');
+    blk.innerHTML='<span class="nm">'+sd+'</span>'+
+      '<select data-t="'+sd+'">'+
+        '<option value="D"'+(S.type[sd]==='D'?' selected':'')+'>given</option>'+
+        '<option value="N"'+(S.type[sd]==='N'?' selected':'')+'>insulated</option>'+
+      '</select>'+
+      '<select data-s="'+sd+'"'+(S.type[sd]==='N'?' disabled':'')+'>'+
+        Object.keys(SHAPES).map(k=>'<option value="'+k+'"'+(S.shape[sd]===k?' selected':'')+'>'+
+          SHAPES[k].lab+'</option>').join('')+
+      '</select>'+
+      '<input type="range" data-a="'+sd+'" min="-1.5" max="1.5" step="0.05" value="'+S.amp[sd]+'"'+
+        (S.type[sd]==='N'?' disabled':'')+'>'+
+      '<span class="rdout" data-v="'+sd+'">'+fmt(S.amp[sd],2)+'</span>';
+    host.appendChild(blk);
+  }
+  host.querySelectorAll('select[data-t]').forEach(el=>{
+    el.addEventListener('change',function(){
+      S.type[this.dataset.t]=this.value; buildSideRow(); rebuild();
+    });
+  });
+  host.querySelectorAll('select[data-s]').forEach(el=>{
+    el.addEventListener('change',function(){ S.shape[this.dataset.s]=this.value; rebuild(); });
+  });
+  host.querySelectorAll('input[data-a]').forEach(el=>{
+    el.addEventListener('input',function(){
+      const sd=this.dataset.a;
+      S.amp[sd]=parseFloat(this.value);
+      host.querySelector('[data-v="'+sd+'"]').textContent=fmt(S.amp[sd],2);
+      rebuild();
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   10. WIRE-UP
+   ══════════════════════════════════════════════════════════════════ */
+
+const $=id=>document.getElementById(id);
+function rebuild(){ buildAll(); draw(); }
+function draw(){ renderMain(); renderDecomp(); renderDiag(); renderStats(); renderBanner(); }
+
+$('slB').addEventListener('input',function(){
+  S.b=parseFloat(this.value); $('bVal').textContent=S.b.toFixed(2); rebuild();
+});
+$('selView').addEventListener('change',function(){ S.view=this.value; draw(); });
+$('slK').addEventListener('input',function(){
+  S.K=parseInt(this.value,10); $('kVal').textContent=S.K; rebuild();
+});
+$('slNC').addEventListener('input',function(){
+  S.nc=parseInt(this.value,10); $('ncVal').textContent=S.nc; renderMain();
+});
+$('selSrc').addEventListener('change',function(){ S.src=this.value; rebuild(); });
+$('slSA').addEventListener('input',function(){
+  S.sA=parseFloat(this.value); $('saVal').textContent=S.sA.toFixed(1); rebuild();
+});
+$('slSX').addEventListener('input',function(){
+  S.sx=parseFloat(this.value); $('sxVal').textContent=S.sx.toFixed(2); rebuild();
+});
+$('slSY').addEventListener('input',function(){
+  S.sy=parseFloat(this.value); $('syVal').textContent=S.sy.toFixed(2); rebuild();
+});
+$('selNorm').addEventListener('change',function(){ S.norm=this.value; rebuild(); });
+$('bComp').addEventListener('click',function(){
+  /* subtracting the mean is exactly what compatibility asks for; the
+     dipole and the split source already have zero mean by construction */
+  if(S.src==='uniform'||S.src==='blob'){
+    S.src=(S.src==='uniform')?'halves':'dipole';
+    $('selSrc').value=S.src;
+  }
+  rebuild();
+});
+
+function setSides(t,sh,am){
+  for(let i=0;i<4;i++){
+    S.type[SIDES[i]]=t[i]; S.shape[SIDES[i]]=sh[i]; S.amp[SIDES[i]]=am[i];
+  }
+  buildSideRow();
+}
+$('pOne').addEventListener('click',function(){
+  setSides(['D','D','D','D'],['const','zero','zero','zero'],[1,0,0,0]);
+  S.src='none'; $('selSrc').value='none'; rebuild();
+});
+$('pTwo').addEventListener('click',function(){
+  setSides(['D','D','D','D'],['const','zero','hump','zero'],[1,0,1,0]);
+  S.src='none'; $('selSrc').value='none'; rebuild();
+});
+$('pMix').addEventListener('click',function(){
+  setSides(['D','D','N','N'],['hump','const','zero','zero'],[1,-0.5,0,0]);
+  S.src='none'; $('selSrc').value='none'; rebuild();
+});
+$('pPois').addEventListener('click',function(){
+  setSides(['D','D','D','D'],['zero','zero','zero','zero'],[0,0,0,0]);
+  S.src='blob'; $('selSrc').value='blob';
+  S.sA=20; $('slSA').value=20; $('saVal').textContent='20.0';
+  S.sx=0.5; S.sy=0.5; $('slSX').value=0.5; $('slSY').value=0.5;
+  $('sxVal').textContent='0.50'; $('syVal').textContent='0.50';
+  rebuild();
+});
+$('pNeu').addEventListener('click',function(){
+  setSides(['N','N','N','N'],['zero','zero','zero','zero'],[0,0,0,0]);
+  S.src='uniform'; $('selSrc').value='uniform';
+  S.sA=20; $('slSA').value=20; $('saVal').textContent='20.0';
+  rebuild();
+});
+
+/* turning the surface */
+let dragging=false,last=null;
+c1.addEventListener('mousedown',function(e){
+  if(S.view!=='surf') return;
+  dragging=true; last={x:e.clientX,y:e.clientY}; c1.classList.add('drag');
+});
+window.addEventListener('mousemove',function(e){
+  if(!dragging||!last) return;
+  S.yaw+=(e.clientX-last.x)*0.01;
+  S.elev=Math.max(0.12,Math.min(1.4,S.elev+(e.clientY-last.y)*0.008));
+  last={x:e.clientX,y:e.clientY}; renderMain();
+});
+window.addEventListener('mouseup',function(){ dragging=false; last=null; c1.classList.remove('drag'); });
+
+function sizeAll(){ hidpi(c1,x1,W1,H1); hidpi(c2,x2,W2,H2); hidpi(c3,x3,W3,H3); }
+window.addEventListener('resize',function(){ sizeAll(); draw(); });
+document.fonts && document.fonts.ready.then(draw);
+
+sizeAll();
+buildSideRow();
+rebuild();
+</script>
+</body>
+</html>

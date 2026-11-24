@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrix Multiplication — Four Interpretations</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+  <style>
+    :root {
+      --cream:    #faf7f2;
+      --paper:    #ffffff;
+      --navy:     #18284a;
+      --navy2:    #2c4070;
+      --accent:   #3a6eb5;
+      --red:      #b33a2f;
+      --red-bg:   #fef0ee;
+      --red-lt:   #f9ddd8;
+      --gold:     #c8a430;
+      --gray:     #7a7a8a;
+      --border:   #ddd9d0;
+      --acc-bg:   #edf1fb;
+      --green:    #2e7d4f;
+      --green-bg: #e8f5ed;
+      --blue-lt:  #dce8f8;
+      --purple-lt:#ece0f6;
+      --orange-lt:#fce9d4;
+      --teal-lt:  #d4f0ed;
+      --font-body:'Crimson Pro', Georgia, serif;
+      --font-head:'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--navy);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 1.8rem 2.5rem;
+      border-bottom: 3px solid var(--gold);
+    }
+    header h1 { font-family: var(--font-head); font-size: 2rem; font-weight: 400; letter-spacing:.02em; }
+    header p  { color: #a0b8d8; font-size: 1.05rem; font-style: italic; }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 14px rgba(24,40,74,.06);
+    }
+    .card h2 {
+      font-family: var(--font-head);
+      font-size: 1.25rem; font-weight:600;
+      color: var(--navy);
+      margin-bottom: 1.2rem;
+    }
+
+    .size-row { display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .size-row label { display:flex; align-items:center; gap:.45rem; font-size:.95rem; color: var(--navy2); }
+    .size-row input[type=number] {
+      width:48px; padding:.28rem .3rem;
+      border: 1px solid var(--border); border-radius:4px;
+      font-family:var(--font-body); font-size:1rem;
+      color:var(--navy); text-align:center;
+    }
+    .size-row input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+    .examples-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+
+    button {
+      font-family: var(--font-body);
+      font-size:.95rem; cursor:pointer;
+      border:none; border-radius:4px;
+      padding:.35rem .9rem;
+      transition: background .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    .btn-ghost { background: var(--acc-bg); color: var(--navy2); border:1px solid #c0ccdd; }
+    .btn-ghost:hover { background:#d8e4f8; }
+
+    /* ── DUAL MATRIX INPUT ───────────────────────── */
+    .dual-input { display:flex; gap:2.5rem; flex-wrap:wrap; align-items:flex-start; margin:.8rem 0; }
+    .mat-input-group h3 {
+      font-family: var(--font-head); font-size:1.05rem; font-weight:600;
+      color: var(--navy); margin-bottom:.5rem;
+    }
+    .mat-input-grid {
+      display: inline-grid;
+      gap: 5px 6px;
+      align-items: center;
+    }
+    .mat-input-grid input {
+      width: 54px; padding:.28rem .3rem;
+      border: 1px solid var(--border); border-radius:4px;
+      font-family: var(--font-body); font-size:.95rem;
+      color: var(--navy); text-align:center; background:#fafafa;
+    }
+    .mat-input-grid input:focus { outline:none; border-color:var(--accent); background:#fff; }
+    .mat-input-grid .col-lbl { text-align:center; font-size:.78rem; color:var(--gray); }
+    .mat-input-grid .row-lbl { text-align:right; padding-right:6px; font-size:.82rem; color:var(--gray); }
+
+    /* ── METHOD TABS ─────────────────────────────── */
+    .method-tabs {
+      display:flex; gap:0; margin-bottom:0; border-bottom:2px solid var(--border);
+    }
+    .method-tab {
+      background: #f0ede8; color: var(--navy2);
+      border: 1px solid var(--border); border-bottom:none;
+      border-radius: 6px 6px 0 0;
+      padding: .5rem 1.1rem;
+      font-size: .88rem;
+      margin-right: -1px;
+      position: relative;
+      top: 2px;
+      transition: background .15s, color .15s;
+    }
+    .method-tab:hover { background: #e8e4de; }
+    .method-tab.active {
+      background: var(--paper);
+      color: var(--navy);
+      font-weight: 600;
+      border-bottom: 2px solid var(--paper);
+    }
+
+    /* ── VIZ AREA ────────────────────────────────── */
+    .viz-card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 1.5rem 1.8rem;
+      box-shadow: 0 2px 14px rgba(24,40,74,.06);
+    }
+
+    .method-formula {
+      background: var(--acc-bg);
+      border: 1px solid #c0ccdd;
+      border-radius: 6px;
+      padding: .6rem 1rem;
+      margin-bottom: 1.2rem;
+      font-size: .95rem;
+      color: var(--navy2);
+    }
+    .method-formula .katex { font-size: 1.05em; }
+
+    /* ── MATRIX DISPLAY ROW ──────────────────────── */
+    .matrix-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+    .op-sym {
+      font-size: 1.4rem;
+      color: var(--navy2);
+      padding: 0 .2rem;
+      font-weight: 300;
+    }
+    .mat-label {
+      font-size: .8rem;
+      text-align: center;
+      color: var(--gray);
+      margin-bottom: .25rem;
+      font-style: italic;
+    }
+
+    /* ── MATRIX WITH BRACKETS ────────────────────── */
+    .mat-wrap {
+      display: inline-block;
+      text-align: center;
+    }
+    .mat-bracket {
+      display: inline-block;
+      position: relative;
+      padding: 2px 9px;
+    }
+    .mat-bracket::before, .mat-bracket::after {
+      content: '';
+      position: absolute;
+      top: -1px; bottom: -1px;
+      width: 5px;
+      border: 2px solid var(--navy);
+    }
+    .mat-bracket::before {
+      left: 0;
+      border-right: none;
+      border-radius: 3px 0 0 3px;
+    }
+    .mat-bracket::after {
+      right: 0;
+      border-left: none;
+      border-radius: 0 3px 3px 0;
+    }
+
+    .mat-table {
+      border-collapse: collapse;
+    }
+    .mat-table td {
+      padding: .3rem .5rem;
+      text-align: center;
+      font-size: .9rem;
+      min-width: 36px;
+      transition: background .2s, color .2s;
+      position: relative;
+    }
+    .mat-table .katex { font-size: .9em; }
+
+    /* Cell highlight classes */
+    .hl-row    { background: var(--red-lt) !important; }
+    .hl-col    { background: var(--blue-lt) !important; }
+    .hl-cell   { background: var(--gold) !important; color: var(--navy) !important; font-weight:600; }
+    .hl-result { background: #fef3c7 !important; outline: 2px solid var(--gold); outline-offset:-1px; }
+    .hl-done   { background: var(--green-bg) !important; }
+    .hl-active-col { background: var(--purple-lt) !important; }
+    .hl-rank1  { background: var(--orange-lt) !important; }
+    .hl-dim    { color: #aaa; }
+
+    /* Block partition borders */
+    .blk-border-right { border-right: 2.5px solid var(--navy) !important; }
+    .blk-border-bottom { border-bottom: 2.5px solid var(--navy) !important; }
+    .blk-00 { background: rgba(58,110,181,.07); }
+    .blk-01 { background: rgba(46,125,79,.07); }
+    .blk-10 { background: rgba(200,164,48,.07); }
+    .blk-11 { background: rgba(179,58,47,.07); }
+    .blk-hl { outline: 2.5px solid var(--red); outline-offset:-1px; }
+
+    /* ── STEP CONTROLS ───────────────────────────── */
+    .step-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .8rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .step-btn {
+      background: var(--navy);
+      color: #fff;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: inline-flex; align-items:center; justify-content:center;
+      font-size: 1rem;
+      padding: 0;
+    }
+    .step-btn:hover { background: var(--navy2); }
+    .step-btn:disabled { opacity:.35; cursor: default; }
+    .step-label {
+      font-size: .88rem;
+      color: var(--gray);
+      min-width: 110px;
+      text-align: center;
+    }
+    .play-btn {
+      background: var(--red);
+      color: #fff;
+      padding: .35rem 1rem;
+      font-size: .85rem;
+      letter-spacing: .04em;
+    }
+    .play-btn:hover { background:#952e24; }
+    .play-btn.playing { background: var(--navy2); }
+
+    /* ── CALC DETAIL PANEL ───────────────────────── */
+    .calc-panel {
+      background: #fafaf5;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      min-height: 60px;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+    .calc-panel .katex { font-size: 1em; }
+    .calc-panel .calc-title {
+      font-weight: 600;
+      color: var(--navy);
+      font-size: .92rem;
+      margin-bottom: .4rem;
+    }
+    .calc-panel .calc-body {
+      color: var(--navy2);
+      font-size: .95rem;
+    }
+
+    /* ── OUTER PRODUCT MINI MATRICES ─────────────── */
+    .op-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: .5rem 0;
+    }
+    .op-row .mat-bracket { padding: 1px 6px; }
+    .op-row .mat-table td { padding: .2rem .35rem; font-size: .82rem; min-width:28px; }
+    .op-row .op-sym { font-size:1.1rem; padding:0 .1rem; }
+    .op-row .mat-bracket::before, .op-row .mat-bracket::after { border-width:1.5px; width:4px; }
+
+    /* ── KEY BOX ─────────────────────────────────── */
+    .key-box {
+      background: var(--acc-bg);
+      border: 1px solid #c0ccdd;
+      border-radius: 6px;
+      padding: .85rem 1.2rem;
+      font-size: .9rem;
+      color: var(--navy2);
+      line-height: 1.6;
+      margin-top: 1.2rem;
+    }
+    .key-box strong { color: var(--navy); }
+
+    @media(max-width:700px){
+      header{padding:1.2rem 1rem;} header h1{font-size:1.5rem;}
+      main{padding:1rem .75rem;}
+      .card,.viz-card{padding:1.2rem 1rem;}
+      .dual-input{gap:1.2rem;}
+      .method-tab{padding:.4rem .6rem; font-size:.78rem;}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Matrix Multiplication — Four Ways</h1>
+  <p>Inner products, column combinations, outer products, and block decomposition</p>
+</header>
+
+<main>
+  <!-- ── INPUT ─────────────────────────────────────── -->
+  <div class="card">
+    <h2>Enter Matrices A and B</h2>
+
+    <div class="size-row">
+      <label><em>m</em> = <input type="number" id="dimM" min="1" max="4" value="3"></label>
+      <span style="color:var(--gray)">×</span>
+      <label><em>n</em> = <input type="number" id="dimN" min="1" max="4" value="3"></label>
+      <span style="color:var(--gray); font-size:.9rem">times</span>
+      <label><em>n</em> = <input type="number" id="dimN2" min="1" max="4" value="3" disabled style="background:#eee"></label>
+      <span style="color:var(--gray)">×</span>
+      <label><em>p</em> = <input type="number" id="dimP" min="1" max="4" value="3"></label>
+      <button class="btn-ghost" onclick="rebuildInputs()">Resize</button>
+    </div>
+
+    <div class="examples-row">
+      <button class="btn-ghost" onclick="loadEx(0)">3×3 · 3×3</button>
+      <button class="btn-ghost" onclick="loadEx(1)">2×3 · 3×2</button>
+      <button class="btn-ghost" onclick="loadEx(2)">3×2 · 2×4</button>
+      <button class="btn-ghost" onclick="loadEx(3)">2×2 · 2×2</button>
+    </div>
+
+    <p style="font-size:.86rem; color:var(--gray); margin-bottom:.6rem;">
+      Integers, decimals, or fractions (e.g. <code>2/3</code>).
+      A is <em>m × n</em>, B is <em>n × p</em>, product C is <em>m × p</em>.
+    </p>
+
+    <div class="dual-input">
+      <div class="mat-input-group">
+        <h3>A <span style="font-weight:300; font-size:.88rem; color:var(--gray)" id="lblA">(3×3)</span></h3>
+        <div id="gridA"></div>
+      </div>
+      <div class="mat-input-group">
+        <h3>B <span style="font-weight:300; font-size:.88rem; color:var(--gray)" id="lblB">(3×3)</span></h3>
+        <div id="gridB"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── METHOD TABS ───────────────────────────────── -->
+  <div class="method-tabs">
+    <button class="method-tab active" data-method="1" onclick="selectMethod(1)">① Inner Product</button>
+    <button class="method-tab" data-method="2" onclick="selectMethod(2)">② Column Combination</button>
+    <button class="method-tab" data-method="3" onclick="selectMethod(3)">③ Outer Product Sum</button>
+    <button class="method-tab" data-method="4" onclick="selectMethod(4)">④ Block Multiply</button>
+  </div>
+
+  <!-- ── VIZ ───────────────────────────────────────── -->
+  <div class="viz-card" id="vizCard" style="display:none;">
+    <div class="method-formula" id="methodFormula"></div>
+    <div id="vizBody"></div>
+    <div class="step-controls" id="stepControls" style="display:none;">
+      <button class="step-btn" id="prevBtn" onclick="prevStep()">‹</button>
+      <span class="step-label" id="stepLabel">Step 1 / 1</span>
+      <button class="step-btn" id="nextBtn" onclick="nextStep()">›</button>
+      <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play</button>
+    </div>
+    <div class="calc-panel" id="calcPanel"></div>
+    <div class="key-box" id="keyBox"></div>
+  </div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  FRACTION ARITHMETIC
+// ═══════════════════════════════════════════════
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b>0){const t=b;b=a%b;a=t;}return a===0?1:a;}
+
+class Frac {
+  constructor(n,d=1){
+    if(d===0){this.n=0;this.d=1;return;}
+    if(d<0){n=-n;d=-d;}
+    const g=gcd(Math.abs(n),d);
+    this.n=Math.trunc(n/g);this.d=Math.trunc(d/g);
+  }
+  static parse(s){
+    s=(s||'').trim();
+    if(!s||s==='-')return new Frac(0);
+    if(s.includes('/')){const[a,b]=s.split('/');return new Frac(parseInt(a)||0,parseInt(b)||1);}
+    if(s.includes('.')){const dec=(s.split('.')[1]||'').length;const den=10**dec;return new Frac(Math.round(parseFloat(s)*den),den);}
+    return new Frac(parseInt(s)||0);
+  }
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  isZero(){return this.n===0;}
+  toTeX(inline=true){
+    if(this.d===1) return String(this.n);
+    const cmd=inline?'\\tfrac':'\\dfrac';
+    const sg=this.n<0?'-':'';
+    return `${sg}${cmd}{${Math.abs(this.n)}}{${this.d}}`;
+  }
+  toNum(){return this.n/this.d;}
+}
+
+function rk(t){try{return katex.renderToString(t,{throwOnError:false});}catch(e){return t;}}
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let dM=3,dN=3,dP=3;
+let A=[],B=[],C=[];
+let curMethod=1, steps=[], curStep=0;
+let playTimer=null, playing=false;
+
+// ═══════════════════════════════════════════════
+//  INPUT UI
+// ═══════════════════════════════════════════════
+function rebuildInputs(){
+  dM=clamp(parseInt(document.getElementById('dimM').value)||2,1,4);
+  dN=clamp(parseInt(document.getElementById('dimN').value)||2,1,4);
+  dP=clamp(parseInt(document.getElementById('dimP').value)||2,1,4);
+  document.getElementById('dimM').value=dM;
+  document.getElementById('dimN').value=dN;
+  document.getElementById('dimN2').value=dN;
+  document.getElementById('dimP').value=dP;
+  document.getElementById('lblA').textContent=`(${dM}×${dN})`;
+  document.getElementById('lblB').textContent=`(${dN}×${dP})`;
+  buildGrid('gridA','a',dM,dN);
+  buildGrid('gridB','b',dN,dP);
+}
+
+function buildGrid(containerId,prefix,rows,cols){
+  const c=document.getElementById(containerId);
+  c.innerHTML='';
+  const g=document.createElement('div');
+  g.className='mat-input-grid';
+  g.style.gridTemplateColumns=`auto repeat(${cols},56px)`;
+  // col headers
+  g.appendChild(document.createElement('div'));
+  for(let j=0;j<cols;j++){
+    const d=document.createElement('div');d.className='col-lbl';d.textContent=j+1;g.appendChild(d);
+  }
+  for(let i=0;i<rows;i++){
+    const rl=document.createElement('div');rl.className='row-lbl';rl.textContent=`${i+1}`;g.appendChild(rl);
+    for(let j=0;j<cols;j++){
+      const inp=document.createElement('input');
+      inp.type='text';inp.id=`${prefix}${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      g.appendChild(inp);
+    }
+  }
+  c.appendChild(g);
+}
+
+function readMatrix(prefix,rows,cols){
+  return Array.from({length:rows},(_,i)=>Array.from({length:cols},(_,j)=>Frac.parse(document.getElementById(`${prefix}${i}_${j}`)?.value||'0')));
+}
+
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+// Sync n when changed
+document.getElementById('dimN').addEventListener('change',function(){
+  document.getElementById('dimN2').value=this.value;
+});
+
+// ── Examples ──
+const EXAMPLES=[
+  {m:3,n:3,p:3,a:[[3,5,3],[3,1,3],[5,3,2]],b:[[2,3,5],[1,3,3],[5,2,1]]},
+  {m:2,n:3,p:2,a:[[1,2,3],[4,5,6]],b:[[1,4],[2,5],[3,6]]},
+  {m:3,n:2,p:4,a:[[1,2],[3,4],[5,6]],b:[[1,2,3,4],[5,6,7,8]]},
+  {m:2,n:2,p:2,a:[[1,3],[2,4]],b:[[5,7],[6,8]]},
+];
+
+function loadEx(idx){
+  const e=EXAMPLES[idx];
+  dM=e.m;dN=e.n;dP=e.p;
+  document.getElementById('dimM').value=dM;
+  document.getElementById('dimN').value=dN;
+  document.getElementById('dimN2').value=dN;
+  document.getElementById('dimP').value=dP;
+  document.getElementById('lblA').textContent=`(${dM}×${dN})`;
+  document.getElementById('lblB').textContent=`(${dN}×${dP})`;
+  buildGrid('gridA','a',dM,dN);
+  buildGrid('gridB','b',dN,dP);
+  e.a.forEach((r,i)=>r.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+  e.b.forEach((r,i)=>r.forEach((v,j)=>{const el=document.getElementById(`b${i}_${j}`);if(el)el.value=v;}));
+}
+
+// ═══════════════════════════════════════════════
+//  MATRIX MATH
+// ═══════════════════════════════════════════════
+function matMul(A,B,m,n,p){
+  return Array.from({length:m},(_,i)=>Array.from({length:p},(_,j)=>{
+    let s=new Frac(0);
+    for(let k=0;k<n;k++) s=s.add(A[i][k].mul(B[k][j]));
+    return s;
+  }));
+}
+
+// outer product: col vector (m×1) times row vector (1×p)
+function outerProd(col,row){
+  return col.map(ci=>row.map(rj=>ci.mul(rj)));
+}
+
+// add two matrices
+function matAdd(X,Y){
+  return X.map((r,i)=>r.map((v,j)=>v.add(Y[i][j])));
+}
+
+// zero matrix
+function zeroMat(m,p){
+  return Array.from({length:m},()=>Array.from({length:p},()=>new Frac(0)));
+}
+
+// extract sub-block
+function subBlock(M,r0,r1,c0,c1){
+  const out=[];
+  for(let i=r0;i<r1;i++){const row=[];for(let j=c0;j<c1;j++) row.push(M[i][j].clone());out.push(row);}
+  return out;
+}
+
+// ═══════════════════════════════════════════════
+//  MATRIX RENDERING
+// ═══════════════════════════════════════════════
+function renderMat(data,opts={}){
+  // opts: hlRows:Set, hlCols:Set, hlCells:Set("i,j"), doneCells:Set, resultCell:"i,j",
+  //       activeCols:Set, rank1Cells:Set, dimCells:Set, hide:bool,
+  //       blkRowSeps:[], blkColSeps:[], blkColors:map("bi,bj"->class), blkHl:Set("bi,bj"), label:string
+  const {hlRows,hlCols,hlCells,doneCells,resultCell,activeCols,rank1Cells,dimCells,hide,
+         blkRowSeps,blkColSeps,blkColors,blkHl,label}=Object.assign({
+    hlRows:new Set(),hlCols:new Set(),hlCells:new Set(),doneCells:new Set(),
+    resultCell:null,activeCols:new Set(),rank1Cells:new Set(),dimCells:new Set(),hide:false,
+    blkRowSeps:[],blkColSeps:[],blkColors:null,blkHl:new Set(),label:null
+  },opts);
+
+  const wrap=document.createElement('div');
+  wrap.className='mat-wrap';
+  if(label){const lb=document.createElement('div');lb.className='mat-label';lb.textContent=label;wrap.appendChild(lb);}
+  const bracket=document.createElement('div');
+  bracket.className='mat-bracket';
+  const tbl=document.createElement('table');
+  tbl.className='mat-table';
+  const m=data.length, cols=data[0]?data[0].length:0;
+
+  // Compute cumulative block boundaries
+  const rSeps=new Set(blkRowSeps);
+  const cSeps=new Set(blkColSeps);
+
+  // block index helper
+  function blkIdx(idx, seps){
+    let bi=0;
+    for(const s of (seps===rSeps?blkRowSeps:blkColSeps)){if(idx>=s) bi++; else break;}
+    // simpler: count how many sep values <= idx
+    bi=0;
+    const arr=seps===rSeps?blkRowSeps:blkColSeps;
+    for(const s of arr) if(idx>=s) bi++;
+    return bi;
+  }
+  function blkRowIdx(i){let bi=0;for(const s of blkRowSeps)if(i>=s)bi++;return bi;}
+  function blkColIdx(j){let bi=0;for(const s of blkColSeps)if(j>=s)bi++;return bi;}
+
+  for(let i=0;i<m;i++){
+    const tr=document.createElement('tr');
+    for(let j=0;j<cols;j++){
+      const td=document.createElement('td');
+      const key=`${i},${j}`;
+
+      // Block coloring
+      if(blkColors){
+        const bk=`${blkRowIdx(i)},${blkColIdx(j)}`;
+        if(blkColors[bk]) td.classList.add(blkColors[bk]);
+        if(blkHl.has(bk)) td.classList.add('blk-hl');
+      }
+      // Block borders
+      if(blkRowSeps.includes(i) && i>0) td.classList.add('blk-border-bottom');
+      // Actually we want border on the LAST cell of the block above. Let me use bottom border on i-1.
+      // Easier: add top border to cells at sep boundaries
+      // Let me just add a bottom border to the cell above. Hmm, css-wise let's use border-top on sep rows.
+
+      if(rSeps.has(i) && i>0) td.style.borderTop='2.5px solid var(--navy)';
+      if(cSeps.has(j) && j>0) td.style.borderLeft='2.5px solid var(--navy)';
+
+      // Highlight logic (priority order)
+      if(resultCell===key) td.classList.add('hl-result');
+      else if(hlCells.has(key)) td.classList.add('hl-cell');
+      else if(doneCells.has(key)) td.classList.add('hl-done');
+      else if(rank1Cells.has(key)) td.classList.add('hl-rank1');
+      else if(hlRows.has(i)&&hlCols.has(j)) td.classList.add('hl-cell');
+      else if(hlRows.has(i)) td.classList.add('hl-row');
+      else if(hlCols.has(j)) td.classList.add('hl-col');
+      else if(activeCols.has(j)) td.classList.add('hl-active-col');
+
+      if(dimCells.has(key)) td.classList.add('hl-dim');
+
+      if(hide){
+        td.innerHTML=rk('\\cdot');
+        td.style.color='#ccc';
+      } else {
+        td.innerHTML=rk(data[i][j].toTeX(true));
+      }
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  bracket.appendChild(tbl);
+  wrap.appendChild(bracket);
+  return wrap;
+}
+
+// Small matrix for outer product display
+function renderSmallMat(data){
+  const bracket=document.createElement('div');
+  bracket.className='mat-bracket';
+  const tbl=document.createElement('table');
+  tbl.className='mat-table';
+  for(const row of data){
+    const tr=document.createElement('tr');
+    for(const v of row){
+      const td=document.createElement('td');
+      td.innerHTML=rk(v.toTeX(true));
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  bracket.appendChild(tbl);
+  return bracket;
+}
+
+// ═══════════════════════════════════════════════
+//  METHOD SELECTION & EXECUTION
+// ═══════════════════════════════════════════════
+function selectMethod(m){
+  document.querySelectorAll('.method-tab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.method)===m));
+  curMethod=m;
+  run();
+}
+
+function run(){
+  stopPlay();
+  A=readMatrix('a',dM,dN);
+  B=readMatrix('b',dN,dP);
+  C=matMul(A,B,dM,dN,dP);
+
+  switch(curMethod){
+    case 1: steps=genInnerProduct(); break;
+    case 2: steps=genColumnWise(); break;
+    case 3: steps=genOuterProduct(); break;
+    case 4: steps=genBlock(); break;
+  }
+
+  curStep=0;
+  document.getElementById('vizCard').style.display='';
+  document.getElementById('stepControls').style.display=steps.length>1?'flex':'none';
+  showStep();
+}
+
+function showStep(){
+  if(!steps.length) return;
+  const s=steps[curStep];
+  document.getElementById('methodFormula').innerHTML=s.formula||'';
+  document.getElementById('vizBody').innerHTML='';
+  document.getElementById('vizBody').appendChild(s.render());
+  document.getElementById('calcPanel').innerHTML=s.detail||'';
+  document.getElementById('keyBox').innerHTML=s.key||'';
+  document.getElementById('stepLabel').textContent=`Step ${curStep+1} / ${steps.length}`;
+  document.getElementById('prevBtn').disabled=curStep===0;
+  document.getElementById('nextBtn').disabled=curStep===steps.length-1;
+}
+
+function nextStep(){if(curStep<steps.length-1){curStep++;showStep();}}
+function prevStep(){if(curStep>0){curStep--;showStep();}}
+function togglePlay(){
+  if(playing) stopPlay();
+  else{playing=true;document.getElementById('playBtn').textContent='⏸ Pause';document.getElementById('playBtn').classList.add('playing');tick();}
+}
+function tick(){
+  if(!playing)return;
+  if(curStep<steps.length-1){curStep++;showStep();playTimer=setTimeout(tick,900);}
+  else stopPlay();
+}
+function stopPlay(){
+  playing=false;clearTimeout(playTimer);
+  document.getElementById('playBtn').textContent='▶ Play';
+  document.getElementById('playBtn').classList.remove('playing');
+}
+
+// ═══════════════════════════════════════════════
+//  METHOD 1: INNER PRODUCT
+// ═══════════════════════════════════════════════
+function genInnerProduct(){
+  const st=[];
+  const done=new Set();
+  const formula=`<strong>① Inner Product:</strong> ${rk(`C_{ij} = \\displaystyle\\sum_{k=1}^{${dN}} a_{ik}\\, b_{kj}`)} — row <em>i</em> of A dotted with column <em>j</em> of B.`;
+  const key=`<strong>Reading the highlights:</strong>
+    <span style="display:inline-block;width:14px;height:14px;background:var(--red-lt);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> active row in A,&ensp;
+    <span style="display:inline-block;width:14px;height:14px;background:var(--blue-lt);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> active column in B,&ensp;
+    <span style="display:inline-block;width:14px;height:14px;background:var(--gold);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> intersection / active entry in C,&ensp;
+    <span style="display:inline-block;width:14px;height:14px;background:var(--green-bg);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> already computed.`;
+
+  for(let i=0;i<dM;i++){
+    for(let j=0;j<dP;j++){
+      const ci=i,cj=j;
+      const doneSnap=new Set(done);
+      // build detail
+      const terms=[];
+      const vals=[];
+      for(let k=0;k<dN;k++){
+        terms.push(`${A[ci][k].toTeX(true)} \\cdot ${B[k][cj].toTeX(true)}`);
+        vals.push(A[ci][k].mul(B[k][cj]).toTeX(true));
+      }
+      let detTeX=`c_{${ci+1},${cj+1}} = ${terms.join(' + ')}`;
+      if(dN>1) detTeX+=` = ${vals.join(' + ')}`;
+      detTeX+=` = ${C[ci][cj].toTeX(true)}`;
+      const detail=`<div class="calc-title">Computing entry (${ci+1}, ${cj+1})</div><div class="calc-body">${rk(detTeX)}</div>`;
+
+      // Show C with computed entries + current as result
+      const CShow=Array.from({length:dM},(_,r)=>Array.from({length:dP},(_,c)=>{
+        const k=`${r},${c}`;
+        if(r===ci&&c===cj) return C[r][c];
+        if(doneSnap.has(k)) return C[r][c];
+        return new Frac(0);
+      }));
+      // dim cells: those not yet computed
+      const dimC=new Set();
+      for(let r=0;r<dM;r++) for(let c=0;c<dP;c++){
+        const k=`${r},${c}`;
+        if(k!==`${ci},${cj}` && !doneSnap.has(k)) dimC.add(k);
+      }
+
+      st.push({
+        formula, key, detail,
+        render(){
+          const row=document.createElement('div');row.className='matrix-row';
+          row.appendChild(renderMat(A,{hlRows:new Set([ci]),label:'A'}));
+          const d1=document.createElement('span');d1.className='op-sym';d1.textContent='·';row.appendChild(d1);
+          row.appendChild(renderMat(B,{hlCols:new Set([cj]),label:'B'}));
+          const d2=document.createElement('span');d2.className='op-sym';d2.textContent='=';row.appendChild(d2);
+          row.appendChild(renderMat(CShow,{resultCell:`${ci},${cj}`,doneCells:doneSnap,dimCells:dimC,label:'C'}));
+          return row;
+        }
+      });
+      done.add(`${ci},${cj}`);
+    }
+  }
+  return st;
+}
+
+// ═══════════════════════════════════════════════
+//  METHOD 2: COLUMN COMBINATION
+// ═══════════════════════════════════════════════
+function genColumnWise(){
+  const st=[];
+  const doneCols=new Set();
+  const formula=`<strong>② Column Combination:</strong> ${rk(`A\\,[b_1 \\mid \\cdots \\mid b_p] = [Ab_1 \\mid \\cdots \\mid Ab_p]`)} — each column of C is A times a column of B, i.e. a <em>linear combination of the columns of A</em>.`;
+  const key=`<strong>Reading the highlights:</strong>
+    <span style="display:inline-block;width:14px;height:14px;background:var(--purple-lt);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> active column in A (being weighted),&ensp;
+    <span style="display:inline-block;width:14px;height:14px;background:var(--blue-lt);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> active column in B (providing weights),&ensp;
+    <span style="display:inline-block;width:14px;height:14px;background:#fef3c7;border:2px solid var(--gold);border-radius:2px;vertical-align:middle;margin:0 3px;"></span> result column in C.`;
+
+  for(let j=0;j<dP;j++){
+    const cj=j;
+    const doneSnap=new Set(doneCols);
+
+    // Build detail: A*b_j = b_{1j}*col1(A) + b_{2j}*col2(A) + ...
+    const termParts=[];
+    for(let k=0;k<dN;k++){
+      const bkj=B[k][cj];
+      if(!bkj.isZero()){
+        const colStr=`\\begin{pmatrix}${A.map(r=>r[k].toTeX(true)).join('\\\\')}\\end{pmatrix}`;
+        termParts.push(`${bkj.toTeX(true)}${colStr}`);
+      }
+    }
+    const resCol=`\\begin{pmatrix}${C.map(r=>r[cj].toTeX(true)).join('\\\\')}\\end{pmatrix}`;
+    let detTeX=`Ab_{${cj+1}} = `;
+    detTeX+=termParts.length?termParts.join(' + '):rk('0');
+    detTeX+=` = ${resCol}`;
+    const detail=`<div class="calc-title">Column ${cj+1} of C = A · b<sub>${cj+1}</sub></div><div class="calc-body">${rk(detTeX)}</div>`;
+
+    // C display: show computed columns + current highlighted
+    const CShow=Array.from({length:dM},(_,r)=>Array.from({length:dP},(_,c)=>{
+      if(c===cj||doneSnap.has(c)) return C[r][c];
+      return new Frac(0);
+    }));
+    const dimC=new Set();
+    for(let r=0;r<dM;r++) for(let c=0;c<dP;c++){
+      if(c!==cj&&!doneSnap.has(c)) dimC.add(`${r},${c}`);
+    }
+    // result cells for column j
+    const resCells=new Set();
+    for(let r=0;r<dM;r++) resCells.add(`${r},${cj}`);
+
+    // done cells
+    const doneCellSet=new Set();
+    for(const dc of doneSnap) for(let r=0;r<dM;r++) doneCellSet.add(`${r},${dc}`);
+
+    st.push({
+      formula, key, detail,
+      render(){
+        const row=document.createElement('div');row.className='matrix-row';
+        // A: highlight all columns being combined
+        const allCols=new Set();
+        for(let k=0;k<dN;k++) if(!B[k][cj].isZero()) allCols.add(k);
+        row.appendChild(renderMat(A,{activeCols:allCols,label:'A'}));
+        const d1=document.createElement('span');d1.className='op-sym';d1.textContent='·';row.appendChild(d1);
+        row.appendChild(renderMat(B,{hlCols:new Set([cj]),label:'B'}));
+        const d2=document.createElement('span');d2.className='op-sym';d2.textContent='=';row.appendChild(d2);
+        row.appendChild(renderMat(CShow,{hlCells:resCells,doneCells:doneCellSet,dimCells:dimC,label:'C'}));
+        return row;
+      }
+    });
+    doneCols.add(cj);
+  }
+  return st;
+}
+
+// ═══════════════════════════════════════════════
+//  METHOD 3: OUTER PRODUCT / RANK-1 SUM
+// ═══════════════════════════════════════════════
+function genOuterProduct(){
+  const st=[];
+  const formula=`<strong>③ Outer Product (Rank-1 Sum):</strong> ${rk(`C = \\displaystyle\\sum_{k=1}^{${dN}} a_k\\, b_k^T`)} — sum of rank-1 matrices, each formed from column <em>k</em> of A times row <em>k</em> of B.`;
+  const key=`<strong>Key idea:</strong> Each term ${rk('a_k b_k^T')} is an <em>m × p</em> rank-1 matrix. The full product C is the sum of all <em>n</em> = ${dN} such terms. This decomposition is fundamental to compressed sensing, low-rank approximation, and the SVD.`;
+
+  let running=zeroMat(dM,dP);
+
+  for(let k=0;k<dN;k++){
+    const ck=k;
+    const col=A.map(r=>r[ck]);
+    const row=B[ck];
+    const rank1=outerProd(col,row);
+    running=matAdd(running,rank1);
+    const runSnap=running.map(r=>r.map(v=>v.clone()));
+
+    // Detail
+    const colTeX=`\\begin{pmatrix}${col.map(v=>v.toTeX(true)).join('\\\\')}\\end{pmatrix}`;
+    const rowTeX=`\\begin{pmatrix}${row.map(v=>v.toTeX(true)).join('&')}\\end{pmatrix}`;
+    let detTeX=`\\text{Term }${ck+1}:\\quad a_{${ck+1}}\\,b_{${ck+1}}^T = ${colTeX}${rowTeX}`;
+    const detail=`<div class="calc-title">Adding rank-1 term ${ck+1} of ${dN}</div><div class="calc-body">${rk(detTeX)}</div>`;
+
+    st.push({
+      formula, key, detail,
+      render(){
+        const container=document.createElement('div');
+
+        // Top row: A (highlight col k) · B (highlight row k) = C
+        const row=document.createElement('div');row.className='matrix-row';
+        row.appendChild(renderMat(A,{hlCols:new Set([ck]),label:'A'}));
+        const d1=document.createElement('span');d1.className='op-sym';d1.textContent='·';row.appendChild(d1);
+        row.appendChild(renderMat(B,{hlRows:new Set([ck]),label:'B'}));
+        const d2=document.createElement('span');d2.className='op-sym';d2.textContent='=';row.appendChild(d2);
+        row.appendChild(renderMat(C,{label:'C (final)'}));
+        container.appendChild(row);
+
+        // Bottom row: show the sum so far with small matrices
+        const opRow=document.createElement('div');opRow.className='op-row';
+        opRow.style.marginTop='1rem';
+
+        // "Running sum = "
+        if(ck>0){
+          const prevRun=zeroMat(dM,dP);
+          // recompute running up to k-1
+          let pr=zeroMat(dM,dP);
+          for(let kk=0;kk<ck;kk++){
+            const c2=A.map(r=>r[kk]);
+            const r2=B[kk];
+            pr=matAdd(pr,outerProd(c2,r2));
+          }
+          const lbl1=document.createElement('span');lbl1.style.fontSize='.82rem';lbl1.style.color='var(--gray)';
+          lbl1.textContent='partial sum';
+          opRow.appendChild(lbl1);
+          opRow.appendChild(renderSmallMat(pr));
+          const plus=document.createElement('span');plus.className='op-sym';plus.textContent='+';opRow.appendChild(plus);
+        }
+
+        const lbl2=document.createElement('span');lbl2.style.fontSize='.82rem';lbl2.style.color='var(--gray)';
+        lbl2.innerHTML=rk(`a_{${ck+1}}b_{${ck+1}}^T`);
+        opRow.appendChild(lbl2);
+        opRow.appendChild(renderSmallMat(rank1));
+
+        const eq=document.createElement('span');eq.className='op-sym';eq.textContent='=';opRow.appendChild(eq);
+
+        const lbl3=document.createElement('span');lbl3.style.fontSize='.82rem';lbl3.style.color='var(--navy)';lbl3.style.fontWeight='600';
+        lbl3.textContent=ck===dN-1?'C':'new sum';
+        opRow.appendChild(lbl3);
+        opRow.appendChild(renderSmallMat(runSnap));
+
+        container.appendChild(opRow);
+        return container;
+      }
+    });
+  }
+  return st;
+}
+
+// ═══════════════════════════════════════════════
+//  METHOD 4: BLOCK MULTIPLICATION
+// ═══════════════════════════════════════════════
+function partition(d){
+  if(d<=1) return [d];
+  const h=Math.ceil(d/2);
+  return [h, d-h];
+}
+
+function cumSeps(parts){
+  // returns array of cumulative start indices (excluding 0)
+  const s=[];
+  let c=0;
+  for(let i=0;i<parts.length-1;i++){c+=parts[i]; s.push(c);}
+  return s;
+}
+
+function blkRanges(parts){
+  const ranges=[];
+  let c=0;
+  for(const p of parts){ranges.push([c,c+p]);c+=p;}
+  return ranges;
+}
+
+function genBlock(){
+  const st=[];
+  const rParts=partition(dM);  // row partition of A
+  const nParts=partition(dN);  // col partition of A = row partition of B
+  const cParts=partition(dP);  // col partition of B
+
+  const rRanges=blkRanges(rParts);
+  const nRanges=blkRanges(nParts);
+  const cRanges=blkRanges(cParts);
+
+  const nBR=rRanges.length, nBN=nRanges.length, nBP=cRanges.length;
+
+  const rSepsA=cumSeps(rParts);
+  const cSepsA=cumSeps(nParts);
+  const rSepsB=cumSeps(nParts);
+  const cSepsB=cumSeps(cParts);
+  const rSepsC=cumSeps(rParts);
+  const cSepsC=cumSeps(cParts);
+
+  // Block label (subscript style): I,J uses 1-indexed
+  function blkLabel(name,I,J){return `${name}_{${I+1}${J+1}}`;}
+
+  // Block color classes
+  const blkClasses=['blk-00','blk-01','blk-10','blk-11'];
+  function blkColorMap(rRng,cRng){
+    const m={};
+    for(let bi=0;bi<rRng.length;bi++)
+      for(let bj=0;bj<cRng.length;bj++)
+        m[`${bi},${bj}`]=blkClasses[(bi*2+bj)%4];
+    return m;
+  }
+
+  const aColors=blkColorMap(rRanges,nRanges);
+  const bColors=blkColorMap(nRanges,cRanges);
+  const cColors=blkColorMap(rRanges,cRanges);
+
+  // Formula
+  const subTerms=[];
+  for(let K=0;K<nBN;K++) subTerms.push(`${blkLabel('A','I',String(K))}\\,${blkLabel('B',String(K),'J')}`);
+  const formula=`<strong>④ Block Multiplication:</strong> Partition A, B into blocks. Then ${rk(`C_{IJ} = ${subTerms.join(' + ')}`)} for each block (I,J) of C.`;
+  const key=`<strong>Block multiplication</strong> treats sub-matrices as single "elements" in a matrix product. The same formula ${rk('C_{IJ}=\\sum_K A_{IK}B_{KJ}')} holds at the block level, provided the partitions are compatible. This is the basis for cache-efficient and parallel matrix algorithms.`;
+
+  const done=new Set();
+
+  // Step 0: show the partition
+  st.push({
+    formula, key,
+    detail:`<div class="calc-title">Block Partition</div><div class="calc-body">A is partitioned into ${nBR}×${nBN} blocks, B into ${nBN}×${nBP} blocks, giving C with ${nBR}×${nBP} blocks.<br>
+    Block sizes — A rows: [${rParts.join(', ')}], shared dim: [${nParts.join(', ')}], B cols: [${cParts.join(', ')}].</div>`,
+    render(){
+      const row=document.createElement('div');row.className='matrix-row';
+      row.appendChild(renderMat(A,{blkRowSeps:rSepsA,blkColSeps:cSepsA,blkColors:aColors,label:'A (partitioned)'}));
+      const d1=document.createElement('span');d1.className='op-sym';d1.textContent='·';row.appendChild(d1);
+      row.appendChild(renderMat(B,{blkRowSeps:rSepsB,blkColSeps:cSepsB,blkColors:bColors,label:'B (partitioned)'}));
+      const d2=document.createElement('span');d2.className='op-sym';d2.textContent='=';row.appendChild(d2);
+      row.appendChild(renderMat(C,{blkRowSeps:rSepsC,blkColSeps:cSepsC,blkColors:cColors,label:'C (partitioned)'}));
+      return row;
+    }
+  });
+
+  // Steps: one per block of C
+  for(let bi=0;bi<nBR;bi++){
+    for(let bj=0;bj<nBP;bj++){
+      const I=bi, J=bj;
+      const doneSnap=new Set(done);
+
+      // Compute C_IJ = sum_K A_IK * B_KJ
+      const [r0,r1]=rRanges[I];
+      const [c0,c1]=cRanges[J];
+      const blkM=r1-r0, blkP=c1-c0;
+
+      // Build the formula detail
+      const termStrs=[];
+      const termMats=[];
+      for(let K=0;K<nBN;K++){
+        const [n0,n1]=nRanges[K];
+        const aBlk=subBlock(A,r0,r1,n0,n1);
+        const bBlk=subBlock(B,n0,n1,c0,c1);
+        const prod=matMul(aBlk,bBlk,blkM,n1-n0,blkP);
+        termMats.push(prod);
+        termStrs.push(`${blkLabel('A',I,K)} \\cdot ${blkLabel('B',K,J)}`);
+      }
+
+      // Sum
+      let cBlk=zeroMat(blkM,blkP);
+      for(const tm of termMats) cBlk=matAdd(cBlk,tm);
+
+      // Expanded detail
+      let detTeX=`C_{${I+1}${J+1}} = ${termStrs.join(' + ')} = `;
+      // show each product result
+      const matParts=termMats.map(tm=>`\\begin{pmatrix}${tm.map(r=>r.map(v=>v.toTeX(true)).join('&')).join('\\\\\\\\')}\\end{pmatrix}`);
+      detTeX+=matParts.join(' + ');
+      detTeX+=` = \\begin{pmatrix}${cBlk.map(r=>r.map(v=>v.toTeX(true)).join('&')).join('\\\\\\\\')}\\end{pmatrix}`;
+
+      const detail=`<div class="calc-title">Computing block C<sub>${I+1}${J+1}</sub></div><div class="calc-body">${rk(detTeX)}</div>`;
+
+      // Highlight sets
+      const aHl=new Set();
+      for(let K=0;K<nBN;K++) aHl.add(`${I},${K}`);
+      const bHl=new Set();
+      for(let K=0;K<nBN;K++) bHl.add(`${K},${J}`);
+      const cHl=new Set([`${I},${J}`]);
+
+      // C display: show done blocks + current
+      const CShow=C.map(r=>r.map(v=>v.clone()));
+      const dimC=new Set();
+      for(let r=0;r<dM;r++){
+        const bri=rRanges.findIndex(([s,e])=>r>=s&&r<e);
+        for(let c=0;c<dP;c++){
+          const bci=cRanges.findIndex(([s,e])=>c>=s&&c<e);
+          const bk=`${bri},${bci}`;
+          if(bk!==`${I},${J}` && !doneSnap.has(bk)) dimC.add(`${r},${c}`);
+        }
+      }
+
+      st.push({
+        formula, key, detail,
+        render(){
+          const row=document.createElement('div');row.className='matrix-row';
+          row.appendChild(renderMat(A,{blkRowSeps:rSepsA,blkColSeps:cSepsA,blkColors:aColors,blkHl:aHl,label:'A'}));
+          const d1=document.createElement('span');d1.className='op-sym';d1.textContent='·';row.appendChild(d1);
+          row.appendChild(renderMat(B,{blkRowSeps:rSepsB,blkColSeps:cSepsB,blkColors:bColors,blkHl:bHl,label:'B'}));
+          const d2=document.createElement('span');d2.className='op-sym';d2.textContent='=';row.appendChild(d2);
+          row.appendChild(renderMat(CShow,{blkRowSeps:rSepsC,blkColSeps:cSepsC,blkColors:cColors,blkHl:cHl,dimCells:dimC,label:'C'}));
+          return row;
+        }
+      });
+      done.add(`${I},${J}`);
+    }
+  }
+  return st;
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  rebuildInputs();
+  loadEx(0);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Simplex Method</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gold-bg:#fffaec;--gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#edf1fb;--green:#1a6a40;--green-bg:#e8f5ec;
+  --enter-bg:#fff8e8;--leave-bg:#edf4ff;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1240px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1rem;}
+
+/* Controls */
+.ctrl-row{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;margin-bottom:.9rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.45rem;font-size:.93rem;color:var(--navy2);}
+.ctrl-row input[type=number]{width:56px;padding:.27rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;text-align:center;}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;}
+.btn-solve:hover{background:#952e24;}
+.btn-sm{font-size:.85rem;padding:.25rem .7rem;}
+
+/* Matrix input grid */
+.mx-section{margin-bottom:1.2rem;}
+.mx-section h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy2);margin-bottom:.5rem;}
+.mx-grid{display:inline-grid;gap:6px 8px;align-items:center;}
+.mx-grid input{width:62px;padding:.27rem .4rem;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;text-align:center;background:#fafafa;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);background:#fff;}
+.mx-grid .chdr{text-align:center;font-size:.82rem;color:var(--gray);}
+.mx-grid .rhdr{text-align:right;padding-right:6px;font-size:.88rem;color:var(--gray);}
+
+/* Problem statement display */
+.prob-box{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.8rem 1.3rem;margin-bottom:1.4rem;overflow-x:auto;}
+
+/* Step blocks */
+.step-block{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);margin-bottom:1.4rem;}
+.shd{background:var(--navy);color:#fff;padding:.58rem 1.2rem;display:flex;align-items:center;gap:.75rem;}
+.shd.shd-pivot{background:var(--navy2);}
+.shd.shd-s1{background:#2e6844;}
+.shd.shd-s2{background:#2e6844;}
+.shd.shd-opt{background:#1a5c28;}
+.shd.shd-err{background:var(--red);}
+.sbadge{background:var(--gold);color:var(--navy);width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;}
+.stitle{font-style:italic;font-size:.95rem;color:#d0ddf0;}
+.sbody{padding:.85rem 1.4rem;}
+
+/* Tableau table */
+.tab-scroll{overflow-x:auto;padding:.3rem 0;}
+table.tab{border-collapse:collapse;font-size:.92rem;}
+table.tab th,table.tab td{padding:.36rem .7rem;border:1px solid #e0dcd8;text-align:center;white-space:nowrap;min-width:50px;}
+table.tab thead th{font-family:'Crimson Pro',Georgia,serif;font-weight:400;font-size:.83rem;color:var(--navy2);background:#f5f7fa;border-bottom:2px solid var(--border);}
+table.tab thead th.enter-hdr{background:var(--gold-bg);color:#7a5800;font-weight:600;border-bottom:2.5px solid var(--gold);}
+table.tab thead th.ratio-hdr{background:#f5efff;color:#4a2080;font-style:italic;}
+table.tab td.bv-cell{background:#f5f7fa;font-weight:600;text-align:left;padding-left:.8rem;min-width:80px;}
+table.tab td.eq-cell{background:#f5f7fa;color:var(--gray);font-size:.85rem;min-width:40px;}
+table.tab td.enter-col{background:var(--enter-bg);}
+table.tab td.leave-row{background:var(--leave-bg);}
+table.tab td.enter-col.leave-row{background:#fff0cc;}
+table.tab td.pivot-cell{background:var(--red-bg)!important;}
+.pivot-inner{display:inline-block;border:2px solid var(--red);border-radius:4px;padding:1px 8px;color:var(--red);font-weight:600;}
+table.tab td.zero{color:#c0bcb8;}
+table.tab td.rhs-cell{border-left:2.5px solid #bbb;}
+table.tab th.rhs-hdr{border-left:2.5px solid #bbb;}
+table.tab td.ratio-cell{background:#f5efff;color:#4a2080;font-size:.87rem;}
+table.tab td.ratio-cell.min-ratio{font-weight:700;color:var(--red);}
+
+/* Row operation list */
+.row-ops{margin:.55rem 0 .2rem;}
+.row-op{display:flex;align-items:baseline;gap:.55rem;padding:.2rem .4rem;font-size:.91rem;border-left:2px solid #d0d8e8;margin:.2rem 0;}
+.row-op-arr{color:var(--gold);font-weight:700;}
+.row-op.pivot-op{border-left-color:var(--gold);}
+
+/* Notes */
+.pivot-note{background:var(--gold-bg);border:1px solid #d4b440;border-radius:6px;padding:.65rem 1rem;font-size:.91rem;color:#5a4000;margin:.5rem 0;}
+.optimal-box{background:var(--green-bg);border:1px solid #80c090;border-radius:8px;padding:1rem 1.4rem;margin:.6rem 0;}
+.optimal-box h3{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--green);margin-bottom:.5rem;}
+.err-box{background:var(--red-bg);border:1px solid #e08080;border-radius:6px;padding:.65rem 1rem;color:var(--red);font-size:.91rem;}
+.key-box{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.7rem 1.1rem;font-size:.88rem;line-height:1.65;color:var(--navy2);margin-top:.6rem;}
+
+@media(max-width:600px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .7rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>The Simplex Method</h1>
+  <p>Standard form maximization with ≤ constraints — step-by-step pivoting</p>
+</header>
+<main>
+
+<!-- ─── INPUT CARD ─────────────────────────────── -->
+<div class="card">
+  <h2>Enter the LP Problem &ensp; <span style="font-family:'Crimson Pro';font-size:.92rem;font-weight:400;color:var(--gray)">Maximize Z = c·x &nbsp; subject to &nbsp; Ax ≤ b, &nbsp; x ≥ 0</span></h2>
+
+  <div class="ctrl-row">
+    <label>Decision variables (n): <input type="number" id="inN" min="1" max="6" value="2"></label>
+    <label>Constraints (m): <input type="number" id="inM" min="1" max="6" value="3"></label>
+    <button class="btn-ghost" onclick="resize()">Resize</button>
+  </div>
+
+  <div class="ex-row" id="exRow"></div>
+
+  <!-- Objective -->
+  <div class="mx-section">
+    <h3>Objective coefficients — Maximize Z = <span id="objExpr" style="color:var(--accent)"></span></h3>
+    <div class="mx-grid" id="objGrid"></div>
+  </div>
+
+  <!-- Constraints -->
+  <div class="mx-section">
+    <h3>Constraint matrix A &nbsp;&amp;&nbsp; right-hand side b &nbsp; (each row: a<sub>i</sub>·x ≤ b<sub>i</sub>)</h3>
+    <div class="mx-grid" id="conGrid"></div>
+  </div>
+
+  <button class="btn-solve" onclick="runSolve()">Solve →</button>
+</div>
+
+<!-- ─── OUTPUT ─────────────────────────────────── -->
+<div id="output"></div>
+
+</main>
+<script>
+/* ══════════════════════════════════════════
+   FRACTION ARITHMETIC
+══════════════════════════════════════════ */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b>0){var t=b;b=a%b;a=t;}return a===0?1:a;}
+function Frac(n,d){
+  d=d===undefined?1:d;
+  if(d===0){this.n=0;this.d=1;return;}
+  if(d<0){n=-n;d=-d;}
+  var g=gcd(Math.abs(n),d);
+  this.n=Math.trunc(n/g);this.d=Math.trunc(d/g);
+}
+Frac.parse=function(s){
+  s=(s||'').trim();
+  if(!s||s==='-')return new Frac(0);
+  if(s.indexOf('/')>-1){var p=s.split('/');var a=parseInt(p[0]),b=parseInt(p[1]);return(isNaN(a)||isNaN(b))?new Frac(0):new Frac(a,b);}
+  if(s.indexOf('.')>-1){var pts=s.replace('-','').split('.');var dec=pts[1]?pts[1].length:0;var dn=Math.pow(10,dec);return new Frac(Math.round(parseFloat(s)*dn),dn);}
+  var n2=parseInt(s);return isNaN(n2)?new Frac(0):new Frac(n2);
+};
+Frac.prototype.clone=function(){return new Frac(this.n,this.d);};
+Frac.prototype.add=function(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);};
+Frac.prototype.sub=function(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);};
+Frac.prototype.mul=function(o){return new Frac(this.n*o.n,this.d*o.d);};
+Frac.prototype.div=function(o){return new Frac(this.n*o.d,this.d*o.n);};
+Frac.prototype.neg=function(){return new Frac(-this.n,this.d);};
+Frac.prototype.isZero=function(){return this.n===0;};
+Frac.prototype.isOne=function(){return this.n>0&&this.n===this.d;};
+Frac.prototype.lt=function(o){return this.n*o.d<o.n*this.d;};
+Frac.prototype.gt=function(o){return this.n*o.d>o.n*this.d;};
+Frac.prototype.toTeX=function(inline){
+  inline=inline===undefined?true:inline;
+  if(this.d===1)return String(this.n);
+  var cmd=inline?'\\tfrac':'\\dfrac';
+  var abs=Math.abs(this.n);var sg=this.n<0?'-':'';
+  return sg+cmd+'{'+abs+'}{'+this.d+'}';
+};
+var ZERO=new Frac(0),ONE=new Frac(1);
+
+/* ══════════════════════════════════════════
+   KATEX
+══════════════════════════════════════════ */
+function rk(t,disp){try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}}
+
+/* ══════════════════════════════════════════
+   NAMING HELPERS
+══════════════════════════════════════════ */
+// col: 0=Z, 1..n = x_j, n+1..n+m = s_k,  n+m+1 = RHS
+function colTeX(col,n){
+  if(col===0)return'Z';
+  if(col<=n)return'x_{'+ col +'}';
+  return's_{'+(col-n)+'}';
+}
+function colHTML(col,n){
+  if(col===0)return'Z';
+  if(col<=n)return'x<sub>'+col+'</sub>';
+  return's<sub>'+(col-n)+'</sub>';
+}
+
+/* ══════════════════════════════════════════
+   SIMPLEX  CORE
+══════════════════════════════════════════ */
+function cloneTab(T){return T.map(function(r){return r.map(function(f){return f.clone();});});}
+
+function buildInitial(c,A,b,n,m){
+  // T[i][j]: rows 0..m, cols 0=Z, 1..n=x, n+1..n+m=s, n+m+1=RHS
+  var T=[];
+  // Z row: [1, -c1, ..., -cn, 0,...,0, 0]
+  var zr=[ONE.clone()];
+  for(var j=0;j<n;j++) zr.push(c[j].neg());
+  for(var j=0;j<m;j++) zr.push(ZERO.clone());
+  zr.push(ZERO.clone());
+  T.push(zr);
+  // Constraint rows
+  for(var i=0;i<m;i++){
+    var row=[ZERO.clone()];
+    for(var j=0;j<n;j++) row.push(A[i][j].clone());
+    for(var j=0;j<m;j++) row.push(new Frac(i===j?1:0));
+    row.push(b[i].clone());
+    T.push(row);
+  }
+  return T;
+}
+
+function findPivotCol(T,n,m){
+  var best=ZERO,pc=-1;
+  for(var j=1;j<=n+m;j++){
+    if(T[0][j].lt(best)){best=T[0][j];pc=j;}
+  }
+  return pc; // -1 = optimal
+}
+
+function findPivotRow(T,pc,m){
+  var RHS=T[0].length-1,minR=null,pr=-1;
+  var ratios=new Array(m+1).fill(null);
+  for(var i=1;i<=m;i++){
+    var coef=T[i][pc];
+    if(coef.gt(ZERO)){
+      var r=T[i][RHS].div(coef);
+      ratios[i]=r;
+      if(minR===null||r.lt(minR)){minR=r;pr=i;}
+    }
+  }
+  return{pr:pr,ratios:ratios,minR:minR};
+}
+
+function simplex(c,A,b,n,m){
+  var T=buildInitial(c,A,b,n,m);
+  // basic[i] = column index of basic variable in row i
+  var basic=[0];
+  for(var i=1;i<=m;i++) basic.push(n+i); // slacks
+  var steps=[];
+  steps.push({type:'initial',T:cloneTab(T),basic:basic.slice()});
+  var RHS=n+m+1;
+  for(var iter=1;iter<=20;iter++){
+    var pc=findPivotCol(T,n,m);
+    if(pc===-1) break;
+    var res=findPivotRow(T,pc,m);
+    if(res.pr===-1){steps.push({type:'unbounded'});break;}
+    var pr=res.pr, pv=T[pr][pc].clone();
+    steps.push({type:'pivot',iter:iter,T:cloneTab(T),basic:basic.slice(),
+      pc:pc,pr:pr,pv:pv,ratios:res.ratios,minR:res.minR,
+      entering:pc,leaving:basic[pr]});
+    // Step k.1: divide pivot row
+    for(var j=0;j<=RHS;j++) T[pr][j]=T[pr][j].div(pv);
+    steps.push({type:'step1',iter:iter,T:cloneTab(T),basic:basic.slice(),
+      pc:pc,pr:pr,pv:pv});
+    // Step k.2: eliminate column in all other rows
+    var ops=[];
+    for(var i=0;i<=m;i++){
+      if(i===pr) continue;
+      var f=T[i][pc].clone();
+      if(f.isZero()) continue;
+      for(var j=0;j<=RHS;j++) T[i][j]=T[i][j].sub(f.mul(T[pr][j]));
+      ops.push({row:i,f:f});
+    }
+    basic[pr]=pc;
+    steps.push({type:'step2',iter:iter,T:cloneTab(T),basic:basic.slice(),
+      pc:pc,pr:pr,ops:ops});
+  }
+  if(findPivotCol(T,n,m)===-1)
+    steps.push({type:'optimal',T:cloneTab(T),basic:basic.slice()});
+  return steps;
+}
+
+/* ══════════════════════════════════════════
+   RENDER TABLEAU
+══════════════════════════════════════════ */
+function renderTab(step,n,m,opts){
+  opts=opts||{};
+  var T=step.T,basic=step.basic;
+  var RHS=n+m+1;
+  var pc=opts.pc!=null?opts.pc:-1;
+  var pr=opts.pr!=null?opts.pr:-1;
+  var ratios=opts.ratios||null;
+
+  var wrap=document.createElement('div');wrap.className='tab-scroll';
+  var tbl=document.createElement('table');tbl.className='tab';
+
+  // ── thead ──
+  var thead=document.createElement('thead');
+  var htr=document.createElement('tr');
+  function mth(html,cls){var t=document.createElement('th');t.innerHTML=html;if(cls)t.className=cls;return t;}
+  htr.appendChild(mth('Basic<br>Variable'));
+  htr.appendChild(mth('Eq.'));
+  // Z col (col 0 — not a pivot target, no highlight)
+  htr.appendChild(mth(rk('Z')));
+  // decision + slack cols
+  for(var j=1;j<=n+m;j++){
+    var cls=(j===pc)?'enter-hdr':'';
+    htr.appendChild(mth(rk(colTeX(j,n)),cls));
+  }
+  htr.appendChild(mth('Right<br>Side','rhs-hdr'));
+  if(ratios) htr.appendChild(mth('Ratio','ratio-hdr'));
+  thead.appendChild(htr);tbl.appendChild(thead);
+
+  // ── tbody ──
+  var tbody=document.createElement('tbody');
+  for(var i=0;i<=m;i++){
+    var tr=document.createElement('tr');
+    var isLeave=(i===pr);
+    // Basic variable cell
+    var tdBV=document.createElement('td');
+    tdBV.className='bv-cell'+(isLeave?' leave-row':'');
+    tdBV.innerHTML=rk(colTeX(basic[i],n));
+    tr.appendChild(tdBV);
+    // Eq cell
+    var tdEq=document.createElement('td');
+    tdEq.className='eq-cell'+(isLeave?' leave-row':'');
+    tdEq.textContent='('+i+')';
+    tr.appendChild(tdEq);
+    // Data cells (col 0 = Z through col RHS)
+    for(var j=0;j<=RHS;j++){
+      var td=document.createElement('td');
+      var v=T[i][j];
+      var isEnterC=(j===pc&&j!==RHS&&j!==0);
+      var isPivEl=(isEnterC&&isLeave);
+      // classes
+      var cls='';
+      if(j===RHS) cls='rhs-cell';
+      if(isEnterC) cls+=' enter-col';
+      if(isLeave) cls+=' leave-row';
+      if(isPivEl) cls='pivot-cell';
+      td.className=cls.trim();
+      if(isPivEl){
+        td.innerHTML='<span class="pivot-inner">'+rk(v.toTeX())+'</span>';
+      } else if(v.isZero()){
+        td.className=(td.className+' zero').trim();
+        td.innerHTML=rk('0');
+      } else {
+        td.innerHTML=rk(v.toTeX());
+      }
+      tr.appendChild(td);
+    }
+    // Ratio cell
+    if(ratios){
+      var tdR=document.createElement('td');
+      tdR.className='ratio-cell';
+      if(i===0){tdR.textContent='';}
+      else if(ratios[i]){
+        var isMin=(i===pr);
+        if(isMin) tdR.className+=' min-ratio';
+        var rv=T[i][RHS],rc=T[i][pc];
+        tdR.innerHTML=rk(rv.toTeX()+'\\div '+rc.toTeX()+'='+ratios[i].toTeX())+(isMin?' ← min':'');
+      } else {tdR.textContent='—';}
+      tr.appendChild(tdR);
+    }
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);wrap.appendChild(tbl);
+  return wrap;
+}
+
+/* ══════════════════════════════════════════
+   ROW OPERATION LABEL
+══════════════════════════════════════════ */
+function rowOpTeX(i,f,j){
+  // New row i = row i - f * row j
+  var ri='\\text{Row}\\,('+i+')';
+  var rj='\\text{Row}\\,('+j+')';
+  if(f.n===0) return null;
+  var base=ri+' \\leftarrow '+ri;
+  if(f.isOne())  return base+' - '+rj;
+  if(f.n===-f.d) return base+' + '+rj;
+  if(f.n>0) return base+' - '+f.toTeX()+'\\,'+rj;
+  return base+' + '+f.neg().toTeX()+'\\,'+rj;
+}
+
+/* ══════════════════════════════════════════
+   STEP BLOCK BUILDER
+══════════════════════════════════════════ */
+function mkBlock(shdCls,badgeTxt,title){
+  var blk=document.createElement('div');blk.className='step-block';
+  var hd=document.createElement('div');hd.className='shd '+shdCls;
+  var badge=document.createElement('span');badge.className='sbadge';badge.textContent=badgeTxt;
+  hd.appendChild(badge);
+  var ttl=document.createElement('span');ttl.className='stitle';ttl.innerHTML=title;
+  hd.appendChild(ttl);
+  blk.appendChild(hd);
+  var body=document.createElement('div');body.className='sbody';
+  blk.appendChild(body);
+  blk._body=body;
+  return blk;
+}
+
+/* ══════════════════════════════════════════
+   FULL RENDER
+══════════════════════════════════════════ */
+function renderAll(steps,n,m,c,A,b){
+  var out=document.getElementById('output');out.innerHTML='';
+
+  // ── Problem statement ──
+  var probDiv=document.createElement('div');probDiv.className='card';
+  probDiv.innerHTML='<h2>Problem</h2>';
+  var probBox=document.createElement('div');probBox.className='prob-box';
+
+  // Objective
+  var objTerms=[];
+  for(var j=0;j<n;j++){
+    var cf=c[j];
+    if(cf.isZero()) continue;
+    var t=rk(cf.toTeX()+'\\, x_{'+(j+1)+'}');
+    objTerms.push(t);
+  }
+  var objLine=document.createElement('div');objLine.style.marginBottom='.35rem';
+  objLine.innerHTML='<strong>Maximize</strong> &ensp;'+rk('Z = ')+objTerms.join(' + ');
+  probBox.appendChild(objLine);
+
+  var stLine=document.createElement('div');stLine.style.cssText='font-size:.88rem;color:var(--gray);margin-bottom:.3rem';stLine.textContent='subject to:';
+  probBox.appendChild(stLine);
+
+  for(var i=0;i<m;i++){
+    var terms=[];
+    for(var j=0;j<n;j++){
+      var cf=A[i][j];
+      if(cf.isZero()) continue;
+      terms.push(rk(cf.toTeX()+'\\,x_{'+(j+1)+'}'));
+    }
+    var row=document.createElement('div');row.style.marginLeft='1.5rem';
+    row.innerHTML=terms.join(' + ')+' &nbsp;'+rk('\\leq')+' &nbsp;'+rk(b[i].toTeX());
+    probBox.appendChild(row);
+  }
+  var nnRow=document.createElement('div');nnRow.style.cssText='margin-top:.3rem;font-size:.9rem;color:var(--gray);';
+  nnRow.innerHTML=rk('x_1, x_2, \\ldots, x_n \\geq 0');
+  probBox.appendChild(nnRow);
+
+  // Slack introduction
+  var slackLine=document.createElement('div');slackLine.style.cssText='margin-top:.6rem;font-size:.9rem;';
+  var sNames=Array.from({length:m},function(_,i){return rk('s_{'+(i+1)+'}');}).join(', ');
+  slackLine.innerHTML='Add slack variables '+sNames+' to convert ≤ constraints to equalities. '+
+    'Initial basic feasible solution: &ensp;'+sNames+' = '+Array.from({length:m},function(_,i){return rk(b[i].toTeX());}).join(', ')+',&ensp; Z = 0.';
+  probBox.appendChild(slackLine);
+  probDiv.appendChild(probBox);
+  out.appendChild(probDiv);
+
+  // ── Steps ──
+  steps.forEach(function(st){
+    var blk,body;
+
+    if(st.type==='initial'){
+      blk=mkBlock('','0','Iteration 0 — Initial Tableau');
+      body=blk._body;
+      body.appendChild(renderTab(st,n,m,{}));
+      body.appendChild(mkKeyBox('The Z row carries the objective function in the form <em>Z − c·x = 0</em>. ' +
+        'The most negative coefficient in the Z row identifies the entering variable (most improvement per unit).'));
+      out.appendChild(blk);
+    }
+
+    else if(st.type==='pivot'){
+      blk=mkBlock('shd-pivot',String(st.iter),
+        'Iteration '+st.iter+' — Pivot Selection &ensp; <span style="color:#c8e0ff;font-size:.88rem">'+
+        'Entering: '+rk(colTeX(st.entering,n))+' &ensp; Leaving: '+rk(colTeX(st.leaving,n))+'</span>');
+      body=blk._body;
+      var note=document.createElement('div');note.className='pivot-note';
+      note.innerHTML=
+        '<strong>Pivot column:</strong> '+rk(colTeX(st.pc,n))+
+        ' has Z-row coefficient '+rk(st.T[0][st.pc].toTeX())+
+        ' — the most negative, so '+rk(colTeX(st.pc,n))+' enters the basis.<br>'+
+        '<strong>Minimum ratio test:</strong> Divide each positive pivot-column entry into its RHS. '+
+        'Row ('+st.pr+') gives the minimum ratio '+rk(st.minR.toTeX())+
+        ', so '+rk(colTeX(st.leaving,n))+' leaves.';
+      body.appendChild(note);
+      body.appendChild(renderTab(st,n,m,{pc:st.pc,pr:st.pr,ratios:st.ratios}));
+      out.appendChild(blk);
+    }
+
+    else if(st.type==='step1'){
+      blk=mkBlock('shd-s1',st.iter+'.1',
+        'Iteration '+st.iter+'.1 — Normalize Pivot Row &ensp; <span style="color:#c0f0d0;font-size:.88rem">'+
+        rk('\\text{Row}\\,('+st.pr+')\\leftarrow \\text{Row}\\,('+st.pr+')\\div '+st.pv.toTeX())+'</span>');
+      body=blk._body;
+      // Row op
+      var opDiv=document.createElement('div');opDiv.className='row-ops';
+      var opRow=document.createElement('div');opRow.className='row-op pivot-op';
+      opRow.innerHTML='<span class="row-op-arr">→</span>'+
+        rk('\\text{Row}\\,('+st.pr+')\\leftarrow \\dfrac{1}{'+st.pv.toTeX()+'}\\cdot\\text{Row}\\,('+st.pr+') ')+
+        '&ensp; <span style="color:var(--gray);font-size:.85rem">(pivot element becomes 1)</span>';
+      opDiv.appendChild(opRow);body.appendChild(opDiv);
+      body.appendChild(renderTab(st,n,m,{pc:st.pc,pr:st.pr}));
+      out.appendChild(blk);
+    }
+
+    else if(st.type==='step2'){
+      blk=mkBlock('shd-s2',st.iter+'.2',
+        'Iteration '+st.iter+'.2 — Clear Pivot Column &ensp; <span style="color:#c0f0d0;font-size:.88rem">'+
+        'New basic: '+rk(colTeX(st.pc,n))+' replaces '+rk(colTeX(steps.find(function(s){return s.type==='pivot'&&s.iter===st.iter;}).leaving,n))+'</span>');
+      body=blk._body;
+      if(st.ops.length>0){
+        var opDiv=document.createElement('div');opDiv.className='row-ops';
+        st.ops.forEach(function(op){
+          var tex=rowOpTeX(op.row,op.f,st.pr);
+          if(!tex)return;
+          var opRow=document.createElement('div');opRow.className='row-op';
+          opRow.innerHTML='<span class="row-op-arr">→</span>'+rk(tex);
+          opDiv.appendChild(opRow);
+        });
+        body.appendChild(opDiv);
+      }
+      body.appendChild(renderTab(st,n,m,{}));
+      out.appendChild(blk);
+    }
+
+    else if(st.type==='unbounded'){
+      blk=mkBlock('shd-err','!','Unbounded Problem');
+      body=blk._body;
+      var errD=document.createElement('div');errD.className='err-box';
+      errD.textContent='No positive entries in the pivot column — the objective is unbounded.';
+      body.appendChild(errD);
+      out.appendChild(blk);
+    }
+
+    else if(st.type==='optimal'){
+      blk=mkBlock('shd-opt','★','Optimal Solution Found — No negative coefficients remain in Z row');
+      body=blk._body;
+      body.appendChild(renderTab(st,n,m,{}));
+
+      // Extract solution
+      var RHS=n+m+1;
+      var optBox=document.createElement('div');optBox.className='optimal-box';
+      optBox.innerHTML='<h3>Optimal Solution</h3>';
+      var Zval=st.T[0][RHS];
+      var zLine=document.createElement('div');zLine.style.marginBottom='.4rem';
+      zLine.innerHTML=rk('Z^* = '+Zval.toTeX());
+      optBox.appendChild(zLine);
+      // Decision variables
+      for(var j=1;j<=n;j++){
+        var val=new Frac(0);
+        for(var i=0;i<=m;i++){
+          if(st.basic[i]===j) val=st.T[i][RHS].clone();
+        }
+        var vLine=document.createElement('div');
+        vLine.innerHTML=rk('x_'+j+'^* = '+val.toTeX());
+        optBox.appendChild(vLine);
+      }
+      // Slack values
+      var slkLine=document.createElement('div');slkLine.style.cssText='margin-top:.4rem;font-size:.9rem;color:var(--gray)';
+      var slkParts=[];
+      for(var k=1;k<=m;k++){
+        var sval=new Frac(0);
+        for(var i=0;i<=m;i++){
+          if(st.basic[i]===n+k) sval=st.T[i][RHS].clone();
+        }
+        slkParts.push(rk('s_'+k+' = '+sval.toTeX()));
+      }
+      slkLine.innerHTML='Slacks: '+slkParts.join(', &ensp;');
+      optBox.appendChild(slkLine);
+      body.appendChild(optBox);
+      out.appendChild(blk);
+    }
+  });
+}
+
+function mkKeyBox(html){
+  var d=document.createElement('div');d.className='key-box';d.innerHTML=html;return d;
+}
+
+/* ══════════════════════════════════════════
+   INPUT UI
+══════════════════════════════════════════ */
+var cN=2,cM=3;
+
+function resize(){
+  cN=Math.min(Math.max(parseInt(document.getElementById('inN').value)||2,1),6);
+  cM=Math.min(Math.max(parseInt(document.getElementById('inM').value)||3,1),6);
+  document.getElementById('inN').value=cN;
+  document.getElementById('inM').value=cM;
+  buildGrids();
+}
+
+function buildGrids(){
+  buildObjGrid();
+  buildConGrid();
+  updateObjExpr();
+}
+
+function buildObjGrid(){
+  var g=document.getElementById('objGrid');g.innerHTML='';
+  g.style.gridTemplateColumns='repeat('+cN+',64px)';
+  // Column headers
+  for(var j=0;j<cN;j++){
+    var hd=document.createElement('div');hd.className='chdr';
+    hd.innerHTML='c<sub>'+(j+1)+'</sub>';g.appendChild(hd);
+  }
+  // Inputs
+  for(var j=0;j<cN;j++){
+    var inp=document.createElement('input');inp.type='text';
+    inp.id='c'+j;inp.placeholder='0';inp.autocomplete='off';
+    inp.addEventListener('input',updateObjExpr);
+    g.appendChild(inp);
+  }
+}
+
+function updateObjExpr(){
+  var parts=[];
+  for(var j=0;j<cN;j++){
+    var el=document.getElementById('c'+j);
+    if(!el) continue;
+    var v=el.value.trim();
+    if(!v||v==='0') continue;
+    parts.push(v+'·x<sub>'+(j+1)+'</sub>');
+  }
+  document.getElementById('objExpr').innerHTML=parts.length?parts.join(' + '):'0';
+}
+
+function buildConGrid(){
+  var g=document.getElementById('conGrid');g.innerHTML='';
+  g.style.gridTemplateColumns='auto repeat('+cN+',64px) auto 64px';
+  // Header row
+  g.appendChild(document.createElement('div')); // spacer
+  for(var j=0;j<cN;j++){
+    var hd=document.createElement('div');hd.className='chdr';
+    hd.innerHTML='x<sub>'+(j+1)+'</sub>';g.appendChild(hd);
+  }
+  var le=document.createElement('div');le.className='chdr';le.textContent='≤';g.appendChild(le);
+  var be=document.createElement('div');be.className='chdr';be.textContent='b';g.appendChild(be);
+  // Data rows
+  for(var i=0;i<cM;i++){
+    var rh=document.createElement('div');rh.className='rhdr';rh.innerHTML='C<sub>'+(i+1)+'</sub>';g.appendChild(rh);
+    for(var j=0;j<cN;j++){
+      var inp=document.createElement('input');inp.type='text';
+      inp.id='a'+i+'_'+j;inp.placeholder='0';inp.autocomplete='off';
+      g.appendChild(inp);
+    }
+    var leq=document.createElement('div');leq.style.cssText='text-align:center;font-size:1.1rem;padding-top:3px;';leq.textContent='≤';g.appendChild(leq);
+    var binp=document.createElement('input');binp.type='text';
+    binp.id='b'+i;binp.placeholder='0';binp.autocomplete='off';
+    binp.style.borderColor='var(--gold)';
+    g.appendChild(binp);
+  }
+}
+
+function getInputs(){
+  var c=[],A=[],b=[];
+  for(var j=0;j<cN;j++) c.push(Frac.parse(document.getElementById('c'+j)?.value||'0'));
+  for(var i=0;i<cM;i++){
+    var row=[];
+    for(var j=0;j<cN;j++) row.push(Frac.parse(document.getElementById('a'+i+'_'+j)?.value||'0'));
+    A.push(row);
+    b.push(Frac.parse(document.getElementById('b'+i)?.value||'0'));
+  }
+  return{c:c,A:A,b:b};
+}
+
+function setVals(n,m,cArr,Aarr,bArr){
+  cN=n;cM=m;
+  document.getElementById('inN').value=n;
+  document.getElementById('inM').value=m;
+  buildGrids();
+  cArr.forEach(function(v,j){var el=document.getElementById('c'+j);if(el)el.value=v;});
+  Aarr.forEach(function(row,i){row.forEach(function(v,j){var el=document.getElementById('a'+i+'_'+j);if(el)el.value=v;});});
+  bArr.forEach(function(v,i){var el=document.getElementById('b'+i);if(el)el.value=v;});
+  updateObjExpr();
+}
+
+var PRESETS=[
+  {label:'Wyndor Glass',n:2,m:3,
+   c:['3','5'],A:[['1','0'],['0','2'],['3','2']],b:['4','12','18']},
+  {label:'2 vars, 2 con',n:2,m:2,
+   c:['5','4'],A:[['6','4'],['1','2']],b:['24','6']},
+  {label:'3 vars',n:3,m:3,
+   c:['2','3','1'],A:[['1','1','1'],['2','1','1'],['1','2','0']],b:['6','8','4']},
+];
+
+function buildPresets(){
+  var row=document.getElementById('exRow');
+  PRESETS.forEach(function(p){
+    var btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent=p.label;
+    btn.addEventListener('click',function(){setVals(p.n,p.m,p.c,p.A,p.b);});
+    row.appendChild(btn);
+  });
+}
+
+function runSolve(){
+  var inp=getInputs();
+  // Validate b >= 0
+  for(var i=0;i<cM;i++){
+    if(inp.b[i].lt(ZERO)){
+      document.getElementById('output').innerHTML=
+        '<div class="step-block"><div class="shd shd-err"><span class="sbadge">!</span><span class="stitle">Error</span></div>'+
+        '<div class="sbody"><div class="err-box">All right-hand side values b<sub>i</sub> must be ≥ 0 for the standard simplex method.</div></div></div>';
+      return;
+    }
+  }
+  var steps=simplex(inp.c,inp.A,inp.b,cN,cM);
+  renderAll(steps,cN,cM,inp.c,inp.A,inp.b);
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  buildPresets();
+  buildGrids();
+  setVals(2,3,['3','5'],[['1','0'],['0','2'],['3','2']],['4','12','18']);
+  updateObjExpr();
+});
+</script>
+</body>
+</html>

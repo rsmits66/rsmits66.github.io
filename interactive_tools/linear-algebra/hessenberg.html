@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hessenberg Reduction — Householder Reflections</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  /* Householder vector — teal */
+  --H-bg:#e8f5f2; --H2:#1a6a58; --H-hi:#b3e4d8;
+  /* pivot subcolumn — amber */
+  --x-bg:#fff8ea; --x2:#8a5a00; --x-hi:#f5d87a;
+  /* modified rows/cols — indigo */
+  --mod-bg:#edf1fb; --mod2:#3a5aa8;
+  /* done — muted */
+  --done-bg:#f5f5f4; --done-c:#b0b0b8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--H-bg);color:var(--H2);border:1px solid #90ccc0;}
+.btn-ghost:hover{background:#c4e8e0;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:64px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+/* ── Step cards ── */
+.steps-wrap{display:flex;flex-direction:column;gap:1.4rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.7rem;}
+.sbadge{background:var(--gold);color:var(--navy);min-width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.65rem;}
+.sbadge.done-b{background:#2a7a5a;color:#fff;font-size:.7rem;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;overflow-x:auto;}
+
+.sec-body{padding:1.1rem 1.5rem;overflow-x:auto;}
+
+/* ── Two-column layout: formula | matrix ── */
+.step-layout{display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start;}
+.step-formulas{min-width:220px;flex:0 0 auto;}
+.step-matrix{flex:1 1 auto;overflow-x:auto;}
+
+/* ── Formula items ── */
+.formula-block{margin-bottom:1rem;}
+.formula-lbl{font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.055em;margin-bottom:.28rem;}
+.formula-body{overflow-x:auto;}
+
+/* ── Matrix table ── */
+.mat-wrap{overflow-x:auto;}
+.htbl{border-collapse:collapse;font-size:.9rem;}
+.htbl th,.htbl td{padding:.33rem .65rem;border:1px solid #e0dbd3;text-align:right;min-width:58px;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle;}
+.htbl thead th{font-size:.75rem;font-weight:400;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);background:#f8f6f2;text-align:center;padding:.2rem .65rem;}
+.htbl td.row-idx{background:#f8f6f2;color:#aaa;font-size:.8rem;text-align:center;min-width:24px;padding:.33rem .4rem;}
+
+/* Cell colour classes */
+.htbl td.x-hi   {background:var(--x-bg);color:var(--x2);font-weight:700;}      /* subcolumn x */
+.htbl td.x-zero {background:var(--x-bg);color:#c8a860;opacity:.55;}             /* enforced zero */
+.htbl td.v-hi   {background:var(--H-bg);color:var(--H2);}                       /* same rows as v */
+.htbl td.mod-c  {background:var(--mod-bg);color:var(--mod2);}                   /* modified by reflection */
+.htbl td.done-c {background:var(--done-bg);color:var(--done-c);}                /* finished subdiagonal */
+.htbl td.piv-c  {background:var(--H-hi);color:var(--H2);font-weight:700;}       /* new sub-diag entry */
+
+/* ── Result: Q and H display ── */
+.mat-eq{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;overflow-x:auto;padding:.4rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.mat-lbl{font-size:.8rem;font-style:italic;color:var(--gray);text-align:center;}
+.mat-op{font-size:1.35rem;color:var(--navy2);align-self:center;padding:0 .1rem;}
+
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+.keybox{background:var(--H-bg);border:1px solid #90ccc0;border-radius:6px;padding:.85rem 1.1rem;font-size:.88rem;color:#1a3a28;line-height:1.65;}
+.keybox strong{color:var(--navy);}
+.info-note{background:var(--mod-bg);border:1px solid #c0ccdd;border-radius:5px;padding:.55rem .9rem;font-size:.87rem;color:var(--navy2);margin:.55rem 0;}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+/* ── Colour legend ── */
+.legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.8rem;font-size:.82rem;color:var(--navy2);}
+.leg-item{display:flex;align-items:center;gap:.35rem;}
+.leg-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hessenberg Reduction — Householder Reflections</h1>
+  <p>Algorithm 26.1 — step by step: extract x, build vₖ, apply left and right reflections</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter a Square Matrix A</h2>
+  <div class="ctrl-row">
+    <label>Size n×n: <input type="number" id="nSz" min="3" max="6" value="4"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.6rem;">
+    Enter integers or decimals. The algorithm runs for k = 1 to n−2, zeroing sub-subdiagonal entries column by column.
+  </p>
+  <div style="overflow-x:auto"><div class="mx-grid" id="mxA"></div></div>
+  <button class="btn-solve" onclick="doSolve()">Reduce to Hessenberg Form →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ══ MATH UTILITIES ══════════════════════════════════════════ */
+const EPS = 1e-14;
+
+function fmt(x, dp) {
+  dp = dp === undefined ? 4 : dp;
+  var v = Math.abs(x) < 5e-12 ? 0 : x;
+  if (v === 0) return '0';
+  return parseFloat(v.toFixed(dp)).toString();
+}
+
+function fmtTeX(x) {
+  var v = Math.abs(x) < 5e-12 ? 0 : x;
+  if (v === 0) return '0';
+  return parseFloat(v.toFixed(4)).toString();
+}
+
+function vdot(a, b) {
+  var s = 0;
+  for (var i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
+}
+function vnorm(v) { return Math.sqrt(vdot(v, v)); }
+function matClone(M) { return M.map(function(r){ return r.slice(); }); }
+
+/* ══ KaTeX helper ═══════════════════════════════════════════ */
+function rk(t, opts) {
+  try { return katex.renderToString(t, Object.assign({throwOnError:false}, opts||{})); }
+  catch(e) { return t; }
+}
+
+/* ══ vecTeX: column vector as LaTeX ════════════════════════ */
+function vecTeX(v) {
+  var rows = v.map(fmtTeX).join('\\\\');
+  return '\\begin{pmatrix}' + rows + '\\end{pmatrix}';
+}
+
+/* ══ ALGORITHM 26.1 ═════════════════════════════════════════
+   Left-multiplication only: A ← Q_k A at each step k.
+   Returns array of step objects. ══════════════════════════ */
+function hessenberg(Ain) {
+  var n = Ain.length;
+  var A = matClone(Ain);
+  var steps = [];
+  steps.push({ type: 'init', A: matClone(A), n: n });
+
+  for (var k = 0; k < n - 2; k++) {
+    // x = A[k+1:n, k]
+    var x = [];
+    for (var i = k + 1; i < n; i++) x.push(A[i][k]);
+    var xnorm = vnorm(x);
+
+    // v = sign(x[0]) * ||x|| * e1 + x
+    var sign = (x[0] >= 0) ? 1 : -1;
+    var v = x.slice();
+    v[0] += sign * xnorm;
+    var vn = vnorm(v);
+    var vhat = (vn > EPS) ? v.map(function(c){ return c / vn; }) : v.slice();
+
+    var Abefore = matClone(A);
+
+    // Left: A[k+1:n, k:n] -= 2 vhat (vhat^T A[k+1:n, k:n])
+    for (var c = k; c < n; c++) {
+      var dot = 0;
+      for (var r = 0; r < vhat.length; r++) dot += vhat[r] * A[k+1+r][c];
+      for (var r = 0; r < vhat.length; r++) A[k+1+r][c] -= 2 * vhat[r] * dot;
+    }
+
+    steps.push({
+      type: 'step', k: k, n: n,
+      x: x.slice(), xnorm: xnorm,
+      v: v.slice(), vhat: vhat.slice(),
+      Abefore: Abefore,
+      A: matClone(A)
+    });
+  }
+
+  steps.push({ type: 'done', A: matClone(A), n: n });
+  return steps;
+}
+
+/* ══ MATRIX TABLE ════════════════════════════════════════════
+   hl = { xRows:[], xCol:int, modCols:[], doneBelow:int,
+           pivRow:int, pivCol:int }  ════════════════════════ */
+function matTable(M, n, hl) {
+  hl = hl || {};
+  var xRows   = hl.xRows  || [];
+  var xCol    = hl.xCol !== undefined ? hl.xCol : -1;
+  var modCols = hl.modCols || [];
+  var doneBelow = hl.doneBelow !== undefined ? hl.doneBelow : -1;
+  var pivRow  = hl.pivRow !== undefined ? hl.pivRow : -1;
+  var pivCol  = hl.pivCol !== undefined ? hl.pivCol : -1;
+
+  var tbl = document.createElement('table');
+  tbl.className = 'htbl';
+
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  var th0 = document.createElement('th'); th0.textContent = ''; hr.appendChild(th0);
+  for (var j = 0; j < n; j++) {
+    var th = document.createElement('th');
+    th.innerHTML = rk('c_{' + (j+1) + '}');
+    hr.appendChild(th);
+  }
+  thead.appendChild(hr); tbl.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var i = 0; i < n; i++) {
+    var tr = document.createElement('tr');
+    var tdR = document.createElement('td');
+    tdR.className = 'row-idx';
+    tdR.innerHTML = rk('r_{' + (i+1) + '}');
+    tr.appendChild(tdR);
+
+    for (var j = 0; j < n; j++) {
+      var td = document.createElement('td');
+      var cls = '';
+
+      if (i === pivRow && j === pivCol) {
+        cls = 'piv-c';
+      } else if (xRows.indexOf(i) >= 0 && j === xCol) {
+        cls = 'x-hi';
+      } else if (modCols.indexOf(j) >= 0) {
+        cls = 'mod-c';
+      } else if (doneBelow >= 0 && i > doneBelow + 1 && j <= doneBelow) {
+        cls = 'x-zero';
+      }
+
+      if (cls) td.className = cls;
+      td.textContent = fmt(M[i][j]);
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  return tbl;
+}
+
+/* ══ LEGEND ══════════════════════════════════════════════════ */
+function renderLegend() {
+  var d = document.createElement('div'); d.className = 'legend';
+  var items = [
+    ['var(--x-bg)', '1px solid var(--x2)',  'amber — subcolumn x = A[k+1:n, k]'],
+    ['var(--H-hi)', '1px solid var(--H2)',   'bright teal — new sub-diagonal entry'],
+    ['var(--mod-bg)','1px solid #c0ccdd',    'indigo — modified by reflection'],
+    ['var(--done-bg)','1px solid #ddd',      'gray — enforced zeros (done)'],
+  ];
+  items.forEach(function(item) {
+    var bg = item[0], bdr = item[1], lbl = item[2];
+    var it = document.createElement('div'); it.className = 'leg-item';
+    var sw = document.createElement('div'); sw.className = 'leg-swatch';
+    sw.style.background = bg; sw.style.border = bdr;
+    var lt = document.createElement('span'); lt.textContent = lbl;
+    it.appendChild(sw); it.appendChild(lt); d.appendChild(it);
+  });
+  return d;
+}
+
+/* ══ RENDER: INITIAL STEP ═══════════════════════════════════ */
+function renderInit(step) {
+  var A = step.A, n = step.n;
+  var block = document.createElement('div'); block.className = 'scard';
+  var hd = document.createElement('div'); hd.className = 'shd';
+  var badge = document.createElement('span'); badge.className = 'sbadge init-b'; badge.textContent = 'A\u2080';
+  var desc = document.createElement('span'); desc.className = 'sdesc';
+  desc.innerHTML = rk('\\text{Initial matrix } A \\text{ — algorithm runs for } k=1,\\ldots,n-2');
+  hd.appendChild(badge); hd.appendChild(desc); block.appendChild(hd);
+
+  var sec = document.createElement('div'); sec.className = 'sec-body';
+  var wrap = document.createElement('div'); wrap.className = 'mat-wrap';
+  wrap.appendChild(matTable(A, n));
+  sec.appendChild(wrap);
+
+  var note = document.createElement('div'); note.className = 'info-note';
+  note.textContent = 'Goal: for each column k, zero out entries below the first sub-diagonal (row k+2 and below) using a Householder reflection applied on the left.';
+  sec.appendChild(note);
+  block.appendChild(sec);
+  return block;
+}
+
+/* ══ RENDER: STEP k ══════════════════════════════════════════ */
+function renderStep(step) {
+  var k = step.k, n = step.n;
+  var x = step.x, xnorm = step.xnorm;
+  var v = step.v, vhat = step.vhat;
+  var Abefore = step.Abefore, A = step.A;
+
+  var block = document.createElement('div'); block.className = 'scard';
+
+  /* header */
+  var hd = document.createElement('div'); hd.className = 'shd';
+  var badge = document.createElement('span'); badge.className = 'sbadge';
+  badge.textContent = 'k=' + (k+1);
+  var desc = document.createElement('span'); desc.className = 'sdesc';
+  desc.innerHTML = rk(
+    'x = A_{' + (k+2) + ':' + n + ',\\,' + (k+1) + '}' +
+    ',\\quad v_' + (k+1) + ' = \\operatorname{sign}(x_1)\\|x\\|e_1 + x' +
+    ',\\quad Q_' + (k+1) + ' = I - 2v_' + (k+1) + 'v_' + (k+1) + '^T'
+  );
+  hd.appendChild(badge); hd.appendChild(desc); block.appendChild(hd);
+
+  var sec = document.createElement('div'); sec.className = 'sec-body';
+  var layout = document.createElement('div'); layout.className = 'step-layout';
+
+  /* ── left: formulas ── */
+  var fPanel = document.createElement('div'); fPanel.className = 'step-formulas';
+
+  function addFormula(lbl, html) {
+    var bl = document.createElement('div'); bl.className = 'formula-block';
+    var l = document.createElement('div'); l.className = 'formula-lbl'; l.textContent = lbl;
+    var b = document.createElement('div'); b.className = 'formula-body'; b.innerHTML = html;
+    bl.appendChild(l); bl.appendChild(b); fPanel.appendChild(bl);
+  }
+
+  addFormula('Subcolumn x',
+    rk('x = A_{' + (k+2) + ':' + n + ',\\,' + (k+1) + '} = ' + vecTeX(x), {displayMode:true}));
+
+  var signTex = (x[0] >= 0) ? '+1' : '-1';
+  addFormula('Norm and sign',
+    rk('\\|x\\|_2 = ' + fmtTeX(xnorm) + ', \\quad \\operatorname{sign}(x_1) = ' + signTex));
+
+  addFormula('Householder vector v (unnormalized)',
+    rk('v = \\operatorname{sign}(x_1)\\|x\\|e_1 + x = ' + vecTeX(v), {displayMode:true}));
+
+  addFormula('Normalized v̂',
+    rk('\\hat{v} = v / \\|v\\| = ' + vecTeX(vhat), {displayMode:true}));
+
+  addFormula('Reflector',
+    rk('Q_' + (k+1) + ' = I - 2\\hat{v}\\hat{v}^T \\in \\mathbb{R}^{' + (n-k-1) + '\\times' + (n-k-1) + '}'));
+
+  layout.appendChild(fPanel);
+
+  /* ── right: two matrices ── */
+  var mPanel = document.createElement('div'); mPanel.className = 'step-matrix';
+
+  var m1Lbl = document.createElement('div');
+  m1Lbl.style.cssText = 'font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.055em;margin-bottom:.3rem;';
+  m1Lbl.innerHTML = 'A before step k=' + (k+1) + ' <span style="font-size:.75rem;color:var(--x2)">(amber = subcolumn x)</span>';
+  mPanel.appendChild(m1Lbl);
+
+  var xRows = [];
+  for (var i = k+1; i < n; i++) xRows.push(i);
+  mPanel.appendChild(matTable(Abefore, n, { xRows: xRows, xCol: k, doneBelow: k-1 }));
+
+  var sep = document.createElement('div');
+  sep.style.cssText = 'margin:.7rem 0;font-size:.85rem;color:var(--H2);font-style:italic;';
+  sep.innerHTML = rk('\\downarrow\\; A_{k+1:n,\\,k:n} \\leftarrow A_{k+1:n,\\,k:n} - 2\\hat{v}(\\hat{v}^T A_{k+1:n,\\,k:n})');
+  mPanel.appendChild(sep);
+
+  var m2Lbl = document.createElement('div');
+  m2Lbl.style.cssText = 'font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.055em;margin-bottom:.3rem;';
+  m2Lbl.innerHTML = 'After left reflection <span style="font-size:.75rem;color:var(--H2)">(zeros below r_{k+2} in column k)</span>';
+  mPanel.appendChild(m2Lbl);
+
+  var modCols = [];
+  for (var c = k; c < n; c++) modCols.push(c);
+  mPanel.appendChild(matTable(A, n, { modCols: modCols, doneBelow: k-1, pivRow: k+1, pivCol: k }));
+
+  layout.appendChild(mPanel);
+  sec.appendChild(layout);
+  block.appendChild(sec);
+  return block;
+}
+
+/* ══ RENDER: FINAL RESULT ════════════════════════════════════ */
+function renderDone(step, A0) {
+  var A = step.A, n = step.n;
+  var block = document.createElement('div'); block.className = 'scard';
+  var hd = document.createElement('div'); hd.className = 'shd';
+  var badge = document.createElement('span'); badge.className = 'sbadge done-b'; badge.textContent = 'H';
+  var desc = document.createElement('span'); desc.className = 'sdesc';
+  desc.innerHTML = rk('H = Q_{n-2} \\cdots Q_1 A \\text{ — result after all left reflections}');
+  hd.appendChild(badge); hd.appendChild(desc); block.appendChild(hd);
+
+  var sec = document.createElement('div'); sec.className = 'sec-body';
+  var eq = document.createElement('div'); eq.className = 'mat-eq';
+
+  function mb(lbl, tbl) {
+    var b = document.createElement('div'); b.className = 'mat-block';
+    var l = document.createElement('div'); l.className = 'mat-lbl'; l.textContent = lbl;
+    b.appendChild(l); b.appendChild(tbl);
+    return b;
+  }
+  function op(t) {
+    var s = document.createElement('span'); s.className = 'mat-op';
+    s.innerHTML = rk(t);
+    return s;
+  }
+
+  eq.appendChild(mb('A (original)', matTable(A0, n)));
+  eq.appendChild(op('\\longrightarrow'));
+  eq.appendChild(mb('H = Q\u2099\u208B\u2082\u22EFQ\u2081 A', matTable(A, n, { doneBelow: n-2 })));
+  sec.appendChild(eq);
+
+  var maxErr = 0;
+  for (var i = 2; i < n; i++)
+    for (var j = 0; j < i-1; j++)
+      maxErr = Math.max(maxErr, Math.abs(A[i][j]));
+  var chk = document.createElement('div'); chk.className = 'info-note';
+  chk.innerHTML = rk('\\text{Max entry below sub-diagonal: }' + maxErr.toExponential(2) +
+    (maxErr < 1e-9 ? '\\;\\checkmark' : '\\;\\approx 0'));
+  sec.appendChild(chk);
+
+  block.appendChild(sec);
+  return block;
+}
+
+/* ══ KEY BOX ════════════════════════════════════════════════ */
+function renderKey() {
+  var k = document.createElement('div'); k.className = 'keybox';
+  k.innerHTML =
+    '<strong>What is a Hessenberg matrix?</strong> ' +
+    'H<sub>ij</sub> = 0 whenever i &gt; j+1 — zero everywhere <em>below</em> the first sub-diagonal.' +
+    '<br><br>' +
+    '<strong>Householder reflector Q<sub>k</sub>:</strong> ' +
+    'Choose v\u0302 so that Q<sub>k</sub>x = &minus;sign(x\u2081)&Vert;x&Vert;e\u2081, ' +
+    'zeroing all but the first entry of the subcolumn x = A[k+1:n, k].' +
+    '<br><br>' +
+    '<strong>Left multiplication only (this program):</strong> ' +
+    'Each step applies A &larr; Q<sub>k</sub>A. ' +
+    'This zeros out the sub-subdiagonal of column k. ' +
+    'The full similarity A &rarr; Q<sup>T</sup>AQ (which preserves eigenvalues) ' +
+    'also requires a right multiplication by Q<sub>k</sub><sup>T</sup>, shown in Algorithm 26.1.' +
+    '<br><br>' +
+    '<strong>Why Hessenberg?</strong> ' +
+    'QR iteration on a Hessenberg matrix costs O(n\u00B2) per step instead of O(n\u00B3), ' +
+    'making Hessenberg reduction the standard preprocessing for eigenvalue algorithms.';
+  return k;
+}
+
+/* ══ MAIN DRIVER ════════════════════════════════════════════ */
+function doSolve() {
+  var out = document.getElementById('out');
+  out.innerHTML = '';
+  try {
+    var n = cN;
+    var A = [];
+    for (var i = 0; i < n; i++) {
+      var row = [];
+      for (var j = 0; j < n; j++) {
+        var el = document.getElementById('a' + i + '_' + j);
+        row.push(parseFloat((el ? el.value : '') || '0') || 0);
+      }
+      A.push(row);
+    }
+    var A0 = matClone(A);
+    var steps = hessenberg(A);
+
+    var wrap = document.createElement('div'); wrap.className = 'steps-wrap';
+
+    var lbl = document.createElement('div'); lbl.className = 'phase-lbl';
+    lbl.textContent = 'Algorithm 26.1 — Householder Reduction (n = ' + n + ', steps k = 1 to ' + (n-2) + ')';
+    wrap.appendChild(lbl);
+    wrap.appendChild(renderLegend());
+
+    steps.forEach(function(step) {
+      if (step.type === 'init')       wrap.appendChild(renderInit(step));
+      else if (step.type === 'step')  wrap.appendChild(renderStep(step));
+      else if (step.type === 'done')  wrap.appendChild(renderDone(step, A0));
+    });
+
+    wrap.appendChild(renderKey());
+    out.appendChild(wrap);
+    out.scrollIntoView({ behavior: 'smooth' });
+  } catch(e) {
+    out.innerHTML = '<div class="err-msg" style="padding:1rem">' + e.message + '</div>';
+    console.error(e);
+  }
+}
+
+/* ══ UI ══════════════════════════════════════════════════════ */
+var cN = 4;
+
+var EXAMPLES = [
+  { n:4, A:[[4,1,-2,2],[1,2,0,1],[-2,0,3,-2],[2,1,-2,-1]], label:'4\xD74 symmetric' },
+  { n:4, A:[[2,-1,0,0],[-1,2,-1,0],[0,-1,2,-1],[0,0,-1,2]],  label:'4\xD74 tridiagonal' },
+  { n:5, A:[[6,5,4,3,2],[5,4,3,2,1],[4,3,2,1,0],[3,2,1,0,-1],[2,1,0,-1,-2]], label:'5\xD75 example' },
+  { n:4, A:[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]], label:'4\xD74 rank-deficient' },
+  { n:3, A:[[2,1,1],[4,3,3],[8,7,9]], label:'3\xD73 simple' },
+];
+
+function rebuildAll() {
+  cN = Math.min(Math.max(parseInt(document.getElementById('nSz').value) || 3, 3), 6);
+  document.getElementById('nSz').value = cN;
+  buildGrid();
+}
+
+function buildGrid() {
+  var cont = document.getElementById('mxA');
+  cont.innerHTML = '';
+  var cols = 'auto';
+  for (var j = 0; j < cN; j++) cols += ' 64px';
+  cont.style.gridTemplateColumns = cols;
+
+  var empty = document.createElement('div'); cont.appendChild(empty);
+  for (var j = 0; j < cN; j++) {
+    var d = document.createElement('div'); d.className = 'clbl';
+    d.innerHTML = rk('c_{' + (j+1) + '}'); cont.appendChild(d);
+  }
+  for (var i = 0; i < cN; i++) {
+    var rl = document.createElement('div'); rl.className = 'rlbl';
+    rl.innerHTML = rk('R_{' + (i+1) + '}'); cont.appendChild(rl);
+    for (var j = 0; j < cN; j++) {
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.id = 'a' + i + '_' + j;
+      inp.placeholder = '0'; inp.autocomplete = 'off';
+      cont.appendChild(inp);
+    }
+  }
+}
+
+function loadEx(ex) {
+  cN = ex.n;
+  document.getElementById('nSz').value = cN;
+  buildGrid();
+  for (var i = 0; i < ex.A.length; i++) {
+    for (var j = 0; j < ex.A[i].length; j++) {
+      var el = document.getElementById('a' + i + '_' + j);
+      if (el) el.value = ex.A[i][j];
+    }
+  }
+}
+
+function buildExamples() {
+  var row = document.getElementById('exRow'); row.innerHTML = '';
+  EXAMPLES.forEach(function(ex) {
+    var btn = document.createElement('button'); btn.className = 'btn-ghost';
+    btn.textContent = ex.label;
+    btn.onclick = (function(e){ return function(){ loadEx(e); }; })(ex);
+    row.appendChild(btn);
+  });
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildExamples(); buildGrid(); loadEx(EXAMPLES[0]);
+});
+
+</script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  /* Householder vector — teal */
+  --H-bg:#e8f5f2; --H2:#1a6a58; --H-hi:#b3e4d8;
+  /* pivot subcolumn — amber */
+  --x-bg:#fff8ea; --x2:#8a5a00; --x-hi:#f5d87a;
+  /* modified rows/cols — indigo */
+  --mod-bg:#edf1fb; --mod2:#3a5aa8;
+  /* done — muted */
+  --done-bg:#f5f5f4; --done-c:#b0b0b8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--H-bg);color:var(--H2);border:1px solid #90ccc0;}
+.btn-ghost:hover{background:#c4e8e0;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:64px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+/* ── Step cards ── */
+.steps-wrap{display:flex;flex-direction:column;gap:1.4rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.7rem;}
+.sbadge{background:var(--gold);color:var(--navy);min-width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.65rem;}
+.sbadge.done-b{background:#2a7a5a;color:#fff;font-size:.7rem;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;overflow-x:auto;}
+
+.sec-body{padding:1.1rem 1.5rem;overflow-x:auto;}
+
+/* ── Two-column layout: formula | matrix ── */
+.step-layout{display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start;}
+.step-formulas{min-width:220px;flex:0 0 auto;}
+.step-matrix{flex:1 1 auto;overflow-x:auto;}
+
+/* ── Formula items ── */
+.formula-block{margin-bottom:1rem;}
+.formula-lbl{font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.055em;margin-bottom:.28rem;}
+.formula-body{overflow-x:auto;}
+
+/* ── Matrix table ── */
+.mat-wrap{overflow-x:auto;}
+.htbl{border-collapse:collapse;font-size:.9rem;}
+.htbl th,.htbl td{padding:.33rem .65rem;border:1px solid #e0dbd3;text-align:right;min-width:58px;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle;}
+.htbl thead th{font-size:.75rem;font-weight:400;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);background:#f8f6f2;text-align:center;padding:.2rem .65rem;}
+.htbl td.row-idx{background:#f8f6f2;color:#aaa;font-size:.8rem;text-align:center;min-width:24px;padding:.33rem .4rem;}
+
+/* Cell colour classes */
+.htbl td.x-hi   {background:var(--x-bg);color:var(--x2);font-weight:700;}      /* subcolumn x */
+.htbl td.x-zero {background:var(--x-bg);color:#c8a860;opacity:.55;}             /* enforced zero */
+.htbl td.v-hi   {background:var(--H-bg);color:var(--H2);}                       /* same rows as v */
+.htbl td.mod-c  {background:var(--mod-bg);color:var(--mod2);}                   /* modified by reflection */
+.htbl td.done-c {background:var(--done-bg);color:var(--done-c);}                /* finished subdiagonal */
+.htbl td.piv-c  {background:var(--H-hi);color:var(--H2);font-weight:700;}       /* new sub-diag entry */
+
+/* ── Result: Q and H display ── */
+.mat-eq{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;overflow-x:auto;padding:.4rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.mat-lbl{font-size:.8rem;font-style:italic;color:var(--gray);text-align:center;}
+.mat-op{font-size:1.35rem;color:var(--navy2);align-self:center;padding:0 .1rem;}
+
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+.keybox{background:var(--H-bg);border:1px solid #90ccc0;border-radius:6px;padding:.85rem 1.1rem;font-size:.88rem;color:#1a3a28;line-height:1.65;}
+.keybox strong{color:var(--navy);}
+.info-note{background:var(--mod-bg);border:1px solid #c0ccdd;border-radius:5px;padding:.55rem .9rem;font-size:.87rem;color:var(--navy2);margin:.55rem 0;}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+/* ── Colour legend ── */
+.legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.8rem;font-size:.82rem;color:var(--navy2);}
+.leg-item{display:flex;align-items:center;gap:.35rem;}
+.leg-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hessenberg Reduction — Householder Reflections</h1>
+  <p>Algorithm 26.1 — step by step: extract x, build vₖ, apply left and right reflections</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter a Square Matrix A</h2>
+  <div class="ctrl-row">
+    <label>Size n×n: <input type="number" id="nSz" min="3" max="6" value="4"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.6rem;">
+    Enter integers or decimals. The algorithm runs for k = 1 to n−2, zeroing sub-subdiagonal entries column by column.
+  </p>
+  <div style="overflow-x:auto"><div class="mx-grid" id="mxA"></div></div>
+  <button class="btn-solve" onclick="doSolve()">Reduce to Hessenberg Form →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ══════════════════════════════════════
+   MATH UTILITIES
+══════════════════════════════════════ */
+const eps = 1e-14;
+function fmt(x,dp=4){
+  const v=Math.abs(x)<5e-12?0:x;
+  if(v===0)return'0';
+  return parseFloat(v.toFixed(dp)).toString();
+}
+function fmtTeX(x){
+  const v=Math.abs(x)<5e-12?0:x;
+  if(v===0)return'0';
+  const s=parseFloat(v.toFixed(4)).toString();
+  return s;
+}
+function vdot(a,b){return a.reduce((s,x,i)=>s+x*b[i],0);}
+function vnorm(v){return Math.sqrt(vdot(v,v));}
+function vscale(v,s){return v.map(x=>x*s);}
+function vadd(a,b){return a.map((x,i)=>x+b[i]);}
+function matClone(M){return M.map(r=>r.slice());}
+
+/* ══════════════════════════════════════
+   KaTeX
+══════════════════════════════════════ */
+function rk(t,opts){try{return katex.renderToString(t,{throwOnError:false,...(opts||{})});}catch(e){return t;}}
+
+/* ══════════════════════════════════════
+   HOUSEHOLDER HESSENBERG  (Algorithm 26.1)
+   Returns array of steps, each with:
+     k, x, v, A_before (before left mult),
+     A_after_left, A_after_right (= new A)
+══════════════════════════════════════ */
+function hessenberg(Ain){
+  const n=Ain.length;
+  let A=matClone(Ain);
+  const steps=[];
+  // initial snapshot
+  steps.push({type:'init', A:matClone(A), n});
+
+  for(let k=0;k<n-2;k++){
+    // x = A[k+1:n, k]  (0-indexed: rows k+1..n-1, col k)
+    const x=Array.from({length:n-k-1},(_,i)=>A[k+1+i][k]);
+    const xnorm=vnorm(x);
+
+    // sign(x[0])*||x||*e1 + x
+    const sign=x[0]>=0?1:-1;
+    const v=x.slice();
+    v[0]+=sign*xnorm;
+    const vn=vnorm(v);
+    const vhat=vn>eps?vscale(v,1/vn):v.slice();
+
+    // ── Left multiplication: A[k+1:n, k:n] -= 2 v (v^T A[k+1:n, k:n]) ──
+    const Abefore=matClone(A);
+    // submatrix rows k+1..n-1, cols k..n-1
+    for(let c=k;c<n;c++){
+      let dot=0;
+      for(let r=0;r<vhat.length;r++) dot+=vhat[r]*A[k+1+r][c];
+      for(let r=0;r<vhat.length;r++) A[k+1+r][c]-=2*vhat[r]*dot;
+    }
+
+    steps.push({
+      type:'step', k, n,
+      x:x.slice(), xnorm,
+      v:v.slice(), vhat:vhat.slice(),
+      Abefore,
+      A:matClone(A)
+    });
+  }
+
+  steps.push({type:'done', A:matClone(A), n});
+  return steps;
+}
+
+/* ══════════════════════════════════════
+   MATRIX TABLE RENDERER
+   highlight:
+     { xRows:[...], vRows:[...], modRows:[...], modCols:[...],
+       doneSubDiag: k (zero out below this),  pivRow: r, pivCol: c }
+══════════════════════════════════════ */
+function matTable(M, n, hl={}){
+  const{xRows=[],vRows=[],modCols=[],doneBelow=-1,pivRow=-1,pivCol=-1}=hl;
+  const tbl=document.createElement('table');tbl.className='htbl';
+
+  // col header
+  const thead=document.createElement('thead');
+  const hr=document.createElement('tr');
+  const th0=document.createElement('th');th0.textContent='';hr.appendChild(th0);
+  for(let j=0;j<n;j++){
+    const th=document.createElement('th');th.innerHTML=rk(`c_{${j+1}}`);hr.appendChild(th);
+  }
+  thead.appendChild(hr);tbl.appendChild(thead);
+
+  const tbody=document.createElement('tbody');
+  for(let i=0;i<n;i++){
+    const tr=document.createElement('tr');
+    const tdR=document.createElement('td');tdR.className='row-idx';
+    tdR.innerHTML=rk(`r_{${i+1}}`);tr.appendChild(tdR);
+
+    for(let j=0;j<n;j++){
+      const td=document.createElement('td');
+      const v=M[i][j];
+      const isZeroed=Math.abs(v)<5e-12;
+
+      // Determine cell class
+      if(i===pivRow&&j===pivCol){
+        td.className='piv-c';
+      } else if(xRows.includes(i)&&j===hl.xCol){
+        // subcolumn x — highlighted
+        td.className=isZeroed?'x-zero':'x-hi';
+      } else if(vRows.includes(i)&&modCols.includes(j)){
+        td.className='mod-c';
+      } else if(modCols.includes(j)&&i<n){
+        td.className='mod-c';
+      } else if(doneBelow>=0&&i>doneBelow+1&&j<=doneBelow){
+        // enforced zeros below sub-diagonal
+        td.className='x-zero';
+      }
+
+      td.textContent=fmt(v);
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  return tbl;
+}
+
+/* ══════════════════════════════════════
+   RENDER: INITIAL STEP
+══════════════════════════════════════ */
+function renderInit(step){
+  const{A,n}=step;
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge init-b';badge.textContent='A₀';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Initial matrix }A\\text{ — algorithm will run for }k=1,\\ldots,n-2');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+  const wrap=document.createElement('div');wrap.className='mat-wrap';
+  wrap.appendChild(matTable(A,n));
+  sec.appendChild(wrap);
+
+  const note=document.createElement('div');note.className='info-note';
+  note.innerHTML=`Goal: for each column k, zero out entries below the first sub-diagonal using a Householder reflection.
+  The result will be an <strong>upper Hessenberg matrix H</strong>: zero everywhere below the first sub-diagonal.`;
+  sec.appendChild(note);
+  block.appendChild(sec);return block;
+}
+
+/* ══════════════════════════════════════
+   RENDER: ALGORITHM STEP k
+══════════════════════════════════════ */
+function renderStep(step){
+  const{k,n,x,xnorm,v,vhat,Abefore,A}=step;
+  const block=document.createElement('div');block.className='scard';
+
+  // Header
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge';badge.textContent=`k=${k+1}`;
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk(
+    `x = A_{${k+2}:${n},\\,${k+1}}\\text{, }\\;`+
+    `v_${k+1}=\\operatorname{sign}(x_1)\\|x\\|e_1+x\\text{, }\\;`+
+    `Q_${k+1}=I-2v_{${k+1}}v_{${k+1}}^T`
+  );
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+  const layout=document.createElement('div');layout.className='step-layout';
+
+  // LEFT: formula panel
+  const fPanel=document.createElement('div');fPanel.className='step-formulas';
+
+  function fb(lbl,bodyHTML){
+    const bl=document.createElement('div');bl.className='formula-block';
+    const l=document.createElement('div');l.className='formula-lbl';l.textContent=lbl;
+    const b=document.createElement('div');b.className='formula-body';b.innerHTML=bodyHTML;
+    bl.append(l,b);fPanel.appendChild(bl);
+  }
+
+  fb('Subcolumn x', rk(`x = A_{${k+2}:${n},\\,${k+1}} = ${vecTeX(x)}`,{displayMode:true}));
+  fb('Norm and sign', rk(`\\|x\\|_2 = ${fmtTeX(xnorm)},\\quad \\operatorname{sign}(x_1) = ${x[0]>=0?'+':'-'}1`));
+  fb('Householder vector v (unnormalized)', rk(`v = \\operatorname{sign}(x_1)\\|x\\|e_1 + x = ${vecTeX(v)}`,{displayMode:true}));
+  fb('Normalized v̂ (unit vector)', rk(`\\hat{v} = v/\\|v\\| = ${vecTeX(vhat)}`,{displayMode:true}));
+  fb('Reflector (acts on rows k+1:n)', rk(`Q_${k+1} = I - 2\\hat{v}\\hat{v}^T \\in \\mathbb{R}^{${n-k-1}\\times${n-k-1}}`));
+
+  layout.appendChild(fPanel);
+
+  // RIGHT: two matrices
+  const mPanel=document.createElement('div');mPanel.className='step-matrix';
+
+  const m1Lbl=document.createElement('div');m1Lbl.style.cssText='font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.055em;margin-bottom:.3rem;';
+  m1Lbl.innerHTML=`A before step k=${k+1} &nbsp;<span style="font-size:.75rem;color:var(--x2)">(amber = subcolumn x)</span>`;
+  mPanel.appendChild(m1Lbl);
+  const xRows=Array.from({length:n-k-1},(_,i)=>k+1+i);
+  mPanel.appendChild(matTable(Abefore,n,{xRows,xCol:k,doneBelow:k-1}));
+
+  const sep=document.createElement('div');sep.style.cssText='margin:.7rem 0;font-size:.85rem;color:var(--H2);font-style:italic;';
+  sep.innerHTML=rk(`\\downarrow\\; A_{k+1:n,\\,k:n} \\leftarrow A_{k+1:n,\\,k:n} - 2\\hat{v}(\\hat{v}^T A_{k+1:n,\\,k:n})`,{displayMode:false});
+  mPanel.appendChild(sep);
+
+  const m2Lbl=document.createElement('div');m2Lbl.style.cssText='font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.055em;margin-bottom:.3rem;';
+  m2Lbl.innerHTML=`After left reflection &nbsp;<span style="font-size:.75rem;color:var(--H2)">(zeros below r_{k+2} in column k)</span>`;
+  mPanel.appendChild(m2Lbl);
+  const modColsLeft=Array.from({length:n-k},(_,i)=>k+i);
+  mPanel.appendChild(matTable(A,n,{xRows,modCols:modColsLeft,doneBelow:k-1,pivRow:k+1,pivCol:k}));
+
+  layout.appendChild(mPanel);
+  sec.appendChild(layout);
+  block.appendChild(sec);
+  return block;
+}
+
+/* ══════════════════════════════════════
+   RENDER: FINAL RESULT
+══════════════════════════════════════ */
+function renderDone(step, A0){
+  const{A,n}=step;
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge done-b';badge.textContent='H';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Result after all left reflections }H = Q_{n-2}\\cdots Q_1 A');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  const eq=document.createElement('div');eq.className='mat-eq';
+
+  function mb(lbl,tbl){
+    const b=document.createElement('div');b.className='mat-block';
+    const l=document.createElement('div');l.className='mat-lbl';l.textContent=lbl;
+    b.append(l,tbl);return b;
+  }
+  function op(t){const s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+
+  // Hessenberg matrix with colour coding
+  const Htbl=matTable(A,n,{doneBelow:n-3});
+  // Force all entries strictly below sub-diagonal to zero-colour
+  eq.append(
+    mb('A (original)',matTable(A0,n)),
+    op('\\longrightarrow'),
+    mb('H = Q_{n-2}⋯Q₁ A  (upper Hessenberg)',matTable(A,n,{doneBelow:n-2}))
+  );
+  sec.appendChild(eq);
+
+  // Hessenberg check
+  let maxBelowSubDiag=0;
+  for(let i=2;i<n;i++) for(let j=0;j<i-1;j++) maxBelowSubDiag=Math.max(maxBelowSubDiag,Math.abs(A[i][j]));
+  const chk=document.createElement('div');chk.className='info-note';chk.style.marginTop='.6rem';
+  chk.innerHTML=rk(`\\text{Max entry below sub-diagonal: }${maxBelowSubDiag.toExponential(2)}\\;${maxBelowSubDiag<1e-9?'\\checkmark':'\\approx 0'}`);
+  sec.appendChild(chk);
+
+  block.appendChild(sec);return block;
+}
+
+/* ══════════════════════════════════════
+   KEYBOX
+══════════════════════════════════════ */
+function renderKey(n){
+  const k=document.createElement('div');k.className='keybox';
+  k.innerHTML=`
+    <strong>What is a Hessenberg matrix?</strong>
+    An upper Hessenberg matrix has zeros everywhere <em>below</em> the first sub-diagonal:
+    H<sub>ij</sub> = 0 whenever i &gt; j+1.
+    It is almost upper triangular — just one extra diagonal below the main.
+    <br><br>
+    <strong>Why Householder reflections?</strong>
+    At step k, we choose the reflector Q<sub>k</sub> ∈ ℝ<sup>(n−k)×(n−k)</sup> so that
+    Q<sub>k</sub>x = −sign(x₁)‖x‖e₁, turning all but the first entry of the subcolumn x to zero.
+    <br><br>
+    <strong>Left multiplication only:</strong>
+    Each step applies Q<sub>k</sub> on the left: A ← Q<sub>k</sub> A.
+    This zeros out the entries of column k below row k+2, progressively
+    driving A toward upper Hessenberg form.
+    The accumulated product Q = Q<sub>n−2</sub>⋯Q<sub>1</sub> gives H = QA.
+    <br><br>
+    <strong>Note:</strong> The full similarity transformation A → Q<sup>T</sup>AQ
+    (which would preserve eigenvalues) requires also multiplying on the right by Q<sup>T</sup>.
+    Here we show only the left multiplications — the result is H = QA, not a similar matrix.
+  `;
+  return k;
+}
+
+/* ══════════════════════════════════════
+   TEX VECTOR  (column vector)
+══════════════════════════════════════ */
+function vecTeX(v){
+  return`\\begin{pmatrix}${v.map(x=>fmtTeX(x)).join('\\\\')}\\end{pmatrix}`;
+}
+
+/* ══════════════════════════════════════
+   COLOUR LEGEND
+══════════════════════════════════════ */
+function renderLegend(){
+  const d=document.createElement('div');d.className='legend';
+  const items=[
+    ['#fff8ea','var(--x-bg)','amber / sub-column x = A[k+1:n, k]'],
+    ['var(--H-bg)','1px solid #90ccc0','teal / modified by right reflection'],
+    ['var(--mod-bg)','1px solid #c0ccdd','indigo / modified by left reflection'],
+    ['var(--H-hi)','1px solid var(--H2)','bright teal / new sub-diagonal entry'],
+    ['var(--done-bg)','1px solid #ddd','gray / enforced zeros'],
+  ];
+  items.forEach(([bg,bdr,lbl])=>{
+    const it=document.createElement('div');it.className='leg-item';
+    const sw=document.createElement('div');sw.className='leg-swatch';sw.style.background=bg;sw.style.border=bdr;
+    const lt=document.createElement('span');lt.textContent=lbl;
+    it.append(sw,lt);d.appendChild(it);
+  });
+  return d;
+}
+
+/* ══════════════════════════════════════
+   MAIN DRIVER
+══════════════════════════════════════ */
+function doSolve(){
+  const out=document.getElementById('out');out.innerHTML='';
+  try{
+    const n=cN;
+    const A=Array.from({length:n},(_,i)=>
+      Array.from({length:n},(_,j)=>parseFloat(document.getElementById(`a${i}_${j}`)?.value||'0')||0)
+    );
+    const A0=matClone(A);
+    const steps=hessenberg(A);
+
+    const wrap=document.createElement('div');wrap.className='steps-wrap';
+
+    const lbl=document.createElement('div');lbl.className='phase-lbl';
+    lbl.textContent=`Algorithm 26.1 — Householder Reduction to Hessenberg Form (n = ${n}, steps k = 1 to ${n-2})`;
+    wrap.appendChild(lbl);
+    wrap.appendChild(renderLegend());
+
+    steps.forEach(step=>{
+      if(step.type==='init') wrap.appendChild(renderInit(step));
+      else if(step.type==='step') wrap.appendChild(renderStep(step));
+      else if(step.type==='done') wrap.appendChild(renderDone(step,A0));
+    });
+
+    wrap.appendChild(renderKey(n));
+    out.appendChild(wrap);
+    out.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    out.innerHTML=`<div class="err-msg" style="padding:1rem">${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════
+   UI
+══════════════════════════════════════ */
+let cN=4;
+
+const EXAMPLES=[
+  {n:4, A:[[4,1,-2,2],[1,2,0,1],[-2,0,3,-2],[2,1,-2,-1]], label:'4×4 symmetric'},
+  {n:4, A:[[2,-1,0,0],[-1,2,-1,0],[0,-1,2,-1],[0,0,-1,2]], label:'4×4 tridiagonal'},
+  {n:5, A:[[6,5,4,3,2],[5,4,3,2,1],[4,3,2,1,0],[3,2,1,0,-1],[2,1,0,-1,-2]], label:'5×5 Hilbert-like'},
+  {n:4, A:[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]], label:'4×4 rank-deficient'},
+  {n:3, A:[[2,1,1],[4,3,3],[8,7,9]], label:'3×3 simple'},
+];
+
+function rebuildAll(){
+  cN=Math.min(Math.max(parseInt(document.getElementById('nSz').value)||3,3),6);
+  document.getElementById('nSz').value=cN;
+  buildGrid();
+}
+function buildGrid(){
+  const cont=document.getElementById('mxA');cont.innerHTML='';
+  cont.style.gridTemplateColumns=`auto ${Array(cN).fill('64px').join(' ')}`;
+  const empty=document.createElement('div');cont.appendChild(empty);
+  for(let j=0;j<cN;j++){const d=document.createElement('div');d.className='clbl';d.innerHTML=rk(`c_{${j+1}}`);cont.appendChild(d);}
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`R_{${i+1}}`);cont.appendChild(rl);
+    for(let j=0;j<cN;j++){
+      const inp=document.createElement('input');inp.type='text';inp.id=`a${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      cont.appendChild(inp);
+    }
+  }
+}
+function loadEx(ex){
+  cN=ex.n;document.getElementById('nSz').value=cN;buildGrid();
+  ex.A.forEach((row,i)=>row.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+}
+function buildExamples(){
+  const row=document.getElementById('exRow');row.innerHTML='';
+  EXAMPLES.forEach(ex=>{
+    const btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);row.appendChild(btn);
+  });
+}
+window.addEventListener('DOMContentLoaded',()=>{buildExamples();buildGrid();loadEx(EXAMPLES[0]);});
+</script>
+</body>
+</html>

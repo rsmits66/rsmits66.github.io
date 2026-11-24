@@ -39,11 +39,15 @@ if (any(.args %in% c("--check", "--preview"))) UPDATE_FILE <- FALSE
 ROOT <- "interactive_tools"   # display name used in the report
 SKIP_FILE <- "(^\\.)|(\\(\\d+\\)\\.html$)"   # ignore dotfiles and "name (1).html" copies
 
-CAT_ORDER <- c("linear-algebra", "optimization", "probability-and-statistics",
+CAT_ORDER <- c("linear-algebra", "optimization",
+               "probability-and-statistics",
                "analysis", "topology", "geometry")
-SUB_ORDER <- c("linear-models", "probability-basics", "statistical-learning", "time-series",
-               "stochastic-processes", "basic-statistics", "geostatistics",
-               "harmonic-analysis", "differential-geometry", "algebraic-geometry")
+SUB_ORDER <- c("basic-statistics", "geostatistics", "linear-models",
+               "probability-basics", "statistical-learning",
+               "stochastic-processes", "time-series",
+               "complex-analysis", "fourier-series", 
+               "functional-analysis", "harmonic-analysis",
+               "algebraic-geometry", "differential-geometry")
 
 
 # ---------- find the website folder ----------

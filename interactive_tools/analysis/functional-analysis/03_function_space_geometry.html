@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3. A function is a point | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1.3fr 1fr 1.1fr; } }
+#cvMain { height: 300px; touch-action: none; cursor: crosshair; } #cvD { height: 150px; }
+#cvC { height: 250px; } #cvTri { height: 270px; } #cvN { height: 190px; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); opacity: .4; }
+.legend i.thin { border-top-width: 1.5px; }
+table.norms { border-collapse: collapse; width: 100%; font-size: .93rem; margin-top: .6rem; font-variant-numeric: tabular-nums; }
+table.norms th, table.norms td { padding: .2rem .25rem; text-align: right; white-space: nowrap; }
+table.norms th:first-child, table.norms td:first-child { text-align: left; }
+table.norms thead th { font-family: var(--slab); font-weight: 500; border-bottom: 2px solid var(--ink); }
+table.norms tbody tr + tr { border-top: 1px solid var(--rule); }
+table.norms tbody tr { cursor: pointer; } table.norms tbody tr:hover { background: var(--mist); }
+table.norms tr.on td { font-weight: 600; } table.norms tr.on td:first-child { box-shadow: inset 4px 0 0 var(--crimson); padding-left: .55rem; }
+table.norms td:last-child { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Section 1.3</span>
+    </div>
+    <div class="page-number" aria-hidden="true">3</div>
+    <div>
+      <h1>A function is a point</h1>
+      <p>Draw two functions. Each is a single point of a function space, and how far apart the two points are depends entirely on which norm you hold the ruler in.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>Page 2 measured vectors with two or three coordinates. A function on $[0,1]$ has a coordinate for every $x$, and the same formulas, with integrals in place of sums, measure it. Draw $f$ and $g$, or let $g$ be $f$ plus a small disturbance, and read off six distances at once.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>The function f</legend>
+        <div class="chips">
+          <input type="radio" name="fKind" id="f-sine" value="sine" checked><label for="f-sine">sin 2πx</label>
+          <input type="radio" name="fKind" id="f-hat" value="hat"><label for="f-hat">Hat</label>
+          <input type="radio" name="fKind" id="f-bump" value="bump"><label for="f-bump">Smooth bump</label>
+          <input type="radio" name="fKind" id="f-step" value="step"><label for="f-step">Step</label>
+          <input type="radio" name="fKind" id="f-sketch" value="sketch"><label for="f-sketch">Your sketch</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>The function g</legend>
+        <div class="chips">
+          <input type="radio" name="gMode" id="g-spike" value="spike" checked><label for="g-spike">f + narrow spike</label>
+          <input type="radio" name="gMode" id="g-wiggle" value="wiggle"><label for="g-wiggle">f + fine wiggle</label>
+          <input type="radio" name="gMode" id="g-const" value="const"><label for="g-const">f + constant 1/n</label>
+          <input type="radio" name="gMode" id="g-ramp" value="ramp"><label for="g-ramp">Ramp of width 1/n</label>
+          <input type="radio" name="gMode" id="g-cos" value="cos"><label for="g-cos">cos 2πx</label>
+          <input type="radio" name="gMode" id="g-zero" value="zero"><label for="g-zero">0</label>
+          <input type="radio" name="gMode" id="g-sketch" value="sketch"><label for="g-sketch">Your sketch</label>
+        </div>
+      </fieldset>
+      <div class="slider big" id="nWrap">
+        <label for="sn">Sharpness n</label><output id="on">8</output>
+        <input type="range" id="sn" min="1" max="64" step="1" value="8">
+      </div>
+      <div class="slider">
+        <label for="sN">Coordinates kept, N</label><output id="oN">12</output>
+        <input type="range" id="sN" min="1" max="32" step="1" value="12">
+      </div>
+      <fieldset style="grid-column:auto">
+        <legend>The pencil draws</legend>
+        <div class="chips">
+          <input type="radio" name="target" id="t-f" value="f"><label for="t-f">f</label>
+          <input type="radio" name="target" id="t-g" value="g" checked><label for="t-g">g</label>
+        </div>
+      </fieldset>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">Two graphs on [0, 1]. Drag across the picture to draw with the pencil.</p>
+        <canvas id="cvMain" aria-label="Graphs of f and g; drawing surface"></canvas>
+        <ul class="legend">
+          <li><i class="c"></i>f</li><li><i></i>g</li><li><i class="c d thin"></i>f<sub>N</sub>, from N coordinates</li>
+          <li><i class="sq"></i>area = ‖f − g‖ in L¹</li><li><i class="g"></i>largest gap = ‖f − g‖ in L<sup>∞</sup></li>
+        </ul>
+        <p class="cap">Derivatives, which the Sobolev norms also measure:</p>
+        <canvas id="cvD" aria-label="Graphs of the derivatives of f and g"></canvas>
+        <ul class="legend"><li><i class="c"></i>f′</li><li><i></i>g′</li></ul>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">Coordinates in the orthonormal basis 1, √2 cos πx, √2 cos 2πx, … The function becomes a point of ℝ<sup>N</sup>.</p>
+        <div class="mini">
+          <span>Bars show</span>
+          <div class="chips">
+            <input type="radio" name="weight" id="w-plain" value="plain" checked><label for="w-plain">c<sub>k</sub>, for L²</label>
+            <input type="radio" name="weight" id="w-h1" value="h1"><label for="w-h1">√(1 + k²π²) c<sub>k</sub>, for H¹</label>
+          </div>
+        </div>
+        <canvas id="cvC" aria-label="Bar chart of cosine coefficients of f and g"></canvas>
+        <ul class="legend"><li><i class="sq" style="opacity:1"></i>f</li><li><i class="sq" style="opacity:1;background:var(--ink)"></i>g</li></ul>
+        <p class="cap">The length of the bar vector is the norm. The H¹ norm is the L² norm with weights that grow with frequency: a weighted ℓ², as on page 2, in infinitely many coordinates.</p>
+        <table class="read">
+          <tr><th>‖f‖ in L², from the graph</th><td id="c1">–</td></tr>
+          <tr><th>from N coordinates</th><td id="c2">–</td></tr>
+          <tr><th>‖f‖ in H¹, from the graph</th><td id="c3">–</td></tr>
+          <tr><th>from N coordinates</th><td id="c4">–</td></tr>
+          <tr><th>‖f − g‖ in L², from the graph</th><td id="c5">–</td></tr>
+          <tr><th>distance between the points of ℝ<sup>N</sup></th><td id="c6">–</td></tr>
+        </table>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub">The triangle with corners 0, f, g, drawn with its true side lengths in the chosen norm.</p>
+        <canvas id="cvTri" aria-label="Triangle with vertices zero, f and g whose side lengths are the norms"></canvas>
+        <ul class="legend"><li><i class="c"></i>this norm</li><li><i class="g thin"></i>the L² triangle, same scale</li></ul>
+        <table class="norms" id="normTable" aria-label="Norms of f, g and f minus g. Select a row to draw its triangle.">
+          <thead><tr><th>Norm</th><th>‖f‖</th><th>‖g‖</th><th>‖f − g‖</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="cap">Select a row to draw that triangle.</p>
+        <div id="nBlock">
+          <canvas id="cvN" aria-label="Distances between f and g as functions of n, on log-log axes"></canvas>
+          <ul class="legend"><li><i class="g"></i>L¹</li><li><i></i>L²</li><li><i class="c"></i>L<sup>∞</sup></li><li><i class="c d"></i>H¹</li></ul>
+          <p class="cap">‖f − g‖ against n, on log–log axes. Lines that fall mean g → f in that norm.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Definitions.</span> For a function $f$ on $[0,1]$,
+    $$\|f\|_{1}=\int_0^1|f|,\qquad \|f\|_{2}=\Bigl(\int_0^1|f|^2\Bigr)^{1/2},\qquad \|f\|_{\infty}=\max_{0\le x\le1}|f(x)|,$$
+    and, when $f$ has a derivative in the appropriate sense,
+    $$\|f\|_{W^{1,1}}=\|f\|_1+\|f'\|_1,\qquad \|f\|_{H^1}=\bigl(\|f\|_2^2+\|f'\|_2^2\bigr)^{1/2},\qquad \|f\|_{W^{1,\infty}}=\max\bigl(\|f\|_\infty,\|f'\|_\infty\bigr).$$
+    The distance between $f$ and $g$ is the norm of $f-g$.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Proposition (one direction only).</span> For every continuously differentiable $f$ on $[0,1]$,
+    $$\|f\|_1\le\|f\|_2\le\|f\|_\infty\le\sqrt2\,\|f\|_{H^1}.$$
+    None of these can be reversed: there is no constant $C$ with $\|f\|_\infty\le C\|f\|_2$, none with $\|f\|_2\le C\|f\|_1$, and none with $\|f\|_{H^1}\le C\|f\|_\infty$.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Proposition (coordinates).</span> With $\varphi_0=1$, $\varphi_k=\sqrt2\cos k\pi x$ and $c_k=\int_0^1f\varphi_k$,
+    $$\|f\|_2^2=\sum_{k\ge0}c_k^2,\qquad \|f\|_{H^1}^2=\sum_{k\ge0}(1+k^2\pi^2)\,c_k^2 .$$
+    Both norms come from inner products. $L^2$ and $H^1$ are Hilbert spaces. $L^1$, $C[0,1]$ with the max norm, and the $W^{1,p}$ for $p\ne2$ are Banach spaces that are not.</p>
+  </div>
+  <div class="prose">
+    <p>On page 2 every pair of norms on $\mathbb R^n$ was equivalent, so the choice changed the shape of the ball and nothing else. Here the choice changes which sequences converge, which sets are closed, and which operators are bounded. Differentiation is unbounded from $C[0,1]$ to $C[0,1]$ but has norm at most $1$ from $H^1$ to $L^2$. Choosing the space is part of posing the problem.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>Close in area, far in height</h3>
+      <p>A spike of height 1 and width 1/n. Raise n. The L¹ and L² distances fall, the L<sup>∞</sup> distance stays at 1, and the H¹ distance grows. One sequence, three verdicts.</p>
+      <button type="button" class="plain" data-exp="spike">Set up the spike</button>
+    </div>
+    <div class="exp">
+      <h3>Close in height, far in slope</h3>
+      <p>A wiggle sin(2πnx)/n. The two graphs merge to the eye, and every L<sup>p</sup> distance falls. The derivative panel tells another story, and the H¹ distance never drops below about 4.4.</p>
+      <button type="button" class="plain" data-exp="wiggle">Set up the wiggle</button>
+    </div>
+    <div class="exp">
+      <h3>When all the rulers agree</h3>
+      <p>Adding the constant 1/n moves f the same distance in every norm on this page. Compare the six triangles. Why is the Sobolev distance no larger than the L² distance here?</p>
+      <button type="button" class="plain" data-exp="const">Set up the constant shift</button>
+    </div>
+    <div class="exp">
+      <h3>Continuous functions closing in on a step</h3>
+      <p>With f the step, ramps of width 1/n approach it in L¹ and L² while staying at L<sup>∞</sup> distance ½. The ramps form a Cauchy sequence in L² whose limit has left C[0, 1].</p>
+      <button type="button" class="plain" data-exp="ramp">Set up the ramps</button>
+    </div>
+    <div class="exp">
+      <h3>A right angle between functions</h3>
+      <p>sin 2πx and the hat are orthogonal in L². The triangle is right-angled and Pythagoras holds exactly. Select the L<sup>∞</sup> row: the same two functions now meet at about 97°. In which rows does the angle mean anything?</p>
+      <button type="button" class="plain" data-exp="orth">Set up sine and hat</button>
+    </div>
+    <div class="exp">
+      <h3>Your own pair</h3>
+      <p>Draw f, switch the pencil, draw g. Try to make g close to f in L<sup>∞</sup> and far in L¹. Then explain why you could not.</p>
+      <button type="button" class="plain" data-exp="free">Set up two sketches</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>The triangle is honest about lengths in every row. Three numbers are the sides of a plane triangle exactly when each is at most the sum of the other two, and that is axiom (iii) of a norm.</li>
+        <li>For the preset families the distances have closed forms, for example $\|f-g\|_1=1/(2n)$ and $\|f-g\|_\infty=1$ for the spike. The plotted lines are those formulas, and their slopes are exact.</li>
+        <li>The chain $\|f\|_1\le\|f\|_2\le\|f\|_\infty$ is visible in every table you can produce and follows from the Cauchy–Schwarz inequality in two lines.</li>
+        <li>In the $L^2$ and $H^1$ rows the angle at $0$ is real: its cosine is $\langle f,g\rangle/\|f\|\|g\|$.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>In the other rows the angle is an artefact of drawing a triangle in a Euclidean plane. There is no inner product behind it, and the plane through $0$, $f$, $g$ does not look Euclidean from inside $L^1$ or $L^\infty$.</li>
+        <li>Each function here is 513 numbers, and on $\mathbb R^{513}$ all norms are equivalent. The step function shows a finite $H^1$ norm near 23, which is $\sqrt{1/h}$ for the grid spacing $h$. Halve the spacing and it grows by $\sqrt2$. The true value is infinite: the step is not in $H^1$.</li>
+        <li>A slider that stops at $n=64$ cannot show that no constant $C$ works. It shows a trend, and the proof is the closed form.</li>
+        <li>That the ramps have no continuous limit in $L^2$, and that there is a complete space $L^2$ in which they do converge, are statements about completion. The screen shows the Cauchy sequence, not the space that catches it.</li>
+        <li>A hand-drawn curve is smoothed slightly when you lift the pencil. Without that, the jitter of the hand would dominate every derivative norm, which is itself a lesson about $H^1$.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Prove $\|f\|_1\le\|f\|_2\le\|f\|_\infty$ on $[0,1]$. What happens to these inequalities on $[0,L]$, and on all of $\mathbb R$? For the spike of height $1$ and width $1/n$, compute the three norms exactly and deduce that neither inequality can be reversed with a constant.</li>
+    <li>For $f$ continuously differentiable on $[0,1]$, start from $f(x)=f(y)+\int_y^xf'$ and integrate in $y$ to prove $\|f\|_\infty\le\|f\|_1+\|f'\|_1\le\sqrt2\,\|f\|_{H^1}$. Use the wiggle to show no inequality $\|f\|_{H^1}\le C\|f\|_\infty$ holds. Conclude that $d/dx$ is a bounded operator from $H^1$ to $L^2$ but not from $C[0,1]$ with the max norm to itself, even on the subspace where it is defined.</li>
+    <li>Let $g_n$ be the ramp of width $1/n$. Compute $\|g_n-g_m\|_2$ and show $(g_n)$ is Cauchy in the $L^2$ norm. Show that if $g_n\to g$ in $L^2$ with $g$ continuous, then $g=0$ on $[0,\tfrac12)$ and $g=1$ on $(\tfrac12,1]$, which is impossible. What does this say about $C[0,1]$ with the $L^2$ norm, and why did page 1 use the max norm?</li>
+    <li>Verify that the $\varphi_k$ are orthonormal, and for $f\in C^1[0,1]$ integrate by parts to show that the sine coefficients of $f'$ are $-k\pi c_k$. Deduce the formula for $\|f\|_{H^1}^2$. Which sequences $(c_k)$ are the coordinates of a function in $H^1$? Show that the unit ball of $H^1$, viewed inside $L^2$, is an ellipsoid whose $k$-th semi-axis is $(1+k^2\pi^2)^{-1/2}$. Keep this picture. It is what a compact operator does to a ball.</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="02_normed_space_gallery.html">Previous: 2. A gallery of normed spaces</a>
+  <a href="index.html">Course contents</a>
+  <a href="04.html" id="nextLink">Next page: 4</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   Functions on a grid, their norms and coordinates
+   ------------------------------------------------------------------ */
+const n = 512, h = 1 / n, K = 32;
+const xs = Float64Array.from({ length: n + 1 }, (_, j) => j * h);
+const PHI = []; for (let k = 0; k < K; k++) PHI.push(Float64Array.from(xs, x => k ? Math.SQRT2 * Math.cos(k * Math.PI * x) : 1));
+const state = { fKind: 'sine', gMode: 'spike', n: 8, N: 12, target: 'g', norm: 'L2', weight: 'plain' };
+const NORMS = [['L1', 'L¹'], ['L2', 'L²'], ['Linf', 'L<sup>∞</sup>'], ['W11', 'W<sup>1,1</sup>'], ['H1', 'H¹'], ['W1inf', 'W<sup>1,∞</sup>']];
+let fSketch = new Float64Array(n + 1), gSketch = new Float64Array(n + 1);
+const F_KINDS = { sine: x => Math.sin(2 * Math.PI * x), hat: x => 1 - Math.abs(2 * x - 1), bump: x => Math.exp(-(((x - 0.5) / 0.15) ** 2)), step: x => (x < 0.5 ? 0 : 1) };
+const buildF = () => state.fKind === 'sketch' ? fSketch.slice() : Float64Array.from(xs, F_KINDS[state.fKind]);
+function buildG(f, m = state.n, mode = state.gMode) {
+  switch (mode) {
+    case 'spike':  return f.map((v, j) => v + Math.max(0, 1 - Math.abs(xs[j] - 0.55) * 2 * m));
+    case 'wiggle': return f.map((v, j) => v + Math.sin(2 * Math.PI * m * xs[j]) / m);
+    case 'const':  return f.map(v => v + 1 / m);
+    case 'ramp':   return Float64Array.from(xs, x => Math.min(1, Math.max(0, (x - 0.5) * m + 0.5)));
+    case 'cos':    return Float64Array.from(xs, x => Math.cos(2 * Math.PI * x));
+    case 'zero':   return new Float64Array(n + 1);
+    default:       return gSketch.slice();
+  }
+}
+const FAMILY = m => ['spike', 'wiggle', 'const', 'ramp'].includes(m);
+function norms(a) {
+  let s1 = 0, s2 = 0, mx = 0, arg = 0, d1 = 0, d2 = 0, dm = 0;
+  for (let j = 0; j <= n; j++) { const v = Math.abs(a[j]), w = j === 0 || j === n ? 0.5 : 1; s1 += w * v; s2 += w * v * v; if (v > mx) { mx = v; arg = j; } }
+  for (let j = 0; j < n; j++) { const d = Math.abs(a[j + 1] - a[j]) / h; d1 += d; d2 += d * d; if (d > dm) dm = d; }
+  const L1 = s1 * h, L2 = Math.sqrt(s2 * h), D1 = d1 * h, D2 = Math.sqrt(d2 * h);
+  return { L1, L2, Linf: mx, W11: L1 + D1, H1: Math.hypot(L2, D2), W1inf: Math.max(mx, dm), arg };
+}
+const coeffs = a => PHI.map(p => { let s = 0; for (let j = 0; j <= n; j++) s += (j === 0 || j === n ? 0.5 : 1) * a[j] * p[j]; return s * h; });
+const R = {};
+function compute() {
+  const f = buildF(), g = buildG(f), d = f.map((v, j) => v - g[j]);
+  const cf = coeffs(f), cg = coeffs(g), fN = new Float64Array(n + 1);
+  for (let k = 0; k < state.N; k++) for (let j = 0; j <= n; j++) fN[j] += cf[k] * PHI[k][j];
+  let fam = null;
+  if (FAMILY(state.gMode)) { fam = []; for (const m of [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]) { const gm = buildG(f, m); fam.push([m, norms(f.map((v, j) => v - gm[j]))]); } }
+  Object.assign(R, { f, g, d, nf: norms(f), ng: norms(g), nd: norms(d), cf, cg, fN, fam });
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }) {
+  const x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function axes(ctx, F, xt = [0, 0.5, 1]) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.fillStyle = col.gray; ctx.setLineDash([]); ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of xt) { const X = Math.round(F.X(t)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(String(t), X, F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; const lab = v => Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1);
+  ctx.fillText(lab(F.yr[1]), F.x0 - 5, F.y0 + 6); ctx.fillText(lab(F.yr[0]), F.x0 - 5, F.y1 - 6);
+  if (F.yr[0] < 0 && F.yr[1] > 0) { const Y = Math.round(F.Y(0)) + .5; ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, Y); ctx.lineTo(F.x1, Y); ctx.stroke(); ctx.fillText('0', F.x0 - 5, Y); }
+}
+function curve(ctx, F, X, Yv, color, width, dash = []) { clip(ctx, F); ctx.beginPath(); for (let j = 0; j < Yv.length; j++) ctx.lineTo(F.X(X[j]), Math.max(-1e4, Math.min(1e4, F.Y(Yv[j])))); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.stroke(); ctx.restore(); }
+function drag(cv, start, end) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { if (move && end) end(); move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = v => v >= 100 ? v.toFixed(1) : v >= 10 ? v.toFixed(2) : v.toFixed(4);
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', sup = e => (e < 0 ? '⁻' : '') + [...String(Math.abs(e))].map(c => SUP[c]).join('');
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {};
+function drawMain() {
+  const { ctx, W, H } = fit($('cvMain')), { f, g, fN, nd } = R, F = FR.main = frame(W, H, [0, 1], [-2.1, 2.1]); axes(ctx, F);
+  clip(ctx, F); ctx.beginPath(); for (let j = 0; j <= n; j++) ctx.lineTo(F.X(xs[j]), F.Y(f[j])); for (let j = n; j >= 0; j--) ctx.lineTo(F.X(xs[j]), F.Y(g[j])); ctx.closePath(); ctx.globalAlpha = .22; ctx.fillStyle = col.accent; ctx.fill('evenodd'); ctx.globalAlpha = 1; ctx.restore();
+  curve(ctx, F, xs, fN, col.accent, 1.5, [5, 4]); curve(ctx, F, xs, g, col.ink, 3); curve(ctx, F, xs, f, col.accent, 3);
+  if (nd.Linf > 1e-9) { const X = F.X(xs[nd.arg]); clip(ctx, F); ctx.strokeStyle = col.gray; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(X, F.Y(f[nd.arg])); ctx.lineTo(X, F.Y(g[nd.arg])); ctx.stroke(); ctx.restore(); }
+  ctx.fillStyle = state.target === 'f' ? col.accent : col.ink; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.font = `italic 13px ${col.font}`; ctx.fillText('pencil draws ' + state.target, F.x1 - 6, F.y0 + 5);
+}
+function drawD() {
+  const { ctx, W, H } = fit($('cvD')), der = a => { const d = new Float64Array(n); for (let j = 0; j < n; j++) d[j] = (a[j + 1] - a[j]) / h; return d; };
+  const df = der(R.f), dg = der(R.g), xm = Float64Array.from({ length: n }, (_, j) => (j + .5) * h);
+  let mx = 1; for (const a of [df, dg]) for (const v of a) mx = Math.max(mx, Math.abs(v)); mx = Math.min(mx, 40) * 1.1;
+  const F = frame(W, H, [0, 1], [-mx, mx]); axes(ctx, F); curve(ctx, F, xm, dg, col.ink, 2); curve(ctx, F, xm, df, col.accent, 2);
+}
+function drawC() {
+  const { ctx, W, H } = fit($('cvC')), N = state.N, wt = k => state.weight === 'h1' ? Math.sqrt(1 + (k * Math.PI) ** 2) : 1;
+  let mx = 1e-9; for (let k = 0; k < K; k++) mx = Math.max(mx, Math.abs(R.cf[k]) * wt(k), Math.abs(R.cg[k]) * wt(k)); mx *= 1.1;
+  const F = frame(W, H, [-0.7, K - 0.3], [-mx, mx], { l: 40, r: 8, t: 10, b: 20 });
+  ctx.fillStyle = col.mist; ctx.fillRect(F.x0, F.y0, F.X(N - 0.5) - F.x0, F.y1 - F.y0);
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.stroke();
+  ctx.fillStyle = col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(mx >= 10 ? mx.toFixed(0) : mx.toFixed(2), F.x0 - 5, F.y0 + 6); ctx.fillText('0', F.x0 - 5, F.Y(0));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const k of [0, 8, 16, 24, 31]) ctx.fillText('k=' + k, clamp(F.X(k), F.x0 + 10, F.x1 - 12), F.y1 + 4);
+  const bw = (F.x1 - F.x0) / K * 0.36;
+  for (let k = 0; k < K; k++) { ctx.globalAlpha = k < N ? 1 : .28; for (const [c, color, off] of [[R.cf, col.accent, -bw], [R.cg, col.ink, 0]]) { const Y = F.Y(c[k] * wt(k)); ctx.fillStyle = color; ctx.fillRect(F.X(k) + off, Math.min(Y, F.Y(0)), bw, Math.max(1, Math.abs(Y - F.Y(0)))); } }
+  ctx.globalAlpha = 1;
+}
+function triangle(a, b, c) { const th = a > 1e-12 && b > 1e-12 ? Math.acos(clamp((a * a + b * b - c * c) / (2 * a * b), -1, 1)) : 0, al = 0.2; return { O: [0, 0], Fp: [a * Math.cos(al), a * Math.sin(al)], Gp: [b * Math.cos(al + th), b * Math.sin(al + th)], th }; }
+function drawTri() {
+  const { ctx, W, H } = fit($('cvTri')), key = state.norm, T = triangle(R.nf[key], R.ng[key], R.nd[key]), T2 = triangle(R.nf.L2, R.ng.L2, R.nd.L2);
+  const pts = [T.O, T.Fp, T.Gp, T2.Fp, T2.Gp]; let x0 = 0, x1 = 1e-9, y0 = 0, y1 = 1e-9; for (const p of pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+  const pad = 38, sc = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0)), ox = pad + ((W - 2 * pad) - (x1 - x0) * sc) / 2, oy = pad + ((H - 2 * pad) - (y1 - y0) * sc) / 2;
+  const S = p => [ox + (p[0] - x0) * sc, H - oy - (p[1] - y0) * sc], seg = (p, q, color, w, dash = []) => { ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(...S(p)); ctx.lineTo(...S(q)); ctx.stroke(); ctx.setLineDash([]); };
+  if (key !== 'L2') { seg(T2.O, T2.Fp, col.gray, 1.2); seg(T2.O, T2.Gp, col.gray, 1.2); seg(T2.Fp, T2.Gp, col.gray, 1.2); }
+  ctx.globalAlpha = .12; ctx.fillStyle = col.accent; ctx.beginPath(); ctx.moveTo(...S(T.O)); ctx.lineTo(...S(T.Fp)); ctx.lineTo(...S(T.Gp)); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+  seg(T.O, T.Fp, col.ink, 2); seg(T.O, T.Gp, col.ink, 2); seg(T.Fp, T.Gp, col.accent, 4.5);
+  const label = (p, q, text, color) => { const a = S(p), b = S(q), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, c = S([(T.O[0] + T.Fp[0] + T.Gp[0]) / 3, (T.O[1] + T.Fp[1] + T.Gp[1]) / 3]); let dx = mx - c[0], dy = my - c[1]; const l = Math.hypot(dx, dy) || 1; ctx.fillStyle = color; ctx.font = `12px ${col.font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, clamp(mx + dx / l * 22, 34, W - 34), clamp(my + dy / l * 14, 10, H - 10)); };
+  label(T.O, T.Fp, num(R.nf[key]), col.ink); label(T.O, T.Gp, num(R.ng[key]), col.ink); label(T.Fp, T.Gp, num(R.nd[key]), col.accent);
+  for (const [p, name, color] of [[T.O, '0', col.gray], [T.Fp, 'f', col.accent], [T.Gp, 'g', col.ink]]) { const s = S(p); ctx.beginPath(); ctx.arc(s[0], s[1], 6, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col.panel; ctx.stroke(); ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(name, s[0] + 8, s[1] + 4); }
+  ctx.font = `12px ${col.font}`; ctx.fillStyle = col.gray; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('angle at 0: ' + (T.th * 180 / Math.PI).toFixed(1) + '°' + (key === 'L2' || key === 'H1' ? '' : '  (drawing artefact)'), 6, 4);
+}
+function drawN() {
+  if (!R.fam) return; const { ctx, W, H } = fit($('cvN')), lines = [['L1', col.gray, []], ['L2', col.ink, []], ['Linf', col.accent, []], ['H1', col.accent, [5, 4]]];
+  let lo = Infinity, hi = -Infinity; for (const [, nm] of R.fam) for (const [k] of lines) { const v = Math.log10(Math.max(nm[k], 1e-6)); lo = Math.min(lo, v); hi = Math.max(hi, v); } lo = Math.floor(lo - .01); hi = Math.ceil(hi + .01); if (hi - lo < 2) lo = hi - 2;
+  const F = frame(W, H, [0, Math.log10(64)], [lo, hi], { l: 44, r: 12, t: 10, b: 20 });
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.fillStyle = col.gray; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const m of [1, 2, 4, 8, 16, 32, 64]) { const X = Math.round(F.X(Math.log10(m))) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(m === 1 ? 'n=1' : String(m), clamp(X, F.x0 + 12, F.x1 - 6), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; for (let e = lo; e <= hi; e++) { const Y = Math.round(F.Y(e)) + .5; ctx.beginPath(); ctx.moveTo(F.x0, Y); ctx.lineTo(F.x1, Y); ctx.stroke(); ctx.fillText(e === 0 ? '1' : '10' + sup(e), F.x0 - 5, clamp(Y, F.y0 + 6, F.y1 - 6)); }
+  const XN = F.X(Math.log10(state.n)); ctx.strokeStyle = col.ink; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(XN, F.y0); ctx.lineTo(XN, F.y1); ctx.stroke(); ctx.setLineDash([]);
+  for (const [k, color, dash] of lines) { clip(ctx, F); ctx.beginPath(); for (const [m, nm] of R.fam) ctx.lineTo(F.X(Math.log10(m)), F.Y(Math.log10(Math.max(nm[k], 1e-6)))); ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(XN, F.Y(Math.log10(Math.max(R.nd[k], 1e-6))), 4.5, 0, 7); ctx.fill(); }
+}
+function readouts() {
+  $('on').textContent = state.n; $('oN').textContent = state.N;
+  const body = $('normTable').tBodies[0]; body.innerHTML = '';
+  for (const [k, name] of NORMS) { const tr = document.createElement('tr'); tr.className = k === state.norm ? 'on' : ''; tr.tabIndex = 0; tr.setAttribute('role', 'button'); tr.setAttribute('aria-pressed', k === state.norm);
+    tr.innerHTML = `<td>${name}</td><td>${num(R.nf[k])}</td><td>${num(R.ng[k])}</td><td>${num(R.nd[k])}</td>`; const pick = () => { state.norm = k; update(false); };
+    tr.addEventListener('click', pick); tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }); body.appendChild(tr); }
+  const N = state.N, part = (c, w) => { let s = 0; for (let k = 0; k < N; k++) s += (w ? 1 + (k * Math.PI) ** 2 : 1) * c[k] * c[k]; return Math.sqrt(s); };
+  $('c1').textContent = num(R.nf.L2); $('c2').textContent = num(part(R.cf)); $('c3').textContent = num(R.nf.H1); $('c4').textContent = num(part(R.cf, true));
+  $('c5').textContent = num(R.nd.L2); $('c6').textContent = num(part(R.cf.map((v, k) => v - R.cg[k])));
+  const nm = NORMS.find(q => q[0] === state.norm)[1];
+  $('eqLive').innerHTML = `Two points of a function space. &nbsp; In ${nm}: &nbsp; ‖f‖ = <b>${num(R.nf[state.norm])}</b>, &nbsp; ‖g‖ = <b>${num(R.ng[state.norm])}</b>, &nbsp; distance ‖f − g‖ = <b>${num(R.nd[state.norm])}</b>.`;
+}
+let pending = false, need = true;
+function update(re = true) { need = need || re; if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; if (need) { compute(); need = false; } drawMain(); drawD(); drawC(); drawTri(); drawN(); readouts(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+function syncUI() {
+  for (const k of ['fKind', 'gMode', 'target', 'weight']) document.querySelector(`input[name=${k}][value=${state[k]}]`).checked = true;
+  $('sn').value = state.n; $('sN').value = state.N; const fam = FAMILY(state.gMode); $('nWrap').hidden = !fam; $('nBlock').hidden = !fam;
+}
+for (const name of ['fKind', 'gMode', 'target', 'weight']) for (const r of document.querySelectorAll(`input[name=${name}]`)) r.addEventListener('change', () => {
+  if (name === 'fKind' && r.value === 'sketch') fSketch = R.f.slice(); if (name === 'gMode' && r.value === 'sketch') gSketch = R.g.slice();
+  state[name] = r.value; if (name === 'gMode') state.target = r.value === 'sketch' ? 'g' : state.target; if (name === 'fKind' && r.value === 'sketch') state.target = 'f'; syncUI(); update(); });
+$('sn').addEventListener('input', e => { state.n = +e.target.value; update(); }); $('sN').addEventListener('input', e => { state.N = +e.target.value; update(); });
+
+let last = null;
+drag($('cvMain'), () => {
+  const F = FR.main; if (!F) return null; last = null;
+  if (state.target === 'f' && state.fKind !== 'sketch') { fSketch = R.f.slice(); state.fKind = 'sketch'; syncUI(); }
+  if (state.target === 'g' && state.gMode !== 'sketch') { gSketch = R.g.slice(); state.gMode = 'sketch'; syncUI(); }
+  const arr = state.target === 'f' ? fSketch : gSketch;
+  return (px, py) => { const j = clamp(Math.round(F.iX(px) * n), 0, n), v = clamp(F.iY(py), -2, 2);
+    if (last) { const [j0, v0] = last, a = Math.min(j0, j), b = Math.max(j0, j); for (let q = a; q <= b; q++) arr[q] = j === j0 ? v : v0 + (v - v0) * (q - j0) / (j - j0); } else arr[j] = v; last = [j, v]; update(); };
+}, () => {                                            // lifting the pencil: two light smoothing passes, so hand jitter does not swamp the derivative norms
+  const arr = state.target === 'f' ? fSketch : gSketch; for (let pass = 0; pass < 3; pass++) { const c = arr.slice(); for (let j = 1; j < n; j++) arr[j] = (c[j - 1] + 2 * c[j] + c[j + 1]) / 4; } last = null; update();
+});
+
+const wave = (a, b, c) => Float64Array.from(xs, x => a * Math.sin(Math.PI * x) + b * Math.sin(3 * Math.PI * x) + c * x);
+const EXP = {
+  spike:  { fKind: 'sine', gMode: 'spike', n: 8, norm: 'L1' }, wiggle: { fKind: 'bump', gMode: 'wiggle', n: 8, norm: 'H1' },
+  const:  { fKind: 'hat', gMode: 'const', n: 4, norm: 'H1' }, ramp: { fKind: 'step', gMode: 'ramp', n: 6, norm: 'L2' },
+  orth:   { fKind: 'sine', gMode: 'sketch', norm: 'L2', target: 'g' }, free: { fKind: 'sketch', gMode: 'sketch', norm: 'L2', target: 'g' }
+};
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => {
+  if (b.dataset.exp === 'orth') gSketch = Float64Array.from(xs, F_KINDS.hat);
+  if (b.dataset.exp === 'free') { fSketch = wave(0.9, 0.25, 0); gSketch = wave(0.5, -0.3, 0.4); }
+  Object.assign(state, EXP[b.dataset.exp]); syncUI(); update(); $('lab').scrollIntoView({ block: 'start' }); $(FAMILY(state.gMode) ? 'sn' : 'sN').focus({ preventScroll: true });
+});
+
+const recolor = () => { readColors(); update(false); };
+readColors(); syncUI(); update();
+new ResizeObserver(() => update(false)).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => update(false));
+})();
+</script>
+</body>
+</html>

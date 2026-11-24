@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>7. Hahn–Banach geometry | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1fr 1fr 1.3fr; } }
+#cvFun { height: 300px; touch-action: none; } 
+#cvDual, #cvGeo { aspect-ratio: 1 / 1; height: auto; margin: 0 auto; touch-action: none; } #cvDual { max-width: 380px; } #cvGeo { max-width: 480px; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); opacity: .35; } .legend i.sq.g { background: var(--gray); }
+.legend i.dot { width: .75rem; height: .75rem; border: 0; border-radius: 50%; background: var(--ink); } .legend i.dot.c { background: var(--accent); }
+.legend i.thin { border-top-width: 1.5px; }
+.verdict { font-family: var(--slab); font-weight: 700; font-size: 1.05rem; padding: .45rem .7rem; margin: .7rem 0 0; border-left: 5px solid var(--gray); background: var(--mist); }
+.verdict.bad { border-color: var(--crimson); color: var(--accent); }
+.controls .btn { align-self: end; } .controls .btn button { width: 100%; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Sections 2.2 and 2.3</span>
+    </div>
+    <div class="page-number" aria-hidden="true">7</div>
+    <div>
+      <h1>Hahn–Banach: there is always a hyperplane</h1>
+      <p>A functional known only on a subspace can be extended to the whole space without growing. Geometrically, a line that touches the unit ball can always be widened to a hyperplane that still only touches it.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>On page 6 an inner product handed us the extension: project, then apply $f$. A general normed space has no perpendiculars. What it has is a unit ball, and the ball is enough. Choose a norm, a subspace $M$ and a value for $f$ on it. Then turn the candidate level line of $F$ until it stops cutting the ball.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>Mode</legend>
+        <div class="chips">
+          <input type="radio" name="mode" id="m-ext" value="ext" checked><label for="m-ext">Extend a functional from a subspace</label>
+          <input type="radio" name="mode" id="m-sep" value="sep"><label for="m-sep">Separate two sets</label>
+        </div>
+      </fieldset>
+      <!-- extension controls -->
+      <div class="slider big ext"><label for="sQ">Norm: exponent p</label><output id="oP">1</output><input type="range" id="sQ" min="0" max="1" step="0.005" value="1"></div>
+      <div class="slider ext"><label for="sS">Stretch of the ball</label><output id="oS">1.00</output><input type="range" id="sS" min="0.6" max="1.6" step="0.01" value="1"></div>
+      <div class="slider ext"><label for="sTh">Direction of the subspace M</label><output id="oTh">0°</output><input type="range" id="sTh" min="-90" max="90" step="0.5" value="0"></div>
+      <div class="slider ext"><label for="sC">Prescribed value f(u) = c</label><output id="oC">1.00</output><input type="range" id="sC" min="-2" max="2" step="0.05" value="1"></div>
+      <div class="slider ext"><label for="sTau">Turn the candidate extension F</label><output id="oTau">0.80</output><input type="range" id="sTau" min="-3" max="3" step="0.005" value="0.8"></div>
+      <div class="slider ext btn"><button type="button" class="plain" id="findExt">Turn F until it is admissible</button></div>
+      <!-- separation controls -->
+      <fieldset class="sep" hidden>
+        <legend>The set B</legend>
+        <div class="chips">
+          <input type="radio" name="bk" id="b-square" value="square" checked><label for="b-square">Square</label>
+          <input type="radio" name="bk" id="b-tri" value="tri"><label for="b-tri">Triangle</label>
+          <input type="radio" name="bk" id="b-disc" value="disc"><label for="b-disc">Disc</label>
+          <input type="radio" name="bk" id="b-c" value="cshape"><label for="b-c">C-shape, not convex</label>
+        </div>
+      </fieldset>
+      <div class="slider big sep" hidden><label for="sPhi">Direction of F</label><output id="oPhi">0°</output><input type="range" id="sPhi" min="0" max="360" step="0.5" value="20"></div>
+      <div class="slider sep btn" hidden><button type="button" class="plain" id="findSep">Turn F to the best separating direction</button></div>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub" id="subFun"></p>
+        <canvas id="cvFun" aria-label="Function view"></canvas>
+        <ul class="legend" id="legFun"></ul>
+        <p class="cap" id="capFun"></p>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub" id="subDual"></p>
+        <canvas id="cvDual" aria-label="The plane of functionals F = (F1, F2)"></canvas>
+        <ul class="legend" id="legDual"></ul>
+        <p class="cap" id="capDual"></p>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub" id="subGeo"></p>
+        <canvas id="cvGeo" aria-label="The plane with the unit ball or the two sets, and the level line of F"></canvas>
+        <ul class="legend" id="legGeo"></ul>
+        <p class="verdict" id="verdict"></p>
+        <table class="read" id="readT"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Theorem (Hahn–Banach).</span> Let $V$ be a real vector space and $p$ a sublinear functional on it: $p(x+y)\le p(x)+p(y)$ and $p(\alpha x)=\alpha p(x)$ for $\alpha\ge0$. Let $M$ be a subspace and $f$ a linear functional on $M$ with $f(x)\le p(x)$ on $M$. Then there is a linear functional $F$ on $V$ with $F=f$ on $M$ and $F(x)\le p(x)$ on all of $V$.</p>
+    <p><span class="kind">Corollary (norm-preserving extension).</span> If $X$ is a normed space, $M$ a subspace and $f\in M'$, there is $F\in X'$ with $F=f$ on $M$ and $\|F\|=\|f\|$. Take $p(x)=\|f\|\,\|x\|$.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">The one-dimensional step.</span> Let $x_1\notin M$. To extend $f$ to $M\oplus\mathbb Rx_1$ we need only choose the number $a=F(x_1)$. The extension satisfies $F\le p$ exactly when
+    $$\sup_{y\in M}\bigl[-p(-y-x_1)-f(y)\bigr]\ \le\ a\ \le\ \inf_{y\in M}\bigl[p(y+x_1)-f(y)\bigr],$$
+    and sublinearity of $p$ guarantees that the left side does not exceed the right. The Function panel plots both brackets.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Consequences.</span> (a) For every $x_0\ne0$ in a normed space there is $F\in X'$ with $\|F\|=1$ and $F(x_0)=\|x_0\|$. Hence $\|x\|=\max\{|F(x)|:\|F\|=1\}$, and $X'$ separates points. (b) If $M$ is a subspace and $d=\operatorname{dist}(x_0,M)\gt0$, there is $F$ with $\|F\|=1$, $F=0$ on $M$ and $F(x_0)=d$. (c) If $A$ and $B$ are disjoint convex sets and $A$ is open, there are $F\ne0$ and $\gamma$ with $F(a)\lt\gamma\le F(b)$ for all $a\in A$, $b\in B$.</p>
+  </div>
+  <div class="prose">
+    <p>Read (a) geometrically: through every point of the unit sphere there passes a hyperplane that does not enter the ball. At a smooth point there is one. At a corner there is a fan of them, and each gives a different norm-preserving extension. Consequence (b) is the tool that will identify annihilators in Section 3.3 and ranges of adjoints after that. It is how one proves that an operator's range is, or is not, all of the space.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>A round ball: one tangent, one extension</h3>
+      <p>With p = 2 the candidate line cuts the ball for every position but one. The Coordinates panel shows why: the line of all extensions touches the round dual ball at a single point. That point is the Riesz vector of page 6.</p>
+      <button type="button" class="plain" data-exp="round">Set up p = 2</button>
+    </div>
+    <div class="exp">
+      <h3>A corner: a fan of extensions</h3>
+      <p>With p = 1 and M through a corner of the diamond, the level line can swing through a right angle without entering the ball. Every position is a different extension of the same norm. In the dual picture the constraint line lies along an edge of the square.</p>
+      <button type="button" class="plain" data-exp="corner">Set up the ℓ¹ corner</button>
+    </div>
+    <div class="exp">
+      <h3>A flat face is not a corner</h3>
+      <p>Still p = 1, but turn M to 45°, through the middle of a face. The norm is not smooth there in any naive sense, yet only one line works: the face itself. Non-uniqueness lives at the corners of the ball, which are the flat parts of the dual ball.</p>
+      <button type="button" class="plain" data-exp="face">Set up the ℓ¹ face</button>
+    </div>
+    <div class="exp">
+      <h3>The interval for one new number</h3>
+      <p>Drag x₁ and watch the admissible interval for a = F(x₁) in the Function panel. It is never empty. At a smooth point it has length 0 wherever x₁ is. At a corner its length depends on x₁.</p>
+      <button type="button" class="plain" data-exp="interval">Set up the ℓ<sup>∞</sup> corner</button>
+    </div>
+    <div class="exp">
+      <h3>Separating a disc from a square</h3>
+      <p>Turn F. The shadows F(A) and F(B) on the number line slide past each other. The directions that separate form an arc. Push the sets together and the arc shrinks to a point, then to nothing.</p>
+      <button type="button" class="plain" data-exp="sep">Set up two convex sets</button>
+    </div>
+    <div class="exp">
+      <h3>Why convexity is in the hypothesis</h3>
+      <p>Put the disc in the mouth of the C-shape. The sets are disjoint, and no direction separates them: every shadow of the disc falls inside the shadow of the C.</p>
+      <button type="button" class="plain" data-exp="cshape">Set up the C-shape</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>In $\mathbb R^2$ with $M$ a line, the whole theorem is the one-dimensional step, and the screen carries it out. The admissible interval is computed from the dual ball and is never empty, in agreement with the inequality in the statement.</li>
+        <li>The equivalence on display is exact: $\|F\|=\|f\|$ if and only if the level set $\{F=c\}$ misses the open ball of radius $1$, if and only if the point $F$ lies in the dual ball of radius $|c|$.</li>
+        <li>The dual ball drawn in the Coordinates panel is the true unit ball of the dual norm, $\ell^{p'}$ with $1/p+1/p'=1$ and the inverse stretch. A later page on dual spaces computes it from scratch.</li>
+        <li>A failure to separate can be certified: if the shadows overlap for every one of the 720 sampled directions and the gap function is continuous with a negative maximum, no functional separates.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>The theorem earns its name in infinite dimensions, where the one-dimensional step must be repeated beyond any finite count. The proof invokes Zorn's lemma, or for separable spaces a countable induction followed by extension by continuity. It asserts that $F$ exists and gives no formula for it.</li>
+        <li>On the screen every linear functional is continuous. In general, separation by a <em>continuous</em> functional needs a hypothesis such as an interior point of $A$. Two disjoint convex sets, both dense, cannot be separated by any bounded functional.</li>
+        <li>Uniqueness is decided by the shape of the dual ball, which you can see here but would have to prove elsewhere: if $X'$ is strictly convex, extensions are unique. In a Hilbert space that gives the projection formula of page 6.</li>
+        <li>Complex scalars. The theorem holds for them too (Section 6.6), but level sets of a complex functional are not hyperplanes that split the space in two, and this picture does not survive.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>In the one-dimensional step, prove that $-p(-y-x_1)-f(y)\le p(y'+x_1)-f(y')$ for all $y,y'\in M$. Which properties of $p$ and $f$ did you use? Show that choosing $a$ in the interval is not only sufficient but necessary for $F\le p$ on $M\oplus\mathbb Rx_1$.</li>
+    <li>Let $X=\mathbb R^2$ with the $\ell^1$ norm, $M$ the horizontal axis and $f(t,0)=t$. Find all $F=(F_1,F_2)$ with $F=f$ on $M$ and $\|F\|=1$. Repeat with $M$ the diagonal and $f(t,t)=2t$. Check both answers in the laboratory. State a conjecture relating uniqueness of the extension to the shape of the dual ball at the point where the constraint line touches it, and prove it.</li>
+    <li>Prove consequence (b) from the corollary: define $f$ on $M\oplus\mathbb Rx_0$ by $f(y+\alpha x_0)=\alpha d$ and show $\|f\|=1$. Deduce that a subspace $M$ is dense in $X$ if and only if the only $F\in X'$ vanishing on $M$ is $F=0$. Where on page 5 did you meet the Hilbert space version of this statement?</li>
+    <li>In $\mathbb R^2$ let $A$ be the open unit disc and $B$ a closed convex set disjoint from it. Construct the separating $F$ from the point of $B$ closest to the origin, and explain where convexity of $B$ is used. Then let $A=\{(x,y):y\le0\}$ and $B=\{(x,y):x\gt0,\ xy\ge1\}$. Both are closed, convex and disjoint. Which functionals separate them? Is the separation strict? What does this example warn about?</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="06_riesz_representation.html">Previous: 6. The Riesz representation theorem</a>
+  <a href="index.html">Course contents</a>
+  <a href="08.html" id="nextLink">Next page: 8</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   Norm, dual norm, and the line of extensions
+   ------------------------------------------------------------------ */
+const state = { mode: 'ext', q: 1, s: 1, th: 0, c: 1, tau: 0.8, x1: [0.45, 1.35], A: [-1.15, 0.1], B: [1.2, 0.25], bk: 'square', phi: 20 };
+const pOf = q => (q < 0.004 ? Infinity : 1 / q), conj = p => (p === Infinity ? 1 : p === 1 ? Infinity : p / (p - 1));
+const pn = (z, p) => { const a = Math.abs(z[0]), b = Math.abs(z[1]), m = Math.max(a, b); if (!m) return 0; if (p === Infinity) return m; return m * ((a / m) ** p + (b / m) ** p) ** (1 / p); };
+const N = x => pn([x[0] * state.s, x[1] / state.s], pOf(state.q));                   // the norm on X = R^2
+const Nd = F => pn([F[0] / state.s, F[1] * state.s], conj(pOf(state.q)));            // the dual norm on X'
+const R = {};
+function computeExt() {
+  const t = state.th * Math.PI / 180, d = [Math.cos(t), Math.sin(t)], nu = N(d), u = [d[0] / nu, d[1] / nu], uu = u[0] * u[0] + u[1] * u[1], c = state.c;
+  const F0 = [c * u[0] / uu, c * u[1] / uu], nv = [-u[1] / Math.sqrt(uu), u[0] / Math.sqrt(uu)], Fat = tau => [F0[0] + tau * nv[0], F0[1] + tau * nv[1]], g = tau => Nd(Fat(tau));
+  let lo = -6, hi = 6; for (let i = 0; i < 80; i++) { const a = lo + (hi - lo) * 0.382, b = lo + (hi - lo) * 0.618; g(a) <= g(b) ? (hi = b) : (lo = a); }     // Nd is convex along the line
+  const tm = (lo + hi) / 2, tol = 1e-7 * Math.max(1, Math.abs(c)), lvl = Math.abs(c) + tol, edge = dir => { let a = tm, b = tm + dir * 8; for (let i = 0; i < 60; i++) { const m = (a + b) / 2; g(m) <= lvl ? (a = m) : (b = m); } return a; };
+  let tMinus = edge(-1), tPlus = edge(1); if (tPlus - tMinus < 2e-3) tMinus = tPlus = tm;
+  const F = Fat(state.tau), nF = Nd(F), ok = nF <= lvl + 1e-9 || (state.tau >= tMinus - 1e-9 && state.tau <= tPlus + 1e-9);
+  const val = G => G[0] * state.x1[0] + G[1] * state.x1[1], a1 = val(Fat(tMinus)), a2 = val(Fat(tPlus));
+  Object.assign(R, { u, F0, nv, Fat, F, nF, ok, tMinus, tPlus, alpha: Math.min(a1, a2), beta: Math.max(a1, a2), a: val(F) });
+}
+/* ------------------------------------------------------------------
+   Sets and separation
+   ------------------------------------------------------------------ */
+const disc = r => Array.from({ length: 48 }, (_, i) => [r * Math.cos(i * Math.PI / 24), r * Math.sin(i * Math.PI / 24)]);
+const rot = (P, a) => P.map(([x, y]) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]);
+const SHAPES = { square: rot([[-.75, -.75], [.75, -.75], [.75, .75], [-.75, .75]], 0.35), tri: rot([[-.9, -.7], [.9, -.7], [0, 1]], -0.3), disc: disc(0.8),
+  cshape: [[-1.3, -1.3], [1.1, -1.3], [1.1, -0.75], [-0.7, -0.75], [-0.7, 0.75], [1.1, 0.75], [1.1, 1.3], [-1.3, 1.3]] };
+const RA = 0.6, place = (P, c) => P.map(([x, y]) => [x + c[0], y + c[1]]);
+const shadow = (P, d) => { let lo = Infinity, hi = -Infinity; for (const v of P) { const s = v[0] * d[0] + v[1] * d[1]; if (s < lo) lo = s; if (s > hi) hi = s; } return [lo, hi]; };
+const inside = (pt, P) => { let inn = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) if ((P[i][1] > pt[1]) !== (P[j][1] > pt[1]) && pt[0] < (P[j][0] - P[i][0]) * (pt[1] - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) inn = !inn; return inn; };
+function distSeg(p, a, b) { const vx = b[0] - a[0], vy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / (vx * vx + vy * vy))); return Math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy); }
+function computeSep() {
+  const A = place(disc(RA), state.A), B = place(SHAPES[state.bk], state.B), gaps = [];
+  for (let k = 0; k < 720; k++) { const f = k * Math.PI / 360, d = [Math.cos(f), Math.sin(f)], a = shadow(A, d), b = shadow(B, d); gaps.push(Math.max(b[0] - a[1], a[0] - b[1])); }   // positive when the two shadows do not overlap; F and -F separate together
+  let best = 0; gaps.forEach((g, k) => { if (g > gaps[best]) best = k; });
+  let dmin = Infinity; for (let i = 0; i < B.length; i++) dmin = Math.min(dmin, distSeg(state.A, B[i], B[(i + 1) % B.length])); const meet = inside(state.A, B) || dmin < RA;
+  const f = state.phi * Math.PI / 180, d = [Math.cos(f), Math.sin(f)], sa = shadow(A, d), sb = shadow(B, d);
+  Object.assign(R, { A, B, gaps, best, meet, d, sa, sb, gap: Math.max(sb[0] - sa[1], sa[0] - sb[1]) });
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); col.dark = parseInt(col.panel.slice(1, 3), 16) < 128; }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }) {
+  const x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function plane(ctx, F, labels) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; for (let k = Math.ceil(F.xr[0]); k <= F.xr[1]; k++) { ctx.beginPath(); ctx.moveTo(F.X(k) + .5, F.y0); ctx.lineTo(F.X(k) + .5, F.y1); ctx.moveTo(F.x0, F.Y(k) + .5); ctx.lineTo(F.x1, F.Y(k) + .5); ctx.stroke(); }
+  ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.moveTo(F.X(0) + .5, F.y0); ctx.lineTo(F.X(0) + .5, F.y1); ctx.stroke();
+  ctx.fillStyle = col.gray; ctx.font = `italic 13px ${col.font}`; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText(labels[0], F.x1 - 5, F.Y(0) - 3); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(labels[1], F.X(0) + 5, F.y0 + 3); ctx.font = `12px ${col.font}`;
+}
+function drag(cv, start, end) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { if (move && end) end(); move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = (v, d = 3) => (Math.abs(v) < 5e-7 ? '0' : v.toFixed(d));
+const pText = p => (p === Infinity ? '∞' : p >= 10 ? p.toFixed(0) : p.toFixed(2).replace(/\.?0+$/, ''));
+function ballPath(ctx, F, norm, r = 1) { ctx.beginPath(); for (let k = 0; k <= 720; k++) { const f = k * Math.PI / 360, d = [Math.cos(f), Math.sin(f)], s = r / norm(d); ctx.lineTo(F.X(s * d[0]), F.Y(s * d[1])); } ctx.closePath(); }
+function longLine(ctx, F, pt, dir, L = 20) { ctx.beginPath(); ctx.moveTo(F.X(pt[0] - L * dir[0]), F.Y(pt[1] - L * dir[1])); ctx.lineTo(F.X(pt[0] + L * dir[0]), F.Y(pt[1] + L * dir[1])); ctx.stroke(); }
+function knob(ctx, F, v, color, name, r = 8) { ctx.beginPath(); ctx.arc(F.X(v[0]), F.Y(v[1]), r, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = col.panel; ctx.stroke(); if (name) { ctx.fillStyle = color; ctx.font = `italic 15px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(name, F.X(v[0]) + 10, F.Y(v[1]) - 6); ctx.font = `12px ${col.font}`; } }
+
+/* ------------------------------------------------------------------
+   Drawing: extension mode
+   ------------------------------------------------------------------ */
+const FR = {};
+function extGeo() {
+  const { ctx, W, H } = fit($('cvGeo')), F = FR.geo = frame(W, H, [-2.6, 2.6], [-2.6, 2.6], { l: 6, r: 6, t: 6, b: 6 }), { u, F: G, ok } = R; clip(ctx, F); plane(ctx, F, ['x₁ axis', 'x₂ axis']);
+  ballPath(ctx, F, N); ctx.globalAlpha = col.dark ? .3 : .16; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.accent; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = col.ink; ctx.lineWidth = 2.5; longLine(ctx, F, [0, 0], u);
+  const lineDir = G => { const l = Math.hypot(G[0], G[1]); return l > 1e-9 ? [-G[1] / l, G[0] / l] : null; };
+  if (Math.abs(state.c) > 1e-9) {
+    if (R.tPlus - R.tMinus > 1e-3) { ctx.strokeStyle = col.gray; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]); for (const t of [R.tMinus, R.tPlus]) { const dd = lineDir(R.Fat(t)); if (dd) longLine(ctx, F, u, dd); } ctx.setLineDash([]); }
+    const dd = lineDir(G); if (dd) { ctx.strokeStyle = ok ? col.accent : col.gray; ctx.lineWidth = 3; longLine(ctx, F, u, dd);
+      if (!ok) { ctx.strokeStyle = col.accent; ctx.lineWidth = 6; ctx.beginPath(); let on = false; for (let k = -400; k <= 400; k++) { const pt = [u[0] + dd[0] * k / 80, u[1] + dd[1] * k / 80], inn = N(pt) < 1 - 1e-9; if (inn) { on ? ctx.lineTo(F.X(pt[0]), F.Y(pt[1])) : ctx.moveTo(F.X(pt[0]), F.Y(pt[1])); on = true; } else on = false; } ctx.stroke(); }
+      R.handle = [u[0] + dd[0] * 1.5 * (R.hs || 1), u[1] + dd[1] * 1.5 * (R.hs || 1)]; knob(ctx, F, R.handle, ok ? col.accent : col.gray, '', 7);
+      ctx.fillStyle = ok ? col.accent : col.gray; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('F = c', F.X(R.handle[0]) + 10, F.Y(R.handle[1]) + 4); }
+  }
+  knob(ctx, F, state.x1, col.gray, 'x₁'); knob(ctx, F, u, col.ink, 'u');
+  ctx.fillStyle = col.ink; ctx.font = `italic 14px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; const e = [u[0] * -2.2 / Math.max(Math.abs(u[0]), Math.abs(u[1])) * 1, u[1] * -2.2 / Math.max(Math.abs(u[0]), Math.abs(u[1]))]; ctx.fillText('M', F.X(e[0]) + 8, F.Y(e[1]) - 4);
+  ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function extDual() {
+  const { ctx, W, H } = fit($('cvDual')), Rv = Math.max(2.4, Math.abs(state.c) * 1.9), F = FR.dual = frame(W, H, [-Rv, Rv], [-Rv, Rv], { l: 6, r: 6, t: 6, b: 6 }), c = Math.abs(state.c); clip(ctx, F); plane(ctx, F, ['F₁', 'F₂']);
+  if (c > 1e-9) { ballPath(ctx, F, Nd, c); ctx.globalAlpha = col.dark ? .3 : .16; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.accent; ctx.lineWidth = 2; ctx.stroke(); }
+  ctx.strokeStyle = col.ink; ctx.lineWidth = 2; longLine(ctx, F, R.F0, R.nv);
+  const a = R.Fat(R.tMinus), b = R.Fat(R.tPlus); ctx.strokeStyle = col.accent; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(F.X(a[0]), F.Y(a[1])); ctx.lineTo(F.X(b[0]), F.Y(b[1])); ctx.stroke();
+  if (R.tPlus - R.tMinus < 1e-3) { ctx.beginPath(); ctx.arc(F.X(a[0]), F.Y(a[1]), 5, 0, 7); ctx.fillStyle = col.accent; ctx.fill(); }
+  knob(ctx, F, R.F, R.ok ? col.accent : col.gray, 'F'); ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function extFun() {
+  const { ctx, W, H } = fit($('cvFun')), c = state.c, ac = Math.abs(c), T = 8, n = 320, up = [], dn = []; let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i <= n; i++) { const t = -T + 2 * T * i / n, v = ac * N([state.x1[0] + t * R.u[0], state.x1[1] + t * R.u[1]]); up.push([t, v - c * t]); dn.push([t, -v - c * t]); }
+  for (const v of [R.alpha, R.beta, R.a]) { lo = Math.min(lo, v); hi = Math.max(hi, v); } const pad = Math.max(1.2, (hi - lo) * 0.8); lo -= pad; hi += pad;
+  const F = frame(W, H, [-T, T], [lo, hi]); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of [-8, -4, 0, 4, 8]) { const X = Math.round(F.X(t)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(t === 0 ? 't = 0' : String(t), clamp(X, F.x0 + 14, F.x1 - 8), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(hi.toFixed(1), F.x0 - 5, F.y0 + 6); ctx.fillText(lo.toFixed(1), F.x0 - 5, F.y1 - 6);
+  clip(ctx, F); ctx.globalAlpha = .25; ctx.fillStyle = col.accent; ctx.fillRect(F.x0, F.Y(R.beta), F.x1 - F.x0, Math.max(2, F.Y(R.alpha) - F.Y(R.beta))); ctx.globalAlpha = 1;
+  for (const [arr, color] of [[up, col.ink], [dn, col.gray]]) { ctx.beginPath(); for (const [t, v] of arr) ctx.lineTo(F.X(t), clamp(F.Y(v), -1e4, 1e4)); ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke(); }
+  ctx.strokeStyle = R.ok ? col.accent : col.gray; ctx.lineWidth = 3; ctx.setLineDash(R.ok ? [] : [7, 4]); ctx.beginPath(); ctx.moveTo(F.x0, F.Y(R.a)); ctx.lineTo(F.x1, F.Y(R.a)); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  ctx.fillStyle = R.ok ? col.accent : col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText('a = F(x₁) = ' + num(R.a), F.x1 - 6, clamp(F.Y(R.a) - 4, F.y0 + 14, F.y1));
+}
+
+/* ------------------------------------------------------------------
+   Drawing: separation mode
+   ------------------------------------------------------------------ */
+function poly(ctx, F, P) { ctx.beginPath(); P.forEach((v, i) => (i ? ctx.lineTo(F.X(v[0]), F.Y(v[1])) : ctx.moveTo(F.X(v[0]), F.Y(v[1])))); ctx.closePath(); }
+function sepGeo() {
+  const { ctx, W, H } = fit($('cvGeo')), F = FR.geo = frame(W, H, [-3.2, 3.2], [-3.2, 3.2], { l: 6, r: 6, t: 6, b: 6 }), { A, B, d, sa, sb, gap } = R, t = [-d[1], d[0]]; clip(ctx, F); plane(ctx, F, ['', '']);
+  const aLow = sa[1] <= sb[0] + 1e-12 || !(sb[1] <= sa[0]), g1 = aLow ? sa[1] : sb[1], g2 = aLow ? sb[0] : sa[0];                                   // supporting values facing each other
+  if (gap >= 0) { ctx.globalAlpha = .18; ctx.fillStyle = col.accent; ctx.beginPath(); for (const [g, s] of [[g1, -1], [g1, 1], [g2, 1], [g2, -1]]) ctx.lineTo(F.X(g * d[0] + s * 9 * t[0]), F.Y(g * d[1] + s * 9 * t[1])); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1; }
+  poly(ctx, F, A); ctx.globalAlpha = .55; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.accent; ctx.lineWidth = 2; ctx.stroke();
+  poly(ctx, F, B); ctx.globalAlpha = .5; ctx.fillStyle = col.gray; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.ink; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = col.gray; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]); for (const g of [g1, g2]) longLine(ctx, F, [g * d[0], g * d[1]], t); ctx.setLineDash([]);
+  if (gap >= 0) { const gm = (g1 + g2) / 2; ctx.strokeStyle = col.accent; ctx.lineWidth = 3.5; longLine(ctx, F, [gm * d[0], gm * d[1]], t); }
+  ctx.strokeStyle = ctx.fillStyle = col.ink; ctx.lineWidth = 2.5; const o = [-2.5, -2.6], e = [o[0] + d[0] * 0.9, o[1] + d[1] * 0.9]; ctx.beginPath(); ctx.moveTo(F.X(o[0]), F.Y(o[1])); ctx.lineTo(F.X(e[0]), F.Y(e[1])); ctx.stroke(); ctx.beginPath(); ctx.arc(F.X(e[0]), F.Y(e[1]), 4, 0, 7); ctx.fill();
+  ctx.font = `italic 14px ${col.font}`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText('direction of F', F.X(o[0]) + 6, F.Y(o[1]) + 20);
+  ctx.font = `italic 16px ${col.font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col.dark ? '#fff' : col.ink; ctx.fillText('A', F.X(state.A[0]), F.Y(state.A[1])); const bc = state.bk === 'cshape' ? [state.B[0] - 1, state.B[1]] : state.B; ctx.fillText('B', F.X(bc[0]), F.Y(bc[1]));
+  ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function sepDual() {
+  const { ctx, W, H } = fit($('cvDual')), F = FR.dual = frame(W, H, [-1.5, 1.5], [-1.5, 1.5], { l: 6, r: 6, t: 6, b: 6 }); clip(ctx, F); plane(ctx, F, ['F₁', 'F₂']);
+  ctx.strokeStyle = col.gray; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(F.X(0), F.Y(0), F.X(1) - F.X(0), 0, 7); ctx.stroke();
+  ctx.strokeStyle = col.accent; ctx.lineWidth = 8; ctx.lineCap = 'butt'; for (let k = 0; k < 720; k++) for (const off of [0, 360]) if (R.gaps[k] > 0) { const f0 = (k + off - .5) * Math.PI / 360, f1 = (k + off + .5) * Math.PI / 360; ctx.beginPath(); ctx.arc(F.X(0), F.Y(0), F.X(1) - F.X(0), -f1, -f0); ctx.stroke(); } ctx.lineCap = 'round';
+  knob(ctx, F, R.d, R.gap > 0 ? col.accent : col.ink, 'F'); ctx.restore(); ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+}
+function sepFun() {
+  const { ctx, W, H } = fit($('cvFun')), { sa, sb, gaps } = R, F1 = frame(W, H * 0.34, [-4.6, 4.6], [0, 1], { l: 40, r: 10, t: 8, b: 20 });
+  ctx.strokeStyle = col.gray; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(F1.x0, F1.y1); ctx.lineTo(F1.x1, F1.y1); ctx.stroke(); ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (let k = -4; k <= 4; k += 2) { ctx.fillText(String(k), F1.X(k), F1.y1 + 4); ctx.beginPath(); ctx.moveTo(F1.X(k), F1.y1 - 3); ctx.lineTo(F1.X(k), F1.y1 + 3); ctx.stroke(); }
+  const bar = (s, y, color, name) => { ctx.globalAlpha = .7; ctx.fillStyle = color; ctx.fillRect(F1.X(s[0]), F1.Y(y), F1.X(s[1]) - F1.X(s[0]), 14); ctx.globalAlpha = 1; ctx.fillStyle = col.ink; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText(name, F1.x0 - 5, F1.Y(y) + 1); };
+  bar(sa, 0.95, col.accent, 'F(A)'); bar(sb, 0.5, col.gray, 'F(B)');
+  const top = H * 0.36; let mx = 0.5; for (const g of gaps) mx = Math.max(mx, Math.abs(g)); const F2 = { ...frame(W, H - top, [0, 360], [-mx * 1.1, mx * 1.1]) }; for (const k of ['y0', 'y1']) F2[k] += top; const Y2 = v => F2.y1 - (v + mx * 1.1) / (2.2 * mx) * (F2.y1 - F2.y0);
+  ctx.strokeStyle = col.rule; ctx.strokeRect(F2.x0 + .5, F2.y0 + .5, F2.x1 - F2.x0, F2.y1 - F2.y0); ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const a of [0, 90, 180, 270, 360]) { const X = Math.round(F2.X(a)) + .5; ctx.beginPath(); ctx.moveTo(X, F2.y0); ctx.lineTo(X, F2.y1); ctx.stroke(); ctx.fillText(a + '°', clamp(X, F2.x0 + 8, F2.x1 - 12), F2.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('0', F2.x0 - 5, Y2(0)); ctx.fillText(mx.toFixed(1), F2.x0 - 5, F2.y0 + 6);
+  ctx.beginPath(); ctx.moveTo(F2.X(0), Y2(0)); gaps.forEach((g, k) => ctx.lineTo(F2.X(k / 2), Y2(Math.max(0, g)))); ctx.lineTo(F2.X(360), Y2(0)); ctx.closePath(); ctx.globalAlpha = .3; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F2.x0, Y2(0)); ctx.lineTo(F2.x1, Y2(0)); ctx.stroke();
+  ctx.beginPath(); gaps.forEach((g, k) => ctx.lineTo(F2.X(k / 2), Y2(g))); ctx.strokeStyle = col.ink; ctx.lineWidth = 2.3; ctx.stroke();
+  const X = F2.X(state.phi % 360); ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X, F2.y0); ctx.lineTo(X, F2.y1); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.arc(X, Y2(gaps[Math.round(state.phi * 2) % 720]), 5, 0, 7); ctx.fillStyle = col.accent; ctx.fill();
+}
+
+/* ------------------------------------------------------------------
+   Text that depends on the mode
+   ------------------------------------------------------------------ */
+const TXT = {
+  ext: { subFun: 'The one-dimensional step: bounds on the single new number a = F(x₁), as the point y = tu runs along M.', legFun: '<li><i></i>upper bound p(x₁ + tu) − ct</li><li><i class="g"></i>lower bound −p(x₁ + tu) − ct</li><li><i class="sq"></i>admissible values of a</li>',
+    capFun: 'The band lies between the highest point of the gray curve and the lowest point of the black one. Drag x₁ in the Geometry panel.', subDual: 'Each functional is a point F = (F₁, F₂). The extensions of f are the points of one line.',
+    legDual: '<li><i></i>all extensions: F(u) = c</li><li><i class="sq"></i>dual ball of radius |c|: ‖F‖ ≤ ‖f‖</li><li><i class="c" style="border-top-width:5px"></i>norm-preserving extensions</li>', capDual: 'Drag F along the line.',
+    subGeo: 'The unit ball, the subspace M, and the level set { F = c } of the candidate. It always passes through u. Drag u, x₁, or the handle on the level line.', legGeo: '<li><i></i>M</li><li><i class="c"></i>{F = c}, admissible</li><li><i class="g"></i>{F = c}, cuts the ball</li><li><i class="g d thin"></i>extreme admissible positions</li>' },
+  sep: { subFun: 'Top: the shadows F(A) and F(B) on the number line. Bottom: the gap between the two shadows, for every direction of F. Negative means they overlap.', legFun: '<li><i class="sq" style="opacity:.7"></i>F(A)</li><li><i class="sq g" style="opacity:.7"></i>F(B)</li><li><i class="sq"></i>directions that separate</li>',
+    capFun: 'F separates when the gap is positive, that is, when the two shadows do not overlap.', subDual: 'Unit functionals F = (cos φ, sin φ). The thick arc is the set of separating directions.', legDual: '<li><i class="c" style="border-top-width:5px"></i>the shadows do not overlap. F and −F always separate together</li>', capDual: 'Drag F around the circle.',
+    subGeo: 'Drag the sets. The band between the dashed supporting lines is empty of both sets when F separates them.', legGeo: '<li><i class="sq" style="opacity:.6"></i>A, a disc</li><li><i class="sq g" style="opacity:.6"></i>B</li><li><i class="c"></i>separating line {F = γ}</li><li><i class="g d thin"></i>supporting lines</li>' }
+};
+function readouts() {
+  const T = TXT[state.mode]; for (const k of Object.keys(T)) $(k).innerHTML = T[k]; const v = $('verdict'), rows = [];
+  if (state.mode === 'ext') {
+    const many = R.tPlus - R.tMinus > 1e-3, c = Math.abs(state.c); v.classList.toggle('bad', !R.ok);
+    v.textContent = R.ok ? 'Admissible: ‖F‖ = ‖f‖. The level line touches the ball without entering it.' : `Not admissible: ‖F‖ = ${num(R.nF)} exceeds ‖f‖ = ${num(c)}. The level line cuts the ball.`;
+    rows.push(['u, the point of M with ‖u‖ = 1', `(${num(R.u[0])}, ${num(R.u[1])})`], ['‖f‖ on M', num(c)], ['F = (F₁, F₂)', `(${num(R.F[0])}, ${num(R.F[1])})`], ['‖F‖, the dual norm', num(R.nF)], ['admissible interval for a = F(x₁)', `[${num(R.alpha)}, ${num(R.beta)}]`], ['norm-preserving extensions', c < 1e-9 ? 'only F = 0' : many ? 'a whole segment of them' : 'exactly one']);
+    $('oP').textContent = pText(pOf(state.q)); $('oS').textContent = state.s.toFixed(2); $('oTh').textContent = state.th.toFixed(1).replace('.0', '') + '°'; $('oC').textContent = state.c.toFixed(2); $('oTau').textContent = state.tau.toFixed(2);
+    $('eqLive').innerHTML = `Norm ℓ<sup>${pText(pOf(state.q))}</sup>${state.s !== 1 ? ', stretched' : ''}. &nbsp; f(u) = <b>${state.c.toFixed(2)}</b> on M. &nbsp; Candidate F = (<b>${num(R.F[0])}</b>, <b>${num(R.F[1])}</b>), &nbsp; ‖F‖ = <b>${num(R.nF)}</b>, &nbsp; ‖f‖ = <b>${num(c)}</b>.`;
+  } else {
+    const sepd = R.gap > 1e-9, bestGap = R.gaps[R.best], convex = state.bk !== 'cshape'; v.classList.toggle('bad', !sepd);
+    v.textContent = sepd ? 'This F separates A from B strictly.' : bestGap > 1e-9 ? 'This F does not separate. Others do: see the thick arc.' : R.meet ? 'No F separates: the sets meet.' : convex ? 'The sets are as good as touching: no direction leaves a positive gap.' : 'No F separates, although A and B are disjoint. B is not convex.';
+    rows.push(['F(A) = [inf, sup]', `[${num(R.sa[0], 2)}, ${num(R.sa[1], 2)}]`], ['F(B) = [inf, sup]', `[${num(R.sb[0], 2)}, ${num(R.sb[1], 2)}]`], ['gap for this F', num(R.gap)], ['largest gap over all directions', num(bestGap) + (bestGap > 0 && convex ? ' = distance from A to B' : '')], ['separating directions', (R.gaps.filter(g => g > 0).length / 4).toFixed(1) + '° of arc, twice']);
+    $('oPhi').textContent = state.phi.toFixed(1).replace('.0', '') + '°'; $('eqLive').innerHTML = `F(x) = x₁ cos φ + x₂ sin φ with φ = <b>${state.phi.toFixed(1)}°</b>. &nbsp; Gap between the shadows: <b>${num(R.gap)}</b>. &nbsp; A and B ${R.meet ? '<b>meet</b>' : 'are disjoint'}.`;
+  }
+  $('readT').innerHTML = rows.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join('');
+}
+let pending = false;
+function update() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; if (state.mode === 'ext') { computeExt(); extGeo(); extDual(); extFun(); } else { computeSep(); sepGeo(); sepDual(); sepFun(); } readouts(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+function syncUI() {
+  document.querySelector(`input[name=mode][value=${state.mode}]`).checked = true; document.querySelector(`input[name=bk][value=${state.bk}]`).checked = true;
+  for (const el of document.querySelectorAll('.controls .ext')) el.hidden = state.mode !== 'ext'; for (const el of document.querySelectorAll('.controls .sep')) el.hidden = state.mode !== 'sep';
+  $('sQ').value = state.q; $('sS').value = state.s; $('sTh').value = state.th; $('sC').value = state.c; $('sTau').value = state.tau; $('sPhi').value = state.phi;
+}
+let anim = 0; const stop = () => { anim++; };
+function glide(key, target, slider) { const id = ++anim, from = state[key], t0 = performance.now(), step = t => { if (anim !== id) return; const k = Math.min(1, (t - t0) / 900), e = k * k * (3 - 2 * k); state[key] = from + (target - from) * e; $(slider).value = state[key]; update(); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+for (const r of document.querySelectorAll('input[name=mode]')) r.addEventListener('change', () => { stop(); state.mode = r.value; syncUI(); update(); });
+for (const r of document.querySelectorAll('input[name=bk]')) r.addEventListener('change', () => { stop(); state.bk = r.value; update(); });
+[['sQ', 'q'], ['sS', 's'], ['sTh', 'th'], ['sC', 'c'], ['sTau', 'tau'], ['sPhi', 'phi']].forEach(([id, k]) => $(id).addEventListener('input', e => { stop(); state[k] = +e.target.value; if (k === 'q') for (const p of [1, 1.5, 2, 4]) if (Math.abs(state.q - 1 / p) < 0.012) state.q = 1 / p; update(); }));
+$('findExt').addEventListener('click', () => { computeExt(); glide('tau', clamp(state.tau, R.tMinus, R.tPlus) === state.tau ? (R.tMinus + R.tPlus) / 2 : clamp(state.tau, R.tMinus, R.tPlus), 'sTau'); });
+$('findSep').addEventListener('click', () => { computeSep(); let target = R.best / 2; while (target - state.phi > 180) target -= 360; while (state.phi - target > 180) target += 360; const id = ++anim, from = state.phi, t0 = performance.now(), step = t => { if (anim !== id) return; const k = Math.min(1, (t - t0) / 900), e = k * k * (3 - 2 * k); state.phi = ((from + (target - from) * e) % 360 + 360) % 360; $('sPhi').value = state.phi; update(); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); });
+
+drag($('cvGeo'), (px, py) => {
+  const F = FR.geo; if (!F) return null; stop(); const near = v => Math.hypot(px - F.X(v[0]), py - F.Y(v[1])), pt = [F.iX(px), F.iY(py)];
+  if (state.mode === 'sep') { const hitA = Math.hypot(pt[0] - state.A[0], pt[1] - state.A[1]) < RA + 0.1, P = place(SHAPES[state.bk], state.B), xs = P.map(v => v[0]), ys = P.map(v => v[1]), hitB = pt[0] > Math.min(...xs) && pt[0] < Math.max(...xs) && pt[1] > Math.min(...ys) && pt[1] < Math.max(...ys);
+    const key = hitA ? 'A' : hitB ? 'B' : null; if (!key) return null; const off = [state[key][0] - pt[0], state[key][1] - pt[1]]; return (qx, qy) => { state[key] = [clamp(F.iX(qx) + off[0], -2.6, 2.6), clamp(F.iY(qy) + off[1], -2.6, 2.6)]; update(); }; }
+  const cand = [['u', near(R.u)], ['x1', near(state.x1)], ['h', R.handle ? near(R.handle) : 1e9]].sort((a, b) => a[1] - b[1])[0]; if (cand[1] > 30) return null;
+  if (cand[0] === 'x1') return (qx, qy) => { state.x1 = [clamp(F.iX(qx), -2.5, 2.5), clamp(F.iY(qy), -2.5, 2.5)]; update(); };
+  if (cand[0] === 'u') return (qx, qy) => { let a = Math.atan2(F.iY(qy), F.iX(qx)) * 180 / Math.PI; if (a > 90) a -= 180; if (a < -90) a += 180; for (const s of [-90, -45, 0, 45, 90]) if (Math.abs(a - s) < 2) a = s; state.th = a; $('sTh').value = a; update(); };
+  return (qx, qy) => { const v = [F.iX(qx) - R.u[0], F.iY(qy) - R.u[1]], l = Math.hypot(...v); if (l < 0.15) return; const nrm = [-v[1] / l, v[0] / l], den = nrm[0] * R.u[0] + nrm[1] * R.u[1]; if (Math.abs(den) < 0.02) return;
+    const G = [state.c * nrm[0] / den, state.c * nrm[1] / den]; state.tau = clamp((G[0] - R.F0[0]) * R.nv[0] + (G[1] - R.F0[1]) * R.nv[1], -3, 3); const dd = [-G[1], G[0]]; R.hs = Math.sign(dd[0] * v[0] + dd[1] * v[1]) || 1; $('sTau').value = state.tau; update(); };
+});
+drag($('cvDual'), () => { const F = FR.dual; if (!F) return null; stop();
+  if (state.mode === 'sep') return (qx, qy) => { state.phi = (Math.atan2(F.iY(qy), F.iX(qx)) * 180 / Math.PI + 360) % 360; $('sPhi').value = state.phi; update(); };
+  return (qx, qy) => { state.tau = clamp((F.iX(qx) - R.F0[0]) * R.nv[0] + (F.iY(qy) - R.F0[1]) * R.nv[1], -3, 3); $('sTau').value = state.tau; update(); }; });
+$('cvGeo').style.cursor = 'grab'; $('cvDual').style.cursor = 'grab';
+
+const EXP = {
+  round: { mode: 'ext', q: 0.5, s: 1, th: 25, c: 1, tau: 0.9, x1: [0.45, 1.35] }, corner: { mode: 'ext', q: 1, s: 1, th: 0, c: 1, tau: 1.6, x1: [0.45, 1.35] }, face: { mode: 'ext', q: 1, s: 1, th: 45, c: 1, tau: 0.7, x1: [-0.6, 1.4] },
+  interval: { mode: 'ext', q: 0, s: 1, th: 45, c: 1, tau: 0.2, x1: [1.6, -0.4] }, sep: { mode: 'sep', bk: 'square', A: [-1.15, 0.1], B: [1.2, 0.25], phi: 75 }, cshape: { mode: 'sep', bk: 'cshape', A: [0.75, 0], B: [0, 0], phi: 0 }
+};
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => { stop(); const e = EXP[b.dataset.exp]; Object.assign(state, JSON.parse(JSON.stringify(e))); R.hs = 1; syncUI(); update(); $('lab').scrollIntoView({ block: 'start' }); $(state.mode === 'ext' ? 'sTau' : 'sPhi').focus({ preventScroll: true }); });
+
+const recolor = () => { readColors(); update(); };
+readColors(); syncUI(); update();
+new ResizeObserver(update).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
+})();
+</script>
+</body>
+</html>

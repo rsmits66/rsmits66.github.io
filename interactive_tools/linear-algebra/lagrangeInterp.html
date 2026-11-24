@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lagrange Interpolation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;--acc-bg:#edf1fb;
+  --green:#1a6a40;--green-bg:#e8f5ec;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:18px;line-height:1.65;}
+header{background:var(--navy);color:#fff;padding:1.8rem 2.5rem;border-bottom:3px solid var(--gold);display:flex;flex-direction:column;gap:.25rem;}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-size:1.05rem;font-style:italic;}
+main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+
+/* ── Theory sections ── */
+.section{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.8rem 2.2rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.section h2{font-family:var(--font-head);font-size:1.35rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+.section h3{font-family:var(--font-head);font-size:1.1rem;font-weight:600;color:var(--navy2);margin:1.2rem 0 .5rem;}
+.section p{margin-bottom:.85rem;line-height:1.7;}
+.section p:last-child{margin-bottom:0;}
+
+/* ── Math display blocks ── */
+.math-block{overflow-x:auto;margin:1rem 0;padding:.6rem 0;}
+.math-inline{display:inline;}
+
+/* ── Definition / theorem boxes ── */
+.def-box{background:var(--acc-bg);border-left:3.5px solid var(--accent);border-radius:0 6px 6px 0;padding:.85rem 1.2rem;margin:1rem 0;font-size:.97rem;line-height:1.7;}
+.def-box strong{color:var(--navy);font-weight:600;}
+.thm-box{background:#f0f8f2;border-left:3.5px solid var(--green);border-radius:0 6px 6px 0;padding:.85rem 1.2rem;margin:1rem 0;font-size:.97rem;line-height:1.7;}
+.thm-box strong{color:var(--green);}
+.key-box{background:#fffaec;border:1px solid #d4b440;border-radius:6px;padding:.85rem 1.2rem;margin:1rem 0;font-size:.95rem;line-height:1.7;color:#4a3800;}
+.key-box strong{color:var(--navy);}
+.proof-block{background:#f8f6f2;border:1px solid var(--border);border-radius:6px;padding:.85rem 1.2rem;margin:.7rem 0;font-size:.94rem;line-height:1.7;color:var(--navy2);}
+.proof-block strong{color:var(--navy);}
+
+/* ── Step numbering ── */
+.step-list{counter-reset:step;list-style:none;padding:0;}
+.step-list li{counter-increment:step;display:flex;gap:.9rem;margin:.6rem 0;align-items:flex-start;}
+.step-list li::before{content:counter(step);background:var(--gold);color:var(--navy);font-weight:700;font-size:.82rem;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.2rem;}
+
+/* ── Delta table ── */
+table.delta-tbl{border-collapse:collapse;margin:.6rem 0;font-size:.93rem;}
+table.delta-tbl th,table.delta-tbl td{border:1px solid var(--border);padding:.3rem .75rem;text-align:center;}
+table.delta-tbl th{background:#f5f7fa;color:var(--navy2);font-weight:400;font-size:.85rem;}
+table.delta-tbl td.hit{background:var(--green-bg);color:var(--green);font-weight:700;}
+table.delta-tbl td.miss{color:#bbb;}
+
+/* ── Interactive section ── */
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.8rem 2rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:var(--font-head);font-size:1.25rem;font-weight:600;color:var(--navy);margin-bottom:1rem;}
+
+.pts-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem;}
+.pt-entry{display:flex;align-items:center;gap:.3rem;background:#f5f7fa;border:1px solid var(--border);border-radius:5px;padding:.25rem .55rem;font-size:.92rem;}
+.pt-entry input{width:56px;padding:.22rem .3rem;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);font-size:.92rem;text-align:center;background:#fff;}
+.pt-entry input:focus{outline:none;border-color:var(--accent);}
+.pt-entry .rm{cursor:pointer;color:var(--red);font-weight:700;font-size:1rem;padding:0 .2rem;}
+
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+button{font-family:var(--font-body);cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.92rem;transition:background .14s;}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-add{background:var(--green-bg);color:var(--green);border:1px solid #90c8a0;}
+.btn-add:hover{background:#d0eeda;}
+.btn-go{background:var(--red);color:#fff;padding:.45rem 1.7rem;font-size:.98rem;margin-top:.7rem;}
+.btn-go:hover{background:#952e24;}
+
+/* ── Lagrange polynomial display ── */
+.pi-block{background:#f5f7fa;border:1px solid var(--border);border-radius:6px;padding:.65rem 1rem;margin:.4rem 0;overflow-x:auto;}
+
+/* ── Plot canvas ── */
+.plot-wrap{margin-top:1.4rem;background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.plot-wrap canvas{display:block;width:100%;max-height:420px;}
+
+@media(max-width:640px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .7rem;}.section,.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lagrange Interpolation</h1>
+  <p>Dual bases, evaluation functionals, Vandermonde matrices, and the interpolating polynomial</p>
+</header>
+<main>
+
+<!-- ══════════════════════════════════════════════════════
+     §1  SETTING
+══════════════════════════════════════════════════════ -->
+<div class="section">
+<h2>§1 — The Setting</h2>
+<p>
+  We are given <strong>n+1 distinct nodes</strong> and values:
+</p>
+<div class="math-block" id="s1_data"></div>
+<p>
+  We want a polynomial <span id="s1_Pt"></span> of degree <em>at most n</em>
+  satisfying <span id="s1_interp"></span>.
+</p>
+
+<div class="def-box">
+  <strong>The space V.</strong>
+  Let <span id="s1_V"></span> be the vector space over <span id="s1_F"></span>
+  of all polynomials of degree at most <em>n</em> (including the zero polynomial).
+  A basis for <em>V</em> is <span id="s1_monomial"></span>,
+  so <span id="s1_dim"></span>.
+</div>
+
+<p>
+  The interpolation problem asks: given the data <span id="s1_data2"></span>,
+  find the unique element of <em>V</em> that fits all of them.
+  The key is to understand <em>V</em> through its <strong>dual space</strong>.
+</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     §2  EVALUATION FUNCTIONALS
+══════════════════════════════════════════════════════ -->
+<div class="section">
+<h2>§2 — Evaluation Functionals as a Dual Basis</h2>
+
+<div class="def-box">
+  <strong>Evaluation functional.</strong>
+  For each <span id="s2_i"></span>, define the map <span id="s2_Li"></span>
+  by <span id="s2_Lidef"></span>.
+  Linearity is immediate: <span id="s2_lin"></span>.
+  So each <span id="s2_Liin"></span>.
+</div>
+
+<p>
+  The question is whether <span id="s2_Ls"></span> form a basis for the
+  dual space <span id="s2_Vstar"></span>.  Since <span id="s2_dimV"></span>,
+  it suffices to show they are linearly independent — i.e. that the only way
+  <span id="s2_vanish"></span> for all <span id="s2_fall"></span> is <span id="s2_ci0"></span>.
+</p>
+
+<p>
+  We prove this <em>indirectly</em> by first constructing a basis for <em>V</em>
+  that is <strong>dual to</strong> the <span id="s2_Ls2"></span>.
+</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     §3  LAGRANGE BASIS POLYNOMIALS
+══════════════════════════════════════════════════════ -->
+<div class="section">
+<h2>§3 — The Lagrange Basis Polynomials P₀, P₁, …, Pₙ</h2>
+
+<div class="def-box">
+  <strong>Lagrange basis polynomial.</strong>
+  For each <span id="s3_i"></span>, define:
+</div>
+<div class="math-block" id="s3_Pi"></div>
+<div class="math-block" id="s3_Pi2"></div>
+
+<p>
+  Each <span id="s3_Pi_is"></span> is a polynomial of degree exactly <em>n</em>,
+  hence in <em>V</em>.
+</p>
+
+<h3>The dual basis property</h3>
+<p>It is easy to verify by direct evaluation:</p>
+<div class="math-block" id="s3_dual"></div>
+
+<div class="proof-block">
+  <strong>Why?</strong>
+  When <span id="s3_ji"></span>, the numerator of <span id="s3_Pitj"></span>
+  contains the factor <span id="s3_factor"></span>, which is zero.
+  When <span id="s3_ii"></span>, every factor in the numerator equals the
+  corresponding factor in the denominator, giving 1.
+</div>
+
+<p>Here is the full evaluation table (for 3 nodes as illustration):</p>
+<div id="s3_deltaTbl"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     §4  LINEAR INDEPENDENCE AND BASIS
+══════════════════════════════════════════════════════ -->
+<div class="section">
+<h2>§4 — Linear Independence, and {Pᵢ} is a Basis for V</h2>
+
+<div class="thm-box">
+  <strong>Theorem.</strong>
+  The polynomials <span id="s4_Ps"></span> are linearly independent.
+</div>
+
+<div class="proof-block">
+  <strong>Proof.</strong>
+  Suppose <span id="s4_sum0"></span> for all <span id="s4_xF"></span>.
+  Apply <span id="s4_Lj"></span> to both sides.
+  Since the zero polynomial vanishes everywhere,
+  <span id="s4_Ljapp"></span>, so by the dual property
+  <div class="math-block" id="s4_main"></div>
+  Since <em>j</em> was arbitrary, all coefficients are zero. ∎
+</div>
+
+<p>
+  Now count: <span id="s4_dim1"></span> while
+  <span id="s4_dim2"></span>.
+  An independent set of size <span id="s4_n1"></span>
+  inside an <span id="s4_n1b"></span>-dimensional space must be a basis.
+  Therefore:
+</p>
+
+<div class="thm-box">
+  <strong>Corollary.</strong>
+  <span id="s4_basis"></span> is a basis for <em>V</em>, and
+  <span id="s4_Li_basis"></span> is the dual basis in <em>V*</em>.
+</div>
+
+<p>
+  Consequently, every <span id="s4_finV"></span> has the unique expansion
+</p>
+<div class="math-block" id="s4_formula"></div>
+<div class="key-box">
+  <strong>(4-14) Lagrange's Interpolation Formula.</strong>
+  <div class="math-block" id="s4_lagrange"></div>
+  This is the answer to the original problem: the interpolating polynomial is the
+  linear combination of Lagrange basis polynomials with coefficients given by the data values.
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     §5  VANDERMONDE
+══════════════════════════════════════════════════════ -->
+<div class="section">
+<h2>§5 — Connection to the Vandermonde Matrix</h2>
+
+<p>
+  Setting <span id="s5_xj"></span> in (4-14) gives the monomial-to-Lagrange change of basis:
+</p>
+<div class="math-block" id="s5_chgbasis"></div>
+
+<p>In matrix form this reads:</p>
+<div class="math-block" id="s5_matrix"></div>
+
+<div class="def-box">
+  <strong>Vandermonde matrix.</strong>
+  The matrix on the right is the Vandermonde matrix:
+  <div class="math-block" id="s5_V"></div>
+  Its (<em>i</em>, <em>j</em>) entry is <span id="s5_Vij"></span>.
+  Being a change-of-basis matrix between two bases of the same space,
+  <strong>V is invertible</strong>.
+  Its determinant has the explicit formula
+  <div class="math-block" id="s5_det"></div>
+  which is nonzero precisely because the nodes are distinct.
+</div>
+
+<p>
+  The Vandermonde viewpoint: solving the interpolation problem is equivalent to
+  solving the linear system <span id="s5_Vc"></span> for the monomial
+  coefficients <span id="s5_cvec"></span>.
+</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     §6  INTERACTIVE
+══════════════════════════════════════════════════════ -->
+<div class="card">
+  <h2>Interactive — Compute Lagrange Interpolation</h2>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.88rem;color:var(--gray);margin-bottom:.6rem;">
+    Enter the nodes <em>tⱼ</em> (must be distinct) and values <em>yⱼ</em>.
+    You may use decimals or fractions like <code>1/3</code>.
+  </p>
+  <div class="pts-row" id="ptsRow"></div>
+  <div style="display:flex;gap:.6rem;margin-top:.3rem;">
+    <button class="btn-add" onclick="addPoint()">+ Add point</button>
+    <button class="btn-go" onclick="runInterp()">Interpolate ▶</button>
+  </div>
+  <div id="interpOut" style="margin-top:1.2rem;"></div>
+  <div class="plot-wrap" id="plotWrap" style="display:none;">
+    <canvas id="plotCanvas" height="380"></canvas>
+  </div>
+</div>
+
+</main>
+<script>
+/* ══════════════════════════════════════════
+   KATEX RENDER HELPERS
+══════════════════════════════════════════ */
+function rk(t,disp){try{return katex.renderToString(t,{throwOnError:false,displayMode:!!disp});}catch(e){return t;}}
+function setK(id,t,disp){const el=document.getElementById(id);if(el)el.innerHTML=rk(t,disp);}
+function setH(id,h){const el=document.getElementById(id);if(el)el.innerHTML=h;}
+
+/* ══════════════════════════════════════════
+   THEORY SECTION KaTeX POPULATION
+══════════════════════════════════════════ */
+function populateTheory(){
+  // §1
+  setK('s1_data','\\{(t_j, y_j)\\}_{j=0}^{n}, \\quad t_0,t_1,\\ldots,t_n\\text{ distinct}',true);
+  setK('s1_Pt','P(t)');
+  setK('s1_interp','P(t_j)=y_j\\text{ for }0\\le j\\le n');
+  setK('s1_V','V=\\mathcal{P}_{\\le n}');
+  setK('s1_F','F');
+  setK('s1_monomial','\\{1,x,x^2,\\ldots,x^n\\}');
+  setK('s1_dim','\\dim V=n+1');
+  setK('s1_data2','\\{(t_j,y_j)\\}');
+
+  // §2
+  setK('s2_i','0\\le i\\le n');
+  setK('s2_Li','L_i:V\\to F');
+  setK('s2_Lidef','L_i(f)=f(t_i)');
+  setK('s2_lin','L_i(\\alpha f+\\beta g)=\\alpha f(t_i)+\\beta g(t_i)=\\alpha L_i(f)+\\beta L_i(g)');
+  setK('s2_Liin','L_i\\in V^*');
+  setK('s2_Ls','L_0,L_1,\\ldots,L_n');
+  setK('s2_Vstar','V^*');
+  setK('s2_dimV','\\dim V^*=\\dim V=n+1');
+  setK('s2_vanish','\\sum_{i=0}^n c_i L_i(f)=0');
+  setK('s2_fall','f\\in V');
+  setK('s2_ci0','c_0=c_1=\\cdots=c_n=0');
+  setK('s2_Ls2','L_i');
+
+  // §3
+  setK('s3_i','0\\le i\\le n');
+  setK('s3_Pi',
+    'P_i(x)=\\dfrac{(x-t_0)\\cdots(x-t_{i-1})(x-t_{i+1})\\cdots(x-t_n)}{(t_i-t_0)\\cdots(t_i-t_{i-1})(t_i-t_{i+1})\\cdots(t_i-t_n)}',true);
+  setK('s3_Pi2','P_i(x)=\\prod_{\\underset{j\\,\\not=\\,i}{j=0}}^{n}\\frac{x-t_j}{t_i-t_j}',true);
+  setK('s3_Pi_is','P_i');
+  setK('s3_dual','L_j(P_i)=P_i(t_j)=\\delta_{ij}=\\begin{cases}1&\\text{if }i=j\\\\[4pt]0&\\text{if }i\\not=j\\end{cases}',true);
+  setK('s3_ji','j\\not= i');
+  setK('s3_Pitj','P_i(t_j)');
+  setK('s3_factor','(t_j-t_j)=0');
+  setK('s3_ii','j=i');
+
+  // §4
+  setK('s4_Ps','P_0,P_1,\\ldots,P_n');
+  setK('s4_sum0','\\sum_{i=0}^n c_i P_i = 0');
+  setK('s4_xF','x\\in F');
+  setK('s4_Lj','L_j');
+  setK('s4_Ljapp','\\sum_i c_i L_j(P_i)=L_j(0)=0');
+  setK('s4_main','\\sum_i c_i\\,\\delta_{ij}=c_j=0',true);
+  setK('s4_dim1','\\dim V = n+1');
+  setK('s4_dim2','|\\{P_0,\\ldots,P_n\\}|=n+1');
+  setK('s4_n1','n+1');
+  setK('s4_n1b','(n+1)');
+  setK('s4_basis','\\{P_0,P_1,\\ldots,P_n\\}');
+  setK('s4_Li_basis','\\{L_0,L_1,\\ldots,L_n\\}');
+  setK('s4_finV','f\\in V');
+  setK('s4_formula','f=\\sum_{i=0}^n L_i(f)\\,P_i=\\sum_{i=0}^n f(t_i)\\,P_i',true);
+  setK('s4_lagrange',
+    '\\boxed{P(x)=\\sum_{i=0}^n y_i\\,P_i(x)=\\sum_{i=0}^n y_i\\prod_{\\underset{j\\,\\not=\\,i}{j=0}}^{n}\\frac{x-t_j}{t_i-t_j}}',true);
+
+  // §5
+  setK('s5_xj','f=x^k');
+  setK('s5_chgbasis','x^k=\\sum_{i=0}^n t_i^k\\,P_i(x),\\quad k=0,1,\\ldots,n',true);
+  setK('s5_matrix',
+    '\\begin{bmatrix}1\\\\x\\\\x^2\\\\\\vdots\\\\x^n\\end{bmatrix}=\\begin{bmatrix}P_0(x)&P_1(x)&\\cdots&P_n(x)\\end{bmatrix}\\begin{bmatrix}1&t_0&t_0^2&\\cdots&t_0^n\\\\1&t_1&t_1^2&\\cdots&t_1^n\\\\\\vdots&&&\\ddots&\\vdots\\\\1&t_n&t_n^2&\\cdots&t_n^n\\end{bmatrix}',true);
+  setK('s5_V',
+    'V=\\begin{bmatrix}1&t_0&t_0^2&\\cdots&t_0^n\\\\1&t_1&t_1^2&\\cdots&t_1^n\\\\\\vdots&&&\\ddots&\\vdots\\\\1&t_n&t_n^2&\\cdots&t_n^n\\end{bmatrix}',true);
+  setK('s5_Vij','V_{ij}=t_i^{j}');
+  setK('s5_det','\\det V=\\prod_{0\\le i<j\\le n}(t_j-t_i)',true);
+  setK('s5_Vc','V\\mathbf{c}=\\mathbf{y}');
+  setK('s5_cvec','c_0,c_1,\\ldots,c_n');
+
+  // §3 delta table (3-node example with symbolic t0,t1,t2)
+  buildDeltaTable();
+}
+
+function buildDeltaTable(){
+  const nodes=['t_0','t_1','t_2'];
+  const tbl=document.createElement('table');tbl.className='delta-tbl';
+  const hr=document.createElement('tr');
+  ['','t_0','t_1','t_2'].forEach(function(h){
+    const th=document.createElement('th');th.innerHTML=h?rk(h):'eval at';hr.appendChild(th);
+  });
+  tbl.appendChild(hr);
+  nodes.forEach(function(pi,i){
+    const tr=document.createElement('tr');
+    const th=document.createElement('th');th.innerHTML=rk('P_'+i+'(\\cdot)');tr.appendChild(th);
+    nodes.forEach(function(_,j){
+      const td=document.createElement('td');
+      if(i===j){td.className='hit';td.innerHTML=rk('1');}
+      else{td.className='miss';td.innerHTML=rk('0');}
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  const wrap=document.getElementById('s3_deltaTbl');
+  if(wrap){wrap.innerHTML='';wrap.appendChild(tbl);}
+}
+
+/* ══════════════════════════════════════════
+   EXACT RATIONAL ARITHMETIC  (for display)
+══════════════════════════════════════════ */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=b;b=a%b;a=t;}return a||1;}
+function Frac(n,d){
+  d=d===undefined?1:d;
+  if(d<0){n=-n;d=-d;}
+  var g=gcd(Math.abs(n),d);
+  this.n=Math.round(n/g);this.d=Math.round(d/g);
+}
+Frac.parse=function(s){
+  s=(s||'').trim();
+  if(!s||s==='-')return new Frac(0);
+  if(s.indexOf('/')>-1){var p=s.split('/');return new Frac(parseInt(p[0]),parseInt(p[1]));}
+  if(s.indexOf('.')>-1){var dec=(s.split('.')[1]||'').length;var dn=Math.pow(10,dec);return new Frac(Math.round(parseFloat(s)*dn),dn);}
+  return new Frac(parseInt(s)||0);
+};
+Frac.prototype.add=function(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);};
+Frac.prototype.sub=function(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);};
+Frac.prototype.mul=function(o){return new Frac(this.n*o.n,this.d*o.d);};
+Frac.prototype.div=function(o){return new Frac(this.n*o.d,this.d*o.n);};
+Frac.prototype.neg=function(){return new Frac(-this.n,this.d);};
+Frac.prototype.isZero=function(){return this.n===0;};
+Frac.prototype.toTeX=function(){
+  if(this.d===1)return String(this.n);
+  var abs=Math.abs(this.n),sg=this.n<0?'-':'';
+  return sg+'\\tfrac{'+abs+'}{'+this.d+'}';
+};
+Frac.prototype.toFloat=function(){return this.n/this.d;};
+var F0=new Frac(0),F1=new Frac(1);
+
+/* ══════════════════════════════════════════
+   POLYNOMIAL (array of Frac, coeff of x^k at index k)
+══════════════════════════════════════════ */
+function polyMul(p,q){
+  var r=new Array(p.length+q.length-1).fill(null).map(function(){return new Frac(0);});
+  for(var i=0;i<p.length;i++) for(var j=0;j<q.length;j++) r[i+j]=r[i+j].add(p[i].mul(q[j]));
+  return r;
+}
+function polyScale(p,s){return p.map(function(c){return c.mul(s);});}
+function polyEval(p,x){  // x is Frac
+  var r=new Frac(0);
+  for(var k=p.length-1;k>=0;k--) r=r.mul(x).add(p[k]);
+  return r;
+}
+function polyEvalFloat(p,x){
+  var r=0;
+  for(var k=p.length-1;k>=0;k--) r=r*x+p[k].toFloat();
+  return r;
+}
+function polyToTeX(p,varName){
+  varName=varName||'x';
+  // collect nonzero terms from highest degree down
+  var terms=[];
+  for(var k=p.length-1;k>=0;k--){
+    var c=p[k];if(c.isZero()) continue;
+    terms.push({k:k,c:c});
+  }
+  if(!terms.length) return'0';
+
+  var out='';
+  terms.forEach(function(t,idx){
+    var k=t.k, c=t.c;
+    var isNeg=(c.n<0);
+    var absC=new Frac(Math.abs(c.n),c.d);
+    var sign=isNeg?'-':'+';
+    if(idx===0) sign=isNeg?'-':'';  // no leading +
+
+    // coefficient string (omit '1' when multiplied by x^k>0)
+    var cStr='';
+    if(k===0) cStr=absC.toTeX();
+    else if(absC.n===absC.d) cStr='';  // coefficient is 1
+    else cStr=absC.d===1?String(absC.n):'\\tfrac{'+absC.n+'}{'+absC.d+'}';
+
+    // variable string
+    var xStr=k===0?'':(k===1?varName:varName+'^{'+k+'}');
+
+    out+=sign+cStr+xStr;
+  });
+  return out||'0';
+}
+
+/* ══════════════════════════════════════════
+   LAGRANGE COMPUTATION
+══════════════════════════════════════════ */
+function lagrangePolys(ts){
+  var n=ts.length;
+  var polys=[];
+  for(var i=0;i<n;i++){
+    var num=[F1];
+    for(var j=0;j<n;j++){
+      if(j===i) continue;
+      num=polyMul(num,[ts[j].neg(),F1]);
+    }
+    var den=F1;
+    for(var j=0;j<n;j++){
+      if(j===i) continue;
+      den=den.mul(ts[i].sub(ts[j]));
+    }
+    polys.push(polyScale(num,F1.div(den)));
+  }
+  return polys;
+}
+
+function interpolate(ts,ys){
+  // P = sum y_i * P_i
+  var polys=lagrangePolys(ts);
+  var n=ts.length;
+  var result=new Array(n).fill(null).map(function(){return new Frac(0);});
+  for(var i=0;i<n;i++){
+    var scaled=polyScale(polys[i],ys[i]);
+    for(var k=0;k<scaled.length;k++){
+      if(k>=result.length) result.push(new Frac(0));
+      result[k]=result[k].add(scaled[k]);
+    }
+  }
+  return{polys:polys,P:result};
+}
+
+/* ══════════════════════════════════════════
+   POINT EDITOR UI
+══════════════════════════════════════════ */
+var ptCount=0;
+function addPoint(t,y){
+  ptCount++;
+  var id='pt'+ptCount;
+  var row=document.getElementById('ptsRow');
+  var div=document.createElement('div');div.className='pt-entry';div.id=id;
+  var idx=row.children.length;
+  div.innerHTML=
+    '<span style="color:var(--gray);font-size:.82rem">t<sub>'+(idx)+'</sub>=</span>'+
+    '<input type="text" id="t'+ptCount+'" value="'+(t!=null?t:'')+'" placeholder="t">'+
+    '<span style="color:var(--gray);font-size:.82rem">y<sub>'+(idx)+'</sub>=</span>'+
+    '<input type="text" id="y'+ptCount+'" value="'+(y!=null?y:'')+'" placeholder="y">'+
+    '<span class="rm" onclick="removePoint(\''+id+'\')">×</span>';
+  row.appendChild(div);
+}
+function removePoint(id){
+  var el=document.getElementById(id);if(el)el.remove();
+  // relabel
+  var entries=document.querySelectorAll('.pt-entry');
+  entries.forEach(function(e,idx){
+    var spans=e.querySelectorAll('span');
+    if(spans[0]) spans[0].innerHTML='t<sub>'+idx+'</sub>=';
+    if(spans[1]) spans[1].innerHTML='y<sub>'+idx+'</sub>=';
+  });
+}
+function getPoints(){
+  var entries=document.querySelectorAll('.pt-entry');
+  var ts=[],ys=[];
+  var ok=true;
+  entries.forEach(function(e){
+    var inputs=e.querySelectorAll('input');
+    var t=Frac.parse(inputs[0]?.value||'0');
+    var y=Frac.parse(inputs[1]?.value||'0');
+    ts.push(t);ys.push(y);
+  });
+  // Check distinct
+  for(var i=0;i<ts.length;i++) for(var j=i+1;j<ts.length;j++)
+    if(ts[i].n===ts[j].n&&ts[i].d===ts[j].d) ok=false;
+  return ok?{ts:ts,ys:ys}:null;
+}
+
+var PRESETS=[
+  {label:'Wyndor (n=2)',pts:[[0,1],[1,2],[2,0]]},
+  {label:'n=3 smooth',pts:[[-2,3],[-1,1],[1,2],[3,-1]]},
+  {label:'Runge-like',pts:[[-4,1],[-2,2],[0,3],[2,1],[4,0]]},
+  {label:'Linear (n=1)',pts:[[0,1],[3,4]]},
+];
+function loadPreset(p){
+  document.getElementById('ptsRow').innerHTML='';
+  ptCount=0;
+  p.pts.forEach(function(pt){addPoint(pt[0],pt[1]);});
+}
+function buildPresets(){
+  var row=document.getElementById('exRow');
+  PRESETS.forEach(function(p){
+    var btn=document.createElement('button');btn.className='btn-ghost';btn.style.fontSize='.88rem';btn.textContent=p.label;
+    btn.addEventListener('click',function(){loadPreset(p);});
+    row.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════════════════
+   RUN INTERPOLATION & DISPLAY
+══════════════════════════════════════════ */
+function runInterp(){
+  var out=document.getElementById('interpOut');
+  var plotWrap=document.getElementById('plotWrap');
+  out.innerHTML='';
+  var data=getPoints();
+  if(!data){
+    out.innerHTML='<p style="color:var(--red)">⚠ Nodes tⱼ must be distinct.</p>';
+    return;
+  }
+  var ts=data.ts,ys=data.ys,n=ts.length;
+  if(n<2){out.innerHTML='<p style="color:var(--red)">Need at least 2 points.</p>';return;}
+
+  var result=interpolate(ts,ys);
+  var polys=result.polys,P=result.P;
+
+  // ── Lagrange polynomials ──
+  var secDiv=document.createElement('div');secDiv.style.marginBottom='1rem';
+  var h3=document.createElement('h3');h3.style.cssText='font-family:var(--font-head);font-size:1.1rem;color:var(--navy2);margin-bottom:.6rem;';
+  h3.textContent='Lagrange Basis Polynomials';
+  secDiv.appendChild(h3);
+
+  polys.forEach(function(pi,i){
+    var block=document.createElement('div');block.className='pi-block';
+    // Show symbolic form first, then evaluated polynomial
+    var tTeX=ts.map(function(t){return t.toTeX();}).join(',\\;');
+    var numTeX='';
+    var denTeX='';
+    for(var j=0;j<n;j++){
+      if(j===i) continue;
+      numTeX+='(x-'+ts[j].toTeX()+')';
+      denTeX+='('+ts[i].toTeX()+'-'+ts[j].toTeX()+')';
+    }
+    var pTeX=polyToTeX(pi,'x');
+    block.innerHTML=
+      rk('P_'+i+'(x)=\\dfrac{'+numTeX+'}{'+denTeX+'}='+pTeX);
+    secDiv.appendChild(block);
+  });
+
+  // ── Interpolating polynomial ──
+  var h3b=document.createElement('h3');h3b.style.cssText='font-family:var(--font-head);font-size:1.1rem;color:var(--navy);margin:.9rem 0 .4rem;';
+  h3b.textContent='Interpolating Polynomial';
+  secDiv.appendChild(h3b);
+
+  var sumTeX=ys.map(function(y,i){
+    var yTeX=y.toTeX();
+    return(y.n<0?'('+yTeX+')':yTeX)+'\\,P_'+i+'(x)';
+  }).join('+');
+  var fullTeX=polyToTeX(P,'x');
+
+  var sumBlock=document.createElement('div');sumBlock.className='pi-block';
+  sumBlock.innerHTML=rk('P(x)='+sumTeX+'='+fullTeX);
+  secDiv.appendChild(sumBlock);
+
+  // Verify at nodes
+  var verDiv=document.createElement('div');verDiv.style.cssText='font-size:.9rem;color:var(--gray);margin-top:.5rem;';
+  var vParts=ts.map(function(t,i){
+    var val=polyEval(P,t);
+    var ok=val.n===ys[i].n&&val.d===ys[i].d;
+    return rk('P('+t.toTeX()+')='+(ok?'{\\color{'+( ok?'#1a6a40':'red')+'}'+val.toTeX()+'}':val.toTeX()));
+  });
+  verDiv.innerHTML='<strong>Verification:</strong> &ensp;'+vParts.join('&ensp;');
+  secDiv.appendChild(verDiv);
+  out.appendChild(secDiv);
+
+  // ── Plot ──
+  plotWrap.style.display='block';
+  drawPlot(ts,ys,P);
+}
+
+/* ══════════════════════════════════════════
+   CANVAS PLOT
+══════════════════════════════════════════ */
+function drawPlot(ts,ys,P){
+  var cv=document.getElementById('plotCanvas');
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.parentElement.offsetWidth||700;
+  var cssH=380;
+  cv.width=Math.round(cssW*dpr);
+  cv.height=Math.round(cssH*dpr);
+  cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  var W=cssW,H=cssH;
+
+  // Find plot range
+  var tfs=ts.map(function(t){return t.toFloat();});
+  var yfs=ys.map(function(y){return y.toFloat();});
+  var tMin=Math.min.apply(null,tfs),tMax=Math.max.apply(null,tfs);
+  var margin=(tMax-tMin)*0.18||0.5;
+  var xLo=tMin-margin,xHi=tMax+margin;
+
+  // Evaluate P over range to find y range
+  var N=400;
+  var xs=[],pyVals=[];
+  for(var k=0;k<=N;k++){
+    var xx=xLo+(xHi-xLo)*k/N;
+    xs.push(xx);
+    pyVals.push(polyEvalFloat(P,xx));
+  }
+  var allY=pyVals.concat(yfs);
+  var yMin=Math.min.apply(null,allY),yMax=Math.max.apply(null,allY);
+  var yMarg=(yMax-yMin)*0.18||0.5;
+  yMin-=yMarg;yMax+=yMarg;
+
+  var pad={l:52,r:20,t:24,b:44};
+  var gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+
+  function px(x){return pad.l+(x-xLo)/(xHi-xLo)*gW;}
+  function py(y){return pad.t+(1-(y-yMin)/(yMax-yMin))*gH;}
+
+  // Background
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='#e8e4de';ctx.lineWidth=0.8;
+  // Horizontal grid lines
+  var yRange=yMax-yMin;
+  var yStepRaw=yRange/6;
+  var mag=Math.pow(10,Math.floor(Math.log10(yStepRaw)));
+  var yStep=[0.1,0.2,0.25,0.5,1,2,2.5,5,10].map(function(f){return f*mag;})
+    .find(function(s){return s>=yStepRaw*0.7;})||mag;
+  for(var yv=Math.ceil(yMin/yStep)*yStep;yv<=yMax+1e-9;yv+=yStep){
+    var yp=Math.round(py(yv))+0.5;
+    ctx.beginPath();ctx.moveTo(pad.l,yp);ctx.lineTo(pad.l+gW,yp);ctx.stroke();
+  }
+  // Vertical grid lines
+  var xRange=xHi-xLo;
+  var xStepRaw=xRange/8;
+  var xmag=Math.pow(10,Math.floor(Math.log10(xStepRaw)));
+  var xStep=[0.1,0.2,0.25,0.5,1,2,2.5,5,10].map(function(f){return f*xmag;})
+    .find(function(s){return s>=xStepRaw*0.7;})||xmag;
+  for(var xv=Math.ceil(xLo/xStep)*xStep;xv<=xHi+1e-9;xv+=xStep){
+    var xp=Math.round(px(xv))+0.5;
+    ctx.beginPath();ctx.moveTo(xp,pad.t);ctx.lineTo(xp,pad.t+gH);ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle='#18284a';ctx.lineWidth=1.2;
+  var y0=Math.max(pad.t,Math.min(pad.t+gH,py(0)));
+  var x0=Math.max(pad.l,Math.min(pad.l+gW,px(0)));
+  ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(pad.l+gW,y0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+gH);ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle='#7a7a8a';ctx.font='11px "Crimson Pro",Georgia,serif';ctx.textAlign='center';
+  for(var xv=Math.ceil(xLo/xStep)*xStep;xv<=xHi+1e-9;xv+=xStep){
+    var label=parseFloat(xv.toFixed(6)).toString();
+    ctx.fillText(label,px(xv),pad.t+gH+18);
+    ctx.strokeStyle='#c0bcb8';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(px(xv),y0-3);ctx.lineTo(px(xv),y0+3);ctx.stroke();
+  }
+  ctx.textAlign='right';
+  for(var yv=Math.ceil(yMin/yStep)*yStep;yv<=yMax+1e-9;yv+=yStep){
+    var label=parseFloat(yv.toFixed(6)).toString();
+    ctx.fillText(label,pad.l-6,py(yv)+4);
+    ctx.strokeStyle='#c0bcb8';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(x0-3,py(yv));ctx.lineTo(x0+3,py(yv));ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle='#18284a';ctx.font='13px "Crimson Pro",Georgia,serif';ctx.textAlign='center';
+  ctx.fillText('x',pad.l+gW+10,y0+4);
+  ctx.save();ctx.translate(14,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('P(x)',0,0);ctx.restore();
+
+  // Polynomial curve
+  ctx.strokeStyle='#3a6eb5';ctx.lineWidth=2.2;ctx.setLineDash([]);
+  ctx.beginPath();
+  var started=false;
+  for(var k=0;k<=N;k++){
+    var xp=px(xs[k]),yp2=py(pyVals[k]);
+    if(!isFinite(pyVals[k])||yp2<pad.t-20||yp2>pad.t+gH+20){started=false;continue;}
+    if(!started){ctx.moveTo(xp,yp2);started=true;}else ctx.lineTo(xp,yp2);
+  }
+  ctx.stroke();
+
+  // Data points — red dots
+  ts.forEach(function(t,i){
+    var xp=px(t.toFloat()),yp2=py(ys[i].toFloat());
+    ctx.beginPath();ctx.arc(xp,yp2,6,0,2*Math.PI);
+    ctx.fillStyle='#b33a2f';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    // label
+    ctx.fillStyle='#18284a';ctx.font='bold 11px "Crimson Pro",Georgia,serif';ctx.textAlign='center';
+    var label='('+parseFloat(t.toFloat().toFixed(3))+', '+parseFloat(ys[i].toFloat().toFixed(3))+')';
+    var above=yp2>pad.t+20;
+    ctx.fillText(label,xp,above?yp2-11:yp2+18);
+  });
+
+  // Legend
+  ctx.fillStyle='#3a6eb5';ctx.font='12px "Crimson Pro",Georgia,serif';ctx.textAlign='left';
+  ctx.strokeStyle='#3a6eb5';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(pad.l+6,pad.t+10);ctx.lineTo(pad.l+30,pad.t+10);ctx.stroke();
+  ctx.fillText('P(x)',pad.l+34,pad.t+14);
+  ctx.beginPath();ctx.arc(pad.l+80,pad.t+10,5,0,2*Math.PI);
+  ctx.fillStyle='#b33a2f';ctx.fill();
+  ctx.fillStyle='#b33a2f';ctx.fillText('data points',pad.l+90,pad.t+14);
+}
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  populateTheory();
+  buildPresets();
+  // Default points
+  [[0,1],[1,3],[3,2],[4,5]].forEach(function(pt){addPoint(pt[0],pt[1]);});
+});
+</script>
+</body>
+</html>

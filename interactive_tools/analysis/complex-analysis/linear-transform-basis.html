@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Transformations & Change of Basis</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root {
+  --bg: #0c0c0f; --surface: #141418; --surface2: #1c1c22;
+  --border: #2a2a34; --border-hi: #3d3d4a;
+  --text: #e8e6e3; --text2: #9b98a0; --text3: #5f5d66;
+  --accent: #6e8efb; --accent2: #a777e3;
+  --beta-col: #4ade80; --gamma-col: #f87171;
+  --betap-col: #fbbf24; --gammap-col: #38bdf8;
+  --std-col: rgba(255,255,255,0.22);
+  --mono: 'JetBrains Mono', monospace; --sans: 'DM Sans', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--bg); color: var(--text); font-family: var(--sans); }
+body { padding: 16px 20px; max-width: 1200px; margin: 0 auto; }
+
+header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+header h1 { font-family: var(--mono); font-size: 16px; font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+header .sub { font-size: 12px; color: var(--text3); }
+
+/* ── Canvas row ── */
+.canvas-row { display: flex; align-items: flex-start; justify-content: center;
+  gap: 12px; margin-bottom: 8px; }
+.panel { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.panel-hd { font-family: var(--mono); font-size: 10px; color: var(--text2);
+  text-align: center; letter-spacing: 0.5px; }
+.canvas-box { width: 380px; height: 380px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.canvas-box canvas { width: 380px; height: 380px; display: block; }
+
+/* arrow between panels */
+.t-arrow { display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px; padding-top: 160px; }
+.t-arrow .arr { font-size: 28px; color: var(--accent2); line-height: 1; }
+.t-arrow .lbl { font-family: var(--mono); font-size: 12px; color: var(--accent2); }
+
+/* ── Controls ── */
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;
+  justify-content: center; }
+.card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; }
+.card-title { font-family: var(--mono); font-size: 9px; font-weight: 500;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 7px; }
+
+/* Matrix inputs */
+.mx-wrap { display: grid; grid-template-columns: repeat(2, 44px);
+  gap: 4px; align-items: center; }
+.mx-inp { width: 44px; height: 32px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 5px;
+  color: var(--text); font-family: var(--mono); font-size: 13px;
+  text-align: center; padding: 0 4px; outline: none; }
+.mx-inp:focus { border-color: var(--border-hi); }
+.mx-label { font-family: var(--mono); font-size: 9px; color: var(--text3);
+  text-align: center; margin-bottom: 2px; }
+
+/* Basis inputs */
+.basis-grid { display: grid; grid-template-columns: auto 44px 44px;
+  gap: 3px 5px; align-items: center; }
+.basis-grid .blbl { font-family: var(--mono); font-size: 10px; padding-right: 2px; }
+.basis-grid .bval { font-family: var(--mono); font-size: 9px; color: var(--text3);
+  text-align: center; }
+
+/* Preset buttons */
+.preset-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.pbtn { background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text2); font-family: var(--mono);
+  font-size: 9px; padding: 3px 7px; cursor: pointer; transition: border-color .12s; }
+.pbtn:hover { border-color: var(--accent); color: var(--text); }
+
+/* ── Matrix display section ── */
+.matrix-section { margin-top: 14px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+.ms-title { font-family: var(--mono); font-size: 10px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.ms-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 8px; }
+.ms-block { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ms-lbl { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+.ms-eq { font-size: 14px; color: var(--text2); align-self: center; padding: 0 4px; }
+.formula-display { overflow-x: auto; line-height: 1.5; }
+
+/* Similarity check */
+.sim-check { margin-top: 8px; padding: 7px 10px;
+  border-radius: 5px; font-family: var(--mono); font-size: 10px; }
+.sim-ok { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
+  color: #4ade80; }
+.sim-fail { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
+  color: #f87171; }
+
+/* matrix table */
+.mtbl { border-collapse: collapse; display: inline-table; font-family: var(--mono);
+  font-size: 11px; }
+.mtbl td { padding: 2px 7px; border: 1px solid var(--border);
+  text-align: right; min-width: 46px; color: var(--text2); }
+.mtbl td.hi { color: var(--text); font-weight: 600; }
+
+/* Legend */
+.legend { display: grid; grid-template-columns: repeat(2, auto);
+  gap: 3px 14px; margin-top: 4px; }
+.leg { display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--text2); }
+.lsw { width: 20px; height: 3px; border-radius: 1px; flex-shrink: 0; }
+.lsw.dashed { border-top: 2px dashed; background: none; }
+
+.zoom-row { display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+.zoom-row label { font-size: 9px; color: var(--text3); font-family: var(--mono); }
+.zoom-row input { width: 80px; }
+.zoom-row span { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>T: V → V — Linear Transformations & Change of Basis</h1>
+  <span class="sub">[T]_β^γ and [T]_β′^γ′ are similar matrices</span>
+</header>
+
+<!-- ══ CANVAS ROW ════════════════════════════════════════ -->
+<div class="canvas-row">
+  <div class="panel">
+    <div class="panel-hd">DOMAIN — preimage<br><span style="color:var(--text3)">bases β (green) and β′ (gold)</span></div>
+    <div class="canvas-box"><canvas id="domC"></canvas></div>
+  </div>
+  <div class="t-arrow">
+    <div class="arr">→</div>
+    <div class="lbl">T</div>
+  </div>
+  <div class="panel">
+    <div class="panel-hd">RANGE — image<br><span style="color:var(--text3)">bases γ (red) and γ′ (blue)</span></div>
+    <div class="canvas-box"><canvas id="ranC"></canvas></div>
+  </div>
+</div>
+
+<!-- ══ CONTROLS ══════════════════════════════════════════ -->
+<div class="controls">
+
+  <!-- T matrix -->
+  <div class="card">
+    <div class="card-title">Transformation T (standard matrix)</div>
+    <div class="mx-label" style="grid-column:1/-1">T =</div>
+    <div class="mx-wrap">
+      <input class="mx-inp" id="ta" value="2"><input class="mx-inp" id="tb" value="1">
+      <input class="mx-inp" id="tc" value="0"><input class="mx-inp" id="td" value="3">
+    </div>
+    <div class="preset-row">
+      <button class="pbtn" onclick="setT(2,1,0,3)">shear+scale</button>
+      <button class="pbtn" onclick="setT(0,-1,1,0)">rot 90°</button>
+      <button class="pbtn" onclick="setT(1,1,0,1)">shear</button>
+      <button class="pbtn" onclick="setT(2,0,0,2)">scale ×2</button>
+      <button class="pbtn" onclick="setT(1,0,0,-1)">reflect</button>
+      <button class="pbtn" onclick="setT(1,2,3,4)">general</button>
+    </div>
+  </div>
+
+  <!-- Domain basis β -->
+  <div class="card">
+    <div class="card-title">Domain basis β (green)</div>
+    <div class="basis-grid">
+      <div class="blbl" style="color:var(--beta-col)">v₁ =</div>
+      <input class="mx-inp" id="b1x" value="1"><input class="mx-inp" id="b1y" value="0">
+      <div class="blbl" style="color:var(--beta-col)">v₂ =</div>
+      <input class="mx-inp" id="b2x" value="0"><input class="mx-inp" id="b2y" value="1">
+    </div>
+    <div style="margin-top:6px">
+    <div class="card-title" style="margin-top:2px">Domain basis β′ (gold)</div>
+    <div class="basis-grid">
+      <div class="blbl" style="color:var(--betap-col)">v′₁ =</div>
+      <input class="mx-inp" id="bp1x" value="-1"><input class="mx-inp" id="bp1y" value="1">
+      <div class="blbl" style="color:var(--betap-col)">v′₂ =</div>
+      <input class="mx-inp" id="bp2x" value="1"><input class="mx-inp" id="bp2y" value="1">
+    </div>
+    </div>
+    <div class="preset-row">
+      <button class="pbtn" onclick="setBeta(1,0,0,1,-1,1,1,1)">std / rot</button>
+      <button class="pbtn" onclick="setBeta(2,1,0,2,1,1,-1,1)">custom</button>
+      <button class="pbtn" onclick="setBeta(1,0,0,1,1,1,0,1)">std / skew</button>
+    </div>
+  </div>
+
+  <!-- Range bases γ, γ′ -->
+  <div class="card">
+    <div class="card-title">Range basis γ (red)</div>
+    <div class="basis-grid">
+      <div class="blbl" style="color:var(--gamma-col)">w₁ =</div>
+      <input class="mx-inp" id="g1x" value="1"><input class="mx-inp" id="g1y" value="0">
+      <div class="blbl" style="color:var(--gamma-col)">w₂ =</div>
+      <input class="mx-inp" id="g2x" value="0"><input class="mx-inp" id="g2y" value="1">
+    </div>
+    <div style="margin-top:6px">
+    <div class="card-title" style="margin-top:2px">Range basis γ′ (cyan)</div>
+    <div class="basis-grid">
+      <div class="blbl" style="color:var(--gammap-col)">w′₁ =</div>
+      <input class="mx-inp" id="gp1x" value="3"><input class="mx-inp" id="gp1y" value="-1">
+      <div class="blbl" style="color:var(--gammap-col)">w′₂ =</div>
+      <input class="mx-inp" id="gp2x" value="2"><input class="mx-inp" id="gp2y" value="1">
+    </div>
+    </div>
+    <div class="preset-row">
+      <button class="pbtn" onclick="setGamma(1,0,0,1,3,-1,2,1)">std / notes</button>
+      <button class="pbtn" onclick="setGamma(1,0,0,1,1,1,-1,1)">std / rot</button>
+      <button class="pbtn" onclick="setGamma(2,1,0,2,1,0,1,1)">custom</button>
+    </div>
+  </div>
+
+  <!-- View -->
+  <div class="card">
+    <div class="card-title">View</div>
+    <div class="zoom-row">
+      <label>Zoom</label>
+      <input type="range" id="zoomSlider" min="2" max="12" step="0.5" value="4">
+      <span id="zoomVal">4</span>
+    </div>
+    <div class="legend" style="margin-top:8px">
+      <div class="leg"><div class="lsw" style="background:var(--beta-col)"></div>β basis (green)</div>
+      <div class="leg"><div class="lsw" style="background:var(--betap-col)"></div>β′ basis (gold)</div>
+      <div class="leg"><div class="lsw" style="background:var(--gamma-col)"></div>γ basis (red)</div>
+      <div class="leg"><div class="lsw" style="background:var(--gammap-col)"></div>γ′ basis (cyan)</div>
+      <div class="leg"><div class="lsw" style="background:var(--std-col)"></div>std grid</div>
+      <div class="leg"><div class="lsw dashed" style="border-color:#c084fc"></div>circle</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MATRIX DISPLAY ═══════════════════════════════════ -->
+<div class="matrix-section" id="matSection">
+  <div class="ms-title">Matrix representations of T and the change-of-basis formula</div>
+  <div id="formulaOut"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   UTILITY
+════════════════════════════════════════ */
+function rk(t,opts){
+  try{return katex.renderToString(t,Object.assign({throwOnError:false},opts||{}));}
+  catch(e){return t;}
+}
+function n(id){return parseFloat(document.getElementById(id).value)||0;}
+function det2(a,b,c,d){return a*d-b*c;}
+function inv2x2(m){
+  var d=det2(m[0],m[1],m[2],m[3]);
+  if(Math.abs(d)<1e-10)return null;
+  return[m[3]/d,-m[1]/d,-m[2]/d,m[0]/d];
+}
+function mmul(A,B){ // 2x2 row-major [a,b,c,d]
+  return[A[0]*B[0]+A[1]*B[2], A[0]*B[1]+A[1]*B[3],
+         A[2]*B[0]+A[3]*B[2], A[2]*B[1]+A[3]*B[3]];
+}
+function applyMat(m,x,y){return[m[0]*x+m[1]*y, m[2]*x+m[3]*y];}
+function fmt(x){if(Math.abs(x)<5e-10)return'0';return parseFloat(x.toFixed(3)).toString();}
+function fmtTeX(x){return fmt(x);}
+function matTeX(m,cls){
+  return'\\begin{pmatrix}'+fmtTeX(m[0])+'&'+fmtTeX(m[1])+'\\\\'+fmtTeX(m[2])+'&'+fmtTeX(m[3])+'\\end{pmatrix}';
+}
+
+/* ════════════════════════════════════════
+   CANVAS
+════════════════════════════════════════ */
+const domC=document.getElementById('domC');
+const ranC=document.getElementById('ranC');
+const dCtx=domC.getContext('2d');
+const rCtx=ranC.getContext('2d');
+let PX=760, VIEW=4;
+
+function resize(){
+  const dpr=window.devicePixelRatio||1;
+  const box=document.querySelector('.canvas-box');
+  const sz=box.getBoundingClientRect().width;
+  PX=Math.round(sz*dpr);
+  [domC,ranC].forEach(c=>{c.width=PX;c.height=PX;});
+  draw();
+}
+window.addEventListener('resize',resize);
+
+function toC(x,y){return[(x/VIEW+0.5)*PX,(0.5-y/VIEW)*PX];}
+function applyT(x,y,T){return[T[0]*x+T[1]*y,T[2]*x+T[3]*y];}
+
+function drawArrow(ctx,fx,fy,tx,ty,col,w){
+  const dpr=window.devicePixelRatio||1;
+  const[cx1,cy1]=toC(fx,fy);
+  const[cx2,cy2]=toC(tx,ty);
+  const dx=cx2-cx1,dy=cy2-cy1;
+  const len=Math.sqrt(dx*dx+dy*dy);if(len<3)return;
+  const ux=dx/len,uy=dy/len;
+  ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;
+  ctx.lineWidth=w*dpr;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(cx1,cy1);ctx.lineTo(cx2,cy2);ctx.stroke();
+  const hl=11*dpr,ha=0.4;
+  ctx.beginPath();ctx.moveTo(cx2,cy2);
+  ctx.lineTo(cx2-hl*(ux*Math.cos(ha)-uy*Math.sin(ha)),cy2-hl*(uy*Math.cos(ha)+ux*Math.sin(ha)));
+  ctx.lineTo(cx2-hl*(ux*Math.cos(-ha)-uy*Math.sin(-ha)),cy2-hl*(uy*Math.cos(-ha)+ux*Math.sin(-ha)));
+  ctx.closePath();ctx.fill();ctx.restore();
+}
+
+/* Draw a basis's grid lines across the canvas */
+function drawBasisGrid(ctx,b1x,b1y,b2x,b2y,col,alpha,T){
+  const dpr=window.devicePixelRatio||1;
+  const steps=Math.ceil(VIEW*2)+4;
+  ctx.save();ctx.strokeStyle=col;ctx.globalAlpha=alpha;ctx.lineWidth=0.7*dpr;
+  for(let i=-steps;i<=steps;i++){
+    // lines parallel to b1: origin at i*b2, direction b1
+    var ox=i*b2x,oy=i*b2y;
+    var [p0x,p0y]=T?applyT(ox-steps*b1x,oy-steps*b1y,T):[ox-steps*b1x,oy-steps*b1y];
+    var [p1x,p1y]=T?applyT(ox+steps*b1x,oy+steps*b1y,T):[ox+steps*b1x,oy+steps*b1y];
+    var[c0x,c0y]=toC(p0x,p0y);var[c1x,c1y]=toC(p1x,p1y);
+    ctx.beginPath();ctx.moveTo(c0x,c0y);ctx.lineTo(c1x,c1y);ctx.stroke();
+    // lines parallel to b2
+    ox=i*b1x;oy=i*b1y;
+    [p0x,p0y]=T?applyT(ox-steps*b2x,oy-steps*b2y,T):[ox-steps*b2x,oy-steps*b2y];
+    [p1x,p1y]=T?applyT(ox+steps*b2x,oy+steps*b2y,T):[ox+steps*b2x,oy+steps*b2y];
+    [c0x,c0y]=toC(p0x,p0y);[c1x,c1y]=toC(p1x,p1y);
+    ctx.beginPath();ctx.moveTo(c0x,c0y);ctx.lineTo(c1x,c1y);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* Draw standard cartesian grid */
+function drawStdGrid(ctx,T){
+  const dpr=window.devicePixelRatio||1;
+  const steps=Math.ceil(VIEW)+2;
+  ctx.save();
+  for(let i=-steps*3;i<=steps*3;i++){
+    ctx.strokeStyle=i===0?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.055)';
+    ctx.lineWidth=(i===0?1.5:0.7)*dpr;
+    var[p0x,p0y]=T?applyT(-steps*3,i,T):[-steps*3,i];
+    var[p1x,p1y]=T?applyT(steps*3,i,T):[steps*3,i];
+    ctx.beginPath();ctx.moveTo(...toC(p0x,p0y));ctx.lineTo(...toC(p1x,p1y));ctx.stroke();
+    [p0x,p0y]=T?applyT(i,-steps*3,T):[i,-steps*3];
+    [p1x,p1y]=T?applyT(i,steps*3,T):[i,steps*3];
+    ctx.beginPath();ctx.moveTo(...toC(p0x,p0y));ctx.lineTo(...toC(p1x,p1y));ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawQuad(ctx,corners,T,fill,stroke,lw){
+  const dpr=window.devicePixelRatio||1;
+  const tc=corners.map(p=>applyT(p[0],p[1],T));
+  ctx.save();ctx.fillStyle=fill;ctx.strokeStyle=stroke;
+  ctx.lineWidth=lw*dpr;ctx.lineJoin='round';
+  ctx.beginPath();
+  ctx.moveTo(...toC(tc[0][0],tc[0][1]));
+  for(let i=1;i<tc.length;i++)ctx.lineTo(...toC(tc[i][0],tc[i][1]));
+  ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+}
+
+function drawCircle(ctx,T){
+  const dpr=window.devicePixelRatio||1;const N=150;
+  // circle centred at (-0.7, 0.5) radius 0.65 — stays in frame under typical T
+  const CX=-0.7,CY=0.5,R=0.65;
+  ctx.save();ctx.strokeStyle='#c084fc';ctx.lineWidth=2*dpr;
+  ctx.beginPath();
+  for(let i=0;i<=N;i++){
+    const a=2*Math.PI*i/N;
+    const[tx,ty]=applyT(CX+R*Math.cos(a),CY+R*Math.sin(a),T);
+    i===0?ctx.moveTo(...toC(tx,ty)):ctx.lineTo(...toC(tx,ty));
+  }
+  ctx.stroke();
+  // center dot
+  const[cx,cy]=toC(...applyT(CX,CY,T));
+  ctx.fillStyle='#c084fc';ctx.beginPath();ctx.arc(cx,cy,3*dpr,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function drawObjects(ctx,T){
+  // Square 1 — right of origin, small
+  drawQuad(ctx,[[0.3,-0.5],[1.3,-0.5],[1.3,0.5],[0.3,0.5]],T,
+    'rgba(255,255,255,0.09)','rgba(255,255,255,0.50)',1.5);
+  // Square 2 — left of origin
+  drawQuad(ctx,[[-1.3,-1.0],[-0.4,-1.0],[-0.4,-0.1],[-1.3,-0.1]],T,
+    'rgba(110,142,251,0.13)','rgba(110,142,251,0.55)',1.5);
+  drawCircle(ctx,T);
+}
+
+function drawBasisArrows(ctx,b1x,b1y,b2x,b2y,col1,col2,T,scale){
+  scale=scale||1;
+  var[tb1x,tb1y]=T?applyT(b1x,b1y,T):[b1x,b1y];
+  var[tb2x,tb2y]=T?applyT(b2x,b2y,T):[b2x,b2y];
+  // Scale from 0 to T(b1)
+  drawArrow(ctx,0,0,tb1x*scale,tb1y*scale,col1,2.5);
+  drawArrow(ctx,0,0,tb2x*scale,tb2y*scale,col2,2.5);
+}
+
+function drawLabel(ctx,wx,wy,txt,col,align){
+  const dpr=window.devicePixelRatio||1;
+  ctx.save();ctx.font=`500 ${10*dpr}px 'JetBrains Mono',monospace`;
+  ctx.fillStyle=col;ctx.textAlign=align||'left';ctx.textBaseline='bottom';
+  const[cx,cy]=toC(wx,wy);
+  ctx.fillText(txt,cx+5*dpr,cy-3*dpr);
+  ctx.restore();
+}
+
+function drawPanel(ctx,T,isRange,bases){
+  ctx.clearRect(0,0,PX,PX);
+  ctx.fillStyle='#0f0f13';ctx.fillRect(0,0,PX,PX);
+
+  // Standard grid (faint)
+  drawStdGrid(ctx,isRange?T:null);
+
+  // β / γ grid
+  if(isRange){
+    drawBasisGrid(ctx,bases.g1x,bases.g1y,bases.g2x,bases.g2y,
+      '#f87171',0.15,T);
+    drawBasisGrid(ctx,bases.gp1x,bases.gp1y,bases.gp2x,bases.gp2y,
+      '#38bdf8',0.12,T);
+  } else {
+    drawBasisGrid(ctx,bases.b1x,bases.b1y,bases.b2x,bases.b2y,
+      '#4ade80',0.15,null);
+    drawBasisGrid(ctx,bases.bp1x,bases.bp1y,bases.bp2x,bases.bp2y,
+      '#fbbf24',0.12,null);
+  }
+
+  // Objects
+  drawObjects(ctx,T);
+
+  // Basis arrows — β and β′ in domain, γ and γ′ in range
+  const dpr=window.devicePixelRatio||1;
+  if(!isRange){
+    drawArrow(ctx,0,0,bases.b1x,bases.b1y,'#4ade80',2.5);
+    drawArrow(ctx,0,0,bases.b2x,bases.b2y,'#22c55e',2.5);
+    drawArrow(ctx,0,0,bases.bp1x,bases.bp1y,'#fbbf24',2.5);
+    drawArrow(ctx,0,0,bases.bp2x,bases.bp2y,'#f59e0b',2.5);
+    drawLabel(ctx,bases.b1x,bases.b1y,'v₁','#4ade80');
+    drawLabel(ctx,bases.b2x,bases.b2y,'v₂','#22c55e');
+    drawLabel(ctx,bases.bp1x,bases.bp1y,"v′₁",'#fbbf24');
+    drawLabel(ctx,bases.bp2x,bases.bp2y,"v′₂",'#f59e0b');
+  } else {
+    // In range: draw w1,w2 (γ) and w'1,w'2 (γ') in standard coords
+    drawArrow(ctx,0,0,bases.g1x,bases.g1y,'#f87171',2.5);
+    drawArrow(ctx,0,0,bases.g2x,bases.g2y,'#ef4444',2.5);
+    drawArrow(ctx,0,0,bases.gp1x,bases.gp1y,'#38bdf8',2.5);
+    drawArrow(ctx,0,0,bases.gp2x,bases.gp2y,'#0ea5e9',2.5);
+    drawLabel(ctx,bases.g1x,bases.g1y,'w₁','#f87171');
+    drawLabel(ctx,bases.g2x,bases.g2y,'w₂','#ef4444');
+    drawLabel(ctx,bases.gp1x,bases.gp1y,"w′₁",'#38bdf8');
+    drawLabel(ctx,bases.gp2x,bases.gp2y,"w′₂",'#0ea5e9');
+    // Also show T(v1), T(v2) as dots
+    var[tv1x,tv1y]=applyT(bases.b1x,bases.b1y,T);
+    var[tv2x,tv2y]=applyT(bases.b2x,bases.b2y,T);
+    var[cx1,cy1]=toC(tv1x,tv1y);
+    var[cx2,cy2]=toC(tv2x,tv2y);
+    ctx.save();
+    ctx.fillStyle='#4ade80';ctx.beginPath();ctx.arc(cx1,cy1,4*dpr,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#22c55e';ctx.beginPath();ctx.arc(cx2,cy2,4*dpr,0,Math.PI*2);ctx.fill();
+    drawLabel(ctx,tv1x,tv1y,'T(v₁)','#4ade80');
+    drawLabel(ctx,tv2x,tv2y,'T(v₂)','#22c55e');
+    ctx.restore();
+  }
+
+  // Origin dot
+  const[ocx,ocy]=toC(0,0);const dpr2=window.devicePixelRatio||1;
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.beginPath();ctx.arc(ocx,ocy,3*dpr2,0,Math.PI*2);ctx.fill();
+}
+
+/* ════════════════════════════════════════
+   MATRIX CALCULATIONS
+════════════════════════════════════════ */
+function getBases(){
+  return{
+    b1x:n('b1x'),b1y:n('b1y'),b2x:n('b2x'),b2y:n('b2y'),
+    bp1x:n('bp1x'),bp1y:n('bp1y'),bp2x:n('bp2x'),bp2y:n('bp2y'),
+    g1x:n('g1x'),g1y:n('g1y'),g2x:n('g2x'),g2y:n('g2y'),
+    gp1x:n('gp1x'),gp1y:n('gp1y'),gp2x:n('gp2x'),gp2y:n('gp2y')
+  };
+}
+
+/* [T]_β^γ : columns = coordinates of T(vj) in basis γ */
+function matRep(T,basisDom,basisRng){
+  // basisDom = [d1x,d1y,d2x,d2y] (columns = basis vectors)
+  // basisRng = [r1x,r1y,r2x,r2y]
+  var Td=inv2x2(basisRng);if(!Td)return null;
+  // T(v1) in std, then coords in γ
+  var[tv1x,tv1y]=applyMat(T,basisDom[0],basisDom[2]);
+  var[tv2x,tv2y]=applyMat(T,basisDom[1],basisDom[3]);
+  var c1=applyMat(Td,tv1x,tv1y);
+  var c2=applyMat(Td,tv2x,tv2y);
+  // matrix columns are c1, c2
+  return[c1[0],c2[0],c1[1],c2[1]];
+}
+
+/* Change of basis P_β'←β : columns = coords of β vectors in β' */
+function cobMatrix(fromBasis,toBasis){
+  // P such that [v]_{toBasis} = P [v]_{fromBasis}
+  // Columns of P = coords of from-vectors in toBasis
+  var invTo=inv2x2(toBasis);if(!invTo)return null;
+  var c1=applyMat(invTo,fromBasis[0],fromBasis[2]);
+  var c2=applyMat(invTo,fromBasis[1],fromBasis[3]);
+  return[c1[0],c2[0],c1[1],c2[1]];
+}
+
+function buildBasisMat(ax,ay,bx,by){
+  // columns = basis vectors: [[ax,bx],[ay,by]]
+  // row-major 2×2: [ax, bx, ay, by]
+  return[ax,bx,ay,by];
+}
+
+function matDiff(A,B){
+  return Math.max(Math.abs(A[0]-B[0]),Math.abs(A[1]-B[1]),
+                  Math.abs(A[2]-B[2]),Math.abs(A[3]-B[3]));
+}
+
+function matTblEl(m,cls){
+  var tbl=document.createElement('table');tbl.className='mtbl';
+  [[m[0],m[1]],[m[2],m[3]]].forEach(function(row){
+    var tr=document.createElement('tr');
+    row.forEach(function(v){
+      var td=document.createElement('td');
+      td.className=cls||'';
+      td.innerHTML=rk(fmtTeX(v));
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  return tbl;
+}
+
+function updateFormulas(T,bases){
+  var Bmat=buildBasisMat(bases.b1x,bases.b1y,bases.b2x,bases.b2y);
+  var Bpmat=buildBasisMat(bases.bp1x,bases.bp1y,bases.bp2x,bases.bp2y);
+  var Gmat=buildBasisMat(bases.g1x,bases.g1y,bases.g2x,bases.g2y);
+  var Gpmat=buildBasisMat(bases.gp1x,bases.gp1y,bases.gp2x,bases.gp2y);
+
+  var TBG=matRep(T,Bmat,Gmat);
+  var TBpGp=matRep(T,Bpmat,Gpmat);
+  var Pbeta=cobMatrix(Bpmat,Bmat);   // P_{β←β'} : [v]_β = P [v]_{β'}
+  var Pgamma=cobMatrix(Gmat,Gpmat);  // P_{γ'←γ} : [w]_{γ'} = P [w]_γ
+
+  var out=document.getElementById('formulaOut');
+  out.innerHTML='';
+
+  /* ── Row 1: the four matrices ── */
+  var row1=document.createElement('div');row1.className='ms-row';
+
+  function mblock(lbl,M,col){
+    var b=document.createElement('div');b.className='ms-block';
+    var l=document.createElement('div');l.className='ms-lbl';
+    l.style.color=col||'var(--text3)';l.innerHTML=rk(lbl);
+    b.appendChild(l);
+    if(M){
+      b.appendChild(matTblEl(M,'hi'));
+    } else {
+      var e=document.createElement('div');e.style.cssText='font-size:10px;color:#f87171;font-family:var(--mono)';
+      e.textContent='singular';b.appendChild(e);
+    }
+    return b;
+  }
+  function eq(t){var s=document.createElement('span');s.className='ms-eq';s.innerHTML=rk(t);return s;}
+
+  if(TBG)  row1.appendChild(mblock('[T]_\\beta^\\gamma',TBG,'#9b98a0'));
+  if(TBpGp)row1.appendChild(mblock('[T]_{\\beta^{\\prime}}^{\\gamma^{\\prime}}',TBpGp,'#9b98a0'));
+  if(Pbeta)row1.appendChild(mblock('P_{\\beta \\leftarrow \\beta^{\\prime}}',Pbeta,'var(--betap-col)'));
+  if(Pgamma)row1.appendChild(mblock('P_{\\gamma^{\\prime} \\leftarrow \\gamma}',Pgamma,'var(--gammap-col)'));
+  out.appendChild(row1);
+
+  /* ── Row 2: the formula ── */
+  if(TBG&&TBpGp&&Pbeta&&Pgamma){
+    var fDiv=document.createElement('div');fDiv.className='formula-display';fDiv.style.margin='10px 0 6px';
+    fDiv.innerHTML=rk(
+      '[T]_{\\beta^{\\prime}}^{\\gamma^{\\prime}} \\;=\\; P_{\\gamma^{\\prime}\\leftarrow\\gamma}\\;[T]_\\beta^\\gamma\\;P_{\\beta\\leftarrow\\beta^{\\prime}}',
+      {displayMode:true});
+    out.appendChild(fDiv);
+
+    /* Verify: compute RHS = Pgamma * TBG * Pbeta and compare to TBpGp */
+    var rhs=mmul(mmul(Pgamma,TBG),Pbeta);
+    var err=matDiff(rhs,TBpGp);
+    var ok=err<0.001;
+
+    var row2=document.createElement('div');row2.className='ms-row';
+    row2.appendChild(mblock('P_{\\gamma^{\\prime}\\leftarrow\\gamma}',Pgamma,'var(--gammap-col)'));
+    row2.appendChild(eq('\\times'));
+    row2.appendChild(mblock('[T]_\\beta^\\gamma',TBG));
+    row2.appendChild(eq('\\times'));
+    row2.appendChild(mblock('P_{\\beta\\leftarrow\\beta^{\\prime}}',Pbeta,'var(--betap-col)'));
+    row2.appendChild(eq('='));
+    row2.appendChild(mblock('\\text{RHS}',rhs,ok?'#4ade80':'#f87171'));
+    out.appendChild(row2);
+
+    /* Similarity check */
+    var simDiv=document.createElement('div');
+    simDiv.className='sim-check '+(ok?'sim-ok':'sim-fail');
+    simDiv.innerHTML=rk(
+      ok
+        ? '\\checkmark\\; [T]_{\\beta^{\\prime}}^{\\gamma^{\\prime}} = P_{\\gamma^{\\prime}\\leftarrow\\gamma}\\,[T]_\\beta^\\gamma\\,P_{\\beta\\leftarrow\\beta^{\\prime}} \\text{ verified (max entry error: '+err.toExponential(1)+')}'
+        : '\\times\\; \\text{Check: max error = }'+err.toFixed(4)
+    );
+    out.appendChild(simDiv);
+
+    /* Special case note: if γ=β and γ'=β' → classical similarity A' = P⁻¹AP */
+    var sameVW=(Math.abs(bases.b1x-bases.g1x)<1e-9&&Math.abs(bases.b1y-bases.g1y)<1e-9&&
+                Math.abs(bases.b2x-bases.g2x)<1e-9&&Math.abs(bases.b2y-bases.g2y)<1e-9&&
+                Math.abs(bases.bp1x-bases.gp1x)<1e-9&&Math.abs(bases.bp2x-bases.gp2x)<1e-9);
+    if(sameVW&&ok){
+      var noteDiv=document.createElement('div');
+      noteDiv.style.cssText='font-size:10px;color:var(--text3);margin-top:5px;font-family:var(--mono);';
+      noteDiv.innerHTML='Special case V=W, β=γ, β′=γ′ → classical similarity: '+
+        rk('[T]_{\\beta^{\\prime}} = P^{-1}[T]_\\beta P');
+      out.appendChild(noteDiv);
+    }
+
+    /* Explicit explanation */
+    var expDiv=document.createElement('div');
+    expDiv.style.cssText='margin-top:10px;font-size:11px;color:var(--text3);line-height:1.7;';
+    expDiv.innerHTML=
+      '<span style="color:var(--betap-col)">P_{β←β′}</span>: columns = coordinates of β′ vectors in the β basis &nbsp;|&nbsp; '+
+      '<span style="color:var(--gammap-col)">P_{γ′←γ}</span>: columns = coordinates of γ vectors in the γ′ basis<br>'+
+      'The same vector '+rk('\\alpha')+' satisfies '+
+      rk('[\\alpha]_\\beta = P_{\\beta\\leftarrow\\beta^{\\prime}}[\\alpha]_{\\beta^{\\prime}}')+
+      ' and '+
+      rk('[T\\alpha]_{\\gamma^{\\prime}} = P_{\\gamma^{\\prime}\\leftarrow\\gamma}[T\\alpha]_\\gamma');
+    out.appendChild(expDiv);
+  }
+}
+
+/* ════════════════════════════════════════
+   MAIN DRAW
+════════════════════════════════════════ */
+function getT(){return[n('ta'),n('tb'),n('tc'),n('td')];}
+
+function draw(){
+  VIEW=parseFloat(document.getElementById('zoomSlider').value)||4;
+  document.getElementById('zoomVal').textContent=VIEW;
+  var T=getT();
+  var bases=getBases();
+  drawPanel(dCtx,[1,0,0,1],false,bases);
+  drawPanel(rCtx,T,true,bases);
+  updateFormulas(T,bases);
+}
+
+/* ════════════════════════════════════════
+   SETTERS
+════════════════════════════════════════ */
+function setT(a,b,c,d){
+  ['ta','tb','tc','td'].forEach((id,i)=>{document.getElementById(id).value=[a,b,c,d][i];});draw();
+}
+function setBeta(b1x,b1y,b2x,b2y,bp1x,bp1y,bp2x,bp2y){
+  document.getElementById('b1x').value=b1x;document.getElementById('b1y').value=b1y;
+  document.getElementById('b2x').value=b2x;document.getElementById('b2y').value=b2y;
+  document.getElementById('bp1x').value=bp1x;document.getElementById('bp1y').value=bp1y;
+  document.getElementById('bp2x').value=bp2x;document.getElementById('bp2y').value=bp2y;
+  draw();
+}
+function setGamma(g1x,g1y,g2x,g2y,gp1x,gp1y,gp2x,gp2y){
+  document.getElementById('g1x').value=g1x;document.getElementById('g1y').value=g1y;
+  document.getElementById('g2x').value=g2x;document.getElementById('g2y').value=g2y;
+  document.getElementById('gp1x').value=gp1x;document.getElementById('gp1y').value=gp1y;
+  document.getElementById('gp2x').value=gp2x;document.getElementById('gp2y').value=gp2y;
+  draw();
+}
+
+document.querySelectorAll('input.mx-inp').forEach(inp=>{
+  inp.addEventListener('input',draw);
+  inp.addEventListener('change',draw);
+});
+document.getElementById('zoomSlider').addEventListener('input',draw);
+
+window.addEventListener('DOMContentLoaded',()=>{resize();});
+</script>
+</body>
+</html>

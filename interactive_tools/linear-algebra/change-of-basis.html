@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Change of Basis — Two Observers, One Vector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0; --red:#b33a2f;
+  --V-col:#2255cc;   --V-bg:#edf1fb;    /* basis V  — indigo/blue */
+  --Vp-col:#c8181c;  --Vp-bg:#fef0ee;   /* basis V' — red */
+  --a-col:#1a6a40;   --a-bg:#e8f5ec;    /* vector α — green */
+  --P-col:#6a1a80;   --P-bg:#f5e8fb;    /* change-of-basis matrix — purple */
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.6rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.6rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.18rem;font-weight:600;margin-bottom:.9rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--V-bg);color:var(--V-col);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-sm{padding:.22rem .65rem;font-size:.86rem;}
+
+/* Basis input grid */
+.basis-inputs{display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.basis-group{display:flex;flex-direction:column;gap:.3rem;}
+.basis-lbl{font-size:.85rem;font-weight:600;margin-bottom:.2rem;}
+.vec-inp-row{display:flex;align-items:center;gap:.35rem;}
+.vec-inp-row span.vlbl{font-size:.88rem;min-width:28px;text-align:right;}
+.vi{width:58px;padding:.25rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.vi:focus{outline:none;}
+.vi.V{border-color:var(--V-col);background:var(--V-bg);}
+.vi.Vp{border-color:var(--Vp-col);background:var(--Vp-bg);}
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;}
+
+/* Main layout: canvas left, coords right */
+.main-layout{display:grid;grid-template-columns:1fr 400px;gap:1.4rem;align-items:start;}
+@media(max-width:860px){.main-layout{grid-template-columns:1fr;}}
+
+/* Canvas */
+.canvas-wrap{position:relative;background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(24,40,74,.08);}
+#mainCanvas{display:block;width:100%;cursor:crosshair;touch-action:none;}
+.drag-hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:.78rem;color:var(--gray);background:rgba(255,255,255,.85);padding:.15rem .6rem;border-radius:4px;pointer-events:none;}
+
+/* Coordinate panels */
+.coord-panels{display:flex;flex-direction:column;gap:1rem;}
+.coord-card{border-radius:8px;padding:.9rem 1.1rem;}
+.coord-card.V-card{background:var(--V-bg);border:2px solid var(--V-col);}
+.coord-card.Vp-card{background:var(--Vp-bg);border:2px solid var(--Vp-col);}
+.coord-card.P-card{background:var(--P-bg);border:2px solid var(--P-col);}
+.coord-title{font-family:'Playfair Display',serif;font-size:.95rem;margin-bottom:.4rem;}
+.coord-formula{overflow-x:auto;margin:.25rem 0;}
+.coord-decomp{font-size:.84rem;color:var(--navy2);margin-top:.3rem;overflow-x:auto;}
+
+/* Change of basis section */
+.cob-section{margin-top:1.6rem;}
+.scard{border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.07);margin-bottom:1.4rem;}
+.shd{padding:.52rem 1.2rem;display:flex;align-items:center;gap:.7rem;color:#fff;}
+.shd h3{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:400;}
+.sbody{background:var(--paper);padding:1.1rem 1.5rem;border:1px solid var(--border);border-top:none;overflow-x:auto;}
+
+/* Matrix display */
+.mat-eq{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;overflow-x:auto;padding:.3rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.mat-lbl{font-size:.78rem;font-style:italic;color:var(--gray);text-align:center;}
+.mat-op{font-size:1.3rem;color:var(--navy2);align-self:center;}
+.mtbl{border-collapse:collapse;display:inline-table;font-size:.9rem;}
+.mtbl td{padding:.3rem .62rem;border:1px solid #e0dbd3;text-align:right;min-width:48px;font-variant-numeric:tabular-nums;}
+.mtbl td.V-c{background:var(--V-bg);color:var(--V-col);}
+.mtbl td.Vp-c{background:var(--Vp-bg);color:var(--Vp-col);}
+.mtbl td.P-c{background:var(--P-bg);color:var(--P-col);}
+.mtbl td.a-c{background:var(--a-bg);color:var(--a-col);}
+
+.kb{border-radius:6px;padding:.75rem 1rem;font-size:.87rem;line-height:1.65;margin:.5rem 0;}
+.kb strong{color:var(--navy);}
+.kb-V{background:var(--V-bg);border:1px solid #b8ccee;color:#1a2860;}
+.kb-Vp{background:var(--Vp-bg);border:1px solid #e8b0a8;color:#5a0808;}
+.kb-P{background:var(--P-bg);border:1px solid #c890d8;color:#3a0a50;}
+
+.formula-row{overflow-x:auto;margin:.4rem 0;}
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.4rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.6rem;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Change of Basis — Two Observers, One Vector</h1>
+  <p>Two bases 𝒱 and 𝒱′ for the same space; dragging α shows its different coordinate representations</p>
+</header>
+<main>
+
+<!-- ═══ SETUP CARD ═══════════════════════════════════════ -->
+<div class="card">
+  <h2>Define the Two Bases</h2>
+  <div class="ex-row" id="exRow"></div>
+  <div class="basis-inputs">
+    <!-- V basis -->
+    <div class="basis-group">
+      <div class="basis-lbl" style="color:var(--V-col)">Basis 𝒱 = {v₁, v₂} (blue)</div>
+      <div class="vec-inp-row">
+        <span class="vlbl" style="color:var(--V-col)">v₁ =</span>
+        <span>(</span><input class="vi V" id="v1x" value="-1"><span>,</span>
+        <input class="vi V" id="v1y" value="1"><span>)</span>
+      </div>
+      <div class="vec-inp-row">
+        <span class="vlbl" style="color:var(--V-col)">v₂ =</span>
+        <span>(</span><input class="vi V" id="v2x" value="1"><span>,</span>
+        <input class="vi V" id="v2y" value="1"><span>)</span>
+      </div>
+    </div>
+    <!-- V' basis -->
+    <div class="basis-group">
+      <div class="basis-lbl" style="color:var(--Vp-col)">Basis 𝒱′ = {v′₁, v′₂} (red)</div>
+      <div class="vec-inp-row">
+        <span class="vlbl" style="color:var(--Vp-col)">v′₁ =</span>
+        <span>(</span><input class="vi Vp" id="vp1x" value="3"><span>,</span>
+        <input class="vi Vp" id="vp1y" value="-1"><span>)</span>
+      </div>
+      <div class="vec-inp-row">
+        <span class="vlbl" style="color:var(--Vp-col)">v′₂ =</span>
+        <span>(</span><input class="vi Vp" id="vp2x" value="2"><span>,</span>
+        <input class="vi Vp" id="vp2y" value="1"><span>)</span>
+      </div>
+    </div>
+    <!-- α initial position -->
+    <div class="basis-group">
+      <div class="basis-lbl" style="color:var(--a-col)">Vector α (drag on canvas)</div>
+      <div class="vec-inp-row">
+        <span class="vlbl" style="color:var(--a-col)">α =</span>
+        <span>(</span><input class="vi" id="ax" value="3" style="border-color:var(--a-col);background:var(--a-bg)"><span>,</span>
+        <input class="vi" id="ay" value="3" style="border-color:var(--a-col);background:var(--a-bg)"><span>)</span>
+      </div>
+    </div>
+  </div>
+  <button class="btn-ghost" onclick="rebuild()">Update →</button>
+</div>
+
+<!-- ═══ MAIN INTERACTIVE SECTION ══════════════════════════ -->
+<div class="main-layout" id="mainLayout">
+  <div class="canvas-wrap">
+    <canvas id="mainCanvas" width="560" height="560"></canvas>
+    <div class="drag-hint">click and drag the green dot at α's tip to move it</div>
+  </div>
+  <div class="coord-panels" id="coordPanels">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ═══ CHANGE OF BASIS SECTION ══════════════════════════ -->
+<div class="cob-section" id="cobSection"></div>
+
+</main>
+<script>
+/* ════════════════════════════════════════
+   MATH HELPERS
+════════════════════════════════════════ */
+function det2(a,b,c,d){return a*d-b*c;}
+function inv2(m){var d=det2(m[0][0],m[0][1],m[1][0],m[1][1]);if(Math.abs(d)<1e-12)return null;return[[m[1][1]/d,-m[0][1]/d],[-m[1][0]/d,m[0][0]/d]];}
+function matMul2(A,B){return[[A[0][0]*B[0][0]+A[0][1]*B[1][0],A[0][0]*B[0][1]+A[0][1]*B[1][1]],[A[1][0]*B[0][0]+A[1][1]*B[1][0],A[1][0]*B[0][1]+A[1][1]*B[1][1]]];}
+/* coords: solve c1*b1 + c2*b2 = v  (basis vectors as columns) */
+function coords(v,b1,b2){
+  /* column matrix: M = [[b1[0], b2[0]], [b1[1], b2[1]]] */
+  var M=[[b1[0],b2[0]],[b1[1],b2[1]]];
+  var inv=inv2(M);
+  if(!inv)return[0,0];
+  return[inv[0][0]*v[0]+inv[0][1]*v[1],inv[1][0]*v[0]+inv[1][1]*v[1]];
+}
+function fmt(x){if(Math.abs(x)<5e-10)return'0';return parseFloat(x.toFixed(4)).toString();}
+function fmt2(x){return parseFloat(x.toFixed(2)).toString();}
+function rk(t,opts){try{return katex.renderToString(t,Object.assign({throwOnError:false},opts||{}));}catch(e){return t;}}
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+var state={
+  v1:[-1,1], v2:[1,1],
+  vp1:[3,-1], vp2:[2,1],
+  alpha:[3,3],
+  dragging:false
+};
+
+/* ════════════════════════════════════════
+   CANVAS RENDERING
+════════════════════════════════════════ */
+var CV_SIZE=560, GRID_RANGE=5;
+
+function worldToCanvas(x,y,W,H){
+  var scale=W/(2*GRID_RANGE);
+  return[(x+GRID_RANGE)*scale,(GRID_RANGE-y)*scale];
+}
+function canvasToWorld(cx,cy,W,H){
+  var scale=W/(2*GRID_RANGE);
+  return[cx/scale-GRID_RANGE,GRID_RANGE-cy/scale];
+}
+
+function drawArrow(ctx,x1,y1,x2,y2,col,width,label,labelSide){
+  var dx=x2-x1,dy=y2-y1;
+  var len=Math.sqrt(dx*dx+dy*dy);
+  if(len<3)return;
+  var ang=Math.atan2(dy,dx);
+  var hL=Math.min(14,len*0.22),hA=0.42;
+  ctx.save();
+  ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=width;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hL*Math.cos(ang-hA),y2-hL*Math.sin(ang-hA));
+  ctx.lineTo(x2-hL*Math.cos(ang+hA),y2-hL*Math.sin(ang+hA));
+  ctx.closePath();ctx.fill();
+  if(label){
+    ctx.font='bold 14px Georgia,serif';
+    var side=labelSide||'right';
+    var lx=x2+(side==='right'?8:-26),ly=y2+(dy>0?16:-6);
+    ctx.fillText(label,lx,ly);
+  }
+  ctx.restore();
+}
+
+function drawDashedLine(ctx,x1,y1,x2,y2,col){
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+}
+
+function drawParallelogram(ctx,ox,oy,ax,ay,bx,by,col,alpha2){
+  ctx.save();
+  ctx.fillStyle=col;ctx.globalAlpha=alpha2;
+  ctx.beginPath();
+  ctx.moveTo(ox,oy);ctx.lineTo(ox+ax,oy+ay);
+  ctx.lineTo(ox+ax+bx,oy+ay+by);ctx.lineTo(ox+bx,oy+by);
+  ctx.closePath();ctx.fill();
+  ctx.globalAlpha=1;ctx.restore();
+}
+
+/* Draw the "grid lines" of a basis — like the image in the prompt */
+function drawBasisGrid(ctx,W,H,b1,b2,col,alpha2){
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=0.8;ctx.globalAlpha=alpha2;
+  var O=worldToCanvas(0,0,W,H);
+  var steps=10;
+  for(var i=-steps;i<=steps;i++){
+    /* lines parallel to b1 */
+    var p0=worldToCanvas(i*b2[0]-steps*b1[0],i*b2[1]-steps*b1[1],W,H);
+    var p1=worldToCanvas(i*b2[0]+steps*b1[0],i*b2[1]+steps*b1[1],W,H);
+    ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();
+    /* lines parallel to b2 */
+    var q0=worldToCanvas(i*b1[0]-steps*b2[0],i*b1[1]-steps*b2[1],W,H);
+    var q1=worldToCanvas(i*b1[0]+steps*b2[0],i*b1[1]+steps*b2[1],W,H);
+    ctx.beginPath();ctx.moveTo(q0[0],q0[1]);ctx.lineTo(q1[0],q1[1]);ctx.stroke();
+  }
+  ctx.globalAlpha=1;ctx.restore();
+}
+
+function redraw(){
+  var cv=document.getElementById('mainCanvas');
+  var W=cv.width,H=cv.height;
+  var ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#faf7f2';ctx.fillRect(0,0,W,H);
+
+  var v1=state.v1,v2=state.v2,vp1=state.vp1,vp2=state.vp2,al=state.alpha;
+
+  /* ── Basis grid lines ── */
+  drawBasisGrid(ctx,W,H,v1,v2,'#2255cc',0.12);
+  drawBasisGrid(ctx,W,H,vp1,vp2,'#cc2020',0.12);
+
+  /* ── Standard cartesian grid ── */
+  ctx.save();ctx.strokeStyle='#bbb';ctx.lineWidth=1;
+  for(var i=-GRID_RANGE;i<=GRID_RANGE;i++){
+    var p=worldToCanvas(i,-GRID_RANGE,W,H);
+    var q=worldToCanvas(i,GRID_RANGE,W,H);
+    ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();
+    p=worldToCanvas(-GRID_RANGE,i,W,H);q=worldToCanvas(GRID_RANGE,i,W,H);
+    ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();
+  }
+  ctx.restore();
+
+  /* ── Axis labels ── */
+  ctx.save();ctx.fillStyle='#888';ctx.font='11px Crimson Pro,serif';
+  for(var i=-GRID_RANGE;i<=GRID_RANGE;i++){
+    if(i===0)continue;
+    var p=worldToCanvas(i,0,W,H);ctx.fillText(i,p[0]-4,p[1]+14);
+    p=worldToCanvas(0,i,W,H);ctx.fillText(i,p[0]-20,p[1]+4);
+  }
+  ctx.restore();
+
+  /* ── Axes ── */
+  ctx.save();ctx.strokeStyle='#888';ctx.lineWidth=1.5;
+  var ax0=worldToCanvas(-GRID_RANGE,0,W,H),ax1=worldToCanvas(GRID_RANGE,0,W,H);
+  ctx.beginPath();ctx.moveTo(ax0[0],ax0[1]);ctx.lineTo(ax1[0],ax1[1]);ctx.stroke();
+  ax0=worldToCanvas(0,-GRID_RANGE,W,H);ax1=worldToCanvas(0,GRID_RANGE,W,H);
+  ctx.beginPath();ctx.moveTo(ax0[0],ax0[1]);ctx.lineTo(ax1[0],ax1[1]);ctx.stroke();
+  ctx.restore();
+
+  /* ── Coordinate decomposition parallelogram for V ── */
+  var cV=coords(al,v1,v2);
+  var c1=cV[0],c2=cV[1];
+  var O=worldToCanvas(0,0,W,H);
+  var sc=(W/(2*GRID_RANGE));
+  /* component 1: c1*v1 */
+  var p1c=[c1*v1[0]*sc, -c1*v1[1]*sc];
+  /* component 2: c2*v2 */
+  var p2c=[c2*v2[0]*sc, -c2*v2[1]*sc];
+  drawParallelogram(ctx,O[0],O[1],p1c[0],p1c[1],p2c[0],p2c[1],'#2255cc',0.1);
+  /* dashed lines showing decomposition */
+  drawDashedLine(ctx,O[0]+p1c[0],O[1]+p1c[1],O[0]+p1c[0]+p2c[0],O[1]+p1c[1]+p2c[1],'#2255cc');
+  drawDashedLine(ctx,O[0]+p2c[0],O[1]+p2c[1],O[0]+p1c[0]+p2c[0],O[1]+p1c[1]+p2c[1],'#2255cc');
+
+  /* ── Coordinate decomposition parallelogram for V' ── */
+  var cVp=coords(al,vp1,vp2);
+  var c1p=cVp[0],c2p=cVp[1];
+  var pp1c=[c1p*vp1[0]*sc, -c1p*vp1[1]*sc];
+  var pp2c=[c2p*vp2[0]*sc, -c2p*vp2[1]*sc];
+  drawParallelogram(ctx,O[0],O[1],pp1c[0],pp1c[1],pp2c[0],pp2c[1],'#cc2020',0.08);
+  drawDashedLine(ctx,O[0]+pp1c[0],O[1]+pp1c[1],O[0]+pp1c[0]+pp2c[0],O[1]+pp1c[1]+pp2c[1],'#cc2020');
+  drawDashedLine(ctx,O[0]+pp2c[0],O[1]+pp2c[1],O[0]+pp1c[0]+pp2c[0],O[1]+pp1c[1]+pp2c[1],'#cc2020');
+
+  /* ── Basis vectors V ── */
+  var v1c=worldToCanvas(v1[0],v1[1],W,H);
+  var v2c=worldToCanvas(v2[0],v2[1],W,H);
+  drawArrow(ctx,O[0],O[1],v1c[0],v1c[1],'#2255cc',2.5,'v₁');
+  drawArrow(ctx,O[0],O[1],v2c[0],v2c[1],'#2255cc',2.5,'v₂');
+
+  /* ── Basis vectors V' ── */
+  var vp1c=worldToCanvas(vp1[0],vp1[1],W,H);
+  var vp2c=worldToCanvas(vp2[0],vp2[1],W,H);
+  drawArrow(ctx,O[0],O[1],vp1c[0],vp1c[1],'#cc2020',2.5,"v′₁");
+  drawArrow(ctx,O[0],O[1],vp2c[0],vp2c[1],'#cc2020',2.5,"v′₂");
+
+  /* ── Vector α (draggable, thick green) ── */
+  var alc=worldToCanvas(al[0],al[1],W,H);
+  drawArrow(ctx,O[0],O[1],alc[0],alc[1],'#1a6a40',3.5,'α','right');
+  /* dot at tip for dragging — larger for easy grabbing */
+  ctx.save();ctx.fillStyle='#1a6a40';
+  ctx.beginPath();ctx.arc(alc[0],alc[1],9,0,2*Math.PI);ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  ctx.restore();
+
+  /* ── Coordinate tick marks on basis axes ── */
+  function tickMark(ctx,ox,oy,bx,by,val,col){
+    if(Math.abs(val)<1e-9)return;
+    var tx=ox+val*bx*sc,ty=oy-val*by*sc;
+    /* small perpendicular tick */
+    var nx=-by,ny=-bx;var tl=5;
+    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(tx-nx*tl,ty-ny*tl);ctx.lineTo(tx+nx*tl,ty+ny*tl);ctx.stroke();
+    ctx.restore();
+  }
+  tickMark(ctx,O[0],O[1],v1[0],v1[1],c1,'#2255cc');
+  tickMark(ctx,O[0],O[1],v2[0],v2[1],c2,'#2255cc');
+  tickMark(ctx,O[0],O[1],vp1[0],vp1[1],c1p,'#cc2020');
+  tickMark(ctx,O[0],O[1],vp2[0],vp2[1],c2p,'#cc2020');
+
+  /* update coordinate panels */
+  updateCoordPanels(al,cV,cVp,v1,v2,vp1,vp2);
+}
+
+/* ════════════════════════════════════════
+   COORDINATE PANELS (right column)
+════════════════════════════════════════ */
+function updateCoordPanels(al,cV,cVp,v1,v2,vp1,vp2){
+  var panels=document.getElementById('coordPanels');
+  panels.innerHTML='';
+
+  var c1=cV[0],c2=cV[1],c1p=cVp[0],c2p=cVp[1];
+
+  /* ── α in standard coords ── */
+  var stdCard=document.createElement('div');
+  stdCard.style.cssText='background:var(--a-bg);border:2px solid var(--a-col);border-radius:8px;padding:.85rem 1rem;';
+  stdCard.innerHTML='<div style="font-family:Playfair Display,serif;font-size:.95rem;color:var(--a-col);margin-bottom:.3rem;">Vector α (standard coordinates)</div>'+
+    '<div class="coord-formula">'+rk('\\vec{\\alpha} = ('+fmt2(al[0])+',\\,'+fmt2(al[1])+')',{displayMode:false})+'</div>';
+  panels.appendChild(stdCard);
+
+  /* ── [α]_V ── */
+  var vCard=document.createElement('div');vCard.className='coord-card V-card';
+  var sign1=c2>=0?' + ':' - ';
+  vCard.innerHTML=
+    '<div class="coord-title" style="color:var(--V-col)">'+rk('[\\vec{\\alpha}]_{\\mathcal{V}}')+'  — blue basis</div>'+
+    '<div class="coord-formula">'+
+      rk('[\\vec{\\alpha}]_{\\mathcal{V}} = \\begin{pmatrix}'+fmt2(c1)+'\\\\'+fmt2(c2)+'\\end{pmatrix}',{displayMode:true})+
+    '</div>'+
+    '<div class="coord-decomp">'+
+      rk('\\vec{\\alpha} = '+fmt2(c1)+'\\cdot v_1'+sign1+fmt2(Math.abs(c2))+'\\cdot v_2',{displayMode:false})+
+    '</div>'+
+    '<div class="coord-decomp" style="margin-top:.25rem;">'+
+      rk('= '+fmt2(c1)+'\\begin{pmatrix}'+fmt2(v1[0])+'\\\\'+fmt2(v1[1])+'\\end{pmatrix}'+sign1+fmt2(Math.abs(c2))+'\\begin{pmatrix}'+fmt2(v2[0])+'\\\\'+fmt2(v2[1])+'\\end{pmatrix}',{displayMode:false})+
+    '</div>';
+  panels.appendChild(vCard);
+
+  /* ── [α]_V' ── */
+  var vpCard=document.createElement('div');vpCard.className='coord-card Vp-card';
+  var sign1p=c2p>=0?' + ':' - ';
+  vpCard.innerHTML=
+    '<div class="coord-title" style="color:var(--Vp-col)">'+rk('[\\vec{\\alpha}]_{\\mathcal{V}^{\\prime}}')+'  — red basis</div>'+
+    '<div class="coord-formula">'+
+      rk('[\\vec{\\alpha}]_{\\mathcal{V}^{\\prime}} = \\begin{pmatrix}'+fmt2(c1p)+'\\\\'+fmt2(c2p)+'\\end{pmatrix}',{displayMode:true})+
+    '</div>'+
+    '<div class="coord-decomp">'+
+      rk('\\vec{\\alpha} = '+fmt2(c1p)+"\\cdot v'_1"+sign1p+fmt2(Math.abs(c2p))+"\\cdot v'_2",{displayMode:false})+
+    '</div>'+
+    '<div class="coord-decomp" style="margin-top:.25rem;">'+
+      rk('= '+fmt2(c1p)+'\\begin{pmatrix}'+fmt2(vp1[0])+'\\\\'+fmt2(vp1[1])+'\\end{pmatrix}'+sign1p+fmt2(Math.abs(c2p))+'\\begin{pmatrix}'+fmt2(vp2[0])+'\\\\'+fmt2(vp2[1])+'\\end{pmatrix}',{displayMode:false})+
+    '</div>';
+  panels.appendChild(vpCard);
+
+  /* ── Conversion check ── */
+  var Vbasis=[[v1[0],v2[0]],[v1[1],v2[1]]];
+  var Vpbasis=[[vp1[0],vp2[0]],[vp1[1],vp2[1]]];
+  var invV=inv2(Vbasis);
+  var P=invV?[[invV[0][0]*Vpbasis[0][0]+invV[0][1]*Vpbasis[1][0],invV[0][0]*Vpbasis[0][1]+invV[0][1]*Vpbasis[1][1]],[invV[1][0]*Vpbasis[0][0]+invV[1][1]*Vpbasis[1][0],invV[1][0]*Vpbasis[0][1]+invV[1][1]*Vpbasis[1][1]]]:null;
+
+  if(P){
+    var chk0=P[0][0]*c1p+P[0][1]*c2p;
+    var chk1=P[1][0]*c1p+P[1][1]*c2p;
+    var pCard=document.createElement('div');pCard.className='coord-card P-card';
+    pCard.innerHTML=
+      '<div class="coord-title" style="color:var(--P-col)">'+rk('P_{\\mathcal{V}^{\\prime}\\to\\mathcal{V}}\\,\\cdot\\,[\\vec{\\alpha}]_{\\mathcal{V}^{\\prime}} = [\\vec{\\alpha}]_{\\mathcal{V}}')+'</div>'+
+      '<div class="coord-formula">'+
+        rk('\\begin{pmatrix}'+fmt2(P[0][0])+'&'+fmt2(P[0][1])+'\\\\'+fmt2(P[1][0])+'&'+fmt2(P[1][1])+'\\end{pmatrix}\\begin{pmatrix}'+fmt2(c1p)+'\\\\'+fmt2(c2p)+'\\end{pmatrix}=\\begin{pmatrix}'+fmt2(chk0)+'\\\\'+fmt2(chk1)+'\\end{pmatrix}',{displayMode:true})+
+      '</div>'+
+      '<div style="font-size:.82rem;color:var(--P-col);margin-top:.2rem;">'+
+        (Math.abs(chk0-c1)<0.01&&Math.abs(chk1-c2)<0.01?'✓ matches [α]_𝒱':'⚠ check inputs')+
+      '</div>';
+    panels.appendChild(pCard);
+  }
+}
+
+/* ════════════════════════════════════════
+   DRAG HANDLING  — always use CSS pixels,
+   convert to world coords via the logical
+   canvas size (not the device-scaled buffer)
+════════════════════════════════════════ */
+function getClientPos(e){
+  if(e.touches&&e.touches.length>0) return{x:e.touches[0].clientX,y:e.touches[0].clientY};
+  return{x:e.clientX,y:e.clientY};
+}
+
+/* Convert a CSS-pixel point (relative to canvas bounding rect)
+   straight to world coords — no device pixel ratio needed here
+   because worldToCanvas / canvasToWorld use logical CV_SIZE */
+function clientToWorld(cv,clientX,clientY){
+  var rect=cv.getBoundingClientRect();
+  var lw=rect.width, lh=rect.height;   /* logical CSS size */
+  var cx=(clientX-rect.left)*(CV_SIZE/lw);
+  var cy=(clientY-rect.top )*(CV_SIZE/lh);
+  return canvasToWorld(cx,cy,CV_SIZE,CV_SIZE);
+}
+
+/* Is the client-pixel position close to the tip of α? */
+function nearAlphaTip(cv,clientX,clientY){
+  var rect=cv.getBoundingClientRect();
+  var lw=rect.width, lh=rect.height;
+  var al=state.alpha;
+  var alc=worldToCanvas(al[0],al[1],CV_SIZE,CV_SIZE);
+  /* convert alc (logical canvas px) to CSS px */
+  var tipCSSx=rect.left+alc[0]*(lw/CV_SIZE);
+  var tipCSSy=rect.top +alc[1]*(lh/CV_SIZE);
+  var dist=Math.hypot(clientX-tipCSSx,clientY-tipCSSy);
+  return dist<28;   /* 28 CSS px hit radius — generous */
+}
+
+(function setupDrag(){
+  function init(){
+    var cv=document.getElementById('mainCanvas');
+    if(!cv)return;
+
+    cv.addEventListener('mousedown',function(e){
+      var p=getClientPos(e);
+      if(nearAlphaTip(cv,p.x,p.y)){
+        state.dragging=true;
+        e.preventDefault();
+        cv.style.cursor='grabbing';
+      }
+    });
+    window.addEventListener('mouseup',function(){
+      state.dragging=false;
+      var cv2=document.getElementById('mainCanvas');
+      if(cv2)cv2.style.cursor='crosshair';
+    });
+    window.addEventListener('mousemove',function(e){
+      if(!state.dragging)return;
+      var cv2=document.getElementById('mainCanvas');
+      if(!cv2)return;
+      var p=getClientPos(e);
+      var w=clientToWorld(cv2,p.x,p.y);
+      /* snap to 0.25 grid */
+      state.alpha=[Math.round(w[0]*4)/4, Math.round(w[1]*4)/4];
+      document.getElementById('ax').value=fmt(state.alpha[0]);
+      document.getElementById('ay').value=fmt(state.alpha[1]);
+      redraw();
+      buildCoBSection();
+    });
+
+    cv.addEventListener('touchstart',function(e){
+      var p=getClientPos(e);
+      if(nearAlphaTip(cv,p.x,p.y)){
+        state.dragging=true;
+        e.preventDefault();
+      }
+    },{passive:false});
+    window.addEventListener('touchend',function(){state.dragging=false;});
+    window.addEventListener('touchmove',function(e){
+      if(!state.dragging)return;
+      var cv2=document.getElementById('mainCanvas');
+      if(!cv2)return;
+      var p=getClientPos(e);
+      var w=clientToWorld(cv2,p.x,p.y);
+      state.alpha=[Math.round(w[0]*4)/4, Math.round(w[1]*4)/4];
+      document.getElementById('ax').value=fmt(state.alpha[0]);
+      document.getElementById('ay').value=fmt(state.alpha[1]);
+      redraw();
+      buildCoBSection();
+      e.preventDefault();
+    },{passive:false});
+  }
+  window.addEventListener('DOMContentLoaded',init);
+})();
+
+/* ════════════════════════════════════════
+   CHANGE-OF-BASIS SECTION
+════════════════════════════════════════ */
+function buildCoBSection(){
+  var v1=state.v1,v2=state.v2,vp1=state.vp1,vp2=state.vp2;
+  var Vbasis=[[v1[0],v2[0]],[v1[1],v2[1]]];
+  var Vpbasis=[[vp1[0],vp2[0]],[vp1[1],vp2[1]]];
+  var invV=inv2(Vbasis);
+  if(!invV){
+    document.getElementById('cobSection').innerHTML='<p style="color:var(--red);font-style:italic">Basis 𝒱 is linearly dependent — please change it.</p>';
+    return;
+  }
+  /* P = V⁻¹ V' */
+  var P=matMul2(invV,Vpbasis);
+
+  var sec=document.getElementById('cobSection');
+  sec.innerHTML='';
+
+  /* Phase label */
+  var pl=document.createElement('div');pl.className='phase-lbl';
+  pl.textContent='Change-of-Basis Matrix P from 𝒱′ to 𝒱';
+  sec.appendChild(pl);
+
+  /* ── Card 1: Definition ── */
+  var card1=document.createElement('div');card1.className='scard';
+  card1.innerHTML='<div class="shd" style="background:var(--P-col)"><h3>How P is built — expressing each v′ₖ in terms of 𝒱</h3></div>';
+  var b1=document.createElement('div');b1.className='sbody';
+
+  /* Express vp1 and vp2 in V basis */
+  var cvp1=coords(vp1,v1,v2);
+  var cvp2=coords(vp2,v1,v2);
+
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk(
+    "\\left[v'_1\\right]_{\\mathcal{V}} = \\begin{pmatrix}"+fmt2(cvp1[0])+"\\\\"+fmt2(cvp1[1])+"\\end{pmatrix},\\qquad"+
+    "\\left[v'_2\\right]_{\\mathcal{V}} = \\begin{pmatrix}"+fmt2(cvp2[0])+"\\\\"+fmt2(cvp2[1])+"\\end{pmatrix}",
+    {displayMode:true});
+  b1.appendChild(fDiv);
+
+  /* Column picture of P */
+  var fDiv2=document.createElement('div');fDiv2.className='formula-row';
+  fDiv2.innerHTML=rk(
+    'P_{\\mathcal{V}^{\\prime}\\to\\mathcal{V}} = '+
+    '\\left[\\left[v_1^{\\prime}\\right]_{\\mathcal{V}}\\;\\left[v_2^{\\prime}\\right]_{\\mathcal{V}}\\right] = '+
+    '\\begin{pmatrix}'+fmt2(P[0][0])+'&'+fmt2(P[0][1])+'\\\\'+fmt2(P[1][0])+'&'+fmt2(P[1][1])+'\\end{pmatrix}',
+    {displayMode:true});
+  b1.appendChild(fDiv2);
+
+  /* Geometric verification: V * P = V' */
+  b1.appendChild(mkKB('kb-V',
+    '<strong>The column rule:</strong> Column j of P is '+rk("[v'_j]_{\\mathcal{V}}")+
+    ' — the 𝒱-coordinates of the j-th new basis vector. '+
+    'This means P tells you: "to go from the new observer\'s coordinates to the old observer\'s coordinates."<br><br>'+
+    '<strong>Verification:</strong> '+
+    rk('\\bigl[v_1\\;v_2\\bigr]\\cdot P = \\bigl[v_1^{\\prime}\\;v_2^{\\prime}\\bigr]')+
+    ' — the columns of the old basis matrix, multiplied by P, should give the columns of the new basis matrix.'));
+  card1.appendChild(b1);
+  sec.appendChild(card1);
+
+  /* ── Card 2: The conversion formula ── */
+  var card2=document.createElement('div');card2.className='scard';
+  card2.innerHTML='<div class="shd" style="background:#1a3a70"><h3>The coordinate conversion formula</h3></div>';
+  var b2=document.createElement('div');b2.className='sbody';
+
+  var fBig=document.createElement('div');fBig.className='formula-row';
+  fBig.innerHTML=rk(
+    '[\\vec{\\alpha}]_{\\mathcal{V}} = P_{\\mathcal{V}^{\\prime}\\to\\mathcal{V}}\\;[\\vec{\\alpha}]_{\\mathcal{V}^{\\prime}}',
+    {displayMode:true});
+  b2.appendChild(fBig);
+
+  /* Written out with current alpha */
+  var al=state.alpha;
+  var cV=coords(al,v1,v2);
+  var cVp=coords(al,vp1,vp2);
+  var fFull=document.createElement('div');fFull.className='formula-row';
+  fFull.innerHTML=rk(
+    '\\underbrace{\\begin{pmatrix}'+fmt2(cV[0])+'\\\\'+fmt2(cV[1])+'\\end{pmatrix}}_{[\\alpha]_{\\mathcal{V}}}'+
+    '=\\underbrace{\\begin{pmatrix}'+fmt2(P[0][0])+'&'+fmt2(P[0][1])+'\\\\'+fmt2(P[1][0])+'&'+fmt2(P[1][1])+'\\end{pmatrix}}_{P}'+
+    '\\underbrace{\\begin{pmatrix}'+fmt2(cVp[0])+'\\\\'+fmt2(cVp[1])+'\\end{pmatrix}}_{[\\alpha]_{\\mathcal{V}^{\\prime}}}',
+    {displayMode:true});
+  b2.appendChild(fFull);
+
+  /* Explain why it seems backwards */
+  b2.appendChild(mkKB('kb-P',
+    '<strong>Why is this called 𝒱′ → 𝒱 yet built from the new vectors?</strong><br>'+
+    'P is built by expressing <em>new</em> basis vectors in terms of <em>old</em> ones. '+
+    'But the formula '+rk('[\\alpha]_{\\mathcal{V}} = P\\,[\\alpha]_{\\mathcal{V}^{\\prime}}')+
+    ' converts <em>new</em> coordinates into <em>old</em> coordinates. '+
+    'These are the same direction: P encodes "V′-observer speaks → V-observer understands."<br><br>'+
+    '<strong>Memory trick:</strong> The subscript on P tells you the direction of coordinate conversion, not the direction the basis vectors point.<br><br>'+
+    '<strong>Inverse:</strong> '+rk('P^{-1} = P_{\\mathcal{V}\\to\\mathcal{V}^{\\prime}}')+
+    ' converts the other way: '+rk('[\\alpha]_{\\mathcal{V}^{\\prime}} = P^{-1}[\\alpha]_{\\mathcal{V}}')+'.'));
+
+  /* Show P inverse */
+  var invP=inv2(P);
+  if(invP){
+    var fInv=document.createElement('div');fInv.className='formula-row';
+    fInv.innerHTML=rk(
+      'P^{-1} = P_{\\mathcal{V}\\to\\mathcal{V}^{\\prime}} = '+
+      '\\begin{pmatrix}'+fmt2(invP[0][0])+'&'+fmt2(invP[0][1])+'\\\\'+fmt2(invP[1][0])+'&'+fmt2(invP[1][1])+'\\end{pmatrix}',
+      {displayMode:true});
+    b2.appendChild(fInv);
+  }
+
+  card2.appendChild(b2);
+  sec.appendChild(card2);
+
+  /* ── Card 3: Matrix display with colour-coded equation ── */
+  var card3=document.createElement('div');card3.className='scard';
+  card3.innerHTML='<div class="shd" style="background:var(--navy)"><h3>The full picture — basis matrices and P</h3></div>';
+  var b3=document.createElement('div');b3.className='sbody';
+
+  var meq=document.createElement('div');meq.className='mat-eq';
+  function mb(lbl,tbl){var b=document.createElement('div');b.className='mat-block';var l=document.createElement('div');l.className='mat-lbl';l.innerHTML=lbl;b.appendChild(l);b.appendChild(tbl);return b;}
+  function op(t){var s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+  function matTbl(M,cls){var tbl=document.createElement('table');tbl.className='mtbl';M.forEach(function(r){var tr=document.createElement('tr');r.forEach(function(v2){var td=document.createElement('td');td.className=cls;td.innerHTML=rk(fmt2(v2));tr.appendChild(td);});tbl.appendChild(tr);});return tbl;}
+
+  meq.appendChild(mb(rk('[v_1\\;v_2]'),matTbl([[v1[0],v2[0]],[v1[1],v2[1]]],'V-c')));
+  meq.appendChild(op('\\cdot'));
+  meq.appendChild(mb(rk('P_{\\mathcal{V}^{\\prime}\\to\\mathcal{V}}'),matTbl([[P[0][0],P[0][1]],[P[1][0],P[1][1]]],'P-c')));
+  meq.appendChild(op('='));
+  meq.appendChild(mb(rk("[v'_1\\;v'_2]"),matTbl([[vp1[0],vp2[0]],[vp1[1],vp2[1]]],'Vp-c')));
+  b3.appendChild(meq);
+
+  b3.appendChild(mkKB('kb-V',
+    '<strong>Reading this equation left to right:</strong> '+
+    'The columns of '+rk('[v_1\\;v_2]')+' are the 𝒱 basis vectors in standard coordinates. '+
+    'Multiplying on the right by P produces the 𝒱′ basis vectors in standard coordinates. '+
+    'So P "rotates/stretches" the old frame into the new frame.<br><br>'+
+    '<strong>Coordinates in standard basis:</strong> Both '+rk('[\\alpha]_{\\mathcal{V}}')+
+    ' and '+rk('[\\alpha]_{\\mathcal{V}^{\\prime}}')+
+    ' are abstract coordinate lists — they only become geometric when you scale by the corresponding basis vectors. '+
+    'Drag α around to see how the two coordinate lists change while the geometric vector stays fixed.'));
+  card3.appendChild(b3);
+  sec.appendChild(card3);
+}
+
+function mkKB(cls,html){var d=document.createElement('div');d.className='kb '+cls;d.innerHTML=html;return d;}
+
+/* ════════════════════════════════════════
+   REBUILD STATE FROM INPUTS
+════════════════════════════════════════ */
+function readState(){
+  function n(id){return parseFloat(document.getElementById(id).value)||0;}
+  state.v1=[n('v1x'),n('v1y')];
+  state.v2=[n('v2x'),n('v2y')];
+  state.vp1=[n('vp1x'),n('vp1y')];
+  state.vp2=[n('vp2x'),n('vp2y')];
+  state.alpha=[n('ax'),n('ay')];
+}
+
+function rebuild(){
+  readState();
+  redraw();
+  buildCoBSection();
+}
+
+/* ════════════════════════════════════════
+   INPUT LIVE UPDATE on α
+════════════════════════════════════════ */
+['ax','ay'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('input',function(){readState();redraw();buildCoBSection();});
+});
+
+/* ════════════════════════════════════════
+   CANVAS RESIZE
+════════════════════════════════════════ */
+function resizeCanvas(){
+  var cv=document.getElementById('mainCanvas');
+  if(!cv)return;
+  var wrap=cv.parentElement;
+  var w=wrap.offsetWidth;
+  cv.style.height=w+'px';
+  cv.width=w*(window.devicePixelRatio||1);
+  cv.height=w*(window.devicePixelRatio||1);
+  CV_SIZE=w;
+  redraw();
+}
+
+/* ════════════════════════════════════════
+   EXAMPLES
+════════════════════════════════════════ */
+var EXAMPLES=[
+  {label:'From notes',   v1:[-1,1],v2:[1,1],  vp1:[3,-1],vp2:[2,1],  a:[3,3]},
+  {label:'Rotated bases',v1:[1,0], v2:[0,1],  vp1:[1,1], vp2:[-1,1], a:[2,1]},
+  {label:'Skewed',       v1:[2,1], v2:[0,2],  vp1:[1,0], vp2:[1,1],  a:[3,2]},
+  {label:'45° / axis',   v1:[1,1], v2:[-1,1], vp1:[2,0], vp2:[0,3],  a:[2,2]},
+];
+
+function loadEx(ex){
+  document.getElementById('v1x').value=ex.v1[0];document.getElementById('v1y').value=ex.v1[1];
+  document.getElementById('v2x').value=ex.v2[0];document.getElementById('v2y').value=ex.v2[1];
+  document.getElementById('vp1x').value=ex.vp1[0];document.getElementById('vp1y').value=ex.vp1[1];
+  document.getElementById('vp2x').value=ex.vp2[0];document.getElementById('vp2y').value=ex.vp2[1];
+  document.getElementById('ax').value=ex.a[0];document.getElementById('ay').value=ex.a[1];
+  rebuild();
+}
+function buildExamples(){
+  var row=document.getElementById('exRow');
+  EXAMPLES.forEach(function(ex){
+    var btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent=ex.label;
+    btn.addEventListener('click',function(){loadEx(ex);});row.appendChild(btn);
+  });
+}
+
+/* ════════════════════════════════════════
+   BOOT
+════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',function(){
+  buildExamples();
+  readState();
+  resizeCanvas();
+  buildCoBSection();
+  window.addEventListener('resize',function(){resizeCanvas();buildCoBSection();});
+});
+</script>
+</body>
+</html>

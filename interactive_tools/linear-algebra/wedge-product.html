@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-Vectors and 2-Forms — The Wedge Product</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;--red:#b33a2f;
+  --u-col:#c8a430;    --u-bg:#fff8ea;   /* u vector — gold */
+  --v-col:#d94f8a;    --v-bg:#fdf0f7;   /* v vector — pink */
+  --w-col:#b07030;    --w-bg:#fcf3e8;   /* w vector — copper (4D only) */
+  --a-col:#1a6a58;    --a-bg:#e8f5f2;   /* α covector — teal */
+  --b-col:#6a1a80;    --b-bg:#f5e8fb;   /* β covector — purple */
+  --g-col:#3a7a1a;    --g-bg:#eef8e6;   /* γ covector — forest green (4D only) */
+  --two-vec:#2c4a96;  --two-vec-bg:#edf1fb;  /* 2-vector — indigo */
+  --two-frm:#8a1a10;  --two-frm-bg:#fef0ee;  /* 2-form — crimson */
+  --shadow-col:#1a6a58; --shadow-bg:#e8f5f2;  /* shadow — teal */
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.6;}
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+main{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:1.6rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.18rem;font-weight:600;margin-bottom:1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--two-vec-bg);color:var(--two-vec);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-go{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:.9rem;}
+.btn-go:hover{background:#952e24;}
+.btn-sm{padding:.22rem .65rem;font-size:.86rem;}
+
+/* Input rows */
+.vec-input-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.35rem 0;}
+.vec-label{font-size:.95rem;min-width:28px;text-align:right;flex-shrink:0;}
+.paren{font-size:1.6rem;color:#aaa;line-height:1;}
+.vec-inp{width:60px;padding:.27rem .3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.95rem;}
+.vec-inp:focus{outline:none;}
+.vec-inp.u-inp{border-color:var(--u-col);background:var(--u-bg);}
+.vec-inp.v-inp{border-color:var(--v-col);background:var(--v-bg);}
+.vec-inp.w-inp{border-color:var(--w-col);background:var(--w-bg);}
+.vec-inp.a-inp{border-color:var(--a-col);background:var(--a-bg);}
+.vec-inp.b-inp{border-color:var(--b-col);background:var(--b-bg);}
+.vec-inp.g-inp{border-color:var(--g-col);background:var(--g-bg);}
+.comma{color:#999;margin:0 1px;}
+.ex-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;}
+
+/* Layout rows */
+.two-col{display:flex;gap:1.4rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+.two-col > *{flex:1;min-width:260px;}
+.three-col{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+.three-col > *{flex:1;min-width:200px;}
+
+/* Section cards */
+.sec{border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.07);}
+.sec-hd{padding:.52rem 1.1rem;display:flex;align-items:center;gap:.6rem;}
+.sec-hd h3{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:400;color:#fff;}
+.sec-body{background:var(--paper);padding:1.1rem 1.4rem;border:1px solid var(--border);border-top:none;overflow-x:auto;}
+.sec-uvec .sec-hd{background:var(--two-vec);}
+.sec-form .sec-hd{background:var(--two-frm);}
+.sec-shad .sec-hd{background:var(--a-col);}
+.sec-prop .sec-hd{background:var(--navy);}
+.sec-skew .sec-hd{background:#5a3070;}   /* deep purple for the A matrix section */
+
+/* Skew matrix table */
+.sktbl{border-collapse:collapse;display:inline-table;font-size:.9rem;margin:.2rem 0;}
+.sktbl td{padding:.32rem .62rem;border:1px solid #e0dbd3;text-align:right;min-width:52px;font-variant-numeric:tabular-nums;}
+.sktbl td.sk-pos{background:#f0eafc;color:#5a1a80;font-weight:600;}
+.sktbl td.sk-neg{background:#fef0ee;color:#8a1a10;font-weight:600;}
+.sktbl td.sk-zero{color:#ccc;}
+.sktbl td.sk-lbl{background:#f8f6f2;color:var(--gray);font-size:.78rem;text-align:center;font-style:italic;border-color:#e8e4dc;}
+
+/* 3D canvas container */
+.canvas3d-wrap{border-radius:8px;overflow:hidden;background:#f8f6f2;box-shadow:0 2px 12px rgba(24,40,74,.1);margin-bottom:1.4rem;position:relative;}
+#cv3d{display:block;width:100%;height:230px;cursor:grab;}
+.cv3d-legend{position:absolute;bottom:10px;left:12px;background:rgba(255,255,255,.88);border-radius:6px;padding:.45rem .7rem;font-size:.8rem;line-height:1.7;}
+.leg-row{display:flex;align-items:center;gap:.45rem;}
+.leg-swatch{width:18px;height:3px;border-radius:1px;flex-shrink:0;}
+.leg-swatch.thick{height:5px;}
+
+/* 2D canvas */
+#cv2d{display:block;border:1px solid var(--border);border-radius:6px;background:#f8f6f2;}
+
+/* Formula display */
+.formula-row{overflow-x:auto;margin:.45rem 0;}
+.step-row{display:flex;align-items:baseline;gap:.7rem;margin:.3rem 0;padding:.28rem .5rem;border-radius:4px;font-size:.92rem;}
+.step-row.u-step{background:var(--u-bg);}
+.step-row.v-step{background:var(--v-bg);}
+.step-row.w-step{background:var(--w-bg);}
+.step-row.a-step{background:var(--a-bg);}
+.step-row.b-step{background:var(--b-bg);}
+.step-row.g-step{background:var(--g-bg);}
+.step-row.res-step{background:var(--two-frm-bg);font-weight:600;}
+.step-lbl{font-size:.76rem;color:var(--gray);min-width:44px;text-align:right;flex-shrink:0;}
+
+.result-box{background:var(--two-frm-bg);border:2px solid var(--two-frm);border-radius:8px;padding:.8rem 1.1rem;margin:.6rem 0;text-align:center;overflow-x:auto;}
+.result-big{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--two-frm);}
+
+.kb{border-radius:6px;padding:.78rem 1rem;font-size:.87rem;line-height:1.65;margin:.55rem 0;}
+.kb strong{color:var(--navy);}
+.kb-vec{background:var(--two-vec-bg);border:1px solid #b8ccee;color:#1a2a60;}
+.kb-frm{background:var(--two-frm-bg);border:1px solid #e8b0a8;color:#5a0808;}
+.kb-shd{background:var(--a-bg);border:1px solid #90ccc0;color:#0a3a28;}
+.kb-prp{background:#f8f6f2;border:1px solid var(--border);color:var(--navy2);}
+
+.highlight-zero{color:var(--a-col);font-style:italic;}
+
+/* Dimension toggle */
+.dim-toggle{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.dim-toggle .dim-lbl{font-size:.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-right:.2rem;}
+.dim-btn{padding:.32rem .9rem;border:1px solid var(--border);background:var(--paper);color:var(--navy);border-radius:5px;font-size:.95rem;cursor:pointer;font-family:inherit;}
+.dim-btn:hover{background:#f0ede5;}
+.dim-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.dim-btn.active:hover{background:var(--navy2);}
+body[data-dim="3"] .d4-only{display:none !important;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .7rem;}}
+</style>
+</head>
+<body data-dim="3">
+<header>
+  <h1>2-Vectors and 2-Forms — The Wedge Product</h1>
+  <p>How a 2-form α∧β measures a 2-vector u∧v via the shadow it casts on the α–β plane</p>
+</header>
+<main>
+
+<!-- ═══ INPUT CARD ═══════════════════════════════════════ -->
+<div class="card">
+  <h2>Enter Vectors and Covectors in ℝ<span id="dimSup">³</span></h2>
+  <div class="dim-toggle">
+    <span class="dim-lbl">Dimension:</span>
+    <button class="dim-btn active" data-dim="3" onclick="setDim(3)">ℝ³ (with figures)</button>
+    <button class="dim-btn" data-dim="4" onclick="setDim(4)">ℝ⁴ (algebra only)</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start;">
+    <div>
+      <div style="font-size:.82rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">The 2-vector: pair of vectors<span class="d4-only"> (and w for 3-vectors)</span></div>
+      <div class="vec-input-row">
+        <span class="vec-label" style="color:var(--u-col)">u =</span>
+        <span class="paren">(</span>
+        <input class="vec-inp u-inp" id="u1" value="1"><span class="comma">,</span>
+        <input class="vec-inp u-inp" id="u2" value="0"><span class="comma">,</span>
+        <input class="vec-inp u-inp" id="u3" value="0"><span class="comma d4-only">,</span>
+        <input class="vec-inp u-inp d4-only" id="u4" value="0">
+        <span class="paren">)</span>
+      </div>
+      <div class="vec-input-row">
+        <span class="vec-label" style="color:var(--v-col)">v =</span>
+        <span class="paren">(</span>
+        <input class="vec-inp v-inp" id="v1" value="0"><span class="comma">,</span>
+        <input class="vec-inp v-inp" id="v2" value="1"><span class="comma">,</span>
+        <input class="vec-inp v-inp" id="v3" value="0"><span class="comma d4-only">,</span>
+        <input class="vec-inp v-inp d4-only" id="v4" value="0">
+        <span class="paren">)</span>
+      </div>
+      <div class="vec-input-row d4-only">
+        <span class="vec-label" style="color:var(--w-col)">w =</span>
+        <span class="paren">(</span>
+        <input class="vec-inp w-inp" id="w1" value="0"><span class="comma">,</span>
+        <input class="vec-inp w-inp" id="w2" value="0"><span class="comma">,</span>
+        <input class="vec-inp w-inp" id="w3" value="0"><span class="comma">,</span>
+        <input class="vec-inp w-inp" id="w4" value="0">
+        <span class="paren">)</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:.82rem;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">The 2-form: pair of covectors<span class="d4-only"> (and γ for 3-forms)</span></div>
+      <div class="vec-input-row">
+        <span class="vec-label" style="color:var(--a-col)">α =</span>
+        <span class="paren">(</span>
+        <input class="vec-inp a-inp" id="a1" value="1"><span class="comma">,</span>
+        <input class="vec-inp a-inp" id="a2" value="0"><span class="comma">,</span>
+        <input class="vec-inp a-inp" id="a3" value="0"><span class="comma d4-only">,</span>
+        <input class="vec-inp a-inp d4-only" id="a4" value="0">
+        <span class="paren">)</span>
+      </div>
+      <div class="vec-input-row">
+        <span class="vec-label" style="color:var(--b-col)">β =</span>
+        <span class="paren">(</span>
+        <input class="vec-inp b-inp" id="b1" value="0"><span class="comma">,</span>
+        <input class="vec-inp b-inp" id="b2" value="1"><span class="comma">,</span>
+        <input class="vec-inp b-inp" id="b3" value="0"><span class="comma d4-only">,</span>
+        <input class="vec-inp b-inp d4-only" id="b4" value="0">
+        <span class="paren">)</span>
+      </div>
+      <div class="vec-input-row d4-only">
+        <span class="vec-label" style="color:var(--g-col)">γ =</span>
+        <span class="paren">(</span>
+        <input class="vec-inp g-inp" id="g1" value="0"><span class="comma">,</span>
+        <input class="vec-inp g-inp" id="g2" value="0"><span class="comma">,</span>
+        <input class="vec-inp g-inp" id="g3" value="0"><span class="comma">,</span>
+        <input class="vec-inp g-inp" id="g4" value="0">
+        <span class="paren">)</span>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:.85rem;color:var(--gray);margin-top:.6rem;">
+    α(u) = α₁u₁ + α₂u₂ + … + α<sub>n</sub>u<sub>n</sub> — the covector α "measures" the vector u by projecting onto its direction.
+    The 2-form α∧β then measures the parallelogram spanned by u and v.
+  </p>
+  <button class="btn-go" onclick="computeAll()">Compute Wedge Products →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ════════════════════════════════════════
+   STATE & DIMENSION
+════════════════════════════════════════ */
+var N = 3;  /* current ambient dimension (3 or 4) */
+
+function setDim(n){
+  if(n===N)return;
+  N=n;
+  document.body.dataset.dim=String(n);
+  document.getElementById('dimSup').textContent=(n===3?'³':'⁴');
+  document.querySelectorAll('.dim-btn').forEach(function(b){
+    b.classList.toggle('active', parseInt(b.dataset.dim,10)===n);
+  });
+  buildExamples();
+  if(document.getElementById('out').innerHTML!=='')computeAll();
+}
+
+/* ════════════════════════════════════════
+   MATH HELPERS
+════════════════════════════════════════ */
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function cross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+function norm(a){return Math.sqrt(dot(a,a));}
+function unit(a){var n=norm(a);return n>1e-12?[a[0]/n,a[1]/n,a[2]/n]:[1,0,0];}
+function scl(a,s){return[a[0]*s,a[1]*s,a[2]*s];}
+function add(a,b){return[a[0]+b[0],a[1]+b[1],a[2]+b[2]];}
+function sub(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+function fmt(x){if(Math.abs(x)<5e-10)return'0';return parseFloat(x.toFixed(4)).toString();}
+function rk(t,opts){try{return katex.renderToString(t,Object.assign({throwOnError:false},opts||{}));}catch(e){return t;}}
+
+/* n-dimensional dot product */
+function dotN(a,b){var s=0;for(var i=0;i<a.length;i++)s+=a[i]*b[i];return s;}
+
+/* All index pairs (i,j) with i<j; returns array of [i,j] (0-indexed) */
+function allPairs(n){var p=[];for(var i=0;i<n;i++)for(var j=i+1;j<n;j++)p.push([i,j]);return p;}
+
+/* All index triples (i,j,k) with i<j<k */
+function allTriples(n){
+  var t=[];
+  for(var i=0;i<n;i++)for(var j=i+1;j<n;j++)for(var k=j+1;k<n;k++)t.push([i,j,k]);
+  return t;
+}
+
+/* 3×3 determinant of a [[a,b,c],[d,e,f],[g,h,i]] matrix */
+function det3x3(m){
+  return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+       - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+       + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+}
+
+/* (x∧y∧z)_{ijk} for every triple (i<j<k) in dimension n */
+function wedge3Components(x,y,z){
+  var n=x.length;
+  return allTriples(n).map(function(t){
+    var i=t[0],j=t[1],k=t[2];
+    return det3x3([[x[i],x[j],x[k]],[y[i],y[j],y[k]],[z[i],z[j],z[k]]]);
+  });
+}
+
+/* Gram-Schmidt: orthonormalise a,b  → [e1,e2]   (3D only — used by 3D viz) */
+function gramSchmidt(a,b){
+  var e1=unit(a);
+  var b2=sub(b,scl(e1,dot(e1,b)));
+  var e2=norm(b2)>1e-10?unit(b2):[0,0,1];
+  return[e1,e2];
+}
+
+function parseVec(prefix){
+  var arr=[];
+  for(var i=1;i<=N;i++){
+    arr.push(parseFloat(document.getElementById(prefix+i).value)||0);
+  }
+  return arr;
+}
+
+/* ════════════════════════════════════════
+   THREE.JS SCENE
+════════════════════════════════════════ */
+var gRenderer, gScene, gCamera;
+var gTheta=0.75,gPhi=1.2,gRadius=6.8;
+var gDrag=false,gPX=0,gPY=0,gRAF;
+
+function initThree(){
+  var cv=document.getElementById('cv3d');
+  if(!cv)return;
+  var W=cv.offsetWidth||700, H=cv.offsetHeight||230;
+  cv.width=W*(window.devicePixelRatio||1);
+  cv.height=H*(window.devicePixelRatio||1);
+
+  gRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
+  gRenderer.setPixelRatio(window.devicePixelRatio||1);
+  gRenderer.setSize(W,H);
+  gRenderer.setClearColor(0xf8f6f2);
+
+  gScene=new THREE.Scene();
+  gScene.background=new THREE.Color(0xf8f6f2);
+  gScene.add(new THREE.AmbientLight(0xffffff,0.85));
+  var dl=new THREE.DirectionalLight(0xffffff,0.35);
+  dl.position.set(3,5,4);gScene.add(dl);
+
+  gCamera=new THREE.PerspectiveCamera(38,W/H,0.01,100);
+
+  cv.addEventListener('mousedown',function(e){gDrag=true;gPX=e.clientX;gPY=e.clientY;cv.style.cursor='grabbing';});
+  window.addEventListener('mouseup',function(){gDrag=false;cv.style.cursor='grab';});
+  window.addEventListener('mousemove',function(e){
+    if(!gDrag)return;
+    gTheta-=(e.clientX-gPX)*0.013;gPhi-=(e.clientY-gPY)*0.013;
+    gPhi=Math.max(0.08,Math.min(Math.PI-0.08,gPhi));
+    gPX=e.clientX;gPY=e.clientY;
+  });
+  cv.addEventListener('touchstart',function(e){gDrag=true;gPX=e.touches[0].clientX;gPY=e.touches[0].clientY;e.preventDefault();},{passive:false});
+  cv.addEventListener('touchend',function(){gDrag=false;});
+  cv.addEventListener('touchmove',function(e){
+    if(!gDrag)return;
+    gTheta-=(e.touches[0].clientX-gPX)*0.013;gPhi-=(e.touches[0].clientY-gPY)*0.013;
+    gPhi=Math.max(0.08,Math.min(Math.PI-0.08,gPhi));
+    gPX=e.touches[0].clientX;gPY=e.touches[0].clientY;e.preventDefault();
+  },{passive:false});
+  cv.style.cursor='grab';
+
+  if(gRAF)cancelAnimationFrame(gRAF);
+  function animate(){
+    gRAF=requestAnimationFrame(animate);
+    if(!gDrag)gTheta+=0.004;
+    gCamera.position.set(
+      gRadius*Math.sin(gPhi)*Math.sin(gTheta),
+      gRadius*Math.cos(gPhi),
+      gRadius*Math.sin(gPhi)*Math.cos(gTheta));
+    gCamera.lookAt(0,0,0);
+    gRenderer.render(gScene,gCamera);
+  }
+  animate();
+}
+
+/* ── Scene object helpers ── */
+function clearScene(){
+  if(!gScene)return;
+  while(gScene.children.length)gScene.remove(gScene.children[0]);
+  gScene.add(new THREE.AmbientLight(0xffffff,0.85));
+  var dl=new THREE.DirectionalLight(0xffffff,0.35);dl.position.set(3,5,4);gScene.add(dl);
+}
+
+function addLine3(from,to,col,opacity){
+  var pts=[new THREE.Vector3(from[0],from[1],from[2]),new THREE.Vector3(to[0],to[1],to[2])];
+  var geo=new THREE.BufferGeometry().setFromPoints(pts);
+  var mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:opacity!=null?opacity:1});
+  gScene.add(new THREE.Line(geo,mat));
+}
+
+function addArrow3(from,to,col,ghost){
+  var f=new THREE.Vector3(from[0],from[1],from[2]);
+  var t=new THREE.Vector3(to[0],to[1],to[2]);
+  var dir=t.clone().sub(f);
+  var len=dir.length();if(len<0.04)return;
+  dir.normalize();
+  var hL=Math.min(0.2,len*0.22),hW=hL*0.6;
+  var arr=new THREE.ArrowHelper(dir,f,len,col,hL,hW);
+  if(ghost){
+    arr.line.material.transparent=true;arr.line.material.opacity=0.45;
+    arr.cone.material.transparent=true;arr.cone.material.opacity=0.45;
+  }
+  gScene.add(arr);
+}
+
+function addParallelogram3(o,u,v,col,opacity,outline){
+  var pts=new Float32Array([
+    o[0],o[1],o[2],
+    o[0]+u[0],o[1]+u[1],o[2]+u[2],
+    o[0]+u[0]+v[0],o[1]+u[1]+v[1],o[2]+u[2]+v[2],
+    o[0]+v[0],o[1]+v[1],o[2]+v[2]
+  ]);
+  var idx=new Uint16Array([0,1,2,0,2,3]);
+  var geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pts,3));
+  geo.setIndex(new THREE.BufferAttribute(idx,1));
+  geo.computeVertexNormals();
+  gScene.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:opacity,side:THREE.DoubleSide})));
+  if(outline!==false){
+    var O=o,U=u,V=v;
+    var lpts=[new THREE.Vector3(O[0],O[1],O[2]),
+              new THREE.Vector3(O[0]+U[0],O[1]+U[1],O[2]+U[2]),
+              new THREE.Vector3(O[0]+U[0]+V[0],O[1]+U[1]+V[1],O[2]+U[2]+V[2]),
+              new THREE.Vector3(O[0]+V[0],O[1]+V[1],O[2]+V[2]),
+              new THREE.Vector3(O[0],O[1],O[2])];
+    gScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(lpts),new THREE.LineBasicMaterial({color:col})));
+  }
+}
+
+function addMeasurementPlane(e1,e2){
+  /* grid lines in the plane */
+  for(var i=-3;i<=3;i++){
+    var p1=[i*e1[0]-2.8*e2[0], i*e1[1]-2.8*e2[1], i*e1[2]-2.8*e2[2]];
+    var p2=[i*e1[0]+2.8*e2[0], i*e1[1]+2.8*e2[1], i*e1[2]+2.8*e2[2]];
+    addLine3(p1,p2,0x3a6eb5,0.10);
+    var q1=[-2.8*e1[0]+i*e2[0],-2.8*e1[1]+i*e2[1],-2.8*e1[2]+i*e2[2]];
+    var q2=[ 2.8*e1[0]+i*e2[0], 2.8*e1[1]+i*e2[1], 2.8*e1[2]+i*e2[2]];
+    addLine3(q1,q2,0x3a6eb5,0.10);
+  }
+  /* outer boundary */
+  var corners=[
+    scl(add(scl(e1,-3),scl(e2,-3)),1),
+    scl(add(scl(e1, 3),scl(e2,-3)),1),
+    scl(add(scl(e1, 3),scl(e2, 3)),1),
+    scl(add(scl(e1,-3),scl(e2, 3)),1),
+  ];
+  corners.push(corners[0]);
+  var bpts=corners.map(function(c){return new THREE.Vector3(c[0],c[1],c[2]);});
+  gScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(bpts),new THREE.LineBasicMaterial({color:0x3a6eb5,transparent:true,opacity:0.35})));
+  /* face */
+  var fpts=new Float32Array([
+    corners[0][0],corners[0][1],corners[0][2],
+    corners[1][0],corners[1][1],corners[1][2],
+    corners[2][0],corners[2][1],corners[2][2],
+    corners[3][0],corners[3][1],corners[3][2]
+  ]);
+  var fidx=new Uint16Array([0,1,2,0,2,3]);
+  var fgeo=new THREE.BufferGeometry();
+  fgeo.setAttribute('position',new THREE.BufferAttribute(fpts,3));
+  fgeo.setIndex(new THREE.BufferAttribute(fidx,1));
+  gScene.add(new THREE.Mesh(fgeo,new THREE.MeshBasicMaterial({color:0x3a6eb5,transparent:true,opacity:0.055,side:THREE.DoubleSide})));
+}
+
+function addCoordAxes(){
+  var L=2.2;
+  [[1,0,0],[0,1,0],[0,0,1]].forEach(function(a){
+    addLine3([-L*a[0],-L*a[1],-L*a[2]],[L*a[0],L*a[1],L*a[2]],0xbbbbbb,0.35);
+  });
+}
+
+/* ── Full scene rebuild ── */
+function rebuildScene(u,v,a,b){
+  clearScene();
+  var gs=gramSchmidt(a,b);
+  var e1=gs[0],e2=gs[1];
+  var O=[0,0,0];
+  var au=dot(a,u),bu=dot(b,u);
+  var av=dot(a,v),bv=dot(b,v);
+  /* shadow vectors: us = α(u)·e1 + β(u)·e2 */
+  var us=add(scl(e1,au),scl(e2,bu));
+  var vs=add(scl(e1,av),scl(e2,bv));
+
+  addCoordAxes();
+  addMeasurementPlane(e1,e2);
+
+  /* Projection lines from u,v tips to shadow tips */
+  addLine3(u,us,0x888888,0.3);
+  addLine3(v,vs,0x888888,0.3);
+  addLine3(add(u,v),add(us,vs),0x888888,0.2);
+
+  /* Shadow parallelogram (on the measurement plane) */
+  addParallelogram3(O,us,vs,0x1a6a58,0.32);
+
+  /* Original u,v parallelogram */
+  addParallelogram3(O,u,v,0x2c4a96,0.22);
+
+  /* Shadow arrows (lighter) */
+  addArrow3(O,us,0xe8c05a,true);   /* u' light gold */
+  addArrow3(O,vs,0xf0a0c0,true);   /* v' light pink */
+
+  /* Original arrows */
+  addArrow3(O,u,0xc8a430,false);   /* u gold */
+  addArrow3(O,v,0xd94f8a,false);   /* v pink */
+
+  /* α and β axis arrows on the plane (unit length) */
+  var an=norm(a),bn=norm(b);
+  if(an>1e-12)addArrow3(O,scl(a,1/an),0x1a6a58,false);  /* α teal */
+  if(bn>1e-12)addArrow3(O,scl(b,1/bn),0x6a1a80,false);  /* β purple */
+}
+
+/* ════════════════════════════════════════
+   2D SHADOW CANVAS
+════════════════════════════════════════ */
+function draw2D(au,bu,av,bv,area){
+  var cv=document.getElementById('cv2d');
+  if(!cv)return;
+  var W=cv.width,H=cv.height;
+  var ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f8f6f2';ctx.fillRect(0,0,W,H);
+
+  var cx=W/2,cy=H/2;
+  /* Scale so vectors fit */
+  var maxV=Math.max(Math.abs(au),Math.abs(av),Math.abs(bu),Math.abs(bv),0.5);
+  var sc=Math.min(W,H)*0.35/maxV;
+
+  /* Grid */
+  ctx.strokeStyle='#e0dbd3';ctx.lineWidth=1;
+  for(var t=-3;t<=3;t++){
+    ctx.beginPath();ctx.moveTo(cx+t*sc,8);ctx.lineTo(cx+t*sc,H-8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(8,cy+t*sc);ctx.lineTo(W-8,cy+t*sc);ctx.stroke();
+  }
+  /* Axes */
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(8,cy);ctx.lineTo(W-8,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,8);ctx.lineTo(cx,H-8);ctx.stroke();
+  /* Axis labels */
+  ctx.font='13px Crimson Pro,serif';ctx.fillStyle='#1a6a58';
+  ctx.fillText('\u03b1',W-18,cy-6);
+  ctx.fillStyle='#6a1a80';
+  ctx.fillText('\u03b2',cx+6,14);
+
+  /* Parallelogram fill */
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(cx+au*sc,cy-bu*sc);
+  ctx.lineTo(cx+(au+av)*sc,cy-(bu+bv)*sc);
+  ctx.lineTo(cx+av*sc,cy-bv*sc);
+  ctx.closePath();
+  ctx.fillStyle='rgba(26,106,88,0.18)';ctx.fill();
+  ctx.strokeStyle='#1a6a58';ctx.lineWidth=1.5;ctx.stroke();
+
+  function arrow2d(dx,dy,col,lbl){
+    var len=Math.sqrt(dx*dx+dy*dy);if(len<3)return;
+    var ang=Math.atan2(-dy,dx);
+    var hL=Math.min(12,len*0.22),hA=0.42;
+    ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+dx,cy-dy);ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx+dx,cy-dy);
+    ctx.lineTo(cx+dx-hL*Math.cos(ang-hA)*Math.sign(len),cy-dy+hL*Math.sin(ang-hA)*Math.sign(len));
+    ctx.lineTo(cx+dx-hL*Math.cos(ang+hA)*Math.sign(len),cy-dy+hL*Math.sin(ang+hA)*Math.sign(len));
+    ctx.closePath();ctx.fill();
+    if(lbl){
+      ctx.font='bold 13px Georgia,serif';
+      ctx.fillText(lbl,cx+dx+(dx>=0?8:-22),cy-dy+(dy<=0?-5:16));
+    }
+    ctx.restore();
+  }
+
+  arrow2d(au*sc,bu*sc,'#c8a430',"u'");
+  arrow2d(av*sc,bv*sc,'#d94f8a',"v'");
+
+  /* Origin dot */
+  ctx.beginPath();ctx.arc(cx,cy,4,0,2*Math.PI);ctx.fillStyle='#18284a';ctx.fill();
+
+  /* Area label */
+  var areaStr=fmt(area);
+  ctx.font='14px Crimson Pro,serif';
+  ctx.fillStyle=Math.abs(area)<1e-9?'#b33a2f':'#1a6a58';
+  ctx.textAlign='center';
+  ctx.fillText('area = '+areaStr,W/2,H-10);
+  ctx.textAlign='left';
+}
+
+/* ════════════════════════════════════════
+   BUILD ALL OUTPUT SECTIONS
+════════════════════════════════════════ */
+function computeAll(){
+  var u=parseVec('u');
+  var v=parseVec('v');
+  var a=parseVec('a');
+  var b=parseVec('b');
+  var n=N;
+
+  /* Core computations — work in any dimension */
+  var au=dotN(a,u), av=dotN(a,v);
+  var bu=dotN(b,u), bv=dotN(b,v);
+  var wedgeVal=au*bv-av*bu;         /* (α∧β)(u,v) */
+
+  var out=document.getElementById('out');
+  out.innerHTML='';
+
+  /* ── Row 1: two-vector and two-form side by side ── */
+  var twoVecRes=secTwoVec(u,v);
+  var twoFormRes=secTwoForm(a,b,au,av,bu,bv);
+  var P=twoVecRes.P, W=twoFormRes.W, pairs=twoVecRes.pairs;
+
+  var row1=document.createElement('div');row1.className='two-col';
+  row1.appendChild(twoVecRes.sec);
+  row1.appendChild(twoFormRes.sec);
+  out.appendChild(row1);
+
+  /* ── 3D visualization (only in 3D) ── */
+  if(n===3){
+    var c3wrap=document.createElement('div');c3wrap.className='canvas3d-wrap';
+    var cv3=document.createElement('canvas');cv3.id='cv3d';c3wrap.appendChild(cv3);
+
+    /* Legend overlay */
+    var leg=document.createElement('div');leg.className='cv3d-legend';
+    leg.innerHTML=
+      '<div class="leg-row"><div class="leg-swatch thick" style="background:#c8a430"></div>vector <b>u</b></div>'+
+      '<div class="leg-row"><div class="leg-swatch thick" style="background:#d94f8a"></div>vector <b>v</b></div>'+
+      '<div class="leg-row"><div class="leg-swatch thick" style="background:#2c4a96;opacity:.7"></div>parallelogram <b>u∧v</b></div>'+
+      '<div class="leg-row"><div class="leg-swatch thick" style="background:#1a6a58"></div>α direction (teal) / β direction (purple)</div>'+
+      '<div class="leg-row"><div class="leg-swatch" style="background:#3a6eb5;opacity:.5;height:10px;border-radius:2px"></div>α–β measurement plane</div>'+
+      '<div class="leg-row"><div class="leg-swatch thick" style="background:#1a6a58;opacity:.8"></div>shadow parallelogram (α∧β)(u,v)</div>'+
+      '<div class="leg-row"><div class="leg-swatch" style="background:#888;opacity:.6"></div>projection lines</div>';
+    c3wrap.appendChild(leg);
+    out.appendChild(c3wrap);
+  }
+
+  /* ── Row 2: 2D shadow canvas (3D only) + algebraic steps ── */
+  var row2=document.createElement('div');row2.className='two-col';
+
+  if(n===3){
+    /* Left: 2D shadow */
+    var secSh=document.createElement('div');secSh.className='sec sec-shad';
+    secSh.innerHTML='<div class="sec-hd"><h3>Shadow in the α–β plane</h3></div>';
+    var sbody=document.createElement('div');sbody.className='sec-body';
+    sbody.innerHTML='<p style="font-size:.87rem;color:var(--navy2);margin-bottom:.5rem;">'+
+      'The projected vectors '+rk("u'=(\\alpha(u),\\beta(u))")+' and '+rk("v'=(\\alpha(v),\\beta(v))")+
+      ' in the measurement plane. Their signed area equals '+rk('(\\alpha\\wedge\\beta)(u,v)')+'.'+
+      '</p>';
+    var cv2=document.createElement('canvas');cv2.id='cv2d';cv2.width=340;cv2.height=340;cv2.style.cssText='width:100%;max-width:340px;display:block;margin:0 auto;';
+    sbody.appendChild(cv2);
+    secSh.appendChild(sbody);
+    row2.appendChild(secSh);
+  }
+
+  /* Right (or full-width in 4D): Step-by-step algebra */
+  row2.appendChild(secAlgebra(u,v,a,b,au,av,bu,bv,wedgeVal,W,P,pairs));
+  out.appendChild(row2);
+
+  /* ── Properties card ── */
+  out.appendChild(secProperties(u,v,a,b,wedgeVal));
+  out.appendChild(secSkewMatrix(u,v,a,b,wedgeVal));
+
+  /* ── 3-form / 3-vector sections (4D only) ── */
+  if(n===4){
+    var w=parseVec('w');
+    var c=parseVec('g');  /* γ */
+    var au3=au, av3=av, aw3=dotN(a,w);
+    var bu3=bu, bv3=bv, bw3=dotN(b,w);
+    var cu3=dotN(c,u), cv3=dotN(c,v), cw3=dotN(c,w);
+    var val3=det3x3([[au3,av3,aw3],[bu3,bv3,bw3],[cu3,cv3,cw3]]);
+
+    /* Header card explaining the transition */
+    var hdr=document.createElement('div');hdr.className='card';
+    hdr.style.cssText='background:linear-gradient(180deg,#f8f4ee 0%,var(--paper) 60%);border-left:4px solid var(--g-col);';
+    hdr.innerHTML='<h2 style="margin-bottom:.4rem;">Going up one degree: triplets in ℝ⁴</h2>'+
+      '<p style="font-size:.92rem;color:var(--navy2);">'+
+      'Three vectors '+rk('u, v, w')+' wedge to a <b>3-vector</b>; three covectors '+rk('\\alpha,\\beta,\\gamma')+' wedge to a <b>3-form</b>. '+
+      'Everything generalizes: components are now 3×3 minor determinants, the evaluation is a 3×3 determinant of covector-on-vector pairings, and ℝ⁴ has '+
+      rk('\\binom{4}{3}=4')+' independent 3-form components — equal to '+rk('\\binom{4}{1}=4')+', the dimension of 1-forms, so a 3-form has a Hodge-dual 1-form.'+
+      '</p>';
+    out.appendChild(hdr);
+
+    /* Row: 3-vector and 3-form side by side */
+    var threeVecRes=secThreeVec(u,v,w);
+    var threeFormRes=secThreeForm(a,b,c,au3,av3,aw3,bu3,bv3,bw3,cu3,cv3,cw3);
+    var P3=threeVecRes.P, W3=threeFormRes.W, triples=threeVecRes.triples;
+
+    var row3=document.createElement('div');row3.className='two-col';
+    row3.appendChild(threeVecRes.sec);
+    row3.appendChild(threeFormRes.sec);
+    out.appendChild(row3);
+
+    /* 3-form algebra */
+    out.appendChild(secAlgebra3(u,v,w,a,b,c,au3,av3,aw3,bu3,bv3,bw3,cu3,cv3,cw3,val3,W3,P3,triples));
+  }
+
+  /* ── Trigger draws (only in 3D) ── */
+  if(n===3){
+    setTimeout(function(){
+      initThree();
+      rebuildScene(u,v,a,b);
+      draw2D(au,bu,av,bv,wedgeVal);
+    },80);
+  }
+}
+
+/* ── Section: the 2-vector ── */
+function secTwoVec(u,v){
+  var n=u.length;
+  var pairs=allPairs(n);
+  var P=pairs.map(function(p){return u[p[0]]*v[p[1]]-u[p[1]]*v[p[0]];});
+  var area=Math.sqrt(P.reduce(function(s,x){return s+x*x;},0));
+
+  var sec=document.createElement('div');sec.className='sec sec-uvec';
+  sec.innerHTML='<div class="sec-hd"><h3>The 2-vector u∧v</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  var basisStr=pairs.map(function(p){return 'e_'+(p[0]+1)+'{\\wedge}e_'+(p[1]+1);}).join(',\\,');
+  body.innerHTML='<p style="font-size:.88rem;color:var(--navy2);margin-bottom:.5rem;">'+
+    rk('u\\wedge v')+' is the <b>oriented parallelogram</b> spanned by '+rk('u')+' and '+rk('v')+'. '+
+    'In ℝ'+(n===3?'³':'⁴')+' it has <b>'+pairs.length+'</b> components in the basis '+rk('\\{'+basisStr+'\\}')+', '+
+    'each a signed area '+rk('(u\\wedge v)_{ij}=u_iv_j-u_jv_i')+':'+
+    '</p>';
+
+  function stepRowVec(cls,lbl,tex){
+    var d=document.createElement('div');d.className='step-row '+cls;
+    var l=document.createElement('span');l.className='step-lbl';l.textContent=lbl;
+    var t=document.createElement('div');t.innerHTML=rk(tex);
+    d.appendChild(l);d.appendChild(t);return d;
+  }
+  var subDigits=['₀','₁','₂','₃','₄','₅'];
+  pairs.forEach(function(p,idx){
+    var i=p[0],j=p[1];
+    var cls=idx%2===0?'u-step':'v-step';
+    var lbl='P'+subDigits[i+1]+subDigits[j+1];
+    body.appendChild(stepRowVec(cls,lbl,
+      '(u\\wedge v)_{'+(i+1)+(j+1)+'} = u_{'+(i+1)+'}v_{'+(j+1)+'}-u_{'+(j+1)+'}v_{'+(i+1)+'}'+
+      ' = ('+fmt(u[i])+')('+fmt(v[j])+')-('+fmt(u[j])+')('+fmt(v[i])+') = '+fmt(P[idx])));
+  });
+
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk(
+    'u\\wedge v = '+pairs.map(function(p,idx){
+      return fmt(P[idx])+'\\,e_{'+(p[0]+1)+'}{\\wedge}e_{'+(p[1]+1)+'}';
+    }).join(' + '),
+    {displayMode:true});
+  body.appendChild(fDiv);
+
+  /* Hodge / area: 3D gets cross product, 4D gets just the norm */
+  var cpDiv=document.createElement('div');cpDiv.className='formula-row';
+  if(n===3){
+    cpDiv.innerHTML='<p style="font-size:.86rem;color:var(--navy2);margin:.3rem 0 .2rem;">'+
+      'In ℝ³ via Hodge duality: '+rk('\\star(u\\wedge v) = u\\times v = ('+fmt(P[2])+',\\,'+(fmt(-P[1]))+',\\,'+fmt(P[0])+')')+
+      ', giving area '+rk('|u\\wedge v| = '+fmt(area))+'.'+
+      '</p>';
+  }else{
+    cpDiv.innerHTML='<p style="font-size:.86rem;color:var(--navy2);margin:.3rem 0 .2rem;">'+
+      'Magnitude: '+rk('|u\\wedge v|=\\sqrt{\\textstyle\\sum_{i<j}P_{ij}^2}='+fmt(area))+'. '+
+      '<em>In ℝ⁴ the Hodge dual of a 2-vector is another 2-vector, not a vector.</em>'+
+      '</p>';
+  }
+  body.appendChild(cpDiv);
+
+  /* Matrix form (column-wedge-column hint) */
+  var uMatrix=u.map(function(_,i){return 'u_{'+(i+1)+'}';}).join('\\\\');
+  var vMatrix=v.map(function(_,i){return 'v_{'+(i+1)+'}';}).join('\\\\');
+  var mDiv=document.createElement('div');mDiv.className='formula-row';
+  mDiv.innerHTML=rk(
+    '(u\\wedge v)_{ij} = u_i v_j - u_j v_i \\quad\\Rightarrow\\quad '+
+    '\\begin{pmatrix}'+uMatrix+'\\end{pmatrix}\\wedge'+
+    '\\begin{pmatrix}'+vMatrix+'\\end{pmatrix}',
+    {displayMode:false});
+  body.appendChild(mDiv);
+
+  body.appendChild(mkKB('kb-vec',
+    '<strong>Geometric meaning:</strong> u∧v is a "blade" — a 2-dimensional oriented subspace with magnitude. '+
+    'Its '+pairs.length+' components are the signed areas of the coordinate-plane projections. '+
+    'Swapping u and v reverses orientation: '+rk('v\\wedge u = -u\\wedge v')+'.'));
+  sec.appendChild(body);
+  return {sec:sec, P:P, pairs:pairs, area:area};
+}
+
+/* ── Section: the 2-form ── */
+function secTwoForm(a,b,au,av,bu,bv){
+  var n=a.length;
+  var pairs=allPairs(n);
+  var W=pairs.map(function(p){return a[p[0]]*b[p[1]]-a[p[1]]*b[p[0]];});
+
+  var sec=document.createElement('div');sec.className='sec sec-form';
+  sec.innerHTML='<div class="sec-hd"><h3>The 2-form α∧β</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  body.innerHTML='<p style="font-size:.88rem;color:var(--navy2);margin-bottom:.5rem;">'+
+    'α and β are covectors (1-forms): they assign a number to each vector by a dot product. '+
+    'Their wedge product is the <b>2-form</b>:'+
+    '</p>';
+
+  var defDiv=document.createElement('div');defDiv.className='formula-row';
+  defDiv.innerHTML=rk(
+    '\\alpha\\wedge\\beta\\,(u,v) := \\alpha(u)\\beta(v) - \\alpha(v)\\beta(u) = '+
+    '\\det\\begin{pmatrix}\\alpha(u)&\\alpha(v)\\\\\\beta(u)&\\beta(v)\\end{pmatrix}',
+    {displayMode:true});
+  body.appendChild(defDiv);
+
+  /* Step-by-step component computations: W_ij = α_iβ_j − α_jβ_i */
+  var basisStr=pairs.map(function(p){return 'dx^{'+(p[0]+1)+'}{\\wedge}dx^{'+(p[1]+1)+'}';}).join(',\\,');
+  var introP=document.createElement('p');
+  introP.style.cssText='font-size:.86rem;color:var(--navy2);margin:.5rem 0 .25rem;';
+  introP.innerHTML='In the basis '+rk('\\{'+basisStr+'\\}')+
+    ' ('+pairs.length+' components in ℝ'+(n===3?'³':'⁴')+'), the components are '+
+    rk('W_{ij}=\\alpha_i\\beta_j-\\alpha_j\\beta_i')+':';
+  body.appendChild(introP);
+
+  function stepRowForm(cls,lbl,tex){
+    var d=document.createElement('div');d.className='step-row '+cls;
+    var l=document.createElement('span');l.className='step-lbl';l.textContent=lbl;
+    var t=document.createElement('div');t.innerHTML=rk(tex);
+    d.appendChild(l);d.appendChild(t);return d;
+  }
+  var subDigits=['₀','₁','₂','₃','₄','₅'];
+  pairs.forEach(function(p,idx){
+    var i=p[0],j=p[1];
+    var cls=idx%2===0?'a-step':'b-step';
+    var lbl='W'+subDigits[i+1]+subDigits[j+1];
+    body.appendChild(stepRowForm(cls,lbl,
+      '\\alpha_{'+(i+1)+'}\\beta_{'+(j+1)+'}-\\alpha_{'+(j+1)+'}\\beta_{'+(i+1)+'}'+
+      ' = ('+fmt(a[i])+')('+fmt(b[j])+')-('+fmt(a[j])+')('+fmt(b[i])+') = '+fmt(W[idx])));
+  });
+
+  /* Summary line */
+  var cDiv=document.createElement('div');cDiv.className='formula-row';
+  cDiv.innerHTML=rk(
+    '\\alpha\\wedge\\beta = '+pairs.map(function(p,idx){
+      return fmt(W[idx])+'\\,dx^{'+(p[0]+1)+'}{\\wedge}dx^{'+(p[1]+1)+'}';
+    }).join(' + '),
+    {displayMode:true});
+  body.appendChild(cDiv);
+
+  /* Show what α and β measure */
+  var mDiv=document.createElement('div');mDiv.style.cssText='font-size:.87rem;color:var(--navy2);margin:.4rem 0;';
+  mDiv.innerHTML='The covectors measure: '+
+    rk('\\alpha(u)='+fmt(au)+',\\;\\alpha(v)='+fmt(av)+';\\quad\\beta(u)='+fmt(bu)+',\\;\\beta(v)='+fmt(bv)+'.')+
+    '<br>So the projected vectors are '+rk("u'=("+fmt(au)+","+fmt(bu)+")^T")+' and '+rk("v'=("+fmt(av)+","+fmt(bv)+")^T")+'.';
+  body.appendChild(mDiv);
+
+  body.appendChild(mkKB('kb-frm',
+    '<strong>Geometric meaning:</strong> α∧β measures the "shadow" a parallelogram casts onto the α–β plane. '+
+    'It is antisymmetric: '+rk('\\alpha\\wedge\\beta = -\\beta\\wedge\\alpha')+' (swap rows → negate determinant). '+
+    'And '+rk('\\alpha\\wedge\\alpha = 0')+' because you cannot cast a shadow onto a "flat" (degenerate) plane.'));
+  sec.appendChild(body);
+  return {sec:sec, W:W, pairs:pairs};
+}
+
+/* ── Section: algebra steps ── */
+function secAlgebra(u,v,a,b,au,av,bu,bv,wedgeVal,W,P,pairs){
+  var n=u.length;
+  var sec=document.createElement('div');sec.className='sec sec-shad';
+  sec.innerHTML='<div class="sec-hd"><h3>Step-by-step computation</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  function stepRow(cls,lbl,tex){
+    var d=document.createElement('div');d.className='step-row '+cls;
+    var l=document.createElement('span');l.className='step-lbl';l.textContent=lbl;
+    var t=document.createElement('div');t.innerHTML=rk(tex);
+    d.appendChild(l);d.appendChild(t);return d;
+  }
+
+  /* Build "x₁·y₁ + x₂·y₂ + … + x_n·y_n" KaTeX */
+  function dotExpr(x,y){
+    var terms=[];
+    for(var i=0;i<x.length;i++){
+      terms.push(fmt(x[i])+'\\cdot'+fmt(y[i]));
+    }
+    return terms.join('+');
+  }
+
+  body.appendChild(stepRow('a-step','α(u)','\\alpha(u) = '+dotExpr(a,u)+' = '+fmt(au)));
+  body.appendChild(stepRow('a-step','α(v)','\\alpha(v) = '+dotExpr(a,v)+' = '+fmt(av)));
+  body.appendChild(stepRow('b-step','β(u)','\\beta(u) = '+dotExpr(b,u)+' = '+fmt(bu)));
+  body.appendChild(stepRow('b-step','β(v)','\\beta(v) = '+dotExpr(b,v)+' = '+fmt(bv)));
+
+  /* 2×2 determinant */
+  var detDiv=document.createElement('div');detDiv.className='formula-row';
+  detDiv.innerHTML=rk(
+    '(\\alpha\\wedge\\beta)(u,v) = '+
+    '\\det\\begin{pmatrix}'+fmt(au)+'&'+fmt(av)+'\\\\'+fmt(bu)+'&'+fmt(bv)+'\\end{pmatrix}'+
+    ' = '+fmt(au)+'\\cdot'+fmt(bv)+' - '+fmt(av)+'\\cdot'+fmt(bu),
+    {displayMode:true});
+  body.appendChild(detDiv);
+
+  /* Result box */
+  var isZero=Math.abs(wedgeVal)<1e-9;
+  var resBox=document.createElement('div');resBox.className='result-box';
+  resBox.style.borderColor=isZero?'var(--a-col)':'var(--two-frm)';
+  resBox.style.background=isZero?'var(--a-bg)':'var(--two-frm-bg)';
+  resBox.innerHTML='<div class="result-big" style="color:'+(isZero?'var(--a-col)':'var(--two-frm)')+'">'+
+    rk('(\\alpha\\wedge\\beta)(u,v) = '+fmt(wedgeVal))+
+    '</div>'+
+    (isZero?'<div style="font-size:.85rem;color:var(--a-col);margin-top:.3rem;">'+
+      rk('= 0')+' — the 2-vector lies <em>in</em> the measurement plane (zero shadow)</div>':
+    '<div style="font-size:.85rem;color:var(--navy2);margin-top:.3rem;">signed shadow area = '+fmt(wedgeVal)+'</div>');
+  body.appendChild(resBox);
+
+  /* Pairing formula (full sum over all C(n,2) basis 2-forms) */
+  var pairSum=0;
+  var pairTerms=pairs.map(function(p,idx){
+    pairSum+=W[idx]*P[idx];
+    return fmt(W[idx])+'\\cdot'+fmt(P[idx]);
+  });
+  var pairDiv=document.createElement('div');pairDiv.className='formula-row';
+  pairDiv.innerHTML='<p style="font-size:.84rem;color:var(--navy2);margin-top:.4rem;">'+
+    '<em>Equivalently via component pairing (sum over all '+pairs.length+' basis 2-forms):</em><br>'+
+    rk('(\\alpha\\wedge\\beta)(u\\wedge v) = '+pairTerms.join(' + ')+' = '+fmt(pairSum))+
+    '</p>';
+  body.appendChild(pairDiv);
+
+  sec.appendChild(body);return sec;
+}
+
+/* ── Section: properties ── */
+function secProperties(u,v,a,b,wedgeVal){
+  var sec=document.createElement('div');sec.className='sec sec-prop';
+  sec.innerHTML='<div class="sec-hd"><h3>Properties of the Wedge Product</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  /* Antisymmetry demo */
+  var au2=dot(a,u),av2=dot(a,v),bu2=dot(b,u),bv2=dot(b,v);
+  var swapped=au2*bv2-av2*bu2;  /* should equal wedgeVal */
+  /* (β∧α)(u,v) = β(u)α(v) - β(v)α(u) = -wedgeVal */
+  var negated=bu2*av2-bv2*au2;
+
+  var grid=document.createElement('div');grid.className='three-col';
+
+  function propCard(cls,title,bodyHTML){
+    var d=document.createElement('div');d.className='kb '+cls;
+    d.innerHTML='<strong>'+title+'</strong><br>'+bodyHTML;return d;
+  }
+
+  grid.appendChild(propCard('kb-vec','Antisymmetry',
+    rk('\\alpha\\wedge\\beta = -\\beta\\wedge\\alpha')+
+    '<br>Reverse the measurement axes and the sign flips. '+
+    'Geometrically: swap α and β → reflect the shadow.<br>'+
+    rk('(\\alpha\\wedge\\beta)(u,v)='+fmt(wedgeVal))+
+    '<br>'+rk('(\\beta\\wedge\\alpha)(u,v)='+fmt(negated))));
+
+  grid.appendChild(propCard('kb-frm','Self-wedge is zero',
+    rk('\\alpha\\wedge\\alpha = 0')+
+    '<br>Because '+rk('\\alpha(u)\\alpha(v)-\\alpha(v)\\alpha(u)=0')+
+    ' always. Geometrically: projecting onto a "flat" (degenerate 1D) plane gives zero area.<br>'+
+    rk('(\\alpha\\wedge\\alpha)(u,v)='+fmt(0))));
+
+  grid.appendChild(propCard('kb-shd','Distributivity',
+    rk('\\alpha\\wedge(\\beta+\\gamma) = \\alpha\\wedge\\beta + \\alpha\\wedge\\gamma')+
+    '<br>The sum of projected areas = the area projected onto the sum of planes. '+
+    'Follows from the linearity of the determinant in each row.'));
+
+  body.appendChild(grid);
+
+  /* Geometric summary */
+  body.appendChild(mkKB('kb-prp',
+    '<strong>Summary:</strong> The wedge product of k 1-forms gives a <em>k</em>-form that measures the projected volume of a collection of k vectors. '+
+    'The 2-form α∧β eats a pair of vectors (u,v) and returns the signed area of their shadow on the α–β plane. '+
+    'This is exactly the '+rk('2\\times 2')+' determinant: '+
+    rk('(\\alpha\\wedge\\beta)(u,v) = \\det\\begin{pmatrix}\\alpha(u)&\\alpha(v)\\\\\\beta(u)&\\beta(v)\\end{pmatrix}')+'.<br><br>'+
+    '<strong>Key insight from Crane §4.4:</strong> "Algebraic properties of the wedge product follow <em>directly</em> from the way signed volumes behave." '+
+    'Antisymmetry comes from: reversing the order of measurement axes reverses orientation. '+
+    'α∧α=0 comes from: a "plane" spanned by a single direction has zero area.'));
+  sec.appendChild(body);return sec;
+}
+
+/* ════════════════════════════════════════
+   SKEW-SYMMETRIC MATRIX SECTION
+   A = αβᵀ − βαᵀ  so that (α∧β)(u,v) = uᵀAv
+════════════════════════════════════════ */
+function secSkewMatrix(u,v,a,b,wedgeVal){
+  var sec=document.createElement('div');sec.className='sec sec-skew';
+  sec.innerHTML='<div class="sec-hd"><h3>The Skew-Symmetric Matrix A = αβᵀ − βαᵀ</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  /* Build A = αβᵀ − βαᵀ — n×n for whatever dimension we're in */
+  var n=u.length;
+  var A=[];
+  for(var i=0;i<n;i++){
+    var row=[];
+    for(var j=0;j<n;j++) row.push(a[i]*b[j]-b[i]*a[j]);
+    A.push(row);
+  }
+
+  /* Render the matrix as a table */
+  function aTbl(A){
+    var n=A.length;
+    var labels=[];for(var k=1;k<=n;k++)labels.push(String(k));
+    var tbl=document.createElement('table');tbl.className='sktbl';
+    var hr=document.createElement('tr');
+    var th0=document.createElement('td');th0.className='sk-lbl';th0.style.borderColor='transparent';hr.appendChild(th0);
+    labels.forEach(function(l){var th=document.createElement('td');th.className='sk-lbl';th.textContent=l;hr.appendChild(th);});
+    tbl.appendChild(hr);
+    labels.forEach(function(l,i){
+      var tr=document.createElement('tr');
+      var rl=document.createElement('td');rl.className='sk-lbl';rl.textContent=l;tr.appendChild(rl);
+      for(var j=0;j<n;j++){
+        var td=document.createElement('td');
+        var v2=A[i][j];
+        if(Math.abs(v2)<1e-10) td.className='sk-zero';
+        else td.className=v2>0?'sk-pos':'sk-neg';
+        td.textContent=fmt(v2);tr.appendChild(td);
+      }
+      tbl.appendChild(tr);
+    });
+    return tbl;
+  }
+
+  /* ── Row 1: definition formula ── */
+  var fRow=document.createElement('div');fRow.className='formula-row';
+  fRow.innerHTML=rk(
+    '(\\alpha\\wedge\\beta)(u,v) = u^T A\\, v \\qquad A = \\alpha\\beta^T - \\beta\\alpha^T',
+    {displayMode:true});
+  body.appendChild(fRow);
+
+  /* ── Row 2: just show A ── */
+  var mEq=document.createElement('div');mEq.style.cssText='display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;overflow-x:auto;padding:.3rem 0;justify-content:center;';
+  function mb2(lbl,el){
+    var b=document.createElement('div');b.style.cssText='display:flex;flex-direction:column;align-items:center;gap:.25rem;';
+    var l=document.createElement('div');l.style.cssText='font-size:.78rem;font-style:italic;color:var(--gray);text-align:center;';l.textContent=lbl;
+    b.appendChild(l);b.appendChild(el);return b;
+  }
+  mEq.appendChild(mb2('A = αβᵀ − βαᵀ  ('+n+'×'+n+', skew-symmetric)',aTbl(A)));
+  body.appendChild(mEq);
+
+  /* ── Row 3: compute uᵀAv step by step ── */
+  var stepDiv=document.createElement('div');stepDiv.style.marginTop='.7rem';
+
+  /* Av first */
+  var Av=[];for(var i=0;i<n;i++)Av.push(0);
+  for(var i=0;i<n;i++) for(var j=0;j<n;j++) Av[i]+=A[i][j]*v[j];
+  var uTAv=0;
+  for(var i=0;i<n;i++) uTAv+=u[i]*Av[i];
+
+  /* Build the KaTeX matrix rows for A (n rows) */
+  var Arows=A.map(function(r){return r.map(fmt).join('&');}).join('\\\\');
+
+  var step1=document.createElement('div');step1.className='formula-row';
+  step1.innerHTML=rk(
+    'Av = \\begin{pmatrix}'+Arows+'\\end{pmatrix}'+
+    '\\begin{pmatrix}'+v.map(fmt).join('\\\\')+'\\end{pmatrix}'+
+    ' = \\begin{pmatrix}'+Av.map(fmt).join('\\\\')+'\\end{pmatrix}',
+    {displayMode:true});
+  stepDiv.appendChild(step1);
+
+  var step2=document.createElement('div');step2.className='formula-row';
+  step2.innerHTML=rk(
+    'u^T(Av) = \\begin{pmatrix}'+u.map(fmt).join('&')+'\\end{pmatrix}'+
+    '\\begin{pmatrix}'+Av.map(fmt).join('\\\\')+'\\end{pmatrix}'+
+    ' = '+fmt(uTAv),
+    {displayMode:true});
+  stepDiv.appendChild(step2);
+
+  /* Verification */
+  var match=Math.abs(uTAv-wedgeVal)<1e-9;
+  var verDiv=document.createElement('div');
+  verDiv.style.cssText='margin:.4rem 0;padding:.45rem .8rem;border-radius:5px;font-size:.9rem;'+
+    (match?'background:var(--a-bg);color:var(--a-col);border:1px solid #90ccc0;':'background:var(--two-frm-bg);color:var(--two-frm);border:1px solid #e8b0a8;');
+  verDiv.innerHTML=rk(
+    'u^T A v = '+fmt(uTAv)+'\\quad=\\quad(\\alpha\\wedge\\beta)(u,v) = '+fmt(wedgeVal)+
+    (match?'\\quad\\checkmark':'\\quad\\times'));
+  stepDiv.appendChild(verDiv);
+  body.appendChild(stepDiv);
+
+  /* ── Key facts ── */
+  var facts=document.createElement('div');facts.style.cssText='display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem;';
+
+  function factCard(title,tex,note){
+    var d=document.createElement('div');
+    d.style.cssText='flex:1;min-width:180px;background:#f5e8fb;border:1px solid #c890d8;border-radius:6px;padding:.6rem .85rem;font-size:.86rem;color:#3a0a50;';
+    d.innerHTML='<strong>'+title+'</strong><br>'+rk(tex)+'<br><small style="color:#7a5a8a">'+note+'</small>';
+    return d;
+  }
+
+  facts.appendChild(factCard('Skew-symmetric',
+    'A^T = -A',
+    'So uᵀAv = −vᵀAu — antisymmetry built in'));
+  facts.appendChild(factCard('Self-wedge = 0',
+    '\\beta=\\alpha \\Rightarrow A=0',
+    'αα⊤−αα⊤ = 0 exactly'));
+  facts.appendChild(factCard('Rank 2',
+    '\\mathrm{rank}(A)\\le 2',
+    'kernel has dim '+(n-2)+' in ℝ'+(n===3?'³':'⁴')+' — vectors orthogonal to both α and β cast zero shadow'));
+
+  /* Frobenius norm and Plücker coords — generalizes to any n */
+  var pairs=allPairs(n);
+  var W=pairs.map(function(p){return a[p[0]]*b[p[1]]-a[p[1]]*b[p[0]];});
+  var normW=Math.sqrt(W.reduce(function(s,x){return s+x*x;},0));
+  if(n===3){
+    facts.appendChild(factCard('3D: A = (α×β)̂',
+      '\\|A\\|_F/\\sqrt{2}=|\\alpha\\times\\beta|='+fmt(normW),
+      'Off-diagonal entries are the Plücker coords W₁₂, W₁₃, W₂₃'));
+  }else{
+    facts.appendChild(factCard('Plücker norm',
+      '|\\alpha\\wedge\\beta|=\\|A\\|_F/\\sqrt{2}='+fmt(normW),
+      'The '+pairs.length+' upper-triangular entries are the Plücker coords W₁₂,…,W₃₄'));
+  }
+
+  body.appendChild(facts);
+
+  body.appendChild(mkKB('kb-prp',
+    '<strong>Every 2-form on ℝⁿ is a skew-symmetric matrix.</strong> '+
+    'The space Λ²(ℝⁿ) has dimension '+rk('\\binom{n}{2}')+
+    ' (= '+pairs.length+' for n='+n+'), which matches the number of independent entries in an n×n skew-symmetric matrix. '+
+    'The map '+rk('\\alpha\\wedge\\beta \\mapsto \\alpha\\beta^T-\\beta\\alpha^T')+
+    ' is exactly this identification.<br><br>'+
+    '<strong>Geometric meaning of the rank:</strong> '+
+    'The null space of A consists of vectors w with α(w)=0 and β(w)=0 — '+
+    'precisely those orthogonal to the measurement plane. '+
+    'Their "shadow" has zero area, so uᵀAw=0 for all u. '+
+    '<br><br>'+
+    '<strong>In higher dimensions</strong> '+(n===3?
+      'a general 2-form is a sum of rank-2 skew matrices.':
+      'a generic 2-form on ℝ⁴ has rank 4 (not 2) — it factors as α₁∧β₁ + α₂∧β₂, two independent rank-2 pieces. '+
+      'A simple wedge α∧β like the one above is the rank-2 special case; the test for decomposability is '+rk('(\\alpha\\wedge\\beta)\\wedge(\\alpha\\wedge\\beta)=0')+'.')+
+    ' The Pfaffian of A (square root of det A for even n) gives the volume of the parallelotope.'));
+
+  sec.appendChild(body);return sec;
+}
+
+function mkKB(cls,html){var d=document.createElement('div');d.className='kb '+cls;d.innerHTML=html;return d;}
+
+/* ════════════════════════════════════════
+   3-FORM / 3-VECTOR SECTIONS (4D only)
+════════════════════════════════════════ */
+
+/* ── Section: the 3-vector u∧v∧w ── */
+function secThreeVec(u,v,w){
+  var n=u.length;
+  var triples=allTriples(n);
+  var P=wedge3Components(u,v,w);
+  var vol=Math.sqrt(P.reduce(function(s,x){return s+x*x;},0));
+
+  var sec=document.createElement('div');sec.className='sec sec-uvec';
+  sec.innerHTML='<div class="sec-hd"><h3>The 3-vector u∧v∧w</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  var basisStr=triples.map(function(t){
+    return 'e_{'+(t[0]+1)+'}{\\wedge}e_{'+(t[1]+1)+'}{\\wedge}e_{'+(t[2]+1)+'}';
+  }).join(',\\,');
+  body.innerHTML='<p style="font-size:.88rem;color:var(--navy2);margin-bottom:.5rem;">'+
+    rk('u\\wedge v\\wedge w')+' is the <b>oriented parallelepiped</b> spanned by '+rk('u')+', '+rk('v')+', '+rk('w')+'. '+
+    'In ℝ⁴ it has <b>'+triples.length+'</b> components in the basis '+rk('\\{'+basisStr+'\\}')+', '+
+    'each a signed 3-volume given by a 3×3 minor determinant:'+
+    '</p>';
+
+  function stepRow3(cls,lbl,tex){
+    var d=document.createElement('div');d.className='step-row '+cls;
+    var l=document.createElement('span');l.className='step-lbl';l.textContent=lbl;
+    var t=document.createElement('div');t.innerHTML=rk(tex);
+    d.appendChild(l);d.appendChild(t);return d;
+  }
+  var subDigits=['₀','₁','₂','₃','₄','₅'];
+  var rowClasses=['u-step','v-step','w-step','u-step'];
+  triples.forEach(function(t,idx){
+    var i=t[0],j=t[1],k=t[2];
+    var cls=rowClasses[idx%rowClasses.length];
+    var lbl='P'+subDigits[i+1]+subDigits[j+1]+subDigits[k+1];
+    body.appendChild(stepRow3(cls,lbl,
+      '\\det\\begin{pmatrix}'+
+      fmt(u[i])+'&'+fmt(u[j])+'&'+fmt(u[k])+'\\\\'+
+      fmt(v[i])+'&'+fmt(v[j])+'&'+fmt(v[k])+'\\\\'+
+      fmt(w[i])+'&'+fmt(w[j])+'&'+fmt(w[k])+
+      '\\end{pmatrix} = '+fmt(P[idx])
+    ));
+  });
+
+  var fDiv=document.createElement('div');fDiv.className='formula-row';
+  fDiv.innerHTML=rk(
+    'u\\wedge v\\wedge w = '+triples.map(function(t,idx){
+      return fmt(P[idx])+'\\,e_{'+(t[0]+1)+'}{\\wedge}e_{'+(t[1]+1)+'}{\\wedge}e_{'+(t[2]+1)+'}';
+    }).join(' + '),
+    {displayMode:true}
+  );
+  body.appendChild(fDiv);
+
+  var magDiv=document.createElement('div');magDiv.className='formula-row';
+  magDiv.innerHTML='<p style="font-size:.86rem;color:var(--navy2);margin:.3rem 0 .2rem;">'+
+    'Magnitude (oriented 3-volume): '+rk('|u\\wedge v\\wedge w|=\\sqrt{\\textstyle\\sum_{i<j<k}P_{ijk}^2}='+fmt(vol))+'.'+
+    '</p>';
+  body.appendChild(magDiv);
+
+  body.appendChild(mkKB('kb-vec',
+    '<strong>Geometric meaning:</strong> u∧v∧w is a "3-blade" — an oriented 3D subspace of ℝ⁴ with magnitude. '+
+    'Its '+triples.length+' components are the signed 3-volumes of the parallelepiped projected onto each coordinate 3-hyperplane. '+
+    'Any swap of two arguments negates: '+rk('v\\wedge u\\wedge w = -u\\wedge v\\wedge w')+'. '+
+    'If <em>w</em> lies in span(u, v), the 3-vector is zero.'));
+
+  sec.appendChild(body);
+  return {sec:sec, P:P, triples:triples, vol:vol};
+}
+
+/* ── Section: the 3-form α∧β∧γ ── */
+function secThreeForm(a,b,c,au,av,aw,bu,bv,bw,cu,cv,cw){
+  var n=a.length;
+  var triples=allTriples(n);
+  var W=wedge3Components(a,b,c);
+
+  var sec=document.createElement('div');sec.className='sec sec-form';
+  sec.innerHTML='<div class="sec-hd"><h3>The 3-form α∧β∧γ</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  body.innerHTML='<p style="font-size:.88rem;color:var(--navy2);margin-bottom:.5rem;">'+
+    'Three covectors wedge into a <b>3-form</b> — a function that eats three vectors and returns a signed 3-volume:'+
+    '</p>';
+
+  var defDiv=document.createElement('div');defDiv.className='formula-row';
+  defDiv.innerHTML=rk(
+    '(\\alpha\\wedge\\beta\\wedge\\gamma)(u,v,w) := '+
+    '\\det\\begin{pmatrix}\\alpha(u)&\\alpha(v)&\\alpha(w)\\\\\\beta(u)&\\beta(v)&\\beta(w)\\\\\\gamma(u)&\\gamma(v)&\\gamma(w)\\end{pmatrix}',
+    {displayMode:true}
+  );
+  body.appendChild(defDiv);
+
+  /* Step-by-step components */
+  var basisStr=triples.map(function(t){
+    return 'dx^{'+(t[0]+1)+'}{\\wedge}dx^{'+(t[1]+1)+'}{\\wedge}dx^{'+(t[2]+1)+'}';
+  }).join(',\\,');
+  var introP=document.createElement('p');
+  introP.style.cssText='font-size:.86rem;color:var(--navy2);margin:.5rem 0 .25rem;';
+  introP.innerHTML='In the basis '+rk('\\{'+basisStr+'\\}')+' ('+triples.length+' components in ℝ⁴), each '+rk('W_{ijk}')+' is a 3×3 minor of the matrix with rows α, β, γ:';
+  body.appendChild(introP);
+
+  function stepRow3(cls,lbl,tex){
+    var d=document.createElement('div');d.className='step-row '+cls;
+    var l=document.createElement('span');l.className='step-lbl';l.textContent=lbl;
+    var t=document.createElement('div');t.innerHTML=rk(tex);
+    d.appendChild(l);d.appendChild(t);return d;
+  }
+  var subDigits=['₀','₁','₂','₃','₄','₅'];
+  var rowClasses=['a-step','b-step','g-step','a-step'];
+  triples.forEach(function(t,idx){
+    var i=t[0],j=t[1],k=t[2];
+    var cls=rowClasses[idx%rowClasses.length];
+    var lbl='W'+subDigits[i+1]+subDigits[j+1]+subDigits[k+1];
+    body.appendChild(stepRow3(cls,lbl,
+      '\\det\\begin{pmatrix}'+
+      fmt(a[i])+'&'+fmt(a[j])+'&'+fmt(a[k])+'\\\\'+
+      fmt(b[i])+'&'+fmt(b[j])+'&'+fmt(b[k])+'\\\\'+
+      fmt(c[i])+'&'+fmt(c[j])+'&'+fmt(c[k])+
+      '\\end{pmatrix} = '+fmt(W[idx])
+    ));
+  });
+
+  /* Summary line */
+  var cDiv=document.createElement('div');cDiv.className='formula-row';
+  cDiv.innerHTML=rk(
+    '\\alpha\\wedge\\beta\\wedge\\gamma = '+triples.map(function(t,idx){
+      return fmt(W[idx])+'\\,dx^{'+(t[0]+1)+'}{\\wedge}dx^{'+(t[1]+1)+'}{\\wedge}dx^{'+(t[2]+1)+'}';
+    }).join(' + '),
+    {displayMode:true}
+  );
+  body.appendChild(cDiv);
+
+  /* The 9 pairings α(u)…γ(w) */
+  var mDiv=document.createElement('div');mDiv.style.cssText='font-size:.87rem;color:var(--navy2);margin:.4rem 0;';
+  mDiv.innerHTML='<b>9 covector-vector pairings</b> (the entries of the 3×3 matrix above):<br>'+
+    rk('\\alpha(u)='+fmt(au)+',\\;\\alpha(v)='+fmt(av)+',\\;\\alpha(w)='+fmt(aw))+'<br>'+
+    rk('\\beta(u)='+fmt(bu)+',\\;\\beta(v)='+fmt(bv)+',\\;\\beta(w)='+fmt(bw))+'<br>'+
+    rk('\\gamma(u)='+fmt(cu)+',\\;\\gamma(v)='+fmt(cv)+',\\;\\gamma(w)='+fmt(cw));
+  body.appendChild(mDiv);
+
+  body.appendChild(mkKB('kb-frm',
+    '<strong>Geometric meaning:</strong> α∧β∧γ measures the signed 3-volume of the parallelepiped (u,v,w) as projected onto the 3-hyperplane spanned by α, β, γ. '+
+    'Fully antisymmetric: '+rk('\\beta\\wedge\\alpha\\wedge\\gamma=-\\alpha\\wedge\\beta\\wedge\\gamma')+'. '+
+    'Any repeated covector gives zero: '+rk('\\alpha\\wedge\\alpha\\wedge\\gamma=0')+'.'));
+
+  sec.appendChild(body);
+  return {sec:sec, W:W, triples:triples};
+}
+
+/* ── Section: 3-form step-by-step computation ── */
+function secAlgebra3(u,v,w,a,b,c,au,av,aw,bu,bv,bw,cu,cv,cw,val3,W,P,triples){
+  var sec=document.createElement('div');sec.className='sec sec-shad';
+  sec.innerHTML='<div class="sec-hd"><h3>Step-by-step 3-form computation</h3></div>';
+  var body=document.createElement('div');body.className='sec-body';
+
+  /* The full 3×3 determinant */
+  var detDiv=document.createElement('div');detDiv.className='formula-row';
+  detDiv.innerHTML=rk(
+    '(\\alpha\\wedge\\beta\\wedge\\gamma)(u,v,w) = '+
+    '\\det\\begin{pmatrix}'+
+    fmt(au)+'&'+fmt(av)+'&'+fmt(aw)+'\\\\'+
+    fmt(bu)+'&'+fmt(bv)+'&'+fmt(bw)+'\\\\'+
+    fmt(cu)+'&'+fmt(cv)+'&'+fmt(cw)+
+    '\\end{pmatrix} = '+fmt(val3),
+    {displayMode:true}
+  );
+  body.appendChild(detDiv);
+
+  /* Result box */
+  var isZero=Math.abs(val3)<1e-9;
+  var resBox=document.createElement('div');resBox.className='result-box';
+  resBox.style.borderColor=isZero?'var(--a-col)':'var(--two-frm)';
+  resBox.style.background=isZero?'var(--a-bg)':'var(--two-frm-bg)';
+  resBox.innerHTML='<div class="result-big" style="color:'+(isZero?'var(--a-col)':'var(--two-frm)')+'">'+
+    rk('(\\alpha\\wedge\\beta\\wedge\\gamma)(u,v,w) = '+fmt(val3))+
+    '</div>'+
+    (isZero?'<div style="font-size:.85rem;color:var(--a-col);margin-top:.3rem;">'+
+      rk('= 0')+' — the 3-vector lies in a hyperplane that (α, β, γ) cannot detect, or u, v, w are linearly dependent</div>':
+    '<div style="font-size:.85rem;color:var(--navy2);margin-top:.3rem;">signed shadow 3-volume = '+fmt(val3)+'</div>');
+  body.appendChild(resBox);
+
+  /* Component pairing */
+  var pairSum=0;
+  var pairTerms=triples.map(function(t,idx){
+    pairSum+=W[idx]*P[idx];
+    return fmt(W[idx])+'\\cdot'+fmt(P[idx]);
+  });
+  var pairDiv=document.createElement('div');pairDiv.className='formula-row';
+  pairDiv.innerHTML='<p style="font-size:.84rem;color:var(--navy2);margin-top:.4rem;">'+
+    '<em>Equivalently via component pairing (sum over all '+triples.length+' basis 3-forms):</em><br>'+
+    rk('(\\alpha\\wedge\\beta\\wedge\\gamma)(u\\wedge v\\wedge w) = '+pairTerms.join(' + ')+' = '+fmt(pairSum))+
+    '</p>';
+  body.appendChild(pairDiv);
+
+  /* Verification check */
+  var match=Math.abs(pairSum-val3)<1e-9;
+  var verDiv=document.createElement('div');
+  verDiv.style.cssText='margin:.4rem 0;padding:.45rem .8rem;border-radius:5px;font-size:.9rem;'+
+    (match?'background:var(--a-bg);color:var(--a-col);border:1px solid #90ccc0;':'background:var(--two-frm-bg);color:var(--two-frm);border:1px solid #e8b0a8;');
+  verDiv.innerHTML=rk(
+    '\\sum W_{ijk}P_{ijk} = '+fmt(pairSum)+'\\quad=\\quad\\det = '+fmt(val3)+
+    (match?'\\quad\\checkmark':'\\quad\\times'));
+  body.appendChild(verDiv);
+
+  /* Hodge dual: in ℝ⁴, a 3-form is dual to a 1-form */
+  /* ⋆(α∧β∧γ) = (-W_{234}, W_{134}, -W_{124}, W_{123}) with the convention sign(I,J)=±1 */
+  var hodgeW=[-W[3], W[2], -W[1], W[0]];
+  var hodgeP=[-P[3], P[2], -P[1], P[0]];
+  var hodgeDiv=document.createElement('div');hodgeDiv.style.cssText='font-size:.86rem;color:var(--navy2);margin-top:.6rem;padding:.55rem .8rem;background:#f8f4ee;border-radius:6px;border:1px solid #e0d8c8;';
+  hodgeDiv.innerHTML=
+    '<b>Hodge duality in ℝ⁴ (the 4D "cross product").</b> Because '+rk('\\binom{4}{3}=\\binom{4}{1}=4')+
+    ', a 3-form is dual to a 1-form (4 numbers ↔ 4 numbers). With the standard convention '+rk('\\star(e^{i}\\wedge e^{j}\\wedge e^{k})=\\mathrm{sign}(i,j,k,l)\\,e^{l}')+':<br>'+
+    '<div style="margin:.4rem 0;">'+rk(
+      '\\star(\\alpha\\wedge\\beta\\wedge\\gamma) = (-W_{234},\\,W_{134},\\,-W_{124},\\,W_{123}) = ('+hodgeW.map(fmt).join(',\\,')+')'
+    )+'</div>'+
+    '<div style="margin:.4rem 0;">'+rk(
+      '\\star(u\\wedge v\\wedge w) = (-P_{234},\\,P_{134},\\,-P_{124},\\,P_{123}) = ('+hodgeP.map(fmt).join(',\\,')+')'
+    )+'</div>'+
+    'These 4-vectors are the unique directions perpendicular to the 3-plane spanned by (α, β, γ) and (u, v, w) respectively — the natural generalization of the cross product '+rk('u\\times v')+' in ℝ³.';
+  body.appendChild(hodgeDiv);
+
+  sec.appendChild(body);return sec;
+}
+
+/* ════════════════════════════════════════
+   PRESETS / UI
+════════════════════════════════════════ */
+var EXAMPLES=[
+  /* 3D presets */
+  {dim:3, label:'Standard (xy-plane)',   u:[1,0,0],v:[0,1,0],a:[1,0,0],b:[0,1,0]},
+  {dim:3, label:'Tilted parallelogram',  u:[1,1,0],v:[0,1,0],a:[1,0,0],b:[0,1,0]},
+  {dim:3, label:'3D with xz shadow',     u:[1,0,1],v:[0,1,1],a:[1,0,0],b:[0,0,1]},
+  {dim:3, label:'Diagonal covectors',    u:[1,0,0],v:[0,1,0],a:[1,1,0],b:[1,-1,0]},
+  {dim:3, label:'Zero shadow',           u:[1,0,0],v:[0,1,0],a:[1,0,0],b:[2,0,0]},
+  {dim:3, label:'Full 3D',               u:[1,1,0],v:[0,1,1],a:[1,0,0],b:[0,1,0]},
+  /* 4D 2-form-only presets (w = γ = 0 → 3-form vanishes) */
+  {dim:4, label:'2-form e₁∧e₂',          u:[1,0,0,0],v:[0,1,0,0],w:[0,0,0,0],a:[1,0,0,0],b:[0,1,0,0],g:[0,0,0,0]},
+  {dim:4, label:'2-form pure e₁∧e₄',     u:[1,0,0,0],v:[0,0,0,1],w:[0,0,0,0],a:[1,0,0,0],b:[0,0,0,1],g:[0,0,0,0]},
+  {dim:4, label:'2-form mixed planes',   u:[1,0,1,0],v:[0,1,0,1],w:[0,0,0,0],a:[1,0,0,0],b:[0,1,0,0],g:[0,0,0,0]},
+  /* 4D triplet presets */
+  {dim:4, label:'3-form e₁∧e₂∧e₃',       u:[1,0,0,0],v:[0,1,0,0],w:[0,0,1,0],a:[1,0,0,0],b:[0,1,0,0],g:[0,0,1,0]},
+  {dim:4, label:'3-form e₁∧e₂∧e₄',       u:[1,0,0,0],v:[0,1,0,0],w:[0,0,0,1],a:[1,0,0,0],b:[0,1,0,0],g:[0,0,0,1]},
+  {dim:4, label:'Triple zero (w∈span)',  u:[1,0,0,0],v:[0,1,0,0],w:[1,1,0,0],a:[1,0,0,0],b:[0,1,0,0],g:[0,0,1,0]},
+  {dim:4, label:'Mixed 3-form',          u:[1,1,0,0],v:[0,1,1,0],w:[0,0,1,1],a:[1,0,0,0],b:[0,1,0,0],g:[0,0,1,0]},
+  {dim:4, label:'Full 4D triplet',       u:[1,1,0,1],v:[0,1,1,0],w:[1,0,1,1],a:[1,0,1,0],b:[0,1,0,1],g:[1,1,0,0]},
+];
+
+function loadEx(ex){
+  if(ex.dim!==N){
+    /* Switch dimension without retriggering computeAll twice */
+    N=ex.dim;
+    document.body.dataset.dim=String(N);
+    document.getElementById('dimSup').textContent=(N===3?'³':'⁴');
+    document.querySelectorAll('.dim-btn').forEach(function(b){
+      b.classList.toggle('active', parseInt(b.dataset.dim,10)===N);
+    });
+    buildExamples();
+  }
+  for(var i=1;i<=N;i++){
+    document.getElementById('u'+i).value=ex.u[i-1];
+    document.getElementById('v'+i).value=ex.v[i-1];
+    document.getElementById('a'+i).value=ex.a[i-1];
+    document.getElementById('b'+i).value=ex.b[i-1];
+  }
+  /* w and γ exist only in 4D */
+  if(N===4){
+    for(var i=1;i<=4;i++){
+      var wv=(ex.w && ex.w[i-1]!=null)?ex.w[i-1]:0;
+      var gv=(ex.g && ex.g[i-1]!=null)?ex.g[i-1]:0;
+      document.getElementById('w'+i).value=wv;
+      document.getElementById('g'+i).value=gv;
+    }
+  }
+  computeAll();
+}
+
+function buildExamples(){
+  var row=document.getElementById('exRow');
+  row.innerHTML='';
+  EXAMPLES.filter(function(ex){return ex.dim===N;}).forEach(function(ex){
+    var btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent=ex.label;
+    btn.addEventListener('click',function(){loadEx(ex);});
+    row.appendChild(btn);
+  });
+}
+
+/* Live updates on input change */
+var debounceTimer;
+function onInput(){
+  clearTimeout(debounceTimer);
+  debounceTimer=setTimeout(function(){
+    if(document.getElementById('out').innerHTML!=='')computeAll();
+  },120);
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  buildExamples();
+  /* All inputs across both dimensions, including w and γ (4D only) */
+  ['u1','u2','u3','u4','v1','v2','v3','v4','w1','w2','w3','w4',
+   'a1','a2','a3','a4','b1','b2','b3','b4','g1','g2','g3','g4'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.addEventListener('input',onInput);
+  });
+  loadEx(EXAMPLES[0]);
+});
+</script>
+</body>
+</html>

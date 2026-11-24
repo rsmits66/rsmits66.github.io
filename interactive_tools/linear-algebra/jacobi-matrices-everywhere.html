@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jacobi Matrices — Everywhere You Look</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --crimson: #9E1B32;
+  --crimson-dark: #6B0F22;
+  --crimson-light: rgba(158, 27, 50, 0.08);
+  --cream: #F5EFE3;
+  --paper: #FBF7EF;
+  --ink: #1A1614;
+  --ink-soft: rgba(26, 22, 20, 0.65);
+  --ink-faint: rgba(26, 22, 20, 0.4);
+  --gold: #C9A961;
+  --gold-dark: #8B7142;
+  --rule: rgba(26, 22, 20, 0.14);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% -260px, rgba(158, 27, 50, 0.07), transparent),
+    radial-gradient(ellipse 700px 350px at 100% 900px, rgba(201, 169, 97, 0.06), transparent);
+  min-height: 100vh;
+}
+
+.editorial-band { height: 14px; background: var(--crimson); position: relative; }
+.editorial-band::before { content: ''; position: absolute; inset: auto 0 3px 0; height: 1px; background: rgba(255, 255, 255, 0.35); }
+.editorial-band::after { content: ''; position: absolute; inset: 3px 0 auto 0; height: 1px; background: rgba(255, 255, 255, 0.18); }
+.gold-rule { height: 2px; background: var(--gold); opacity: 0.85; }
+
+header.hero { padding: 5rem 2rem 3.5rem; max-width: 1100px; margin: 0 auto; text-align: center; }
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase;
+  color: var(--crimson); margin-bottom: 1.8rem;
+}
+.eyebrow .dot {
+  display: inline-block; width: 4px; height: 4px;
+  background: var(--gold); border-radius: 50%;
+  vertical-align: middle; margin: 0 0.7em; transform: translateY(-2px);
+}
+
+h1.display {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(50px, 8vw, 100px);
+  line-height: 0.94; letter-spacing: -0.025em;
+  color: var(--ink); margin-bottom: 1.4rem;
+}
+h1.display em { font-style: italic; font-weight: 400; color: var(--crimson); }
+
+.dek {
+  font-style: italic; font-size: 22px;
+  color: var(--ink-soft); max-width: 640px; margin: 0 auto; line-height: 1.5;
+}
+
+main { max-width: 760px; margin: 0 auto; padding: 0 2rem 6rem; }
+section { margin-top: 5.5rem; scroll-margin-top: 2rem; }
+
+h2 {
+  font-family: 'Playfair Display', serif; font-weight: 700;
+  font-size: 38px; letter-spacing: -0.012em;
+  color: var(--ink); margin-bottom: 1.6rem; padding-bottom: 0.4rem;
+}
+h2::after { content: ''; display: block; width: 56px; height: 3px; background: var(--crimson); margin-top: 0.6rem; }
+h2 .num {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em;
+  color: var(--crimson); display: block; margin-bottom: 0.4rem;
+}
+
+h3 {
+  font-family: 'Playfair Display', serif; font-weight: 700; font-style: italic;
+  font-size: 23px; margin: 2.4rem 0 0.7rem; color: var(--ink);
+}
+
+p { margin: 0.95em 0; }
+
+.lead { font-size: 22px; line-height: 1.55; margin-top: 1.2rem; }
+.lead::first-letter {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: 4.4em; line-height: 0.85; float: left;
+  margin: 0.08em 0.12em -0.05em 0; color: var(--crimson);
+}
+
+em { color: var(--ink); }
+strong { font-weight: 600; color: var(--ink); }
+
+.aside {
+  border-left: 2px solid var(--ink);
+  padding: 0.4rem 0 0.4rem 1.4rem; margin: 1.8rem 0;
+  font-style: italic; color: var(--ink-soft); font-size: 19px;
+}
+
+.boxed {
+  background: var(--crimson-light);
+  border-left: 3px solid var(--crimson);
+  padding: 1.2rem 1.6rem; margin: 1.6rem 0;
+  border-radius: 0 2px 2px 0;
+}
+.boxed .tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--crimson); display: block; margin-bottom: 0.55rem; font-weight: 500;
+}
+
+/* Algorithm block — numbered list with crimson markers */
+.algorithm { padding-left: 1.6em; margin: 0.8rem 0 0.6rem; }
+.algorithm li {
+  margin: 0.5rem 0;
+  font-size: 19px;
+  padding-left: 0.35em;
+  line-height: 1.55;
+}
+.algorithm li::marker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--crimson);
+  font-weight: 500;
+}
+.algorithm .note {
+  color: var(--ink-soft);
+  font-size: 16px;
+  font-style: italic;
+}
+
+/* Jacobi matrix display */
+.jacobi-display {
+  background: #FFFCF7;
+  border: 1px solid var(--rule);
+  padding: 2rem 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 14px 36px rgba(26, 22, 20, 0.07);
+  text-align: center;
+}
+.jacobi-display .caption {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 17px;
+  margin-bottom: 1.2rem;
+}
+.jacobi-grid {
+  display: inline-grid;
+  grid-template-columns: repeat(5, minmax(50px, 80px));
+  gap: 0;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 20px;
+  position: relative;
+  padding: 1.2rem 1.8rem;
+}
+.jacobi-grid::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px; border-left: 1.5px solid var(--ink);
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+.jacobi-grid::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px; border-right: 1.5px solid var(--ink);
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+.jacobi-grid .cell {
+  padding: 0.55rem 0.4rem;
+  text-align: center;
+  color: var(--ink-faint);
+}
+.jacobi-grid .cell.diag { color: var(--crimson); font-weight: 500; }
+.jacobi-grid .cell.off { color: var(--gold-dark); font-weight: 500; }
+.jacobi-grid .cell.zero { color: rgba(26, 22, 20, 0.18); }
+
+/* Comparison table for polynomial families */
+.fam-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 16px;
+  background: #FFFCF7;
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 14px 36px rgba(26, 22, 20, 0.06);
+}
+.fam-table th {
+  background: var(--ink); color: var(--cream);
+  padding: 0.75rem 0.8rem; text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  font-weight: 500;
+}
+.fam-table th:last-child { text-align: center; }
+.fam-table td {
+  padding: 0.85rem 0.8rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+.fam-table tr:last-child td { border-bottom: none; }
+.fam-table td:first-child {
+  font-family: 'Playfair Display', serif;
+  font-style: italic; font-weight: 600;
+  color: var(--crimson); width: 19%;
+}
+.fam-table td:nth-child(2), .fam-table td:nth-child(3) { width: 18%; }
+.fam-table td:last-child { text-align: center; }
+
+/* Interactive viz */
+.viz {
+  background: #FFFCF7;
+  border: 1px solid var(--rule);
+  padding: 1.6rem;
+  margin: 2rem 0 1rem;
+  box-shadow: 0 1px 0 rgba(26, 22, 20, 0.04), 0 16px 40px rgba(26, 22, 20, 0.07);
+}
+.controls {
+  display: flex; flex-wrap: wrap; gap: 1rem;
+  align-items: center; margin-bottom: 1.3rem;
+  padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule);
+}
+.control-group { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+.control-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.fam-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.fam-buttons button {
+  font-family: 'EB Garamond', serif; font-size: 16px; font-style: italic;
+  background: transparent;
+  border: 1.5px solid var(--rule); padding: 0.35rem 0.85rem;
+  cursor: pointer; color: var(--ink);
+  transition: all 0.18s ease;
+}
+.fam-buttons button:hover { border-color: var(--crimson); color: var(--crimson); }
+.fam-buttons button.active { background: var(--crimson); color: var(--cream); border-color: var(--crimson); }
+
+canvas { width: 100%; height: auto; display: block; }
+
+.legend {
+  display: flex; gap: 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.05em;
+  margin-top: 0.7rem; color: var(--ink-soft);
+  flex-wrap: wrap; justify-content: center;
+}
+.legend .swatch { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 0.4rem; }
+
+footer {
+  text-align: center; padding: 3rem 2rem 2.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+footer .sep { display: inline-block; margin: 0 1em; color: var(--crimson); }
+
+mjx-container { font-size: 1.03em !important; }
+mjx-container[display="true"] { margin: 1.2em 0 !important; }
+
+@media (max-width: 640px) {
+  body { font-size: 18px; }
+  main { padding: 0 1.2rem 4rem; }
+  header.hero { padding: 3.5rem 1.2rem 2.5rem; }
+  h2 { font-size: 30px; }
+  mjx-container { font-size: 0.9em !important; }
+  .jacobi-grid { font-size: 16px; grid-template-columns: repeat(5, 48px); }
+  .fam-table { font-size: 13px; }
+  .fam-table th, .fam-table td { padding: 0.5rem 0.4rem; }
+  .viz { padding: 1.1rem; }
+}
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+</head>
+<body>
+
+<div class="editorial-band"></div>
+<div class="gold-rule"></div>
+
+<header class="hero">
+  <div class="eyebrow">A Note on Linear Algebra <span class="dot"></span> Vol. III</div>
+  <h1 class="display">Jacobi Matrices<br><em>everywhere you look</em></h1>
+  <p class="dek">The three-term recurrence we built for Legendre wasn't about polynomials. It was about self-adjoint operators on Krylov subspaces. Run the same argument on $\ell^2$, on weighted $L^2$, on a graph — the same tridiagonal shape keeps falling out.</p>
+</header>
+
+<main>
+
+<section id="recap">
+  <h2><span class="num">§ 01</span>What We Actually Used</h2>
+  <p class="lead">Look back at the proof of Bonnet's recurrence. The argument used two facts, and only two:</p>
+
+  <p>(i) Multiplication by $x$ is <strong>self-adjoint</strong>: $\langle xf, g\rangle = \langle f, xg\rangle$.</p>
+
+  <p>(ii) $P_n$ is <strong>orthogonal to everything below</strong>: any polynomial of degree $< n$ is in $\mathrm{span}(P_0, \ldots, P_{n-1})$, so $\langle P_n, q\rangle = 0$ for all such $q$.</p>
+
+  <p>From (i) and (ii) we deduced $\langle xP_n, P_k\rangle = \langle P_n, xP_k\rangle = 0$ for $k \leq n - 2$, and the three-term recurrence followed. Nowhere did the word "polynomial" actually do work. What did work were "self-adjoint operator," "orthogonal basis," and the structural fact that the operator only nudges $P_n$ a small amount up and down in degree.</p>
+
+  <p>So the argument transports. The question is: where else does the same setup appear?</p>
+</section>
+
+<section id="pattern">
+  <h2><span class="num">§ 02</span>The Pattern, Distilled</h2>
+
+  <p>Let $T$ be a self-adjoint operator on a Hilbert space $H$, and let $v \in H$ be a <em>cyclic vector</em> — meaning the iterates $\{v, Tv, T^2 v, T^3 v, \ldots\}$ span a dense subspace. Apply Gram–Schmidt to this Krylov sequence and call the orthonormal output $\{q_0, q_1, q_2, \ldots\}$.</p>
+
+  <p>Then in the basis $\{q_n\}$, the matrix of $T$ is <strong>tridiagonal</strong>. Always. The proof copies the Legendre argument exactly:</p>
+
+  <div class="boxed">
+    <span class="tag">Argument</span>
+    <p>By construction, $q_k \in \mathrm{span}(v, Tv, \ldots, T^k v)$. So $T q_k \in \mathrm{span}(Tv, T^2 v, \ldots, T^{k+1} v) \subseteq \mathrm{span}(q_0, q_1, \ldots, q_{k+1})$.</p>
+    <p>Hence $\langle Tq_k, q_j \rangle = 0$ for $j > k+1$.</p>
+    <p>By self-adjointness, $\langle Tq_k, q_j\rangle = \langle q_k, Tq_j\rangle = 0$ also for $j < k - 1$ (apply the previous statement with $k$ and $j$ swapped).</p>
+    <p>Only $\langle Tq_k, q_{k-1}\rangle$, $\langle Tq_k, q_k\rangle$, $\langle Tq_k, q_{k+1}\rangle$ can be nonzero. The matrix is tridiagonal.</p>
+  </div>
+
+  <p>The resulting matrix has a name. It is a <strong>Jacobi matrix</strong> — tridiagonal, real-symmetric, with the form</p>
+
+  <div class="jacobi-display">
+    <div class="caption">a Jacobi matrix: tridiagonal, symmetric, with $b_n$ on the diagonal and $a_n$ on the off-diagonals</div>
+    <div class="jacobi-grid">
+      <div class="cell diag">$b_0$</div>
+      <div class="cell off">$a_0$</div>
+      <div class="cell zero">$0$</div>
+      <div class="cell zero">$0$</div>
+      <div class="cell zero">$\cdots$</div>
+
+      <div class="cell off">$a_0$</div>
+      <div class="cell diag">$b_1$</div>
+      <div class="cell off">$a_1$</div>
+      <div class="cell zero">$0$</div>
+      <div class="cell zero">$\cdots$</div>
+
+      <div class="cell zero">$0$</div>
+      <div class="cell off">$a_1$</div>
+      <div class="cell diag">$b_2$</div>
+      <div class="cell off">$a_2$</div>
+      <div class="cell zero">$\cdots$</div>
+
+      <div class="cell zero">$0$</div>
+      <div class="cell zero">$0$</div>
+      <div class="cell off">$a_2$</div>
+      <div class="cell diag">$b_3$</div>
+      <div class="cell zero">$\cdots$</div>
+
+      <div class="cell zero">$\vdots$</div>
+      <div class="cell zero">$\vdots$</div>
+      <div class="cell zero">$\vdots$</div>
+      <div class="cell zero">$\vdots$</div>
+      <div class="cell zero">$\ddots$</div>
+    </div>
+  </div>
+
+  <p>The three-term recurrence is the statement that $Tq_n$ lives on the diagonal and two adjacent positions:</p>
+
+  $$T q_n \;=\; a_{n-1}\, q_{n-1} \;+\; b_n\, q_n \;+\; a_n\, q_{n+1}.$$
+
+  <p>Different $T$, different $v$, different $a_n$ and $b_n$. Always tridiagonal. Always symmetric.</p>
+</section>
+
+<section id="ell2">
+  <h2><span class="num">§ 03</span>Examples on $\ell^2$</h2>
+
+  <h3>The discrete Laplacian</h3>
+  <p>On $\ell^2(\mathbb{Z})$ or $\ell^2(\mathbb{N})$, define</p>
+  $$(\Delta f)(n) \;=\; f(n+1) \,+\, f(n-1) \,-\, 2 f(n).$$
+  <p>This is self-adjoint and real-symmetric. In the standard basis $\{e_n\}$, the action is</p>
+  $$\Delta\, e_n \;=\; e_{n-1} \,-\, 2 e_n \,+\, e_{n+1},$$
+  <p>which is exactly the Jacobi-matrix form with $b_n = -2$ and $a_n = 1$ — already tridiagonal in the obvious basis. No Gram–Schmidt needed; the structure is built in. Different choices of starting vector $v$ would produce different Krylov bases and reveal different orthogonal polynomial systems on the spectrum of $\Delta$ (which is $[-4, 0]$). For the cyclic vector $v = e_0$ on $\ell^2(\mathbb{N})$, the polynomials are <em>Chebyshev polynomials of the second kind</em> in disguise: $\Delta$ is "multiplication by $2(\cos\theta - 1)$" on a Chebyshev-weighted $L^2$ space.</p>
+
+  <h3>Adjacency matrices and random walks</h3>
+  <p>The adjacency matrix $A$ of a graph is real-symmetric on $\ell^2(\mathrm{vertices})$. On a path graph it is tridiagonal already. On a more general graph, fix a starting vertex $v$ and run Lanczos: the orthogonal basis you build is supported on "spheres of distance $k$ around $v$," and $A$ acts tridiagonally on it. The associated orthogonal polynomials encode return probabilities for the random walk — a fact known to Stieltjes in the 1890s, rediscovered repeatedly since.</p>
+
+  <h3>Birth–death chains</h3>
+  <p>The generator of a continuous-time birth–death Markov chain is a tridiagonal operator on $\ell^2(\mathbb{N})$ (or a weighted version). Self-adjoint with respect to the stationary measure; its orthogonal polynomials — the <em>Karlin–McGregor polynomials</em> — give exact formulas for transition probabilities. Same Jacobi-matrix machinery, different application.</p>
+</section>
+
+<section id="weighted">
+  <h2><span class="num">§ 04</span>Different Weights, Different Families</h2>
+
+  <p>On $L^2$ with a positive weight $w(x)$ on some interval, the inner product is $\langle f, g\rangle_w = \int f g\, w\, dx$. Multiplication by $x$ is self-adjoint in this inner product too (the weight commutes with $x$). Gram–Schmidt on the monomials $\{1, x, x^2, \ldots\}$ produces a different orthogonal polynomial family for each weight — and every one of them satisfies a three-term recurrence, courtesy of the same argument.</p>
+
+  <table class="fam-table">
+    <thead>
+      <tr>
+        <th>Family</th>
+        <th>Weight $w(x)$</th>
+        <th>Interval</th>
+        <th>Recurrence</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Legendre $P_n$</td>
+        <td>$1$</td>
+        <td>$[-1, 1]$</td>
+        <td>$(n{+}1) P_{n+1} = (2n{+}1) x P_n - n P_{n-1}$</td>
+      </tr>
+      <tr>
+        <td>Chebyshev 1st, $T_n$</td>
+        <td>$\dfrac{1}{\sqrt{1-x^2}}$</td>
+        <td>$[-1, 1]$</td>
+        <td>$T_{n+1} = 2 x T_n - T_{n-1}$</td>
+      </tr>
+      <tr>
+        <td>Chebyshev 2nd, $U_n$</td>
+        <td>$\sqrt{1-x^2}$</td>
+        <td>$[-1, 1]$</td>
+        <td>$U_{n+1} = 2 x U_n - U_{n-1}$</td>
+      </tr>
+      <tr>
+        <td>Hermite $H_n$</td>
+        <td>$e^{-x^2}$</td>
+        <td>$\mathbb{R}$</td>
+        <td>$H_{n+1} = 2 x H_n - 2n H_{n-1}$</td>
+      </tr>
+      <tr>
+        <td>Laguerre $L_n$</td>
+        <td>$e^{-x}$</td>
+        <td>$[0, \infty)$</td>
+        <td>$(n{+}1) L_{n+1} = (2n{+}1{-}x) L_n - n L_{n-1}$</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Each recurrence has the form $x P_n = \alpha_{n+1} P_{n+1} + \beta_n P_n + \alpha_{n-1} P_{n-1}$ — three terms, never more. Where the weight has parity symmetry (Legendre, Chebyshev, Hermite — all symmetric in $x \to -x$), $\beta_n = 0$, exactly as for Legendre. Laguerre lives on the half-line $[0, \infty)$ with no parity, so its diagonal entries are nonzero — that is the $-x$ piece embedded in the recurrence coefficient.</p>
+
+  <p>Each family is "the natural basis" somewhere. Hermite shows up for the quantum harmonic oscillator and expansions around a Gaussian. Chebyshev shows up in best-uniform polynomial approximation (Chebyshev nodes minimize Runge's phenomenon) and is essentially the cosine series in disguise: $T_n(\cos\theta) = \cos(n\theta)$. Laguerre shows up in the hydrogen atom's radial wavefunctions and in queueing theory. The reason they keep appearing is exactly the reason Legendre kept appearing in Vol II: each is the orthogonal basis of its space, produced by Gram–Schmidt on monomials with the right weight.</p>
+
+  <div class="viz">
+    <div class="controls">
+      <div class="control-group">
+        <span class="control-label">Family</span>
+        <div class="fam-buttons" id="famBtns">
+          <button data-fam="legendre" class="active">Legendre</button>
+          <button data-fam="chebyT">Chebyshev T</button>
+          <button data-fam="chebyU">Chebyshev U</button>
+          <button data-fam="hermite">Hermite</button>
+          <button data-fam="laguerre">Laguerre</button>
+        </div>
+      </div>
+    </div>
+    <canvas id="famPlot" width="1200" height="600" aria-label="Orthogonal polynomial families"></canvas>
+    <div class="legend" id="famLegend"></div>
+  </div>
+</section>
+
+<section id="lanczos">
+  <h2><span class="num">§ 05</span>Lanczos, and the Spectral Theorem in Disguise</h2>
+
+  <p>The reason this pattern keeps appearing is not coincidence. It has a name in numerical linear algebra and a name in functional analysis, and they are the same thing.</p>
+
+  <h3>The Lanczos algorithm</h3>
+
+  <p>The same recurrence Vol II ground out for Legendre is, at the algorithmic level, a <em>recipe</em>: it tells you how to extend an orthonormal sequence $q_0, q_1, \ldots, q_n$ to $q_{n+1}$ at constant cost per step, instead of the $O(n)$ Gram–Schmidt against everything built so far. Rearrange the three-term recurrence from §02 to solve for the new vector:</p>
+
+  $$q_{n+1} \;=\; \frac{1}{a_n}\Bigl(\, A\, q_n \;-\; b_n\, q_n \;-\; a_{n-1}\, q_{n-1}\,\Bigr).$$
+
+  <p>That is the entire update. The vector $A q_n$ has, in principle, components on every $q_k$ with $k \leq n+1$, but the structural fact — self-adjointness plus Krylov nesting — forces $\langle A q_n,\, q_k\rangle = 0$ for $k \leq n-2$. <em>Exactly</em> zero, not approximately. So the only components present are on $q_{n-1}, q_n, q_{n+1}$; peel off the first two and what remains is a positive multiple of $q_{n+1}$.</p>
+
+  <div class="boxed">
+    <span class="tag">Lanczos iteration · step n</span>
+    <p style="margin: 0.4rem 0;">Given $q_{n-1},\, q_n$, and the previously computed $a_{n-1}$:</p>
+    <ol class="algorithm">
+      <li>$w \;\leftarrow\; A\, q_n$ &nbsp;<span class="note">— one matrix–vector product, the dominant cost</span></li>
+      <li>$b_n \;\leftarrow\; \langle w,\, q_n\rangle$ &nbsp;<span class="note">— diagonal entry of the Jacobi matrix</span></li>
+      <li>$r \;\leftarrow\; w \,-\, b_n\, q_n \,-\, a_{n-1}\, q_{n-1}$ &nbsp;<span class="note">— only two subtractions</span></li>
+      <li>$a_n \;\leftarrow\; \|r\|$ &nbsp;<span class="note">— next off-diagonal entry</span></li>
+      <li>$q_{n+1} \;\leftarrow\; r\,/\,a_n$</li>
+    </ol>
+    <p style="margin-bottom: 0;">For $n = 0$, take $a_{-1} = 0$ and $q_{-1} = 0$, starting from $q_0 = v/\|v\|$.</p>
+  </div>
+
+  <p>The recurrence pays back twice. You skip the $O(n)$ Gram–Schmidt projections per step, <em>and</em> the Jacobi matrix is read off as a side effect — $b_n$ and $a_n$ fall out of the iteration without separate computation. After $N$ steps you have the orthonormal basis $q_0, \ldots, q_N$ <em>and</em> the $N \times N$ tridiagonal truncation of $A$ in that basis.</p>
+
+  <p><strong>Cost.</strong> Full Gram–Schmidt on $\{v, Av, A^2 v, \ldots, A^N v\}$ costs $O(N^2)$ inner products. Lanczos costs $O(N)$ inner products plus $N$ matrix–vector multiplies. For sparse $A$ — adjacency matrices of large graphs, discretized PDE operators, covariance matrices — where $Av$ costs $O(\mathrm{nnz}(A))$, this is the difference between feasible and infeasible. The eigenvalues of the $k \times k$ tridiagonal truncation converge rapidly to the extreme eigenvalues of $A$. This is how billion-dimensional symmetric eigenvalue problems get solved in practice.</p>
+
+  <p><strong>One numerical caveat.</strong> In exact arithmetic, $q_n$ is automatically orthogonal to all earlier $q_k$ — that is a <em>consequence</em> of the iteration, not an assumption to maintain. In floating point, rounding error breaks this. After several dozen iterations, the computed $q_n$ silently lose orthogonality against older $q_j$, and eigenvalue estimates can stall or "ghost" (the same eigenvalue gets rediscovered as if it were new). Production codes apply <em>selective reorthogonalization</em>: every few steps, project the new vector against an older one to clean up drift. The mathematics is unchanged; only the bookkeeping gets harder.</p>
+
+  <p>When $A$ is "multiplication by $x$" on polynomial space and $v$ is the constant function $1$, the Krylov sequence is $\{1, x, x^2, x^3, \ldots\}$ and Lanczos is exactly Gram–Schmidt on monomials. The output basis is the orthonormal Legendre polynomials, and the Jacobi matrix encodes Bonnet's recurrence. Lanczos is Vol II's calculation, abstracted to arbitrary self-adjoint operators.</p>
+
+
+  <h3>The spectral theorem, in one sentence</h3>
+  <p>Every cyclic self-adjoint operator $T$ on a separable Hilbert space, with a chosen cyclic vector $v$, is unitarily equivalent to "multiplication by $x$" on $L^2(\mathbb{R}, d\mu)$ for some Borel probability measure $\mu$ — the <em>spectral measure</em> of $v$ under $T$. The Krylov basis $\{q_n\}$ corresponds, under this equivalence, to the orthonormal polynomials with respect to $\mu$.</p>
+
+  <p>So every self-adjoint operator with a cyclic vector hides a measure on $\mathbb{R}$ and an orthogonal polynomial family. The three-term recurrence we discovered for Legendre is not a property of polynomials. It is a property of self-adjoint operators. Polynomials are how we see it.</p>
+
+  <div class="aside">The bookkeeping: the measure $\mu$ can be read off the Jacobi matrix as the spectral measure of $e_0$. The classical orthogonal polynomial families correspond to specific Jacobi matrices: Legendre $\leftrightarrow$ a specific tridiagonal pattern; Chebyshev $\leftrightarrow$ the "free Jacobi" with constant entries; Hermite $\leftrightarrow$ a Jacobi matrix with growing off-diagonals. Each is the spectral story of one self-adjoint operator on $\ell^2(\mathbb{N})$, paired with one orthogonal polynomial family on $L^2(\mu)$, paired with one absolutely-continuous measure on $\mathbb{R}$. Three faces. One linear algebra.</div>
+</section>
+
+<section id="moral">
+  <h2><span class="num">§ 06</span>Closing the Loop</h2>
+  <p>Vol I projected onto a basis whose orthogonality was visible (the trig functions, on a circle, almost embarrassingly orthogonal). Vol II built one by hand on $[-1, 1]$ — Gram–Schmidt on monomials, plus the recurrence trick to extend forever cheaply. Vol III is the moral: the trick is not specific to monomials, or polynomials, or that interval. It is what self-adjoint operators on Krylov subspaces look like. Tridiagonal symmetric matrices, three-term recurrences, orthogonal polynomial families on the spectrum — all the same object, viewed from three different rooms.</p>
+
+  <p>Pick a self-adjoint operator. Pick a cyclic vector. The polynomials are already there, waiting to be written down. The linear algebra was waiting too.</p>
+</section>
+
+</main>
+
+<div class="gold-rule"></div>
+<div class="editorial-band"></div>
+
+<footer>
+  Linear Algebra <span class="sep">◆</span> Self-Adjoint Operators <span class="sep">◆</span> Roll Tide
+</footer>
+
+<script>
+// ─── Orthogonal polynomial families via three-term recurrences ─────────
+// Each family supplies: interval, y-range, initial P_0, P_1, recurrence step.
+
+const FAMILIES = {
+  legendre: {
+    name: 'Legendre',
+    interval: [-1, 1],
+    yRange: [-1.3, 1.3],
+    Nshow: 5,
+    P0: 1,
+    P1: x => x,
+    // (n+1) P_{n+1} = (2n+1) x P_n - n P_{n-1}
+    step: (n, x, Pn, Pnm1) => ((2 * n + 1) * x * Pn - n * Pnm1) / (n + 1)
+  },
+  chebyT: {
+    name: 'Chebyshev T',
+    interval: [-1, 1],
+    yRange: [-1.3, 1.3],
+    Nshow: 5,
+    P0: 1,
+    P1: x => x,
+    // T_{n+1} = 2 x T_n - T_{n-1}
+    step: (n, x, Pn, Pnm1) => 2 * x * Pn - Pnm1
+  },
+  chebyU: {
+    name: 'Chebyshev U',
+    interval: [-1, 1],
+    yRange: [-6.5, 6.5],
+    Nshow: 5,
+    P0: 1,
+    P1: x => 2 * x,
+    // U_{n+1} = 2 x U_n - U_{n-1}
+    step: (n, x, Pn, Pnm1) => 2 * x * Pn - Pnm1
+  },
+  hermite: {
+    name: 'Hermite',
+    interval: [-2.5, 2.5],
+    yRange: [-80, 80],
+    Nshow: 4,
+    P0: 1,
+    P1: x => 2 * x,
+    // H_{n+1} = 2 x H_n - 2 n H_{n-1}
+    step: (n, x, Pn, Pnm1) => 2 * x * Pn - 2 * n * Pnm1
+  },
+  laguerre: {
+    name: 'Laguerre',
+    interval: [0, 10],
+    yRange: [-30, 30],
+    Nshow: 4,
+    P0: 1,
+    P1: x => 1 - x,
+    // (n+1) L_{n+1} = (2n+1 - x) L_n - n L_{n-1}
+    step: (n, x, Pn, Pnm1) => ((2 * n + 1 - x) * Pn - n * Pnm1) / (n + 1)
+  }
+};
+
+function evalPolys(family, x, N) {
+  // Returns [P_0(x), P_1(x), ..., P_N(x)]
+  const out = new Array(N + 1);
+  out[0] = (typeof family.P0 === 'function') ? family.P0(x) : family.P0;
+  if (N >= 1) out[1] = family.P1(x);
+  for (let n = 1; n < N; n++) {
+    out[n + 1] = family.step(n, x, out[n], out[n - 1]);
+  }
+  return out;
+}
+
+// ─── Canvas plotter for families ───────────────────────────────────────
+const PALETTE = ['#9E1B32', '#C9A961', '#6B0F22', '#8B7142', '#1A1614', '#B85A6C'];
+
+const canvas = document.getElementById('famPlot');
+const ctx = canvas.getContext('2d');
+const legendEl = document.getElementById('famLegend');
+
+let currentFamily = 'legendre';
+
+function drawFamily() {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = Math.round(cssW * 0.5);
+  canvas.style.height = cssH + 'px';
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = cssW, H = cssH;
+  ctx.clearRect(0, 0, W, H);
+
+  const fam = FAMILIES[currentFamily];
+  const [xMin, xMax] = fam.interval;
+  const [yMin, yMax] = fam.yRange;
+  const N = fam.Nshow;
+
+  const padL = 56, padR = 24, padTop = 22, padBottom = 40;
+  const plotW = W - padL - padR;
+  const plotH = H - padTop - padBottom;
+
+  const X = x => padL + ((x - xMin) / (xMax - xMin)) * plotW;
+  const Y = y => padTop + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+
+  // gridlines
+  ctx.strokeStyle = 'rgba(26, 22, 20, 0.06)';
+  ctx.lineWidth = 1;
+  const xTicks = niceTicks(xMin, xMax, 6);
+  ctx.beginPath();
+  for (const xt of xTicks) {
+    ctx.moveTo(X(xt), padTop);
+    ctx.lineTo(X(xt), padTop + plotH);
+  }
+  ctx.stroke();
+
+  // axes (x = 0 and y = 0 if in range)
+  if (xMin < 0 && xMax > 0) {
+    ctx.strokeStyle = 'rgba(26, 22, 20, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(X(0), padTop);
+    ctx.lineTo(X(0), padTop + plotH);
+    ctx.stroke();
+  }
+  if (yMin < 0 && yMax > 0) {
+    ctx.strokeStyle = 'rgba(26, 22, 20, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, Y(0));
+    ctx.lineTo(padL + plotW, Y(0));
+    ctx.stroke();
+  }
+
+  // y-tick labels
+  const yTicks = niceTicks(yMin, yMax, 5);
+  ctx.fillStyle = 'rgba(26, 22, 20, 0.55)';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (const yt of yTicks) {
+    ctx.fillText(formatNum(yt), padL - 6, Y(yt));
+  }
+
+  // x-tick labels
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const xt of xTicks) {
+    ctx.fillText(formatNum(xt), X(xt), padTop + plotH + 8);
+  }
+
+  // plot polynomials
+  const samples = 700;
+  for (let n = 0; n <= N; n++) {
+    ctx.strokeStyle = PALETTE[n];
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= samples; i++) {
+      const x = xMin + ((xMax - xMin) * i) / samples;
+      const P = evalPolys(fam, x, N);
+      const y = P[n];
+      if (y < yMin - (yMax - yMin) * 0.3 || y > yMax + (yMax - yMin) * 0.3) {
+        started = false;
+        continue;
+      }
+      if (!started) {
+        ctx.moveTo(X(x), Y(y));
+        started = true;
+      } else {
+        ctx.lineTo(X(x), Y(y));
+      }
+    }
+    ctx.stroke();
+  }
+
+  // frame
+  ctx.strokeStyle = 'rgba(26, 22, 20, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(padL, padTop, plotW, plotH);
+
+  // rebuild legend
+  legendEl.innerHTML = '';
+  const symbol = currentFamily === 'legendre' ? 'P' :
+                 currentFamily === 'chebyT' ? 'T' :
+                 currentFamily === 'chebyU' ? 'U' :
+                 currentFamily === 'hermite' ? 'H' : 'L';
+  for (let n = 0; n <= N; n++) {
+    const item = document.createElement('span');
+    item.innerHTML = `<span class="swatch" style="background:${PALETTE[n]}"></span>${symbol}<sub>${n}</sub>`;
+    legendEl.appendChild(item);
+  }
+}
+
+function niceTicks(lo, hi, target) {
+  const range = hi - lo;
+  const rawStep = range / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalized = rawStep / mag;
+  let step;
+  if (normalized < 1.5) step = 1 * mag;
+  else if (normalized < 3) step = 2 * mag;
+  else if (normalized < 7) step = 5 * mag;
+  else step = 10 * mag;
+  const ticks = [];
+  const start = Math.ceil(lo / step) * step;
+  for (let v = start; v <= hi + step * 0.0001; v += step) {
+    ticks.push(Math.round(v / step) * step);
+  }
+  return ticks;
+}
+
+function formatNum(v) {
+  if (Math.abs(v) < 1e-9) return '0';
+  if (Math.abs(v) >= 1000) return v.toExponential(1);
+  if (Math.abs(v) < 0.01) return v.toExponential(1);
+  return Number(v.toPrecision(3)).toString();
+}
+
+document.querySelectorAll('#famBtns button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#famBtns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFamily = btn.dataset.fam;
+    drawFamily();
+  });
+});
+
+window.addEventListener('resize', drawFamily);
+window.addEventListener('load', drawFamily);
+drawFamily();
+</script>
+
+</body>
+</html>

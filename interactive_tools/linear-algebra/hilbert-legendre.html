@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hilbert Matrix &mdash; Legendre Congruence Diagonalization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root {
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  --left-bg:#edf2fb;  --left-hd:#b8ccee;  --left-mod:#cad8ee;
+  --right-bg:#f0ecfb; --right-hd:#c0b0e8; --right-mod:#d6c8ee;
+  --diag-bg:#e8f5ec;  --diag-fg:#1a6a40;
+  --mod-bg:#fff3e8;
+  --font-body:'Crimson Pro',Georgia,serif;
+  --font-head:'Playfair Display',Georgia,serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+header{background:var(--navy);color:#fff;padding:1.8rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:var(--font-head);font-size:2rem;font-weight:400;letter-spacing:.02em;margin-bottom:.25rem;}
+header p{color:#a0b8d8;font-size:1.05rem;font-style:italic;}
+main{max-width:1500px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.6rem 2rem;margin-bottom:2rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:var(--font-head);font-size:1.3rem;font-weight:600;color:var(--navy);margin-bottom:.9rem;}
+.card .intro{color:var(--navy2);margin-bottom:1rem;font-size:.98rem;}
+.card .intro em{font-style:italic;}
+
+/* Size selector */
+.size-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+.size-row .lbl{margin-right:.6rem;font-size:.95rem;color:var(--navy2);}
+.size-btn{font-family:var(--font-body);font-size:1rem;cursor:pointer;border:1px solid #c0ccdd;background:var(--left-bg);color:var(--navy2);border-radius:4px;padding:.4rem 1.05rem;transition:all .15s;}
+.size-btn:hover{background:#d8e4f8;}
+.size-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* Tableau outer */
+.tab-scroll{overflow-x:auto;padding:.5rem .2rem 1rem;}
+.big-tab{border-collapse:separate;border-spacing:0;margin:0 auto;}
+.big-tab thead th{padding:.3rem .6rem .55rem;font-family:var(--font-head);font-size:1.05rem;font-weight:400;letter-spacing:.05em;text-align:center;}
+.big-tab thead th .katex{font-size:1.1em;}
+.big-tab thead th.h-a{background:var(--left-bg);color:#152460;border-top:1.5px solid var(--left-hd);border-left:1.5px solid var(--left-hd);border-right:1.5px solid var(--left-hd);border-radius:4px 4px 0 0;}
+.big-tab thead th.h-h{background:#f5f7fa;color:var(--navy2);border-top:1.5px solid #ccc;border-left:1.5px solid #ccc;border-right:1.5px solid #ccc;border-radius:4px 4px 0 0;}
+.big-tab thead th.h-at{background:var(--right-bg);color:#241565;border-top:1.5px solid var(--right-hd);border-left:1.5px solid var(--right-hd);border-right:1.5px solid var(--right-hd);border-radius:4px 4px 0 0;}
+.big-tab tbody td{padding:.2rem .3rem;vertical-align:middle;}
+.big-tab tbody td.block{padding:.2rem .3rem;}
+
+/* Mini matrix cells */
+.mini-mat{border-collapse:collapse;margin:0 auto;background:transparent;}
+.mini-mat td{
+  padding:.32rem .35rem;
+  text-align:center;
+  font-size:.93rem;
+  min-width:46px;
+  height:34px;
+  border:1px solid;
+}
+.block-A .mini-mat{background:var(--left-bg);}
+.block-A .mini-mat td{border-color:#cfdaee;background:#fafbfd;}
+.block-A .mini-mat td.mod{background:var(--left-mod);font-weight:600;color:#0c1d50;}
+
+.block-H .mini-mat{background:#fff;}
+.block-H .mini-mat td{border-color:#e0e0e0;background:#fff;}
+.block-H .mini-mat td.zer{color:#cfcfcf;}
+.block-H .mini-mat td.mod{background:var(--mod-bg);}
+.block-H .mini-mat td.diag{background:var(--diag-bg);color:var(--diag-fg);font-weight:600;}
+
+.block-AT .mini-mat{background:var(--right-bg);}
+.block-AT .mini-mat td{border-color:#dccee8;background:#fafafd;}
+.block-AT .mini-mat td.mod{background:var(--right-mod);font-weight:600;color:#1a0c52;}
+
+.block-wrap{padding:3px;border-radius:5px;display:inline-block;}
+.block-wrap.bA{background:var(--left-bg);border:1.5px solid var(--left-hd);}
+.block-wrap.bH{background:#fff;border:1.5px solid #ccc;}
+.block-wrap.bAT{background:var(--right-bg);border:1.5px solid var(--right-hd);}
+
+/* Fractions */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.82em;line-height:1;}
+.fr .nm{padding:0 .25em;border-bottom:1px solid currentColor;line-height:1.05;}
+.fr .dn{padding:0 .25em;line-height:1.15;}
+.neg{margin-right:.05em;}
+
+/* Operation labels */
+.op-label{font-size:.93rem;color:var(--navy);padding:0 1rem;line-height:1.4;}
+.op-label .lbl-tag{display:block;font-size:.7rem;color:var(--gray);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:3px;}
+.op-row{text-align:right;padding-right:1.1rem;}
+.op-col{text-align:left;padding-left:1.1rem;}
+.op-row .lbl-tag{color:#7c3000;}
+.op-col .lbl-tag{color:#3a1c70;}
+.op-row .katex,.op-col .katex{font-size:.93em;}
+
+/* Identity / factorization cards */
+.fact-card{background:#f3f7fd;border:1px solid #c0d0e8;border-radius:6px;padding:1.4rem 1.6rem;margin:.9rem 0;}
+.fact-card h3{font-family:var(--font-head);font-size:1.12rem;color:var(--navy);margin-bottom:.5rem;font-weight:600;}
+.fact-card .eq-name{font-style:italic;color:var(--navy2);font-size:.95rem;margin-bottom:.6rem;}
+.eq-scroll{overflow-x:auto;padding:.6rem 0;}
+.eq-scroll .katex-display{margin:.3rem 0;}
+.fact-note{color:var(--navy2);font-size:.95rem;margin-top:.6rem;}
+
+.poly-list{background:#fcfbf6;border:1px solid #e0d8c0;border-radius:6px;padding:.9rem 1.3rem;margin:.5rem 0 1rem;}
+.poly-list h3{font-family:var(--font-head);font-size:1.05rem;color:var(--navy);margin-bottom:.4rem;font-weight:600;}
+.poly-list .poly-row{padding:.15rem 0;font-size:.97rem;}
+
+/* Derivation steps */
+.approach-formula{background:#fbfaf3;border-left:3px solid var(--gold);padding:.7rem 1rem;margin:.7rem 0;border-radius:0 4px 4px 0;}
+.deriv-step{background:#f7fafd;border:1px solid #d8e2f0;border-radius:6px;padding:.9rem 1.3rem;margin:.9rem 0;}
+.deriv-step h4{font-family:var(--font-head);color:var(--navy);font-size:1.02rem;font-weight:600;margin-bottom:.5rem;letter-spacing:.01em;}
+.deriv-step .deriv-stage{color:var(--gray);font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;font-weight:600;display:block;margin-bottom:.3rem;}
+.deriv-step .deriv-eq{padding:.18rem 0;font-size:.95rem;}
+.deriv-step .deriv-eq .katex{font-size:.94em;}
+.deriv-step .deriv-lcm{margin:.55rem 0 .3rem;font-size:.95rem;color:var(--navy2);}
+.deriv-step .deriv-lcm .katex{color:var(--red);font-weight:600;}
+.deriv-step .deriv-result{margin-top:.55rem;padding:.45rem .8rem;background:#fff;border-left:3px solid var(--gold);border-radius:0 4px 4px 0;font-weight:500;}
+
+/* Pattern reveal card */
+.pat-card{background:#fcfbf6;border:1px solid #e0d8c0;border-radius:6px;padding:1.2rem 1.5rem;margin:.6rem 0;}
+.pat-row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;padding:.4rem 0;font-size:1.02rem;}
+.pat-row .pat-step{color:var(--gray);min-width:5.5rem;font-size:.92rem;}
+.pat-row .pat-val{font-weight:600;color:var(--red);font-size:1.15rem;min-width:3rem;}
+.pat-row .pat-binom{color:var(--navy2);}
+.pat-conclusion{margin-top:.9rem;padding-top:.7rem;border-top:1px dashed #cdc0a0;color:var(--navy);}
+
+/* Legendre reveal */
+.leg-reveal{background:#f5f2fb;border:1px solid #d0c0e8;border-radius:6px;padding:1.2rem 1.5rem;margin:.6rem 0;}
+.leg-reveal .reveal-eq{padding:.7rem 0;}
+.leg-reveal p{margin-bottom:.6rem;}
+
+/* Responsive */
+@media(max-width:720px){
+  header{padding:1.2rem 1rem;}
+  header h1{font-size:1.45rem;}
+  main{padding:1rem .75rem;}
+  .card{padding:1.2rem 1rem;}
+  .op-label{padding:0 .6rem;font-size:.85rem;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Integer Diagonalization of the Hilbert Matrix</h1>
+  <p>Clear the denominators, do the elimination &mdash; and watch Legendre fall out</p>
+</header>
+<main>
+  <div class="card">
+    <h2>Choose size</h2>
+    <p class="intro">The Hilbert matrix <span id="hil-eq"></span> has fractional entries everywhere. We want an <strong>integer</strong> matrix <em>A</em> such that <span id="cong-eq"></span> is diagonal. The trick: do symmetric Gauss elimination, but whenever you'd divide by a pivot, <strong>multiply through</strong> to clear denominators &mdash; choosing the smallest integer multiplier at each step. The leading multipliers that come out, <span id="seq-eq"></span>, will tell us something deep. But let's start by just running the algorithm.</p>
+    <div class="size-row" id="sizeRow">
+      <span class="lbl">n &times; n &nbsp;</span>
+    </div>
+  </div>
+  <div id="output"></div>
+</main>
+
+<script>
+/* ════════════════════════════════════════════════
+   FRACTION ARITHMETIC
+════════════════════════════════════════════════ */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b>0){const t=b;b=a%b;a=t;}return a||1;}
+function Frac(n,d){
+  d=(d===undefined)?1:d;
+  if(d===0){this.n=0;this.d=1;return;}
+  if(d<0){n=-n;d=-d;}
+  const g=gcd(Math.abs(n),d);
+  this.n=n/g; this.d=d/g;
+}
+Frac.prototype.add=function(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);};
+Frac.prototype.sub=function(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);};
+Frac.prototype.mul=function(o){return new Frac(this.n*o.n,this.d*o.d);};
+Frac.prototype.div=function(o){return new Frac(this.n*o.d,this.d*o.n);};
+Frac.prototype.neg=function(){return new Frac(-this.n,this.d);};
+Frac.prototype.isZero=function(){return this.n===0;};
+Frac.prototype.isNeg=function(){return this.n<0;};
+Frac.prototype.eq=function(o){return this.n*o.d===o.n*this.d;};
+Frac.prototype.clone=function(){return new Frac(this.n,this.d);};
+Frac.prototype.toHTML=function(){
+  if(this.d===1)return String(this.n);
+  const sign=this.n<0?'<span class="neg">&minus;</span>':'';
+  const absN=Math.abs(this.n);
+  return sign+'<span class="fr"><span class="nm">'+absN+'</span><span class="dn">'+this.d+'</span></span>';
+};
+Frac.prototype.toTeX=function(){
+  if(this.d===1)return String(this.n);
+  if(this.n<0)return '-\\tfrac{'+(-this.n)+'}{'+this.d+'}';
+  return '\\tfrac{'+this.n+'}{'+this.d+'}';
+};
+
+/* ════════════════════════════════════════════════
+   MATRIX / LEGENDRE / OPS
+════════════════════════════════════════════════ */
+function binom(n,k){
+  if(k<0||k>n)return 0;
+  let r=1;
+  for(let i=0;i<k;i++)r=r*(n-i)/(i+1);
+  return Math.round(r);
+}
+function buildHilbert(n){
+  const H=[];
+  for(let i=0;i<n;i++){H.push([]);for(let j=0;j<n;j++)H[i].push(new Frac(1,i+j+1));}
+  return H;
+}
+function buildIdentity(n){
+  const I=[];
+  for(let i=0;i<n;i++){I.push([]);for(let j=0;j<n;j++)I[i].push(new Frac(i===j?1:0));}
+  return I;
+}
+function copyMat(M){return M.map(row=>row.map(f=>f.clone()));}
+function buildLegendreL(n){
+  /* L[i][j] = coeff of x^i in shifted Legendre P̃_j on [0,1]
+     P̃_j(x) = Σ_{k=0..j} (-1)^{j-k} C(j,k) C(j+k,k) x^k    */
+  const L=[];
+  for(let i=0;i<n;i++)L.push(Array(n).fill(0).map(()=>new Frac(0)));
+  for(let j=0;j<n;j++){
+    for(let i=0;i<=j;i++){
+      const sign=((j-i)%2===0)?1:-1;
+      L[i][j]=new Frac(sign*binom(j,i)*binom(j+i,i));
+    }
+  }
+  return L;
+}
+function colOpFor(L,jStep){
+  /* Returns vector v of length n such that operation
+     R_{jStep} ← Σ v[k] R_{k+1}  (or column analog)
+     transforms current Aᵀ (partial Legendre matrix) into one with column jStep = L[:,jStep].
+     Method: back-substitute on the upper-triangular system L_{jStep-1} · v = L[:,jStep]. */
+  const n=L.length;
+  const v=Array(n).fill(0).map(()=>new Frac(0));
+  const j=jStep-1;
+  const a=L.map(row=>row[j]);
+  v[j]=a[j].clone();
+  for(let k=j-1;k>=0;k--){
+    let sum=new Frac(0);
+    for(let l=k+1;l<j;l++)sum=sum.add(v[l].mul(L[k][l]));
+    v[k]=a[k].sub(sum).div(L[k][k]);
+  }
+  return v;
+}
+function applyRowOp(M,jRow,v){
+  const n=M.length;
+  const nr=Array(n).fill(0).map(()=>new Frac(0));
+  for(let c=0;c<n;c++){
+    let s=new Frac(0);
+    for(let k=0;k<n;k++)s=s.add(v[k].mul(M[k][c]));
+    nr[c]=s;
+  }
+  M[jRow]=nr;
+}
+function applyColOp(M,jCol,v){
+  const n=M.length;
+  const nc=Array(n).fill(0).map(()=>new Frac(0));
+  for(let r=0;r<n;r++){
+    let s=new Frac(0);
+    for(let k=0;k<n;k++)s=s.add(v[k].mul(M[r][k]));
+    nc[r]=s;
+  }
+  for(let r=0;r<n;r++)M[r][jCol]=nc[r];
+}
+function matMul(A,B){
+  const n=A.length,m=B[0].length,p=A[0].length;
+  const C=[];
+  for(let i=0;i<n;i++){
+    C.push([]);
+    for(let j=0;j<m;j++){
+      let s=new Frac(0);
+      for(let k=0;k<p;k++)s=s.add(A[i][k].mul(B[k][j]));
+      C[i].push(s);
+    }
+  }
+  return C;
+}
+function diagInv(D){
+  const n=D.length;
+  const Di=buildIdentity(n);
+  for(let i=0;i<n;i++)Di[i][i]=new Frac(D[i][i].d,D[i][i].n);
+  return Di;
+}
+
+/* ════════════════════════════════════════════════
+   ALGORITHM
+════════════════════════════════════════════════ */
+function diagonalize(n){
+  const L=buildLegendreL(n);
+  const steps=[];
+  let A=buildIdentity(n);
+  let H=buildHilbert(n);
+  let AT=buildIdentity(n);
+  steps.push({type:'initial',A:copyMat(A),H:copyMat(H),AT:copyMat(AT)});
+  for(let jStep=2;jStep<=n;jStep++){
+    const v=colOpFor(L,jStep);
+    const j=jStep-1;
+    applyRowOp(H,j,v);
+    applyRowOp(A,j,v);
+    steps.push({type:'row',jStep,v:v.map(f=>f.clone()),A:copyMat(A),H:copyMat(H),AT:copyMat(AT)});
+    applyColOp(H,j,v);
+    applyColOp(AT,j,v);
+    steps.push({type:'col',jStep,v:v.map(f=>f.clone()),A:copyMat(A),H:copyMat(H),AT:copyMat(AT)});
+  }
+  return {steps,finalA:A,finalH:H,finalAT:AT,L};
+}
+
+/* ════════════════════════════════════════════════
+   RENDERING
+════════════════════════════════════════════════ */
+function rk(tex,display){
+  return katex.renderToString(tex,{throwOnError:false,displayMode:!!display});
+}
+
+function opLabelTeX(v,jStep,type){
+  let parts='';
+  let first=true;
+  const one=new Frac(1);
+  for(let k=0;k<v.length;k++){
+    if(v[k].isZero())continue;
+    const neg=v[k].isNeg();
+    const a=neg?v[k].neg():v[k];
+    if(first){if(neg)parts+='-';}
+    else{parts+=neg?' - ':' + ';}
+    if(!a.eq(one))parts+=a.toTeX();
+    parts+=type+'_{'+(k+1)+'}';
+    first=false;
+  }
+  return type+'_{'+jStep+'} \\;\\leftarrow\\; '+parts;
+}
+
+function renderMat(M,opts){
+  opts=opts||{};
+  let html='<table class="mini-mat"><tbody>';
+  for(let i=0;i<M.length;i++){
+    html+='<tr>';
+    for(let j=0;j<M[i].length;j++){
+      const val=M[i][j];
+      const cls=[];
+      if(val.isZero())cls.push('zer');
+      if(opts.block==='H'&&i===j&&!val.isZero()&&opts.isFinal)cls.push('diag');
+      if(opts.highlightRow!==undefined&&i===opts.highlightRow)cls.push('mod');
+      if(opts.highlightCol!==undefined&&j===opts.highlightCol)cls.push('mod');
+      html+='<td'+(cls.length?' class="'+cls.join(' ')+'"':'')+'>'+val.toHTML()+'</td>';
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  return html;
+}
+
+function renderTableau(steps,n){
+  let html='<table class="big-tab"><thead><tr>';
+  html+='<th></th>';
+  html+='<th class="h-a">'+rk('A')+'</th>';
+  html+='<th class="h-h">'+rk('H')+'</th>';
+  html+='<th class="h-at">'+rk('A^{\\!\\top}')+'</th>';
+  html+='<th></th>';
+  html+='</tr></thead><tbody>';
+  steps.forEach((step,idx)=>{
+    const isFinal=(idx===steps.length-1);
+    html+='<tr>';
+    /* Left label */
+    if(step.type==='row'){
+      const lbl=rk(opLabelTeX(step.v,step.jStep,'R'));
+      html+='<td class="op-label op-row"><span class="lbl-tag">Row op</span>'+lbl+'</td>';
+    } else {
+      html+='<td></td>';
+    }
+    /* A block */
+    const aOpts={block:'A'};
+    if(step.type==='row')aOpts.highlightRow=step.jStep-1;
+    html+='<td class="block"><div class="block-wrap bA block-A">'+renderMat(step.A,aOpts)+'</div></td>';
+    /* H block */
+    const hOpts={block:'H',isFinal};
+    if(step.type==='row')hOpts.highlightRow=step.jStep-1;
+    if(step.type==='col')hOpts.highlightCol=step.jStep-1;
+    html+='<td class="block"><div class="block-wrap bH block-H">'+renderMat(step.H,hOpts)+'</div></td>';
+    /* AT block */
+    const atOpts={block:'AT'};
+    if(step.type==='col')atOpts.highlightCol=step.jStep-1;
+    html+='<td class="block"><div class="block-wrap bAT block-AT">'+renderMat(step.AT,atOpts)+'</div></td>';
+    /* Right label */
+    if(step.type==='col'){
+      const lbl=rk(opLabelTeX(step.v,step.jStep,'C'));
+      html+='<td class="op-label op-col"><span class="lbl-tag">Col op</span>'+lbl+'</td>';
+    } else {
+      html+='<td></td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  return html;
+}
+
+function matToTeX(M,env){
+  env=env||'pmatrix';
+  let s='\\begin{'+env+'}';
+  s+=M.map(row=>row.map(f=>f.toTeX()).join(' & ')).join(' \\\\ ');
+  s+='\\end{'+env+'}';
+  return s;
+}
+
+function legendrePolyTeX(coeffs){
+  /* coeffs[i] is coefficient of x^i */
+  let parts=[];
+  for(let i=coeffs.length-1;i>=0;i--){
+    const c=coeffs[i];
+    if(c===0)continue;
+    let sign;
+    let absC=Math.abs(c);
+    let coefStr=(absC===1&&i>0)?'':String(absC);
+    let xPart=(i===0)?'':(i===1?'x':'x^{'+i+'}');
+    if(parts.length===0){
+      sign=(c<0)?'-':'';
+      parts.push(sign+coefStr+xPart);
+    } else {
+      sign=(c<0)?' - ':' + ';
+      parts.push(sign+coefStr+xPart);
+    }
+  }
+  return parts.join('')||'0';
+}
+
+function renderPolyList(n){
+  let html='<div class="poly-list"><h3>Shifted Legendre polynomials on [0,1]</h3>';
+  for(let j=0;j<n;j++){
+    const coeffs=[];
+    for(let i=0;i<=j;i++){
+      const sign=((j-i)%2===0)?1:-1;
+      coeffs.push(sign*binom(j,i)*binom(j+i,i));
+    }
+    const polyT=legendrePolyTeX(coeffs);
+    const normT='\\| \\tilde P_{'+j+'} \\|^2 = \\tfrac{1}{'+(2*j+1)+'}';
+    html+='<div class="poly-row">'+rk('\\tilde P_{'+j+'}(x) = '+polyT)+' &nbsp;&nbsp;&nbsp; '+rk(normT)+'</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function renderFactorization(result,n){
+  const A=result.finalA, D=result.finalH, AT=result.finalAT;
+  const H=buildHilbert(n);
+  const Dinv=diagInv(D);
+  const Hinv=matMul(matMul(AT,Dinv),A);
+  /* Verify integer entries */
+  let allInt=true;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(Hinv[i][j].d!==1){allInt=false;break;}
+  let html='';
+  /* Diagonalization */
+  html+='<div class="fact-card">';
+  html+='<h3>Diagonalization &nbsp;'+rk('D = A H A^{\\!\\top}')+'</h3>';
+  html+='<p class="eq-name">Read <em>A</em> off the left block and <em>A<sup>T</sup></em> off the right block of the final tableau row.</p>';
+  html+='<div class="eq-scroll">'+rk(matToTeX(D)+' \\;=\\; '+matToTeX(A)+'\\;'+matToTeX(H)+'\\;'+matToTeX(AT),true)+'</div>';
+  html+='<p class="fact-note">The diagonal entries are <em>1/(2k&minus;1)</em> for <em>k = 1, &hellip;, n</em> &mdash; the squared norms of the shifted Legendre polynomials.</p>';
+  html+='</div>';
+  /* Inverse Hilbert */
+  html+='<div class="fact-card">';
+  html+='<h3>Inverse Hilbert &nbsp;'+rk('H^{-1} = A^{\\!\\top} D^{-1} A')+'</h3>';
+  html+='<p class="eq-name">Inverting the diagonalization gives the Hilbert inverse for free.</p>';
+  html+='<div class="eq-scroll">'+rk(matToTeX(Hinv)+' \\;=\\; '+matToTeX(AT)+'\\;'+matToTeX(Dinv)+'\\;'+matToTeX(A),true)+'</div>';
+  if(allInt){
+    html+='<p class="fact-note">Every entry of <em>H<sup>&minus;1</sup></em> is an <strong>integer</strong> &mdash; the classical observation that the inverse Hilbert matrix has integer entries, here built directly from the integer Legendre coefficients in <em>A</em> and the odd-integer diagonal of <em>D<sup>&minus;1</sup></em>.</p>';
+  }
+  html+='</div>';
+  return html;
+}
+
+/* ════════════════════════════════════════════════
+   DERIVATION RENDERING — the "discover Legendre" angle
+════════════════════════════════════════════════ */
+
+function renderApproach(steps,n){
+  let html='';
+  html+='<p class="intro">At step <em>k</em>, the top-left <span class="katex">'+rk('(k{-}1)\\times(k{-}1)')+'</span> block of the current matrix is already diagonal from prior steps. So asking the new <em>k</em>-th row to be zero in column <em>l</em> (for <span class="katex">'+rk('l<k')+'</span>) reduces to a single linear equation</p>';
+  html+='<div class="approach-formula">'+rk('\\alpha_l \\, h^{(k-1)}_{l,l} \\;+\\; \\alpha_k \\, h^{(k-1)}_{k,l} \\;=\\; 0',true)+'</div>';
+  html+='<p class="intro">in <span class="katex">'+rk('\\alpha_l')+'</span> and <span class="katex">'+rk('\\alpha_k')+'</span>. Solving for <span class="katex">'+rk('\\alpha_l')+'</span> introduces a denominator; we need <span class="katex">'+rk('\\alpha_k')+'</span> divisible by it. The smallest <span class="katex">'+rk('\\alpha_k')+'</span> that makes <em>every</em> <span class="katex">'+rk('\\alpha_l')+'</span> an integer is the <strong>lcm</strong> of those denominators. The column op that follows uses the same coefficients by symmetry.</p>';
+  for(let jStep=2;jStep<=n;jStep++){
+    html+=renderApproachStep(steps,jStep);
+  }
+  return html;
+}
+
+function renderApproachStep(steps,jStep){
+  const preState=steps[2*(jStep-2)];
+  const H=preState.H;
+  const v=steps[2*(jStep-2)+1].v;
+  const k=jStep;
+  const diag=[], off=[];
+  for(let l=1;l<k;l++){
+    diag.push(H[l-1][l-1]);
+    off.push(H[k-1][l-1]);
+  }
+  /* α_l/α_k = -h_{k,l}/h_{l,l} */
+  const ratios=[];
+  for(let l=1;l<k;l++){
+    ratios.push(off[l-1].div(diag[l-1]).neg());
+  }
+  /* lcm of denominators */
+  let lcmVal=1;
+  const denomSet=new Set();
+  for(const r of ratios){
+    denomSet.add(r.d);
+    lcmVal=(lcmVal*r.d)/gcd(lcmVal,r.d);
+  }
+  const denomArr=Array.from(denomSet).sort((a,b)=>a-b);
+
+  let html='<div class="deriv-step">';
+  html+='<span class="deriv-stage">Step '+(jStep-1)+'</span>';
+  const positions=[];
+  for(let l=1;l<k;l++)positions.push('('+k+','+l+')');
+  html+='<h4>Zero out positions '+positions.join(', ')+' of row '+k+'</h4>';
+
+  /* Equations */
+  for(let l=1;l<k;l++){
+    const offT=off[l-1].toTeX();
+    const offPart=off[l-1].isNeg()?'\\bigl('+offT+'\\bigr)':offT;
+    let eq='\\alpha_{'+l+'}\\cdot '+diag[l-1].toTeX()+' \\;+\\; \\alpha_{'+k+'}\\cdot '+offPart+' \\;=\\; 0';
+    let solv='\\;\\;\\Longrightarrow\\;\\; \\alpha_{'+l+'} \\;=\\; '+ratios[l-1].toTeX()+'\\,\\alpha_{'+k+'}';
+    html+='<div class="deriv-eq">'+rk(eq+solv)+'</div>';
+  }
+
+  /* LCM line */
+  html+='<div class="deriv-lcm">Smallest '+rk('\\alpha_{'+k+'}')+' giving integer solutions: ';
+  if(denomArr.length===1){
+    html+=rk('\\alpha_{'+k+'} = '+denomArr[0]);
+  } else {
+    html+=rk('\\alpha_{'+k+'} = \\operatorname{lcm}('+denomArr.join(',\\,')+') = '+lcmVal);
+  }
+  html+='</div>';
+
+  /* Resulting operation */
+  html+='<div class="deriv-result">'+rk(opLabelTeX(v,jStep,'R'))+'</div>';
+  html+='</div>';
+  return html;
+}
+
+function renderPattern(steps,n){
+  let html='<p class="intro">Lining up the pivot multipliers <span class="katex">'+rk('\\alpha_k')+'</span> we just computed at each step:</p>';
+  html+='<div class="pat-card">';
+  for(let jStep=2;jStep<=n;jStep++){
+    const v=steps[2*(jStep-2)+1].v;
+    const pivot=v[jStep-1].n;
+    const k=jStep;
+    html+='<div class="pat-row">';
+    html+='<span class="pat-step">Step '+(jStep-1)+':</span>';
+    html+='<span class="pat-val">'+pivot+'</span>';
+    html+='<span class="pat-binom">'+rk('= \\binom{'+(2*k-2)+'}{'+(k-1)+'}')+'</span>';
+    html+='</div>';
+  }
+  html+='<div class="pat-conclusion">These are the <strong>central binomial coefficients</strong> <span class="katex">'+rk('\\binom{2k-2}{k-1}')+'</span>. We didn\'t put them there &mdash; they came out of the lcm. Why exactly these numbers?</div>';
+  html+='</div>';
+  return html;
+}
+
+function renderLegendreReveal(result,n){
+  let html='';
+  html+='<div class="leg-reveal">';
+  html+='<p>Look at row <em>k</em> of <em>A</em>: it\'s the integer vector <span class="katex">'+rk('\\boldsymbol{\\alpha} = (\\alpha_1, \\alpha_2, \\ldots, \\alpha_k, 0, \\ldots, 0)')+'</span>. Read it as the coefficient vector of a polynomial</p>';
+  html+='<div class="reveal-eq">'+rk('p_k(x) \\;=\\; \\alpha_1 + \\alpha_2 x + \\alpha_3 x^2 + \\cdots + \\alpha_k x^{k-1}.',true)+'</div>';
+  html+='<p>The zeroing conditions we solved were <span class="katex">'+rk('\\sum_j \\alpha_j H_{j,l} = 0')+'</span> for <span class="katex">'+rk('l<k')+'</span>. But <span class="katex">'+rk('H_{j,l} = \\int_0^1 x^{j-1}x^{l-1}\\,dx')+'</span>, so these conditions say</p>';
+  html+='<div class="reveal-eq">'+rk('\\int_0^1 p_k(x)\\,x^{l-1}\\,dx \\;=\\; 0 \\quad (l = 1, 2, \\ldots, k-1).',true)+'</div>';
+  html+='<p>That is, <em>p<sub>k</sub></em> is a degree-<em>(k&minus;1)</em> polynomial orthogonal to every lower-degree monomial in the <span class="katex">'+rk('L^2[0,1]')+'</span> inner product. That orthogonality, plus a normalization, <em>defines</em> the shifted Legendre polynomial <span class="katex">'+rk('\\tilde P_{k-1}(x)=P_{k-1}(2x-1)')+'</span>. So</p>';
+  html+='<div class="reveal-eq">'+rk('p_k(x) \\;=\\; \\tilde P_{k-1}(x), \\qquad \\text{leading coefficient } \\binom{2k-2}{k-1}.',true)+'</div>';
+  html+='<p>The central binomial coefficient is the natural integer normalization &mdash; that\'s why the lcm pinned to it. And the diagonal entries <span class="katex">'+rk('D_{kk} = 1/(2k-1)')+'</span> are exactly the squared norms <span class="katex">'+rk('\\|\\tilde P_{k-1}\\|^2 = 1/(2k-1)')+'</span>. The algorithm rediscovered Legendre without ever invoking it.</p>';
+  html+='</div>';
+  /* polynomials list */
+  html+=renderPolyList(n);
+  return html;
+}
+
+/* ════════════════════════════════════════════════
+   UI
+════════════════════════════════════════════════ */
+const SIZES=[3,4,5,6,7,8];
+let currentN=4;
+
+function renderAll(n){
+  const result=diagonalize(n);
+  const out=document.getElementById('output');
+  let html='';
+  /* 1. Approach + derivations */
+  html+='<div class="card"><h2>Deriving the row operations</h2>';
+  html+=renderApproach(result.steps,n);
+  html+='</div>';
+  /* 2. Tableau */
+  html+='<div class="card"><h2>Step-by-step congruence</h2>';
+  html+='<p class="intro">Applying those operations to <span class="katex">'+rk('[\\,A \\mid H \\mid A^{\\!\\top}\\,]')+'</span>. The row op (left) and matching column op (right) preserve symmetry and accumulate <em>A</em> and <em>A<sup>T</sup></em>.</p>';
+  html+='<div class="tab-scroll">'+renderTableau(result.steps,n)+'</div>';
+  html+='</div>';
+  /* 3. The pattern */
+  html+='<div class="card"><h2>The pattern in the leading multipliers</h2>';
+  html+=renderPattern(result.steps,n);
+  html+='</div>';
+  /* 4. Legendre reveal */
+  html+='<div class="card"><h2>What we just did: Legendre</h2>';
+  html+=renderLegendreReveal(result,n);
+  html+='</div>';
+  /* 5. Factorizations */
+  html+='<div class="card"><h2>Factorizations</h2>';
+  html+=renderFactorization(result,n);
+  html+='</div>';
+  out.innerHTML=html;
+}
+
+function setupSizeButtons(){
+  const row=document.getElementById('sizeRow');
+  SIZES.forEach(n=>{
+    const btn=document.createElement('button');
+    btn.className='size-btn'+(n===currentN?' active':'');
+    btn.textContent=n;
+    btn.dataset.n=n;
+    btn.addEventListener('click',()=>{
+      currentN=n;
+      document.querySelectorAll('.size-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.n)===n));
+      renderAll(n);
+    });
+    row.appendChild(btn);
+  });
+}
+
+function renderHeaderMath(){
+  document.getElementById('hil-eq').innerHTML=rk('H_{ij}=\\tfrac{1}{i+j-1}');
+  document.getElementById('cong-eq').innerHTML=rk('A H A^{\\!\\top}');
+  document.getElementById('seq-eq').innerHTML=rk('2,\\,6,\\,20,\\,70,\\,\\ldots');
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  renderHeaderMath();
+  setupSizeButtons();
+  renderAll(currentN);
+});
+</script>
+</body>
+</html>

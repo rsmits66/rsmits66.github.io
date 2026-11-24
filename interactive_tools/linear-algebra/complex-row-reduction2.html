@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Row Reduction over ℂ — Accounting Method</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --cream:#faf7f2;--paper:#fff;--navy:#18284a;--navy2:#2c4070;
+  --accent:#3a6eb5;--red:#b33a2f;--red-bg:#fef0ee;
+  --gold:#c8a430;--gray:#7a7a8a;--border:#ddd9d0;
+  --acc-bg:#edf1fb;--mod-bg:#fff9f5;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+/* math */
+.v{font-style:italic;}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.78em;line-height:1.12;margin:0 1px;}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 3px;}
+.fr>span:last-child{padding:0 3px;}
+.math{white-space:nowrap;font-variant-numeric:lining-nums;}
+
+/* controls */
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;color:var(--navy2);}
+.ctrl-row input[type=number]{
+  padding:.27rem .45rem;border:1px solid var(--border);border-radius:4px;
+  font-family:inherit;font-size:1rem;color:var(--navy);width:56px;text-align:center;
+}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--acc-bg);color:var(--navy2);border:1px solid #b8ccee;}
+.btn-ghost:hover{background:#c8daff;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+/* matrix grid */
+.mx-wrap{overflow-x:auto;margin:.7rem 0;}
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:92px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid input.b-input{background:#f4f8ff;border-color:#b8caec;}
+.mx-grid input.bad{border-color:var(--red);background:var(--red-bg);}
+.mx-grid .clbl{text-align:center;font-size:.85rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:8px;font-size:.9rem;color:var(--gray);}
+.mx-grid .eqsign{text-align:center;color:var(--navy2);font-size:1.05rem;}
+
+/* calculator */
+.calc-in{display:flex;gap:1.3rem;flex-wrap:wrap;margin-bottom:1rem;}
+.calc-in label{display:flex;align-items:center;gap:.45rem;color:var(--navy2);}
+.calc-in input{width:130px;padding:.27rem .45rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.calc-in input:focus{outline:none;border-color:var(--accent);}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.55rem;}
+.calc-item{background:var(--acc-bg);border:1px solid #d4def2;border-radius:5px;padding:.4rem .8rem;min-height:2.6rem;display:flex;align-items:center;gap:.5rem;}
+.calc-item.hl{background:#e8f5e8;border-color:#b9dcb9;}
+.calc-item .lhs{color:var(--navy2);}
+.calc-note{font-size:.88rem;color:var(--gray);font-style:italic;margin-top:.8rem;}
+
+/* steps */
+.steps-wrap{display:flex;flex-direction:column;gap:1.3rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.1rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.65rem;}
+.sdesc{color:#dbe6f6;font-size:.95rem;flex:1;}
+.sdesc .why{color:#a0b8d8;font-style:italic;margin-left:.6rem;}
+
+.twrap{overflow-x:auto;padding:.55rem .6rem .7rem;}
+.tab{border-collapse:collapse;font-size:.95rem;}
+.tab th,.tab td{padding:.36rem .68rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+.tab thead tr:first-child th{font-size:.74rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;padding:.2rem .68rem;}
+.tab thead tr:nth-child(2) th{font-weight:400;}
+.tab th.ahd{background:var(--acc-bg);color:#3a5aa8;}
+.tab th.mhd{background:#f5f5f3;color:#555;}
+.tab th.bhd{background:#f0f6ff;color:#3a60a0;}
+.tab th.ehd{background:#fafaf5;color:#666;text-align:left;padding-left:1rem;}
+.tab td.ac{background:var(--acc-bg);}
+.tab td.bc{background:#f4f8ff;}
+.tab td.ec{text-align:left;padding-left:1rem;color:var(--navy2);}
+.tab td.op-lbl{text-align:left;padding-left:.9rem;font-size:.88rem;color:var(--navy2);background:#fafafa;min-width:150px;}
+.tab .sepr{border-right:2.5px solid #aaa !important;}
+.tab td.piv-cell{background:var(--red-bg);}
+.pbox{display:inline-block;border:2px solid var(--red);border-radius:3px;padding:0 5px;color:var(--red);font-weight:600;}
+.tab tr.mod-r td{background:var(--mod-bg);}
+.tab tr.mod-r td.ac{background:#f3ece6;}
+.tab tr.mod-r td.piv-cell{background:var(--red-bg);}
+.tab tr.mod-r td.op-lbl{background:#fff4ee;}
+
+/* solution */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;margin-top:.4rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.25rem;margin-bottom:.85rem;font-weight:400;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.6rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.3rem .9rem;font-size:1.1rem;}
+.sol-note{color:#8ab8d0;font-style:italic;font-size:.9rem;}
+.det-badge{display:inline-block;background:rgba(200,164,48,.2);border:1px solid var(--gold);border-radius:4px;padding:.15rem .7rem;color:var(--gold);font-size:.95rem;margin-top:.5rem;}
+
+.keybox{background:var(--acc-bg);border:1px solid #c0ccdd;border-radius:6px;padding:.8rem 1.1rem;font-size:.9rem;color:var(--navy2);line-height:1.6;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Row Reduction over ℂ</h1>
+  <p>The Accounting Method — solving linear systems with complex coefficients, tracking every operation</p>
+</header>
+<main>
+
+<!-- INPUT CARD -->
+<div class="card">
+  <h2>Enter System</h2>
+  <div class="ctrl-row">
+    <label>Equations:
+      <input type="number" id="nRows" min="2" max="6" value="2">
+    </label>
+    <label>Variables:
+      <input type="number" id="nCols" min="2" max="6" value="2">
+    </label>
+    <button class="btn-ghost" id="resizeBtn">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.9rem;color:var(--gray);margin-bottom:.5rem;">
+    Enter complex numbers such as <span class="math">3</span>, <span class="math">−2i</span>,
+    <span class="math">1+i</span>, <span class="math">1/2−3i/4</span> or <span class="math">0.5+2.25i</span>.
+    All arithmetic is exact (rational real and imaginary parts).
+  </p>
+  <div class="mx-wrap" id="mxWrap"></div>
+  <div class="err-msg" id="inErr" style="display:none"></div>
+  <button class="btn-solve" id="solveBtn">Solve &amp; Show Steps →</button>
+</div>
+
+<!-- COMPLEX ARITHMETIC CARD -->
+<div class="card">
+  <h2>ℂ — Arithmetic Reference</h2>
+  <div class="calc-in">
+    <label><span class="math"><span class="v">z</span> =</span> <input type="text" id="calcZ" value="1+i" autocomplete="off"></label>
+    <label><span class="math"><span class="v">w</span> =</span> <input type="text" id="calcW" value="3-2i" autocomplete="off"></label>
+  </div>
+  <div class="calc-out" id="calcOut"></div>
+  <p class="calc-note">
+    Division is the only step that differs from real arithmetic: multiply top and bottom by the conjugate,
+    so <span class="math">1/<span class="v">w</span> = <span class="v">w̄</span> / |<span class="v">w</span>|²</span>.
+    Every multiplier in the elimination below is a quotient of this kind.
+  </p>
+</div>
+
+<!-- OUTPUT -->
+<div id="out"></div>
+
+</main>
+<script>
+/* ══════════════════════════════════════
+   EXACT RATIONALS (BigInt)
+══════════════════════════════════════ */
+function bgcd(a, b) { if (a < 0n) a = -a; if (b < 0n) b = -b; while (b) { [a, b] = [b, a % b]; } return a; }
+function Q(n, d = 1n) {
+  if (d === 0n) throw new Error('Division by zero');
+  if (d < 0n) { n = -n; d = -d; }
+  const g = bgcd(n, d) || 1n;
+  return { n: n / g, d: d / g };
+}
+const Q0 = Q(0n), Q1 = Q(1n);
+const qadd = (a, b) => Q(a.n * b.d + b.n * a.d, a.d * b.d);
+const qsub = (a, b) => Q(a.n * b.d - b.n * a.d, a.d * b.d);
+const qmul = (a, b) => Q(a.n * b.n, a.d * b.d);
+const qdiv = (a, b) => Q(a.n * b.d, a.d * b.n);
+const qneg = a => ({ n: -a.n, d: a.d });
+const qabs = a => (a.n < 0n ? qneg(a) : a);
+const qis0 = a => a.n === 0n;
+const qis1 = a => a.n === 1n && a.d === 1n;
+
+/* ══════════════════════════════════════
+   COMPLEX NUMBERS  a + bi,  a, b ∈ ℚ
+══════════════════════════════════════ */
+const C = (re, im = Q0) => ({ re, im });
+const C0 = C(Q0), C1 = C(Q1);
+const cadd  = (z, w) => C(qadd(z.re, w.re), qadd(z.im, w.im));
+const csub  = (z, w) => C(qsub(z.re, w.re), qsub(z.im, w.im));
+const cmul  = (z, w) => C(qsub(qmul(z.re, w.re), qmul(z.im, w.im)), qadd(qmul(z.re, w.im), qmul(z.im, w.re)));
+const cneg  = z => C(qneg(z.re), qneg(z.im));
+const cconj = z => C(z.re, qneg(z.im));
+const cnorm2 = z => qadd(qmul(z.re, z.re), qmul(z.im, z.im));
+const cinv  = z => { const n2 = cnorm2(z); return C(qdiv(z.re, n2), qdiv(qneg(z.im), n2)); };
+const cdiv  = (z, w) => cmul(z, cinv(w));
+const cis0  = z => qis0(z.re) && qis0(z.im);
+const cis1  = z => qis1(z.re) && qis0(z.im);
+
+function decQ(s) {
+  const [ip, fp = ''] = s.split('.');
+  return Q(BigInt((ip || '0') + fp), 10n ** BigInt(fp.length));
+}
+function parseC(str) {
+  let s = (str || '').replace(/\s+/g, '').replace(/[−–]/g, '-').replace(/[jJI]/g, 'i').replace(/[*·]/g, '');
+  if (s === '') return C0;
+  const bad = () => new Error(`Cannot read “${str}” as a complex number (try forms like 2-3i or 1/2+i/3)`);
+  const rx = /^([+-]?)(?:(\d+\.?\d*|\.\d+)(?:\/(\d+))?)?(i)?(?:\/(\d+))?/;
+  let re = Q0, im = Q0, first = true;
+  while (s.length) {
+    const m = rx.exec(s);
+    if (!m || m[0].length === 0 || (m[2] === undefined && !m[4]) || (!first && !m[1])) throw bad();
+    let q = m[2] !== undefined ? decQ(m[2]) : Q1;
+    if (m[3]) q = qdiv(q, Q(BigInt(m[3])));
+    if (m[5]) q = qdiv(q, Q(BigInt(m[5])));
+    if (m[1] === '-') q = qneg(q);
+    if (m[4]) im = qadd(im, q); else re = qadd(re, q);
+    s = s.slice(m[0].length); first = false;
+  }
+  return C(re, im);
+}
+
+/* ══════════════════════════════════════
+   GAUSSIAN ELIMINATION over ℂ
+══════════════════════════════════════ */
+function solveC(input) {
+  const n = input.length, m = input[0].length - 1;
+  let M = input.map(r => r.slice());
+  let acc = Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) => i===j ? C1 : C0));
+  const steps = [];
+  const snap = (op, pivs) => steps.push({ op, pivs: (pivs||[]).slice(), M: M.map(r=>r.slice()), acc: acc.map(r=>r.slice()) });
+
+  snap({t:'init'}, []);
+
+  let pr = 0, det = C1, swapCount = 0;
+  const allPivots = [];
+
+  // ── forward pass ──
+  for (let col=0; col<m && pr<n; col++) {
+    let found = -1;
+    for (let r=pr; r<n; r++) if (!cis0(M[r][col])) { found=r; break; }
+    if (found === -1) continue;
+
+    if (found !== pr) {
+      [M[found], M[pr]] = [M[pr], M[found]];
+      [acc[found], acc[pr]] = [acc[pr], acc[found]];
+      swapCount++;
+      snap({t:'swap', i:pr, j:found}, []);
+    }
+
+    det = cmul(det, M[pr][col]);
+    allPivots.push({row:pr, col});
+
+    for (let r=pr+1; r<n; r++) {
+      if (!cis0(M[r][col])) {
+        const a = M[r][col], piv = M[pr][col];
+        const mult = cdiv(a, piv);
+        for (let c=0; c<=m; c++) M[r][c] = csub(M[r][c], cmul(mult, M[pr][c]));
+        for (let c=0; c<n; c++)  acc[r][c] = csub(acc[r][c], cmul(mult, acc[pr][c]));
+        snap({t:'rowop', i:r, j:pr, mult, a, piv, dir:'fwd'}, [{row:pr, col}]);
+      }
+    }
+    pr++;
+  }
+
+  if (swapCount % 2 === 1) det = cneg(det);
+  if (n !== m) det = null; else if (allPivots.length < n) det = C0;
+
+  // ── back substitution ──
+  for (let pIdx=allPivots.length-1; pIdx>=0; pIdx--) {
+    const {row, col} = allPivots[pIdx];
+    for (let r=0; r<row; r++) {
+      if (!cis0(M[r][col])) {
+        const a = M[r][col], piv = M[row][col];
+        const mult = cdiv(a, piv);
+        for (let c=0; c<=m; c++) M[r][c] = csub(M[r][c], cmul(mult, M[row][c]));
+        for (let c=0; c<n; c++)  acc[r][c] = csub(acc[r][c], cmul(mult, acc[row][c]));
+        snap({t:'rowop', i:r, j:row, mult, a, piv, dir:'back'}, [{row, col}]);
+      }
+    }
+  }
+
+  // ── normalize pivots ──
+  for (const {row, col} of allPivots) {
+    const piv = M[row][col];
+    if (!cis1(piv)) {
+      const sc = cinv(piv);
+      for (let c=0; c<=m; c++) M[row][c] = cmul(M[row][c], sc);
+      for (let c=0; c<n; c++)  acc[row][c] = cmul(acc[row][c], sc);
+      snap({t:'scale', i:row, sc, piv}, allPivots.filter(pp=>pp.row<=row));
+    }
+  }
+
+  return { steps, n, m, allPivots, finalM: M, finalAcc: acc, det };
+}
+
+/* ══════════════════════════════════════
+   HTML MATH HELPERS
+══════════════════════════════════════ */
+const I = '<span class="v">i</span>';
+function qH(q) {            // rational, sign included
+  const neg = q.n < 0n, n = neg ? -q.n : q.n;
+  const body = q.d === 1n ? String(n) : `<span class="fr"><span>${n}</span><span>${q.d}</span></span>`;
+  return (neg ? '−' : '') + body;
+}
+function imH(q) {           // q·i, sign included
+  const a = qabs(q);
+  return (q.n < 0n ? '−' : '') + (qis1(a) ? '' : qH(a)) + I;
+}
+function cH(z) {
+  if (qis0(z.im)) return qH(z.re);
+  if (qis0(z.re)) return imH(z.im);
+  return qH(z.re) + (z.im.n < 0n ? ' − ' : ' + ') + imH(qabs(z.im));
+}
+const isSimple = z => qis0(z.re) || qis0(z.im);
+const par = z => (isSimple(z) && z_part(z).n >= 0n) ? cH(z) : `(${cH(z)})`;
+// one term  c·v  of a sum; v may be '' for a constant
+function termH(c, v, first) {
+  if (isSimple(c)) {
+    const neg = qis0(z_part(c).n) ? false : z_part(c).n < 0n;
+    const mag = neg ? cneg(c) : c;
+    const magStr = (cis1(mag) && v) ? '' : cH(mag);
+    return (first ? (neg ? '−' : '') : (neg ? ' − ' : ' + ')) + magStr + v;
+  }
+  return (first ? '' : ' + ') + `(${cH(c)})` + v;
+}
+function z_part(c) { return qis0(c.im) ? c.re : c.im; }
+
+function varH(i, m) {
+  return m <= 4 ? `<span class="v">${['x','y','z','w'][i]}</span>` : `<span class="v">x</span><sub>${i+1}</sub>`;
+}
+const R = i => `<span class="v">R</span><sub>${i+1}</sub>`;
+const E = i => `<span class="v">E</span><sub>${i+1}</sub>`;
+
+function eqH(row, m, vn) {
+  let s = '';
+  for (let i=0; i<m; i++) if (!cis0(row[i])) s += termH(row[i], vn[i], s === '');
+  return (s || '0') + ' = ' + cH(row[m]);
+}
+
+function opDescH(op) {
+  if (op.t === 'init') return { main: '[ acc | <span class="v">A</span> | <span class="v">b</span> ]', why: 'initial augmented system' };
+  if (op.t === 'swap') return { main: `${R(op.i)} ↔ ${R(op.j)}`, why: 'swap rows' };
+  if (op.t === 'scale')
+    return { main: `${R(op.i)} ← ${isSimple(op.sc) ? cH(op.sc) : par(op.sc)} · ${R(op.i)}`,
+             why: `normalize pivot: 1 ÷ ${par(op.piv)} = ${cH(op.sc)}` };
+  if (op.t === 'rowop') {
+    const t = isSimple(op.mult)
+      ? termH(cneg(op.mult), (cis1(op.mult) || cis1(cneg(op.mult)) ? '' : ' · ') + R(op.j), false)
+      : ` − (${cH(op.mult)}) · ${R(op.j)}`;
+    return { main: `${R(op.i)} ← ${R(op.i)}${t}`,
+             why: `${op.dir==='fwd' ? 'forward elim' : 'back sub'}: multiplier ${par(op.a)} ÷ ${par(op.piv)} = ${cH(op.mult)}` };
+  }
+  return { main:'', why:'' };
+}
+
+/* ══════════════════════════════════════
+   EXAMPLES
+══════════════════════════════════════ */
+const EXAMPLES = [
+  {label:'2×2 unique',        A:[['1+i','2'],['i','1-i']],                         b:['3-i','2']},
+  {label:'3×3 unique',        A:[['1','i','0'],['-i','2','1'],['0','1+i','3']],    b:['1','i','2']},
+  {label:'2×2 needs swap',    A:[['0','2i'],['1+i','1']],                          b:['4','2']},
+  {label:'2×2 no solution',   A:[['1','i'],['i','-1']],                            b:['1','1']},
+  {label:'2×3 free variable', A:[['1','i','1+i'],['i','-1','2']],                  b:['1','i']},
+  {label:'3×3 rank 2',        A:[['1','i','1'],['i','1','2'],['1+i','1+i','3']],   b:['2','i','2+i']},
+];
+
+/* ══════════════════════════════════════
+   DOM
+══════════════════════════════════════ */
+if (typeof document !== 'undefined') {
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+  let cN = 2, cM = 2;
+
+  function renderOutput(result) {
+    const {steps, n, m, allPivots, finalM, det} = result;
+    const vn = Array.from({length:m}, (_,i)=>varH(i,m));
+    const out = $('out'); out.innerHTML = '';
+    const wrap = el('div','steps-wrap');
+
+    let stepNum = 0;
+    steps.forEach(step => {
+      if (step.op.t !== 'init') stepNum++;
+      const d = opDescH(step.op);
+      const block = el('div','scard');
+
+      const hd = el('div','shd');
+      hd.append(
+        step.op.t==='init' ? el('span','sbadge init-b','init') : el('span','sbadge',String(stepNum)),
+        el('span','sdesc math', `${d.main}<span class="why">— ${d.why}</span>`)
+      );
+      block.appendChild(hd);
+
+      const tw = el('div','twrap'), tbl = el('table','tab');
+      const thead = el('thead'), hr = el('tr');
+      const thOp = el('th','mhd','Row op'); thOp.rowSpan = 2; hr.appendChild(thOp);
+      const thAcc = el('th','ahd sepr','Accounting — combination of original rows'); thAcc.colSpan = n; hr.appendChild(thAcc);
+      const thVar = el('th','mhd','Coefficients'); thVar.colSpan = m; hr.appendChild(thVar);
+      const thB = el('th','bhd sepr','<span class="v" style="text-transform:none">b</span>'); thB.rowSpan = 2; hr.appendChild(thB);
+      const thEq = el('th','ehd','Equation'); thEq.rowSpan = 2; hr.appendChild(thEq);
+      thead.appendChild(hr);
+      const sr = el('tr');
+      for (let j=0; j<n; j++) sr.appendChild(el('th','ahd'+(j===n-1?' sepr':''), E(j)));
+      for (let j=0; j<m; j++) sr.appendChild(el('th','mhd', vn[j]));
+      thead.appendChild(sr); tbl.appendChild(thead);
+
+      const tbody = el('tbody');
+      const labelRow = step.op.t === 'init' ? -1 : step.op.i;
+      for (let i=0; i<n; i++) {
+        const tr = el('tr');
+        const isMod = step.op.t==='rowop'&&step.op.i===i ||
+                      step.op.t==='swap'&&(step.op.i===i||step.op.j===i) ||
+                      step.op.t==='scale'&&step.op.i===i;
+        if (isMod) tr.classList.add('mod-r');
+        tr.appendChild(el('td','op-lbl math', i===labelRow ? d.main : ''));
+        for (let j=0; j<n; j++) tr.appendChild(el('td','ac math'+(j===n-1?' sepr':''), cH(step.acc[i][j])));
+        for (let j=0; j<m; j++) {
+          const isPiv = step.pivs.some(pv=>pv.row===i&&pv.col===j);
+          tr.appendChild(isPiv ? el('td','piv-cell math',`<span class="pbox">${cH(step.M[i][j])}</span>`)
+                               : el('td','mc math', cH(step.M[i][j])));
+        }
+        tr.appendChild(el('td','bc sepr math', cH(step.M[i][m])));
+        tr.appendChild(el('td','ec math', eqH(step.M[i], m, vn)));
+        tbody.appendChild(tr);
+      }
+      tbl.appendChild(tbody); tw.appendChild(tbl); block.appendChild(tw); wrap.appendChild(block);
+    });
+
+    // ── Solution ──
+    const sol = el('div','sol-card');
+    const rank = allPivots.length;
+    const inconsistent = finalM.some(r => r.slice(0,m).every(cis0) && !cis0(r[m]));
+
+    if (inconsistent) {
+      sol.innerHTML = `<h3>No Solution</h3><p class="sol-note">The system is inconsistent over ℂ: a row reduces to 0 = <span class="v">c</span> with <span class="v">c</span> ≠ 0, a contradiction. The accounting columns of that row show which combination of the original equations produces it.</p>`;
+    } else if (rank < m) {
+      const pivCols = new Set(allPivots.map(pv=>pv.col));
+      const free = Array.from({length:m},(_,i)=>i).filter(j=>!pivCols.has(j));
+      sol.innerHTML = '<h3>Infinitely Many Solutions</h3>';
+      const vals = el('div','sol-vals');
+      allPivots.forEach(({row,col}) => {
+        let s = '';
+        if (!cis0(finalM[row][m])) s += termH(finalM[row][m], '', true);
+        free.forEach(j => { if (!cis0(finalM[row][j])) s += termH(cneg(finalM[row][j]), vn[j], s === ''); });
+        vals.appendChild(el('div','sol-item math', `${vn[col]} = ${s || '0'}`));
+      });
+      sol.appendChild(vals);
+      sol.appendChild(el('p','sol-note', `Free variable${free.length>1?'s':''}: ${free.map(j=>vn[j]).join(', ')} — any complex value${free.length>1?'s':''}. Rank ${rank}, so the solution set is a ${free.length}-dimensional complex affine subspace.`));
+    } else {
+      sol.innerHTML = '<h3>Unique Solution over ℂ</h3>';
+      const vals = el('div','sol-vals');
+      allPivots.forEach(({row,col}) => vals.appendChild(el('div','sol-item math', `${vn[col]} = ${cH(finalM[row][m])}`)));
+      sol.appendChild(vals);
+    }
+    if (det !== null) sol.appendChild(el('div','det-badge math', `det(<span class="v">A</span>) = ${cH(det)}`));
+    if (!inconsistent) {
+      const note = el('p','sol-note','The accounting matrix <span class="v">L</span> satisfies <span class="v">L</span>·<span class="v">A</span> = (row-reduced form). See the final step’s accounting columns above.');
+      note.style.marginTop = '.7rem'; sol.appendChild(note);
+    }
+    wrap.appendChild(sol);
+
+    wrap.appendChild(el('div','keybox', `
+      <strong>Reading this tableau:</strong>
+      The <span style="color:#3a5aa8">blue accounting columns</span> record how each current row
+      is a ℂ-linear combination of the original equations <span class="v">E</span><sub>1</sub>, …, <span class="v">E</span><sub>${n}</sub>.
+      <span style="color:var(--red)">Red-boxed</span> entries are the active <strong>pivot elements</strong>.
+      <br><br>
+      <strong>Why does it work over ℂ?</strong> ℂ is a field: every non-zero <span class="v">z</span> has the inverse
+      <span class="v">z̄</span> / |<span class="v">z</span>|², so row operations work exactly as over ℝ — the same elimination
+      algorithm, with complex multipliers. Note that rows are combined with plain complex scalars; no conjugation
+      enters elimination itself. The accounting matrix <span class="v">L</span> is the product of all elementary matrices and satisfies
+      <em>L·A = (RREF of A)</em>; when <span class="v">A</span> is square and invertible, <span class="v">L</span> = <span class="v">A</span><sup>−1</sup>.
+    `));
+    out.appendChild(wrap);
+    out.scrollIntoView({behavior:'smooth'});
+  }
+
+  /* ── calculator ── */
+  function renderCalc() {
+    const out = $('calcOut'); out.innerHTML = '';
+    let z, w;
+    try { z = parseC($('calcZ').value); w = parseC($('calcW').value); }
+    catch (e) { out.appendChild(el('div','err-msg', e.message)); return; }
+    const Z = '<span class="v">z</span>', W = '<span class="v">w</span>';
+    const item = (lhs, rhs, hl) => out.appendChild(el('div','calc-item math'+(hl?' hl':''), `<span class="lhs">${lhs} =</span> <span>${rhs}</span>`));
+    item(`${Z} + ${W}`, cH(cadd(z,w)));
+    item(`${Z} − ${W}`, cH(csub(z,w)));
+    item(`${Z} · ${W}`, cH(cmul(z,w)));
+    item(`<span class="v">w̄</span>`, cH(cconj(w)));
+    item(`|${W}|²`, qH(cnorm2(w)));
+    item(`1 / ${W}`, cis0(w) ? 'undefined' : cH(cinv(w)), true);
+    item(`${Z} / ${W}`, cis0(w) ? 'undefined' : cH(cdiv(z,w)), true);
+    item(`1 / ${Z}`, cis0(z) ? 'undefined' : cH(cinv(z)), true);
+  }
+
+  /* ── matrix input ── */
+  function buildGrid() {
+    const cont = $('mxWrap'); cont.innerHTML = '';
+    const g = el('div','mx-grid');
+    g.style.gridTemplateColumns = `auto ${Array(cM).fill('92px').join(' ')} 24px 92px`;
+    g.appendChild(el('div'));
+    for (let j=0; j<cM; j++) g.appendChild(el('div','clbl', varH(j,cM)));
+    g.appendChild(el('div'));
+    g.appendChild(el('div','clbl','<span class="v">b</span>'));
+    for (let i=0; i<cN; i++) {
+      g.appendChild(el('div','rlbl', E(i)));
+      for (let j=0; j<cM; j++) {
+        const inp = el('input'); inp.type='text'; inp.id=`m${i}_${j}`; inp.placeholder='0'; inp.autocomplete='off';
+        g.appendChild(inp);
+      }
+      g.appendChild(el('div','eqsign','='));
+      const bi = el('input','b-input'); bi.type='text'; bi.id=`b${i}`; bi.placeholder='0'; bi.autocomplete='off';
+      g.appendChild(bi);
+    }
+    cont.appendChild(g);
+  }
+
+  function rebuildAll() {
+    cN = Math.min(Math.max(parseInt($('nRows').value)||2,2),6);
+    cM = Math.min(Math.max(parseInt($('nCols').value)||2,2),6);
+    $('nRows').value = cN; $('nCols').value = cM;
+    buildGrid();
+  }
+
+  function loadEx(ex) {
+    cN = ex.A.length; cM = ex.A[0].length;
+    $('nRows').value = cN; $('nCols').value = cM;
+    buildGrid();
+    ex.A.forEach((row,i) => {
+      row.forEach((v,j) => { $(`m${i}_${j}`).value = v; });
+      $(`b${i}`).value = ex.b[i];
+    });
+    $('inErr').style.display = 'none';
+  }
+
+  function doSolve() {
+    const err = $('inErr'); err.style.display = 'none';
+    let firstErr = null;
+    const read = id => {
+      const inp = $(id); inp.classList.remove('bad');
+      try { return parseC(inp.value); }
+      catch (e) { inp.classList.add('bad'); firstErr = firstErr || e; return C0; }
+    };
+    const input = Array.from({length:cN}, (_,i) => [
+      ...Array.from({length:cM}, (_,j) => read(`m${i}_${j}`)), read(`b${i}`)
+    ]);
+    if (firstErr) { err.textContent = firstErr.message; err.style.display = 'block'; return; }
+    try { renderOutput(solveC(input)); }
+    catch (e) { $('out').innerHTML = `<div class="err-msg" style="padding:1rem">Error: ${e.message}</div>`; console.error(e); }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const row = $('exRow');
+    EXAMPLES.forEach(ex => { const b = el('button','btn-ghost'); b.textContent = ex.label; b.onclick = () => loadEx(ex); row.appendChild(b); });
+    $('resizeBtn').onclick = rebuildAll;
+    $('solveBtn').onclick = doSolve;
+    $('calcZ').oninput = renderCalc; $('calcW').oninput = renderCalc;
+    $('mxWrap').addEventListener('keydown', e => { if (e.key === 'Enter') doSolve(); });
+    renderCalc();
+    loadEx(EXAMPLES[0]);
+  });
+}
+</script>
+</body>
+</html>

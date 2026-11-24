@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>4. Five ways to converge | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1.3fr 1fr 1.15fr; } }
+#cvMain { height: 290px; touch-action: none; cursor: ew-resize; } #cvPt { height: 150px; }
+#cvC { height: 230px; } #cvG { height: 150px; touch-action: none; } #cvN { height: 200px; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); opacity: .4; }
+.controls .wide { grid-column: 1 / -1; display: grid; gap: .5rem 1.2rem; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.meter { height: 14px; background: var(--mist); border: 1px solid var(--rule); margin: .3rem 0 .2rem; } .meter > div { height: 100%; background: var(--accent); width: 0; }
+table.modes { border-collapse: collapse; width: 100%; font-size: .93rem; margin-top: .7rem; }
+table.modes th, table.modes td { padding: .28rem .25rem; text-align: left; vertical-align: top; }
+table.modes td:first-child, table.modes thead th { white-space: nowrap; }
+table.modes thead th { font-family: var(--slab); font-weight: 500; border-bottom: 2px solid var(--ink); }
+table.modes tbody tr + tr { border-top: 1px solid var(--rule); }
+table.modes td.v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+table.modes td.yes b { color: var(--ink); } table.modes td.no b { color: var(--accent); }
+table.modes td.why { font-size: .88rem; color: var(--gray); line-height: 1.35; }
+table.modes .key { display: inline-block; width: 1.2rem; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Sections 1.3 and 8.4</span>
+    </div>
+    <div class="page-number" aria-hidden="true">4</div>
+    <div>
+      <h1>Five ways to converge</h1>
+      <p>A sequence of functions can settle down at each point, in a band, in area, in energy, or only in its shadows. Seven standard sequences, five verdicts each, and no two sequences alike.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>Page 3 put different rulers on one pair of functions. Now let one of the functions move. Choose a sequence $f_n$, run $n$ upward, and ask in each of five senses whether $f_n\to f$. Decide before you reveal the verdicts.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>The sequence f<sub>n</sub></legend>
+        <div class="chips" id="seqChips"></div>
+      </fieldset>
+      <div class="wide">
+        <div class="slider big">
+          <label for="sn">Index n</label><output id="on">1</output>
+          <input type="range" id="sn" min="1" max="128" step="1" value="4">
+        </div>
+        <div class="chips" style="margin:0"><button type="button" class="plain" id="play">Run n from 1 to 128</button></div>
+      </div>
+      <div class="slider"><label for="sE">Band half-width ε</label><output id="oE">0.20</output><input type="range" id="sE" min="0.02" max="1" step="0.01" value="0.2"></div>
+      <div class="slider"><label for="sX">Watch the point x₀</label><output id="oX">0.80</output><input type="range" id="sX" min="0" max="1" step="0.001" value="0.8"></div>
+      <fieldset style="grid-column:span 2">
+        <legend>Test function g, for weak convergence</legend>
+        <div class="chips" id="gChips"></div>
+      </fieldset>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">The graph of f<sub>n</sub> against its candidate limit f. Uniform convergence means staying inside the band.</p>
+        <canvas id="cvMain" aria-label="Graph of f n, the limit f and the epsilon band around f"></canvas>
+        <ul class="legend"><li><i class="c"></i>f<sub>n</sub></li><li><i></i>f</li><li><i class="sq"></i>band f ± ε</li></ul>
+        <p class="cap" id="capBand"></p>
+        <canvas id="cvPt" aria-label="The numbers f n of x zero plotted against n"></canvas>
+        <p class="cap">Pointwise convergence at x₀ is convergence of this one sequence of numbers, f<sub>1</sub>(x₀), f<sub>2</sub>(x₀), … Drag in the graph above to move x₀.</p>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">Coordinates of f<sub>n</sub> − f in the basis 1, √2 cos kπx. Weak convergence of a bounded sequence is convergence of each bar separately.</p>
+        <canvas id="cvC" aria-label="Bar chart of the first 64 cosine coefficients of f n minus f"></canvas>
+        <p class="cap">Share of ‖f<sub>n</sub> − f‖² carried by these 64 coordinates:</p>
+        <div class="meter" aria-hidden="true"><div id="meter"></div></div>
+        <table class="read">
+          <tr><th>‖f<sub>n</sub> − f‖² in L²</th><td id="c1">–</td></tr>
+          <tr><th>sum of the 64 squared bars</th><td id="c2">–</td></tr>
+          <tr><th>largest single bar</th><td id="c3">–</td></tr>
+        </table>
+        <p class="cap">Every bar can shrink to nothing while the total stays put. The energy has not vanished. It has moved to coordinates further out than any you fixed in advance.</p>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub">Distances from f<sub>n</sub> to f, and one shadow: the number ⟨f<sub>n</sub> − f, g⟩.</p>
+        <canvas id="cvG" aria-label="The test function g and the product of g with f n minus f"></canvas>
+        <ul class="legend"><li><i></i>g</li><li><i class="sq"></i>(f<sub>n</sub> − f) g, whose signed area is the shadow</li></ul>
+        <p class="cap" id="capG">Choose “Your sketch” to draw g here.</p>
+        <canvas id="cvN" aria-label="The four distances plotted against n on log-log axes"></canvas>
+        <table class="modes" id="modes">
+          <thead><tr><th>Sense</th><th style="text-align:right">at this n</th><th>f<sub>n</sub> → f ?</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="mini" style="margin-top:.7rem"><button type="button" class="plain" id="reveal">Reveal the verdicts</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Definitions.</span> Let $f_n,f$ be functions on $[0,1]$.</p>
+    <p><em>Pointwise:</em> $f_n(x)\to f(x)$ for each $x$. &nbsp; <em>Uniform:</em> $\|f_n-f\|_\infty\to0$. &nbsp; <em>In $L^1$:</em> $\int|f_n-f|\to0$. &nbsp; <em>In $L^2$:</em> $\int|f_n-f|^2\to0$.</p>
+    <p><em>Weakly in $L^2$:</em> $\ \langle f_n,g\rangle=\int f_ng\to\int fg\ $ for every $g\in L^2$. In a general normed space $X$, $x_n\to x$ weakly means $x'(x_n)\to x'(x)$ for every bounded linear functional $x'$ on $X$.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Proposition (what implies what).</span> On $[0,1]$,
+    $$\text{uniform}\ \Longrightarrow\ L^2\ \Longrightarrow\ L^1,\qquad \text{uniform}\ \Longrightarrow\ \text{pointwise},\qquad L^2\ \Longrightarrow\ \text{weak in }L^2 .$$
+    No other implication among the five holds in general. The seven sequences in the laboratory are the counterexamples.</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem (weak convergence in coordinates).</span> Let $(e_k)$ be an orthonormal basis of a Hilbert space. Then $f_n\to f$ weakly if and only if $\sup_n\|f_n\|\lt\infty$ and $\langle f_n,e_k\rangle\to\langle f,e_k\rangle$ for each $k$. Moreover a weakly convergent sequence satisfies $\|f\|\le\liminf\|f_n\|$, and if in addition $\|f_n\|\to\|f\|$ then $f_n\to f$ in norm.</p>
+  </div>
+  <div class="prose">
+    <p>The boundedness in the theorem is not a convenience. It is forced by the uniform boundedness principle of Section 3.6, and the tall spike shows what goes wrong without it. Weak convergence is the subject of Section 8.4, where it supplies the compactness that the unit ball of an infinite-dimensional space lacks: bounded sequences in a reflexive space have weakly convergent subsequences. A compact operator is precisely one that turns weak convergence into norm convergence, which is why this page comes before Chapter 4.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>Pointwise without uniform</h3>
+      <p>For xⁿ, put x₀ at 0.8, then 0.95, then 0.99. Each time the dots fall to 0, later and later. However large n is, the graph still climbs out of the band near x = 1.</p>
+      <button type="button" class="plain" data-exp="xn">Set up xⁿ</button>
+    </div>
+    <div class="exp">
+      <h3>Converging in area, nowhere at a point</h3>
+      <p>The typewriter block gets narrower, so its area falls to 0. But it keeps sweeping across, and every x₀ is hit again and again. Watch the dots: infinitely many 1s, infinitely many 0s.</p>
+      <button type="button" class="plain" data-exp="type">Set up the typewriter</button>
+    </div>
+    <div class="exp">
+      <h3>Only the shadows converge</h3>
+      <p>sin 2πnx keeps L² distance 1/√2 from 0 forever. Yet against any g you choose, the shaded area cancels. In the Coordinates panel the bars slide to the right and off the edge.</p>
+      <button type="button" class="plain" data-exp="osc">Set up the oscillation</button>
+    </div>
+    <div class="exp">
+      <h3>Same shape, three fates</h3>
+      <p>A block of width 1/n with height 1, √n, or n. Compare “Spike of height √n” with “Spike of height n”. One converges weakly to 0. The other has shadows that converge, to g(0), but there is no function f with ⟨f, g⟩ = g(0).</p>
+      <button type="button" class="plain" data-exp="sqrt">Set up height √n</button>
+    </div>
+    <div class="exp">
+      <h3>The overshoot that never leaves</h3>
+      <p>Fourier sums of a block converge in L², in L¹, and at every point. Yet no n fits a band with ε below ½, because each sum is continuous and must pass through the jump. Look beyond the corner too: the overshoot of about 9 percent of the jump gets narrower, never lower.</p>
+      <button type="button" class="plain" data-exp="gibbs">Set up the Fourier sums</button>
+    </div>
+    <div class="exp">
+      <h3>A shadow that fools you</h3>
+      <p>With g = 1, the shadow of sin 2πnx is exactly 0 for every n, and the shadow of the spike of height n is exactly 1. One test function proves nothing. Draw your own g and try to keep the oscillation's shadow from shrinking.</p>
+      <button type="button" class="plain" data-exp="fool">Set up g = 1</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>For the first five sequences the three distances are closed forms, for example $\|x^n\|_1=1/(n+1)$ and $\|x^n\|_\infty=1$. The plotted lines are those formulas, not measurements.</li>
+        <li>A single $g$ whose shadow fails to converge proves that weak convergence fails. So does an unbounded norm. These negative verdicts can be certified from the screen.</li>
+        <li>For the oscillation the coordinates are computable by hand, and each one tends to $0$ while $\sum_kc_k^2=\tfrac12$ for every $n$. The picture of energy leaving through the right edge is accurate.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>Convergence is a statement about all large $n$, and the slider stops at 128. A sequence that looks settled may not be, and the typewriter's failure at every point is visible only as a pattern you must extrapolate.</li>
+        <li>Weak convergence quantifies over every $g$ in $L^2$. The screen tests one $g$ at a time. The positive verdict for the oscillation is the Riemann–Lebesgue lemma, not an observation.</li>
+        <li>The point $x=1$, where $x^n\to1$, is not a pixel. Pointwise statements about single points and statements "almost everywhere" are invisible on any grid.</li>
+        <li>The spike of height $n$ is drawn clipped. Its shadows converge to $g(0)$ for continuous $g$, which describes a point mass at $0$. That object lives in the dual of $C[0,1]$ (Section 2.4), not in $L^2$.</li>
+        <li>Beyond $n=128$ the grid of 2048 points cannot resolve $\sin2\pi nx$. Any computed picture of weak convergence eventually turns into aliasing.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Prove the three implications of the proposition. For each of the following, name the sequence from the laboratory that shows the implication fails: pointwise $\Rightarrow L^1$; $L^1\Rightarrow$ pointwise; $L^1\Rightarrow L^2$; weak $\Rightarrow L^2$; pointwise $\Rightarrow$ weak.</li>
+    <li>For $f_n=x^n$ and a given $\varepsilon\lt1$, find the set of $x$ where $f_n(x)\gt\varepsilon$ and its length. Use this to explain, in one sentence each, why the convergence is not uniform on $[0,1]$, is uniform on $[0,b]$ for every $b\lt1$, and does hold in $L^1$.</li>
+    <li>Compute $c_k=\int_0^1\sin(2\pi nx)\,\sqrt2\cos(k\pi x)\,dx$. Show $c_k=0$ for even $k$, and that for fixed $k$, $c_k\to0$ as $n\to\infty$. Near which $k$ are the bars largest? Deduce from the theorem that $\sin2\pi nx\to0$ weakly, and check $\|0\|\le\liminf\|f_n\|$. Why does the last part of the theorem not apply?</li>
+    <li>Let $f_n=n^{\alpha}\chi_{(0,1/n)}$. For which $\alpha$ does $f_n\to0$ pointwise, in $L^1$, in $L^2$, weakly in $L^2$? For $\alpha=1$ show $\int f_ng\to g(0)$ for continuous $g$, and show there is no $f\in L^2$ with $\int fg=g(0)$ for all continuous $g$. Now let $K$ be the integral operator of page 1. Show $Kf_n\to0$ uniformly when $\alpha=\tfrac12$. An operator that improves weak convergence to norm convergence is called compact.</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="03_function_space_geometry.html">Previous: 3. A function is a point</a>
+  <a href="index.html">Course contents</a>
+  <a href="05.html" id="nextLink">Next page: 5</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   The sequences.  Grid of M cell midpoints on [0, 1].
+   ------------------------------------------------------------------ */
+const M = 2048, h = 1 / M, NMAX = 128, K = 64;
+const xm = Float64Array.from({ length: M }, (_, j) => (j + 0.5) * h);
+const PHI = []; for (let k = 0; k < K; k++) PHI.push(Float64Array.from(xm, x => k ? Math.SQRT2 * Math.cos(k * Math.PI * x) : 1));
+const block = x => (x > 0.25 && x < 0.75 ? 1 : x === 0.25 || x === 0.75 ? 0.5 : 0), hat = x => 1 - Math.abs(2 * x - 1);
+const aBlock = k => (k % 2 ? -2 * Math.sin(Math.PI * k / 2) / (Math.PI * k) : 0), aHat = k => (k % 2 ? -4 / (Math.PI * k) ** 2 : 0);
+const fourier = a => (n, x) => { let s = 0.5; for (let k = 1; k <= n; k++) s += a(k) * Math.cos(2 * Math.PI * k * x); return s; };
+const tw = n => { const m = Math.floor(Math.log2(n)); return [m, n - 2 ** m]; };
+const Y = (why) => ['yes', why], N = (why) => ['no', why];
+const SEQ = {
+  xn:   { name: 'xⁿ', ev: (n, x) => x ** n, lim: x => (x === 1 ? 1 : 0), exact: n => ({ sup: 1, L1: 1 / (n + 1), L2: 1 / Math.sqrt(2 * n + 1) }),
+          v: [Y('to 0 for x < 1, to 1 at x = 1'), N('the sup of |fₙ − f| is 1 for every n'), Y('‖fₙ − f‖₁ = 1/(n + 1)'), Y('‖fₙ − f‖₂ = 1/√(2n + 1)'), Y('norm convergence implies weak')] },
+  one:  { name: 'Typewriter block', ev: (n, x) => { const [m, k] = tw(n); return x >= k / 2 ** m && x < (k + 1) / 2 ** m ? 1 : 0; }, lim: () => 0, exact: n => { const m = tw(n)[0]; return { sup: 1, L1: 2 ** -m, L2: 2 ** (-m / 2) }; },
+          v: [N('at no point: every x is covered infinitely often and uncovered infinitely often'), N('the sup is 1'), Y('the width 2^−m tends to 0'), Y('‖fₙ‖₂ = 2^(−m/2)'), Y('norm convergence implies weak')] },
+  sqrt: { name: 'Spike of height √n', ev: (n, x) => (x > 0 && x < 1 / n ? Math.sqrt(n) : 0), lim: () => 0, exact: n => ({ sup: Math.sqrt(n), L1: 1 / Math.sqrt(n), L2: 1 }),
+          v: [Y('each x > 0 is eventually to the right of the spike'), N('the sup is √n'), Y('‖fₙ‖₁ = 1/√n'), N('‖fₙ‖₂ = 1 for every n'), Y('bounded, and |⟨fₙ, g⟩| ≤ (∫₀^{1/n} g²)^{1/2} → 0')] },
+  tall: { name: 'Spike of height n', ev: (n, x) => (x > 0 && x < 1 / n ? n : 0), lim: () => 0, exact: n => ({ sup: n, L1: 1, L2: Math.sqrt(n) }),
+          v: [Y('each x > 0 is eventually to the right of the spike'), N('the sup is n'), N('‖fₙ‖₁ = 1 for every n'), N('‖fₙ‖₂ = √n'), N('‖fₙ‖₂ is unbounded. The shadows tend to g(0), a point mass, which is no function in L²')] },
+  osc:  { name: 'sin 2πnx', ev: (n, x) => Math.sin(2 * Math.PI * n * x), lim: () => 0, exact: () => ({ sup: 1, L1: 2 / Math.PI, L2: Math.SQRT1_2 }),
+          v: [N('only at x = 0, ½ and 1'), N('the sup is 1'), N('‖fₙ‖₁ = 2/π'), N('‖fₙ‖₂ = 1/√2'), Y('Riemann–Lebesgue: every coordinate tends to 0 and the norms are bounded')] },
+  gibbs:{ name: 'Fourier sums of a block', ev: fourier(aBlock), a: aBlock, lim: block,
+          v: [Y('at every x, to ½ at the two jumps'), N('each sum is continuous, so beside a jump the gap is nearly ½. The overshoot of about 0.089 persists as well'), Y('follows from L²'), Y('Parseval: the tail Σ aₖ² tends to 0'), Y('norm convergence implies weak')] },
+  hatf: { name: 'Fourier sums of a hat', ev: fourier(aHat), a: aHat, lim: hat,
+          v: [Y('follows from uniform'), Y('the tail Σ |aₖ| ~ 1/n tends to 0'), Y('follows from uniform'), Y('follows from uniform'), Y('follows from L²')] }
+};
+const G = { one: ['1', () => 1], ramp: ['x', x => x], bump: ['Bump near 0.3', x => Math.exp(-(((x - 0.3) / 0.1) ** 2))], win: ['Window on [0.2, 0.6]', x => (x >= 0.2 && x <= 0.6 ? 1 : 0)], sketch: ['Your sketch', null] };
+const state = { seq: 'xn', n: 4, eps: 0.2, x0: 0.8, g: 'bump', reveal: false };
+let gSketch = Float64Array.from(xm, x => Math.cos(3 * Math.PI * x) * 0.8);
+const R = {}; let COS2 = null;
+const gArr = () => state.g === 'sketch' ? gSketch : Float64Array.from(xm, G[state.g][1]);
+
+function gridOf(seq, n) { return Float64Array.from(xm, x => seq.ev(n, x)); }
+function computeAll() {                              // everything that depends on the sequence and on g, for all n at once
+  const seq = SEQ[state.seq], f = Float64Array.from(xm, seq.lim), g = gArr(), rows = [null];
+  let run = null; if (seq.a) { if (!COS2) { COS2 = [null]; for (let k = 1; k <= NMAX; k++) COS2.push(Float64Array.from(xm, x => Math.cos(2 * Math.PI * k * x))); } run = new Float64Array(M).fill(0.5); }
+  for (let n = 1; n <= NMAX; n++) {
+    let fn; if (run) { const a = seq.a(n); if (a) for (let j = 0; j < M; j++) run[j] += a * COS2[n][j]; fn = run; } else fn = gridOf(seq, n);
+    let sup = 0, s1 = 0, s2 = 0, pg = 0; for (let j = 0; j < M; j++) { const d = fn[j] - f[j], a = Math.abs(d); if (a > sup) sup = a; s1 += a; s2 += d * d; pg += d * g[j]; }
+    const r = { sup, L1: s1 * h, L2: Math.sqrt(s2 * h), weak: pg * h }; if (seq.exact) Object.assign(r, seq.exact(n)); rows.push(r);
+  }
+  Object.assign(R, { f, g, rows });
+}
+function computeN() {
+  const seq = SEQ[state.seq], fn = seq.a ? Float64Array.from(xm, x => seq.ev(state.n, x)) : gridOf(seq, state.n), d = fn.map((v, j) => v - R.f[j]);
+  const c = PHI.map(p => { let s = 0; for (let j = 0; j < M; j++) s += d[j] * p[j]; return s * h; });
+  Object.assign(R, { fn, d, c, pt: Array.from({ length: NMAX }, (_, i) => seq.ev(i + 1, state.x0)), flim: seq.lim(state.x0) });
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }) {
+  const x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function axes(ctx, F, xt = [0, 0.5, 1]) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.fillStyle = col.gray; ctx.setLineDash([]); ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of xt) { const X = Math.round(F.X(t)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(String(t), X, F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(F.yr[1].toFixed(1), F.x0 - 5, F.y0 + 6); ctx.fillText(F.yr[0].toFixed(1), F.x0 - 5, F.y1 - 6);
+  if (F.yr[0] < 0 && F.yr[1] > 0) { const Yz = Math.round(F.Y(0)) + .5; ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, Yz); ctx.lineTo(F.x1, Yz); ctx.stroke(); ctx.fillText('0', F.x0 - 5, Yz); }
+}
+function curve(ctx, F, X, Yv, color, width, dash = []) { clip(ctx, F); ctx.beginPath(); for (let j = 0; j < Yv.length; j++) ctx.lineTo(F.X(X[j]), Math.max(-1e4, Math.min(1e4, F.Y(Yv[j])))); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.stroke(); ctx.restore(); }
+function drag(cv, start, end) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { if (move && end) end(); move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', sup = e => (e < 0 ? '⁻' : '') + [...String(Math.abs(e))].map(c => SUP[c]).join('');
+const num = v => { const a = Math.abs(v); if (a < 1e-12) return '0'; if (a < 1e-4) { const e = Math.floor(Math.log10(a)); return (v / 10 ** e).toFixed(1) + ' × 10' + sup(e); } return a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : v.toFixed(4); };
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {};
+function drawMain() {
+  const { ctx, W, H } = fit($('cvMain')), { f, fn } = R, F = FR.main = frame(W, H, [0, 1], [-1.35, 2.35]), e = state.eps; axes(ctx, F);
+  clip(ctx, F); ctx.beginPath(); for (let j = 0; j < M; j++) ctx.lineTo(F.X(xm[j]), F.Y(f[j] + e)); for (let j = M - 1; j >= 0; j--) ctx.lineTo(F.X(xm[j]), F.Y(f[j] - e)); ctx.closePath(); ctx.globalAlpha = .2; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.restore();
+  curve(ctx, F, xm, f, col.ink, 3); curve(ctx, F, xm, fn, col.accent, 2.2);
+  let mx = 0; for (const v of fn) mx = Math.max(mx, v); if (mx > 2.35) { ctx.fillStyle = col.accent; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('↑ height ' + mx.toFixed(1) + ', clipped', F.x0 + 8 + (F.x1 - F.x0) / state.n, F.y0 + 4); }
+  const X = F.X(state.x0); ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = col.ink; ctx.fillRect(X - 7, F.y1 - 4, 14, 8); ctx.beginPath(); ctx.arc(X, clamp(F.Y(R.pt[state.n - 1]), F.y0, F.y1), 5, 0, 7); ctx.fillStyle = col.accent; ctx.fill();
+  ctx.fillStyle = col.ink; ctx.textBaseline = 'bottom'; ctx.textAlign = state.x0 > 0.75 ? 'right' : 'left'; ctx.fillText('x₀ = ' + state.x0.toFixed(3), X + (state.x0 > 0.75 ? -9 : 9), F.y1 - 5);
+  const s = R.rows[state.n].sup; $('capBand').textContent = s <= e ? `At n = ${state.n} the graph is inside the band: sup |fₙ − f| = ${num(s)} ≤ ε. Uniform convergence asks for this at every later n, for every ε.` : `At n = ${state.n} the graph leaves the band: sup |fₙ − f| = ${num(s)} > ε.`;
+}
+function drawPt() {
+  const { ctx, W, H } = fit($('cvPt')), pt = R.pt; let lo = Math.min(0, R.flim, ...pt), hi = Math.max(1, R.flim, ...pt); hi = Math.min(hi, 3); const pad = (hi - lo) * .12;
+  const F = frame(W, H, [0, NMAX + 1], [lo - pad, hi + 3.2 * pad]); axes(ctx, F, []);
+  ctx.fillStyle = col.gray; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of [1, 32, 64, 96, 128]) ctx.fillText(t === 1 ? 'n=1' : String(t), clamp(F.X(t), F.x0 + 12, F.x1 - 10), F.y1 + 4);
+  ctx.strokeStyle = col.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(R.flim)); ctx.lineTo(F.x1, F.Y(R.flim)); ctx.stroke();
+  clip(ctx, F); for (let i = 0; i < NMAX; i++) { ctx.globalAlpha = i < state.n ? 1 : .25; ctx.fillStyle = col.accent; ctx.beginPath(); ctx.arc(F.X(i + 1), F.Y(Math.min(pt[i], 1e3)), i + 1 === state.n ? 4.5 : 2, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; ctx.restore();
+  ctx.fillStyle = col.ink; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('fₙ(x₀) = ' + num(pt[state.n - 1]) + ',  f(x₀) = ' + num(R.flim), F.x1 - 6, F.y0 + 3);
+}
+function drawC() {
+  const { ctx, W, H } = fit($('cvC')), c = R.c; let mx = 0.05; for (const v of c) mx = Math.max(mx, Math.abs(v)); mx *= 1.1;
+  const F = frame(W, H, [-0.8, K - 0.2], [-mx, mx], { l: 40, r: 8, t: 10, b: 20 });
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0); ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.stroke();
+  ctx.fillStyle = col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(mx.toFixed(2), F.x0 - 5, F.y0 + 6); ctx.fillText('0', F.x0 - 5, F.Y(0));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const k of [0, 16, 32, 48, 63]) ctx.fillText('k=' + k, clamp(F.X(k), F.x0 + 10, F.x1 - 12), F.y1 + 4);
+  const bw = Math.max(1.5, (F.x1 - F.x0) / K * 0.66); ctx.fillStyle = col.accent; for (let k = 0; k < K; k++) { const Yv = F.Y(c[k]); ctx.fillRect(F.X(k) - bw / 2, Math.min(Yv, F.Y(0)), bw, Math.max(1, Math.abs(Yv - F.Y(0)))); }
+  const tot = R.rows[state.n].L2 ** 2, part = c.reduce((s, v) => s + v * v, 0); $('c1').textContent = num(tot); $('c2').textContent = num(part); $('c3').textContent = num(Math.max(...c.map(Math.abs)));
+  $('meter').style.width = (tot > 1e-14 ? clamp(part / tot, 0, 1) * 100 : 100) + '%';
+}
+function drawG() {
+  const { ctx, W, H } = fit($('cvG')), g = R.g, prod = R.d.map((v, j) => v * g[j]); let mx = 1.2; for (const v of prod) mx = Math.max(mx, Math.min(3, Math.abs(v) * 1.1));
+  const F = FR.g = frame(W, H, [0, 1], [-mx, mx]); axes(ctx, F);
+  clip(ctx, F); ctx.beginPath(); ctx.moveTo(F.X(0), F.Y(0)); for (let j = 0; j < M; j++) ctx.lineTo(F.X(xm[j]), Math.max(-1e4, Math.min(1e4, F.Y(prod[j])))); ctx.lineTo(F.X(1), F.Y(0)); ctx.closePath(); ctx.globalAlpha = .3; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.restore();
+  curve(ctx, F, xm, prod, col.accent, 1.2); curve(ctx, F, xm, g, col.ink, 2.5);
+  ctx.fillStyle = col.ink; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('⟨fₙ − f, g⟩ = ' + num(R.rows[state.n].weak), F.x1 - 6, F.y0 + 3);
+}
+const LINES = [['sup', 'Uniform', 'accent', []], ['L1', 'L¹', 'gray', []], ['L2', 'L²', 'ink', []], ['weak', 'Weak, this g', 'accent', [5, 4]]];
+function drawN() {
+  const { ctx, W, H } = fit($('cvN')), lo = -4; let hi = 0; for (let n = 1; n <= NMAX; n++) hi = Math.max(hi, Math.log10(R.rows[n].sup)); hi = Math.ceil(hi + .2);
+  const F = frame(W, H, [0, Math.log10(NMAX)], [lo, hi], { l: 44, r: 12, t: 10, b: 20 });
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.fillStyle = col.gray; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const m of [1, 2, 4, 8, 16, 32, 64, 128]) { const X = Math.round(F.X(Math.log10(m))) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(m === 1 ? 'n=1' : String(m), clamp(X, F.x0 + 12, F.x1 - 8), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; for (let e = lo; e <= hi; e++) { const Yv = Math.round(F.Y(e)) + .5; ctx.beginPath(); ctx.moveTo(F.x0, Yv); ctx.lineTo(F.x1, Yv); ctx.stroke(); ctx.fillText(e === 0 ? '1' : '10' + sup(e), F.x0 - 5, clamp(Yv, F.y0 + 6, F.y1 - 6)); }
+  const XN = F.X(Math.log10(state.n)); ctx.strokeStyle = col.ink; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(XN, F.y0); ctx.lineTo(XN, F.y1); ctx.stroke(); ctx.setLineDash([]);
+  const lg = v => Math.max(lo, Math.log10(Math.abs(v) + 1e-300));
+  for (const [k, , c, dash] of LINES) { clip(ctx, F); ctx.beginPath(); for (let n = 1; n <= NMAX; n++) ctx.lineTo(F.X(Math.log10(n)), F.Y(lg(R.rows[n][k]))); ctx.strokeStyle = col[c]; ctx.lineWidth = 2.3; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); ctx.fillStyle = col[c]; ctx.beginPath(); ctx.arc(XN, F.Y(lg(R.rows[state.n][k])), 4, 0, 7); ctx.fill(); }
+}
+function table() {
+  const seq = SEQ[state.seq], r = R.rows[state.n], body = $('modes').tBodies[0]; body.innerHTML = '';
+  const rows = [['Pointwise at x₀', Math.abs(R.pt[state.n - 1] - R.flim), null], ['Uniform', r.sup, LINES[0]], ['In L¹', r.L1, LINES[1]], ['In L²', r.L2, LINES[2]], ['Weak, this g', r.weak, LINES[3]]];
+  rows.forEach(([name, val, line], i) => { const [ans, why] = seq.v[i], tr = document.createElement('tr');
+    const key = line ? `<span class="key" style="border-color:var(--${line[2]});${line[3].length ? 'border-top-style:dashed' : ''}"></span>` : '<span class="key" style="border-color:transparent"></span>';
+    tr.innerHTML = `<td>${key}${name}</td><td class="v">${num(val)}</td>` + (state.reveal ? `<td class="${ans}"><b>${ans === 'yes' ? 'Yes' : 'No'}</b><div class="why">${why}</div></td>` : '<td class="why">hidden</td>'); body.appendChild(tr); });
+  $('reveal').textContent = state.reveal ? 'Hide the verdicts' : 'Reveal the verdicts';
+  $('on').textContent = state.n; $('oE').textContent = state.eps.toFixed(2); $('oX').textContent = state.x0.toFixed(3);
+  $('eqLive').innerHTML = `fₙ = <b>${seq.name}</b>, &nbsp; n = <b>${state.n}</b>. &nbsp; sup = <b>${num(r.sup)}</b>, &nbsp; ‖fₙ − f‖₁ = <b>${num(r.L1)}</b>, &nbsp; ‖fₙ − f‖₂ = <b>${num(r.L2)}</b>, &nbsp; ⟨fₙ − f, g⟩ = <b>${num(r.weak)}</b>.`;
+}
+let pending = false, needAll = true;
+function update(all = false) { needAll = needAll || all; if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; if (needAll) { computeAll(); needAll = false; } computeN(); drawMain(); drawPt(); drawC(); drawG(); drawN(); table(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+function chips(holder, name, items, key) { for (const [v, label] of items) { const id = name + '-' + v; holder.insertAdjacentHTML('beforeend', `<input type="radio" name="${name}" id="${id}" value="${v}"><label for="${id}">${label}</label>`); }
+  for (const r of holder.querySelectorAll('input')) r.addEventListener('change', () => { stop(); state[key] = r.value; if (key === 'seq') state.reveal = false; syncUI(); update(true); }); }
+chips($('seqChips'), 'seq', Object.entries(SEQ).map(([k, s]) => [k, s.name]), 'seq'); chips($('gChips'), 'g', Object.entries(G).map(([k, s]) => [k, s[0]]), 'g');
+function syncUI() { document.querySelector(`input[name=seq][value=${state.seq}]`).checked = true; document.querySelector(`input[name=g][value=${state.g}]`).checked = true; $('sn').value = state.n; $('sE').value = state.eps; $('sX').value = state.x0;
+  $('cvG').style.cursor = state.g === 'sketch' ? 'crosshair' : 'default'; $('capG').textContent = state.g === 'sketch' ? 'Drag across the picture to draw g.' : 'Choose “Your sketch” to draw g here.'; }
+let timer = 0; function stop() { if (timer) { clearInterval(timer); timer = 0; $('play').textContent = 'Run n from 1 to 128'; } }
+$('play').addEventListener('click', () => { if (timer) return stop(); state.n = 1; $('play').textContent = 'Stop'; timer = setInterval(() => { state.n = Math.min(NMAX, state.n + 1); $('sn').value = state.n; update(); if (state.n >= NMAX) stop(); }, 110); update(); });
+$('sn').addEventListener('input', e => { stop(); state.n = +e.target.value; update(); }); $('sE').addEventListener('input', e => { state.eps = +e.target.value; update(); }); $('sX').addEventListener('input', e => { state.x0 = +e.target.value; update(); });
+$('reveal').addEventListener('click', () => { state.reveal = !state.reveal; update(); });
+drag($('cvMain'), () => { const F = FR.main; return F ? x => { state.x0 = clamp(Math.round(F.iX(x) * 1000) / 1000, 0, 1); $('sX').value = state.x0; update(); } : null; });
+let last = null;
+drag($('cvG'), () => { const F = FR.g; if (!F || state.g !== 'sketch') return null; last = null;
+  return (px, py) => { const j = clamp(Math.round(F.iX(px) * M - .5), 0, M - 1), v = clamp(F.iY(py), -1.2, 1.2); if (last) { const [j0, v0] = last, a = Math.min(j0, j), b = Math.max(j0, j); for (let q = a; q <= b; q++) gSketch[q] = j === j0 ? v : v0 + (v - v0) * (q - j0) / (j - j0); } else gSketch[j] = v; last = [j, v]; update(true); }; }, () => { last = null; });
+
+const EXP = { xn: { seq: 'xn', n: 8, x0: 0.8, eps: 0.2, g: 'bump' }, type: { seq: 'one', n: 5, x0: 0.3, eps: 0.2, g: 'bump' }, osc: { seq: 'osc', n: 2, x0: 0.3, eps: 0.2, g: 'bump' },
+  sqrt: { seq: 'sqrt', n: 4, x0: 0.1, eps: 0.2, g: 'ramp' }, gibbs: { seq: 'gibbs', n: 8, x0: 0.25, eps: 0.05, g: 'win' }, fool: { seq: 'osc', n: 3, x0: 0.3, eps: 0.2, g: 'one' } };
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => { stop(); Object.assign(state, EXP[b.dataset.exp], { reveal: false }); syncUI(); update(true); $('lab').scrollIntoView({ block: 'start' }); $('sn').focus({ preventScroll: true }); });
+
+const recolor = () => { readColors(); update(); };
+readColors(); syncUI(); update(true);
+new ResizeObserver(() => update()).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => update());
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimum Norm Solution — Minimize ‖x‖ subject to Ax = b</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  --Q-bg:#edf6ee; --Q2:#267048; --Q-new:#b3e4d8;
+  --R-bg:#fff8ea; --R2:#8a5a00;
+  --y-bg:#f0f4fb; --y2:#3a5aa8;
+  --x-bg:#fdf0fb; --x2:#7a2a90;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--Q-bg);color:var(--Q2);border:1px solid #a8d8b8;}
+.btn-ghost:hover{background:#c4eacf;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+.input-wrap{display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start;margin:.7rem 0;}
+.sub-lbl{font-size:.82rem;color:var(--gray);margin-bottom:.35rem;font-style:italic;}
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:58px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid input.b-inp{background:#f4f8ff;border-color:#b8caec;}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+.steps-wrap{display:flex;flex-direction:column;gap:1.3rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.gs-b{background:var(--Q2);color:#fff;}
+.sbadge.R-b{background:var(--R2);color:#fff;}
+.sbadge.y-b{background:var(--y2);color:#fff;}
+.sbadge.x-b{background:var(--x2);color:#fff;}
+.sbadge.chk-b{background:#2a7a5a;color:#fff;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;overflow-x:auto;}
+
+.sec-body{padding:1.1rem 1.5rem;overflow-x:auto;}
+
+.mat-eq{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;overflow-x:auto;padding:.4rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.mat-lbl{font-size:.8rem;color:var(--gray);font-style:italic;text-align:center;}
+.mat-op{font-size:1.35rem;color:var(--navy2);align-self:center;padding:0 .15rem;}
+
+/* GS step tableau */
+.tab{border-collapse:collapse;font-size:.9rem;}
+.tab th,.tab td{padding:.33rem .65rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+.tab th.grp{font-size:.73rem;font-weight:400;text-transform:uppercase;letter-spacing:.055em;padding:.2rem .65rem;}
+.tab th.sepr{border-right:2.5px solid #aaa !important;}
+.tab th.sepl{border-left:2.5px solid #aaa !important;}
+.tab th.Q-hd{background:var(--Q-bg);color:var(--Q2);}
+.tab th.R-hd{background:var(--R-bg);color:var(--R2);}
+.tab th.done-hd{background:#f0f5f0;color:#90b890;}
+.tab th.piv-hd{background:var(--Q2);color:#fff;}
+.tab th.mod-hd{background:var(--y-bg);color:var(--navy2);max-width:180px;white-space:normal;line-height:1.25;}
+.tab td.Q-done{background:#f0f5f1;color:#90b890;}
+.tab td.Q-piv{background:var(--Q-bg);}
+.tab td.Q-mod{background:var(--y-bg);}
+.pbox{display:inline-block;border:2px solid var(--Q2);border-radius:3px;padding:0 5px;color:var(--Q2);font-weight:700;}
+
+/* Solve steps */
+.solve-steps{display:flex;flex-direction:column;gap:.5rem;margin:.7rem 0;}
+.sstep{display:flex;align-items:baseline;gap:.7rem;padding:.32rem .55rem;border-radius:4px;}
+.sstep.y-step{background:var(--y-bg);}
+.sstep.x-step{background:var(--x-bg);}
+.sstep-idx{font-size:.78rem;color:var(--gray);min-width:55px;text-align:right;flex-shrink:0;}
+.sstep-tex{flex:1;overflow-x:auto;}
+
+/* verify / norm */
+.verify-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem;margin:.7rem 0;}
+.vitem{border-radius:6px;padding:.65rem 1rem;}
+.vitem.ok{background:#e8f5e9;border:1px solid #a8d8a8;}
+.vitem.val{background:var(--y-bg);border:1px solid #c0ccdd;}
+.vitem .v-lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem;}
+.vitem.ok .v-lbl{color:var(--Q2);}
+.vitem.val .v-lbl{color:var(--y2);}
+.vitem .v-val{overflow-x:auto;font-size:.95rem;}
+
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:.7rem;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.6rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.3rem .9rem;font-size:1.05rem;}
+.sol-sub{color:#8ab8d0;font-style:italic;font-size:.88rem;margin-top:.5rem;}
+
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+.keybox{background:var(--Q-bg);border:1px solid #a8d8b8;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:#1a3a28;line-height:1.65;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.info-note{background:var(--y-bg);border:1px solid #c0ccdd;border-radius:5px;padding:.55rem .9rem;font-size:.87rem;color:var(--navy2);margin:.55rem 0;}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Minimum Norm Solution — Minimize ‖x‖ subject to Ax = b</h1>
+  <p>Factor Aᵀ = QR via Gram–Schmidt, then solve Rᵀy = b, then set x = Qy</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter Matrix A and Vector b</h2>
+  <div class="ctrl-row">
+    <label>Rows m: <input type="number" id="nRows" min="1" max="5" value="2"></label>
+    <label>Cols n: <input type="number" id="nCols" min="2" max="6" value="4"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p style="font-size:.86rem;color:var(--gray);margin-bottom:.6rem;">
+    A should have more columns than rows (n &gt; m) — an underdetermined system with infinitely many solutions.
+    Entries may be integers or fractions like <code>3/2</code>.
+  </p>
+  <div class="input-wrap">
+    <div>
+      <div class="sub-lbl">Matrix A (m × n)</div>
+      <div style="overflow-x:auto"><div class="mx-grid" id="mxA"></div></div>
+    </div>
+    <div style="align-self:center;font-size:1.5rem;color:var(--navy2);padding-top:1.2rem;">&nbsp;</div>
+    <div>
+      <div class="sub-lbl">Vector b (length m)</div>
+      <div class="mx-grid" id="mxB"></div>
+    </div>
+  </div>
+  <button class="btn-solve" onclick="doSolve()">Find Minimum Norm Solution →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ══════════════════════════════════════
+   FRACTION CLASS
+══════════════════════════════════════ */
+function gcd(a,b){a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));while(b){const t=b;b=a%b;a=t;}return a||1;}
+class Frac{
+  constructor(n,d=1){
+    if(d===0){this.n=0;this.d=1;return;}
+    if(d<0){n=-n;d=-d;}
+    const g=gcd(Math.abs(n),d);
+    this.n=Math.round(n/g);this.d=Math.round(d/g);
+  }
+  static parse(s){
+    s=(s||'').trim();if(!s||s==='-')return new Frac(0);
+    if(s.includes('/')){const[a,b]=s.split('/');return new Frac(+a,+b);}
+    if(s.includes('.')){const p=s.replace(/^-/,'').split('.'),dec=p[1]?p[1].length:0,dn=10**dec;return new Frac(Math.round(parseFloat(s)*dn),dn);}
+    return new Frac(+s||0);
+  }
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  div(o){return new Frac(this.n*o.d,this.d*o.n);}
+  neg(){return new Frac(-this.n,this.d);}
+  isZero(){return this.n===0;}
+  isOne(){return this.n>0&&this.n===this.d;}
+  toFloat(){return this.n/this.d;}
+  toTeX(){
+    if(this.d===1)return String(this.n);
+    const sg=this.n<0?'-':'';
+    return`${sg}\\tfrac{${Math.abs(this.n)}}{${this.d}}`;
+  }
+}
+
+/* ══════════════════════════════════════
+   SYMBOLIC SQRT  — value = coeff·√rad
+   coeff ∈ ℚ,  rad ∈ ℤ⁺ square-free
+══════════════════════════════════════ */
+function squareFreePart(n){
+  n=Math.abs(Math.round(n));if(!n)return{sq:0,rad:1};
+  let sq=1;for(let p=2;p*p<=n;p++)while(n%(p*p)===0){n=Math.round(n/(p*p));sq*=p;}
+  return{sq,rad:n};
+}
+function sqrtFrac(f){
+  // √(p/q) = (k/q)·√r  where p·q = k²·r
+  if(f.isZero()||f.n<0)return new SymReal(new Frac(0),1);
+  const pq=f.n*f.d;const{sq:k,rad:r}=squareFreePart(pq);
+  return new SymReal(new Frac(k,f.d),r);
+}
+class SymReal{
+  constructor(coeff,rad){this.coeff=coeff instanceof Frac?coeff:new Frac(coeff);this.rad=rad;}
+  clone(){return new SymReal(this.coeff.clone(),this.rad);}
+  isZero(){return this.coeff.isZero();}
+  // (c₁√r)·(c₂√r) = c₁c₂r ∈ ℚ  (must have same rad)
+  mulSame(o){return this.coeff.mul(o.coeff).mul(new Frac(this.rad));}
+  // Frac / SymReal = (f/(c·r))·√r
+  static fracDiv(f,s){return new SymReal(f.div(s.coeff).div(new Frac(s.rad)),s.rad);}
+  // Frac · SymReal
+  static fracMul(f,s){return new SymReal(f.mul(s.coeff),s.rad);}
+  toTeX(){
+    if(this.coeff.isZero())return'0';
+    if(this.rad===1)return this.coeff.toTeX();
+    const{n,d}=this.coeff,absN=Math.abs(n),sign=n<0?'-':'';
+    const sq=`\\sqrt{${this.rad}}`;
+    const num=absN===1?sq:`${absN}${sq}`;
+    return d===1?`${sign}${num}`:`${sign}\\tfrac{${num}}{${d}}`;
+  }
+}
+
+/* ══════════════════════════════════════
+   KaTeX helper
+══════════════════════════════════════ */
+function rk(t,opts){try{return katex.renderToString(t,{throwOnError:false,...(opts||{})});}catch(e){return t;}}
+
+function matTeX(rows){
+  return`\\begin{pmatrix}${rows.map(r=>r.join('&')).join('\\\\')}\\end{pmatrix}`;
+}
+function colsToTeX(cols,m){
+  return matTeX(Array.from({length:m},(_,i)=>cols.map(c=>c[i].toTeX())));
+}
+function symColsToTeX(cols,m){
+  return matTeX(Array.from({length:m},(_,i)=>cols.map(c=>c[i].toTeX())));
+}
+function fracVecTeX(v){return`\\begin{pmatrix}${v.map(f=>f.toTeX()).join('\\\\')}\\end{pmatrix}`;}
+function symVecTeX(v){return`\\begin{pmatrix}${v.map(s=>s.toTeX()).join('\\\\')}\\end{pmatrix}`;}
+
+function matBlock(lbl,tex,dm=true){
+  const b=document.createElement('div');b.className='mat-block';
+  const l=document.createElement('div');l.className='mat-lbl';l.textContent=lbl;
+  const mv=document.createElement('div');mv.innerHTML=rk(tex,{displayMode:dm});
+  b.append(l,mv);return b;
+}
+function opSpan(t){const s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+
+/* ══════════════════════════════════════
+   GRAM-SCHMIDT on columns of Aᵀ
+   (= rows of A)
+   Input: cols[j] = array of m Fracs  (j=0..n-1, length m each)
+   Output: Qtilde (n×m array of SymReal cols),
+           Rops (n×n unit-upper-triangular, Frac entries),
+           norms (SymReal, one per column),
+           steps
+══════════════════════════════════════ */
+function gramSchmidt(cols, n, m){
+  // cols[j][i] = Frac,  j=0..n-1 columns,  i=0..m-1 rows
+  // We work in ℝ^m (the ambient space of A's rows)
+  // Result: orthogonal cols in Q̃, rij scalars in Rops
+  let C = cols.map(c=>c.map(f=>f.clone()));
+  const Rops = Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?new Frac(1):new Frac(0)));
+  const steps=[];
+  steps.push({pivCol:-1,ops:[],cols:C.map(c=>c.map(f=>f.clone())),Rops:Rops.map(r=>r.map(f=>f.clone()))});
+
+  for(let i=0;i<n-1;i++){
+    const norm2=C[i].reduce((s,f)=>s.add(f.mul(f)),new Frac(0));
+    if(norm2.isZero()) throw new Error(`Column ${i+1} of Aᵀ is zero — rows of A are linearly dependent (rank < m). The system may be inconsistent.`);
+    const ops=[];
+    for(let j=i+1;j<n;j++){
+      const dot=C[i].reduce((s,f,k)=>s.add(f.mul(C[j][k])),new Frac(0));
+      const rij=dot.div(norm2);
+      Rops[i][j]=rij.clone();
+      for(let k=0;k<m;k++) C[j][k]=C[j][k].sub(rij.mul(C[i][k]));
+      ops.push({i,j,rij:rij.clone(),dot:dot.clone(),norm2:norm2.clone()});
+    }
+    steps.push({pivCol:i,ops,cols:C.map(c=>c.map(f=>f.clone())),Rops:Rops.map(r=>r.map(f=>f.clone()))});
+  }
+
+  // Column norms of Q̃ (SymReal)
+  const norms=C.map(col=>{
+    const s=col.reduce((acc,f)=>acc.add(f.mul(f)),new Frac(0));
+    return sqrtFrac(s);
+  });
+
+  // Q columns as SymReal: Q[j][i] = C[j][i] / norms[j]
+  const Qcols=C.map((col,j)=>col.map(f=>SymReal.fracDiv(f,norms[j])));
+
+  // Full R (with norms on diagonal): R[i][j] = norms[i]·Rops[i][j] for j>=i
+  // R[i][j] is SymReal  (norms[i] * Rops[i][j])
+  const Rfull=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{
+    if(j<i) return new SymReal(new Frac(0),1);
+    if(j===i) return norms[i].clone();
+    return SymReal.fracMul(Rops[i][j],norms[i]);
+  }));
+
+  return{steps,Qtilde:C,Qcols,Rops,Rfull,norms,n,m};
+}
+
+/* ══════════════════════════════════════
+   FORWARD SOLVE  Rᵀy = b
+   Rᵀ is lower triangular, (Rᵀ)[i][j] = R[j][i]
+   Diagonal = norms[i] (SymReal)
+   Below diagonal = norms[j]·Rops[j][i] (SymReal, j<i)
+
+   Key insight: since y[j] will be c·√(norms[j].rad),
+   each product R[j][i]·y[j] = rational (same rad cancels).
+   So each y[i] = SymReal.
+══════════════════════════════════════ */
+function forwardSolveRT(Rfull, b, n){
+  // b has length m ≤ n; we solve for y of length n but only m equations
+  // (A is m×n with m rows, Aᵀ is n×m so R is n×n but only the first m cols/rows matter)
+  // Actually: Aᵀ = QR where Q is n×m and R is m×m (economy QR)
+  // We implement economy QR: only m columns processed
+  const r=Math.min(n,b.length); // = m
+  const y=Array(r).fill(null).map(()=>new SymReal(new Frac(0),1));
+  const steps=[];
+
+  for(let i=0;i<r;i++){
+    // (Rᵀ)[i][j] = R[j][i]
+    // y[i]·diag[i] = b[i] - Σ_{j<i} R[j][i]·y[j]
+    // R[j][i] for j<i: SymReal with rad = norms[j].rad
+    // y[j]: SymReal with rad = norms[j].rad
+    // → product is Frac (same rad cancels)
+    let num = b[i].clone(); // Frac
+    const terms=[];
+    for(let j=0;j<i;j++){
+      const Rji = Rfull[j][i]; // SymReal
+      if(!Rji.isZero()){
+        // Rji · y[j] = (c_Rji·√r_j)·(c_yj·√r_j) = c_Rji·c_yj·r_j ∈ ℚ
+        const prod = Rji.mulSame(y[j]); // Frac
+        terms.push({j, Rji:Rji.clone(), yj:y[j].clone(), prod:prod.clone()});
+        num = num.sub(prod);
+      }
+    }
+    const diag = Rfull[i][i]; // SymReal = norms[i]
+    // y[i] = num / diag = (Frac) / (c·√r) = (num/(c·r))·√r — SymReal
+    y[i] = SymReal.fracDiv(num, diag);
+    steps.push({i, bi:b[i].clone(), terms, diag:diag.clone(), yi:y[i].clone(), num:num.clone()});
+  }
+  return{y,steps};
+}
+
+/* ══════════════════════════════════════
+   COMPUTE x = Q·y
+   Q[j][i] = SymReal with rad = norms[j].rad
+   y[j]    = SymReal with rad = norms[j].rad
+   → Q[j][i]·y[j] = Frac (same rad)
+   → x[i] = Σ_j Frac = Frac  ✓
+══════════════════════════════════════ */
+function computeX(Qcols, y, n, m){
+  // x has length n (the number of unknowns)
+  // Qcols[j] has length m (entries in ℝ^m... wait)
+  // Hmm: Aᵀ is n×m. Q has n rows and m cols. y has m entries.
+  // x = Q·y has n entries. ✓
+  const x=Array.from({length:n},(_,i)=>{
+    // x[i] = Σ_{j=0}^{m-1} Q[j][i] · y[j]
+    // Q[j][i] is entry (row i, col j) of Q = Qcols[j][i]
+    return Array.from({length:y.length},(_,j)=>{
+      const Qji=Qcols[j][i]; // SymReal, rad = norms[j].rad
+      const yj =y[j];         // SymReal, rad = norms[j].rad
+      return Qji.mulSame(yj); // Frac
+    }).reduce((s,f)=>s.add(f),new Frac(0));
+  });
+  return x;
+}
+
+/* ══════════════════════════════════════
+   VERIFY  Ax = b  (exact)
+══════════════════════════════════════ */
+function verifyAx(A,x,b,m,n){
+  return Array.from({length:m},(_,i)=>{
+    const lhs=Array.from({length:n},(_,j)=>A[i][j].mul(x[j])).reduce((s,f)=>s.add(f),new Frac(0));
+    return{lhs,rhs:b[i].clone(),ok:lhs.n===b[i].n&&lhs.d===b[i].d};
+  });
+}
+
+/* ══════════════════════════════════════
+   PHASE RENDERERS
+══════════════════════════════════════ */
+
+/* ── Phase 1: GS step tableau ── */
+function renderGS(gsResult, ATransposeCols){
+  const{steps,n,m}=gsResult;
+  const frag=document.createDocumentFragment();
+  const lbl=document.createElement('div');lbl.className='phase-lbl';
+  lbl.innerHTML=`Phase 1 &mdash; Gram&ndash;Schmidt on the <em>columns</em> of A<sup>T</sup> (= rows of A)`;
+  frag.appendChild(lbl);
+
+  steps.forEach((step,si)=>{
+    const{pivCol,ops,cols,Rops}=step;
+    const isInit=pivCol===-1;
+    const block=document.createElement('div');block.className='scard';
+
+    const hd=document.createElement('div');hd.className='shd';
+    const badge=document.createElement('span');
+    if(isInit){badge.className='sbadge gs-b';badge.style.fontSize='.65rem';badge.textContent='init';}
+    else{badge.className='sbadge';badge.textContent=si;}
+    const desc=document.createElement('span');desc.className='sdesc';
+    if(isInit){
+      desc.innerHTML=rk('\\text{Initial columns of }A^T');
+    } else {
+      const parts=ops.map(op=>
+        `r_{${op.i+1},${op.j+1}}=\\dfrac{${op.dot.toTeX()}}{${op.norm2.toTeX()}}=${op.rij.toTeX()}`
+      ).join('\\qquad\\;');
+      desc.innerHTML=rk(parts);
+    }
+    hd.append(badge,desc);block.appendChild(hd);
+
+    const tw=document.createElement('div');tw.style.cssText='overflow-x:auto;padding:.55rem .6rem .7rem;';
+    const tbl=document.createElement('table');tbl.className='tab';
+    const thead=document.createElement('thead');
+
+    // header row 1: group labels
+    const hr1=document.createElement('tr');
+    const thIdx=document.createElement('th');thIdx.rowSpan=2;thIdx.style.verticalAlign='middle';thIdx.className='sepr';thIdx.textContent='';hr1.appendChild(thIdx);
+    for(let j=0;j<n;j++){
+      const th=document.createElement('th');
+      if(isInit){th.className='Q-hd';th.textContent='—';}
+      else if(j<pivCol){th.className='done-hd';th.textContent='done';}
+      else if(j===pivCol){th.className='piv-hd';th.innerHTML=rk(`\\text{pivot }c_{${j+1}}`);}
+      else{
+        const op=ops.find(o=>o.j===j);
+        th.className='mod-hd';
+        if(op) th.innerHTML=rk(`C_{${j+1}} \\leftarrow C_{${j+1}} - ${op.rij.toTeX()}\\, C_{${op.i+1}}`);
+        else th.textContent='—';
+      }
+      hr1.appendChild(th);
+    }
+    // R-header
+    const thR=document.createElement('th');thR.rowSpan=2;thR.className='R-hd sepl';thR.style.verticalAlign='middle';
+    thR.innerHTML='r<sub>ij</sub><br>recorded';hr1.appendChild(thR);
+    thead.appendChild(hr1);
+
+    // header row 2: col names
+    const hr2=document.createElement('tr');
+    for(let j=0;j<n;j++){
+      const th=document.createElement('th');
+      if(!isInit&&j<pivCol) th.className='done-hd';
+      else if(!isInit&&j===pivCol) th.className='Q-hd';
+      else if(!isInit&&j>pivCol) th.className='mod-hd';
+      else th.className='Q-hd';
+      th.innerHTML=rk(`c_{${j+1}}`);hr2.appendChild(th);
+    }
+    thead.appendChild(hr2);
+    tbl.appendChild(thead);
+
+    const tbody=document.createElement('tbody');
+    for(let i=0;i<m;i++){
+      const tr=document.createElement('tr');
+      const tdIdx=document.createElement('td');tdIdx.className='sepr';tdIdx.style.color='#999';tdIdx.style.fontSize='.82rem';tdIdx.textContent=i+1;tr.appendChild(tdIdx);
+      for(let j=0;j<n;j++){
+        const td=document.createElement('td');
+        const isDone=!isInit&&j<pivCol,isPiv=!isInit&&j===pivCol,isMod=!isInit&&j>pivCol;
+        if(isPiv){td.className='Q-piv';td.innerHTML=`<span class="pbox">${rk(cols[j][i].toTeX())}</span>`;}
+        else if(isMod){td.className='Q-mod';td.innerHTML=rk(cols[j][i].toTeX());}
+        else if(isDone){td.className='Q-done';td.innerHTML=rk(cols[j][i].toTeX());}
+        else{td.innerHTML=rk(cols[j][i].toTeX());}
+        tr.appendChild(td);
+      }
+      // R data (first row only, spans m)
+      if(i===0){
+        const tdR=document.createElement('td');tdR.className='sepl';tdR.rowSpan=m;tdR.style.verticalAlign='middle';
+        tdR.style.cssText='background:var(--R-bg);color:var(--R2);padding:.4rem .9rem;text-align:center;vertical-align:middle;border-left:2.5px solid #aaa;';
+        if(!isInit&&ops.length){
+          tdR.innerHTML=ops.map(op=>rk(`r_{${op.i+1},${op.j+1}}=${op.rij.toTeX()}`)).join('<br><br>');
+        } else {tdR.innerHTML='<span style="color:#ccc">—</span>';}
+        tr.appendChild(tdR);
+      }
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    tw.appendChild(tbl);block.appendChild(tw);
+    frag.appendChild(block);
+  });
+  return frag;
+}
+
+/* ── Phase 2: Show Aᵀ = QR ── */
+function renderQR(A,ATransposeCols,gsResult,m,n){
+  const{Qcols,Rfull,norms,Rops,Qtilde}=gsResult;
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge R-b';badge.textContent='QR';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('A^T = Q R \\text{ — exact factorization with orthonormal } Q');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Q: n×m matrix with SymReal entries
+  const QtTeX=matTeX(Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>Qcols[j][i].toTeX())));
+  // R: m×m upper triangular with SymReal entries (norms and products)
+  const RtTeX=matTeX(Array.from({length:m},(_,i)=>Array.from({length:m},(_,j)=>{
+    if(j<i) return '0';
+    return Rfull[i][j].toTeX();
+  })));
+  // Aᵀ original
+  const ATtTeX=matTeX(Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>A[j][i].toTeX())));
+
+  const eq=document.createElement('div');eq.className='mat-eq';
+  eq.append(
+    matBlock('Aᵀ',ATtTeX),
+    opSpan('='),
+    matBlock('Q (orthonormal cols, exact √)',QtTeX),
+    opSpan('\\cdot'),
+    matBlock('R (upper triangular)',RtTeX)
+  );
+  sec.appendChild(eq);
+
+  // Show column norms
+  const normDiv=document.createElement('div');normDiv.style.cssText='margin:.8rem 0;overflow-x:auto;';
+  normDiv.innerHTML=rk(
+    norms.map((s,j)=>`\\|\\tilde{c}_{${j+1}}\\|=${s.toTeX()}`).join('\\qquad\\;'),
+    {displayMode:true}
+  );
+  sec.appendChild(normDiv);
+
+  // QᵀQ = I check
+  const QtQrows=Array.from({length:m},(_,ci)=>Array.from({length:m},(_,cj)=>{
+    let s=0;
+    for(let k=0;k<n;k++) s+=Qcols[ci][k].coeff.toFloat()*Math.sqrt(Qcols[ci][k].rad)*Qcols[cj][k].coeff.toFloat()*Math.sqrt(Qcols[cj][k].rad);
+    return Math.abs(s)<1e-9?'0':(Math.abs(s-1)<1e-9?'1':s.toFixed(4));
+  }));
+  const noteDiv=document.createElement('div');noteDiv.className='info-note';
+  noteDiv.innerHTML=rk(`Q^T Q = ${matTeX(QtQrows)} = I_{${m}}\\;\\checkmark`);
+  sec.appendChild(noteDiv);
+
+  block.appendChild(sec);return block;
+}
+
+/* ── Phase 3: Solve Rᵀy = b ── */
+function renderSolveY(b,y,fwdSteps,m,Rfull){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge y-b';badge.textContent='y';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Forward substitution: solve }R^T y = b\\text{ (}R^T\\text{ is lower triangular)}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Augmented [Rᵀ | b]
+  const cols='c'.repeat(m)+'|c';
+  const augRows=Array.from({length:m},(_,i)=>
+    Array.from({length:m},(_,j)=>{
+      const v=Rfull[j][i]; // Rᵀ[i][j] = R[j][i]
+      return j>i?'0':v.toTeX();
+    }).join('&')+'&'+b[i].toTeX()
+  );
+  const augDiv=document.createElement('div');augDiv.style.cssText='overflow-x:auto;margin-bottom:.85rem;';
+  augDiv.innerHTML=rk(`\\left(\\begin{array}{${cols}}${augRows.join('\\\\')}\\end{array}\\right)`,{displayMode:true});
+  sec.appendChild(augDiv);
+
+  // Step-by-step
+  const vn=['y_1','y_2','y_3','y_4','y_5'];
+  const stepsDiv=document.createElement('div');stepsDiv.className='solve-steps';
+  fwdSteps.forEach(step=>{
+    const{i,bi,terms,diag,yi,num}=step;
+    const row=document.createElement('div');row.className='sstep y-step';
+    const idx=document.createElement('span');idx.className='sstep-idx';idx.innerHTML=rk(`\\text{Row }${i+1}:`);
+    const tex=document.createElement('div');tex.className='sstep-tex';
+    let s;
+    if(!terms.length){
+      s=`${vn[i]} = \\dfrac{${bi.toTeX()}}{${diag.toTeX()}} = ${yi.toTeX()}`;
+    } else {
+      const sub=terms.map(t=>`${t.Rji.toTeX()}\\cdot ${vn[t.j]}`).join('+');
+      s=`${vn[i]} = \\dfrac{${bi.toTeX()} - (${sub})}{${diag.toTeX()}} = \\dfrac{${num.toTeX()}}{${diag.toTeX()}} = ${yi.toTeX()}`;
+    }
+    tex.innerHTML=rk(s);row.append(idx,tex);stepsDiv.appendChild(row);
+  });
+  sec.appendChild(stepsDiv);
+
+  const yv=document.createElement('div');yv.style.cssText='margin-top:.85rem;overflow-x:auto;';
+  yv.innerHTML=rk(`y = ${symVecTeX(y)}`);sec.appendChild(yv);
+  block.appendChild(sec);return block;
+}
+
+/* ── Phase 4: Compute x = Qy ── */
+function renderComputeX(Qcols,y,x,n,m){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge x-b';badge.textContent='x';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('x = Q y \\text{ — minimum norm solution (lies in row space of }A\\text{)}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  // Show Qy = x multiplication
+  const QtTeX=matTeX(Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>Qcols[j][i].toTeX())));
+  const eq=document.createElement('div');eq.className='mat-eq';eq.style.marginBottom='.85rem';
+  eq.append(
+    matBlock('Q',QtTeX),
+    opSpan('\\cdot'),
+    matBlock('y',symVecTeX(y)),
+    opSpan('='),
+    matBlock('x (min-norm solution, exact fractions)',fracVecTeX(x))
+  );
+  sec.appendChild(eq);
+
+  // Explain why fractions: Q[j][i]·y[j] both have the same √, they cancel
+  const note=document.createElement('div');note.className='info-note';
+  note.innerHTML=`Each product Q<sub>ij</sub>·y<sub>j</sub> involves two SymReal values sharing the same √-radical (from column j's norm). Their product is rational, so x has <strong>exact fractional entries</strong>.`;
+  sec.appendChild(note);
+
+  block.appendChild(sec);return block;
+}
+
+/* ── Phase 5: Verify + norm ── */
+function renderVerify(A,x,b,m,n,checks){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge chk-b';badge.textContent='✓';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('\\text{Verification: }Ax = b \\text{ and } \\|x\\|^2\\text{ is minimized}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const sec=document.createElement('div');sec.className='sec-body';
+
+  const grid=document.createElement('div');grid.className='verify-grid';
+
+  // Ax = b check
+  checks.forEach((c,i)=>{
+    const item=document.createElement('div');item.className='vitem ok';
+    const lbl=document.createElement('div');lbl.className='v-lbl';lbl.textContent=`Row ${i+1}: (Ax)${i+1}`;
+    const val=document.createElement('div');val.className='v-val';
+    val.innerHTML=rk(`${c.lhs.toTeX()} = ${c.rhs.toTeX()}\\;${c.ok?'\\checkmark':'\\times'}`);
+    item.append(lbl,val);grid.appendChild(item);
+  });
+
+  // ‖x‖²
+  const norm2=x.reduce((s,f)=>s.add(f.mul(f)),new Frac(0));
+  const n2item=document.createElement('div');n2item.className='vitem val';
+  const n2lbl=document.createElement('div');n2lbl.className='v-lbl';n2lbl.textContent='‖x‖² (exact)';
+  const n2val=document.createElement('div');n2val.className='v-val';
+  n2val.innerHTML=rk(`\\|x\\|^2 = ${norm2.toTeX()}`);
+  n2item.append(n2lbl,n2val);grid.appendChild(n2item);
+
+  const n2f=document.createElement('div');n2f.className='vitem val';
+  const nfl=document.createElement('div');nfl.className='v-lbl';nfl.textContent='‖x‖ (approx)';
+  const nfv=document.createElement('div');nfv.className='v-val';
+  nfv.innerHTML=rk(`\\|x\\| \\approx ${Math.sqrt(norm2.toFloat()).toFixed(6)}`);
+  n2f.append(nfl,nfv);grid.appendChild(n2f);
+
+  sec.appendChild(grid);
+
+  // Why minimum norm
+  const wn=document.createElement('div');wn.className='info-note';wn.style.marginTop='.7rem';
+  wn.innerHTML=rk('x = Qy \\in \\operatorname{col}(Q) = \\operatorname{row}(A)\\text{, so } x \\perp \\operatorname{null}(A).\\text{ Any other solution } x+z \\text{ has }\\|x+z\\|^2=\\|x\\|^2+\\|z\\|^2 \\geq \\|x\\|^2.');
+  sec.appendChild(wn);
+  block.appendChild(sec);return block;
+}
+
+/* ── Solution card ── */
+function renderSolution(x,n,norm2){
+  const card=document.createElement('div');card.className='sol-card';
+  card.innerHTML='<h3>Minimum Norm Solution</h3>';
+  const vals=document.createElement('div');vals.className='sol-vals';
+  const vn=n<=4?['x','y','z','w','v','u']:null;
+  x.forEach((f,i)=>{
+    const item=document.createElement('div');item.className='sol-item';
+    item.innerHTML=rk(`${vn?vn[i]:(`x_{${i+1}}`)} = ${f.toTeX()}`);
+    vals.appendChild(item);
+  });
+  card.appendChild(vals);
+  const sub=document.createElement('div');sub.className='sol-sub';
+  sub.innerHTML=rk(`\\|x\\|^2 = ${norm2.toTeX()}\\text{ — minimum among all solutions to }Ax=b`);
+  card.appendChild(sub);
+  return card;
+}
+
+/* ── Key box ── */
+function renderKey(){
+  const k=document.createElement('div');k.className='keybox';
+  k.innerHTML=`
+    <strong>Why this gives the minimum norm solution:</strong>
+    The general solution to Ax = b is x = x<sub>particular</sub> + z, where z ∈ null(A).
+    Among all solutions, the one with smallest ‖x‖ lies in the <em>row space</em> of A
+    (= orthogonal complement of null(A)), since null(A) ⊥ row(A).
+    <br><br>
+    <strong>The QR approach:</strong>
+    Factor Aᵀ = QR (economy QR, n×m = n×m · m×m).
+    Then A = RᵀQᵀ. Setting x = Qy forces x ∈ col(Q) = row(A).
+    Substituting into Ax = b gives RᵀQᵀQy = b → Rᵀy = b (since QᵀQ = I).
+    This is a lower-triangular system, solved by forward substitution.
+    <br><br>
+    <strong>Exact arithmetic:</strong>
+    Q has SymReal entries (rationals times √), but Q[j][i]·y[j] always involves
+    two factors with the <em>same</em> square-root, so x = Qy has <strong>exact rational entries</strong>.
+    Likewise ‖x‖² is an exact fraction.
+    <br><br>
+    <strong>Comparison with least squares:</strong>
+    Least squares handles too many equations (overdetermined, m > n) by minimizing ‖Ax − b‖.
+    Minimum norm handles too few equations (underdetermined, m &lt; n) by minimizing ‖x‖.
+    Both use QR factorization — least squares on A, minimum norm on Aᵀ.
+  `;
+  return k;
+}
+
+/* ══════════════════════════════════════
+   MAIN DRIVER
+══════════════════════════════════════ */
+function doSolve(){
+  const out=document.getElementById('out');out.innerHTML='';
+  try{
+    const m=cM,n=cN;
+    if(n<=m) throw new Error(`Need more columns than rows (n > m) for an underdetermined system. Currently m=${m}, n=${n}.`);
+
+    const A=Array.from({length:m},(_,i)=>Array.from({length:n},(_,j)=>Frac.parse(document.getElementById(`a${i}_${j}`)?.value||'0')));
+    const b=Array.from({length:m},(_,i)=>Frac.parse(document.getElementById(`b${i}`)?.value||'0'));
+
+    // Columns of Aᵀ = rows of A
+    const ATcols=Array.from({length:n},(_,j)=>Array.from({length:m},(_,i)=>A[i][j].clone()));
+
+    // Run economy GS on n columns of Aᵀ (length m each), keeping only m columns
+    // (economy QR: only process first rank=m columns of Q)
+    const gsResult=gramSchmidt(ATcols,n,m);
+    const{Qcols,Rfull,norms,steps}=gsResult;
+
+    const{y,steps:fwdSteps}=forwardSolveRT(Rfull,b,n);
+    const x=computeX(Qcols,y,n,m);
+    const checks=verifyAx(A,x,b,m,n);
+    const norm2=x.reduce((s,f)=>s.add(f.mul(f)),new Frac(0));
+
+    const wrap=document.createElement('div');wrap.className='steps-wrap';
+
+    // GS steps
+    wrap.appendChild(renderGS(gsResult,ATcols));
+
+    // QR result
+    const lbl2=document.createElement('div');lbl2.className='phase-lbl';lbl2.textContent='Phase 2 — Factorization Result: Aᵀ = QR';
+    wrap.appendChild(lbl2);
+    wrap.appendChild(renderQR(A,ATcols,gsResult,m,n));
+
+    // Solve Rᵀy = b
+    const lbl3=document.createElement('div');lbl3.className='phase-lbl';lbl3.textContent='Phase 3 — Forward Substitution: Rᵀy = b';
+    wrap.appendChild(lbl3);
+    wrap.appendChild(renderSolveY(b,y,fwdSteps,m,Rfull));
+
+    // Compute x = Qy
+    const lbl4=document.createElement('div');lbl4.className='phase-lbl';lbl4.textContent='Phase 4 — Compute x = Qy';
+    wrap.appendChild(lbl4);
+    wrap.appendChild(renderComputeX(Qcols,y,x,n,m));
+
+    // Verify
+    const lbl5=document.createElement('div');lbl5.className='phase-lbl';lbl5.textContent='Phase 5 — Verification and Norm';
+    wrap.appendChild(lbl5);
+    wrap.appendChild(renderVerify(A,x,b,m,n,checks));
+
+    wrap.appendChild(renderSolution(x,n,norm2));
+    wrap.appendChild(renderKey());
+    out.appendChild(wrap);
+    out.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    out.innerHTML=`<div class="err-msg" style="padding:1rem">${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════
+   UI — INPUT GRIDS
+══════════════════════════════════════ */
+let cM=2, cN=4;
+
+const EXAMPLES=[
+  {m:2,n:4, A:[[1,0,1,0],[0,1,0,1]],    b:[1,1],    label:'2×4 simple'},
+  {m:2,n:3, A:[[1,2,1],[1,0,1]],         b:[3,1],    label:'2×3 classic'},
+  {m:1,n:3, A:[[1,1,1]],                 b:[1],      label:'1×3 plane'},
+  {m:2,n:4, A:[[1,1,0,0],[0,0,1,1]],    b:[2,3],    label:'2×4 block'},
+  {m:3,n:5, A:[[1,0,0,1,0],[0,1,0,0,1],[0,0,1,1,1]], b:[2,1,3], label:'3×5 example'},
+];
+
+function rebuildAll(){
+  cM=Math.min(Math.max(parseInt(document.getElementById('nRows').value)||1,1),5);
+  cN=Math.min(Math.max(parseInt(document.getElementById('nCols').value)||2,2),6);
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrids();
+}
+function buildGrids(){buildA();buildB();}
+
+function buildA(){
+  const cont=document.getElementById('mxA');cont.innerHTML='';
+  cont.style.gridTemplateColumns=`auto ${Array(cN).fill('58px').join(' ')}`;
+  const empty=document.createElement('div');cont.appendChild(empty);
+  for(let j=0;j<cN;j++){const d=document.createElement('div');d.className='clbl';d.innerHTML=rk(cN<=4?['x','y','z','w'][j]:`x_{${j+1}}`);cont.appendChild(d);}
+  for(let i=0;i<cM;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`E_{${i+1}}`);cont.appendChild(rl);
+    for(let j=0;j<cN;j++){const inp=document.createElement('input');inp.type='text';inp.id=`a${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';cont.appendChild(inp);}
+  }
+}
+
+function buildB(){
+  const cont=document.getElementById('mxB');cont.innerHTML='';
+  cont.style.gridTemplateColumns='auto 58px';
+  const empty=document.createElement('div');cont.appendChild(empty);
+  const bh=document.createElement('div');bh.className='clbl';bh.innerHTML=rk('b_i');cont.appendChild(bh);
+  for(let i=0;i<cM;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`E_{${i+1}}`);cont.appendChild(rl);
+    const inp=document.createElement('input');inp.type='text';inp.id=`b${i}`;inp.placeholder='0';inp.className='b-inp';inp.autocomplete='off';cont.appendChild(inp);
+  }
+}
+
+function loadEx(ex){
+  cM=ex.m;cN=ex.n;
+  document.getElementById('nRows').value=cM;
+  document.getElementById('nCols').value=cN;
+  buildGrids();
+  ex.A.forEach((row,i)=>row.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+  ex.b.forEach((v,i)=>{const el=document.getElementById(`b${i}`);if(el)el.value=v;});
+}
+
+function buildExamples(){
+  const row=document.getElementById('exRow');row.innerHTML='';
+  EXAMPLES.forEach(ex=>{
+    const btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);row.appendChild(btn);
+  });
+}
+window.addEventListener('DOMContentLoaded',()=>{buildExamples();buildGrids();loadEx(EXAMPLES[0]);});
+</script>
+</body>
+</html>

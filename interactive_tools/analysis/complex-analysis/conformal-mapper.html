@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformal Mapper</title>
+<style>
+/* Layout: a one-row toolbar, then two equal plane views (domain | range).
+   The circle and the 12 rays are painted by angle (hue sweeps 0..2π); each ray shares the hue of the
+   rim point it ends on, and the same hue is used for its image, so corresponding curves match across
+   the two windows. Angle markers at the center and at the rim are measured numerically in both planes. */
+:root {
+  --bg: #F3F4F0;
+  --pane: #FFFFFF;
+  --ink: #1C2321;
+  --ink-2: #5C6663;
+  --rule: #D8DCD6;
+  --grid: #E6E9E4;
+  --axis: #B3BAB5;
+  --accent: #0B6E6A;
+  --center: #B23A2E;
+  --warn: #A04A00;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+    --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; --warn: #F0B070; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+  --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; --warn: #F0B070; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); }
+.wrap { max-width: 78rem; margin-inline: auto; padding-inline: 16px; padding-block: 1.25rem 2rem; display: grid; gap: 1rem; }
+h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+.sub { margin: 0.2rem 0 0; color: var(--ink-2); max-width: 68ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 0.6rem 1.4rem; align-items: end; }
+.field { display: grid; gap: 0.25rem; min-width: 0; }
+.field > span { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+select, input[type="number"], button {
+  font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 0.35rem 0.5rem; min-width: 5.5rem;
+}
+button { cursor: pointer; padding-inline: 0.75rem; }
+button:hover { border-color: var(--accent); }
+button[hidden] { display: none; }
+select { min-width: 12rem; }
+input[type="number"] { width: 6.5rem; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.row { display: flex; gap: 0.4rem; align-items: center; }
+.chk { display: flex; gap: 0.4rem; align-items: center; color: var(--ink-2); padding-bottom: 0.4rem; }
+.chk input { accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.planes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 40rem) { .planes { gap: 0.5rem; } .pane { padding: 0.4rem; } .pane h2 small { display: none; } .read { font-size: 0.72rem; } }
+.pane { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; min-width: 0; display: grid; gap: 0.5rem; align-content: start; }
+.pane h2 { margin: 0; font-size: 1rem; font-weight: 600; display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.pane h2 small { font-weight: 400; color: var(--ink-2); font-size: 0.82rem; }
+.view { position: relative; width: 100%; aspect-ratio: 1; max-width: 100%; }
+canvas { display: block; width: 100%; height: 100%; border-radius: 4px; cursor: crosshair; touch-action: none; }
+#dom { cursor: grab; }
+.read { font-family: var(--mono); font-size: 0.86rem; font-variant-numeric: tabular-nums; color: var(--ink-2); display: grid; gap: 0.15rem; }
+.read b { color: var(--ink); font-weight: 600; }
+.read .bad b { color: var(--warn); }
+.swatch { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; vertical-align: -0.05em; margin-right: 0.3em; background: var(--center); }
+.hint { color: var(--ink-2); font-size: 0.86rem; margin: 0; max-width: 90ch; }
+.hint.bad { color: var(--warn); }
+input[type="range"] { width: 12rem; max-width: 100%; accent-color: var(--accent); margin: 0; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Conformal Mapper</h1>
+    <p class="sub">Twelve rays leave the center z₀ at 30° intervals and meet the circle at 90°. Where f′(z₀) ≠ 0 their images leave f(z₀) at the same 30° intervals and still cross the image curves at 90° — the map bends lengths, not angles.</p>
+  </header>
+
+  <div class="bar">
+    <label class="field"><span>Function f(z)</span>
+      <select id="fn"></select>
+    </label>
+    <div class="field"><span>Center z₀ (re, im)</span>
+      <div class="row">
+        <input type="number" id="cx" step="0.1" value="1" aria-label="Real part of the center">
+        <input type="number" id="cy" step="0.1" value="0.5" aria-label="Imaginary part of the center">
+      </div>
+    </div>
+    <label class="field"><span>Radius r</span>
+      <input type="number" id="r" step="0.05" min="0.01" value="0.75">
+    </label>
+    <label class="field"><span>Measured ray θ = <output id="thv">0°</output></span>
+      <input type="range" id="th" min="0" max="11" step="1" value="1">
+    </label>
+    <button type="button" id="crit" hidden>Center on a critical point</button>
+    <label class="chk"><input type="checkbox" id="rings" checked> Concentric circles</label>
+    <label class="chk"><input type="checkbox" id="fit" checked> Fit range view to the image</label>
+  </div>
+
+  <div class="planes">
+    <section class="pane">
+      <h2>Domain <small>z-plane · drag the center, drag the edge to resize, scroll to zoom</small></h2>
+      <div class="view"><canvas id="dom"></canvas></div>
+      <div class="read">
+        <div><span class="swatch"></span>z₀ = <b id="rz0"></b></div>
+        <div><span class="swatch" id="swz"></span>angle to next ray at z₀ = <b>30.0°</b></div>
+        <div><span class="swatch" id="swz2"></span>angle ray ∠ circle at rim = <b>90.0°</b></div>
+      </div>
+    </section>
+    <section class="pane">
+      <h2>Range <small>w-plane · scroll to zoom, drag to pan</small></h2>
+      <div class="view"><canvas id="ran"></canvas></div>
+      <div class="read">
+        <div><span class="swatch"></span>f(z₀) = <b id="rw0"></b></div>
+        <div id="lineC"><span class="swatch" id="sww"></span>angle to next ray at f(z₀) = <b id="angC"></b></div>
+        <div id="lineR"><span class="swatch" id="sww2"></span>angle ray ∠ image curve at rim = <b id="angR"></b></div>
+        <div>f′(z₀): <b id="der"></b></div>
+      </div>
+    </section>
+  </div>
+  <p class="hint" id="verdict"></p>
+  <p class="hint" id="note"></p>
+</main>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------- complex arithmetic ----------
+const C = (re, im) => ({ re, im });
+const add = (a, b) => C(a.re + b.re, a.im + b.im);
+const sub = (a, b) => C(a.re - b.re, a.im - b.im);
+const mul = (a, b) => C(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+const div = (a, b) => { const d = b.re * b.re + b.im * b.im; return C((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+const exp = z => { const m = Math.exp(z.re); return C(m * Math.cos(z.im), m * Math.sin(z.im)); };
+const log = z => C(Math.log(Math.hypot(z.re, z.im)), Math.atan2(z.im, z.re));
+const sqrt = z => { const m = Math.sqrt(Math.hypot(z.re, z.im)), a = Math.atan2(z.im, z.re) / 2; return C(m * Math.cos(a), m * Math.sin(a)); };
+const sin = z => C(Math.sin(z.re) * Math.cosh(z.im), Math.cos(z.re) * Math.sinh(z.im));
+const ONE = C(1, 0);
+const abs = z => Math.hypot(z.re, z.im);
+const DEG = 180 / Math.PI;
+// signed angle (degrees) turning from direction a to direction b, counter-clockwise positive
+const turn = (a, b) => Math.atan2(a.re * b.im - a.im * b.re, a.re * b.re + a.im * b.im) * DEG;
+
+// analytic: false marks comparison maps with no complex derivative. crit: a point where f′ = 0.
+const FUNCS = [
+  { name: 'z²',              f: z => mul(z, z),                      crit: C(0, 0),           note: 'Conformal everywhere except z = 0. Put the center on 0 and the twelve rays land on top of each other in pairs, 60° apart: angles double.' },
+  { name: 'z³',              f: z => mul(z, mul(z, z)),              crit: C(0, 0),           note: 'Conformal except at z = 0, where angles triple (30° becomes 90°).' },
+  { name: 'eᶻ',              f: exp,                                                          note: 'f′ = eᶻ never vanishes, so this map is conformal at every point of the plane.' },
+  { name: '1/z',             f: z => div(ONE, z),                                             note: 'A Möbius map: conformal away from the pole at 0, and it sends the rays (straight lines) to arcs of circles through 0.' },
+  { name: '(z − 1)/(z + 1)', f: z => div(sub(z, ONE), add(z, ONE)),                           note: 'Möbius again: conformal away from the pole at −1; circles and lines go to circles and lines.' },
+  { name: 'sin z',           f: sin,                                 crit: C(Math.PI / 2, 0), note: 'Conformal except where cos z = 0, i.e. at z = π/2 + kπ, where angles double.' },
+  { name: '√z (principal)',  f: sqrt,                                                         note: 'Conformal off the branch cut (the negative real axis). A disk that crosses the cut has a torn image, but angles are still preserved on each side.' },
+  { name: 'log z (principal)', f: log,                                                        note: 'Conformal off the branch cut: circles around 0 become vertical segments and rays from 0 become horizontal lines.' },
+  { name: 'z + 1/z',         f: z => add(z, div(ONE, z)),            crit: C(1, 0),           note: 'The Joukowski map: conformal except at z = ±1 (and the pole at 0). The cusp of the airfoil is the image of a critical point on the circle.' },
+  { name: 'z̄  — not analytic', f: z => C(z.re, -z.im),              analytic: false,         note: 'Complex conjugation keeps the size of every angle but reverses its sense (30° becomes −30°). It is anti-conformal, not conformal.' },
+  { name: 'z + ½z̄  — not analytic', f: z => C(1.5 * z.re, 0.5 * z.im), analytic: false,      note: 'A plain stretch, 1.5x + 0.5iy. It is smooth but not analytic: the 30° sectors come out unequal and the rays no longer meet the image of the circle at 90°.' },
+];
+FUNCS.forEach((F, i) => { const o = document.createElement('option'); o.value = i; o.textContent = F.name; $('fn').appendChild(o); });
+$('fn').value = 0;
+
+// ---------- state ----------
+const RAYS = 12;
+const S = { fi: 0, cx: 1, cy: 0.5, r: 0.75, k: 1, fit: true, rings: true };
+const dom = { cvs: $('dom'), x: 0.6, y: 0.3, half: 2 };  // view center and half-width in plane units
+const ran = { cvs: $('ran'), x: 0, y: 0, half: 3 };
+const N = 720;                                           // samples around the circle
+const M = 160;                                           // samples along each ray
+const hue = t => `hsl(${(((t * DEG) % 360 + 360) % 360).toFixed(0)} 70% 48%)`;
+const fmt = z => `${z.re.toFixed(3)} ${z.im < 0 ? '−' : '+'} ${Math.abs(z.im).toFixed(3)}i`;
+const finite = w => Number.isFinite(w.re) && Number.isFinite(w.im) && Math.hypot(w.re, w.im) < 1e6;
+const polar = (rr, t) => C(S.cx + rr * Math.cos(t), S.cy + rr * Math.sin(t));
+const rayAngle = k => 2 * Math.PI * k / RAYS;
+
+// ---------- canvas plumbing ----------
+function setup(v) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = v.cvs.clientWidth, h = v.cvs.clientHeight;
+  if (v.cvs.width !== Math.round(w * dpr) || v.cvs.height !== Math.round(h * dpr)) {
+    v.cvs.width = Math.round(w * dpr); v.cvs.height = Math.round(h * dpr);
+  }
+  const g = v.cvs.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  v.w = w; v.h = h; v.scale = Math.min(w, h) / (2 * v.half);
+  v.toPx = z => [w / 2 + (z.re - v.x) * v.scale, h / 2 - (z.im - v.y) * v.scale];
+  v.toZ = (px, py) => C(v.x + (px - w / 2) / v.scale, v.y - (py - h / 2) / v.scale);
+  return g;
+}
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function niceStep(half) { const raw = half / 3, p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+
+function drawGrid(g, v) {
+  g.clearRect(0, 0, v.w, v.h);
+  const step = niceStep(v.half);
+  const z0 = v.toZ(0, v.h), z1 = v.toZ(v.w, 0);
+  g.lineWidth = 1; g.strokeStyle = cssVar('--grid');
+  g.font = '11px ' + cssVar('--sans'); g.fillStyle = cssVar('--ink-2'); g.textAlign = 'left'; g.textBaseline = 'top';
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) {
+    const [px] = v.toPx(C(x, 0)); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, v.h); g.stroke();
+  }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) {
+    const [, py] = v.toPx(C(0, y)); g.beginPath(); g.moveTo(0, py); g.lineTo(v.w, py); g.stroke();
+  }
+  g.strokeStyle = cssVar('--axis');
+  const [ox, oy] = v.toPx(C(0, 0));
+  g.beginPath(); g.moveTo(ox, 0); g.lineTo(ox, v.h); g.moveTo(0, oy); g.lineTo(v.w, oy); g.stroke();
+  const dec = step < 1 ? Math.ceil(-Math.log10(step)) : 0;
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) {
+    if (Math.abs(x) < 1e-9) continue;
+    const [px] = v.toPx(C(x, 0)); g.fillText(x.toFixed(dec), px + 3, Math.min(Math.max(oy + 3, 2), v.h - 14));
+  }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) {
+    if (Math.abs(y) < 1e-9) continue;
+    const [, py] = v.toPx(C(0, y)); g.fillText(y.toFixed(dec) + 'i', Math.min(Math.max(ox + 3, 2), v.w - 30), py + 2);
+  }
+}
+
+// polyline through plane points, broken where the map blows up or jumps a branch cut.
+// color: a string, or a function of the sample index for per-segment color.
+function paintLine(g, v, pts, color, width, alpha) {
+  g.lineWidth = width; g.lineCap = 'round'; g.globalAlpha = alpha == null ? 1 : alpha;
+  const per = typeof color === 'function';
+  if (!per) { g.strokeStyle = color; g.beginPath(); }
+  const lim = Math.max(v.w, v.h);
+  let prev = null;
+  for (let i = 0; i < pts.length; i++) {
+    const z = pts[i];
+    if (!finite(z)) { prev = null; continue; }
+    const p = v.toPx(z);
+    if (prev && Math.hypot(p[0] - prev[0], p[1] - prev[1]) <= lim) {
+      if (per) { g.strokeStyle = color(i - 1); g.beginPath(); g.moveTo(prev[0], prev[1]); g.lineTo(p[0], p[1]); g.stroke(); }
+      else { g.moveTo(prev[0], prev[1]); g.lineTo(p[0], p[1]); }
+    }
+    prev = p;
+  }
+  if (!per) g.stroke();
+  g.globalAlpha = 1;
+}
+function dot(g, v, z, color, rad) {
+  if (!finite(z)) return;
+  const [x, y] = v.toPx(z);
+  g.beginPath(); g.arc(x, y, rad, 0, 2 * Math.PI); g.fillStyle = color; g.fill();
+  g.lineWidth = 2; g.strokeStyle = cssVar('--pane'); g.stroke();
+}
+// angle marker at plane point z: a filled wedge from direction a, turning by the signed angle to b
+function wedge(g, v, z, a, b, color, R) {
+  if (!finite(z) || !finite(a) || !finite(b) || abs(a) === 0 || abs(b) === 0) return;
+  const [x, y] = v.toPx(z);
+  const a0 = Math.atan2(a.im, a.re), s = turn(a, b) / DEG;
+  g.beginPath(); g.moveTo(x, y); g.arc(x, y, R, -a0, -(a0 + s), s > 0); g.closePath();
+  g.globalAlpha = 0.28; g.fillStyle = color; g.fill();
+  g.globalAlpha = 1; g.lineWidth = 1.5; g.strokeStyle = color;
+  g.beginPath(); g.arc(x, y, R, -a0, -(a0 + s), s > 0); g.stroke();
+}
+
+// ---------- render ----------
+function render() {
+  const F = FUNCS[S.fi], f = F.f;
+  const z0 = C(S.cx, S.cy), w0 = f(z0);
+
+  // sample the circle, the rays and (optionally) the inner circles
+  const circ = [];
+  for (let i = 0; i <= N; i++) circ.push(polar(S.r, 2 * Math.PI * i / N));
+  const circW = circ.map(f);
+  const rays = [];
+  for (let k = 0; k < RAYS; k++) {
+    const t = rayAngle(k), z = [];
+    for (let i = 0; i <= M; i++) z.push(polar(S.r * i / M, t));
+    rays.push({ t, z, w: z.map(f) });
+  }
+  const rings = [];
+  if (S.rings) for (let j = 1; j <= 3; j++) {
+    const z = [];
+    for (let i = 0; i <= 240; i++) z.push(polar(S.r * j / 4, 2 * Math.PI * i / 240));
+    rings.push({ z, w: z.map(f) });
+  }
+
+  // directions for the angle markers, by finite differences along the curves themselves
+  const t0 = rayAngle(S.k), t1 = rayAngle(S.k + 1), h = S.r * 1e-4;
+  const dz0 = C(Math.cos(t0), Math.sin(t0)), dz1 = C(Math.cos(t1), Math.sin(t1));
+  const dw0 = sub(f(polar(h, t0)), w0), dw1 = sub(f(polar(h, t1)), w0);      // image rays leaving f(z₀)
+  const zr = polar(S.r, t0), wr = f(zr);                                      // rim point of the measured ray
+  const tanZ = C(-Math.sin(t0), Math.cos(t0)), inZ = C(-dz0.re, -dz0.im);
+  const tanW = sub(f(polar(S.r, t0 + 1e-4)), f(polar(S.r, t0 - 1e-4)));       // image circle direction
+  const inW = sub(f(polar(S.r - h, t0)), wr);                                 // image ray, heading inward
+  const okC = finite(w0) && finite(dw0) && finite(dw1) && abs(dw0) > 0 && abs(dw1) > 0;
+  const okR = finite(wr) && finite(tanW) && finite(inW) && abs(tanW) > 0 && abs(inW) > 0;
+  const angC = okC ? turn(dw0, dw1) : NaN, angR = okR ? turn(tanW, inW) : NaN;
+
+  // derivative at the center (central difference along the real direction)
+  const e = 1e-5;
+  const d = div(sub(f(C(z0.re + e, z0.im)), f(C(z0.re - e, z0.im))), C(2 * e, 0));
+
+  if (S.fit) {   // frame the finite part of the image, trimming outliers near a pole
+    const all = [];
+    circW.forEach(w => { if (finite(w)) all.push(w); });
+    rays.forEach(r => r.w.forEach(w => { if (finite(w)) all.push(w); }));
+    if (all.length) {
+      const re = all.map(w => w.re).sort((a, b) => a - b), im = all.map(w => w.im).sort((a, b) => a - b);
+      const q = (arr, p) => arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
+      const L = C(q(re, 0.02), q(im, 0.02)), H = C(q(re, 0.98), q(im, 0.98));
+      ran.x = (L.re + H.re) / 2; ran.y = (L.im + H.im) / 2;
+      ran.half = Math.max(0.02, Math.max(H.re - L.re, H.im - L.im) / 2 * 1.3);
+    }
+  }
+
+  const gd = setup(dom), gr = setup(ran);
+  drawGrid(gd, dom); drawGrid(gr, ran);
+  const ink2 = cssVar('--ink-2'), ink = cssVar('--ink'), center = cssVar('--center');
+
+  for (const c of rings) { paintLine(gd, dom, c.z, ink2, 1, 0.55); paintLine(gr, ran, c.w, ink2, 1, 0.55); }
+  rays.forEach((r, k) => {
+    const wd = (k === S.k || k === (S.k + 1) % RAYS) ? 3.5 : 2;
+    paintLine(gd, dom, r.z, hue(r.t), wd); paintLine(gr, ran, r.w, hue(r.t), wd);
+  });
+  const circHue = i => hue(2 * Math.PI * i / N);
+  paintLine(gd, dom, circ, circHue, 3); paintLine(gr, ran, circW, circHue, 3);
+
+  // angle markers: between the measured ray and the next one at the center, and ray-vs-circle at the rim
+  wedge(gd, dom, z0, dz0, dz1, ink, 30);  if (okC) wedge(gr, ran, w0, dw0, dw1, ink, 30);
+  wedge(gd, dom, zr, tanZ, inZ, ink, 14); if (okR) wedge(gr, ran, wr, tanW, inW, ink, 14);
+
+  dot(gd, dom, z0, center, 6); dot(gr, ran, w0, center, 6);
+  dot(gd, dom, zr, hue(t0), 6); dot(gr, ran, wr, hue(t0), 6);
+
+  // readouts
+  $('rz0').textContent = fmt(z0); $('rw0').textContent = finite(w0) ? fmt(w0) : 'undefined';
+  $('swz').style.background = $('sww').style.background = $('swz2').style.background = $('sww2').style.background = hue(t0);
+  $('thv').textContent = Math.round(t0 * DEG) + '° (and ' + (Math.round(t1 * DEG) % 360) + '°)';
+  const show = x => Number.isFinite(x) ? (x < 0 ? '−' : '') + Math.abs(x).toFixed(1) + '°' : '—';
+  const offC = okC && Math.abs(angC - 30) > 0.5, offR = okR && Math.abs(angR - 90) > 0.5;
+  $('angC').textContent = show(angC); $('angR').textContent = show(angR);
+  $('lineC').className = offC ? 'bad' : ''; $('lineR').className = offR ? 'bad' : '';
+
+  const critical = F.analytic !== false && finite(d) && abs(d) < 1e-4;
+  let dtxt, verdict, bad = false;
+  if (F.analytic === false) {
+    dtxt = 'does not exist (not analytic)';
+    verdict = 'Not conformal: this map has no complex derivative, so nothing forces angles to survive. Compare the measured angles with 30° and 90°.'; bad = true;
+  } else if (!finite(d) || !finite(w0)) {
+    dtxt = 'undefined here';
+    verdict = 'f is not defined at the center (a pole or branch point), so there is no angle to compare there.'; bad = true;
+  } else if (critical) {
+    dtxt = '0  (critical point)';
+    verdict = 'f′(z₀) = 0: conformality fails at this one point. The image rays leave f(z₀) at a multiple of 30° — yet they still cross the image circles at 90°, because the map is conformal everywhere else in the disk.'; bad = true;
+  } else {
+    dtxt = `${fmt(d)}  →  scale ×${abs(d).toFixed(3)}, rotate ${show(Math.atan2(d.im, d.re) * DEG)}`;
+    verdict = 'f′(z₀) ≠ 0: near z₀ the map acts like a rotation plus a uniform scaling, so every ray is turned by the same amount and the 30° sectors survive.'
+      + (offR ? ' The rim angle is off because the disk reaches a branch cut or a point where f′ = 0.' : '');
+  }
+  $('der').textContent = dtxt;
+  $('verdict').textContent = verdict; $('verdict').className = bad ? 'hint bad' : 'hint';
+  $('note').textContent = F.note;
+  $('crit').hidden = !F.crit;
+}
+
+// ---------- controls ----------
+function syncInputs() { $('cx').value = S.cx.toFixed(2); $('cy').value = S.cy.toFixed(2); $('r').value = S.r.toFixed(2); }
+$('fn').addEventListener('change', e => { S.fi = +e.target.value; render(); });
+$('cx').addEventListener('input', e => { const v = +e.target.value; if (e.target.value !== '' && Number.isFinite(v)) { S.cx = v; render(); } });
+$('cy').addEventListener('input', e => { const v = +e.target.value; if (e.target.value !== '' && Number.isFinite(v)) { S.cy = v; render(); } });
+$('r').addEventListener('input', e => { const v = +e.target.value; if (v > 0) { S.r = v; render(); } });
+$('th').addEventListener('input', e => { S.k = +e.target.value; render(); });
+$('fit').addEventListener('change', e => { S.fit = e.target.checked; render(); });
+$('rings').addEventListener('change', e => { S.rings = e.target.checked; render(); });
+$('crit').addEventListener('click', () => {
+  const c = FUNCS[S.fi].crit; if (!c) return;
+  S.cx = c.re; S.cy = c.im; dom.x = c.re; dom.y = c.im;
+  syncInputs(); render();
+});
+
+// domain: drag center or edge; drag empty space to pan; wheel zooms
+let drag = null;
+const pos = (v, e) => { const r = v.cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+dom.cvs.addEventListener('pointerdown', e => {
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  const d = Math.hypot(z.re - S.cx, z.im - S.cy);
+  const tol = 12 / dom.scale;
+  if (Math.abs(d - S.r) < tol && d > tol) drag = { kind: 'edge' };
+  else if (d < S.r || d < tol) drag = { kind: 'center', dx: z.re - S.cx, dy: z.im - S.cy };
+  else drag = { kind: 'pan', px, py, x: dom.x, y: dom.y };
+  dom.cvs.setPointerCapture(e.pointerId);
+});
+dom.cvs.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  if (drag.kind === 'center') { S.cx = z.re - drag.dx; S.cy = z.im - drag.dy; }
+  else if (drag.kind === 'edge') { S.r = Math.max(0.01, Math.hypot(z.re - S.cx, z.im - S.cy)); }
+  else { dom.x = drag.x - (px - drag.px) / dom.scale; dom.y = drag.y + (py - drag.py) / dom.scale; }
+  syncInputs(); render();
+});
+const stop = () => { drag = null; };
+dom.cvs.addEventListener('pointerup', stop); dom.cvs.addEventListener('pointercancel', stop);
+
+// range: drag pans (and turns auto-fit off); wheel zooms
+let pan = null;
+ran.cvs.addEventListener('pointerdown', e => { const [px, py] = pos(ran, e); pan = { px, py, x: ran.x, y: ran.y }; ran.cvs.setPointerCapture(e.pointerId); });
+ran.cvs.addEventListener('pointermove', e => {
+  if (!pan) return;
+  const [px, py] = pos(ran, e);
+  if (S.fit) { S.fit = false; $('fit').checked = false; }
+  ran.x = pan.x - (px - pan.px) / ran.scale; ran.y = pan.y + (py - pan.py) / ran.scale; render();
+});
+ran.cvs.addEventListener('pointerup', () => { pan = null; }); ran.cvs.addEventListener('pointercancel', () => { pan = null; });
+
+function wheel(v) {
+  return e => {
+    e.preventDefault();
+    const [px, py] = pos(v, e), before = v.toZ(px, py);
+    v.half = Math.min(1e4, Math.max(1e-3, v.half * Math.exp(e.deltaY * 0.0015)));
+    if (v === ran && S.fit) { S.fit = false; $('fit').checked = false; }
+    setup(v);
+    const after = v.toZ(px, py);                   // keep the point under the cursor fixed
+    v.x += before.re - after.re; v.y += before.im - after.im;
+    render();
+  };
+}
+dom.cvs.addEventListener('wheel', wheel(dom), { passive: false });
+ran.cvs.addEventListener('wheel', wheel(ran), { passive: false });
+
+new ResizeObserver(render).observe(dom.cvs);
+new ResizeObserver(render).observe(ran.cvs);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+syncInputs(); render();
+})();
+</script>
+</body>
+</html>

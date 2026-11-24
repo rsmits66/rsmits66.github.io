@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Square Root Branch Cut</title>
+<style>
+/* Layout: one toolbar row, then three equal columns. The z-plane takes the first column;
+   the other two hold either the two w-plane sheets or one wide 3D Riemann surface.
+   The circle is painted by angle (hue sweeps 0..2π) and every lift or image reuses that hue.
+   Sheet 1 is always the cool tint, sheet 2 the warm tint, the cut always the orange zigzag. */
+:root {
+  --bg: #F3F4F0;
+  --pane: #FFFFFF;
+  --ink: #1C2321;
+  --ink-2: #5C6663;
+  --rule: #D8DCD6;
+  --grid: #E6E9E4;
+  --axis: #B3BAB5;
+  --accent: #0B6E6A;
+  --on-accent: #FFFFFF;
+  --cut: #C2410C;
+  --s1: 150 200 208;
+  --s2: 238 205 150;
+  --hue-l: 46%;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+    --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --on-accent: #0B1F1E; --cut: #FB923C;
+    --s1: 38 92 102; --s2: 122 90 44; --hue-l: 62%; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+  --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --on-accent: #0B1F1E; --cut: #FB923C;
+  --s1: 38 92 102; --s2: 122 90 44; --hue-l: 62%; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); }
+.wrap { max-width: 84rem; margin-inline: auto; padding-inline: 16px; padding-block: 1.25rem 2rem; display: grid; gap: 1rem; }
+h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { margin: 0.2rem 0 0; color: var(--ink-2); max-width: 68ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 0.7rem 1.4rem; align-items: end; }
+.field { display: grid; gap: 0.25rem; min-width: 0; }
+.field > span { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.field > span output { text-transform: none; letter-spacing: 0; font-family: var(--mono); color: var(--ink); }
+input[type="number"] {
+  font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 0.35rem 0.5rem; width: 6rem; font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.row { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.chk { display: flex; gap: 0.4rem; align-items: center; color: var(--ink-2); padding-bottom: 0.4rem; }
+.chk input { accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="range"] { width: 13rem; max-width: 100%; accent-color: var(--accent); margin: 0; }
+
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--pane); }
+.seg label { position: relative; padding: 0.35rem 0.75rem; cursor: pointer; white-space: nowrap; }
+.seg label + label { border-left: 1px solid var(--rule); }
+.seg input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--accent); color: var(--on-accent); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -4px; }
+.btn {
+  font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 0.35rem 0.7rem; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.play { min-width: 4.2rem; }
+
+.planes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.pane { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0.5rem; }
+.pane.wide { grid-column: span 2; }
+.pane h2 { margin: 0; font-size: 1rem; font-weight: 600; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.1rem 1rem; align-items: baseline; }
+.pane h2 small { font-weight: 400; color: var(--ink-2); font-size: 0.82rem; }
+.view { position: relative; width: 100%; aspect-ratio: 1; }
+.pane.wide .view { aspect-ratio: auto; min-height: 15rem; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 4px; cursor: crosshair; touch-action: none; }
+#dom, #surf { cursor: grab; }
+@media (max-width: 56rem) {
+  .planes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  #pDom, .pane.wide { grid-column: 1 / -1; }
+  #pDom .view { max-width: 30rem; margin-inline: auto; }
+  .pane.wide .view { aspect-ratio: 4 / 3; }
+  .pane { padding: 0.5rem; }
+}
+
+.chip { display: inline-block; padding: 0 0.45em; border-radius: 4px; font-family: var(--sans); font-size: 0.8rem; color: var(--ink); white-space: nowrap; }
+.chip.s1 { background: rgb(var(--s1)); }
+.chip.s2 { background: rgb(var(--s2)); }
+.read { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0.3rem 1.5rem; font-family: var(--mono); font-size: 0.86rem; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.read b { color: var(--ink); font-weight: 600; }
+.swatch { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; vertical-align: -0.05em; margin-right: 0.3em; background: var(--ink); }
+.swatch.open { background: transparent; border: 2px solid var(--ink-2); }
+.notes { display: grid; gap: 0.35rem; max-width: 80ch; }
+.notes p { margin: 0; }
+.hint { color: var(--ink-2); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>The two sheets of √z</h1>
+    <p class="sub">Every z ≠ 0 has two square roots. Cutting the z-plane along the negative real axis separates them into two branches. The probe follows √z continuously around the circle and changes sheets each time it crosses the cut.</p>
+  </header>
+
+  <div class="bar">
+    <div class="field"><span>Right-hand view</span>
+      <div class="seg" role="radiogroup" aria-label="Right-hand view">
+        <label><input type="radio" name="mode" id="modePlanes" value="planes" checked>Two sheets</label>
+        <label><input type="radio" name="mode" id="modeSurface" value="surface">Riemann surface</label>
+      </div>
+    </div>
+    <div class="field"><span>Center z₀ (re, im)</span>
+      <div class="row">
+        <input type="number" id="cx" step="0.1" value="0.4" aria-label="Real part of the center">
+        <input type="number" id="cy" step="0.1" value="0.3" aria-label="Imaginary part of the center">
+      </div>
+    </div>
+    <label class="field"><span>Radius r</span>
+      <input type="number" id="r" step="0.05" min="0.01" value="1.5">
+    </label>
+    <div class="field"><span>Probe angle θ = <output id="thv" for="th">40°</output></span>
+      <div class="row">
+        <input type="range" id="th" min="0" max="720" step="1" value="40" aria-label="Probe angle, two full laps">
+        <button type="button" class="btn play" id="play">Play</button>
+      </div>
+    </div>
+    <div class="field"><span>Example circles</span>
+      <div class="row">
+        <button type="button" class="btn" id="exAround">Around 0</button>
+        <button type="button" class="btn" id="exAcross">Across the cut</button>
+        <button type="button" class="btn" id="exClear">Clear of the cut</button>
+      </div>
+    </div>
+    <div class="field" id="heightField" hidden><span>Surface height</span>
+      <div class="seg" role="radiogroup" aria-label="Surface height">
+        <label><input type="radio" name="height" id="hRe" value="re" checked>Re w</label>
+        <label><input type="radio" name="height" id="hIm" value="im">Im w</label>
+      </div>
+    </div>
+    <label class="chk" id="fitField"><input type="checkbox" id="fit" checked> Fit the w-planes to the image</label>
+  </div>
+
+  <div class="planes">
+    <section class="pane" id="pDom">
+      <h2>z-plane <small>drag the circle or its edge · scroll to zoom</small></h2>
+      <div class="view"><canvas id="dom"></canvas></div>
+    </section>
+    <section class="pane" id="pS1">
+      <h2><span><span class="chip s1">Sheet 1</span> w = +√z</span> <small>principal branch</small></h2>
+      <div class="view"><canvas id="sh1"></canvas></div>
+    </section>
+    <section class="pane" id="pS2">
+      <h2><span><span class="chip s2">Sheet 2</span> w = −√z</span> <small>second branch</small></h2>
+      <div class="view"><canvas id="sh2"></canvas></div>
+    </section>
+    <section class="pane wide" id="pSurf" hidden>
+      <h2><span>Riemann surface of √z <span class="chip s1">Sheet 1</span> <span class="chip s2">Sheet 2</span></span> <small id="surfSmall">height = Re w · drag to rotate · scroll to zoom</small></h2>
+      <div class="view"><canvas id="surf"></canvas></div>
+    </section>
+  </div>
+
+  <div class="read">
+    <div><span class="swatch"></span>z₀ = <b id="rz0"></b></div>
+    <div><span class="swatch" id="swz"></span>z(θ) = <b id="rz"></b></div>
+    <div><span class="swatch" id="sww"></span>w(θ) = <b id="rw"></b> <span class="chip" id="rwSheet"></span></div>
+    <div><span class="swatch open" id="swo"></span>−w(θ) = <b id="ro"></b> <span class="chip" id="roSheet"></span></div>
+  </div>
+
+  <div class="notes">
+    <p id="note"></p>
+    <p class="hint" id="hint"></p>
+  </div>
+</main>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = 2 * Math.PI;
+
+// ---------- complex helpers ----------
+const C = (re, im) => ({ re, im });
+const neg = z => C(-z.re, -z.im);
+const dotp = (a, b) => a.re * b.re + a.im * b.im;
+
+// ---------- the branch cut ----------
+// The cut is the ray from 0 in direction CUT. Sheet 1 takes arg z in (CUT − 2π, CUT]; sheet 2 is its negative.
+const CUT = Math.PI;
+function argCut(z) {
+  let a = Math.atan2(z.im, z.re);
+  if (a > CUT) a -= TAU; else if (a <= CUT - TAU) a += TAU;
+  return a;
+}
+function root1(z) { const m = Math.sqrt(Math.hypot(z.re, z.im)), a = argCut(z) / 2; return C(m * Math.cos(a), m * Math.sin(a)); }
+
+// ---------- state ----------
+const S = { cx: 0.4, cy: 0.3, r: 1.5, th: 40 * Math.PI / 180, mode: 'planes', height: 're', fit: true };
+const dom = { cvs: $('dom'), x: 0, y: 0, half: 3 };
+const ran = { x: 0, y: 0, half: 2 };                      // shared by both sheet views
+const sh1 = { cvs: $('sh1'), x: 0, y: 0, half: 2 };
+const sh2 = { cvs: $('sh2'), x: 0, y: 0, half: 2 };
+const surf = { cvs: $('surf'), x: 0, y: 0, half: 1 };
+const cam = { yaw: 0.5, el: 0.45, zoom: 1 };
+const N = 720;                                            // samples around the circle
+let HUE_L = '46%';
+const hue = t => `hsl(${((t * 180 / Math.PI) % 360).toFixed(0)} 70% ${HUE_L})`;
+const fmt = z => `${z.re < 0 ? '−' : ''}${Math.abs(z.re).toFixed(3)} ${z.im < 0 ? '−' : '+'} ${Math.abs(z.im).toFixed(3)}i`;
+function circlePt(t) { return C(S.cx + S.r * Math.cos(t), S.cy + S.r * Math.sin(t)); }
+
+// Sample the circle. P is the sheet-1 root (it jumps at the cut); A is the root followed continuously from θ = 0.
+function tracePath() {
+  const pts = [];
+  let crossings = 0;
+  for (let i = 0; i <= N; i++) {
+    const t = TAU * i / N, z = circlePt(t), P = root1(z);
+    let A = P, jump = false;
+    if (i > 0) {
+      if (dotp(P, pts[i - 1].A) < 0) A = neg(P);
+      if (dotp(P, pts[i - 1].P) < 0) { jump = true; crossings++; }
+    }
+    pts.push({ t, z, P, A, jump });
+  }
+  const sigma = dotp(pts[N].A, pts[0].A) < 0 ? -1 : 1;    // −1 when one lap swaps the two roots
+  return { pts, sigma, crossings };
+}
+function probeAt(pa) {
+  const lap = S.th >= TAU ? 1 : 0, t = S.th - lap * TAU;
+  const z = circlePt(t), P = root1(z);
+  const i = Math.min(N, Math.round(t / TAU * N));
+  let w = dotp(P, pa.pts[i].A) < 0 ? neg(P) : P;
+  if (lap && pa.sigma < 0) w = neg(w);
+  return { t, lap, z, w, sheet: dotp(w, P) > 0 ? 1 : 2 };
+}
+
+// ---------- canvas plumbing ----------
+function setup(v) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = v.cvs.clientWidth, h = v.cvs.clientHeight;
+  if (v.cvs.width !== Math.round(w * dpr) || v.cvs.height !== Math.round(h * dpr)) {
+    v.cvs.width = Math.round(w * dpr); v.cvs.height = Math.round(h * dpr);
+  }
+  const g = v.cvs.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  v.w = w; v.h = h; v.scale = Math.min(w, h) / (2 * v.half);
+  v.toPx = z => [w / 2 + (z.re - v.x) * v.scale, h / 2 - (z.im - v.y) * v.scale];
+  v.toZ = (px, py) => C(v.x + (px - w / 2) / v.scale, v.y - (py - h / 2) / v.scale);
+  return g;
+}
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function niceStep(half) { const raw = half / 3, p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+
+function drawGrid(g, v, K) {
+  const step = niceStep(v.half);
+  const z0 = v.toZ(0, v.h), z1 = v.toZ(v.w, 0);
+  g.lineWidth = 1; g.strokeStyle = K.grid;
+  g.font = '11px ' + K.sans; g.textAlign = 'left'; g.textBaseline = 'top';
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) {
+    const [px] = v.toPx(C(x, 0)); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, v.h); g.stroke();
+  }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) {
+    const [, py] = v.toPx(C(0, y)); g.beginPath(); g.moveTo(0, py); g.lineTo(v.w, py); g.stroke();
+  }
+  g.strokeStyle = K.axis;
+  const [ox, oy] = v.toPx(C(0, 0));
+  g.beginPath(); g.moveTo(ox, 0); g.lineTo(ox, v.h); g.moveTo(0, oy); g.lineTo(v.w, oy); g.stroke();
+  g.fillStyle = K.ink2;
+  const dec = step < 1 ? Math.ceil(-Math.log10(step)) : 0;
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) {
+    if (Math.abs(x) < 1e-9) continue;
+    const [px] = v.toPx(C(x, 0)); g.fillText(x.toFixed(dec), px + 3, Math.min(Math.max(oy + 3, 2), v.h - 14));
+  }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) {
+    if (Math.abs(y) < 1e-9) continue;
+    const [, py] = v.toPx(C(0, y)); g.fillText(y.toFixed(dec) + 'i', Math.min(Math.max(ox + 3, 2), v.w - 30), py + 2);
+  }
+}
+function dot(g, x, y, color, rad, K) {
+  g.beginPath(); g.arc(x, y, rad, 0, TAU); g.fillStyle = color; g.fill();
+  g.lineWidth = 2; g.strokeStyle = K.pane; g.stroke();
+}
+function ring(g, x, y, color, rad, K) {
+  g.beginPath(); g.arc(x, y, rad, 0, TAU); g.fillStyle = K.pane; g.fill();
+  g.lineWidth = 2.5; g.strokeStyle = color; g.stroke();
+}
+
+// ---------- z-plane ----------
+function renderDomain(pa, pr, K) {
+  const v = dom, g = setup(v);
+  if (!v.w) return;
+  g.clearRect(0, 0, v.w, v.h);
+  drawGrid(g, v, K);
+
+  // the cut: a zigzag from the branch point out along direction CUT
+  const [ox, oy] = v.toPx(C(0, 0));
+  const ux = Math.cos(CUT), uy = -Math.sin(CUT), nx = -uy, ny = ux;
+  const L = Math.hypot(v.w, v.h) + Math.hypot(ox - v.w / 2, oy - v.h / 2);
+  const n = Math.min(4000, Math.ceil(L / 5));
+  g.beginPath(); g.moveTo(ox, oy);
+  for (let k = 1; k <= n; k++) { const a = k % 2 ? 3 : -3; g.lineTo(ox + ux * k * 5 + nx * a, oy + uy * k * 5 + ny * a); }
+  g.lineWidth = 1.6; g.lineJoin = 'round'; g.strokeStyle = K.cut; g.stroke();
+  g.beginPath(); g.arc(ox, oy, 4, 0, TAU); g.fillStyle = K.cut; g.fill();
+  g.fillStyle = K.cut; g.font = '11px ' + K.sans; g.textAlign = 'center'; g.textBaseline = 'bottom';
+  g.fillText('branch cut', ox + ux * 62, oy + uy * 62 - 7);
+
+  // the circle, painted by angle
+  g.lineWidth = 3; g.lineCap = 'round';
+  for (let i = 1; i <= N; i++) {
+    const [ax, ay] = v.toPx(pa.pts[i - 1].z), [bx, by] = v.toPx(pa.pts[i].z);
+    g.strokeStyle = hue(pa.pts[i - 1].t); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  }
+  const [cx, cy] = v.toPx(C(S.cx, S.cy)); dot(g, cx, cy, K.ink, 5, K);
+  const [px, py] = v.toPx(pr.z); dot(g, px, py, hue(pr.t), 7, K);
+}
+
+// ---------- one sheet of the w-plane ----------
+function renderSheet(v, sign, pa, pr, K) {
+  v.x = ran.x; v.y = ran.y; v.half = ran.half;
+  const g = setup(v);
+  if (!v.w) return;
+  g.clearRect(0, 0, v.w, v.h);
+
+  // tint the half-plane this branch can reach; its edge is where the cut lands
+  const [ox, oy] = v.toPx(C(0, 0));
+  const ux = Math.cos(CUT / 2), uy = -Math.sin(CUT / 2);
+  const b = CUT / 2 - Math.PI / 2, nx = sign * Math.cos(b), ny = -sign * Math.sin(b);
+  const L = 4 * (v.w + v.h) + Math.hypot(ox - v.w / 2, oy - v.h / 2);
+  g.beginPath();
+  g.moveTo(ox + L * ux, oy + L * uy); g.lineTo(ox - L * ux, oy - L * uy);
+  g.lineTo(ox - L * ux + L * nx, oy - L * uy + L * ny); g.lineTo(ox + L * ux + L * nx, oy + L * uy + L * ny);
+  g.closePath();
+  g.fillStyle = `rgb(${(sign > 0 ? K.s1 : K.s2).join(' ')} / 0.38)`; g.fill();
+  drawGrid(g, v, K);
+  g.setLineDash([6, 5]); g.lineWidth = 1.6; g.strokeStyle = K.cut;
+  g.beginPath(); g.moveTo(ox + L * ux, oy + L * uy); g.lineTo(ox - L * ux, oy - L * uy); g.stroke();
+  g.setLineDash([]);
+
+  // image of the circle under this branch, broken where the circle crosses the cut
+  const W = p => sign > 0 ? p.P : neg(p.P);
+  g.lineWidth = 3; g.lineCap = 'round';
+  for (let i = 1; i <= N; i++) {
+    const a = pa.pts[i - 1], c = pa.pts[i];
+    if (c.jump) continue;
+    const [ax, ay] = v.toPx(W(a)), [bx, by] = v.toPx(W(c));
+    g.strokeStyle = hue(a.t); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  }
+  for (let i = 1; i <= N; i++) {
+    if (!pa.pts[i].jump) continue;
+    for (const p of [pa.pts[i - 1], pa.pts[i]]) { const [x, y] = v.toPx(W(p)); ring(g, x, y, hue(p.t), 5, K); }
+  }
+  const w0 = root1(C(S.cx, S.cy)), [cx, cy] = v.toPx(sign > 0 ? w0 : neg(w0)); dot(g, cx, cy, K.ink, 5, K);
+
+  // the probe: solid on the sheet it is on, an open ring for the other root
+  const here = pr.sheet === (sign > 0 ? 1 : 2);
+  const [px, py] = v.toPx(here ? pr.w : neg(pr.w));
+  if (here) dot(g, px, py, hue(pr.t), 7, K); else ring(g, px, py, hue(pr.t), 6, K);
+}
+
+// ---------- the Riemann surface, drawn over the z-plane ----------
+const NR = 14, NP = 96;
+function renderSurface(pa, pr, K) {
+  const v = surf, g = setup(v);
+  if (!v.w) return;
+  g.clearRect(0, 0, v.w, v.h);
+  const R = Math.max(dom.half, (Math.hypot(S.cx, S.cy) + S.r) * 1.08);
+  const hOf = S.height === 're' ? (w => w.re) : (w => w.im);
+  const HS = 0.5 / Math.sqrt(R);
+  const cyw = Math.cos(cam.yaw), syw = Math.sin(cam.yaw), ce = Math.cos(cam.el), se = Math.sin(cam.el);
+  const Sc = Math.min(v.w, 1.3 * v.h) / 2.6 * cam.zoom, ox = v.w / 2, oy = v.h / 2;
+  // world (x, y, height) -> [screen x, screen y, depth]; larger depth is farther away
+  const P3 = (x, y, h) => {
+    const X = x / R, Y = y / R, Z = h * HS, x1 = X * cyw - Y * syw, y1 = X * syw + Y * cyw;
+    return [ox + x1 * Sc, oy - (Z * ce + y1 * se) * Sc, y1 * ce - Z * se];
+  };
+
+  // mesh in (|z|, ψ) with ψ running 0..4π: z = s·e^{iψ}, w = √s·e^{iψ/2}. One smooth patch covers both sheets.
+  const V = [];
+  for (let i = 0; i <= NR; i++) {
+    const s = R * (i / NR) * (i / NR), m = Math.sqrt(s), row = [];
+    for (let j = 0; j <= NP; j++) {
+      const psi = 2 * TAU * j / NP;
+      row.push(P3(s * Math.cos(psi), s * Math.sin(psi), hOf(C(m * Math.cos(psi / 2), m * Math.sin(psi / 2)))));
+    }
+    V.push(row);
+  }
+  const lx = -0.35, ly = -0.6, lz = -0.72, ll = Math.hypot(lx, ly, lz);
+  const quads = [];
+  for (let i = 0; i < NR; i++) for (let j = 0; j < NP; j++) {
+    const a = V[i][j], b = V[i + 1][j], c = V[i + 1][j + 1], e = V[i][j + 1];
+    const d1 = [c[0] - a[0], c[1] - a[1], (c[2] - a[2]) * Sc], d2 = [e[0] - b[0], e[1] - b[1], (e[2] - b[2]) * Sc];
+    const n0 = d1[1] * d2[2] - d1[2] * d2[1], n1 = d1[2] * d2[0] - d1[0] * d2[2], n2 = d1[0] * d2[1] - d1[1] * d2[0];
+    const nl = Math.hypot(n0, n1, n2) || 1;
+    const shade = 0.72 + 0.28 * Math.abs(n0 * lx + n1 * ly + n2 * lz) / (nl * ll);
+    const psiMid = 2 * TAU * (j + 0.5) / NP;
+    const k = ((psiMid - CUT) % (2 * TAU) + 2 * TAU) % (2 * TAU);
+    quads.push({ a, b, c, e, d: (a[2] + b[2] + c[2] + e[2]) / 4, sheet: k < TAU ? 2 : 1, shade, dec: null });
+  }
+  const quadAt = (z, w) => {
+    const i = Math.min(NR - 1, Math.floor(NR * Math.sqrt(Math.hypot(z.re, z.im) / R)));
+    const psi = ((2 * Math.atan2(w.im, w.re)) % (2 * TAU) + 2 * TAU) % (2 * TAU);
+    const j = Math.min(NP - 1, Math.floor(psi / (2 * TAU) * NP));
+    return quads[i * NP + j];
+  };
+  const decal = (q, s) => { (q.dec || (q.dec = [])).push(s); };
+
+  // the cut lifted to the surface: the two seams where sheet 1 meets sheet 2
+  for (let kk = 0; kk < 2; kk++) {
+    const psi = CUT + kk * TAU, j0 = Math.round((((psi % (2 * TAU)) + 2 * TAU) % (2 * TAU)) / (2 * TAU) * NP) % NP;
+    for (let i = 0; i < NR; i++) {
+      const p = V[i][j0], q = V[i + 1][j0], s = { x0: p[0], y0: p[1], x1: q[0], y1: q[1], color: K.cut, width: 2 };
+      decal(quads[i * NP + j0], s); decal(quads[i * NP + (j0 - 1 + NP) % NP], s);
+    }
+  }
+  // both lifts of the circle, each attached to the patch it lies on so the surface hides it correctly
+  const segs = [];
+  for (const sign of [1, -1]) {
+    let prev = null;
+    for (let i = 0; i <= N; i += 2) {
+      const p = pa.pts[i], w = sign > 0 ? p.A : neg(p.A), s3 = P3(p.z.re, p.z.im, hOf(w));
+      if (prev) {
+        const s = { x0: prev.s3[0], y0: prev.s3[1], x1: s3[0], y1: s3[1], color: hue(prev.t), width: 3.5 };
+        segs.push(s); decal(quadAt(prev.z, prev.w), s);
+      }
+      prev = { s3, t: p.t, z: p.z, w };
+    }
+  }
+
+  // axis stubs and labels at the rim, behind or in front of the surface by depth
+  const labels = [
+    { p: P3(R * 1.14, 0, 0), q: P3(R, 0, 0), text: 'Re z' },
+    { p: P3(0, R * 1.14, 0), q: P3(0, R, 0), text: 'Im z' },
+  ];
+  const drawLabel = l => {
+    g.strokeStyle = K.axis; g.lineWidth = 1.5; g.beginPath(); g.moveTo(l.q[0], l.q[1]); g.lineTo(l.p[0], l.p[1]); g.stroke();
+  };
+  const drawLabelText = l => {
+    g.fillStyle = K.ink2; g.font = '12px ' + K.sans; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(l.text, l.p[0] + (l.p[0] - l.q[0]) * 0.9, l.p[1] + (l.p[1] - l.q[1]) * 0.9);
+  };
+  labels.filter(l => l.p[2] > 0).forEach(drawLabel);
+
+  quads.sort((p, q) => q.d - p.d);
+  g.lineJoin = 'round';
+  const drawSeg = s => { g.strokeStyle = s.color; g.lineWidth = s.width; g.beginPath(); g.moveTo(s.x0, s.y0); g.lineTo(s.x1, s.y1); g.stroke(); };
+  for (const q of quads) {
+    const base = q.sheet === 1 ? K.s1 : K.s2;
+    g.beginPath(); g.moveTo(q.a[0], q.a[1]); g.lineTo(q.b[0], q.b[1]); g.lineTo(q.c[0], q.c[1]); g.lineTo(q.e[0], q.e[1]); g.closePath();
+    g.fillStyle = `rgb(${base.map(x => Math.round(x * q.shade)).join(' ')})`; g.fill();
+    g.globalAlpha = 0.16; g.strokeStyle = K.ink; g.lineWidth = 1; g.lineCap = 'butt'; g.stroke(); g.globalAlpha = 1;
+    if (q.dec) { g.lineCap = 'round'; q.dec.forEach(drawSeg); }
+  }
+  labels.filter(l => l.p[2] <= 0).forEach(drawLabel);
+  labels.forEach(drawLabelText);
+
+  // faint see-through pass so the hidden parts of the lifted circle stay traceable
+  g.globalAlpha = 0.22; g.lineCap = 'round'; segs.forEach(drawSeg); g.globalAlpha = 1;
+
+  // "cut" labels at the outer ends of the seams
+  const m = Math.sqrt(R * 1.1), e1 = C(m * Math.cos(CUT / 2), m * Math.sin(CUT / 2));
+  const c1 = P3(R * 1.1 * Math.cos(CUT), R * 1.1 * Math.sin(CUT), hOf(e1)), c2 = P3(R * 1.1 * Math.cos(CUT), R * 1.1 * Math.sin(CUT), hOf(neg(e1)));
+  g.fillStyle = K.cut; g.font = '12px ' + K.sans; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('cut', c1[0], c1[1]);
+  if (Math.hypot(c1[0] - c2[0], c1[1] - c2[1]) > 14) g.fillText('cut', c2[0], c2[1]);
+
+  // the probe and the other root over the same z, joined by a dashed vertical
+  const a = P3(pr.z.re, pr.z.im, hOf(pr.w)), o = P3(pr.z.re, pr.z.im, hOf(neg(pr.w)));
+  g.setLineDash([4, 4]); g.strokeStyle = K.ink2; g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(o[0], o[1]); g.stroke(); g.setLineDash([]);
+  ring(g, o[0], o[1], hue(pr.t), 6, K);
+  dot(g, a[0], a[1], hue(pr.t), 7, K);
+}
+
+// ---------- render ----------
+function situation(pa) {
+  const d = Math.hypot(S.cx, S.cy);
+  if (Math.abs(d - S.r) < 0.004) return 'The circle passes through the branch point z = 0, where the two roots coincide and the sheets meet.';
+  if (d < S.r) return 'The circle goes around the branch point, so it crosses the cut once per lap. One lap carries √z from one sheet to the other; the value returns to its start only after the second lap, at θ = 720°.';
+  if (pa.crossings >= 2) return 'The circle crosses the cut twice without going around 0. √z leaves for the other sheet and comes back, so each branch draws a broken curve while the followed value still closes up after one lap.';
+  return 'The circle stays clear of the cut. Each sheet carries its own closed image and the followed value never changes sheets.';
+}
+const HINTS = {
+  planes: 'Each plane shows one branch. Sheet 1 fills the right half-plane and sheet 2 the left; the dashed line is where the cut lands. Open rings mark a break: the curve picks up at the same spot on the other sheet. The solid dot is w(θ), the root followed continuously from θ = 0; the open dot is the other root.',
+  surface: 'The surface sits over the z-plane, with two points above every z ≠ 0. Both lifts of the circle are drawn on it, and the dashed vertical joins w(θ) to the other root over the same z. The orange seam is the cut. Switch the height to Im w and the self-crossing moves to the positive real axis: the crossing comes from the projection, and the cut is a choice.',
+};
+function render() {
+  const K = {
+    grid: cssVar('--grid'), axis: cssVar('--axis'), ink: cssVar('--ink'), ink2: cssVar('--ink-2'), pane: cssVar('--pane'),
+    cut: cssVar('--cut'), sans: cssVar('--sans'),
+    s1: cssVar('--s1').split(/\s+/).map(Number), s2: cssVar('--s2').split(/\s+/).map(Number),
+  };
+  HUE_L = cssVar('--hue-l') || '46%';
+  const pa = tracePath(), pr = probeAt(pa);
+  renderDomain(pa, pr, K);
+  if (S.mode === 'planes') {
+    if (S.fit) { ran.x = 0; ran.y = 0; ran.half = Math.max(0.1, Math.sqrt(Math.hypot(S.cx, S.cy) + S.r) * 1.2); }
+    renderSheet(sh1, 1, pa, pr, K); renderSheet(sh2, -1, pa, pr, K);
+  } else renderSurface(pa, pr, K);
+
+  const deg = Math.round(S.th * 180 / Math.PI);
+  $('thv').textContent = `${deg}° · lap ${pr.lap + 1}`;
+  $('rz0').textContent = fmt(C(S.cx, S.cy));
+  $('rz').textContent = fmt(pr.z);
+  $('rw').textContent = fmt(pr.w);
+  $('ro').textContent = fmt(neg(pr.w));
+  $('rwSheet').textContent = 'Sheet ' + pr.sheet; $('rwSheet').className = 'chip s' + pr.sheet;
+  $('roSheet').textContent = 'Sheet ' + (3 - pr.sheet); $('roSheet').className = 'chip s' + (3 - pr.sheet);
+  $('swz').style.background = $('sww').style.background = hue(pr.t);
+  $('swo').style.borderColor = hue(pr.t);
+  $('note').textContent = situation(pa);
+  $('hint').textContent = HINTS[S.mode];
+}
+
+// ---------- controls ----------
+function syncInputs() { $('cx').value = S.cx.toFixed(2); $('cy').value = S.cy.toFixed(2); $('r').value = S.r.toFixed(2); }
+function setMode(m) {
+  S.mode = m;
+  $('pS1').hidden = $('pS2').hidden = m !== 'planes';
+  $('pSurf').hidden = m !== 'surface';
+  $('heightField').hidden = m !== 'surface';
+  $('fitField').hidden = m !== 'planes';
+  render();
+}
+$('modePlanes').addEventListener('change', () => setMode('planes'));
+$('modeSurface').addEventListener('change', () => setMode('surface'));
+function setHeight(h) { S.height = h; $('surfSmall').textContent = `height = ${h === 're' ? 'Re' : 'Im'} w · drag to rotate · scroll to zoom`; render(); }
+$('hRe').addEventListener('change', () => setHeight('re'));
+$('hIm').addEventListener('change', () => setHeight('im'));
+$('cx').addEventListener('input', e => { const v = +e.target.value; if (Number.isFinite(v)) { S.cx = v; render(); } });
+$('cy').addEventListener('input', e => { const v = +e.target.value; if (Number.isFinite(v)) { S.cy = v; render(); } });
+$('r').addEventListener('input', e => { const v = +e.target.value; if (v > 0) { S.r = v; render(); } });
+$('th').addEventListener('input', e => { S.th = +e.target.value * Math.PI / 180; render(); });
+$('fit').addEventListener('change', e => { S.fit = e.target.checked; render(); });
+function example(cx, cy, r) { S.cx = cx; S.cy = cy; S.r = r; dom.x = 0; dom.y = 0; dom.half = 3; syncInputs(); render(); }
+$('exAround').addEventListener('click', () => example(0.4, 0.3, 1.5));
+$('exAcross').addEventListener('click', () => example(-1.6, 0.4, 1.0));
+$('exClear').addEventListener('click', () => example(1.4, 0.6, 1.0));
+
+// play: sweep the probe through both laps
+let playing = false, last = 0;
+function tick(now) {
+  if (!playing) return;
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  let d = S.th * 180 / Math.PI + 72 * dt;
+  if (d >= 720) d -= 720;
+  S.th = d * Math.PI / 180; $('th').value = Math.round(d);
+  render();
+  requestAnimationFrame(tick);
+}
+$('play').addEventListener('click', () => {
+  playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play';
+  if (playing) { last = performance.now(); requestAnimationFrame(tick); }
+});
+
+const pos = (v, e) => { const r = v.cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+// z-plane: drag the center or the edge; drag elsewhere to pan; wheel zooms
+let drag = null;
+dom.cvs.addEventListener('pointerdown', e => {
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  const d = Math.hypot(z.re - S.cx, z.im - S.cy), tol = 12 / dom.scale;
+  if (Math.abs(d - S.r) < tol) drag = { kind: 'edge' };
+  else if (d < S.r || d < tol) drag = { kind: 'center', dx: z.re - S.cx, dy: z.im - S.cy };
+  else drag = { kind: 'pan', px, py, x: dom.x, y: dom.y };
+  dom.cvs.setPointerCapture(e.pointerId);
+});
+dom.cvs.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  if (drag.kind === 'center') { S.cx = z.re - drag.dx; S.cy = z.im - drag.dy; }
+  else if (drag.kind === 'edge') { S.r = Math.max(0.01, Math.hypot(z.re - S.cx, z.im - S.cy)); }
+  else { dom.x = drag.x - (px - drag.px) / dom.scale; dom.y = drag.y + (py - drag.py) / dom.scale; }
+  syncInputs(); render();
+});
+const stop = () => { drag = null; };
+dom.cvs.addEventListener('pointerup', stop); dom.cvs.addEventListener('pointercancel', stop);
+dom.cvs.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [px, py] = pos(dom, e), before = dom.toZ(px, py);
+  dom.half = Math.min(1e4, Math.max(1e-3, dom.half * Math.exp(e.deltaY * 0.0015)));
+  setup(dom);
+  const after = dom.toZ(px, py);                       // keep the point under the cursor fixed
+  dom.x += before.re - after.re; dom.y += before.im - after.im;
+  render();
+}, { passive: false });
+
+// the two sheets share one view: drag pans both, wheel zooms both
+function unfit() { if (S.fit) { S.fit = false; $('fit').checked = false; } }
+for (const v of [sh1, sh2]) {
+  let pan = null;
+  v.cvs.addEventListener('pointerdown', e => { const [px, py] = pos(v, e); pan = { px, py, x: ran.x, y: ran.y }; v.cvs.setPointerCapture(e.pointerId); });
+  v.cvs.addEventListener('pointermove', e => {
+    if (!pan) return;
+    const [px, py] = pos(v, e);
+    unfit();
+    ran.x = pan.x - (px - pan.px) / v.scale; ran.y = pan.y + (py - pan.py) / v.scale; render();
+  });
+  const end = () => { pan = null; };
+  v.cvs.addEventListener('pointerup', end); v.cvs.addEventListener('pointercancel', end);
+  v.cvs.addEventListener('wheel', e => {
+    e.preventDefault();
+    unfit();
+    const [px, py] = pos(v, e), before = v.toZ(px, py);
+    ran.half = Math.min(1e3, Math.max(1e-3, ran.half * Math.exp(e.deltaY * 0.0015)));
+    v.half = ran.half; setup(v);
+    const after = v.toZ(px, py);
+    ran.x += before.re - after.re; ran.y += before.im - after.im;
+    render();
+  }, { passive: false });
+}
+
+// surface: drag rotates, wheel zooms
+let spin = null;
+surf.cvs.addEventListener('pointerdown', e => { spin = { x: e.clientX, y: e.clientY, yaw: cam.yaw, el: cam.el }; surf.cvs.setPointerCapture(e.pointerId); });
+surf.cvs.addEventListener('pointermove', e => {
+  if (!spin) return;
+  cam.yaw = spin.yaw + (e.clientX - spin.x) * 0.01;
+  cam.el = Math.min(1.45, Math.max(-1.45, spin.el + (e.clientY - spin.y) * 0.01));
+  render();
+});
+const unspin = () => { spin = null; };
+surf.cvs.addEventListener('pointerup', unspin); surf.cvs.addEventListener('pointercancel', unspin);
+surf.cvs.addEventListener('wheel', e => {
+  e.preventDefault();
+  cam.zoom = Math.min(4, Math.max(0.4, cam.zoom * Math.exp(-e.deltaY * 0.0015)));
+  render();
+}, { passive: false });
+
+for (const v of [dom, sh1, sh2, surf]) new ResizeObserver(render).observe(v.cvs);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+syncInputs(); render();
+})();
+</script>
+</body>
+</html>

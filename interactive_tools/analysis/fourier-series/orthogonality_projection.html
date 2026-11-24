@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orthogonality &amp; Projection — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Playfair+Display:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --crimson:#9E1B32; --crimson-dk:#6E1322; --crimson-lt:#F2DDE0;
+  --bronze:#9A7B2E; --bronze-lt:#E6D9B8;
+  --slate:#2D343C;
+  --ink:#23191b; --muted:#857f78;
+  --cream:#f8f5f0; --panel:#f6f1ea; --border:#e0dbd2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;line-height:1.5;}
+
+header{width:100%;color:#fff;background:var(--crimson);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 9px);
+  border-bottom:4px solid var(--bronze);}
+.hdr-top{background:var(--crimson-dk);padding:.32rem 2rem;font-size:.72rem;color:#e8c9ce;
+  letter-spacing:.14em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.hdr-main{padding:.85rem 2rem .7rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.55rem;font-weight:700;}
+header .sub{color:#f0d5d9;font-style:italic;margin-top:.25rem;font-size:.88rem;}
+.houndstooth{height:14px;background-color:#fff;
+  background-image:
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%),
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px;}
+
+.wrap{max-width:1220px;width:100%;padding:18px 20px 46px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 14px rgba(35,25,27,.07);margin-bottom:16px;overflow:hidden;}
+.card-hdr{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.13em;color:var(--muted);padding:7px 15px;background:var(--panel);
+  border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.card-hdr .step{color:var(--crimson);font-weight:600;}
+
+/* ── definition banner ── */
+.defs{display:flex;flex-wrap:wrap;gap:0;}
+.def{flex:1;min-width:250px;padding:14px 18px;border-right:1px solid var(--border);}
+.def:last-child{border-right:none;}
+.def .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);}
+.def h3{font-family:'Playfair Display',Georgia,serif;font-size:.97rem;margin:3px 0 6px;}
+.def .f{font-size:1rem;line-height:1.6;}
+.def .n{font-size:.8rem;color:var(--muted);margin-top:5px;}
+.big{font-size:1.4em;vertical-align:-.15em;color:var(--crimson);}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:9px 20px;align-items:center;padding:10px 15px;
+  background:var(--crimson-lt);border-bottom:1px solid var(--border);}
+.ctrl2{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:8px 15px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.grp{display:flex;align-items:center;gap:7px;}
+.grp label{font-size:.85rem;font-weight:600;color:var(--crimson-dk);white-space:nowrap;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.88rem;padding:3px 7px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--ink);}
+input[type=range]{accent-color:var(--crimson);cursor:pointer;width:120px;}
+.rdout{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:600;
+  color:var(--crimson);min-width:2.4em;}
+.chk{display:flex;align-items:center;gap:5px;font-size:.82rem;cursor:pointer;}
+.chk input{accent-color:var(--crimson);cursor:pointer;}
+button{font-family:'Crimson Pro',Georgia,serif;font-size:.84rem;padding:4px 12px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--crimson-dk);cursor:pointer;}
+button:hover{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+button.hero{background:var(--crimson);color:#fff;border-color:var(--crimson);font-weight:600;}
+button.hero:hover{background:var(--crimson-dk);}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--bronze);outline-offset:1px;}
+
+canvas{display:block;width:100%;height:auto;touch-action:none;}
+#vec{cursor:grab;} #vec.drag{cursor:grabbing;}
+
+/* ── verdict chip ── */
+.verdict{padding:9px 15px;border-top:1px solid var(--border);background:#fff;
+  font-family:'IBM Plex Mono',monospace;font-size:.85rem;display:flex;gap:10px;
+  align-items:center;flex-wrap:wrap;}
+.chip{padding:3px 10px;border-radius:2px;font-size:.7rem;letter-spacing:.09em;
+  text-transform:uppercase;font-weight:600;}
+.chip.yes{background:var(--crimson-lt);color:var(--crimson-dk);}
+.chip.no{background:var(--slate);color:#fff;}
+.verdict .v{color:var(--crimson);font-weight:600;}
+
+/* ── coefficient sliders ── */
+.coefs{padding:11px 15px;border-top:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:5px 22px;}
+.crow{display:flex;align-items:center;gap:9px;}
+.crow .nm{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--slate);
+  min-width:9.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.crow input[type=range]{flex:1;min-width:80px;}
+.crow .vv{font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:600;
+  color:var(--crimson);min-width:4.6em;text-align:right;}
+.crow .opt{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted);
+  min-width:4.6em;text-align:right;}
+
+.legend{display:flex;gap:15px;flex-wrap:wrap;align-items:center;padding:8px 15px;
+  background:var(--panel);border-top:1px solid var(--border);font-size:.77rem;color:var(--muted);}
+.li{display:flex;align-items:center;gap:5px;}
+.swl{width:17px;height:3px;flex-shrink:0;}
+.sw{width:15px;height:11px;flex-shrink:0;border-radius:1px;}
+
+.stats{display:flex;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff;}
+.stat{flex:1;min-width:148px;padding:9px 15px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat .k{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:1.02rem;font-weight:600;
+  color:var(--crimson);margin-top:2px;}
+.stat .v.gold{color:var(--bronze);} .stat .v.dark{color:var(--slate);}
+.stat .n{font-size:.75rem;color:var(--muted);font-style:italic;}
+
+.notes{display:flex;gap:16px;flex-wrap:wrap;}
+.note{flex:1;min-width:290px;background:#fff;border:1px solid var(--border);border-radius:5px;
+  padding:15px 18px;box-shadow:0 2px 12px rgba(35,25,27,.06);}
+.note h3{font-family:'Playfair Display',Georgia,serif;font-size:1rem;color:var(--crimson);margin-bottom:3px;}
+.note .kicker{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.note p{font-size:.87rem;margin-bottom:7px;}
+.note p:last-child{margin-bottom:0;}
+.note em{color:var(--crimson-dk);font-style:normal;font-weight:600;}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:.82rem;}
+
+@media (max-width:760px){
+  .hdr-top{padding:.32rem 1rem;font-size:.6rem;}
+  header h1{font-size:1.12rem;} .hdr-main{padding:.7rem 1rem .6rem;}
+  .wrap{padding:12px 10px 30px;}
+  .def{min-width:100%;border-right:none;border-bottom:1px solid var(--border);}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Alabama &ensp;·&ensp; Fourier Analysis &ensp;·&ensp; Part II of the Fourier sequence</div>
+  <div class="hdr-main">
+    <h1>Orthogonality, Projection, and the Best Approximation</h1>
+    <div class="sub">Why the coefficient formula is a formula at all — and what happens when the basis is crooked.</div>
+  </div>
+  <div class="houndstooth"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══ definitions ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>The three definitions everything below rests on</span>
+      <span class="step" id="hdrIP"></span></div>
+    <div class="defs">
+      <div class="def">
+        <span class="eyebrow">an inner product on functions</span>
+        <h3>⟨f, g⟩</h3>
+        <div class="f">⟨f, g⟩ = <span class="big">∫</span><sub>a</sub><sup>b</sup> f(x) g(x) w(x) dx</div>
+        <div class="n">Length follows from it: ‖f‖² = ⟨f, f⟩. Everything you know about dot
+        products — angles, projections, Pythagoras — carries over verbatim.</div>
+      </div>
+      <div class="def">
+        <span class="eyebrow">orthogonal vs. orthonormal</span>
+        <h3>The two conditions</h3>
+        <div class="f">⟨φ<sub>m</sub>, φ<sub>n</sub>⟩ = 0 &nbsp;for m ≠ n<br>
+          <span style="color:var(--muted)">and, for orthonormal,</span> ‖φ<sub>n</sub>‖ = 1</div>
+        <div class="n">Orthogonal alone makes the Gram matrix diagonal. Orthonormal makes it the
+        identity — and only then does the division disappear from the coefficient formula.</div>
+      </div>
+      <div class="def">
+        <span class="eyebrow">generalized Fourier coefficient</span>
+        <h3>c<sub>n</sub></h3>
+        <div class="f">c<sub>n</sub> = ⟨f, φ<sub>n</sub>⟩ / ‖φ<sub>n</sub>‖²</div>
+        <div class="n">This one-at-a-time formula is <em>only</em> valid when the set is
+        orthogonal. Otherwise the coefficients are coupled and you must solve a system.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 1. orthogonality explorer ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>1 — Is this pair orthogonal? Multiply them and integrate</span>
+      <span class="step">the product's signed area is the inner product</span></div>
+    <div class="ctrl">
+      <div class="grp">
+        <label for="selB">Basis</label>
+        <select id="selB">
+          <option value="leg" selected>Legendre Pₙ(x) — orthogonal, w = 1</option>
+          <option value="cheb">Chebyshev Tₙ(x) — orthogonal, w = 1/√(1−x²)</option>
+          <option value="four">Fourier 1, cos nπx, sin nπx — orthogonal</option>
+          <option value="mono">Monomials xⁿ — NOT orthogonal</option>
+          <option value="hat">Hat functions — local support, banded</option>
+        </select>
+      </div>
+      <label class="chk"><input type="checkbox" id="cNorm"> normalize each φₙ (make it orthonormal)</label>
+      <div class="grp">
+        <label for="selM">φ<sub>m</sub>, m =</label>
+        <select id="selM"></select>
+      </div>
+      <div class="grp">
+        <label for="selN">φ<sub>n</sub>, n =</label>
+        <select id="selN"></select>
+      </div>
+    </div>
+    <canvas id="orth" width="1180" height="384"></canvas>
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <!-- ══ 2. approximation ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>2 — Set the coefficients by hand, then let the formula do it</span>
+      <span class="step">shaded area below = the squared error</span></div>
+    <div class="ctrl">
+      <div class="grp">
+        <label for="selF">Target f</label>
+        <select id="selF">
+          <option value="step">step — sgn(x)</option>
+          <option value="abs" selected>corner — |x|</option>
+          <option value="runge">Runge — 1/(1+25x²)</option>
+          <option value="exp">e^x</option>
+          <option value="pulse">pulse — 1 on |x| ≤ ½</option>
+          <option value="wave">sin(4x)</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label for="slK">terms</label>
+        <input type="range" id="slK" min="1" max="8" step="1" value="4">
+        <span class="rdout" id="kVal">4</span>
+      </div>
+      <button class="hero" id="btnFour">Use c<sub>n</sub> = ⟨f, φ<sub>n</sub>⟩ / ‖φ<sub>n</sub>‖²</button>
+      <button id="btnLS">Solve the normal equations</button>
+      <button id="btnZero">Clear to zero</button>
+    </div>
+    <div class="coefs" id="coefs"></div>
+    <canvas id="approx" width="1180" height="400"></canvas>
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#23191b"></div> target f</div>
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> your approximation p</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#9A7B2E 0 5px,transparent 5px 9px)"></div> the best possible p*</div>
+      <div class="li"><div class="sw" style="background:rgba(158,27,50,.22)"></div> |f − p|², whose area is the error</div>
+    </div>
+    <div class="stats" id="stats2"></div>
+  </div>
+
+  <!-- ══ 3. the vector picture ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>3 — The same thing, drawn as vectors</span>
+      <span class="step">drag to orbit · angles are the true function-space angles</span></div>
+    <div class="ctrl2">
+      <span style="font-size:.84rem;color:var(--ink)">Using the pair φ<sub>m</sub>, φ<sub>n</sub>
+        you selected in panel 1, and your sliders c<sub>m</sub>, c<sub>n</sub>.</span>
+      <button id="btnDrop">Drop the perpendicular</button>
+      <button id="btnVView">Reset camera</button>
+    </div>
+    <canvas id="vec" width="1180" height="410"></canvas>
+    <div class="stats" id="stats3"></div>
+  </div>
+
+  <!-- ══ notes ══ -->
+  <div class="notes">
+    <div class="note">
+      <div class="kicker">What panel 1 is really testing</div>
+      <h3>Orthogonality is cancellation</h3>
+      <p>Two functions are orthogonal when their product has <em>as much area below the axis as
+      above</em>. Nothing subtler than that. Watch the bronze running integral climb through the
+      crimson lobes and sink through the charcoal ones, landing back on zero at x = b.</p>
+      <p>The diagonal of the Gram matrix is different in kind: there m = n, the product is
+      φ<sub>n</sub>², which is never negative, so nothing can cancel and the value is ‖φ<sub>n</sub>‖².</p>
+      <p>Switch to <span class="mono">Monomials</span> and try m = 0, n = 2. The product is x², all
+      of it above the axis — the area is 2/3, nowhere near zero. These two directions overlap, and
+      the consequences show up in panel 2.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">The experiment that justifies the whole theory</div>
+      <h3>When the formula stops working</h3>
+      <p>With <em>Legendre</em>, press both buttons. The coefficients and the error come out
+      identical, to every digit. Orthogonality is exactly the condition that makes the
+      one-at-a-time formula solve the full least-squares problem.</p>
+      <p>Now switch to <em>Monomials</em>, 6 terms, and press both. The generalized Fourier formula
+      is now visibly <em>worse</em> — it ignores the overlap between x⁰ and x², x¹ and x³, and so
+      double-counts. Only the normal equations get it right.</p>
+      <p>Tick <b>normalize</b> with monomials. Every diagonal entry becomes 1, but the
+      off-diagonals stay: <em>normalized is not orthonormal</em>. Note the condition number, too —
+      orthogonality is not decoration, it is what keeps the system solvable.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Best approximation in the mean</div>
+      <h3>Why perpendicular means best</h3>
+      <p>In panel 3 the shaded plane is every function you can build from φ<sub>m</sub> and
+      φ<sub>n</sub>. The target f sticks up out of it, and no choice of coefficients can reach it.</p>
+      <p>Move your sliders and the residual tips over; press <b>drop the perpendicular</b> and it
+      stands straight up. That is the whole content of least squares: the error is smallest exactly
+      when what is left over is <em>orthogonal to everything you were allowed to use</em>.</p>
+      <p>At that moment ‖f‖² = ‖p*‖² + ‖f − p*‖² — Pythagoras, in a space of functions. The panel
+      checks the arithmetic for you. For an orthogonal basis the middle term splits further into
+      Σ c<sub>n</sub>²‖φ<sub>n</sub>‖², which is Parseval.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════
+   1. THE INNER PRODUCT — a quadrature rule carrying the weight
+
+   Everything lives on [-1, 1]. Each basis family supplies its own
+   rule, because Chebyshev's weight 1/sqrt(1-x^2) blows up at the
+   endpoints and has to be handled by substitution rather than brute
+   force. Nodes are placed so that every breakpoint a target function
+   might have (0, +/-1/2) lands on a panel boundary.
+   ══════════════════════════════════════════════════════════════════ */
+
+const A=-1, B=1, NMAX=8, EPS=1e-9;
+
+/* Composite Simpson on one segment, tagged with the one-sided offset
+   to use when sampling a function that may jump at a breakpoint. */
+function simpsonSeg(xa,xb,K,out){
+  const h=(xb-xa)/K, dir=Math.sign(xb-xa)||1;
+  for(let j=0;j<=K;j++){
+    const w=(j===0||j===K)?h/3:(j%2?4*h/3:2*h/3);
+    out.x.push(xa+j*h);
+    out.w.push(w);
+    out.e.push(j===0 ? dir*EPS : (j===K ? -dir*EPS : 0));
+  }
+}
+/* Build a composite rule whose panel boundaries include every listed
+   breakpoint, so no panel ever straddles a jump or a kink. */
+function quadFromCuts(cuts,per){
+  const u=Array.from(new Set(cuts.map(v=>+v.toFixed(12)))).sort((a,b)=>a-b);
+  const o={x:[],w:[],e:[]};
+  for(let i=0;i<u.length-1;i++) simpsonSeg(u[i],u[i+1],per,o);
+  return o;
+}
+/* w = 1 : the breakpoints a target function might have */
+function quadPlain(){ return quadFromCuts([-1,-0.5,0,0.5,1],300); }
+/* Hats kink at their own nodes, which move with K. Feeding those nodes
+   in as panel boundaries makes Simpson exact here: a hat times a hat is
+   piecewise quadratic, so an aligned Simpson rule has no error at all. */
+function quadHat(K){
+  const cuts=[-1,-0.5,0,0.5,1];
+  if(K>=2){ const h=2/(K-1); for(let k=0;k<K;k++) cuts.push(-1+k*h); }
+  return quadFromCuts(cuts,60);
+}
+/* w = 1/sqrt(1-x^2) : substitute x = cos(t), so dx*w = dt and the
+   singularity disappears. t runs 0..pi while x runs 1..-1.        */
+function quadCheb(){
+  const o={x:[],w:[],e:[]}, K=300;
+  const tc=[0,Math.PI/3,Math.PI/2,2*Math.PI/3,Math.PI];   // x = 1, .5, 0, -.5, -1
+  const t={x:[],w:[],e:[]};
+  for(let i=0;i<tc.length-1;i++) simpsonSeg(tc[i],tc[i+1],K,t);
+  for(let j=0;j<t.x.length;j++){
+    const xv=Math.cos(t.x[j]);
+    o.x.push(xv); o.w.push(t.w[j]);
+    /* re-derive the offset in x: t increasing means x decreasing */
+    o.e.push(-t.e[j]>0?EPS:(t.e[j]>0?-EPS:0));
+  }
+  return o;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   2. BASIS FAMILIES
+   ══════════════════════════════════════════════════════════════════ */
+
+function legendre(k,x){
+  if(k===0) return 1; if(k===1) return x;
+  let p0=1,p1=x;
+  for(let n=1;n<k;n++){ const p2=((2*n+1)*x*p1-n*p0)/(n+1); p0=p1; p1=p2; }
+  return p1;
+}
+function chebyshev(k,x){
+  if(k===0) return 1; if(k===1) return x;
+  let t0=1,t1=x;
+  for(let n=1;n<k;n++){ const t2=2*x*t1-t0; t0=t1; t1=t2; }
+  return t1;
+}
+function fourierB(k,x){
+  if(k===0) return 1;
+  const m=Math.ceil(k/2);
+  return (k%2===1) ? Math.cos(m*Math.PI*x) : Math.sin(m*Math.PI*x);
+}
+function hatB(k,x,K){
+  if(K<2) return 1;
+  const h=2/(K-1), t=-1+k*h, u=Math.abs(x-t)/h;
+  return u>=1?0:1-u;
+}
+
+const FAM={
+  leg:{ name:'Legendre', q:quadPlain, w:'1',
+        f:(k,x)=>legendre(k,x), lab:k=>'P'+sub(k)+'(x)', orth:true },
+  cheb:{name:'Chebyshev', q:quadCheb, w:'1/\u221A(1\u2212x\u00B2)',
+        f:(k,x)=>chebyshev(k,x), lab:k=>'T'+sub(k)+'(x)', orth:true },
+  four:{name:'Fourier', q:quadPlain, w:'1',
+        f:(k,x)=>fourierB(k,x),
+        lab:k=>k===0?'1':((k%2===1?'cos ':'sin ')+(Math.ceil(k/2)>1?Math.ceil(k/2):'')+'\u03C0x'),
+        orth:true },
+  mono:{name:'Monomials', q:quadPlain, w:'1',
+        f:(k,x)=>Math.pow(x,k), lab:k=>k===0?'1':(k===1?'x':'x'+sup(k)), orth:false },
+  hat: {name:'Hat functions', q:quadHat, w:'1',
+        f:(k,x,K)=>hatB(k,x,K), lab:k=>'\u03C6'+sub(k)+' (hat)', orth:false, needsK:true }
+};
+function sub(n){ return '\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089'[n]||('_'+n); }
+function sup(n){ return '\u2070\u00B9\u00B2\u00B3\u2074\u2075\u2076\u2077\u2078\u2079'[n]||('^'+n); }
+
+/* ══════════════════════════════════════════════════════════════════
+   3. TARGET FUNCTIONS
+   ══════════════════════════════════════════════════════════════════ */
+
+const TGT={
+  step: {f:x=>(x>=0?1:-1),          lab:'sgn(x)'},
+  abs:  {f:x=>Math.abs(x),          lab:'|x|'},
+  runge:{f:x=>1/(1+25*x*x),         lab:'1/(1+25x\u00B2)'},
+  exp:  {f:x=>Math.exp(x),          lab:'e\u02E3'},
+  pulse:{f:x=>(Math.abs(x)<=0.5?1:0), lab:'1 on |x| \u2264 \u00BD'},
+  wave: {f:x=>Math.sin(4*x),        lab:'sin(4x)'}
+};
+
+/* ══════════════════════════════════════════════════════════════════
+   4. STATE
+   ══════════════════════════════════════════════════════════════════ */
+
+const S={ bid:'leg', tid:'abs', K:4, m:0, n:1, norm:false,
+          c:new Float64Array(NMAX), yaw:-0.72, elev:0.42 };
+
+let Q=null;        /* quadrature */
+let PHI=[];        /* PHI[k][j] : basis k at node j (after normalizing) */
+let FV=null;       /* target at nodes */
+let NRM=null;      /* ||phi_k||^2 */
+let G=null;        /* Gram matrix */
+let bvec=null;     /* <f, phi_k> */
+let cF=null, cLS=null;   /* the two coefficient recipes */
+let ff=0;          /* ||f||^2 */
+let condG=1;
+
+/* ══════════════════════════════════════════════════════════════════
+   5. LINEAR ALGEBRA — solve and invert small systems
+   ══════════════════════════════════════════════════════════════════ */
+
+function solve(M,rhs,K){
+  const a=[];
+  for(let i=0;i<K;i++){ a.push(Array.from(M[i].slice(0,K))); a[i].push(rhs[i]); }
+  for(let i=0;i<K;i++){
+    let p=i; for(let r=i+1;r<K;r++) if(Math.abs(a[r][i])>Math.abs(a[p][i])) p=r;
+    if(Math.abs(a[p][i])<1e-14) return null;
+    const t=a[i]; a[i]=a[p]; a[p]=t;
+    for(let r=0;r<K;r++){
+      if(r===i) continue;
+      const f=a[r][i]/a[i][i];
+      for(let cc=i;cc<=K;cc++) a[r][cc]-=f*a[i][cc];
+    }
+  }
+  const out=new Float64Array(K);
+  for(let i=0;i<K;i++) out[i]=a[i][K]/a[i][i];
+  return out;
+}
+/* condition number in the infinity norm, via an explicit inverse */
+function condInf(M,K){
+  const inv=[];
+  for(let j=0;j<K;j++){
+    const e=new Float64Array(K); e[j]=1;
+    const col=solve(M,e,K); if(!col) return Infinity;
+    inv.push(col);
+  }
+  const rowSum=(get)=>{ let m=0;
+    for(let i=0;i<K;i++){ let s=0; for(let j=0;j<K;j++) s+=Math.abs(get(i,j)); m=Math.max(m,s); }
+    return m; };
+  return rowSum((i,j)=>M[i][j]) * rowSum((i,j)=>inv[j][i]);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6. ASSEMBLE — norms, Gram, coefficients
+   ══════════════════════════════════════════════════════════════════ */
+
+/* RAW[k] is the scale factor applied to basis k. It is 1 unless we are
+   normalizing, and it is the SINGLE source of truth for that scaling:
+   both the quadrature rows (PHI) and the plotted curve (phiAt) go
+   through it, so the two can never drift apart. */
+let RAW=new Float64Array(NMAX);
+function phiAt(k,x){ return FAM[S.bid].f(k,x,S.K)*RAW[k]; }
+
+function assemble(){
+  const F=FAM[S.bid];
+  Q=F.q(S.K);
+  const J=Q.x.length;
+
+  /* raw basis values, normalized in the same pass */
+  PHI=[]; NRM=new Float64Array(NMAX);
+  for(let k=0;k<NMAX;k++){
+    const row=new Float64Array(J);
+    for(let j=0;j<J;j++) row[j]=F.f(k,Q.x[j],S.K);
+    let s=0; for(let j=0;j<J;j++) s+=Q.w[j]*row[j]*row[j];
+    RAW[k]=(S.norm && s>1e-14) ? 1/Math.sqrt(s) : 1;
+    if(RAW[k]!==1){
+      for(let j=0;j<J;j++) row[j]*=RAW[k];
+      s*=RAW[k]*RAW[k];
+    }
+    NRM[k]=s; PHI.push(row);
+  }
+
+  /* target at the nodes, using the correct one-sided limit at breaks */
+  const tf=TGT[S.tid].f;
+  FV=new Float64Array(J);
+  for(let j=0;j<J;j++) FV[j]=tf(Q.x[j]+Q.e[j]);
+  ff=0; for(let j=0;j<J;j++) ff+=Q.w[j]*FV[j]*FV[j];
+
+  /* Gram matrix and the right-hand side */
+  G=[]; bvec=new Float64Array(NMAX);
+  for(let p=0;p<NMAX;p++){
+    const row=new Float64Array(NMAX);
+    for(let q=0;q<NMAX;q++){
+      let s=0; for(let j=0;j<J;j++) s+=Q.w[j]*PHI[p][j]*PHI[q][j];
+      row[q]=s;
+    }
+    G.push(row);
+    let s=0; for(let j=0;j<J;j++) s+=Q.w[j]*PHI[p][j]*FV[j];
+    bvec[p]=s;
+  }
+
+  /* the two recipes, over the active K terms */
+  cF=new Float64Array(NMAX); cLS=new Float64Array(NMAX);
+  for(let k=0;k<S.K;k++) cF[k]=NRM[k]>1e-14 ? bvec[k]/NRM[k] : 0;
+  const sol=solve(G,bvec,S.K);
+  if(sol) for(let k=0;k<S.K;k++) cLS[k]=sol[k];
+  condG=condInf(G,S.K);
+}
+
+/* squared error for an arbitrary coefficient vector */
+function errOf(c){
+  const J=Q.x.length; let s=0;
+  for(let j=0;j<J;j++){
+    let p=0; for(let k=0;k<S.K;k++) p+=c[k]*PHI[k][j];
+    const d=FV[j]-p; s+=Q.w[j]*d*d;
+  }
+  return s;
+}
+/* p(x) for plotting — built from the same scaled basis as the quadrature */
+function pAt(x,c){
+  let s=0;
+  for(let k=0;k<S.K;k++){ if(c[k]) s+=c[k]*phiAt(k,x); }
+  return s;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7. CANVAS HELPERS
+   ══════════════════════════════════════════════════════════════════ */
+
+const INK='#23191b', CRIM='#9E1B32', BRZ='#9A7B2E', SLT='#2D343C', MUT='#857f78';
+function hidpi(cv,c,w,h){
+  const d=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*d; cv.height=h*d; cv.style.maxWidth=w+'px'; c.setTransform(d,0,0,d,0,0);
+}
+function niceStep(x){
+  if(!(x>0)) return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(x))), f=x/e;
+  return (f<1.5?1:f<3?2:f<7?5:10)*e;
+}
+function fmt(v,d){
+  if(!Number.isFinite(v)) return '\u221E';
+  if(v!==0&&Math.abs(v)<1e-4) return v.toExponential(1);
+  return v.toFixed(d===undefined?4:d);
+}
+function polyBreak(c,xs,ys,X,Y,jump){
+  c.beginPath(); let open=false;
+  for(let i=0;i<xs.length;i++){
+    const y=ys[i];
+    if(!Number.isFinite(y)){ open=false; continue; }
+    if(open&&Math.abs(y-ys[i-1])>jump){ c.stroke(); c.beginPath(); open=false; }
+    const px=X(xs[i]), py=Y(y);
+    open?c.lineTo(px,py):c.moveTo(px,py); open=true;
+  }
+  c.stroke();
+}
+/* axes for a simple x/y frame */
+function frame(c,P,gW,gH,lo,hi,xlab,ylab){
+  const st=niceStep((hi-lo)/4);
+  c.font='500 10px "IBM Plex Mono",monospace'; c.textAlign='right'; c.textBaseline='middle';
+  for(let k=Math.ceil(lo/st);k*st<=hi;k++){
+    const y=P.t+(hi-k*st)/(hi-lo)*gH;
+    c.strokeStyle=(Math.abs(k*st)<1e-12)?'rgba(35,25,27,0.32)':'rgba(158,27,50,0.07)';
+    c.lineWidth=1; c.beginPath(); c.moveTo(P.l,y); c.lineTo(P.l+gW,y); c.stroke();
+    c.fillStyle=MUT; c.fillText(fmt(k*st,2),P.l-7,y);
+  }
+  c.textAlign='center'; c.textBaseline='top';
+  for(let t=-1;t<=1;t+=0.5){
+    const x=P.l+(t+1)/2*gW;
+    c.strokeStyle=(Math.abs(t)<1e-12)?'rgba(35,25,27,0.32)':'rgba(158,27,50,0.07)';
+    c.beginPath(); c.moveTo(x,P.t); c.lineTo(x,P.t+gH); c.stroke();
+    c.fillStyle=MUT; c.fillText(t===0?'0':t.toFixed(1),x,P.t+gH+5);
+  }
+  c.strokeStyle='rgba(35,25,27,0.35)'; c.lineWidth=1; c.strokeRect(P.l,P.t,gW,gH);
+  if(ylab){
+    c.save(); c.translate(13,P.t+gH/2); c.rotate(-Math.PI/2);
+    c.textAlign='center'; c.font='italic 700 11px "Crimson Pro",Georgia,serif';
+    c.fillStyle='rgba(35,25,27,0.78)'; c.fillText(ylab,0,0); c.restore();
+  }
+  if(xlab){
+    c.font='italic 700 11px "Crimson Pro",Georgia,serif'; c.fillStyle='rgba(35,25,27,0.78)';
+    c.textAlign='center'; c.textBaseline='top'; c.fillText(xlab,P.l+gW/2,P.t+gH+17);
+  }
+}
+
+/* plotting grid in x */
+const NSX=1100, gx=new Float64Array(NSX);
+for(let i=0;i<NSX;i++) gx[i]=A+(B-A)*i/(NSX-1);
+
+/* ══════════════════════════════════════════════════════════════════
+   8. PANEL 1 — the product and its signed area, plus the Gram matrix
+   ══════════════════════════════════════════════════════════════════ */
+
+const oc=document.getElementById('orth'), ox=oc.getContext('2d');
+const OW=1180, OH=384, SPLIT=796;
+
+function renderOrth(){
+  ox.clearRect(0,0,OW,OH); ox.fillStyle='#fff'; ox.fillRect(0,0,OW,OH);
+  const m=S.m, n=S.n;
+
+  /* ── upper: the two basis functions ── */
+  const P1={l:52,t:30}, gW=SPLIT-P1.l-26, gH=128;
+  const pm=new Float64Array(NSX), pn=new Float64Array(NSX);
+  let lo=0,hi=0;
+  for(let i=0;i<NSX;i++){
+    pm[i]=phiAt(m,gx[i]); pn[i]=phiAt(n,gx[i]);
+    lo=Math.min(lo,pm[i],pn[i]); hi=Math.max(hi,pm[i],pn[i]);
+  }
+  let pad=(hi-lo)*0.15||0.5; lo-=pad; hi+=pad;
+  const X1=x=>P1.l+(x-A)/(B-A)*gW, Y1=y=>P1.t+(hi-y)/(hi-lo)*gH;
+  frame(ox,P1,gW,gH,lo,hi,null,null);
+  ox.strokeStyle=CRIM; ox.lineWidth=2.4; polyBreak(ox,gx,pm,X1,Y1,Infinity);
+  ox.strokeStyle=SLT; ox.lineWidth=2.4; ox.setLineDash([7,4]);
+  polyBreak(ox,gx,pn,X1,Y1,Infinity); ox.setLineDash([]);
+  ox.font='600 10px "IBM Plex Mono",monospace'; ox.textAlign='left'; ox.textBaseline='alphabetic';
+  ox.fillStyle=CRIM; ox.fillText('\u03C6\u2098 = '+FAM[S.bid].lab(m),P1.l+7,P1.t+14);
+  ox.fillStyle=SLT;  ox.fillText('\u03C6\u2099 = '+FAM[S.bid].lab(n),P1.l+7,P1.t+27);
+
+  /* ── lower: the product, shaded by sign, with the running integral ── */
+  const P2={l:52,t:222}, gH2=124;
+  const F=FAM[S.bid];
+  const isCheb=(S.bid==='cheb');
+  const prod=new Float64Array(NSX);
+  for(let i=0;i<NSX;i++){
+    const wx=isCheb?1/Math.sqrt(Math.max(1e-12,1-gx[i]*gx[i])):1;
+    prod[i]=pm[i]*pn[i]*wx;
+  }
+  /* the Chebyshev weight is unbounded at the ends: clip the DISPLAY to a
+     robust quantile so one spike cannot flatten the whole curve. The
+     integral itself is computed on the substituted grid, untouched. */
+  let cap=Infinity;
+  if(isCheb){
+    const mag=Array.from(prod,Math.abs).sort((p,q)=>p-q);
+    cap=Math.max(1e-6,mag[Math.floor(0.985*(mag.length-1))]*1.35);
+  }
+  let plo=0,phi=0;
+  for(let i=0;i<NSX;i++){
+    const v=Math.max(-cap,Math.min(cap,prod[i]));
+    plo=Math.min(plo,v); phi=Math.max(phi,v);
+  }
+  pad=(phi-plo)*0.16||0.5; plo-=pad; phi+=pad;
+  const X2=x=>P2.l+(x-A)/(B-A)*gW, Y2=y=>P2.t+(phi-Math.max(plo,Math.min(phi,y)))/(phi-plo)*gH2;
+
+  /* signed fill */
+  const y0=Y2(0);
+  for(const sgn of [1,-1]){
+    ox.beginPath(); let open=false;
+    for(let i=0;i<NSX;i++){
+      const v=Math.max(-cap,Math.min(cap,prod[i]));
+      const keep=(sgn>0?v>0:v<0);
+      if(keep){
+        if(!open){ ox.moveTo(X2(gx[i]),y0); open=true; }
+        ox.lineTo(X2(gx[i]),Y2(v));
+      }else if(open){ ox.lineTo(X2(gx[i]),y0); open=false; }
+    }
+    if(open) ox.lineTo(X2(gx[NSX-1]),y0);
+    ox.closePath();
+    ox.fillStyle = sgn>0?'rgba(158,27,50,0.30)':'rgba(45,52,60,0.30)';
+    ox.fill();
+  }
+  frame(ox,P2,gW,gH2,plo,phi,'x',null);
+  ox.strokeStyle=INK; ox.lineWidth=1.9;
+  const pc=new Float64Array(NSX);
+  for(let i=0;i<NSX;i++) pc[i]=Math.max(-cap,Math.min(cap,prod[i]));
+  polyBreak(ox,gx,pc,X2,Y2,Infinity);
+
+  /* Running integral, in bronze, on its own scale. Accumulate strictly in
+     increasing x: the Chebyshev grid is generated in t, so its nodes run
+     from x = 1 down to x = -1, and accumulating in node order would draw
+     the curve backwards. Sorting first makes one code path serve both. */
+  const ip=Q;
+  const idx=Array.from(ip.x.keys()).sort((p,q)=>ip.x[p]-ip.x[q]);
+  const ordered=[];
+  let acc=0;
+  for(const j of idx){
+    acc+=ip.w[j]*PHI[m][j]*PHI[n][j];
+    ordered.push([ip.x[j],acc]);
+  }
+  const total=acc;
+  let rlo=0,rhi=0;
+  for(const p of ordered){ rlo=Math.min(rlo,p[1]); rhi=Math.max(rhi,p[1]); }
+  const rp=(rhi-rlo)*0.2||0.3; rlo-=rp; rhi+=rp;
+  const YR=y=>P2.t+(rhi-y)/(rhi-rlo)*gH2;
+  ox.strokeStyle=BRZ; ox.lineWidth=2.2; ox.beginPath();
+  for(let i=0;i<ordered.length;i++){
+    const px=X2(ordered[i][0]), py=YR(ordered[i][1]);
+    i?ox.lineTo(px,py):ox.moveTo(px,py);
+  }
+  ox.stroke();
+  ox.setLineDash([3,3]); ox.strokeStyle='rgba(154,123,46,0.6)'; ox.lineWidth=1;
+  ox.beginPath(); ox.moveTo(P2.l,YR(0)); ox.lineTo(P2.l+gW,YR(0)); ox.stroke();
+  ox.setLineDash([]);
+  ox.beginPath(); ox.arc(X2(B),YR(total),4,0,6.283);
+  ox.fillStyle=BRZ; ox.fill();
+  ox.font='600 10px "IBM Plex Mono",monospace'; ox.textAlign='right'; ox.textBaseline='alphabetic';
+  ox.fillStyle=BRZ;
+  ox.fillText('running \u222B \u2192 '+fmt(total,4),P2.l+gW-8,Math.max(P2.t+12,YR(total)-9));
+  ox.textAlign='left'; ox.fillStyle=MUT;
+  ox.fillText('\u03C6\u2098\u00B7\u03C6\u2099'+(isCheb?'\u00B7w':'')+
+    (cap<Infinity?'   (spikes clipped for display)':''),P2.l+7,P2.t+14);
+
+  /* panel captions */
+  ox.font='600 9.5px "IBM Plex Mono",monospace'; ox.fillStyle=MUT; ox.textAlign='left';
+  ox.fillText('THE TWO FUNCTIONS',P1.l,P1.t-9);
+  ox.fillText('THEIR PRODUCT \u2014 CRIMSON AREA MINUS CHARCOAL AREA',P2.l,P2.t-9);
+
+  /* ── the Gram matrix ── */
+  drawGram(SPLIT+18,54,OW-SPLIT-42);
+  ox.strokeStyle='#e0dbd2'; ox.lineWidth=1;
+  ox.beginPath(); ox.moveTo(SPLIT,10); ox.lineTo(SPLIT,OH-10); ox.stroke();
+}
+
+function drawGram(x0,y0,size){
+  const K=S.K, cell=Math.min(size/K,34), s=cell*K;
+  let gmax=0;
+  for(let p=0;p<K;p++) for(let q=0;q<K;q++) gmax=Math.max(gmax,Math.abs(G[p][q]));
+  if(!(gmax>0)) gmax=1;
+  ox.font='600 9.5px "IBM Plex Mono",monospace'; ox.textAlign='left'; ox.textBaseline='alphabetic';
+  ox.fillStyle=MUT; ox.fillText('GRAM MATRIX  G\u209A\u208B\u2099 = \u27E8\u03C6\u209A, \u03C6\u2099\u27E9',x0,y0-22);
+  for(let p=0;p<K;p++) for(let q=0;q<K;q++){
+    const v=G[p][q], t=Math.min(1,Math.abs(v)/gmax);
+    const px=x0+q*cell, py=y0+p*cell;
+    ox.fillStyle = Math.abs(v)<1e-10 ? '#fbfaf8'
+      : (v>0 ? 'rgba(158,27,50,'+(0.10+0.80*t)+')'
+             : 'rgba(45,52,60,'+(0.10+0.80*t)+')');
+    ox.fillRect(px,py,cell-1,cell-1);
+    if(cell>=24){
+      ox.fillStyle = t>0.55?'#fff':'rgba(35,25,27,0.75)';
+      ox.font='500 '+(cell>=30?9.5:8.5)+'px "IBM Plex Mono",monospace';
+      ox.textAlign='center'; ox.textBaseline='middle';
+      const txt=Math.abs(v)<1e-10?'0':(Math.abs(v)>=10?v.toFixed(1):v.toFixed(2));
+      ox.fillText(txt,px+(cell-1)/2,py+(cell-1)/2);
+    }
+  }
+  /* the pair under inspection */
+  ox.strokeStyle=BRZ; ox.lineWidth=2.2;
+  ox.strokeRect(x0+S.n*cell-1.5,y0+S.m*cell-1.5,cell+2,cell+2);
+  if(S.m!==S.n) ox.strokeRect(x0+S.m*cell-1.5,y0+S.n*cell-1.5,cell+2,cell+2);
+  ox.strokeStyle='rgba(35,25,27,0.35)'; ox.lineWidth=1; ox.strokeRect(x0,y0,s,s);
+  /* verdict under the matrix */
+  let offDiag=0;
+  for(let p=0;p<K;p++) for(let q=0;q<K;q++) if(p!==q) offDiag=Math.max(offDiag,Math.abs(G[p][q]));
+  let diagDev=0;
+  for(let p=0;p<K;p++) diagDev=Math.max(diagDev,Math.abs(G[p][p]-1));
+  const isOrth=offDiag<1e-8, isOrthonormal=isOrth&&diagDev<1e-8;
+  ox.font='600 9.5px "IBM Plex Mono",monospace'; ox.textAlign='left'; ox.textBaseline='alphabetic';
+  ox.fillStyle=isOrth?CRIM:SLT;
+  ox.fillText(isOrthonormal?'ORTHONORMAL \u2014 G = I'
+             :(isOrth?'ORTHOGONAL \u2014 G IS DIAGONAL':'NOT ORTHOGONAL \u2014 G HAS OFF-DIAGONAL MASS'),
+             x0,y0+s+18);
+  ox.fillStyle=MUT; ox.font='500 9.5px "IBM Plex Mono",monospace';
+  ox.fillText('largest off-diagonal |G| = '+fmt(offDiag,4),x0,y0+s+33);
+  ox.fillText('cond(G) = '+(condG>1e6?condG.toExponential(1):fmt(condG,1)),x0,y0+s+47);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   9. PANEL 2 — the approximation and the squared error
+   ══════════════════════════════════════════════════════════════════ */
+
+const ac=document.getElementById('approx'), axc=ac.getContext('2d');
+const AW=1180, AH=400;
+
+function renderApprox(){
+  axc.clearRect(0,0,AW,AH); axc.fillStyle='#fff'; axc.fillRect(0,0,AW,AH);
+  const tf=TGT[S.tid].f;
+  const P={l:54,t:30}, gW=AW-P.l-26, gH=206;
+  const fv=new Float64Array(NSX), pv=new Float64Array(NSX), sv=new Float64Array(NSX);
+  let lo=Infinity, hi=-Infinity;
+  for(let i=0;i<NSX;i++){
+    fv[i]=tf(gx[i]); pv[i]=pAt(gx[i],S.c); sv[i]=pAt(gx[i],cLS);
+    lo=Math.min(lo,fv[i],pv[i],sv[i]); hi=Math.max(hi,fv[i],pv[i],sv[i]);
+  }
+  if(!(hi>lo)){hi=lo+1;}
+  const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+  const X=x=>P.l+(x-A)/(B-A)*gW, Y=y=>P.t+(hi-y)/(hi-lo)*gH;
+  const jump=(hi-lo)*0.35;
+
+  /* the gap between f and p, filled */
+  axc.beginPath();
+  for(let i=0;i<NSX;i++){ const px=X(gx[i]); i?axc.lineTo(px,Y(fv[i])):axc.moveTo(px,Y(fv[i])); }
+  for(let i=NSX-1;i>=0;i--) axc.lineTo(X(gx[i]),Y(pv[i]));
+  axc.closePath(); axc.fillStyle='rgba(158,27,50,0.11)'; axc.fill();
+
+  frame(axc,P,gW,gH,lo,hi,null,'f(x)  and  p(x)');
+  axc.save(); axc.beginPath(); axc.rect(P.l,P.t,gW,gH); axc.clip();
+  axc.strokeStyle=BRZ; axc.lineWidth=2; axc.setLineDash([6,4]);
+  polyBreak(axc,gx,sv,X,Y,Infinity); axc.setLineDash([]);
+  axc.strokeStyle=INK; axc.lineWidth=2.5; polyBreak(axc,gx,fv,X,Y,jump);
+  axc.strokeStyle=CRIM; axc.lineWidth=2.8; polyBreak(axc,gx,pv,X,Y,Infinity);
+  axc.restore();
+  axc.font='600 9.5px "IBM Plex Mono",monospace'; axc.textAlign='left'; axc.textBaseline='alphabetic';
+  axc.fillStyle=MUT; axc.fillText('f = '+TGT[S.tid].lab+'   ·   p = \u03A3 c\u2099\u03C6\u2099, '
+    +S.K+' term'+(S.K>1?'s':'')+' of '+FAM[S.bid].name,P.l,P.t-9);
+
+  /* ── the error integrand ── */
+  const P2={l:54,t:284}, gH2=86;
+  const ev=new Float64Array(NSX);
+  let emax=0;
+  const isCheb=(S.bid==='cheb');
+  for(let i=0;i<NSX;i++){
+    const wx=isCheb?1/Math.sqrt(Math.max(1e-12,1-gx[i]*gx[i])):1;
+    const d=fv[i]-pv[i]; ev[i]=d*d*wx;
+  }
+  const mg=Array.from(ev).sort((p,q)=>p-q);
+  emax=Math.max(1e-12,mg[Math.floor(0.99*(mg.length-1))]*1.3);
+  const X2=x=>P2.l+(x-A)/(B-A)*gW, Y2=y=>P2.t+gH2-Math.min(1,y/emax)*gH2;
+  axc.beginPath(); axc.moveTo(X2(A),P2.t+gH2);
+  for(let i=0;i<NSX;i++) axc.lineTo(X2(gx[i]),Y2(ev[i]));
+  axc.lineTo(X2(B),P2.t+gH2); axc.closePath();
+  axc.fillStyle='rgba(158,27,50,0.22)'; axc.fill();
+  axc.strokeStyle=CRIM; axc.lineWidth=1.6; axc.beginPath();
+  for(let i=0;i<NSX;i++){ const px=X2(gx[i]), py=Y2(ev[i]); i?axc.lineTo(px,py):axc.moveTo(px,py); }
+  axc.stroke();
+  axc.strokeStyle='rgba(35,25,27,0.35)'; axc.lineWidth=1; axc.strokeRect(P2.l,P2.t,gW,gH2);
+  axc.font='500 10px "IBM Plex Mono",monospace'; axc.textAlign='center'; axc.textBaseline='top';
+  axc.fillStyle=MUT;
+  for(let t=-1;t<=1;t+=0.5) axc.fillText(t===0?'0':t.toFixed(1),X2(t),P2.t+gH2+5);
+  axc.font='italic 700 11px "Crimson Pro",Georgia,serif'; axc.fillStyle='rgba(35,25,27,0.78)';
+  axc.fillText('x',P2.l+gW/2,P2.t+gH2+17);
+  axc.font='600 9.5px "IBM Plex Mono",monospace'; axc.textAlign='left'; axc.textBaseline='alphabetic';
+  axc.fillStyle=MUT;
+  axc.fillText('|f \u2212 p|\u00B2'+(isCheb?'\u00B7w':'')+
+    '   \u2014   the shaded area IS the squared error',P2.l,P2.t-9);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   10. PANEL 3 — the faithful vector picture
+
+   We embed phi_m, phi_n and f into R^3 using the actual Gram matrix,
+   so the angle you see between the two basis vectors is the true
+   angle in function space, and the residual's length is the true
+   root of the squared error.
+   ══════════════════════════════════════════════════════════════════ */
+
+const vc=document.getElementById('vec'), vx=vc.getContext('2d');
+const VW=1180, VH=410;
+
+function embed(){
+  const m=S.m, n=S.n;
+  const g11=G[m][m], g22=G[n][n], g12=G[m][n];
+  const b1=bvec[m], b2=bvec[n];
+  const L1=Math.sqrt(Math.max(g11,1e-300));
+  const v1=[L1,0,0];
+  const px=g12/L1;
+  const py2=g22-px*px;
+  const oneD=(S.m===S.n)||(py2<=1e-12*Math.max(1,g22));
+  const py=oneD?0:Math.sqrt(py2);
+  /* when the two indices coincide there is no second direction at all —
+     return a genuine zero vector rather than a copy of v1 */
+  const v2=oneD?[0,0,0]:[px,py,0];
+  const fx=b1/L1;
+  const fy=oneD?0:(b2-fx*px)/py;
+  const fz2=ff-fx*fx-fy*fy;
+  const fz=Math.sqrt(Math.max(0,fz2));
+  return {v1:v1,v2:v2,f:[fx,fy,fz],oneD:oneD,
+          cm:S.c[m], cn:oneD?0:S.c[n]};
+}
+function proj3(v,x,y,z,sc){
+  const cw=Math.cos(S.yaw), sw=Math.sin(S.yaw);
+  const X=(x*cw+y*sw)*sc, Y=(-x*sw+y*cw)*sc, Z=z*sc;
+  const ce=Math.cos(S.elev), se=Math.sin(S.elev);
+  return [v.cx+X, v.cy-(Y*se+Z*ce), Y*ce-Z*se];
+}
+function arrow(c,p0,p1,col,lw,head){
+  c.strokeStyle=col; c.lineWidth=lw;
+  c.beginPath(); c.moveTo(p0[0],p0[1]); c.lineTo(p1[0],p1[1]); c.stroke();
+  if(head===false) return;
+  const a=Math.atan2(p1[1]-p0[1],p1[0]-p0[0]), h=8+lw;
+  c.beginPath();
+  c.moveTo(p1[0],p1[1]);
+  c.lineTo(p1[0]-h*Math.cos(a-0.38),p1[1]-h*Math.sin(a-0.38));
+  c.lineTo(p1[0]-h*Math.cos(a+0.38),p1[1]-h*Math.sin(a+0.38));
+  c.closePath(); c.fillStyle=col; c.fill();
+}
+
+function renderVec(){
+  vx.clearRect(0,0,VW,VH); vx.fillStyle='#fff'; vx.fillRect(0,0,VW,VH);
+  const E=embed();
+  const V={cx:VW*0.42,cy:VH*0.60};
+  /* scale so the largest thing on screen is a fixed size */
+  const pvx=E.cm*E.v1[0]+E.cn*E.v2[0], pvy=E.cn*E.v2[1];
+  const ext=Math.max(Math.hypot(E.f[0],E.f[1],E.f[2]),
+                     Math.hypot(E.v1[0],E.v1[1]),Math.hypot(E.v2[0],E.v2[1]),
+                     Math.hypot(pvx,pvy),1e-9);
+  const sc=150/ext;
+  const O=proj3(V,0,0,0,sc);
+
+  /* the span, drawn as a patch of the plane z = 0 */
+  const span=[];
+  const u1=E.v1, u2=E.oneD?[0,1e-9,0]:E.v2;
+  const R=1.45;
+  for(const [s,t] of [[-R,-R],[R,-R],[R,R],[-R,R]]){
+    span.push(proj3(V,s*u1[0]+t*u2[0], s*u1[1]+t*u2[1], 0, sc));
+  }
+  if(!E.oneD){
+    vx.beginPath(); vx.moveTo(span[0][0],span[0][1]);
+    for(let i=1;i<4;i++) vx.lineTo(span[i][0],span[i][1]);
+    vx.closePath();
+    vx.fillStyle='rgba(154,123,46,0.13)'; vx.fill();
+    vx.strokeStyle='rgba(154,123,46,0.55)'; vx.lineWidth=1; vx.stroke();
+    /* faint lattice so the plane reads as a plane */
+    vx.strokeStyle='rgba(154,123,46,0.22)';
+    for(let k=-1;k<=1;k++){
+      if(!k) continue;
+      let p=proj3(V,k*u1[0]-R*u2[0],k*u1[1]-R*u2[1],0,sc),
+          q=proj3(V,k*u1[0]+R*u2[0],k*u1[1]+R*u2[1],0,sc);
+      vx.beginPath(); vx.moveTo(p[0],p[1]); vx.lineTo(q[0],q[1]); vx.stroke();
+      p=proj3(V,-R*u1[0]+k*u2[0],-R*u1[1]+k*u2[1],0,sc);
+      q=proj3(V, R*u1[0]+k*u2[0], R*u1[1]+k*u2[1],0,sc);
+      vx.beginPath(); vx.moveTo(p[0],p[1]); vx.lineTo(q[0],q[1]); vx.stroke();
+    }
+  }else{
+    const p=proj3(V,-R*u1[0],0,0,sc), q=proj3(V,R*u1[0],0,0,sc);
+    vx.strokeStyle='rgba(154,123,46,0.6)'; vx.lineWidth=1.4; vx.setLineDash([6,4]);
+    vx.beginPath(); vx.moveTo(p[0],p[1]); vx.lineTo(q[0],q[1]); vx.stroke(); vx.setLineDash([]);
+  }
+
+  /* current approximation p, and the optimal foot p* */
+  const pv=[pvx,pvy,0];   /* same numbers used for the scale above */
+  const star=[E.f[0],E.f[1],0];
+  const Pp=proj3(V,pv[0],pv[1],0,sc), Ps=proj3(V,star[0],star[1],0,sc),
+        Pf=proj3(V,E.f[0],E.f[1],E.f[2],sc);
+
+  /* basis vectors */
+  arrow(vx,O,proj3(V,u1[0],u1[1],0,sc),'rgba(158,27,50,0.85)',2.2);
+  if(!E.oneD) arrow(vx,O,proj3(V,u2[0],u2[1],0,sc),'rgba(45,52,60,0.85)',2.2);
+
+  /* the perpendicular from f down to the plane */
+  vx.strokeStyle='rgba(154,123,46,0.75)'; vx.lineWidth=1.3; vx.setLineDash([3,3]);
+  vx.beginPath(); vx.moveTo(Pf[0],Pf[1]); vx.lineTo(Ps[0],Ps[1]); vx.stroke();
+  vx.setLineDash([]);
+
+  /* the residual you actually have */
+  arrow(vx,Pp,Pf,'rgba(45,52,60,0.9)',2.0);
+  vx.beginPath(); vx.arc(Ps[0],Ps[1],4,0,6.283);
+  vx.fillStyle='#fff'; vx.fill(); vx.strokeStyle=BRZ; vx.lineWidth=2; vx.stroke();
+
+  /* p and f themselves */
+  arrow(vx,O,Pp,CRIM,3);
+  arrow(vx,O,Pf,INK,3);
+
+  /* right-angle tick when the residual really is perpendicular */
+  const offBy=Math.hypot(pv[0]-star[0],pv[1]-star[1]);
+  if(offBy<1e-6*Math.max(1,ext)){
+    /* v1 lies along +x by construction, so [1,0] is an in-plane direction */
+    const d=0.15*ext;
+    const up=proj3(V,star[0],star[1],d,sc);
+    const along=proj3(V,star[0]+d,star[1],0,sc);
+    vx.strokeStyle=BRZ; vx.lineWidth=1.6;
+    vx.beginPath();
+    vx.moveTo(up[0],up[1]);
+    vx.lineTo(up[0]+along[0]-Ps[0], up[1]+along[1]-Ps[1]);
+    vx.lineTo(along[0],along[1]);
+    vx.stroke();
+  }
+
+  /* labels */
+  vx.font='600 11px "IBM Plex Mono",monospace'; vx.textBaseline='middle';
+  function tag(P,txt,col,dx,dy){
+    vx.textAlign=dx<0?'right':'left';
+    vx.fillStyle='rgba(255,255,255,0.82)';
+    const w=vx.measureText(txt).width;
+    vx.fillRect(P[0]+dx-(dx<0?w+3:1),P[1]+dy-7,w+4,14);
+    vx.fillStyle=col; vx.fillText(txt,P[0]+dx,P[1]+dy);
+  }
+  tag(proj3(V,u1[0],u1[1],0,sc),'\u03C6\u2098',CRIM,9,0);
+  if(!E.oneD) tag(proj3(V,u2[0],u2[1],0,sc),'\u03C6\u2099',SLT,9,0);
+  tag(Pf,'f',INK,10,-4);
+  tag(Pp,'p',CRIM,10,10);
+  tag(Ps,'p*',BRZ,-9,12);
+  const mid=[(Pp[0]+Pf[0])/2,(Pp[1]+Pf[1])/2];
+  tag(mid,'f \u2212 p',SLT,11,0);
+
+  /* the running commentary, to the right */
+  const tx=VW*0.73;
+  vx.textAlign='left'; vx.textBaseline='alphabetic';
+  vx.font='600 9.5px "IBM Plex Mono",monospace'; vx.fillStyle=MUT;
+  vx.fillText(E.oneD?'PROJECTION ONTO A LINE':'PROJECTION ONTO A PLANE',tx,40);
+  vx.font='700 15px "Playfair Display",Georgia,serif'; vx.fillStyle=INK;
+  vx.fillText(E.oneD?'span{\u03C6\u2098}':'span{\u03C6\u2098, \u03C6\u2099}',tx,62);
+  const ang=E.oneD?null:Math.acos(Math.max(-1,Math.min(1,
+      G[S.m][S.n]/Math.sqrt(G[S.m][S.m]*G[S.n][S.n]))))*180/Math.PI;
+  const lines=[
+    ['angle \u03C6\u2098 \u2220 \u03C6\u2099', E.oneD?'\u2014':(ang.toFixed(2)+'\u00B0'),
+      E.oneD?MUT:(Math.abs(ang-90)<1e-4?CRIM:SLT)],
+    ['\u2016f\u2016\u00B2', fmt(ff,4), INK],
+    ['\u2016p\u2016\u00B2', fmt(dot2(pv,pv),4), CRIM],
+    ['\u2016f \u2212 p\u2016\u00B2', fmt(resid2(E,pv),4), SLT],
+    ['\u2016f \u2212 p*\u2016\u00B2', fmt(Math.max(0,E.f[2]*E.f[2]),4), BRZ]
+  ];
+  let yy=92;
+  for(const [k,v,col] of lines){
+    vx.font='500 10px "IBM Plex Mono",monospace'; vx.fillStyle=MUT;
+    vx.fillText(k,tx,yy);
+    vx.font='600 13px "IBM Plex Mono",monospace'; vx.fillStyle=col;
+    vx.fillText(v,tx+126,yy);
+    yy+=25;
+  }
+  /* Pythagoras, checked */
+  const lhs=ff, rhs=dot2(star,star)+E.f[2]*E.f[2];
+  vx.font='500 9.5px "IBM Plex Mono",monospace'; vx.fillStyle=MUT;
+  vx.fillText('\u2016f\u2016\u00B2 = \u2016p*\u2016\u00B2 + \u2016f\u2212p*\u2016\u00B2',tx,yy+10);
+  vx.font='600 11px "IBM Plex Mono",monospace';
+  vx.fillStyle=Math.abs(lhs-rhs)<1e-7*Math.max(1,lhs)?CRIM:SLT;
+  vx.fillText(fmt(lhs,5)+'  =  '+fmt(rhs,5),tx,yy+27);
+  vx.font='italic 11px "Crimson Pro",Georgia,serif'; vx.fillStyle=MUT;
+  vx.fillText(offBy<1e-6*Math.max(1,ext)
+    ? 'The residual is perpendicular: this p is best.'
+    : 'Tilted residual \u2014 not yet the best fit.',tx,yy+48);
+}
+function dot2(u,v){ return u[0]*v[0]+u[1]*v[1]+u[2]*v[2]; }
+function resid2(E,pv){
+  const d=[E.f[0]-pv[0],E.f[1]-pv[1],E.f[2]];
+  return dot2(d,d);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   11. READOUTS
+   ══════════════════════════════════════════════════════════════════ */
+
+function stat(k,v,n,cls){
+  return '<div class="stat"><div class="k">'+k+'</div><div class="v'+(cls?' '+cls:'')+'">'+v+
+         '</div><div class="n">'+n+'</div></div>';
+}
+function renderStats(){
+  const Ec=errOf(S.c), EF=errOf(cF), EL=errOf(cLS);
+  const gap=EF-EL;
+  const same=Math.abs(gap)<=1e-9*Math.max(1,EL);
+  document.getElementById('stats2').innerHTML=
+    stat('your error \u222B|f\u2212p|\u00B2', fmt(Ec,5),'from the sliders above')+
+    stat('one-at-a-time formula', fmt(EF,5),'c\u2099 = \u27E8f,\u03C6\u2099\u27E9/\u2016\u03C6\u2099\u2016\u00B2', 'gold')+
+    stat('true least squares', fmt(EL,5),'from the normal equations','dark')+
+    stat(same?'the two agree':'the formula loses',
+         same?'\u2713':('+'+fmt(gap,5)),
+         same?'orthogonal basis \u2014 the formula IS the projection'
+             :'because the basis is not orthogonal', same?'':'dark')+
+    stat('\u2016f\u2016\u00B2', fmt(ff,5),'total energy to be matched');
+  document.getElementById('stats3').innerHTML=
+    stat('c\u2098 (you)', fmt(S.c[S.m],4), FAM[S.bid].lab(S.m))+
+    stat('c\u2098 (best)', fmt(twoTerm().cm,4),'2-term projection','gold')+
+    stat('c\u2099 (you)', S.m===S.n?'\u2014':fmt(S.c[S.n],4), S.m===S.n?'same index':FAM[S.bid].lab(S.n))+
+    stat('c\u2099 (best)', S.m===S.n?'\u2014':fmt(twoTerm().cn,4),'2-term projection','gold')+
+    stat('cond(G)', condG>1e6?condG.toExponential(1):fmt(condG,1),
+         condG>1e4?'ill-conditioned \u2014 orthogonality would fix this':'well conditioned',
+         condG>1e4?'dark':'');
+  document.getElementById('hdrIP').textContent=
+    'on ['+A+', '+B+'],  w(x) = '+FAM[S.bid].w;
+}
+/* best coefficients using ONLY phi_m and phi_n */
+function twoTerm(){
+  const m=S.m,n=S.n;
+  if(m===n){ const g=G[m][m]; return {cm:g>1e-14?bvec[m]/g:0, cn:0}; }
+  const M=[[G[m][m],G[m][n]],[G[n][m],G[n][n]]];
+  const r=solve(M,[bvec[m],bvec[n]],2);
+  return r?{cm:r[0],cn:r[1]}:{cm:0,cn:0};
+}
+function renderVerdict(){
+  const v=G[S.m][S.n], m=S.m, n=S.n;
+  const near=Math.abs(v)<1e-8;
+  const lab=FAM[S.bid].lab;
+  let html='<span class="chip '+(near?'yes':'no')+'">'+
+    (m===n?'diagonal entry':(near?'orthogonal':'not orthogonal'))+'</span>';
+  html+='<span>\u27E8'+lab(m)+', '+lab(n)+'\u27E9 = <span class="v">'+fmt(v,6)+'</span></span>';
+  if(m===n) html+='<span style="color:var(--muted)">this is \u2016\u03C6'+sub(m)+
+    '\u2016\u00B2 \u2014 a squared length, so it can never be zero</span>';
+  else if(near) html+='<span style="color:var(--muted)">the crimson and charcoal areas cancel exactly</span>';
+  else html+='<span style="color:var(--muted)">the areas do not cancel, so these two directions overlap</span>';
+  html+='<span style="margin-left:auto;color:var(--muted)">\u2016\u03C6'+sub(m)+'\u2016\u00B2 = '+
+    fmt(G[m][m],4)+' \u00B7 \u2016\u03C6'+sub(n)+'\u2016\u00B2 = '+fmt(G[n][n],4)+'</span>';
+  document.getElementById('verdict').innerHTML=html;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   12. COEFFICIENT SLIDERS
+   ══════════════════════════════════════════════════════════════════ */
+
+function buildSliders(){
+  const host=document.getElementById('coefs');
+  host.innerHTML='';
+  for(let k=0;k<S.K;k++){
+    const span=Math.max(1,2.5*Math.max(Math.abs(cLS[k]),Math.abs(cF[k])));
+    const row=document.createElement('div'); row.className='crow';
+    row.innerHTML='<span class="nm">c'+sub(k)+' \u00B7 '+FAM[S.bid].lab(k)+'</span>'+
+      '<input type="range" id="sc'+k+'" min="'+(-span)+'" max="'+span+
+      '" step="'+(span/500)+'" value="'+S.c[k]+'" aria-label="coefficient c'+k+'">'+
+      '<span class="vv" id="cv'+k+'">'+fmt(S.c[k],3)+'</span>'+
+      '<span class="opt" id="co'+k+'">'+fmt(cLS[k],3)+'</span>';
+    host.appendChild(row);
+    row.querySelector('input').addEventListener('input',function(){
+      S.c[k]=parseFloat(this.value);
+      document.getElementById('cv'+k).textContent=fmt(S.c[k],3);
+      redraw();
+    });
+  }
+}
+function syncSliders(){
+  for(let k=0;k<S.K;k++){
+    const el=document.getElementById('sc'+k); if(!el) continue;
+    const span=Math.max(1,2.5*Math.max(Math.abs(cLS[k]),Math.abs(cF[k])),Math.abs(S.c[k])*1.05);
+    el.min=-span; el.max=span; el.step=span/500; el.value=S.c[k];
+    document.getElementById('cv'+k).textContent=fmt(S.c[k],3);
+    document.getElementById('co'+k).textContent=fmt(cLS[k],3);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   13. WIRE-UP
+   ══════════════════════════════════════════════════════════════════ */
+
+const $=id=>document.getElementById(id);
+
+function fillIndexSelectors(){
+  for(const [id,cur] of [['selM',S.m],['selN',S.n]]){
+    const el=$(id); el.innerHTML='';
+    for(let k=0;k<S.K;k++){
+      const o=document.createElement('option');
+      o.value=k; o.textContent=k+'  ('+FAM[S.bid].lab(k)+')';
+      el.appendChild(o);
+    }
+    el.value=Math.min(cur,S.K-1);
+  }
+  S.m=parseInt($('selM').value,10); S.n=parseInt($('selN').value,10);
+}
+function rebuild(keepC){
+  assemble();
+  if(!keepC){ S.c=new Float64Array(NMAX); }
+  fillIndexSelectors(); buildSliders(); redraw();
+}
+function redraw(){
+  renderOrth(); renderApprox(); renderVec(); renderStats(); renderVerdict();
+}
+
+$('selB').addEventListener('change',function(){ S.bid=this.value; rebuild(false); });
+$('selF').addEventListener('change',function(){ S.tid=this.value; rebuild(false); });
+$('cNorm').addEventListener('change',function(){ S.norm=this.checked; rebuild(false); });
+$('slK').addEventListener('input',function(){
+  S.K=parseInt(this.value,10); $('kVal').textContent=S.K; rebuild(true);
+});
+$('selM').addEventListener('change',function(){ S.m=parseInt(this.value,10); redraw(); });
+$('selN').addEventListener('change',function(){ S.n=parseInt(this.value,10); redraw(); });
+$('btnFour').addEventListener('click',function(){
+  for(let k=0;k<S.K;k++) S.c[k]=cF[k]; syncSliders(); redraw();
+});
+$('btnLS').addEventListener('click',function(){
+  for(let k=0;k<S.K;k++) S.c[k]=cLS[k]; syncSliders(); redraw();
+});
+$('btnZero').addEventListener('click',function(){
+  S.c=new Float64Array(NMAX); syncSliders(); redraw();
+});
+$('btnDrop').addEventListener('click',function(){
+  const t=twoTerm();
+  S.c=new Float64Array(NMAX);
+  S.c[S.m]=t.cm; if(S.m!==S.n) S.c[S.n]=t.cn;
+  syncSliders(); redraw();
+});
+$('btnVView').addEventListener('click',function(){ S.yaw=-0.72; S.elev=0.42; renderVec(); });
+
+/* orbit the vector picture */
+let last=null, dragging=false;
+function pos(e){ const t=e.touches?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; }
+function down(e){ dragging=true; last=pos(e); vc.classList.add('drag'); }
+function move(e){
+  if(!dragging||!last) return;
+  const p=pos(e);
+  S.yaw+=(p.x-last.x)*0.010;
+  S.elev=Math.max(0.08,Math.min(1.35,S.elev+(p.y-last.y)*0.008));
+  last=p; renderVec(); e.preventDefault();
+}
+function up(){ dragging=false; last=null; vc.classList.remove('drag'); }
+vc.addEventListener('mousedown',down);
+window.addEventListener('mousemove',move);
+window.addEventListener('mouseup',up);
+vc.addEventListener('touchstart',down,{passive:false});
+vc.addEventListener('touchmove',move,{passive:false});
+vc.addEventListener('touchend',up);
+
+function sizeAll(){
+  hidpi(oc,ox,OW,OH); hidpi(ac,axc,AW,AH); hidpi(vc,vx,VW,VH);
+}
+window.addEventListener('resize',function(){ sizeAll(); redraw(); });
+document.fonts && document.fonts.ready.then(redraw);
+
+sizeAll();
+$('kVal').textContent=S.K;
+rebuild(false);
+/* open on the best fit, so the first thing on screen is the punchline */
+for(let k=0;k<S.K;k++) S.c[k]=cLS[k];
+syncSliders(); redraw();
+</script>
+</body>
+</html>

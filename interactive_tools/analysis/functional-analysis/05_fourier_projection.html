@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>5. Fourier sums as orthogonal projections | Functional Analysis Laboratory</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Zilla+Slab:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+
+<style>
+/* =====================================================================
+   COURSE STYLES. Everything down to "PAGE-SPECIFIC" is shared by all
+   pages of the laboratory and can be moved to a common course.css.
+   ===================================================================== */
+:root {
+  --crimson: #9E1B32;
+  --crimson-deep: #6F1022;
+  --accent: #9E1B32;        /* crimson as used for lines on the page background */
+  --ink: #1C1C1E;
+  --gray: #6E767B;
+  --mist: #EEF0F1;
+  --paper: #FFFFFF;
+  --panel: #FFFFFF;
+  --rule: #D3D7DA;
+  --heat-lo: #FFFFFF;
+  --heat-hi: #9E1B32;
+  --slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+    --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+    --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #E4566F; --ink: #ECEDEE; --gray: #9CA3A8; --mist: #24272A;
+  --paper: #141516; --panel: #1B1D1F; --rule: #363A3E;
+  --heat-lo: #1B1D1F; --heat-hi: #E4566F;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 1.0625rem; line-height: 1.62;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- masthead: crimson field, houndstooth hem ---- */
+.masthead { background: var(--crimson); color: #fff; }
+.masthead-inner {
+  max-width: 1240px; margin: 0 auto; padding: 1.1rem 1.25rem 1.6rem;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 1.4rem; align-items: end;
+}
+.course-line {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--slab); font-weight: 500; font-size: 1rem; margin-bottom: 1.6rem;
+  border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: .55rem;
+}
+.course-line a { color: #fff; text-decoration-color: rgba(255,255,255,.5); }
+.page-number {
+  font-family: var(--slab); font-weight: 700; line-height: .8;
+  font-size: clamp(4.5rem, 12vw, 8rem); color: #fff;
+  -webkit-text-stroke: 0; letter-spacing: -.03em;
+}
+.masthead h1 {
+  font-family: var(--slab); font-weight: 700; margin: 0;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.01em;
+}
+.masthead p { margin: .5rem 0 0; max-width: 58ch; color: rgba(255,255,255,.92); }
+.hem {
+  height: 16px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath fill='%231c1c1e' d='M0 0h2v2h-2z M2 0h1l-1 1z M4 0v1l-1 1h-1z M0 2h1l-1 1z M2 2v1l-1 1h-1z'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 16px;
+}
+
+/* ---- page parts ---- */
+main { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+.part { margin-top: 3.2rem; }
+.part > h2 {
+  font-family: var(--slab); font-weight: 700; font-size: 1.7rem; line-height: 1.15;
+  margin: 0 0 1rem; display: flex; align-items: baseline; gap: .7rem;
+}
+.part > h2 .n {
+  flex: none; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--crimson); color: #fff; font-size: 1.2rem; transform: translateY(-.1rem);
+}
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 1rem; }
+.prose h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 1.6rem 0 .4rem; }
+.statement {
+  max-width: 78ch; border-left: 5px solid var(--crimson); background: var(--mist);
+  padding: 1rem 1.25rem; margin: 1.2rem 0; overflow-x: auto;
+}
+.statement > :first-child { margin-top: 0; } .statement > :last-child { margin-bottom: 0; }
+.statement .kind { font-family: var(--slab); font-weight: 700; }
+.two-col { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); max-width: 78rem; }
+.two-col h3 { font-family: var(--slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5rem;
+  padding-bottom: .35rem; border-bottom: 2px solid var(--ink); }
+.two-col ul { margin: 0; padding-left: 1.1rem; } .two-col li { margin-bottom: .7rem; }
+ol.questions { max-width: 72ch; padding-left: 1.4rem; }
+ol.questions > li { margin-bottom: 1.1rem; padding-left: .3rem; }
+ol.questions > li::marker { font-family: var(--slab); font-weight: 700; color: var(--accent); }
+
+/* ---- the laboratory ---- */
+.lab { border: 1px solid var(--rule); border-top: 5px solid var(--ink); background: var(--panel); }
+.controls {
+  display: grid; gap: .9rem 1.6rem; padding: 1rem 1.1rem; background: var(--mist);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.controls fieldset { border: 0; margin: 0; padding: 0; grid-column: 1 / -1; min-width: 0; }
+.controls legend, .controls label { font-family: var(--slab); font-weight: 500; font-size: 1rem; padding: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label {
+  display: inline-block; font-family: var(--serif); font-size: .95rem; cursor: pointer;
+  padding: .28rem .7rem; border: 1px solid var(--gray); background: var(--panel); color: var(--ink);
+}
+.chips input:checked + label { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: 1fr auto; column-gap: .6rem; align-items: baseline; }
+.slider output { font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--crimson); margin: .2rem 0 0; }
+.slider.big output { font-family: var(--slab); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+[hidden] { display: none !important; }
+
+.panels { display: grid; grid-template-columns: 1fr; }
+.panel { padding: 1rem 1.1rem 1.3rem; min-width: 0; border-top: 1px solid var(--rule); position: relative; }
+.panel:first-child { border-top: 0; }
+.panel > h3 { font-family: var(--slab); font-weight: 700; font-size: 1.35rem; margin: 0; line-height: 1.2; }
+.panel > .sub { margin: .1rem 0 .7rem; color: var(--gray); font-size: .95rem; line-height: 1.4; }
+@media (min-width: 1080px) {
+  .panels { grid-template-columns: 1.25fr 1fr 1fr; }
+  .panel { border-top: 0; border-left: 1px solid var(--rule); }
+  .panel:first-child { border-left: 0; }
+  /* the two-way arrows that tie the three representations together */
+  .panel + .panel > h3::before {
+    content: "\27F7"; position: absolute; left: -1.05rem; top: .75rem; width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center; background: var(--panel); color: var(--accent);
+    border: 1px solid var(--rule); border-radius: 50%; font-family: var(--serif); font-size: 1.1rem; font-weight: 400;
+  }
+  .panel + .panel > h3, .panel + .panel > .sub { padding-left: 1.3rem; }
+}
+canvas { display: block; width: 100%; }
+.cap { font-size: .9rem; color: var(--gray); line-height: 1.4; margin: .3rem 0 .9rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .9rem; margin: .3rem 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: .35rem; }
+.legend i.c { border-color: var(--accent); } .legend i.g { border-color: var(--gray); }
+.legend i.d { border-top-style: dashed; border-top-width: 2px; }
+table.read { border-collapse: collapse; width: 100%; font-size: .95rem; margin-top: .6rem; }
+table.read th { text-align: left; font-weight: 400; padding: .18rem 0; }
+table.read td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; padding: .18rem 0; white-space: nowrap; }
+table.read tr + tr { border-top: 1px solid var(--rule); }
+.mini { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .2rem 0 .5rem; font-size: .92rem; }
+button.plain, .mini .chips label { font-size: .9rem; }
+button.plain {
+  font-family: var(--serif); cursor: pointer; padding: .3rem .75rem;
+  border: 1px solid var(--ink); background: var(--panel); color: var(--ink);
+}
+button.plain:hover { background: var(--ink); color: var(--paper); }
+
+/* experiments */
+.experiments { display: grid; gap: 0; max-width: 78rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); border-top: 2px solid var(--ink); }
+.exp { padding: 1rem 1.2rem 1.2rem 0; border-bottom: 1px solid var(--rule); }
+.exp h3 { font-family: var(--slab); font-weight: 700; font-size: 1.15rem; margin: 0 0 .3rem; }
+.exp p { margin: 0 0 .7rem; }
+
+footer.pager {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 1.25rem 2.5rem; border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--slab);
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* =====================  PAGE-SPECIFIC  ===================== */
+@media (min-width: 1080px) { #lab .panels { grid-template-columns: 1.2fr 1.1fr 1.1fr; } }
+#cvF { height: 250px; touch-action: none; } #cvR { height: 190px; }
+#cvC { height: 260px; touch-action: manipulation; cursor: pointer; } #cvE { height: 170px; }
+#cv3 { aspect-ratio: 1 / 0.92; height: auto; max-width: 440px; margin: 0 auto; touch-action: none; cursor: grab; }
+.eq-live { font-size: 1rem; margin: 0; padding: .7rem 1.1rem; border-bottom: 1px solid var(--rule); overflow-x: auto; white-space: nowrap; }
+.eq-live b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.legend i.sq { width: .8rem; height: .8rem; border: 0; background: var(--accent); }
+.legend i.sq.g { background: var(--gray); } .legend i.sq.l { background: var(--rule); } .legend i.sq.f { opacity: .35; }
+  .legend i.dotc { width: .75rem; height: .75rem; border: 0; border-radius: 50%; background: var(--accent); }
+.energy { display: flex; height: 22px; border: 1px solid var(--ink); margin: .4rem 0 .3rem; background: var(--rule); }
+.energy > div { height: 100%; } .energy .en-cap { background: var(--accent); } .energy .en-rest { background: var(--gray); }
+.controls .btnrow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="course-line">
+      <span>Functional Analysis Laboratory</span>
+      <span>Section 1.4</span>
+    </div>
+    <div class="page-number" aria-hidden="true">5</div>
+    <div>
+      <h1>Fourier sums are shadows cast straight down</h1>
+      <p>Pick any finite set of sines and cosines. The Fourier coefficients give the closest point of their span, the error stands perpendicular to everything you picked, and the energy splits exactly in two.</p>
+    </div>
+  </div>
+  <div class="hem" role="presentation"></div>
+</header>
+
+<main>
+
+<!-- ============================ 1. PICTURE ============================ -->
+<section class="part" id="picture">
+  <h2><span class="n">1</span>The picture</h2>
+  <div class="prose">
+    <p>In $L^2(0,1)$ the functions $1,\ \sqrt2\cos2\pi kx,\ \sqrt2\sin2\pi kx$ are orthonormal. Choose some of them by clicking their bars. They span a subspace $V$. The laboratory computes $Pf=\sum_{j\in S}\langle f,e_j\rangle e_j$ and the residual $r=f-Pf$, and lets you test the residual against each basis vector in turn.</p>
+  </div>
+
+  <div class="lab" id="lab">
+    <form class="controls" onsubmit="return false">
+      <fieldset>
+        <legend>The function f</legend>
+        <div class="chips" id="fChips"></div>
+      </fieldset>
+      <fieldset>
+        <legend>The subspace V</legend>
+        <div class="btnrow">
+          <button type="button" class="plain" data-sel="cos">Constant and cosines</button>
+          <button type="button" class="plain" data-sel="sin">Sines only</button>
+          <button type="button" class="plain" data-sel="odd">Odd harmonics</button>
+          <button type="button" class="plain" data-sel="big">The 6 largest bars</button>
+          <button type="button" class="plain" data-sel="none">Clear</button>
+        </div>
+      </fieldset>
+      <div class="slider big"><label for="sN">Take the first N basis vectors</label><output id="oN">5</output><input type="range" id="sN" min="0" max="33" step="1" value="5"></div>
+      <div class="slider"><label for="sJ">Inspect basis vector e<sub>j</sub></label><output id="oJ">3</output><input type="range" id="sJ" min="0" max="32" step="1" value="3"></div>
+      <div class="slider" style="align-self:end"><button type="button" class="plain" id="toggleJ" style="grid-column:1/-1">Add e_j to V</button></div>
+      <div class="slider"><label for="sT">Detune: v = Pf + t e</label><output id="oT">0.00</output><input type="range" id="sT" min="-1" max="1" step="0.01" value="0"></div>
+    </form>
+
+    <p class="eq-live" id="eqLive"></p>
+
+    <div class="panels">
+
+      <!-- FUNCTION -->
+      <div class="panel">
+        <h3>Function</h3>
+        <p class="sub">f, its projection Pf onto V, and what is left over.</p>
+        <canvas id="cvF" aria-label="Graphs of f, its projection, and the detuned competitor v"></canvas>
+        <ul class="legend"><li><i></i>f</li><li><i class="c"></i>Pf</li><li><i class="g d"></i>v, a detuned competitor in V</li></ul>
+        <p class="cap" id="capF">Choose “Your sketch” to draw f.</p>
+        <canvas id="cvR" aria-label="The residual r, the inspected basis vector, and their product"></canvas>
+        <ul class="legend"><li><i></i>residual r = f − Pf</li><li><i class="g"></i>inspected e<sub>j</sub></li><li><i class="sq f"></i>r · e<sub>j</sub>, whose signed area is ⟨r, e<sub>j</sub>⟩</li></ul>
+        <p class="cap" id="capR"></p>
+      </div>
+
+      <!-- COORDINATES -->
+      <div class="panel">
+        <h3>Coordinates</h3>
+        <p class="sub">One column per basis vector: 1, then cos, sin for each frequency. Click a column to put it in V or take it out.</p>
+        <canvas id="cvC" aria-label="Coordinates of f and of the residual in the trigonometric basis. Click to select."></canvas>
+        <ul class="legend"><li><i class="sq"></i>in V</li><li><i class="sq g"></i>not in V</li></ul>
+        <p class="cap">Top row: ⟨f, e<sub>j</sub>⟩. Bottom row: ⟨r, e<sub>j</sub>⟩. Wherever a column is in V, the residual's bar is gone.</p>
+        <p class="cap" style="margin-bottom:0">Energy ‖f‖², split by Parseval:</p>
+        <div class="energy" aria-hidden="true"><div class="en-cap" id="enCap"></div><div class="en-rest" id="enRest"></div></div>
+        <ul class="legend"><li><i class="sq"></i>captured, Σ<sub>S</sub> c<sub>j</sub>²</li><li><i class="sq g"></i>in the other 33 − |S| columns</li><li><i class="sq l"></i>beyond frequency 16</li></ul>
+        <canvas id="cvE" aria-label="Approximation error against number of basis vectors" style="margin-top:.8rem"></canvas>
+        <ul class="legend"><li><i></i>first m vectors</li><li><i class="g"></i>best m of the 33</li><li><i class="dotc"></i>your V</li></ul>
+        <p class="cap">‖f − Pf‖ against the dimension m of the subspace.</p>
+      </div>
+
+      <!-- GEOMETRY -->
+      <div class="panel">
+        <h3>Geometry</h3>
+        <p class="sub">The three-dimensional slice of L² that contains 0, f, Pf and v. Nothing is distorted: all four points really lie in it. Drag to turn.</p>
+        <canvas id="cv3" aria-label="Three-dimensional picture of f above the subspace V with its projection"></canvas>
+        <ul class="legend"><li><i></i>f</li><li><i class="c"></i>Pf</li><li><i class="g"></i>r, perpendicular to V</li><li><i class="c d"></i>f − v</li></ul>
+        <table class="read">
+          <tr><th>‖f‖²</th><td id="g1">–</td></tr>
+          <tr><th>‖Pf‖² + ‖r‖²</th><td id="g2">–</td></tr>
+          <tr><th>‖r‖ = distance from f to V</th><td id="g3">–</td></tr>
+          <tr><th>‖f − v‖²</th><td id="g4">–</td></tr>
+          <tr><th>‖r‖² + t²</th><td id="g5">–</td></tr>
+          <tr><th>angle between f and V</th><td id="g6">–</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. STATEMENT ============================ -->
+<section class="part" id="statement">
+  <h2><span class="n">2</span>Mathematical statement</h2>
+  <div class="statement">
+    <p><span class="kind">Theorem (projection onto a finite orthonormal set).</span> Let $e_1,\dots,e_m$ be orthonormal in a space with inner product $\langle\cdot,\cdot\rangle$ and norm $\|x\|=\langle x,x\rangle^{1/2}$, let $V$ be their span, and put $Pf=\sum_{j}\langle f,e_j\rangle e_j$. Then</p>
+    <p>(a) &nbsp; $\langle f-Pf,\,e_j\rangle=0$ for each $j$, so $f-Pf\perp V$;</p>
+    <p>(b) &nbsp; for every $v\in V$, $\ \|f-v\|^2=\|f-Pf\|^2+\|Pf-v\|^2$, so $Pf$ is the unique closest point of $V$ to $f$;</p>
+    <p>(c) &nbsp; $\|f\|^2=\sum_j|\langle f,e_j\rangle|^2+\|f-Pf\|^2$. In particular $\sum_j|\langle f,e_j\rangle|^2\le\|f\|^2$ (Bessel's inequality).</p>
+  </div>
+  <div class="statement">
+    <p><span class="kind">Theorem (Parseval).</span> For an orthonormal sequence $(e_j)$ in a Hilbert space the following are equivalent: the finite sums $\sum_{j\le m}\langle f,e_j\rangle e_j$ converge to $f$ for every $f$; $\ \|f\|^2=\sum_j|\langle f,e_j\rangle|^2$ for every $f$; the only $f$ orthogonal to every $e_j$ is $0$. The trigonometric system in $L^2(0,1)$ has these properties.</p>
+  </div>
+  <div class="prose">
+    <p>Nothing in the first theorem mentions sines. It is a statement about inner products, and the proof of (a) is one line: $\langle f-Pf,e_j\rangle=\langle f,e_j\rangle-\langle f,e_j\rangle$. Parts (b) and (c) are Pythagoras applied to the right angle that (a) provides. The map $P$ is linear, satisfies $P^2=P$ and $\|Pf\|\le\|f\|$, and will return as the model of a bounded operator, of a projection in Chapter 6, and of a selfadjoint operator in Chapter 13.</p>
+    <p>The closest-point property is also the engine of the next chapter. The Riesz representation theorem of Section 2.1 is proved by dropping a perpendicular onto the null space of a functional, and that needs a closest point in a subspace that is closed but no longer finite-dimensional. Completeness is what rescues the argument there.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. EXPERIMENT ============================ -->
+<section class="part" id="experiment">
+  <h2><span class="n">3</span>Experiments</h2>
+  <div class="prose"><p>Each button sets up the laboratory above and takes you back to it.</p></div>
+  <div class="experiments">
+    <div class="exp">
+      <h3>One right angle at a time</h3>
+      <p>Start with V empty, so r = f. Step the inspector through the columns and add them one by one. Each addition flattens one bar of the bottom row and makes the shaded area under r · e<sub>j</sub> cancel exactly.</p>
+      <button type="button" class="plain" data-exp="build">Set up the empty subspace</button>
+    </div>
+    <div class="exp">
+      <h3>A subspace that sees nothing</h3>
+      <p>The block is symmetric about x = ½ and every sine is antisymmetric. Project onto sixteen sines and get Pf = 0. A large subspace is no help if f is perpendicular to it.</p>
+      <button type="button" class="plain" data-exp="blind">Set up sines only</button>
+    </div>
+    <div class="exp">
+      <h3>Try to beat the Fourier coefficient</h3>
+      <p>Detune one coefficient by t. The competitor v stays in V, and ‖f − v‖² rises by exactly t², whichever vector you detune and whatever f is. In the Geometry panel the triangle f, Pf, v keeps its right angle.</p>
+      <button type="button" class="plain" data-exp="detune">Set up a detuned competitor</button>
+    </div>
+    <div class="exp">
+      <h3>An error of exactly zero</h3>
+      <p>f = sin 2πx + ½ cos 6πx lies in a two-dimensional subspace. Find it. With the right two columns the residual vanishes identically, and twenty wrong columns leave it untouched.</p>
+      <button type="button" class="plain" data-exp="tones">Set up two tones</button>
+    </div>
+    <div class="exp">
+      <h3>Which six would you pick?</h3>
+      <p>For the sawtooth, compare the first six vectors with the six largest bars. The error plot shows both strategies for every m. For which of the preset functions do the two curves coincide, and why?</p>
+      <button type="button" class="plain" data-exp="greedy">Set up the sawtooth</button>
+    </div>
+    <div class="exp">
+      <h3>Smooth against rough</h3>
+      <p>Compare the error curve of the smooth wave with that of the block. One falls off a cliff and the other crawls along a line of slope −½. The energy bar's pale segment tells the same story.</p>
+      <button type="button" class="plain" data-exp="smooth">Set up the smooth wave</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. PROVES / DOES NOT ============================ -->
+<section class="part" id="limits">
+  <h2><span class="n">4</span>What the picture proves, and what it does not</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you may trust</h3>
+      <ul>
+        <li>The Geometry panel is not an analogy. The points $0$, $f$, $Pf$ and $v$ lie in the span of three orthonormal functions, and the picture is that span drawn to scale. Lengths and angles are the true $L^2$ lengths and angles.</li>
+        <li>On a uniform grid of 1024 points the sampled sines and cosines up to frequency 16 are exactly orthogonal as vectors of numbers. So the zeros in the bottom row are exact up to rounding, about $10^{-17}$.</li>
+        <li>Parts (a), (b), (c) of the theorem are finite algebra. Every instance you can produce on the screen is an instance of a proved identity, and the identities $\|f\|^2=\|Pf\|^2+\|r\|^2$ and $\|f-v\|^2=\|r\|^2+t^2$ hold to every displayed digit.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the screen cannot show</h3>
+      <ul>
+        <li>Completeness. The pale segment of the energy bar is the energy beyond the 33 columns. That it shrinks to zero as columns are added without end, for every $f\in L^2$, is Parseval's theorem for the trigonometric system. It needs an approximation argument, and no finite table can supply it.</li>
+        <li>Closest points in infinite-dimensional subspaces. Here $V$ is finite-dimensional, and the formula for $Pf$ is a finite sum. For a closed subspace in general, the closest point exists because a Hilbert space is complete. In an incomplete inner product space it can fail to exist.</li>
+        <li>Anything about pointwise convergence. The error here is an $L^2$ error. For the block it tends to $0$ while the overshoot at the jumps never does, as page 4 showed.</li>
+        <li>Spaces without an inner product. In $L^1$ or $C[0,1]$ there is no right angle, the closest point of a subspace need not be unique, and the Fourier sum is not the best approximation. The ease of this page is a property of $L^2$.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. QUESTIONS ============================ -->
+<section class="part" id="questions">
+  <h2><span class="n">5</span>Guided questions</h2>
+  <ol class="questions">
+    <li>Prove (a), then expand $\|f-v\|^2=\|(f-Pf)+(Pf-v)\|^2$ to prove (b), and deduce (c). Where exactly did you use that the $e_j$ are orthonormal and not merely linearly independent? If they were only independent, which statement would survive, with $Pf$ defined as the closest point?</li>
+    <li>Show that $P$ is linear, $P^2=P$, $\langle Pf,g\rangle=\langle f,Pg\rangle$, and $\|Pf\|\le\|f\|$ with equality exactly when $f\in V$. In the laboratory, what do these four facts look like? Conversely, let $Q$ be linear with $Q^2=Q$ and $\|Qf\|\le\|f\|$ for all $f$. Show that $f-Qf\perp Qg$ for all $f,g$. (For $Qf=0$ and $g=Qg$, compare $\|g\|$ with $\|g+sf\|$ for all real $s$.)</li>
+    <li>Compute the coefficients of the block $\chi_{(1/4,3/4)}$. Show that with the first $m$ vectors the squared error is a tail $\sum_{k\gt K}\tfrac{2}{\pi^2k^2}$ over odd $k$ and behaves like $c/m$. Explain the slope $-\tfrac12$ in the error plot. What decay of coefficients, and what slope, do you expect for the hat? Check it.</li>
+    <li>Let $W$ be the set of $f\in L^2(0,1)$ with $\int_0^1f=0$. Show $W$ is a closed subspace, find the closest point of $W$ to a given $f$, and identify the residual. Now let $F(f)=\int_0^1f(x)g(x)\,dx$ for a fixed $g\ne0$ and let $W=N(F)$. Show that the residual of any $f$ is a multiple of $g$. Turn this around: given only a bounded linear functional $F$ on a Hilbert space, how would you find the $g$ that represents it?</li>
+  </ol>
+</section>
+</main>
+
+<footer class="pager">
+  <a href="04_convergence_modes.html">Previous: 4. Five ways to converge</a>
+  <a href="index.html">Course contents</a>
+  <a href="06.html" id="nextLink">Next page: 6</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ------------------------------------------------------------------
+   The trigonometric basis on a grid of M midpoints
+   ------------------------------------------------------------------ */
+const M = 1024, h = 1 / M, KF = 16, J = 2 * KF + 1;
+const xm = Float64Array.from({ length: M }, (_, i) => (i + 0.5) * h);
+const E = []; for (let j = 0; j < J; j++) { const k = Math.ceil(j / 2); E.push(Float64Array.from(xm, x => j === 0 ? 1 : Math.SQRT2 * (j % 2 ? Math.cos(2 * Math.PI * k * x) : Math.sin(2 * Math.PI * k * x)))); }
+const ename = j => j === 0 ? '1' : '√2 ' + (j % 2 ? 'cos ' : 'sin ') + '2π' + (Math.ceil(j / 2) > 1 ? '·' + Math.ceil(j / 2) : '') + 'x';
+const FUN = {
+  block: ['Block', x => (x > 0.25 && x < 0.75 ? 1 : 0)], saw: ['Sawtooth', x => 2 * x - 1], hat: ['Hat', x => 1 - Math.abs(2 * x - 1)],
+  smooth: ['Smooth wave', x => 0.6 * (Math.exp(Math.cos(2 * Math.PI * x) + 0.6 * Math.sin(4 * Math.PI * x)) - 1.4)], tones: ['Two tones', x => Math.sin(2 * Math.PI * x) + 0.5 * Math.cos(6 * Math.PI * x)], sketch: ['Your sketch', null]
+};
+const state = { f: 'block', S: new Set([0, 1, 2, 3, 4]), j: 3, t: 0, yaw: -0.55, pitch: 0.38 };
+let sketch = Float64Array.from(xm, x => 0.9 * Math.exp(-(((x - 0.3) / 0.1) ** 2)) - 0.5 * Math.exp(-(((x - 0.72) / 0.06) ** 2)));
+const R = {};
+const dot = (a, b) => { let s = 0; for (let i = 0; i < M; i++) s += a[i] * b[i]; return s * h; };
+function compute() {
+  const f = state.f === 'sketch' ? sketch : Float64Array.from(xm, FUN[state.f][1]), c = E.map(e => dot(f, e)), Pf = new Float64Array(M);
+  for (const j of state.S) for (let i = 0; i < M; i++) Pf[i] += c[j] * E[j][i];
+  const r = f.map((v, i) => v - Pf[i]), rc = E.map(e => dot(r, e)), nf2 = dot(f, f), r2 = dot(r, r), cap = [...state.S].reduce((s, j) => s + c[j] * c[j], 0), all = c.reduce((s, v) => s + v * v, 0);
+  let jw = state.j; if (!state.S.has(jw)) { jw = -1; for (const j of state.S) if (jw < 0 || Math.abs(c[j]) > Math.abs(c[jw])) jw = j; }
+  const v = jw >= 0 ? Pf.map((p, i) => p + state.t * E[jw][i]) : Pf, d = f.map((q, i) => q - v[i]);
+  const nat = [Math.sqrt(nf2)], gr = [Math.sqrt(nf2)], sorted = c.map(q => q * q).sort((a, b) => b - a); let a = nf2, b = nf2;
+  for (let m = 0; m < J; m++) { a -= c[m] * c[m]; b -= sorted[m]; nat.push(Math.sqrt(Math.max(a, 0))); gr.push(Math.sqrt(Math.max(b, 0))); }
+  Object.assign(R, { f, c, Pf, r, rc, nf2, r2, cap, all, jw, v, fv2: dot(d, d), nat, gr });
+}
+
+/* ------------------------------------------------------------------
+   Canvas helpers (shared by every page of the course)
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+const col = {};
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['accent', 'ink', 'gray', 'mist', 'panel', 'rule']) col[k] = cs.getPropertyValue('--' + k).trim(); col.font = cs.getPropertyValue('--serif').trim(); }
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.font = `12px ${col.font}`; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; return { ctx, W, H };
+}
+function frame(W, H, xr, yr, m = { l: 40, r: 10, t: 10, b: 20 }, top = 0, height = H) {
+  const x0 = m.l, x1 = W - m.r, y0 = top + m.t, y1 = top + height - m.b;
+  return { x0, x1, y0, y1, xr, yr, X: x => x0 + (x - xr[0]) / (xr[1] - xr[0]) * (x1 - x0), Y: y => y1 - (y - yr[0]) / (yr[1] - yr[0]) * (y1 - y0),
+    iX: px => xr[0] + (px - x0) / (x1 - x0) * (xr[1] - xr[0]), iY: py => yr[0] + (y1 - py) / (y1 - y0) * (yr[1] - yr[0]) };
+}
+function clip(ctx, F) { ctx.save(); ctx.beginPath(); ctx.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0); ctx.clip(); }
+function axes(ctx, F, xt = [0, 0.5, 1]) {
+  ctx.lineWidth = 1; ctx.strokeStyle = col.rule; ctx.fillStyle = col.gray; ctx.setLineDash([]); ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of xt) { const X = Math.round(F.X(t)) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(String(t), X, F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(F.yr[1].toFixed(1), F.x0 - 5, F.y0 + 6); ctx.fillText(F.yr[0].toFixed(1), F.x0 - 5, F.y1 - 6);
+  if (F.yr[0] < 0 && F.yr[1] > 0) { const Yz = Math.round(F.Y(0)) + .5; ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, Yz); ctx.lineTo(F.x1, Yz); ctx.stroke(); if (Math.abs(Yz - F.y0) > 16 && Math.abs(Yz - F.y1) > 16) ctx.fillText('0', F.x0 - 5, Yz); }
+}
+function curve(ctx, F, Yv, color, width, dash = []) { clip(ctx, F); ctx.beginPath(); for (let i = 0; i < M; i++) ctx.lineTo(F.X(xm[i]), F.Y(Yv[i])); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.stroke(); ctx.restore(); }
+function drag(cv, start, end) {
+  let move = null; const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { move = start(...pos(e)); if (move) { cv.setPointerCapture(e.pointerId); move(...pos(e)); e.preventDefault(); } });
+  cv.addEventListener('pointermove', e => { if (move) move(...pos(e)); });
+  const stop = () => { if (move && end) end(); move = null; }; cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', sup = e => (e < 0 ? '⁻' : '') + [...String(Math.abs(e))].map(q => SUP[q]).join('');
+const num = (v, d = 4) => { const a = Math.abs(v); if (a < 1e-13) return '0'; if (a < 1e-4) { const e = Math.floor(Math.log10(a)); return (v / 10 ** e).toFixed(1) + ' × 10' + sup(e); } return v.toFixed(d); };
+
+/* ------------------------------------------------------------------
+   Drawing
+   ------------------------------------------------------------------ */
+const FR = {};
+function drawF() {
+  const { ctx, W, H } = fit($('cvF')), F = FR.f = frame(W, H, [0, 1], [-1.7, 1.7]); axes(ctx, F);
+  curve(ctx, F, R.f, col.ink, 3); if (state.t !== 0 && R.jw >= 0) curve(ctx, F, R.v, col.gray, 2, [5, 4]); curve(ctx, F, R.Pf, col.accent, 2.4);
+}
+function drawR() {
+  const { ctx, W, H } = fit($('cvR')), e = E[state.j], prod = R.r.map((v, i) => v * e[i]), F = frame(W, H, [0, 1], [-1.7, 1.7]); axes(ctx, F);
+  clip(ctx, F); ctx.beginPath(); ctx.moveTo(F.X(0), F.Y(0)); for (let i = 0; i < M; i++) ctx.lineTo(F.X(xm[i]), F.Y(prod[i])); ctx.lineTo(F.X(1), F.Y(0)); ctx.closePath(); ctx.globalAlpha = .3; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.restore();
+  curve(ctx, F, e, col.gray, 1.3); curve(ctx, F, R.r, col.ink, 2.6);
+  const inV = state.S.has(state.j); $('capR').innerHTML = `Inspecting e<sub>${state.j}</sub> = ${ename(state.j)}, which is ${inV ? '' : 'not '}in V. &nbsp; ⟨f, e<sub>${state.j}</sub>⟩ = <b>${num(R.c[state.j])}</b>, &nbsp; ⟨r, e<sub>${state.j}</sub>⟩ = <b>${num(R.rc[state.j])}</b>${inV ? ': the positive and negative areas cancel.' : '.'}`;
+}
+function drawC() {
+  const { ctx, W, H } = fit($('cvC')); let mx = 0.05; for (const v of R.c) mx = Math.max(mx, Math.abs(v)); mx *= 1.12;
+  const hh = (H - 16) / 2, rows = [[R.c, '⟨f, eⱼ⟩', 0], [R.rc, '⟨r, eⱼ⟩', hh]];
+  rows.forEach(([c, name, top], ri) => {
+    const F = frame(W, H, [-0.6, J - 0.4], [-mx, mx], { l: 40, r: 8, t: 8, b: 6 }, top, hh); if (!ri) FR.c = F; const cw = (F.x1 - F.x0) / J;
+    for (const j of state.S) { ctx.fillStyle = col.mist; ctx.fillRect(F.X(j) - cw / 2, F.y0, cw, F.y1 - F.y0); }
+    ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0); ctx.strokeStyle = col.gray; ctx.beginPath(); ctx.moveTo(F.x0, F.Y(0) + .5); ctx.lineTo(F.x1, F.Y(0) + .5); ctx.stroke();
+    for (let j = 0; j < J; j++) { const Yv = F.Y(c[j]), bw = cw * 0.62; ctx.fillStyle = state.S.has(j) ? col.accent : col.gray; if (Math.abs(c[j]) > 1e-12) ctx.fillRect(F.X(j) - bw / 2, Math.min(Yv, F.Y(0)), bw, Math.max(1, Math.abs(Yv - F.Y(0)))); }
+    ctx.strokeStyle = col.ink; ctx.lineWidth = 2; ctx.strokeRect(F.X(state.j) - cw / 2, F.y0 + 1, cw, F.y1 - F.y0 - 2);
+    ctx.fillStyle = col.gray; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(mx.toFixed(2), F.x0 - 5, F.y0 + 6); ctx.fillText('0', F.x0 - 5, F.Y(0));
+    ctx.fillStyle = col.ink; ctx.textBaseline = 'top'; ctx.fillText(name, F.x1 - 5, F.y0 + 4);
+    if (ri) { ctx.fillStyle = col.gray; ctx.textAlign = 'center'; for (const k of [0, 4, 8, 12, 16]) ctx.fillText(k ? 'k=' + k : '1', clamp(F.X(k ? 2 * k - 0.5 : 0), F.x0 + 8, F.x1 - 14), F.y1 + 3); }
+  });
+}
+function drawE() {
+  const { ctx, W, H } = fit($('cvE')), lo = -4, hi = Math.ceil(Math.log10(Math.max(R.nat[0], 1e-3)) + .01), lx = m => Math.log10(m + 1), F = frame(W, H, [0, lx(J)], [lo, hi], { l: 44, r: 12, t: 10, b: 20 });
+  ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.fillStyle = col.gray; ctx.strokeRect(F.x0 + .5, F.y0 + .5, F.x1 - F.x0, F.y1 - F.y0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const m of [0, 1, 3, 7, 15, 33]) { const X = Math.round(F.X(lx(m))) + .5; ctx.beginPath(); ctx.moveTo(X, F.y0); ctx.lineTo(X, F.y1); ctx.stroke(); ctx.fillText(m ? String(m) : 'm=0', clamp(X, F.x0 + 14, F.x1 - 6), F.y1 + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; for (let e = lo; e <= hi; e++) { const Yv = Math.round(F.Y(e)) + .5; ctx.beginPath(); ctx.moveTo(F.x0, Yv); ctx.lineTo(F.x1, Yv); ctx.stroke(); ctx.fillText(e === 0 ? '1' : '10' + sup(e), F.x0 - 5, clamp(Yv, F.y0 + 6, F.y1 - 6)); }
+  const lg = v => Math.max(lo, Math.log10(v + 1e-300));
+  for (const [arr, c] of [[R.gr, col.gray], [R.nat, col.ink]]) { clip(ctx, F); ctx.beginPath(); arr.forEach((v, m) => ctx.lineTo(F.X(lx(m)), F.Y(lg(v)))); ctx.strokeStyle = c; ctx.lineWidth = 2.3; ctx.stroke(); ctx.restore(); }
+  ctx.fillStyle = col.accent; ctx.beginPath(); ctx.arc(F.X(lx(state.S.size)), F.Y(lg(Math.sqrt(R.r2))), 6, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col.panel; ctx.stroke();
+}
+function draw3() {
+  const { ctx, W, H } = fit($('cv3')), nP = Math.sqrt(R.cap), nr = Math.sqrt(R.r2), t = R.jw >= 0 ? state.t : 0;
+  const a = R.jw >= 0 && nP > 1e-9 ? clamp(R.c[R.jw] / nP, -1, 1) : 1, b = Math.sqrt(Math.max(0, 1 - a * a));
+  const O = [0, 0, 0], PF = [nP, 0, 0], Fp = [nP, 0, nr], V = [nP + t * a, t * b, 0], ext = Math.max(nP + Math.abs(t), nr, 0.2) * 1.12;
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw), cp = Math.cos(state.pitch), sp = Math.sin(state.pitch), sc = Math.min(W, H) / (1.9 * ext), cx0 = ext * 0.45;
+  const S = p => { const x = p[0] - cx0, X = x * cy - p[1] * sy, Yd = x * sy + p[1] * cy; return [W / 2 + X * sc, H * 0.6 - (p[2] * cp - Yd * sp) * sc]; };
+  const path = pts => { ctx.beginPath(); pts.forEach((p, i) => { const s = S(p); i ? ctx.lineTo(...s) : ctx.moveTo(...s); }); };
+  const x0 = -0.35 * ext, x1 = 1.25 * ext, y0 = -0.8 * ext, y1 = 0.8 * ext;
+  path([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]]); ctx.closePath(); ctx.globalAlpha = .13; ctx.fillStyle = col.accent; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.stroke();
+  ctx.globalAlpha = .6; for (let q = 1; q < 6; q++) { const u = x0 + (x1 - x0) * q / 6, w = y0 + (y1 - y0) * q / 6; path([[u, y0, 0], [u, y1, 0]]); ctx.stroke(); path([[x0, w, 0], [x1, w, 0]]); ctx.stroke(); } ctx.globalAlpha = 1;
+  const seg = (p, q, color, w, dash = []) => { path([p, q]); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]); };
+  const corner = (P0, d1, d2) => { const s = ext * 0.07; path([[P0[0] + d1[0] * s, P0[1] + d1[1] * s, P0[2] + d1[2] * s], [P0[0] + (d1[0] + d2[0]) * s, P0[1] + (d1[1] + d2[1]) * s, P0[2] + (d1[2] + d2[2]) * s], [P0[0] + d2[0] * s, P0[1] + d2[1] * s, P0[2] + d2[2] * s]]); ctx.strokeStyle = col.ink; ctx.lineWidth = 1.2; ctx.stroke(); };
+  seg(O, PF, col.accent, 3.5); seg(PF, Fp, col.gray, 3); seg(O, Fp, col.ink, 3.5);
+  if (nr > 1e-6 && nP > 1e-6) corner(PF, [-1, 0, 0], [0, 0, 1]);
+  if (Math.abs(t) > 1e-9) { seg(PF, V, col.accent, 1.5); seg(Fp, V, col.accent, 2.5, [6, 4]); if (nr > 1e-6) corner(PF, [Math.sign(t) * a, Math.sign(t) * b, 0], [0, 0, 1]); }
+  const dotp = (p, name, color, dx = 8, dy = -8) => { const s = S(p); ctx.beginPath(); ctx.arc(s[0], s[1], 5.5, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col.panel; ctx.stroke(); ctx.font = `italic 15px ${col.font}`; ctx.fillStyle = color; ctx.textAlign = dx < 0 ? 'right' : 'left'; ctx.textBaseline = 'middle'; ctx.fillText(name, s[0] + dx, s[1] + dy); };
+  dotp(O, '0', col.gray, -8, 8); dotp(PF, 'Pf', col.accent, 8, 12); dotp(Fp, 'f', col.ink); if (Math.abs(t) > 1e-9) dotp(V, 'v', col.accent, 8, 10);
+  ctx.font = `italic 14px ${col.font}`; ctx.fillStyle = col.accent; ctx.textAlign = 'right'; const cs = S([x1, y0, 0]); ctx.fillText('V', cs[0] - 6, cs[1] - 10);
+  ctx.font = `12px ${col.font}`; ctx.fillStyle = col.gray; const ms = S([nP, 0, nr / 2]); ctx.textAlign = 'left'; if (nr > 1e-6) ctx.fillText('r', ms[0] + 7, ms[1]);
+}
+function readouts() {
+  const S = state.S, inV = S.has(state.j), nf = R.nf2;
+  $('oN').textContent = S.size; $('oJ').textContent = state.j; $('oT').textContent = state.t.toFixed(2); $('toggleJ').textContent = (inV ? 'Remove e' : 'Add e') + [...String(state.j)].map(q => '₀₁₂₃₄₅₆₇₈₉'[q]).join('') + (inV ? ' from V' : ' to V');
+  $('enCap').style.width = (nf > 1e-14 ? R.cap / nf * 100 : 0) + '%'; $('enRest').style.width = (nf > 1e-14 ? Math.max(0, R.all - R.cap) / nf * 100 : 0) + '%';
+  $('g1').textContent = num(nf, 6); $('g2').textContent = num(R.cap, 6) + ' + ' + num(R.r2, 6) + ' = ' + num(R.cap + R.r2, 6); $('g3').textContent = num(Math.sqrt(R.r2), 6);
+  $('g4').textContent = num(R.fv2, 6); $('g5').textContent = num(R.r2 + (R.jw >= 0 ? state.t ** 2 : 0), 6); $('g6').textContent = nf > 1e-14 ? (Math.acos(clamp(Math.sqrt(R.cap / nf), 0, 1)) * 180 / Math.PI).toFixed(1) + '°' : '–';
+  $('eqLive').innerHTML = `dim V = <b>${S.size}</b>. &nbsp; Captured energy <b>${nf > 1e-14 ? (R.cap / nf * 100).toFixed(2) : '0'}%</b>. &nbsp; Error ‖f − Pf‖ = <b>${num(Math.sqrt(R.r2))}</b>. &nbsp; Largest |⟨r, e<sub>j</sub>⟩| over V: <b>${(v => v === 0 ? '0' : v < 1e-4 ? v.toExponential(1).replace(/e-(\d+)/, (_, d) => ' × 10' + sup(-d)) : num(v))(Math.max(0, ...[...S].map(j => Math.abs(R.rc[j]))))}</b>.` + (R.jw >= 0 && state.t !== 0 ? ` &nbsp; Detuning e<sub>${R.jw}</sub>.` : '');
+  $('capF').textContent = state.f === 'sketch' ? 'Drag across the picture to draw f.' : 'Choose “Your sketch” to draw f.'; $('cvF').style.cursor = state.f === 'sketch' ? 'crosshair' : 'default';
+}
+let pending = false;
+function update() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; compute(); drawF(); drawR(); drawC(); drawE(); draw3(); readouts(); }); }
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
+for (const [k, [label]] of Object.entries(FUN)) $('fChips').insertAdjacentHTML('beforeend', `<input type="radio" name="f" id="f-${k}" value="${k}"><label for="f-${k}">${label}</label>`);
+for (const r of document.querySelectorAll('input[name=f]')) r.addEventListener('change', () => { if (r.value === 'sketch' && R.f) sketch = Float64Array.from(R.f); state.f = r.value; update(); });
+function syncUI() { document.querySelector(`input[name=f][value=${state.f}]`).checked = true; $('sJ').value = state.j; $('sT').value = state.t; $('sN').value = Math.min(33, state.S.size); }
+$('sN').addEventListener('input', e => { state.S = new Set(Array.from({ length: +e.target.value }, (_, i) => i)); update(); });
+$('sJ').addEventListener('input', e => { state.j = +e.target.value; update(); }); $('sT').addEventListener('input', e => { state.t = +e.target.value; update(); });
+const toggle = j => { state.S.has(j) ? state.S.delete(j) : state.S.add(j); state.j = j; syncUI(); update(); };
+$('toggleJ').addEventListener('click', () => toggle(state.j));
+const SEL = { cos: () => [...Array(J).keys()].filter(j => j === 0 || j % 2), sin: () => [...Array(J).keys()].filter(j => j && j % 2 === 0), odd: () => [...Array(J).keys()].filter(j => j && Math.ceil(j / 2) % 2), big: () => [...Array(J).keys()].sort((a, b) => Math.abs(R.c[b]) - Math.abs(R.c[a])).slice(0, 6), none: () => [] };
+for (const b of document.querySelectorAll('[data-sel]')) b.addEventListener('click', () => { state.S = new Set(SEL[b.dataset.sel]()); syncUI(); update(); });
+$('cvC').addEventListener('click', e => { const F = FR.c; if (!F) return; const r = e.target.getBoundingClientRect(), j = Math.round(F.iX(e.clientX - r.left)); if (j >= 0 && j < J) toggle(j); });
+drag($('cv3'), (px, py) => { const y0 = state.yaw, p0 = state.pitch; return (qx, qy) => { state.yaw = y0 + (qx - px) * 0.01; state.pitch = clamp(p0 + (qy - py) * 0.01, 0.05, 1.4); update(); }; });
+let last = null;
+drag($('cvF'), () => { const F = FR.f; if (!F || state.f !== 'sketch') return null; last = null;
+  return (px, py) => { const i = clamp(Math.round(F.iX(px) * M - .5), 0, M - 1), v = clamp(F.iY(py), -1.6, 1.6); if (last) { const [i0, v0] = last, a = Math.min(i0, i), b = Math.max(i0, i); for (let q = a; q <= b; q++) sketch[q] = i === i0 ? v : v0 + (v - v0) * (q - i0) / (i - i0); } else sketch[i] = v; last = [i, v]; update(); }; }, () => { last = null; });
+
+const first = n => new Set(Array.from({ length: n }, (_, i) => i));
+const EXP = {
+  build:  () => Object.assign(state, { f: 'block', S: new Set(), j: 0, t: 0 }), blind: () => Object.assign(state, { f: 'block', S: new Set(SEL.sin()), j: 2, t: 0 }),
+  detune: () => Object.assign(state, { f: 'block', S: first(5), j: 1, t: 0.35 }), tones: () => Object.assign(state, { f: 'tones', S: first(5), j: 5, t: 0 }),
+  greedy: () => Object.assign(state, { f: 'saw', S: first(6), j: 2, t: 0 }), smooth: () => Object.assign(state, { f: 'smooth', S: first(9), j: 4, t: 0 })
+};
+for (const b of document.querySelectorAll('[data-exp]')) b.addEventListener('click', () => { EXP[b.dataset.exp](); syncUI(); update(); $('lab').scrollIntoView({ block: 'start' }); $('sJ').focus({ preventScroll: true }); });
+
+const recolor = () => { readColors(); update(); };
+readColors(); syncUI(); update();
+new ResizeObserver(update).observe($('lab'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
+})();
+</script>
+</body>
+</html>

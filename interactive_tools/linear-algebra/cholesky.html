@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cholesky Decomposition — A = LLᵀ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+<style>
+:root{
+  --cream:#faf7f2; --paper:#fff; --navy:#18284a; --navy2:#2c4070;
+  --accent:#3a6eb5; --red:#b33a2f; --red-bg:#fef0ee;
+  --gold:#c8a430; --gray:#7a7a8a; --border:#ddd9d0;
+  /* L column — teal/green */
+  --L-bg:#e8f5f2; --L2:#1a6a58; --L-new:#b3e4d8; --L-done:#f0f5f4; --L-done-c:#90b8b0;
+  /* diagonal sqrt — amber */
+  --D-bg:#fff8ea; --D2:#8a5a00;
+  --mod-bg:#f2f7fe;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--navy);font-size:17px;line-height:1.55;}
+
+header{background:var(--navy);color:#fff;padding:1.7rem 2.5rem;border-bottom:3px solid var(--gold);}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;letter-spacing:.02em;}
+header p{color:#a0b8d8;font-style:italic;margin-top:.25rem;font-size:1.05rem;}
+
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:1.7rem 2rem;margin-bottom:1.8rem;box-shadow:0 2px 14px rgba(24,40,74,.06);}
+.card h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--navy);margin-bottom:1.1rem;}
+
+.ctrl-row{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:.8rem;}
+.ctrl-row label{display:flex;align-items:center;gap:.4rem;font-size:.92rem;}
+.ctrl-row input[type=number]{width:54px;padding:.27rem .4rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;color:var(--navy);}
+.ctrl-row input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:4px;padding:.3rem .85rem;font-size:.9rem;transition:background .14s;}
+.btn-ghost{background:var(--L-bg);color:var(--L2);border:1px solid #90ccc0;}
+.btn-ghost:hover{background:#c4e8e0;}
+.btn-solve{background:var(--red);color:#fff;padding:.52rem 1.9rem;font-size:1rem;margin-top:1.2rem;letter-spacing:.03em;}
+.btn-solve:hover{background:#952e24;}
+
+.mx-grid{display:inline-grid;gap:6px 7px;align-items:center;}
+.mx-grid input{width:58px;padding:.27rem .35rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:1rem;}
+.mx-grid input:focus{outline:none;border-color:var(--accent);}
+.mx-grid .clbl{text-align:center;font-size:.78rem;color:var(--gray);}
+.mx-grid .rlbl{text-align:right;padding-right:6px;font-size:.84rem;color:var(--gray);}
+
+.sym-hint{font-size:.85rem;color:var(--gray);font-style:italic;margin:.5rem 0 .9rem;}
+
+/* steps */
+.steps-wrap{display:flex;flex-direction:column;gap:1.3rem;}
+.scard{background:var(--paper);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(24,40,74,.05);}
+.shd{background:var(--navy);color:#fff;padding:.52rem 1.2rem;display:flex;align-items:center;gap:.65rem;}
+.sbadge{background:var(--gold);color:var(--navy);width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0;}
+.sbadge.init-b{background:#4a6a96;color:#fff;font-size:.65rem;}
+.sbadge.fact-b{background:var(--L2);color:#fff;}
+.sdesc{color:#b8cce8;font-style:italic;font-size:.9rem;flex:1;overflow-x:auto;}
+
+.twrap{overflow-x:auto;padding:.55rem .6rem .7rem;}
+
+/* Main tableau */
+.tab{border-collapse:collapse;font-size:.9rem;}
+.tab th,.tab td{padding:.36rem .72rem;border:1px solid #e0dbd3;text-align:center;white-space:nowrap;vertical-align:middle;}
+
+/* Header rows */
+.tab th.grp-hd{font-size:.73rem;font-weight:400;text-transform:uppercase;letter-spacing:.055em;padding:.22rem .72rem;}
+.tab th.sepr{border-right:2.5px solid #aaa !important;}
+.tab th.sepl{border-left:2.5px solid #aaa !important;}
+
+/* Group: formula column */
+.tab th.fml-hd{background:#f5f5f3;color:#666;text-align:left;padding-left:.9rem;}
+/* Group: L matrix being built */
+.tab th.L-hd{background:var(--L-bg);color:var(--L2);}
+/* Group: residual (what's left in the "A" after accounting) */
+.tab th.res-hd{background:var(--mod-bg);color:var(--navy2);}
+
+/* Data cells */
+.tab td.fml-c{text-align:left;padding-left:.9rem;font-size:.86rem;background:#fafafa;min-width:280px;max-width:380px;white-space:normal;line-height:1.4;}
+.tab td.L-done{background:var(--L-done);color:var(--L-done-c);}
+.tab td.L-new-diag{background:var(--D-bg);color:var(--D2);font-weight:700;}
+.tab td.L-new-off{background:var(--L-new);color:var(--L2);font-weight:600;}
+.tab td.L-zero{color:#ccc;}
+.tab td.res-c{background:var(--mod-bg);}
+.tab td.res-done{background:#f8f8f6;color:#ccc;}
+.tab td.res-diag{background:#fff3cc;}
+
+/* Pivot box */
+.pbox{display:inline-block;border:2px solid var(--D2);border-radius:3px;padding:0 5px;color:var(--D2);font-weight:700;}
+
+/* factorization display */
+.fact-display{padding:1rem 1.5rem;}
+.mat-eq{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;overflow-x:auto;padding:.4rem 0;}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:.25rem;}
+.mat-lbl{font-size:.82rem;color:var(--gray);font-style:italic;}
+.mat-op{font-size:1.4rem;color:var(--navy2);align-self:center;padding:0 .2rem;}
+.fact-note{font-style:italic;font-size:.88rem;color:var(--L2);margin-top:.55rem;}
+
+/* solve panels */
+.solve-section{padding:1rem 1.5rem;}
+.solve-section h3{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy);margin-bottom:.75rem;}
+.solve-aug{overflow-x:auto;margin-bottom:1rem;}
+.solve-steps{display:flex;flex-direction:column;gap:.5rem;}
+.solve-step{display:flex;align-items:baseline;gap:.7rem;padding:.3rem .5rem;border-radius:4px;background:var(--L-bg);}
+.solve-step.back{background:var(--D-bg);}
+.step-idx{font-size:.78rem;color:var(--gray);min-width:55px;text-align:right;flex-shrink:0;}
+.step-tex{flex:1;overflow-x:auto;}
+
+/* solution */
+.sol-card{background:var(--navy);color:#fff;border-radius:8px;padding:1.4rem 2rem;}
+.sol-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:.7rem;}
+.sol-vals{display:flex;flex-wrap:wrap;gap:.6rem;}
+.sol-item{background:rgba(255,255,255,.11);border-radius:5px;padding:.3rem .9rem;font-size:1.05rem;}
+
+.phase-lbl{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy2);padding:.5rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;}
+.keybox{background:var(--L-bg);border:1px solid #90ccc0;border-radius:6px;padding:.8rem 1.1rem;font-size:.88rem;color:#1a3a30;line-height:1.6;margin-top:.4rem;}
+.keybox strong{color:var(--navy);}
+.err-msg{color:var(--red);font-style:italic;padding:.8rem 0;}
+
+@media(max-width:650px){header{padding:1.2rem 1rem;}header h1{font-size:1.5rem;}main{padding:1rem .75rem;}.card{padding:1.2rem 1rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cholesky Decomposition &mdash; A = LL&#x1D40;</h1>
+  <p>Column-by-column factorization of a positive definite symmetric matrix, recording diagonal &radic; entries and sub-diagonal multipliers</p>
+</header>
+<main>
+
+<div class="card">
+  <h2>Enter a Symmetric Positive Definite Matrix A</h2>
+  <div class="ctrl-row">
+    <label>Size n×n: <input type="number" id="nSz" min="2" max="5" value="3"></label>
+    <button class="btn-ghost" onclick="rebuildAll()">Resize</button>
+  </div>
+  <div class="ex-row" id="exRow"></div>
+  <p class="sym-hint">
+    Enter the <em>full</em> matrix — the program will verify symmetry and positive definiteness.
+    Entries may be integers or fractions like <code>3/2</code>.
+  </p>
+  <div style="overflow-x:auto"><div class="mx-grid" id="mxGrid"></div></div>
+  <button class="btn-solve" onclick="doSolve()">Compute Cholesky A = LLᵀ →</button>
+</div>
+
+<div id="out"></div>
+</main>
+
+<script>
+/* ═══════════════════════════════════
+   FRACTION CLASS
+═══════════════════════════════════ */
+function gcd(a,b){a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));while(b){const t=b;b=a%b;a=t;}return a||1;}
+class Frac{
+  constructor(n,d=1){
+    if(d===0){this.n=0;this.d=1;return;}
+    if(d<0){n=-n;d=-d;}
+    const g=gcd(Math.abs(n),d);
+    this.n=Math.round(n/g);this.d=Math.round(d/g);
+  }
+  static parse(s){
+    s=(s||'').trim();if(!s||s==='-')return new Frac(0);
+    if(s.includes('/')){const[a,b]=s.split('/');return new Frac(+a,+b);}
+    if(s.includes('.')){const p=s.replace(/^-/,'').split('.'),dec=p[1]?p[1].length:0,dn=10**dec;return new Frac(Math.round(parseFloat(s)*dn),dn);}
+    return new Frac(+s||0);
+  }
+  clone(){return new Frac(this.n,this.d);}
+  add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Frac(this.n*o.n,this.d*o.d);}
+  div(o){return new Frac(this.n*o.d,this.d*o.n);}
+  neg(){return new Frac(-this.n,this.d);}
+  isZero(){return this.n===0;}
+  isOne(){return this.n>0&&this.n===this.d;}
+  toFloat(){return this.n/this.d;}
+  toTeX(){
+    if(this.d===1)return String(this.n);
+    const sg=this.n<0?'-':'';
+    return`${sg}\\tfrac{${Math.abs(this.n)}}{${this.d}}`;
+  }
+}
+
+/* ═══════════════════════════════════
+   SYMBOLIC SQRT  — entry = (p/q)·√r
+   r is square-free, p/q ∈ ℚ
+═══════════════════════════════════ */
+function squareFreePart(n){
+  n=Math.abs(Math.round(n));if(!n)return{sq:0,rad:1};
+  let sq=1;
+  for(let p=2;p*p<=n;p++) while(n%(p*p)===0){n=Math.round(n/(p*p));sq*=p;}
+  return{sq,rad:n};
+}
+
+function sqrtFrac(f){
+  // √(p/q) = (k/q)·√r  where p·q = k²·r
+  if(f.isZero()||f.n<0) return new SymReal(new Frac(0),1);
+  const pq=f.n*f.d;
+  const{sq:k,rad:r}=squareFreePart(pq);
+  return new SymReal(new Frac(k,f.d),r);
+}
+
+class SymReal{
+  // value = coeff · √rad,  coeff∈Frac, rad∈ℤ⁺ square-free
+  constructor(coeff,rad){
+    this.coeff=coeff instanceof Frac?coeff:new Frac(coeff);
+    this.rad=rad;
+  }
+  isZero(){return this.coeff.isZero();}
+  clone(){return new SymReal(this.coeff.clone(),this.rad);}
+
+  // (SymReal a)·(SymReal b) — only works when a.rad === b.rad (gives rational)
+  mulSame(b){
+    if(this.rad!==b.rad) throw new Error("SymReal.mulSame: different rads");
+    return this.coeff.mul(b.coeff).mul(new Frac(this.rad));
+  }
+
+  // (Frac f) / (SymReal s) = (f/(s.coeff·s.rad))·√s.rad
+  static fracDiv(f,s){
+    return new SymReal(f.div(s.coeff).div(new Frac(s.rad)),s.rad);
+  }
+
+  // (Frac f) · (SymReal s)
+  static fracMul(f,s){
+    return new SymReal(f.mul(s.coeff),s.rad);
+  }
+
+  toTeX(){
+    if(this.coeff.isZero())return'0';
+    if(this.rad===1)return this.coeff.toTeX();
+    const{n,d}=this.coeff;
+    const absN=Math.abs(n);
+    const sign=n<0?'-':'';
+    const sqStr=`\\sqrt{${this.rad}}`;
+    const numStr=absN===1?sqStr:`${absN}${sqStr}`;
+    if(d===1)return`${sign}${numStr}`;
+    return`${sign}\\tfrac{${numStr}}{${d}}`;
+  }
+}
+
+/* ═══════════════════════════════════
+   CHOLESKY  A = L·Lᵀ
+   Returns L as n×n array of SymReal
+   plus step records for display
+═══════════════════════════════════ */
+function computeCholesky(A,n){
+  // L[i][j] stored as SymReal (or null = 0 for j>i)
+  const L=Array.from({length:n},()=>Array(n).fill(null).map(()=>new SymReal(new Frac(0),1)));
+  const steps=[];
+
+  // Initial snapshot
+  steps.push({col:-1,entries:[],L:cloneL(L,n),A:A.map(r=>r.map(f=>f.clone()))});
+
+  for(let k=0;k<n;k++){
+    // ── Diagonal entry L[k][k] = √(A[k][k] - Σ_{j<k} L[k][j]²) ──
+    // Since L[k][j] = coeff_j·√rad_j, L[k][j]² = coeff_j²·rad_j ∈ ℚ
+    let remaining=A[k][k].clone();
+    const diagTerms=[];
+    for(let j=0;j<k;j++){
+      const sq=L[k][j].coeff.mul(L[k][j].coeff).mul(new Frac(L[k][j].rad));
+      diagTerms.push({j,Lkj:L[k][j].clone(),sq:sq.clone()});
+      remaining=remaining.sub(sq);
+    }
+    if(remaining.n<=0) throw new Error(
+      `Matrix is not positive definite: after subtracting Σℓ² from A[${k+1}][${k+1}], `+
+      `the remaining value is ${remaining.toTeX()} ≤ 0.`
+    );
+    L[k][k]=sqrtFrac(remaining);
+    const diagEntry={type:'diag',i:k,k,remaining,diagTerms,value:L[k][k].clone()};
+
+    // ── Sub-diagonal entries L[i][k] = (A[i][k] - Σ_{j<k} L[i][j]·L[k][j]) / L[k][k] ──
+    // L[i][j]·L[k][j] = (c_ij·√r_j)·(c_kj·√r_j) = c_ij·c_kj·r_j  ∈ ℚ  (same rad per col j)
+    const offEntries=[];
+    for(let i=k+1;i<n;i++){
+      let num=A[i][k].clone();
+      const offTerms=[];
+      for(let j=0;j<k;j++){
+        const prod=L[i][j].coeff.mul(L[k][j].coeff).mul(new Frac(L[i][j].rad)); // same rad guaranteed
+        offTerms.push({j,Lij:L[i][j].clone(),Lkj:L[k][j].clone(),prod:prod.clone()});
+        num=num.sub(prod);
+      }
+      L[i][k]=SymReal.fracDiv(num,L[k][k]);
+      offEntries.push({type:'off',i,k,num,offTerms,value:L[i][k].clone()});
+    }
+
+    steps.push({col:k,entries:[diagEntry,...offEntries],L:cloneL(L,n),A:A.map(r=>r.map(f=>f.clone()))});
+  }
+
+  return{steps,L,n};
+}
+
+function cloneL(L,n){
+  return Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>
+    new SymReal(L[i][j].coeff.clone(),L[i][j].rad)));
+}
+
+/* ═══════════════════════════════════
+   KATEX HELPER
+═══════════════════════════════════ */
+function rk(t,opts){try{return katex.renderToString(t,{throwOnError:false,...(opts||{})});}catch(e){return t;}}
+function varName(i,m){return m<=4?['x','y','z','w'][i]:`x_{${i+1}}`;}
+
+/* ═══════════════════════════════════
+   FORMULA TEX for diagonal entry
+═══════════════════════════════════ */
+function diagFormulaTeX(entry,k){
+  const{remaining,diagTerms,value}=entry;
+  const base=`A_{${k+1}${k+1}}`;
+  if(!diagTerms.length){
+    return`\\ell_{${k+1}${k+1}} = \\sqrt{${base}} = \\sqrt{${entry.remaining.toTeX()}} = ${value.toTeX()}`;
+  }
+  const subTerms=diagTerms.map(t=>`\\ell_{${k+1}${t.j+1}}^2 = ${t.sq.toTeX()}`).join(',\\;');
+  const sumTex=diagTerms.map(t=>t.sq.toTeX()).join('+');
+  return`\\ell_{${k+1}${k+1}} = \\sqrt{${base} - \\bigl(${sumTex}\\bigr)} = \\sqrt{${remaining.toTeX()}} = ${value.toTeX()}`;
+}
+
+/* ═══════════════════════════════════
+   FORMULA TEX for off-diagonal entry
+═══════════════════════════════════ */
+function offFormulaTeX(entry){
+  const{i,k,num,offTerms,value}=entry;
+  const base=`A_{${i+1}${k+1}}`;
+  const lkk=`\\ell_{${k+1}${k+1}}`;
+  if(!offTerms.length){
+    return`\\ell_{${i+1}${k+1}} = \\tfrac{${base}}{${lkk}} = \\tfrac{${entry.num.toTeX()}}{\\ell_{${k+1}${k+1}}} = ${value.toTeX()}`;
+  }
+  const subTerms=offTerms.map(t=>`\\ell_{${i+1}${t.j+1}}\\ell_{${k+1}${t.j+1}}`).join('+');
+  return`\\ell_{${i+1}${k+1}} = \\tfrac{${base} - (${subTerms})}{${lkk}} = \\tfrac{${num.toTeX()}}{${lkk}} = ${value.toTeX()}`;
+}
+
+/* ═══════════════════════════════════
+   RENDER CHOLESKY STEPS
+═══════════════════════════════════ */
+function renderCholeskySteps(steps,n){
+  const frag=document.createDocumentFragment();
+  const lbl=document.createElement('div');lbl.className='phase-lbl';
+  lbl.innerHTML='Phase 1 &mdash; Column-by-Column Cholesky Factorization';
+  frag.appendChild(lbl);
+
+  steps.forEach((step,si)=>{
+    const{col,entries,L}=step;
+    const isInit=col===-1;
+
+    const block=document.createElement('div');block.className='scard';
+
+    // Header
+    const hd=document.createElement('div');hd.className='shd';
+    const badge=document.createElement('span');
+    if(isInit){badge.className='sbadge init-b';badge.textContent='init';}
+    else{badge.className='sbadge';badge.textContent=si;}
+    const desc=document.createElement('span');desc.className='sdesc';
+    if(isInit){
+      desc.innerHTML=rk('\\text{Initial matrix }A\\text{ — all entries of }L\\text{ yet to be determined}');
+    } else {
+      const diagE=entries.find(e=>e.type==='diag');
+      desc.innerHTML=rk(
+        `\\text{Column }${col+1}\\text{: compute }\\ell_{${col+1}${col+1}}=\\sqrt{\\cdots}\\text{, then }\\ell_{i,${col+1}}\\text{ for }i>${col+1}`
+      );
+    }
+    hd.append(badge,desc);block.appendChild(hd);
+
+    // Table
+    const tw=document.createElement('div');tw.className='twrap';
+    const tbl=document.createElement('table');tbl.className='tab';
+    const thead=document.createElement('thead');
+
+    // Thead row 1: group labels
+    const hr1=document.createElement('tr');
+    const thFml=document.createElement('th');
+    thFml.className='grp-hd fml-hd sepr';thFml.rowSpan=2;thFml.style.verticalAlign='middle';
+    thFml.textContent=isInit?'—':'Entry formula';
+    hr1.appendChild(thFml);
+
+    const thL=document.createElement('th');
+    thL.className='grp-hd L-hd sepr';thL.colSpan=n;
+    thL.innerHTML='L — lower triangular factor (being built column by column)';
+    hr1.appendChild(thL);
+
+    const thA=document.createElement('th');
+    thA.className='grp-hd res-hd';thA.colSpan=n;
+    thA.innerHTML='A — input matrix (symmetric, reference)';
+    hr1.appendChild(thA);
+
+    thead.appendChild(hr1);
+
+    // Thead row 2: column labels
+    const hr2=document.createElement('tr');
+    for(let j=0;j<n;j++){
+      const th=document.createElement('th');
+      th.className='L-hd'+(j===n-1?' sepr':'');
+      const isDone=!isInit&&j<col;
+      const isNew =!isInit&&j===col;
+      if(isDone) th.style.color='var(--L-done-c)';
+      if(isNew)  th.style.color='var(--D2)';
+      th.innerHTML=rk(`\\ell_{\\cdot,${j+1}}`);
+      hr2.appendChild(th);
+    }
+    for(let j=0;j<n;j++){
+      const th=document.createElement('th');
+      th.className='res-hd';
+      th.innerHTML=rk(`a_{\\cdot,${j+1}}`);
+      hr2.appendChild(th);
+    }
+    thead.appendChild(hr2);
+    tbl.appendChild(thead);
+
+    // Tbody
+    const tbody=document.createElement('tbody');
+    for(let i=0;i<n;i++){
+      const tr=document.createElement('tr');
+
+      // Formula cell
+      const tdFml=document.createElement('td');tdFml.className='fml-c sepr';
+      if(!isInit){
+        const e=entries.find(e=>e.i===i);
+        if(e){
+          const tex=e.type==='diag'?diagFormulaTeX(e,col):offFormulaTeX(e);
+          tdFml.innerHTML=rk(tex);
+        } else {
+          tdFml.innerHTML=rk(`R_{${i+1}}\\text{ unchanged}`);
+          tdFml.style.color='#bbb';tdFml.style.fontSize='.8rem';
+        }
+      } else {
+        tdFml.innerHTML='<span style="color:#ccc">—</span>';
+      }
+      tr.appendChild(tdFml);
+
+      // L cells
+      for(let j=0;j<n;j++){
+        const td=document.createElement('td');
+        const val=L[i][j];
+        const isBelowDiag=j>i;
+        const isDone=!isInit&&j<col;
+        const isNewDiag=!isInit&&j===col&&i===col;
+        const isNewOff =!isInit&&j===col&&i>col;
+
+        if(isBelowDiag){
+          td.className='L-zero'+(j===n-1?' sepr':'');
+          td.innerHTML='<span style="color:#e0dbd3">0</span>';
+        } else if(isNewDiag){
+          td.className='L-new-diag'+(j===n-1?' sepr':'');
+          td.innerHTML=`<span class="pbox">${rk(val.toTeX())}</span>`;
+        } else if(isNewOff){
+          td.className='L-new-off'+(j===n-1?' sepr':'');
+          td.innerHTML=rk(val.toTeX());
+        } else if(isDone){
+          td.className='L-done'+(j===n-1?' sepr':'');
+          td.innerHTML=rk(val.isZero()?'0':val.toTeX());
+        } else {
+          // not yet computed
+          td.className=(j===n-1?'sepr':'');
+          td.style.color='#ccc';
+          td.innerHTML=rk(isInit?'?':(val.isZero()&&j>col?'?':val.isZero()?'0':val.toTeX()));
+        }
+        tr.appendChild(td);
+      }
+
+      // A cells (reference, symmetric)
+      for(let j=0;j<n;j++){
+        const td=document.createElement('td');
+        const isNewPiv=!isInit&&i===col&&j===col;
+        if(isNewPiv) td.className='res-diag';
+        else td.className='res-c';
+        td.innerHTML=rk(step.A[i][j].toTeX());
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    tw.appendChild(tbl);block.appendChild(tw);
+    frag.appendChild(block);
+  });
+  return frag;
+}
+
+/* ═══════════════════════════════════
+   PHASE 2 — A = L·Lᵀ display
+═══════════════════════════════════ */
+function renderFactBlock(A,L,n){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');badge.className='sbadge fact-b';badge.textContent='=';
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk('A = L\\,L^{\\top}\\text{ — Cholesky factorization (exact symbolic entries)}');
+  hd.append(badge,desc);block.appendChild(hd);
+
+  const div=document.createElement('div');div.className='fact-display';
+
+  // Build TeX for L (lower triangular)
+  const Ltex=`L = \\begin{pmatrix}${
+    Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{
+      if(j>i) return'0'; return L[i][j].toTeX();
+    }).join('&')).join('\\\\')
+  }\\end{pmatrix}`;
+
+  // Build TeX for Lᵀ (upper triangular)
+  const LTtex=`L^{\\top} = \\begin{pmatrix}${
+    Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{
+      if(j<i) return'0'; return L[j][i].toTeX(); // transpose
+    }).join('&')).join('\\\\')
+  }\\end{pmatrix}`;
+
+  const Atex=`A = \\begin{pmatrix}${
+    Array.from({length:n},(_,i)=>A[i].map(f=>f.toTeX()).join('&')).join('\\\\')
+  }\\end{pmatrix}`;
+
+  const eq=document.createElement('div');eq.className='mat-eq';
+  function mblock(lbl,tex){
+    const b=document.createElement('div');b.className='mat-block';
+    const l=document.createElement('div');l.className='mat-lbl';l.textContent=lbl;
+    const mv=document.createElement('div');mv.innerHTML=rk(tex,{displayMode:true});
+    b.append(l,mv);return b;
+  }
+  function op(t){const s=document.createElement('span');s.className='mat-op';s.innerHTML=rk(t);return s;}
+
+  eq.append(
+    mblock('L (lower triangular, exact)',Ltex),
+    op('\\cdot'),
+    mblock('Lᵀ (upper triangular)',LTtex),
+    op('='),
+    mblock('A (original)',Atex)
+  );
+
+  // Verification: compute L·Lᵀ as float and show it matches
+  const LLT=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{
+    let s=0;
+    for(let k=0;k<=Math.min(i,j);k++){
+      s+=L[i][k].coeff.toFloat()*Math.sqrt(L[i][k].rad)
+        *L[j][k].coeff.toFloat()*Math.sqrt(L[j][k].rad);
+    }
+    return Math.abs(s)<1e-10?0:s;
+  }));
+  const maxErr=LLT.flat().reduce((mx,v,idx)=>{
+    const i=Math.floor(idx/n),j=idx%n;
+    return Math.max(mx,Math.abs(v-A[i][j].toFloat()));
+  },0);
+  const note=document.createElement('div');note.className='fact-note';
+  note.innerHTML=`✓ Verification: max |LLᵀ − A| = ${maxErr.toExponential(2)} (round-off only)`;
+
+  div.append(eq,note);block.appendChild(div);
+  return block;
+}
+
+/* ═══════════════════════════════════
+   PHASE 3 & 4 — Solve LLᵀx = b
+═══════════════════════════════════ */
+function renderSolveBlock(L,b,n,badge_lbl,phase_lbl,system_tex,isForward){
+  const block=document.createElement('div');block.className='scard';
+  const hd=document.createElement('div');hd.className='shd';
+  const badge=document.createElement('span');
+  badge.className='sbadge';
+  badge.style.background=isForward?'var(--L2)':'var(--D2)';
+  badge.style.color='#fff';badge.textContent=badge_lbl;
+  const desc=document.createElement('span');desc.className='sdesc';
+  desc.innerHTML=rk(system_tex);
+  hd.append(badge,desc);block.appendChild(hd);
+
+  // Build the matrix (L or Lᵀ)
+  const M=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{
+    if(isForward){
+      if(j>i) return null; // 0
+      return L[i][j];
+    } else {
+      if(j<i) return null; // 0
+      return L[j][i]; // Lᵀ
+    }
+  }));
+
+  const sec=document.createElement('div');sec.className='solve-section';
+
+  // Augmented matrix TeX
+  const cols='c'.repeat(n)+'|c';
+  const augRows=Array.from({length:n},(_,i)=>{
+    const row=Array.from({length:n},(_,j)=>M[i][j]?M[i][j].toTeX():'0');
+    return row.join('&')+'&'+b[i].toTeX();
+  });
+  const augTex=`\\left(\\begin{array}{${cols}}${augRows.join('\\\\')}\\end{array}\\right)`;
+  const augDiv=document.createElement('div');augDiv.className='solve-aug';
+  augDiv.innerHTML=rk(augTex,{displayMode:true});
+  sec.appendChild(augDiv);
+
+  // Solve and show steps
+  const x=Array(n).fill(null).map(()=>new Frac(0));
+  // For forward: x[i] = (b[i] - Σ_{j<i} L[i][j]*x[j]) / L[i][i]
+  // For back:    x[i] = (b[i] - Σ_{j>i} Lᵀ[i][j]*x[j]) / Lᵀ[i][i]
+  const order=isForward?[...Array(n).keys()]:[...Array(n).keys()].reverse();
+  const stepsList=document.createElement('div');stepsList.className='solve-steps';
+
+  for(const i of order){
+    let val=b[i].clone();
+    const terms=[];
+    if(isForward){
+      for(let j=0;j<i;j++){
+        if(!L[i][j].isZero()){
+          // L[i][j] is SymReal; x[j] is Frac → product: (Frac · SymReal) → SymReal
+          // But for display we work in float then show exact if possible
+          const Lval=L[i][j].coeff.toFloat()*Math.sqrt(L[i][j].rad);
+          terms.push({j,Lij:L[i][j],xj:x[j].clone()});
+          val=val.sub(L[i][j].coeff.mul(x[j]).mul(new Frac(L[i][j].rad>1?0:1)));
+          // Use float for non-rational L entries, exact only when rad=1
+          if(L[i][j].rad===1) val=val.sub(L[i][j].coeff.mul(x[j]));
+          else val=new Frac(Math.round((val.toFloat()+L[i][j].coeff.toFloat()*Math.sqrt(L[i][j].rad)*x[j].toFloat())*1e9)/1e9,1);
+        }
+      }
+      // divide by diagonal L[i][i] (SymReal, rad might be >1)
+      let xi;
+      if(L[i][i].rad===1) xi=val.div(L[i][i].coeff);
+      else xi=new Frac(Math.round(val.toFloat()/(L[i][i].coeff.toFloat()*Math.sqrt(L[i][i].rad))*1e9)/1e9,1);
+      x[i]=xi;
+    } else {
+      for(let j=i+1;j<n;j++){
+        const LTij=L[j][i]; // Lᵀ[i][j] = L[j][i]
+        if(!LTij.isZero()){
+          terms.push({j,Lij:LTij,xj:x[j].clone()});
+          if(LTij.rad===1) val=val.sub(LTij.coeff.mul(x[j]));
+          else val=new Frac(Math.round((val.toFloat()-LTij.coeff.toFloat()*Math.sqrt(LTij.rad)*x[j].toFloat())*1e9)/1e9,1);
+        }
+      }
+      const LTii=L[i][i];
+      let xi;
+      if(LTii.rad===1) xi=val.div(LTii.coeff);
+      else xi=new Frac(Math.round(val.toFloat()/(LTii.coeff.toFloat()*Math.sqrt(LTii.rad))*1e9)/1e9,1);
+      x[i]=xi;
+    }
+
+    // Build display TeX
+    const vname=isForward?`y_{${i+1}}`:`x_{${i+1}}`;
+    const diag=isForward?L[i][i]:(L[i][i]); // same for both
+    let texStr;
+    if(!terms.length){
+      texStr=`${vname} = \\dfrac{${b[i].toTeX()}}{${diag.toTeX()}} = ${x[i].toTeX()}`;
+    } else {
+      const subParts=terms.map(t=>
+        `${t.Lij.toTeX()} \\cdot ${isForward?`y_{${t.j+1}}`:`x_{${t.j+1}}`}`
+      ).join(' + ');
+      texStr=`${vname} = \\dfrac{${b[i].toTeX()} - (${subParts})}{${diag.toTeX()}} = ${x[i].toTeX()}`;
+    }
+    const row=document.createElement('div');row.className=`solve-step${isForward?'':' back'}`;
+    const idx=document.createElement('span');idx.className='step-idx';
+    idx.innerHTML=rk(`\\text{Row }${i+1}:`);
+    const tex=document.createElement('div');tex.className='step-tex';
+    tex.innerHTML=rk(texStr);
+    row.append(idx,tex);stepsList.appendChild(row);
+  }
+  sec.appendChild(stepsList);
+
+  // Show solution vector
+  const solTex=`\\mathbf{${isForward?'y':'x'}} = ${bToTeX(x)}`;
+  const solDiv=document.createElement('div');solDiv.style.cssText='margin-top:.9rem;padding:.3rem .2rem;overflow-x:auto;';
+  solDiv.innerHTML=rk(solTex);
+  sec.appendChild(solDiv);
+
+  block.appendChild(sec);
+  return{block,x};
+}
+
+function bToTeX(b){
+  return`\\begin{pmatrix}${b.map(f=>f.toTeX()).join('\\\\')}\\end{pmatrix}`;
+}
+
+/* ═══════════════════════════════════
+   KEYBOX
+═══════════════════════════════════ */
+function renderKey(){
+  const k=document.createElement('div');k.className='keybox';
+  k.innerHTML=`
+    <strong>Cholesky vs LU vs QR — one family of ideas:</strong><br>
+    <em>LU</em> applies row operations to A, zeroing below the diagonal, recording multipliers ℓᵢⱼ 
+    in L (sparsity). &nbsp;
+    <em>QR (Gram–Schmidt)</em> applies column operations, recording rᵢⱼ to achieve orthogonality.
+    <br><br>
+    <em>Cholesky</em> exploits <strong>symmetry</strong> and <strong>positive definiteness</strong>: 
+    because A = Aᵀ and all eigenvalues are positive, we can factor A = LLᵀ with a <em>single</em> 
+    lower triangular factor. No separate U is needed — Lᵀ plays the role of U.
+    <br><br>
+    <strong>Column k recipe:</strong>
+    <ul style="margin:.4rem 0 .4rem 1.2rem;line-height:1.7">
+      <li>Diagonal: &nbsp;ℓₖₖ = √(Aₖₖ − Σⱼ﹤ₖ ℓₖⱼ²) &nbsp;— a square root of what remains after 
+          subtracting squared contributions from previous columns.</li>
+      <li>Sub-diagonal: &nbsp;ℓᵢₖ = (Aᵢₖ − Σⱼ﹤ₖ ℓᵢⱼℓₖⱼ) / ℓₖₖ &nbsp;— exactly like an LU 
+          multiplier, but divided by the <em>square root</em> pivot ℓₖₖ.</li>
+    </ul>
+    <strong>Exact arithmetic:</strong> off-diagonal entries are rational (Frac), diagonal entries 
+    are symbolic SymReal = (p/q)·√r with square-free r. Products ℓᵢⱼ·ℓₖⱼ rationalize 
+    because both factors carry the same √r from column j.
+    <br><br>
+    <strong>Cost:</strong> Cholesky requires only ~n³/6 operations — half the cost of LU — because 
+    symmetry means we only need the lower triangle.
+  `;
+  return k;
+}
+
+/* ═══════════════════════════════════
+   MAIN DRIVER
+═══════════════════════════════════ */
+function doSolve(){
+  const out=document.getElementById('out');out.innerHTML='';
+  try{
+    const n=cN;
+    const A=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>Frac.parse(document.getElementById(`a${i}_${j}`)?.value||'0')));
+
+    // Verify symmetry
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++)
+      if(A[i][j].n*A[j][i].d!==A[j][i].n*A[i][j].d)
+        throw new Error(`Matrix is not symmetric: A[${i+1}][${j+1}] = ${A[i][j].toTeX()} ≠ A[${j+1}][${i+1}] = ${A[j][i].toTeX()}`);
+
+    const{steps,L}=computeCholesky(A.map(r=>r.map(f=>f.clone())),n);
+
+    const wrap=document.createElement('div');wrap.className='steps-wrap';
+
+    // Phase 1: factorization steps
+    wrap.appendChild(renderCholeskySteps(steps,n));
+
+    // Phase 2: A = LLᵀ result
+    const lbl2=document.createElement('div');lbl2.className='phase-lbl';lbl2.textContent='Phase 2 — Factorization Result: A = LLᵀ';
+    wrap.appendChild(lbl2);
+    wrap.appendChild(renderFactBlock(A,L,n));
+
+    wrap.appendChild(renderKey());
+    out.appendChild(wrap);
+    out.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    out.innerHTML=`<div class="err-msg" style="padding:1rem">${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ═══════════════════════════════════
+   UI — MATRIX INPUT
+═══════════════════════════════════ */
+let cN=3;
+const EXAMPLES=[
+  {n:3, A:[[4,2,2],[2,10,5],[2,5,15]],                   label:'3×3 example'},
+  {n:4, A:[[4,2,4,2],[2,10,5,2],[4,5,9,6],[2,2,6,9]],   label:'4×4 example'},
+  {n:2, A:[[4,2],[2,13]],                                 label:'2×2 example'},
+  {n:3, A:[[1,0,0],[0,2,0],[0,0,3]],                     label:'3×3 diagonal'},
+  {n:3, A:[[2,1,1],[1,2,1],[1,1,2]],                     label:'3×3 equal entries'},
+];
+
+function rebuildAll(){
+  cN=Math.min(Math.max(parseInt(document.getElementById('nSz').value)||2,2),5);
+  document.getElementById('nSz').value=cN;
+  buildGrid();
+}
+
+function buildGrid(){
+  const cont=document.getElementById('mxGrid');cont.innerHTML='';
+  cont.style.gridTemplateColumns=`auto ${Array(cN).fill('58px').join(' ')}`;
+
+  // header
+  const empty=document.createElement('div');cont.appendChild(empty);
+  for(let j=0;j<cN;j++){const d=document.createElement('div');d.className='clbl';d.innerHTML=rk(`a_{\\cdot,${j+1}}`);cont.appendChild(d);}
+
+  // rows
+  for(let i=0;i<cN;i++){
+    const rl=document.createElement('div');rl.className='rlbl';rl.innerHTML=rk(`R_{${i+1}}`);cont.appendChild(rl);
+    for(let j=0;j<cN;j++){
+      const inp=document.createElement('input');inp.type='text';inp.id=`a${i}_${j}`;inp.placeholder='0';inp.autocomplete='off';
+      cont.appendChild(inp);
+    }
+  }
+}
+
+function loadEx(ex){
+  cN=ex.n;document.getElementById('nSz').value=cN;
+  buildGrid();
+  ex.A.forEach((row,i)=>row.forEach((v,j)=>{const el=document.getElementById(`a${i}_${j}`);if(el)el.value=v;}));
+}
+
+function buildExamples(){
+  const row=document.getElementById('exRow');row.innerHTML='';
+  EXAMPLES.forEach(ex=>{
+    const btn=document.createElement('button');btn.className='btn-ghost';btn.textContent=ex.label;
+    btn.onclick=()=>loadEx(ex);row.appendChild(btn);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{buildExamples();buildGrid();loadEx(EXAMPLES[0]);});
+</script>
+</body>
+</html>

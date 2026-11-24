@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riemann Sphere Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: the sphere stage sits beside the z-plane; controls and live formulas run underneath. */
+  --paper: #e9edf2;
+  --surface: #f8f9fb;
+  --stage: #f1f4f8;
+  --ink: #17212f;
+  --muted: #586475;
+  --rule: #cbd3dc;
+  --z: #c2255c;
+  --w: #0c7489;
+  --circ: #b3590a;
+  --sphere: #3d5a85;
+  --display: "STIX Two Text", Cambria, "Times New Roman", serif;
+  --body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e131a;
+    --surface: #161d26;
+    --stage: #121922;
+    --ink: #e7ecf3;
+    --muted: #96a3b4;
+    --rule: #2c3643;
+    --z: #ff7fa8;
+    --w: #56cfe0;
+    --circ: #f0a84b;
+    --sphere: #8eaede;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e131a;
+  --surface: #161d26;
+  --stage: #121922;
+  --ink: #e7ecf3;
+  --muted: #96a3b4;
+  --rule: #2c3643;
+  --z: #ff7fa8;
+  --w: #56cfe0;
+  --circ: #f0a84b;
+  --sphere: #8eaede;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lede { margin: 0; max-width: 65ch; color: var(--muted); font-size: 1.02rem; }
+
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+  align-self: flex-start;
+}
+.tabs button {
+  font: 500 0.95rem var(--body);
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); }
+
+button:focus-visible, input:focus-visible, canvas:focus-visible {
+  outline: 2px solid var(--w);
+  outline-offset: 2px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 18px;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.panel-head h2 {
+  margin: 0;
+  font: 600 0.82rem var(--body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tools { display: flex; gap: 6px; }
+.tools button {
+  font: 500 0.85rem var(--body);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  cursor: pointer;
+}
+.tools button:hover { border-color: var(--muted); }
+.canvas-box { position: relative; background: var(--stage); flex: 1; min-height: 300px; }
+.stage .canvas-box { aspect-ratio: 5 / 4; }
+.canvas-box canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: block; touch-action: none;
+}
+.plane .canvas-box { border-radius: 0 0 11px 11px; overflow: hidden; }
+.hint {
+  margin: 0;
+  padding: 9px 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+.body p { margin: 0; max-width: 62ch; }
+.body h3 {
+  margin: 0;
+  font: 600 1.25rem var(--display);
+}
+[hidden] { display: none !important; }
+.mode { display: flex; flex-direction: column; gap: 14px; }
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { display: flex; justify-content: space-between; gap: 12px; font-size: 0.9rem; color: var(--muted); }
+.field output { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 500; }
+input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button {
+  font: 500 0.9rem var(--body);
+  color: var(--ink);
+  background: var(--stage);
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.btns button:hover { border-color: var(--muted); }
+.btns button .m { font-size: 1.05em; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+.check input { accent-color: var(--ink); width: 16px; height: 16px; margin: 0; }
+
+/* mathematics */
+.m { font-family: var(--display); font-size: 1.1em; white-space: nowrap; }
+.m i { font-style: italic; }
+.bar { text-decoration: overline; }
+.frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 0.12em; line-height: 1.25; }
+.frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 0.3em 0.08em; }
+.frac > span:last-child { padding: 0.08em 0.3em 0; }
+.sqrt { display: inline-flex; align-items: flex-start; }
+.sqrt::before { content: "\221A"; }
+.sqrt > span { border-top: 1px solid currentColor; padding: 0.05em 0.15em 0; margin-top: 0.14em; }
+
+.rows { display: flex; flex-direction: column; }
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.row:last-child { border-bottom: 0; }
+.row .val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 1.02rem;
+  white-space: nowrap;
+}
+.scroll-x { overflow-x: auto; max-width: 100%; }
+.val.zc { color: var(--z); }
+.val.wc { color: var(--w); }
+.val.cc { color: var(--circ); }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--stage);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--z); flex: none; }
+.chip.cc::before { background: var(--circ); }
+.chip.line::before { border-radius: 0; height: 3px; width: 14px; }
+.note { font-size: 0.88rem; color: var(--muted); }
+
+.meter { display: flex; flex-direction: column; gap: 4px; }
+.meter-track { position: relative; height: 10px; border-radius: 5px; background: var(--stage); border: 1px solid var(--rule); overflow: hidden; }
+.meter-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--ink); }
+.meter-scale { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 860px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .stage .canvas-box { aspect-ratio: 1 / 1; }
+  .plane .canvas-box { aspect-ratio: 1 / 1; max-height: 440px; flex: none; }
+  .wrap { padding: 20px 16px 32px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The Riemann sphere</h1>
+    <p class="lede">Stereographic projection gives every point of the extended complex plane, the point at infinity included, a place on the unit sphere <span class="m"><i>x</i><sub>1</sub><sup>2</sup> + <i>x</i><sub>2</sub><sup>2</sup> + <i>x</i><sub>3</sub><sup>2</sup> = 1</span>.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="What to explore">
+    <button role="tab" id="tab-projection" data-mode="projection" aria-selected="true">The projection</button>
+    <button role="tab" id="tab-circles" data-mode="circles" aria-selected="false">Circles and lines</button>
+    <button role="tab" id="tab-distance" data-mode="distance" aria-selected="false">Distance</button>
+  </div>
+
+  <div class="grid">
+    <section class="panel stage">
+      <div class="panel-head">
+        <h2>On the sphere</h2>
+        <div class="tools">
+          <button id="z3-out" aria-label="Zoom out of the sphere view">&minus;</button>
+          <button id="z3-in" aria-label="Zoom in to the sphere view">+</button>
+          <button id="view-reset">Reset view</button>
+        </div>
+      </div>
+      <div class="canvas-box"><canvas id="cv3" aria-label="Unit sphere above the complex plane, with projection lines from the north pole"></canvas></div>
+      <p class="hint">Drag a marked point to move it. Drag anywhere else to turn the sphere.</p>
+    </section>
+
+    <section class="panel plane">
+      <div class="panel-head">
+        <h2>In the z-plane</h2>
+        <div class="tools">
+          <button id="z2-out" aria-label="Zoom out of the plane">&minus;</button>
+          <button id="z2-in" aria-label="Zoom in to the plane">+</button>
+        </div>
+      </div>
+      <div class="canvas-box"><canvas id="cv2" aria-label="The complex plane seen from above"></canvas></div>
+    </section>
+
+    <section class="panel">
+      <div class="body">
+        <!-- projection -->
+        <div class="mode" id="ctl-projection">
+          <h3>One line through the north pole</h3>
+          <p>Join a point <span class="m"><i>P</i></span> of the sphere to the north pole <span class="m"><i>N</i> = (0, 0, 1)</span> by a straight line. The line meets the equatorial plane in exactly one complex number <span class="m"><i>z</i></span>. The southern hemisphere lands inside the unit circle, the northern hemisphere outside it, and <span class="m"><i>N</i></span> itself is left to stand for <span class="m">&infin;</span>.</p>
+          <div class="field">
+            <label for="in-mod"><span>Modulus <span class="m">|<i>z</i>|</span></span><output id="out-mod"></output></label>
+            <input type="range" id="in-mod" min="-2" max="3" step="0.01" value="0">
+          </div>
+          <div class="field">
+            <label for="in-arg"><span>Argument <span class="m">arg <i>z</i></span></span><output id="out-arg"></output></label>
+            <input type="range" id="in-arg" min="-180" max="180" step="1" value="0">
+          </div>
+          <div class="btns">
+            <button data-z="0,0"><span class="m"><i>z</i> = 0</span></button>
+            <button data-z="1,0"><span class="m"><i>z</i> = 1</span></button>
+            <button data-z="0,1"><span class="m"><i>z</i> = <i>i</i></span></button>
+            <button data-z="-1,0"><span class="m"><i>z</i> = &minus;1</span></button>
+            <button id="btn-inf">Send <span class="m"><i>z</i></span> to <span class="m">&infin;</span></button>
+          </div>
+        </div>
+
+        <!-- circles -->
+        <div class="mode" id="ctl-circles" hidden>
+          <h3>Circles go to circles, or to lines</h3>
+          <p>A plane <span class="m">&alpha;<sub>1</sub><i>x</i><sub>1</sub> + &alpha;<sub>2</sub><i>x</i><sub>2</sub> + &alpha;<sub>3</sub><i>x</i><sub>3</sub> = &alpha;<sub>0</sub></span> with unit normal <span class="m">&alpha;</span> and <span class="m">0 &le; &alpha;<sub>0</sub> &lt; 1</span> cuts the sphere in a circle. Its image in the plane is a circle too, unless the circle on the sphere runs through <span class="m"><i>N</i></span>. Then <span class="m">&alpha;<sub>0</sub> = &alpha;<sub>3</sub></span> and the image is a straight line. This is why every straight line is said to pass through <span class="m">&infin;</span>.</p>
+          <div class="field">
+            <label for="in-th"><span>Tilt of the normal <span class="m">&alpha;</span> away from the <span class="m"><i>x</i><sub>3</sub></span>-axis</span><output id="out-th"></output></label>
+            <input type="range" id="in-th" min="0" max="180" step="0.5" value="58">
+          </div>
+          <div class="field">
+            <label for="in-ph"><span>Direction of <span class="m">&alpha;</span> around the axis</span><output id="out-ph"></output></label>
+            <input type="range" id="in-ph" min="-180" max="180" step="1" value="-35">
+          </div>
+          <div class="field">
+            <label for="in-a0"><span>Distance <span class="m">&alpha;<sub>0</sub></span> of the plane from the centre</span><output id="out-a0"></output></label>
+            <input type="range" id="in-a0" min="0" max="0.99" step="0.01" value="0.35">
+          </div>
+          <div class="btns">
+            <button id="btn-through">Pass through <span class="m"><i>N</i></span></button>
+            <button id="btn-great">Great circle</button>
+            <button id="btn-parallel">Parallel of latitude</button>
+            <button id="btn-meridian">Meridian</button>
+          </div>
+          <label class="check" for="in-rays"><input type="checkbox" id="in-rays" checked> Show the projection lines from <span class="m"><i>N</i></span></label>
+        </div>
+
+        <!-- distance -->
+        <div class="mode" id="ctl-distance" hidden>
+          <h3>Distance measured on the sphere</h3>
+          <p>Take the straight chord between the sphere points of <span class="m"><i>z</i></span> and <span class="m"><i>z</i>&prime;</span>. Its length <span class="m"><i>d</i>(<i>z</i>, <i>z</i>&prime;)</span> never exceeds 2, the diameter, and it treats <span class="m">&infin;</span> like any other point. Far from the origin, numbers that are a long way apart in the plane sit close together near <span class="m"><i>N</i></span>.</p>
+          <div class="btns">
+            <button id="btn-anti">Make <span class="m"><i>z</i>&prime;</span> antipodal to <span class="m"><i>z</i></span></button>
+            <button id="btn-far">Move both far out</button>
+            <button id="btn-dreset">Reset the points</button>
+          </div>
+          <label class="check" for="in-winf"><input type="checkbox" id="in-winf"> Put <span class="m"><i>z</i>&prime;</span> at <span class="m">&infin;</span></label>
+          <div class="meter" aria-hidden="true">
+            <div class="meter-track"><div class="meter-fill" id="meter-fill"></div></div>
+            <div class="meter-scale"><span>0</span><span>1</span><span>2, the diameter</span></div>
+          </div>
+          <p class="note">Drag <span class="m"><i>z</i></span> and <span class="m"><i>z</i>&prime;</span> in either view.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="body" aria-live="off">
+        <!-- projection formulas -->
+        <div class="mode" id="fx-projection">
+          <span class="chip" id="p-chip"></span>
+          <div class="rows">
+            <div class="row">
+              <span class="m"><i>z</i> = <span class="frac"><span><i>x</i><sub>1</sub> + <i>i</i><i>x</i><sub>2</sub></span><span>1 &minus; <i>x</i><sub>3</sub></span></span></span>
+              <span class="val zc" id="p-z"></span>
+            </div>
+            <div class="row">
+              <span class="m"><i>x</i><sub>1</sub> = <span class="frac"><span><i>z</i> + <span class="bar"><i>z</i></span></span><span>1 + |<i>z</i>|<sup>2</sup></span></span></span>
+              <span class="val" id="p-x1"></span>
+            </div>
+            <div class="row">
+              <span class="m"><i>x</i><sub>2</sub> = <span class="frac"><span><i>z</i> &minus; <span class="bar"><i>z</i></span></span><span><i>i</i>(1 + |<i>z</i>|<sup>2</sup>)</span></span></span>
+              <span class="val" id="p-x2"></span>
+            </div>
+            <div class="row">
+              <span class="m"><i>x</i><sub>3</sub> = <span class="frac"><span>|<i>z</i>|<sup>2</sup> &minus; 1</span><span>|<i>z</i>|<sup>2</sup> + 1</span></span></span>
+              <span class="val" id="p-x3"></span>
+            </div>
+            <div class="row">
+              <span class="m">|<i>z</i>|<sup>2</sup> = <span class="frac"><span>1 + <i>x</i><sub>3</sub></span><span>1 &minus; <i>x</i><sub>3</sub></span></span></span>
+              <span class="val" id="p-m2"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- circle formulas -->
+        <div class="mode" id="fx-circles" hidden>
+          <span class="chip cc" id="c-chip"></span>
+          <div class="rows">
+            <div class="row">
+              <span>Plane cutting the sphere</span>
+              <span class="val scroll-x"><span class="m" id="c-plane"></span></span>
+            </div>
+            <div class="row">
+              <span class="scroll-x"><span class="m">(&alpha;<sub>0</sub> &minus; &alpha;<sub>3</sub>)(<i>x</i><sup>2</sup> + <i>y</i><sup>2</sup>) &minus; 2&alpha;<sub>1</sub><i>x</i> &minus; 2&alpha;<sub>2</sub><i>y</i> + &alpha;<sub>0</sub> + &alpha;<sub>3</sub> = 0</span></span>
+            </div>
+            <div class="row">
+              <span>Image in the plane</span>
+              <span class="val cc scroll-x"><span class="m" id="c-image"></span></span>
+            </div>
+            <div class="row">
+              <span class="m">&alpha;<sub>0</sub> &minus; &alpha;<sub>3</sub></span>
+              <span class="val" id="c-k"></span>
+            </div>
+          </div>
+          <p class="note">The coefficient <span class="m">&alpha;<sub>0</sub> &minus; &alpha;<sub>3</sub></span> multiplies the quadratic term. When it vanishes, only the linear equation of a line remains.</p>
+        </div>
+
+        <!-- distance formulas -->
+        <div class="mode" id="fx-distance" hidden>
+          <div class="rows">
+            <div class="row" id="d-row-fin">
+              <span class="scroll-x"><span class="m"><i>d</i>(<i>z</i>, <i>z</i>&prime;) = <span class="frac"><span>2|<i>z</i> &minus; <i>z</i>&prime;|</span><span><span class="sqrt"><span>(1 + |<i>z</i>|<sup>2</sup>)(1 + |<i>z</i>&prime;|<sup>2</sup>)</span></span></span></span></span></span>
+              <span class="val" id="d-fin"></span>
+            </div>
+            <div class="row" id="d-row-inf" hidden>
+              <span class="m"><i>d</i>(<i>z</i>, &infin;) = <span class="frac"><span>2</span><span><span class="sqrt"><span>1 + |<i>z</i>|<sup>2</sup></span></span></span></span></span>
+              <span class="val" id="d-inf"></span>
+            </div>
+            <div class="row">
+              <span>Chord measured in space, <span class="m"><span class="sqrt"><span>2 &minus; 2(<i>x</i><sub>1</sub><i>x</i><sub>1</sub>&prime; + <i>x</i><sub>2</sub><i>x</i><sub>2</sub>&prime; + <i>x</i><sub>3</sub><i>x</i><sub>3</sub>&prime;)</span></span></span></span>
+              <span class="val" id="d-chord"></span>
+            </div>
+            <div class="row">
+              <span>Distance in the plane, <span class="m">|<i>z</i> &minus; <i>z</i>&prime;|</span></span>
+              <span class="val" id="d-plane"></span>
+            </div>
+            <div class="row">
+              <span class="m"><i>z</i></span>
+              <span class="val zc" id="d-z"></span>
+            </div>
+            <div class="row">
+              <span class="m"><i>z</i>&prime;</span>
+              <span class="val wc" id="d-w"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+const D = 10;        // camera distance
+const DN = 8.4;      // near clip, measured along the view axis
+const RCLIP = 6;     // how far the plane is drawn
+const MODES = ['projection', 'circles', 'distance'];
+const DEFAULTS = {
+  mode: 'projection',
+  zx: 1.2, zy: 0.8, arg: 0.588,
+  wx: -0.7, wy: -1.1, wInf: false,
+  th: 58, ph: -35, a0: 0.35, rays: true,
+  yaw: -0.9, pitch: 0.36, zoom2: 1, zoom3: 1
+};
+let S = Object.assign({}, DEFAULTS);
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- small vector helpers ---------- */
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const NP = [0, 0, 1];
+
+/* plane -> sphere and back */
+function sph(x, y) { const m = x * x + y * y; return [2 * x / (1 + m), 2 * y / (1 + m), (m - 1) / (m + 1)]; }
+function ster(p) { const k = 1 - p[2]; return [p[0] / k, p[1] / k]; }
+
+/* ---------- colours from the theme ---------- */
+const C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const n of ['paper', 'surface', 'stage', 'ink', 'muted', 'rule', 'z', 'w', 'circ', 'sphere']) {
+    C[n] = cs.getPropertyValue('--' + n).trim() || '#888888';
+  }
+}
+function rgba(hex, a) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
+  const n = parseInt(h, 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+/* ---------- number formatting ---------- */
+function fmt(v, d) {
+  if (d === undefined) d = 3;
+  if (!isFinite(v)) return '∞';
+  const a = Math.abs(v);
+  const s = a >= 1000 ? a.toFixed(0) : a >= 100 ? a.toFixed(1) : a.toFixed(d);
+  return (v < 0 && parseFloat(s) !== 0 ? '−' : '') + s;
+}
+function fmtC(x, y, d) {
+  if (d === undefined) d = 2;
+  return fmt(x, d) + (y < 0 ? ' − ' : ' + ') + fmt(Math.abs(y), d) + '<i>i</i>';
+}
+/* builds "a x + b y − c = 0" style strings, skipping vanishing terms */
+function equation(terms, rhs) {
+  let out = '';
+  for (const [coef, sym] of terms) {
+    if (Math.abs(coef) < 5e-4) continue;
+    const mag = fmt(Math.abs(coef), 2);
+    if (out === '') out += (coef < 0 ? '−' : '') + mag + sym;
+    else out += (coef < 0 ? ' − ' : ' + ') + mag + sym;
+  }
+  if (out === '') out = '0';
+  return out + ' = ' + rhs;
+}
+
+/* ---------- camera ---------- */
+const cam = { c: [1, 0, 0], r: [0, 1, 0], u: [0, 0, 1], s: 100, cx: 0, cy: 0 };
+function setCam(w, h) {
+  const cp = Math.cos(S.pitch), sp = Math.sin(S.pitch), cy = Math.cos(S.yaw), sy = Math.sin(S.yaw);
+  cam.c = [cp * cy, cp * sy, sp];
+  cam.r = [-sy, cy, 0];
+  cam.u = [-sp * cy, -sp * sy, cp];
+  cam.s = Math.min(w, h * 1.2) * 0.25 * S.zoom3;
+  cam.cx = w / 2;
+  cam.cy = h * 0.52;
+}
+function P3(p) {
+  const d = dot(p, cam.c);
+  const f = D / (D - d);
+  return [cam.cx + cam.s * f * dot(p, cam.r), cam.cy - cam.s * f * dot(p, cam.u), d];
+}
+function pointerRay(px, py) {
+  const u = (px - cam.cx) / cam.s, v = -(py - cam.cy) / cam.s;
+  const o = [cam.c[0] * D, cam.c[1] * D, cam.c[2] * D];
+  const q = [cam.r[0] * u + cam.u[0] * v, cam.r[1] * u + cam.u[1] * v, cam.r[2] * u + cam.u[2] * v];
+  return { o, d: norm([q[0] - o[0], q[1] - o[1], q[2] - o[2]]) };
+}
+function hitSphere(px, py) {
+  const { o, d } = pointerRay(px, py);
+  const b = dot(o, d);
+  const disc = b * b - (D * D - 1);
+  const t = disc >= 0 ? -b - Math.sqrt(disc) : -b;
+  return norm([o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t]);
+}
+function hitPlane(px, py) {
+  const { o, d } = pointerRay(px, py);
+  const LIM = 60;
+  if (d[2] * o[2] < -1e-9) {
+    const t = -o[2] / d[2];
+    const x = o[0] + d[0] * t, y = o[1] + d[1] * t;
+    const r = Math.hypot(x, y);
+    return r > LIM ? [x / r * LIM, y / r * LIM] : [x, y];
+  }
+  const r = Math.hypot(d[0], d[1]) || 1;
+  return [d[0] / r * LIM, d[1] / r * LIM];
+}
+
+/* ---------- static sphere graticule ---------- */
+const GRAT = [];
+for (let k = 0; k < 6; k++) {
+  const a = k * Math.PI / 6, pts = [];
+  for (let i = 0; i <= 96; i++) { const t = i / 96 * TAU; pts.push([Math.cos(a) * Math.sin(t), Math.sin(a) * Math.sin(t), Math.cos(t)]); }
+  GRAT.push(pts);
+}
+for (const lat of [-60, -30, 30, 60]) {
+  const l = lat * Math.PI / 180, pts = [];
+  for (let i = 0; i <= 96; i++) { const t = i / 96 * TAU; pts.push([Math.cos(l) * Math.cos(t), Math.cos(l) * Math.sin(t), Math.sin(l)]); }
+  GRAT.push(pts);
+}
+const EQ = [];
+for (let i = 0; i <= 120; i++) { const t = i / 120 * TAU; EQ.push([Math.cos(t), Math.sin(t), 0]); }
+
+/* ---------- path building with near clipping ---------- */
+function mkPath() { const p = new Path2D(); p.pen = null; return p; }
+function segTo(path, a, b) {
+  const da = dot(a, cam.c), db = dot(b, cam.c);
+  if (da > DN && db > DN) return;
+  if (da > DN) a = lerp(b, a, (DN - db) / (da - db));
+  else if (db > DN) b = lerp(a, b, (DN - da) / (db - da));
+  const A = P3(a), B = P3(b);
+  if (!path.pen || Math.abs(path.pen[0] - A[0]) > 0.3 || Math.abs(path.pen[1] - A[1]) > 0.3) path.moveTo(A[0], A[1]);
+  path.lineTo(B[0], B[1]);
+  path.pen = B;
+}
+function strokeP(ctx, path, color, width, dash) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash(dash || []);
+  ctx.stroke(path);
+  ctx.setLineDash([]);
+}
+const inHalf = (p, half) => (p[2] >= 0) === (half === 'upper');
+function addSph(pts, half, pf, pb) {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (half && ((a[2] + b[2]) / 2 >= 0) !== (half === 'upper')) continue;
+    const md = (dot(a, cam.c) + dot(b, cam.c)) / 2;
+    segTo(md > 1 / D ? pf : pb, a, b);
+  }
+}
+
+/* ---------- geometry of the current mode ---------- */
+function rayParts(x, y) {
+  const P = sph(x, y), r = Math.hypot(x, y);
+  let Z = [x, y, 0], clipped = false;
+  if (r > RCLIP) { const t = RCLIP / r; Z = [x * t, y * t, 1 - t]; clipped = true; }
+  const up = [], lo = [];
+  if (P[2] >= 0) { up.push([NP, P, 'in'], [P, Z, 'out']); }
+  else { up.push([NP, Z, 'in']); lo.push([Z, P, 'in']); }
+  return { P, Z, clipped, up, lo };
+}
+function circleGeom() {
+  const th = S.th * Math.PI / 180, ph = S.ph * Math.PI / 180;
+  const a = [Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)];
+  const a0 = S.a0, rr = Math.sqrt(1 - a0 * a0);
+  const u = Math.abs(a[2]) < 0.9999 ? norm(cross([0, 0, 1], a)) : [1, 0, 0];
+  const v = cross(a, u);
+  const n = 240, pts = [], img = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n * TAU, ct = Math.cos(t), st = Math.sin(t);
+    const q = [a0 * a[0] + rr * (ct * u[0] + st * v[0]), a0 * a[1] + rr * (ct * u[1] + st * v[1]), a0 * a[2] + rr * (ct * u[2] + st * v[2])];
+    pts.push(q);
+    img.push(1 - q[2] > 1e-6 ? ster(q) : null);
+  }
+  const k = a0 - a[2];
+  const isLine = Math.abs(k) < 1e-3;
+  return { a, a0, rr, pts, img, k, isLine, center: isLine ? null : [a[0] / k, a[1] / k], radius: isLine ? Infinity : rr / Math.abs(k) };
+}
+
+/* ---------- 3D drawing ---------- */
+let handles3 = [], labels3 = [];
+function label3(x, y, text, color) { labels3.push({ x, y, text, color }); }
+function sphereDot(ctx, p, color, text, id, big) {
+  const A = P3(p), front = A[2] > 1 / D, r = big ? 6.5 : 5.5;
+  ctx.beginPath(); ctx.arc(A[0], A[1], r, 0, TAU);
+  if (front) { ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = C.stage; ctx.lineWidth = 1.5; ctx.stroke(); }
+  else { ctx.fillStyle = C.stage; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.stroke(); }
+  if (text) label3(A[0] + 10, A[1] - 9, text, color);
+  if (id && front) handles3.push({ id, x: A[0], y: A[1] });
+}
+function planeDot(ctx, p, color, text, id) {
+  if (dot(p, cam.c) > DN) return;
+  const A = P3(p);
+  ctx.beginPath(); ctx.arc(A[0], A[1], 5.5, 0, TAU);
+  ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = C.stage; ctx.lineWidth = 1.5; ctx.stroke();
+  if (text) label3(A[0] + 10, A[1] + 16, text, color);
+  if (id) handles3.push({ id, x: A[0], y: A[1] });
+}
+function arrowHead(ctx, a, b, color) {
+  if (dot(b, cam.c) > DN || dot(a, cam.c) > DN) return;
+  const A = P3(a), B = P3(b);
+  const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy);
+  if (l < 1) return;
+  const ux = dx / l, uy = dy / l;
+  ctx.beginPath();
+  ctx.moveTo(B[0], B[1]);
+  ctx.lineTo(B[0] - ux * 10 - uy * 4, B[1] - uy * 10 + ux * 4);
+  ctx.lineTo(B[0] - ux * 10 + uy * 4, B[1] - uy * 10 - ux * 4);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+}
+function drawRay(ctx, parts, half, color, strength) {
+  const list = half === 'upper' ? parts.up : parts.lo;
+  for (const [a, b, kind] of list) {
+    const p = mkPath(); segTo(p, a, b);
+    if (kind === 'in') strokeP(ctx, p, rgba(color, 0.6 * strength), 1.3, [5, 4]);
+    else strokeP(ctx, p, rgba(color, strength), 1.7);
+  }
+  if (half === 'upper' && parts.clipped) arrowHead(ctx, parts.P, parts.Z, rgba(color, strength));
+}
+
+function drawHalf(ctx, half, G) {
+  const pf = mkPath(), pb = mkPath();
+  for (const g of GRAT) addSph(g, half, pf, pb);
+  strokeP(ctx, pb, rgba(C.sphere, 0.13), 1);
+  strokeP(ctx, pf, rgba(C.sphere, 0.34), 1);
+
+  if (S.mode === 'projection') {
+    drawRay(ctx, G.rz, half, C.z, 1);
+    if (inHalf(G.rz.P, half)) sphereDot(ctx, G.rz.P, C.z, 'P', 'P', true);
+  } else if (S.mode === 'distance') {
+    drawRay(ctx, G.rz, half, C.z, 0.55);
+    if (!S.wInf) drawRay(ctx, G.rw, half, C.w, 0.55);
+    const A = G.rz.P, B = S.wInf ? NP : G.rw.P;
+    const segs = [];
+    if ((A[2] >= 0) === (B[2] >= 0)) segs.push([A, B]);
+    else { const t = A[2] / (A[2] - B[2]); const M = lerp(A, B, t); segs.push([A, M], [M, B]); }
+    for (const [a, b] of segs) {
+      const mid = lerp(a, b, 0.5);
+      if (!inHalf(mid, half) && !(Math.abs(mid[2]) < 1e-12 && half === 'upper')) continue;
+      const p = mkPath(); segTo(p, a, b); strokeP(ctx, p, C.ink, 2.6);
+    }
+    if (inHalf(A, half)) sphereDot(ctx, A, C.z, 'P', 'P', true);
+    if (!S.wInf && inHalf(B, half)) sphereDot(ctx, B, C.w, 'P′', 'Q', true);
+  } else {
+    const cg = G.cg;
+    if (S.rays) {
+      const pin = mkPath(), pout = mkPath();
+      for (let i = 0; i < cg.pts.length - 1; i += 12) {
+        const q = cg.pts[i], im = cg.img[i];
+        const hr = Math.hypot(q[0], q[1]);
+        if (hr < 1e-6) continue;
+        let E;
+        if (im && Math.hypot(im[0], im[1]) <= RCLIP) E = [im[0], im[1], 0];
+        else { const t = RCLIP / hr; E = [q[0] * t, q[1] * t, 1 - t * (1 - q[2])]; }
+        if (q[2] >= 0) { if (half === 'upper') { segTo(pin, NP, q); pin.pen = null; segTo(pout, q, E); pout.pen = null; } }
+        else if (half === 'upper') { segTo(pin, NP, E); pin.pen = null; }
+        else { segTo(pin, E, q); pin.pen = null; }
+      }
+      strokeP(ctx, pin, rgba(C.circ, 0.28), 1, [4, 4]);
+      strokeP(ctx, pout, rgba(C.circ, 0.42), 1);
+    }
+    if (inHalf(cg.a, half)) {
+      const p = mkPath(); segTo(p, [0, 0, 0], cg.a); strokeP(ctx, p, rgba(C.ink, 0.55), 1.3, [2, 3]);
+    }
+    const cf = mkPath(), cb = mkPath();
+    addSph(cg.pts, half, cf, cb);
+    strokeP(ctx, cb, rgba(C.circ, 0.5), 2, [6, 4]);
+    strokeP(ctx, cf, C.circ, 2.8);
+    if (inHalf(cg.a, half)) sphereDot(ctx, cg.a, C.ink, 'α', 'a', false);
+  }
+
+  if (half === 'upper') {
+    const A = P3(NP), front = A[2] > 1 / D;
+    const atInf = S.mode === 'distance' && S.wInf;
+    const col = atInf ? C.w : C.ink;
+    ctx.beginPath(); ctx.arc(A[0], A[1], atInf ? 6.5 : 4.5, 0, TAU);
+    if (front) { ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = C.stage; ctx.lineWidth = 1.5; ctx.stroke(); }
+    else { ctx.fillStyle = C.stage; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.stroke(); }
+    labels3.push({ x: A[0], y: A[1] - 14, text: atInf ? 'N = P′  (z′ = ∞)' : 'N  (∞)', color: col, center: true });
+  }
+}
+
+function drawPlane(ctx, G) {
+  /* soft fill that fades outward */
+  for (let R = RCLIP; R >= 1; R--) {
+    ctx.beginPath();
+    for (let i = 0; i <= 72; i++) {
+      const t = i / 72 * TAU, A = P3([R * Math.cos(t), R * Math.sin(t), 0]);
+      if (i === 0) ctx.moveTo(A[0], A[1]); else ctx.lineTo(A[0], A[1]);
+    }
+    ctx.fillStyle = rgba(C.sphere, 0.016);
+    ctx.fill();
+  }
+  /* grid, fading with distance from the origin */
+  const buckets = [mkPath(), mkPath(), mkPath(), mkPath()];
+  const step = 0.5;
+  for (let k = -RCLIP; k <= RCLIP; k++) {
+    if (k === 0) continue;
+    const ym = Math.sqrt(RCLIP * RCLIP - k * k);
+    for (let y = -ym; y < ym - 1e-9; y += step) {
+      const y2 = Math.min(y + step, ym), rm = Math.hypot(k, (y + y2) / 2);
+      const bi = Math.max(0, Math.min(3, Math.floor((1 - rm / RCLIP) * 4)));
+      segTo(buckets[bi], [k, y, 0], [k, y2, 0]); buckets[bi].pen = null;
+      segTo(buckets[bi], [y, k, 0], [y2, k, 0]); buckets[bi].pen = null;
+    }
+  }
+  buckets.forEach((p, i) => strokeP(ctx, p, rgba(C.sphere, 0.05 + i * 0.05), 1));
+  /* axes */
+  const ax = mkPath();
+  segTo(ax, [-RCLIP, 0, 0], [RCLIP, 0, 0]); ax.pen = null;
+  segTo(ax, [0, -RCLIP, 0], [0, RCLIP, 0]);
+  strokeP(ctx, ax, rgba(C.ink, 0.42), 1.2);
+  const re = P3([1.75, 0, 0]), im = P3([0, 1.75, 0]);
+  label3(re[0], re[1] + 16, 'Re', C.muted);
+  label3(im[0], im[1] + 16, 'Im', C.muted);
+}
+
+function drawPlaneObjects(ctx, G) {
+  /* equator = unit circle */
+  const ef = mkPath(), eb = mkPath();
+  addSph(EQ, null, ef, eb);
+  strokeP(ctx, eb, rgba(C.sphere, 0.4), 1.4);
+  strokeP(ctx, ef, rgba(C.sphere, 0.9), 1.6);
+
+  if (S.mode === 'projection') {
+    if (!G.rz.clipped) planeDot(ctx, G.rz.Z, C.z, 'z', 'z');
+  } else if (S.mode === 'distance') {
+    if (!S.wInf && !G.rz.clipped && !G.rw.clipped) {
+      const p = mkPath(); segTo(p, G.rz.Z, G.rw.Z); strokeP(ctx, p, rgba(C.ink, 0.5), 1.3, [3, 4]);
+    }
+    if (!G.rz.clipped) planeDot(ctx, G.rz.Z, C.z, 'z', 'z');
+    if (!S.wInf && !G.rw.clipped) planeDot(ctx, G.rw.Z, C.w, 'z′', 'w');
+  } else {
+    const cg = G.cg, p = mkPath();
+    for (let i = 0; i < cg.img.length - 1; i++) {
+      const a = cg.img[i], b = cg.img[i + 1];
+      if (!a || !b) continue;
+      if (Math.hypot(a[0], a[1]) > RCLIP || Math.hypot(b[0], b[1]) > RCLIP) continue;
+      segTo(p, [a[0], a[1], 0], [b[0], b[1], 0]);
+    }
+    strokeP(ctx, p, C.circ, 2.4);
+  }
+}
+
+function draw3d() {
+  const cv = $('cv3'), ctx = cv.getContext('2d');
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  setCam(w, h);
+  handles3 = []; labels3 = [];
+  const G = { rz: rayParts(S.zx, S.zy), rw: rayParts(S.wx, S.wy), cg: S.mode === 'circles' ? circleGeom() : null };
+  const above = S.pitch >= 0;
+  drawHalf(ctx, above ? 'lower' : 'upper', G);
+  drawPlane(ctx, G);
+  /* translucent body of the sphere */
+  const R = cam.s * D / Math.sqrt(D * D - 1);
+  const g = ctx.createRadialGradient(cam.cx - R * 0.35, cam.cy - R * 0.4, R * 0.05, cam.cx, cam.cy, R);
+  g.addColorStop(0, rgba(C.sphere, 0.02));
+  g.addColorStop(1, rgba(C.sphere, 0.17));
+  ctx.beginPath(); ctx.arc(cam.cx, cam.cy, R, 0, TAU);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = rgba(C.sphere, 0.7); ctx.lineWidth = 1.2; ctx.stroke();
+  drawPlaneObjects(ctx, G);
+  if (G.cg) {
+    ctx.beginPath();
+    G.cg.pts.forEach((q, i) => { const A = P3(q); if (i === 0) ctx.moveTo(A[0], A[1]); else ctx.lineTo(A[0], A[1]); });
+    ctx.fillStyle = rgba(C.circ, 0.09); ctx.fill();
+  }
+  drawHalf(ctx, above ? 'upper' : 'lower', G);
+  /* labels on top */
+  ctx.font = 'italic 600 18px "STIX Two Text", Cambria, "Times New Roman", serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin = 'round';
+  for (const L of labels3) {
+    ctx.textAlign = L.center ? 'center' : 'left';
+    ctx.strokeStyle = C.stage; ctx.lineWidth = 4; ctx.strokeText(L.text, L.x, L.y);
+    ctx.fillStyle = L.color; ctx.fillText(L.text, L.x, L.y);
+  }
+}
+
+/* ---------- 2D drawing ---------- */
+let handles2 = [], k2 = 40, o2 = [0, 0];
+function draw2d() {
+  const cv = $('cv2'), ctx = cv.getContext('2d');
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const k = Math.min(w, h) / 7 * S.zoom2, ox = w / 2, oy = h / 2;
+  k2 = k; o2 = [ox, oy];
+  const X = x => ox + x * k, Y = y => oy - y * k;
+  handles2 = [];
+
+  const step = k >= 26 ? 1 : k >= 11 ? 2 : 5;
+  ctx.beginPath();
+  for (let i = Math.ceil(-ox / k / step) * step; i * k <= w - ox; i += step) { ctx.moveTo(X(i), 0); ctx.lineTo(X(i), h); }
+  for (let j = Math.ceil(-(h - oy) / k / step) * step; j * k <= oy; j += step) { ctx.moveTo(0, Y(j)); ctx.lineTo(w, Y(j)); }
+  ctx.strokeStyle = rgba(C.sphere, 0.14); ctx.lineWidth = 1; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(w, oy); ctx.moveTo(ox, 0); ctx.lineTo(ox, h);
+  ctx.strokeStyle = rgba(C.ink, 0.45); ctx.lineWidth = 1.2; ctx.stroke();
+
+  /* unit circle: image of the equator */
+  ctx.beginPath(); ctx.arc(ox, oy, k, 0, TAU);
+  ctx.fillStyle = rgba(C.sphere, 0.07); ctx.fill();
+  ctx.strokeStyle = rgba(C.sphere, 0.9); ctx.lineWidth = 1.6; ctx.stroke();
+
+  const serif = 'italic 600 17px "STIX Two Text", Cambria, "Times New Roman", serif';
+  const small = '500 12px "Hanken Grotesk", system-ui, sans-serif';
+  ctx.font = small; ctx.fillStyle = C.muted; ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'right'; ctx.fillText('Re', w - 8, oy - 7);
+  ctx.textAlign = 'left'; ctx.fillText('Im', ox + 7, 15);
+  ctx.fillText('1', X(1) + 5, oy + 15);
+  ctx.fillText('i', ox + 6, Y(1) - 5);
+  ctx.textAlign = 'left';
+  ctx.fillText('|z| = 1 is the equator', 10, h - 10);
+
+  function text(t, x, y, color) {
+    ctx.font = serif; ctx.textAlign = 'left';
+    ctx.strokeStyle = C.stage; ctx.lineWidth = 4; ctx.strokeText(t, x, y);
+    ctx.fillStyle = color; ctx.fillText(t, x, y);
+  }
+  function point(x, y, color, name, id) {
+    const px = X(x), py = Y(y), pad = 16;
+    if (px < pad || px > w - pad || py < pad || py > h - pad) {
+      /* off screen: arrow on the border pointing toward it */
+      const dx = px - ox, dy = py - oy;
+      const t = Math.min((ox - pad) / Math.abs(dx || 1e-9), (oy - pad) / Math.abs(dy || 1e-9));
+      const bx = ox + dx * t, by = oy + dy * t, l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l;
+      ctx.beginPath();
+      ctx.moveTo(bx + ux * 8, by + uy * 8);
+      ctx.lineTo(bx - ux * 6 - uy * 6, by - uy * 6 + ux * 6);
+      ctx.lineTo(bx - ux * 6 + uy * 6, by - uy * 6 - ux * 6);
+      ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+      text(name, Math.min(Math.max(bx - ux * 24 - 4, 6), w - 22), Math.min(Math.max(by - uy * 24 + 6, 18), h - 8), color);
+      return;
+    }
+    ctx.beginPath(); ctx.arc(px, py, 6.5, 0, TAU);
+    ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = C.stage; ctx.lineWidth = 1.5; ctx.stroke();
+    text(name, px + 10, py - 9, color);
+    if (id) handles2.push({ id, x: px, y: py });
+  }
+
+  if (S.mode === 'projection') {
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(X(S.zx), Y(S.zy));
+    ctx.strokeStyle = rgba(C.z, 0.5); ctx.lineWidth = 1.3; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+    point(S.zx, S.zy, C.z, 'z', 'z');
+  } else if (S.mode === 'distance') {
+    if (!S.wInf) {
+      ctx.beginPath(); ctx.moveTo(X(S.zx), Y(S.zy)); ctx.lineTo(X(S.wx), Y(S.wy));
+      ctx.strokeStyle = rgba(C.ink, 0.55); ctx.lineWidth = 1.4; ctx.setLineDash([3, 5]); ctx.stroke(); ctx.setLineDash([]);
+      point(S.wx, S.wy, C.w, 'z′', 'w');
+    } else {
+      ctx.font = small; ctx.textAlign = 'right'; ctx.fillStyle = C.w;
+      ctx.fillText('z′ = ∞ has no place in the plane', w - 10, h - 10);
+    }
+    point(S.zx, S.zy, C.z, 'z', 'z');
+  } else {
+    const cg = circleGeom();
+    ctx.strokeStyle = C.circ; ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    if (cg.isLine) {
+      /* a1 x + a2 y = a0 */
+      const n = Math.hypot(cg.a[0], cg.a[1]) || 1, nx = cg.a[0] / n, ny = cg.a[1] / n, d = cg.a0 / n;
+      const L = (w + h) / k + Math.abs(d) + 4;
+      ctx.moveTo(X(nx * d - ny * L), Y(ny * d + nx * L));
+      ctx.lineTo(X(nx * d + ny * L), Y(ny * d - nx * L));
+    } else {
+      ctx.arc(X(cg.center[0]), Y(cg.center[1]), cg.radius * k, 0, TAU);
+    }
+    ctx.stroke();
+    if (!cg.isLine) {
+      const px = X(cg.center[0]), py = Y(cg.center[1]);
+      if (px > 4 && px < w - 4 && py > 4 && py < h - 4) {
+        ctx.beginPath(); ctx.moveTo(px - 5, py); ctx.lineTo(px + 5, py); ctx.moveTo(px, py - 5); ctx.lineTo(px, py + 5);
+        ctx.strokeStyle = C.circ; ctx.lineWidth = 1.6; ctx.stroke();
+      }
+    }
+  }
+}
+
+/* ---------- readouts ---------- */
+function setText(id, html) { const el = $(id); if (el.innerHTML !== html) el.innerHTML = html; }
+function updateDom() {
+  for (const m of MODES) {
+    $('ctl-' + m).hidden = m !== S.mode;
+    $('fx-' + m).hidden = m !== S.mode;
+    $('tab-' + m).setAttribute('aria-selected', m === S.mode ? 'true' : 'false');
+  }
+  const r = Math.hypot(S.zx, S.zy), P = sph(S.zx, S.zy);
+  if (S.mode === 'projection') {
+    setText('p-z', '<span class="m">' + fmtC(S.zx, S.zy) + '</span>');
+    setText('p-x1', fmt(P[0]));
+    setText('p-x2', fmt(P[1]));
+    setText('p-x3', fmt(P[2], r > 20 ? 6 : 3));
+    setText('p-m2', fmt(r * r, 3));
+    setText('p-chip', r > 1.0005 ? 'Northern hemisphere, |z| &gt; 1' : r < 0.9995 ? 'Southern hemisphere, |z| &lt; 1' : 'On the equator, |z| = 1');
+    setText('out-mod', fmt(r, r < 10 ? 2 : 1));
+    setText('out-arg', fmt(S.arg * 180 / Math.PI, 0) + '°');
+    $('in-mod').value = Math.max(-2, Math.min(3, Math.log10(Math.max(r, 1e-9))));
+    $('in-arg').value = S.arg * 180 / Math.PI;
+  } else if (S.mode === 'circles') {
+    const cg = circleGeom(), a = cg.a;
+    const x1 = '<i>x</i><sub>1</sub>', x2 = '<i>x</i><sub>2</sub>', x3 = '<i>x</i><sub>3</sub>';
+    setText('c-plane', equation([[a[0], x1], [a[1], x2], [a[2], x3]], fmt(cg.a0, 2)));
+    if (cg.isLine) {
+      setText('c-image', equation([[a[0], '<i>x</i>'], [a[1], '<i>y</i>']], fmt(cg.a0, 2)));
+      setText('c-chip', 'Straight line: the circle on the sphere passes through N');
+      $('c-chip').classList.add('line');
+    } else {
+      setText('c-image', equation([[cg.k, '(<i>x</i><sup>2</sup> + <i>y</i><sup>2</sup>)'], [-2 * a[0], '<i>x</i>'], [-2 * a[1], '<i>y</i>'], [cg.a0 + a[2], '']], '0'));
+      setText('c-chip', 'Circle with centre <span class="m">' + fmtC(cg.center[0], cg.center[1]) + '</span> and radius ' + fmt(cg.radius, 2));
+      $('c-chip').classList.remove('line');
+    }
+    setText('c-k', fmt(cg.isLine ? 0 : cg.k, 3));
+    setText('out-th', fmt(S.th, 1) + '°');
+    setText('out-ph', fmt(S.ph, 0) + '°');
+    setText('out-a0', fmt(S.a0, 2));
+    $('in-th').value = S.th; $('in-ph').value = S.ph; $('in-a0').value = S.a0;
+    $('in-rays').checked = S.rays;
+  } else {
+    const Q = S.wInf ? NP : sph(S.wx, S.wy);
+    const chord = Math.sqrt(Math.max(0, 2 - 2 * dot(P, Q)));
+    let d;
+    if (S.wInf) {
+      d = 2 / Math.sqrt(1 + r * r);
+      setText('d-inf', fmt(d));
+      setText('d-plane', '∞');
+      setText('d-w', '<span class="m">∞</span>');
+    } else {
+      const rw = Math.hypot(S.wx, S.wy), dz = Math.hypot(S.zx - S.wx, S.zy - S.wy);
+      d = 2 * dz / Math.sqrt((1 + r * r) * (1 + rw * rw));
+      setText('d-fin', fmt(d));
+      setText('d-plane', fmt(dz));
+      setText('d-w', '<span class="m">' + fmtC(S.wx, S.wy) + '</span>');
+    }
+    $('d-row-fin').hidden = S.wInf;
+    $('d-row-inf').hidden = !S.wInf;
+    setText('d-chord', fmt(chord));
+    setText('d-z', '<span class="m">' + fmtC(S.zx, S.zy) + '</span>');
+    $('meter-fill').style.width = Math.max(0, Math.min(100, d / 2 * 100)) + '%';
+    $('in-winf').checked = S.wInf;
+  }
+}
+
+let raf = 0;
+function render() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => { raf = 0; updateDom(); draw3d(); draw2d(); });
+}
+
+/* ---------- state changes ---------- */
+let anim = 0;
+function stopAnim() { if (anim) { cancelAnimationFrame(anim); anim = 0; } }
+function setZ(x, y) {
+  S.zx = x; S.zy = y;
+  if (Math.hypot(x, y) > 1e-9) S.arg = Math.atan2(y, x);
+}
+function setMode(m, fromHash) {
+  if (!MODES.includes(m)) return;
+  stopAnim();
+  S.mode = m;
+  if (!fromHash) { try { if (location.hash !== '#' + m) location.hash = m; } catch (e) {} }
+  render();
+}
+function sendToInfinity() {
+  stopAnim();
+  const r0 = Math.max(Math.hypot(S.zx, S.zy), 0.05), ang = S.arg, target = 1000;
+  if (reducedMotion) { setZ(target * Math.cos(ang), target * Math.sin(ang)); render(); return; }
+  const L0 = Math.log(r0), L1 = Math.log(target), t0 = performance.now(), dur = 2800;
+  const stepFn = t => {
+    const u = Math.min(1, (t - t0) / dur), e = u * u * (3 - 2 * u), r = Math.exp(L0 + (L1 - L0) * e);
+    setZ(r * Math.cos(ang), r * Math.sin(ang));
+    render();
+    anim = u < 1 ? requestAnimationFrame(stepFn) : 0;
+  };
+  anim = requestAnimationFrame(stepFn);
+}
+
+/* ---------- pointer handling ---------- */
+function localXY(cv, e) { const b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; }
+function nearest(list, x, y, rad) {
+  let best = null, bd = rad;
+  for (const hnd of list) { const d = Math.hypot(hnd.x - x, hnd.y - y); if (d < bd) { bd = d; best = hnd; } }
+  return best;
+}
+function moveSpherePoint(id, x, y) {
+  const p = hitSphere(x, y);
+  if (id === 'a') {
+    S.th = Math.acos(Math.max(-1, Math.min(1, p[2]))) * 180 / Math.PI;
+    S.ph = Math.atan2(p[1], p[0]) * 180 / Math.PI;
+    return;
+  }
+  if (p[2] > 0.9995) { const h = Math.hypot(p[0], p[1]) || 1, s = Math.sqrt(1 - 0.9995 * 0.9995); p[0] = p[0] / h * s; p[1] = p[1] / h * s; p[2] = 0.9995; }
+  const z = ster(p);
+  if (id === 'P') setZ(z[0], z[1]); else { S.wx = z[0]; S.wy = z[1]; }
+}
+function movePlanePoint(id, x, y) {
+  const z = hitPlane(x, y);
+  if (id === 'z') setZ(z[0], z[1]); else { S.wx = z[0]; S.wy = z[1]; }
+}
+function setup3d() {
+  const cv = $('cv3');
+  let drag = null;
+  cv.addEventListener('pointerdown', e => {
+    const [x, y] = localXY(cv, e);
+    stopAnim();
+    const hnd = nearest(handles3, x, y, 20);
+    drag = hnd ? { id: hnd.id } : { id: 'orbit', x, y };
+    cv.setPointerCapture(e.pointerId);
+    cv.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', e => {
+    const [x, y] = localXY(cv, e);
+    if (!drag) { cv.style.cursor = nearest(handles3, x, y, 20) ? 'pointer' : 'grab'; return; }
+    if (drag.id === 'orbit') {
+      S.yaw -= (x - drag.x) * 0.008;
+      S.pitch = Math.max(-1.35, Math.min(1.45, S.pitch + (y - drag.y) * 0.008));
+      drag.x = x; drag.y = y;
+    } else if (drag.id === 'z' || drag.id === 'w') movePlanePoint(drag.id, x, y);
+    else moveSpherePoint(drag.id, x, y);
+    render();
+  });
+  const end = () => { drag = null; cv.style.cursor = 'grab'; };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  cv.style.cursor = 'grab';
+}
+function setup2d() {
+  const cv = $('cv2');
+  let drag = null;
+  const place = (id, x, y) => {
+    const zx = (x - o2[0]) / k2, zy = -(y - o2[1]) / k2;
+    if (id === 'z') setZ(zx, zy); else { S.wx = zx; S.wy = zy; }
+    render();
+  };
+  cv.addEventListener('pointerdown', e => {
+    const [x, y] = localXY(cv, e);
+    stopAnim();
+    const hnd = nearest(handles2, x, y, 22);
+    if (hnd) drag = hnd.id;
+    else if (S.mode === 'projection') { drag = 'z'; place('z', x, y); }
+    else return;
+    cv.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', e => {
+    const [x, y] = localXY(cv, e);
+    if (!drag) { cv.style.cursor = nearest(handles2, x, y, 22) ? 'grab' : (S.mode === 'projection' ? 'crosshair' : 'default'); return; }
+    place(drag, x, y);
+  });
+  const end = () => { drag = null; };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+}
+
+/* ---------- controls ---------- */
+function setupControls() {
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  window.addEventListener('hashchange', () => setMode(location.hash.slice(1), true));
+
+  $('in-mod').addEventListener('input', e => {
+    stopAnim();
+    const r = Math.pow(10, parseFloat(e.target.value));
+    S.zx = r * Math.cos(S.arg); S.zy = r * Math.sin(S.arg); render();
+  });
+  $('in-arg').addEventListener('input', e => {
+    stopAnim();
+    const r = Math.hypot(S.zx, S.zy);
+    S.arg = parseFloat(e.target.value) * Math.PI / 180;
+    S.zx = r * Math.cos(S.arg); S.zy = r * Math.sin(S.arg); render();
+  });
+  document.querySelectorAll('button[data-z]').forEach(b => b.addEventListener('click', () => {
+    stopAnim();
+    const [x, y] = b.dataset.z.split(',').map(Number);
+    setZ(x, y); render();
+  }));
+  $('btn-inf').addEventListener('click', sendToInfinity);
+
+  $('in-th').addEventListener('input', e => { S.th = parseFloat(e.target.value); render(); });
+  $('in-ph').addEventListener('input', e => { S.ph = parseFloat(e.target.value); render(); });
+  $('in-a0').addEventListener('input', e => { S.a0 = parseFloat(e.target.value); render(); });
+  $('in-rays').addEventListener('change', e => { S.rays = e.target.checked; render(); });
+  $('btn-through').addEventListener('click', () => { S.th = Math.acos(S.a0) * 180 / Math.PI; render(); });
+  $('btn-great').addEventListener('click', () => { S.a0 = 0; render(); });
+  $('btn-parallel').addEventListener('click', () => { S.th = 0; if (S.a0 < 0.05) S.a0 = 0.5; render(); });
+  $('btn-meridian').addEventListener('click', () => { S.th = 90; S.a0 = 0; render(); });
+
+  $('in-winf').addEventListener('change', e => { S.wInf = e.target.checked; render(); });
+  $('btn-anti').addEventListener('click', () => {
+    const m = S.zx * S.zx + S.zy * S.zy;
+    S.wInf = m < 1e-8;
+    if (!S.wInf) { S.wx = -S.zx / m; S.wy = -S.zy / m; }   /* z' = -1 / conj(z) */
+    render();
+  });
+  $('btn-far').addEventListener('click', () => { S.wInf = false; setZ(18, 6); S.wx = -14; S.wy = 16; render(); });
+  $('btn-dreset').addEventListener('click', () => { S.wInf = false; setZ(DEFAULTS.zx, DEFAULTS.zy); S.wx = DEFAULTS.wx; S.wy = DEFAULTS.wy; render(); });
+
+  const zoom = (key, f) => { S[key] = Math.max(0.3, Math.min(4, S[key] * f)); render(); };
+  $('z2-in').addEventListener('click', () => zoom('zoom2', 1.3));
+  $('z2-out').addEventListener('click', () => zoom('zoom2', 1 / 1.3));
+  $('z3-in').addEventListener('click', () => zoom('zoom3', 1.2));
+  $('z3-out').addEventListener('click', () => zoom('zoom3', 1 / 1.2));
+  $('view-reset').addEventListener('click', () => { S.yaw = DEFAULTS.yaw; S.pitch = DEFAULTS.pitch; S.zoom3 = 1; render(); });
+}
+
+/* ---------- sizing and theme ---------- */
+function fitCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  for (const id of ['cv3', 'cv2']) {
+    const cv = $(id), w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
+    if (w && h && (cv.width !== w || cv.height !== h)) { cv.width = w; cv.height = h; }
+  }
+  render();
+}
+
+function start(saved) {
+  if (saved && typeof saved === 'object') {
+    for (const key of Object.keys(DEFAULTS)) if (typeof saved[key] === typeof DEFAULTS[key]) S[key] = saved[key];
+  }
+  const h = location.hash.slice(1);
+  if (MODES.includes(h)) S.mode = h;
+  readColors();
+  setupControls(); setup3d(); setup2d();
+  new ResizeObserver(fitCanvases).observe($('cv3').parentElement);
+  new ResizeObserver(fitCanvases).observe($('cv2').parentElement);
+  new MutationObserver(() => { readColors(); render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); render(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+  fitCanvases();
+}
+
+const hot = window.claude && window.claude.hot;
+if (hot && hot.snapshot) hot.snapshot(() => Object.assign({}, S));
+if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>

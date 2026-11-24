@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3D Determinant: Parallelepiped → Box</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { min-height: 100vh; background: linear-gradient(145deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
+    color: #e2e8f0; font-family: 'JetBrains Mono', monospace; padding: 16px; overflow-x: hidden; }
+  input[type="range"] { cursor: pointer; accent-color: #6366f1; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback, useMemo } = React;
+
+/* ─── 3D math ─── */
+const v3 = {
+  add: (a,b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]],
+  sub: (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]],
+  scale: (s,v) => [s*v[0], s*v[1], s*v[2]],
+  len: v => Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]),
+  cross: (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
+  dot: (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+};
+
+function det3(M) {
+  return M[0][0]*(M[1][1]*M[2][2]-M[1][2]*M[2][1])
+       - M[0][1]*(M[1][0]*M[2][2]-M[1][2]*M[2][0])
+       + M[0][2]*(M[1][0]*M[2][1]-M[1][1]*M[2][0]);
+}
+
+function rotateView(p, th, ph) {
+  const x1 = p[0]*Math.cos(th) + p[2]*Math.sin(th);
+  const y1 = p[1];
+  const z1 = -p[0]*Math.sin(th) + p[2]*Math.cos(th);
+  return [x1, y1*Math.cos(ph)-z1*Math.sin(ph), y1*Math.sin(ph)+z1*Math.cos(ph)];
+}
+
+/* ─── Gaussian elimination: 6 shear steps ─── */
+function getMatrix(M0, t) {
+  let M = M0.map(r => [...r]);
+  const ops = [
+    // Column ops (zero upper triangle)
+    (M,s) => { // C₂ -= (M01/M00)*C₁
+      if (Math.abs(M[0][0])<1e-9) return M.map(r=>[...r]);
+      const r=s*M[0][1]/M[0][0]; return M.map(row=>[row[0], row[1]-r*row[0], row[2]]);
+    },
+    (M,s) => { // C₃ -= (M02/M00)*C₁
+      if (Math.abs(M[0][0])<1e-9) return M.map(r=>[...r]);
+      const r=s*M[0][2]/M[0][0]; return M.map(row=>[row[0], row[1], row[2]-r*row[0]]);
+    },
+    (M,s) => { // C₃ -= (M12/M11)*C₂
+      if (Math.abs(M[1][1])<1e-9) return M.map(r=>[...r]);
+      const r=s*M[1][2]/M[1][1]; return M.map(row=>[row[0], row[1], row[2]-r*row[1]]);
+    },
+    // Row ops (zero lower triangle)
+    (M,s) => { // R₂ -= (M10/M00)*R₁
+      if (Math.abs(M[0][0])<1e-9) return M.map(r=>[...r]);
+      const r=s*M[1][0]/M[0][0]; return [M[0].slice(), M[1].map((v,j)=>v-r*M[0][j]), M[2].slice()];
+    },
+    (M,s) => { // R₃ -= (M20/M00)*R₁
+      if (Math.abs(M[0][0])<1e-9) return M.map(r=>[...r]);
+      const r=s*M[2][0]/M[0][0]; return [M[0].slice(), M[1].slice(), M[2].map((v,j)=>v-r*M[0][j])];
+    },
+    (M,s) => { // R₃ -= (M21/M11)*R₂
+      if (Math.abs(M[1][1])<1e-9) return M.map(r=>[...r]);
+      const r=s*M[2][1]/M[1][1]; return [M[0].slice(), M[1].slice(), M[2].map((v,j)=>v-r*M[1][j])];
+    },
+  ];
+  for (let k=0; k<6; k++) { if (t<=k) break; M = ops[k](M, Math.min(1, t-k)); }
+  return M;
+}
+
+const STEP_INFO = [
+  { label: "C₂ − (b/a)·C₁", phase: "col", desc: "Zero top of col 2" },
+  { label: "C₃ − (c/a)·C₁", phase: "col", desc: "Zero top of col 3" },
+  { label: "C₃ − (f′/e′)·C₂", phase: "col", desc: "Zero mid of col 3 → Upper △" },
+  { label: "R₂ − (d/a)·R₁", phase: "row", desc: "Zero left of row 2" },
+  { label: "R₃ − (g/a)·R₁", phase: "row", desc: "Zero left of row 3" },
+  { label: "R₃ − (h′/e′)·R₂", phase: "row", desc: "Zero mid of row 3 → Diagonal" },
+];
+
+/* ─── Parallelepiped geometry ─── */
+function makeParallelepiped(c1, c2, c3) {
+  const O = [0,0,0];
+  const verts = [O, c1, c2, c3, v3.add(c1,c2), v3.add(c1,c3), v3.add(c2,c3), v3.add(v3.add(c1,c2),c3)];
+  const faces = [
+    { vi: [0,1,4,2], clr: [34,211,238] },   // c1-c2
+    { vi: [3,5,7,6], clr: [34,211,238] },
+    { vi: [0,1,5,3], clr: [245,158,11] },   // c1-c3
+    { vi: [2,4,7,6], clr: [245,158,11] },
+    { vi: [0,2,6,3], clr: [167,139,250] },  // c2-c3
+    { vi: [1,4,7,5], clr: [167,139,250] },
+  ];
+  const edges = [[0,1],[0,2],[0,3],[1,4],[1,5],[2,4],[2,6],[3,5],[3,6],[4,7],[5,7],[6,7]];
+  return { verts, faces, edges };
+}
+
+/* ─── Main App ─── */
+function App() {
+  const [entries, setEntries] = useState([3,1,1, 1,3,1, 1,1,3]);
+  const [t, setT] = useState(0);
+  const [theta, setTheta] = useState(-0.65);
+  const [phi, setPhi] = useState(0.5);
+  const [playing, setPlaying] = useState(false);
+  const dragRef = useRef(null);
+  const animRef = useRef(null);
+  const lastRef = useRef(null);
+
+  const M0 = useMemo(() => [[entries[0],entries[1],entries[2]], [entries[3],entries[4],entries[5]], [entries[6],entries[7],entries[8]]], [entries]);
+  const M = useMemo(() => getMatrix(M0, t), [M0, t]);
+  const det = det3(M0);
+
+  const cols = [[M[0][0],M[1][0],M[2][0]], [M[0][1],M[1][1],M[2][1]], [M[0][2],M[1][2],M[2][2]]];
+  const colsOrig = [[M0[0][0],M0[1][0],M0[2][0]], [M0[0][1],M0[1][1],M0[2][1]], [M0[0][2],M0[1][2],M0[2][2]]];
+
+  const ppCur = makeParallelepiped(cols[0], cols[1], cols[2]);
+  const ppOrig = makeParallelepiped(colsOrig[0], colsOrig[1], colsOrig[2]);
+
+  const SC = 40, CX = 315, CY = 235;
+  const proj = p => { const r = rotateView(p, theta, phi); return { x: CX+r[0]*SC, y: CY-r[1]*SC, z: r[2] }; };
+
+  const pvCur = ppCur.verts.map(proj);
+  const pvOrig = ppOrig.verts.map(proj);
+
+  // Sort faces by depth
+  const sortedFaces = ppCur.faces.map((f,i) => ({
+    ...f, i, avgZ: f.vi.reduce((s,vi) => s+pvCur[vi].z, 0)/4
+  })).sort((a,b) => a.avgZ - b.avgZ);
+
+  // Mouse drag
+  const onMD = e => { dragRef.current = { x: e.clientX, y: e.clientY, th: theta, ph: phi }; };
+  const onMM = e => { if (!dragRef.current) return;
+    setTheta(dragRef.current.th + (e.clientX - dragRef.current.x) * 0.007);
+    setPhi(Math.max(-1.3, Math.min(1.3, dragRef.current.ph + (e.clientY - dragRef.current.y) * 0.007)));
+  };
+  const onMU = () => { dragRef.current = null; };
+  const onTS = e => { const tc = e.touches[0]; dragRef.current = { x: tc.clientX, y: tc.clientY, th: theta, ph: phi }; };
+  const onTM = e => { if (!dragRef.current) return; e.preventDefault(); const tc = e.touches[0];
+    setTheta(dragRef.current.th + (tc.clientX - dragRef.current.x) * 0.007);
+    setPhi(Math.max(-1.3, Math.min(1.3, dragRef.current.ph + (tc.clientY - dragRef.current.y) * 0.007)));
+  };
+  const onTE = () => { dragRef.current = null; };
+
+  // Animation
+  const animate = useCallback(ts => {
+    if (!lastRef.current) lastRef.current = ts;
+    const dt = (ts - lastRef.current) / 1000;
+    lastRef.current = ts;
+    setT(prev => { const n = prev + dt * 0.7; if (n >= 6) { setPlaying(false); return 6; } return n; });
+    animRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  useEffect(() => {
+    if (playing) { lastRef.current = null; animRef.current = requestAnimationFrame(animate); }
+    else if (animRef.current) cancelAnimationFrame(animRef.current);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [playing, animate]);
+
+  const reset = () => { setPlaying(false); setT(0); };
+  const playAnim = () => { setT(0); setPlaying(true); };
+
+  const setEntry = (i, v) => { const e = [...entries]; e[i] = v; setEntries(e); reset(); };
+
+  const stepIdx = Math.min(5, Math.floor(t));
+  const isDiag = t >= 5.99;
+  const isUpperTri = t >= 2.99 && t < 5.99;
+
+  const fmt = v => Math.abs(v) < 0.005 ? "0" : v.toFixed(2);
+
+  // Axis endpoints
+  const axLen = 5;
+  const axes = [
+    { to: [axLen,0,0], c: "#ef4444", l: "x" },
+    { to: [0,axLen,0], c: "#22c55e", l: "y" },
+    { to: [0,0,axLen], c: "#3b82f6", l: "z" },
+  ];
+
+  const entryNames = ["a","b","c","d","e","f","g","h","i"];
+  const entryColors = ["#f59e0b","#60a5fa","#a78bfa","#f59e0b","#60a5fa","#a78bfa","#f59e0b","#60a5fa","#a78bfa"];
+
+  return (
+    <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "12px" }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "24px", fontWeight: 900,
+          background: "linear-gradient(135deg, #22d3ee, #f59e0b, #4ade80, #a78bfa)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>
+          3D Determinant: Parallelepiped → Box
+        </h1>
+        <p style={{ color: "#64748b", fontSize: "11px", margin: "4px 0 0" }}>
+          Six shears (3 column ops + 3 row ops) reduce to a box &middot; Volume = |det| throughout &middot; Drag to rotate
+        </p>
+      </div>
+
+      <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", justifyContent: "center" }}>
+        {/* ─── Sidebar ─── */}
+        <div style={{ width: "220px", flexShrink: 0 }}>
+          {/* Matrix entries */}
+          <div style={{ background: "rgba(15,23,42,0.8)", border: "1px solid #1e293b", borderRadius: "10px", padding: "12px", marginBottom: "10px" }}>
+            <h3 style={{ margin: "0 0 8px", fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.5px" }}>Matrix entries</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px" }}>
+              {entries.map((v, i) => (
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "9px", color: entryColors[i], marginBottom: "1px" }}>{entryNames[i]}</div>
+                  <div style={{ fontSize: "12px", color: entryColors[i], fontWeight: 700 }}>{v.toFixed(1)}</div>
+                  <input type="range" min={-4} max={4} step={0.1} value={v}
+                    onChange={e => setEntry(i, Number(e.target.value))}
+                    style={{ width: "100%", height: "12px", accentColor: entryColors[i] }} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Presets */}
+          <div style={{ background: "rgba(15,23,42,0.8)", border: "1px solid #1e293b", borderRadius: "10px", padding: "12px", marginBottom: "10px" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.5px" }}>Presets</h3>
+            {[
+              { name: "[3 1 1; 1 3 1; 1 1 3]  det=20", e: [3,1,1,1,3,1,1,1,3] },
+              { name: "[2 1 0; 0 2 1; 1 0 2]  det=9", e: [2,1,0,0,2,1,1,0,2] },
+              { name: "[3 0 1; 1 2 0; 0 1 3]  det=17", e: [3,0,1,1,2,0,0,1,3] },
+              { name: "[1 2 0; 0 1 2; 2 0 1]  det=9", e: [1,2,0,0,1,2,2,0,1] },
+              { name: "[2 1 1; 1 1 2; 1 2 1]  det=−4", e: [2,1,1,1,1,2,1,2,1] },
+              { name: "Identity  det=1", e: [1,0,0,0,1,0,0,0,1] },
+            ].map(p => (
+              <button key={p.name} onClick={() => { setEntries(p.e); reset(); }}
+                onMouseEnter={e => e.target.style.background = "rgba(99,102,241,0.3)"}
+                onMouseLeave={e => e.target.style.background = "rgba(99,102,241,0.12)"}
+                style={{ display: "block", width: "100%", padding: "4px 7px", marginBottom: "3px",
+                  background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+                  borderRadius: "5px", color: "#a5b4fc", fontSize: "9px", cursor: "pointer", textAlign: "left" }}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Step info */}
+          <div style={{ background: "rgba(15,23,42,0.8)", border: "1px solid #1e293b", borderRadius: "10px", padding: "12px", marginBottom: "10px" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.5px" }}>Elimination steps</h3>
+            {STEP_INFO.map((s, i) => {
+              const active = Math.floor(t) === i && t < 6;
+              const done = t > i + 1 || (t >= 6 && true);
+              const phaseColor = s.phase === "col" ? "#22d3ee" : "#f59e0b";
+              return (
+                <div key={i} onClick={() => { setPlaying(false); setT(i); }}
+                  style={{ padding: "3px 6px", marginBottom: "2px", borderRadius: "4px", cursor: "pointer",
+                    background: active ? `${phaseColor}18` : "transparent",
+                    borderLeft: `3px solid ${done ? "#4ade80" : active ? phaseColor : "#1e293b"}`,
+                    opacity: done ? 0.6 : active ? 1 : 0.45, transition: "all 0.2s" }}>
+                  <div style={{ fontSize: "10px", color: phaseColor, fontWeight: active ? 700 : 400 }}>
+                    {i+1}. {s.label}
+                  </div>
+                  <div style={{ fontSize: "8px", color: "#64748b" }}>{s.desc}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Det readout */}
+          <div style={{ background: "rgba(15,23,42,0.8)", border: "1px solid #1e293b", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+            <div style={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Volume = |det|</div>
+            <div style={{ fontSize: "22px", fontWeight: 900, color: isDiag ? "#4ade80" : "#34d399" }}>
+              {Math.abs(det).toFixed(3)}
+            </div>
+            <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>
+              {isDiag && `= |${fmt(M[0][0])} × ${fmt(M[1][1])} × ${fmt(M[2][2])}|`}
+              {!isDiag && `ad−bc generalized to 3×3`}
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Main area ─── */}
+        <div style={{ flex: "1 1 600px", maxWidth: "720px" }}>
+          {/* 3D viewport */}
+          <div style={{ background: "rgba(15,23,42,0.6)", border: "1px solid #1e293b", borderRadius: "12px", padding: "4px", marginBottom: "10px" }}>
+            <svg viewBox="0 0 630 430" width="100%"
+              style={{ display: "block", cursor: dragRef.current ? "grabbing" : "grab", userSelect: "none", touchAction: "none" }}
+              onMouseDown={onMD} onMouseMove={onMM} onMouseUp={onMU} onMouseLeave={onMU}
+              onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}>
+              <rect width="630" height="430" fill="#070b14" rx="8" />
+
+              {/* Coordinate axes */}
+              {axes.map((ax, i) => {
+                const p0 = proj([0,0,0]), p1 = proj(ax.to);
+                const pNeg = proj(v3.scale(-0.5, ax.to));
+                return (
+                  <g key={i}>
+                    <line x1={pNeg.x} y1={pNeg.y} x2={p1.x} y2={p1.y} stroke={ax.c} strokeWidth="1" opacity="0.25" />
+                    <text x={p1.x+4} y={p1.y-4} fill={ax.c} fontSize="11" fontWeight="600" opacity="0.5"
+                      fontFamily="'JetBrains Mono', monospace">{ax.l}</text>
+                  </g>
+                );
+              })}
+
+              {/* Ghost: original wireframe */}
+              {t > 0.05 && ppOrig.edges.map(([a,b], i) => (
+                <line key={`ge${i}`} x1={pvOrig[a].x} y1={pvOrig[a].y} x2={pvOrig[b].x} y2={pvOrig[b].y}
+                  stroke="#6366f1" strokeWidth="0.8" strokeDasharray="4,4" opacity="0.2" />
+              ))}
+
+              {/* Parallelepiped faces (sorted back to front) */}
+              {sortedFaces.map(f => {
+                const pts = f.vi.map(vi => `${pvCur[vi].x},${pvCur[vi].y}`).join(" ");
+                const [r,g,b] = f.clr;
+                return (
+                  <polygon key={f.i} points={pts}
+                    fill={`rgba(${r},${g},${b},${isDiag ? 0.3 : 0.18})`}
+                    stroke={`rgba(${r},${g},${b},${isDiag ? 0.8 : 0.5})`}
+                    strokeWidth={isDiag ? "2" : "1.5"} strokeLinejoin="round" />
+                );
+              })}
+
+              {/* Edges (current) */}
+              {ppCur.edges.map(([a,b], i) => (
+                <line key={`e${i}`} x1={pvCur[a].x} y1={pvCur[a].y} x2={pvCur[b].x} y2={pvCur[b].y}
+                  stroke="rgba(226,232,240,0.4)" strokeWidth="1" />
+              ))}
+
+              {/* Column vectors as arrows */}
+              {[
+                { c: cols[0], color: "#f59e0b", label: "C₁" },
+                { c: cols[1], color: "#60a5fa", label: "C₂" },
+                { c: cols[2], color: "#a78bfa", label: "C₃" },
+              ].map(({ c, color, label }, i) => {
+                const p0 = proj([0,0,0]), p1 = proj(c);
+                const dx = p1.x-p0.x, dy = p1.y-p0.y;
+                const len = Math.sqrt(dx*dx+dy*dy);
+                if (len < 2) return null;
+                const ux = dx/len, uy = dy/len;
+                const tipX = p1.x, tipY = p1.y;
+                const aSize = 8;
+                const a1x = tipX - aSize*ux + aSize*0.4*uy;
+                const a1y = tipY - aSize*uy - aSize*0.4*ux;
+                const a2x = tipX - aSize*ux - aSize*0.4*uy;
+                const a2y = tipY - aSize*uy + aSize*0.4*ux;
+                return (
+                  <g key={i}>
+                    <line x1={p0.x} y1={p0.y} x2={tipX} y2={tipY} stroke={color} strokeWidth="3" opacity="0.9" />
+                    <polygon points={`${tipX},${tipY} ${a1x},${a1y} ${a2x},${a2y}`} fill={color} opacity="0.9" />
+                    <text x={tipX + ux*14} y={tipY + uy*14} fill={color} fontSize="13" fontWeight="700"
+                      textAnchor="middle" fontFamily="'JetBrains Mono', monospace">{label}</text>
+                  </g>
+                );
+              })}
+
+              {/* Origin dot */}
+              <circle cx={proj([0,0,0]).x} cy={proj([0,0,0]).y} r="4" fill="#e2e8f0" />
+
+              {/* Phase label */}
+              <text x={315} y={20} textAnchor="middle" fill={isDiag ? "#4ade80" : isUpperTri ? "#f59e0b" : "#22d3ee"}
+                fontSize="13" fontWeight="700" fontFamily="'JetBrains Mono', monospace">
+                {isDiag ? "✓ Diagonal — Axis-aligned box!" : isUpperTri ? "Upper triangular — Now row ops..." : t < 0.01 ? "Original parallelepiped" : "Column ops in progress..."}
+              </text>
+              <text x={315} y={420} textAnchor="middle" fill="#475569" fontSize="10" fontFamily="'JetBrains Mono', monospace">
+                Drag to rotate &middot; Volume = |det| = {Math.abs(det).toFixed(3)} (constant!)
+              </text>
+            </svg>
+          </div>
+
+          {/* Timeline */}
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px",
+            background: "rgba(15,23,42,0.6)", border: "1px solid #1e293b", borderRadius: "10px", padding: "10px 14px" }}>
+            <button onClick={playAnim}
+              style={{ width: "36px", height: "36px", borderRadius: "50%", border: "2px solid #6366f1",
+                background: "rgba(99,102,241,0.2)", color: "#a5b4fc", fontSize: "15px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {playing ? "\u23F8" : "\u25B6"}
+            </button>
+            <button onClick={reset} style={{ padding: "5px 10px", borderRadius: "6px", border: "1px solid #334155",
+              background: "rgba(51,65,85,0.3)", color: "#94a3b8", fontSize: "11px", cursor: "pointer" }}>Reset</button>
+            <div style={{ flex: 1, position: "relative" }}>
+              <input type="range" min={0} max={6} step={0.02} value={t}
+                onChange={e => { setPlaying(false); setT(Number(e.target.value)); }}
+                style={{ width: "100%" }} />
+              {/* Step tick marks */}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0 0", fontSize: "8px" }}>
+                {["Start","1","2","3","4","5","Box"].map((l,i) => (
+                  <span key={i} style={{ color: i <= 3 ? "#22d3ee" : i <= 6 ? "#f59e0b" : "#4ade80",
+                    cursor: "pointer", opacity: 0.6 }}
+                    onClick={() => { setPlaying(false); setT(i === 6 ? 6 : i); }}>
+                    {l}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <span style={{ fontSize: "12px", color: "#60a5fa", fontWeight: 600, minWidth: "50px", textAlign: "right" }}>
+              {t.toFixed(1)}/6
+            </span>
+          </div>
+
+          {/* Matrix progression */}
+          <div style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center", flexWrap: "wrap", marginBottom: "10px" }}>
+            {/* Original */}
+            <div style={{ padding: "6px 8px", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "6px", textAlign: "center" }}>
+              <div style={{ fontSize: "8px", color: "#818cf8", marginBottom: "3px" }}>Original</div>
+              {M0.map((row, i) => (
+                <div key={i} style={{ fontSize: "10px", color: "#c7d2fe", lineHeight: "1.4" }}>
+                  [{row.map(v => v.toFixed(1)).join("  ")}]
+                </div>
+              ))}
+            </div>
+
+            <span style={{ color: "#22d3ee", fontSize: "14px", fontWeight: 700 }}>→</span>
+
+            {/* Current */}
+            <div style={{ padding: "6px 8px", background: isDiag ? "rgba(74,222,128,0.08)" : isUpperTri ? "rgba(245,158,11,0.08)" : "rgba(34,211,238,0.08)",
+              border: `1px solid ${isDiag ? "rgba(74,222,128,0.25)" : isUpperTri ? "rgba(245,158,11,0.2)" : "rgba(34,211,238,0.2)"}`,
+              borderRadius: "6px", textAlign: "center" }}>
+              <div style={{ fontSize: "8px", color: isDiag ? "#4ade80" : isUpperTri ? "#fbbf24" : "#67e8f9", marginBottom: "3px" }}>
+                {isDiag ? "Diagonal (box)" : isUpperTri ? "Upper triangular" : `Step ${stepIdx+1}`}
+              </div>
+              {M.map((row, i) => (
+                <div key={i} style={{ fontSize: "10px", lineHeight: "1.4" }}>
+                  [{row.map((v, j) => {
+                    const isZero = Math.abs(v) < 0.005;
+                    const isDiagEntry = i === j;
+                    return (
+                      <span key={j} style={{ color: isZero ? "#4ade80" : isDiagEntry && isDiag ? "#fbbf24" : "#e2e8f0", fontWeight: isDiagEntry && isDiag ? 700 : 400 }}>
+                        {j > 0 ? "  " : ""}{fmt(v)}
+                      </span>
+                    );
+                  })}]
+                </div>
+              ))}
+            </div>
+
+            <span style={{ color: "#4ade80", fontSize: "14px", fontWeight: 700 }}>→</span>
+
+            {/* Final diagonal */}
+            {(() => {
+              const Mfinal = getMatrix(M0, 6);
+              return (
+                <div style={{ padding: "6px 8px", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: "6px", textAlign: "center", opacity: isDiag ? 1 : 0.35, transition: "opacity 0.3s" }}>
+                  <div style={{ fontSize: "8px", color: "#4ade80", marginBottom: "3px" }}>Box</div>
+                  {Mfinal.map((row, i) => (
+                    <div key={i} style={{ fontSize: "10px", lineHeight: "1.4" }}>
+                      [{row.map((v, j) => (
+                        <span key={j} style={{ color: i===j ? "#fbbf24" : "#4ade80", fontWeight: i===j ? 700 : 400 }}>
+                          {j > 0 ? "  " : ""}{fmt(v)}
+                        </span>
+                      ))}]
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Explanation cards */}
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 30%", padding: "8px", background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.12)", borderRadius: "6px" }}>
+              <div style={{ fontSize: "9px", color: "#22d3ee", fontWeight: 700, marginBottom: "2px" }}>Steps 1–3: Column shears</div>
+              <div style={{ fontSize: "9px", color: "#94a3b8", lineHeight: "1.4" }}>
+                Each slides one column along another. Volume preserved (same base, same height in 3D). Result: upper triangular.
+              </div>
+            </div>
+            <div style={{ flex: "1 1 30%", padding: "8px", background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.12)", borderRadius: "6px" }}>
+              <div style={{ fontSize: "9px", color: "#f59e0b", fontWeight: 700, marginBottom: "2px" }}>Steps 4–6: Row shears</div>
+              <div style={{ fontSize: "9px", color: "#94a3b8", lineHeight: "1.4" }}>
+                Same idea on rows. Zeros out the lower triangle. Volume still unchanged. Result: diagonal matrix.
+              </div>
+            </div>
+            <div style={{ flex: "1 1 30%", padding: "8px", background: "rgba(74,222,128,0.05)", border: "1px solid rgba(74,222,128,0.12)", borderRadius: "6px" }}>
+              <div style={{ fontSize: "9px", color: "#4ade80", fontWeight: 700, marginBottom: "2px" }}>Result: axis-aligned box</div>
+              <div style={{ fontSize: "9px", color: "#94a3b8", lineHeight: "1.4" }}>
+                Diagonal = box along axes. Vol = |d₁ × d₂ × d₃| = product of pivots = |det|. No formula memorization needed!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

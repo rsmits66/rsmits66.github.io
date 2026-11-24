@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fourier Convergence Laboratory — University of Alabama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Playfair+Display:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --crimson:#9E1B32; --crimson-dk:#6E1322; --crimson-lt:#F2DDE0;
+  --bronze:#9A7B2E; --bronze-lt:#E6D9B8;
+  --slate:#2D343C;
+  --ink:#23191b; --muted:#857f78;
+  --cream:#f8f5f0; --panel:#f6f1ea; --border:#e0dbd2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--cream);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;line-height:1.5;}
+
+header{width:100%;color:#fff;background:var(--crimson);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 9px);
+  border-bottom:4px solid var(--bronze);}
+.hdr-top{background:var(--crimson-dk);padding:.32rem 2rem;font-size:.72rem;color:#e8c9ce;
+  letter-spacing:.14em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.hdr-main{padding:.85rem 2rem .7rem;text-align:center;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:1.55rem;font-weight:700;}
+header .sub{color:#f0d5d9;font-style:italic;margin-top:.25rem;font-size:.88rem;}
+.houndstooth{height:14px;background-color:#fff;
+  background-image:
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%),
+    linear-gradient(45deg,var(--crimson) 25%,transparent 25%,transparent 75%,var(--crimson) 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px;}
+
+.wrap{max-width:1220px;width:100%;padding:18px 20px 46px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:5px;
+  box-shadow:0 2px 14px rgba(35,25,27,.07);margin-bottom:16px;overflow:hidden;}
+.card-hdr{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.13em;color:var(--muted);padding:7px 15px;background:var(--panel);
+  border-bottom:1px solid var(--border);display:flex;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;align-items:center;}
+.tagm{background:var(--slate);color:#fff;padding:2px 8px;border-radius:2px;
+  font-size:.6rem;letter-spacing:.1em;font-weight:600;white-space:nowrap;}
+
+.defs{display:flex;flex-wrap:wrap;}
+.def{flex:1;min-width:250px;padding:14px 18px;border-right:1px solid var(--border);}
+.def:last-child{border-right:none;}
+.def .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);}
+.def h3{font-family:'Playfair Display',Georgia,serif;font-size:.97rem;margin:3px 0 6px;}
+.def .f{font-size:.95rem;line-height:1.55;}
+.def .n{font-size:.8rem;color:var(--muted);margin-top:5px;}
+.thm{padding:15px 20px;border-bottom:1px solid var(--border);}
+.thm p{font-size:.92rem;max-width:92ch;}
+.thm .eq{text-align:center;font-size:1.12rem;margin:11px 0 4px;}
+.big{font-size:1.35em;vertical-align:-.13em;color:var(--crimson);}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:9px 20px;align-items:center;padding:10px 15px;
+  background:var(--crimson-lt);border-bottom:1px solid var(--border);}
+.ctrl2{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:8px 15px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.grp{display:flex;align-items:center;gap:7px;}
+.grp label{font-size:.85rem;font-weight:600;color:var(--crimson-dk);white-space:nowrap;}
+select{font-family:'Crimson Pro',Georgia,serif;font-size:.88rem;padding:3px 7px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--ink);}
+input[type=range]{accent-color:var(--crimson);cursor:pointer;width:130px;}
+.rdout{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:600;
+  color:var(--crimson);min-width:3.2em;}
+.chk{display:flex;align-items:center;gap:5px;font-size:.82rem;cursor:pointer;}
+.chk input{accent-color:var(--crimson);cursor:pointer;}
+button{font-family:'Crimson Pro',Georgia,serif;font-size:.82rem;padding:4px 10px;
+  border:1px solid #c9b3b7;border-radius:3px;background:#fff;color:var(--crimson-dk);cursor:pointer;}
+button:hover{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--bronze);outline-offset:1px;}
+
+canvas{display:block;width:100%;height:auto;touch-action:none;}
+#main{cursor:crosshair;}
+
+/* specimen strip */
+.spec{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.sp{flex:1;min-width:185px;border-right:1px solid var(--border);padding:8px 11px;
+  cursor:pointer;background:#fff;text-align:left;font-family:'Crimson Pro',Georgia,serif;}
+.sp:last-child{border-right:none;}
+.sp:hover{background:#fdfaf9;}
+.sp[aria-pressed="true"]{background:var(--crimson-lt);}
+.sp .nm{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--ink);font-weight:600;}
+.sp .cl{font-size:.73rem;color:var(--muted);font-style:italic;line-height:1.3;}
+.sp canvas{height:34px;margin-top:3px;}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:8px 15px;
+  background:var(--panel);border-top:1px solid var(--border);font-size:.76rem;color:var(--muted);}
+.li{display:flex;align-items:center;gap:5px;}
+.swl{width:17px;height:3px;flex-shrink:0;}
+.dotm{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ring{width:9px;height:9px;border-radius:50%;border:2px solid #23191b;flex-shrink:0;}
+
+.stats{display:flex;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff;}
+.stat{flex:1;min-width:146px;padding:9px 15px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat .k{font-family:'IBM Plex Mono',monospace;font-size:.61rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:600;
+  color:var(--crimson);margin-top:2px;}
+.stat .v.gold{color:var(--bronze);} .stat .v.dark{color:var(--slate);}
+.stat .n{font-size:.74rem;color:var(--muted);font-style:italic;}
+
+.notes{display:flex;gap:16px;flex-wrap:wrap;}
+.note{flex:1;min-width:290px;background:#fff;border:1px solid var(--border);border-radius:5px;
+  padding:15px 18px;box-shadow:0 2px 12px rgba(35,25,27,.06);}
+.note.warn{border-left:4px solid var(--slate);}
+.note h3{font-family:'Playfair Display',Georgia,serif;font-size:1rem;color:var(--crimson);margin-bottom:3px;}
+.note.warn h3{color:var(--slate);}
+.note .kicker{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.note p{font-size:.87rem;margin-bottom:7px;}
+.note p:last-child{margin-bottom:0;}
+.note em{color:var(--crimson-dk);font-style:normal;font-weight:600;}
+.note.warn em{color:var(--slate);}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:.82rem;}
+
+@media (max-width:760px){
+  .hdr-top{padding:.32rem 1rem;font-size:.6rem;}
+  header h1{font-size:1.12rem;} .hdr-main{padding:.7rem 1rem .6rem;}
+  .wrap{padding:12px 10px 30px;}
+  .def,.sp{min-width:100%;border-right:none;border-bottom:1px solid var(--border);}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">University of Alabama &ensp;·&ensp; Fourier Analysis &ensp;·&ensp; Part III of the Fourier sequence</div>
+  <div class="hdr-main">
+    <h1>The Fourier Convergence Laboratory</h1>
+    <div class="sub">Three kinds of convergence, three kinds of function, and one constant that refuses to go away.</div>
+  </div>
+  <div class="houndstooth"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══ theorem + the three modes ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>The theorem, and the three senses of "converges"</span>
+      <span style="color:var(--muted);text-transform:none;letter-spacing:0;font-style:italic">
+        period 2, harmonics cos nπx and sin nπx</span></div>
+    <div class="thm">
+      <p><b>Fourier convergence theorem.</b> Let f be periodic with period 2L and let f and f′ be
+      piecewise continuous on [−L, L]. Then for every x the Fourier series converges, and its sum is</p>
+      <div class="eq">S(x) = ½ [ f(x⁻) + f(x⁺) ]</div>
+      <p style="margin-top:8px;color:var(--muted);font-size:.87rem">
+      — the average of the two one-sided limits. Where f is continuous that is just f(x); at a jump
+      it is the midpoint, which the series hits regardless of how f was defined there.</p>
+    </div>
+    <div class="defs">
+      <div class="def">
+        <span class="eyebrow">weakest of the three</span>
+        <h3>Pointwise</h3>
+        <div class="f">S<sub>N</sub>(x₀) → S(x₀) &nbsp;for each fixed x₀</div>
+        <div class="n">Fix the point first, then send N → ∞. How fast may depend on the point, and
+        near a jump it depends on it badly. This is what the theorem above delivers.</div>
+      </div>
+      <div class="def">
+        <span class="eyebrow">strongest of the three</span>
+        <h3>Uniform</h3>
+        <div class="f">sup<sub>x∈I</sub> |f(x) − S<sub>N</sub>(x)| → 0</div>
+        <div class="n">One N must work for every point of I at once. A jump inside I destroys this:
+        the sup cannot fall below half the jump. Exclude the jump and it returns.</div>
+      </div>
+      <div class="def">
+        <span class="eyebrow">the forgiving one</span>
+        <h3>Mean-square</h3>
+        <div class="f"><span class="big">∫</span><sub>−L</sub><sup>L</sup> |f − S<sub>N</sub>|² dx → 0</div>
+        <div class="n">Equals the leftover tail energy Σ<sub>n&gt;N</sub>(aₙ²+bₙ²)·L, so it dies for
+        every square-integrable f — jumps and all. Blind to what happens at single points.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ specimens ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>Pick a specimen — smoothness is the only thing that differs</span>
+      <span id="specMeta" style="text-transform:none;letter-spacing:0;color:var(--crimson)"></span></div>
+    <div class="spec" id="spec"></div>
+  </div>
+
+  <!-- ══ main plot ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>1 — The partial sum, up close</span>
+      <span>click the plot to move the probe · drag to pan</span></div>
+    <div class="ctrl">
+      <div class="grp">
+        <label for="slN">terms N</label>
+        <input type="range" id="slN" min="1" max="200" step="1" value="12">
+        <span class="rdout" id="nVal">12</span>
+      </div>
+      <div class="grp">
+        <label for="slZ">zoom</label>
+        <input type="range" id="slZ" min="-5" max="0" step="0.02" value="0">
+        <span class="rdout" id="zVal">±1</span>
+      </div>
+      <div class="grp">
+        <label for="numX">probe x₀</label>
+        <span class="rdout" id="xVal" style="min-width:7em"></span>
+      </div>
+      <button id="bJump">go to a jump</button>
+      <button id="bEnd">go to the endpoint x = 1</button>
+      <button id="bCenter">centre on probe</button>
+      <button id="bFit">whole period</button>
+    </div>
+    <div class="ctrl2">
+      <label class="chk"><input type="checkbox" id="cLadder" checked> show the ladder S₂, S₈, S₃₂</label>
+      <label class="chk"><input type="checkbox" id="cGibbs" checked> Gibbs overshoot levels</label>
+      <label class="chk"><input type="checkbox" id="cMid" checked> one-sided limits &amp; midpoint</label>
+      <label class="chk"><input type="checkbox" id="cResid"> plot the residual f − S<sub>N</sub> instead</label>
+    </div>
+    <canvas id="main" width="1180" height="420"></canvas>
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#23191b"></div> f (periodic extension)</div>
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> S<sub>N</sub></div>
+      <div class="li"><div class="swl" style="background:rgba(158,27,50,.3)"></div> the ladder</div>
+      <div class="li"><div class="ring"></div> one-sided limits f(x∓)</div>
+      <div class="li"><div class="dotm" style="background:#9A7B2E"></div> midpoint ½[f(x⁻)+f(x⁺)] — where the series goes</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#9A7B2E 0 4px,transparent 4px 8px)"></div> f ± 0.0894898·J</div>
+    </div>
+    <div class="stats" id="stats1"></div>
+  </div>
+
+  <!-- ══ diagnostics ══ -->
+  <div class="card">
+    <div class="card-hdr"><span>2 — Convergence at the probe, and the three error measures</span>
+      <span class="tagm">numerical illustration — not proof</span></div>
+    <canvas id="diag" width="1180" height="340"></canvas>
+    <div class="legend">
+      <div class="li"><div class="swl" style="background:#9E1B32;height:4px"></div> S<sub>N</sub>(x₀) &nbsp;/&nbsp; mean-square error</div>
+      <div class="li"><div class="swl" style="background:#2D343C;height:4px"></div> sup|f−S<sub>N</sub>| over the whole period</div>
+      <div class="li"><div class="swl" style="background:#9A7B2E;height:4px"></div> sup|f−S<sub>N</sub>| over the visible window</div>
+      <div class="li"><div class="swl" style="background:repeating-linear-gradient(90deg,#2D343C 0 4px,transparent 4px 8px)"></div> the barrier J/2</div>
+    </div>
+    <div class="stats" id="stats2"></div>
+  </div>
+
+  <!-- ══ notes ══ -->
+  <div class="notes">
+    <div class="note">
+      <div class="kicker">The experiment to run first</div>
+      <h3>Three specimens, one N</h3>
+      <p>Set N = 12 and step through the specimens without touching anything else. The
+      <em>smooth</em> one is already indistinguishable from f. The <em>corner</em> is close
+      everywhere but slightly rounded at the kink. The <em>jump</em> rings.</p>
+      <p>That ordering is the convergence theorem doing its work: the smoother f is, the faster its
+      coefficients decay — geometrically, then 1/n², then 1/n — and the coefficient decay is what
+      controls how fast S<sub>N</sub> closes in.</p>
+      <p>Then press <b>go to the endpoint x = 1</b> with the sawtooth. Nothing is wrong with f at
+      x = 1; the trouble is that the <em>periodic extension</em> jumps there, from 1 down to −1.
+      Endpoint misbehaviour is almost always this in disguise.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Reading panel 2</div>
+      <h3>Why the curves separate</h3>
+      <p>For a jump specimen the crimson mean-square error slides steadily to zero while the
+      charcoal sup-norm flattens onto a horizontal barrier. Same series, same N, two verdicts:
+      <em>mean-square convergence yes, uniform convergence no</em>.</p>
+      <p>The barrier sits at <em>J/2</em>, half the jump. S<sub>N</sub> is continuous and must pass
+      through the midpoint, so just beside the jump it is about J/2 away from f. No N can help.</p>
+      <p>Now zoom into a smooth stretch away from every jump. The bronze curve — the sup over just
+      the visible window — peels off and heads to zero. Uniform convergence holds on any closed
+      interval avoiding the jumps, and that is exactly what the bronze curve is measuring.</p>
+    </div>
+    <div class="note">
+      <div class="kicker">Two numbers people mix up</div>
+      <h3>J/2 is not the Gibbs constant</h3>
+      <p>The <em>barrier</em> is J/2: the worst error near a jump, caused by S<sub>N</sub> being
+      continuous where f is not.</p>
+      <p>The <em>Gibbs overshoot</em> is how far S<sub>N</sub> shoots past f's own value on the far
+      side — it tends to <span class="mono">0.0894898·J</span>, from the Wilbraham–Gibbs constant
+      Si(π)/π − ½. Panel 1 draws those levels; panel 1's stat strip measures the overshoot for you.</p>
+      <p>Raise N and watch: the ripple <em>narrows</em> toward the jump but its height holds at
+      roughly 0.0895 J. It does not shrink — it retreats. That is the whole phenomenon.</p>
+    </div>
+    <div class="note warn">
+      <div class="kicker">Read this before quoting a number</div>
+      <h3>What these numbers can and cannot show</h3>
+      <p>Every figure here is <em>measured</em>, on a finite grid, in floating point. Measurements
+      illustrate theorems; they do not establish them.</p>
+      <p>A supremum computed over finitely many sample points is a <em>lower bound</em> for the true
+      supremum — the real peak generally falls between samples, so the charcoal and bronze curves
+      sit slightly low, especially at large N where the ripple is narrow.</p>
+      <p>To keep that honest where it matters most, the sampling is deliberately clustered onto
+      each jump. Without it the measured sup would sag as N grew and imitate slow uniform
+      convergence — an artefact of the grid, not a fact about the series.</p>
+      <p>The coefficients come from Simpson quadrature and the mean-square error is recovered from
+      them by Parseval, so both carry quadrature error, here around
+      <span class="mono">1e−9</span>. A curve flattening onto its own floor — about
+      <span class="mono">1e−9</span> for the jump specimens, near machine precision for the smooth
+      one — has reached the limit of this arithmetic, not a limit of the mathematics. And no finite
+      N can separate "tends to 0.0895 J" from "tends to something extremely close to it"; for that
+      you need the proof, not the picture.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════
+   1. SETUP
+
+   f has period 2L with L = 1, so the harmonics are cos(n pi x) and
+   sin(n pi x). Everything downstream keys off the smoothness of f,
+   so each specimen declares where it is not smooth.
+   ══════════════════════════════════════════════════════════════════ */
+
+const L=1, NMAX=200, EPSL=1e-9;
+/* the Wilbraham-Gibbs overshoot factor: Si(pi)/pi - 1/2 */
+const GIBBS=0.08948987223608590;
+
+const SPECS={
+  smooth:{ lab:'e^(sin \u03C0x)', f:x=>Math.exp(Math.sin(Math.PI*x)),
+           breaks:[], cls:'C\u221E and periodic', decay:'geometric',
+           mode:'uniform, very fast' },
+  tri:{    lab:'1 \u2212 2|x|', f:x=>1-2*Math.abs(x),
+           breaks:[-1,0], cls:'continuous, corners', decay:'~1/n\u00B2',
+           mode:'uniform' },
+  cusp:{   lab:'\u221A|x|', f:x=>Math.sqrt(Math.abs(x)),
+           breaks:[-1,0], cls:'continuous, cusp at 0', decay:'~1/n^1.5',
+           mode:'uniform' },
+  square:{ lab:'sgn(x)', f:x=>(x>=0?1:-1),
+           breaks:[-1,0], cls:'jumps at 0 and \u00B11', decay:'~1/n',
+           mode:'pointwise only' },
+  saw:{    lab:'x', f:x=>x,
+           breaks:[-1], cls:'jumps only at \u00B11', decay:'~1/n',
+           mode:'pointwise only' },
+  pulse:{  lab:'1 on |x| \u2264 \u00BD', f:x=>(Math.abs(x)<=0.5?1:0),
+           breaks:[-1,-0.5,0.5], cls:'two jumps per period', decay:'~1/n',
+           mode:'pointwise only' }
+};
+
+const S={ id:'square', N:12, x0:0.0, ctr:0, half:1,
+          ladder:true, gibbs:true, mid:true, resid:false };
+
+function fbase(x){ return SPECS[S.id].f(x); }
+function wrap(x){ const P=2*L; let t=(x+L)%P; if(t<0)t+=P; return t-L; }
+function fper(x){ return fbase(wrap(x)); }
+
+/* ══════════════════════════════════════════════════════════════════
+   2. QUADRATURE
+
+   Panel boundaries land on every break, and are graded geometrically
+   toward each break so a cusp like sqrt|x| is resolved. Interval
+   counts scale with segment length, because at n = 200 the integrand
+   completes ~100 oscillations and a coarse panel would alias.
+   ══════════════════════════════════════════════════════════════════ */
+
+function buildQuad(){
+  const br=SPECS[S.id].breaks.slice();
+  const cuts=new Set([-L,L]);
+  for(const b of br){
+    cuts.add(b);
+    for(const d of [1e-1,1e-2,1e-3,1e-4]){
+      if(b-d>-L) cuts.add(b-d);
+      if(b+d< L) cuts.add(b+d);
+    }
+  }
+  const u=Array.from(cuts).map(v=>+v.toFixed(12)).sort((a,b)=>a-b);
+  const x=[], w=[], e=[];
+  for(let i=0;i<u.length-1;i++){
+    const a=u[i], b=u[i+1], len=b-a;
+    let K=Math.ceil(len*4000); if(K<64) K=64; if(K%2) K++;
+    const h=len/K;
+    for(let j=0;j<=K;j++){
+      x.push(a+j*h);
+      w.push((j===0||j===K)?h/3:(j%2?4*h/3:2*h/3));
+      /* one-sided sampling at a panel edge, so a jump sitting exactly on
+         a node contributes its correct limit rather than an arbitrary one */
+      e.push(j===0?EPSL:(j===K?-EPSL:0));
+    }
+  }
+  return {x:Float64Array.from(x), w:Float64Array.from(w), e:Float64Array.from(e)};
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3. COEFFICIENTS
+
+   Computed with an angle-addition recurrence in n, so the whole table
+   costs no trig calls beyond the first harmonic.
+   ══════════════════════════════════════════════════════════════════ */
+
+let Q=null, FQ=null, A=null, Bc=null, ffNorm=0;
+let tailE=null;    /* tailE[N] = mean-square error of S_N */
+
+function computeCoef(){
+  Q=buildQuad();
+  const J=Q.x.length;
+  FQ=new Float64Array(J);
+  for(let j=0;j<J;j++) FQ[j]=fbase(Q.x[j]+Q.e[j]);
+
+  ffNorm=0;
+  for(let j=0;j<J;j++) ffNorm+=Q.w[j]*FQ[j]*FQ[j];
+
+  A=new Float64Array(NMAX+1); Bc=new Float64Array(NMAX+1);
+  let s=0; for(let j=0;j<J;j++) s+=Q.w[j]*FQ[j];
+  A[0]=s/L;
+
+  /* running cos(n t_j), sin(n t_j) with t_j = pi x_j */
+  const c1=new Float64Array(J), s1=new Float64Array(J),
+        cn=new Float64Array(J), sn=new Float64Array(J);
+  for(let j=0;j<J;j++){
+    const t=Math.PI*Q.x[j]/L;
+    c1[j]=Math.cos(t); s1[j]=Math.sin(t);
+    cn[j]=1; sn[j]=0;
+  }
+  for(let n=1;n<=NMAX;n++){
+    let sa=0, sb=0;
+    for(let j=0;j<J;j++){
+      const c2=cn[j]*c1[j]-sn[j]*s1[j], s2=sn[j]*c1[j]+cn[j]*s1[j];
+      cn[j]=c2; sn[j]=s2;
+      const fw=Q.w[j]*FQ[j];
+      sa+=fw*c2; sb+=fw*s2;
+    }
+    A[n]=sa/L; Bc[n]=sb/L;
+  }
+
+  /* Parseval:  integral |f|^2 = L( a0^2/2 + sum(an^2+bn^2) ), so the
+     mean-square error of S_N is exactly the leftover tail.          */
+  tailE=new Float64Array(NMAX+1);
+  let used=L*A[0]*A[0]/2;
+  for(let n=1;n<=NMAX;n++){
+    used+=L*(A[n]*A[n]+Bc[n]*Bc[n]);
+    tailE[n]=Math.max(0,ffNorm-used);
+  }
+  tailE[0]=Math.max(0,ffNorm-L*A[0]*A[0]/2);
+}
+
+/* partial sum by recurrence */
+function SN(x,N){
+  const t=Math.PI*x/L, ct=Math.cos(t), st=Math.sin(t);
+  let c=1, s2=0, out=A[0]/2;
+  for(let n=1;n<=N;n++){
+    const c2=c*ct-s2*st, s3=s2*ct+c*st; c=c2; s2=s3;
+    out+=A[n]*c+Bc[n]*s2;
+  }
+  return out;
+}
+/* every partial sum at one point, in one pass */
+function SNall(x){
+  const t=Math.PI*x/L, ct=Math.cos(t), st=Math.sin(t);
+  const out=new Float64Array(NMAX+1);
+  let c=1, s2=0, acc=A[0]/2;
+  out[0]=acc;
+  for(let n=1;n<=NMAX;n++){
+    const c2=c*ct-s2*st, s3=s2*ct+c*st; c=c2; s2=s3;
+    acc+=A[n]*c+Bc[n]*s2;
+    out[n]=acc;
+  }
+  return out;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4. WHERE f MISBEHAVES — jumps, their sizes, and the midpoints
+   ══════════════════════════════════════════════════════════════════ */
+
+let SING=[];   /* per period: {x, lm, lp, jump, mid, kind} */
+
+function findSingularities(){
+  SING=[];
+  const seen=new Set();
+  for(const b of SPECS[S.id].breaks){
+    const key=(+b.toFixed(9));
+    if(seen.has(key)) continue; seen.add(key);
+    const lm=fper(b-1e-7), lp=fper(b+1e-7);
+    const jump=lp-lm;
+    if(Math.abs(jump)>1e-7){
+      SING.push({x:b, lm:lm, lp:lp, jump:jump, mid:0.5*(lm+lp), kind:'jump'});
+    }else{
+      const dm=(fper(b-1e-5)-fper(b-2e-5))/1e-5,
+            dp=(fper(b+2e-5)-fper(b+1e-5))/1e-5;
+      if(Math.abs(dp-dm)>1e-3 || !Number.isFinite(dp) || !Number.isFinite(dm))
+        SING.push({x:b, lm:lm, lp:lp, jump:0, mid:lm, kind:'corner'});
+    }
+  }
+}
+const jumps=()=>SING.filter(s=>s.kind==='jump');
+function maxJump(){ let m=0; for(const s of jumps()) m=Math.max(m,Math.abs(s.jump)); return m; }
+/* every singular point of the periodic extension inside [lo,hi] */
+function singsIn(lo,hi){
+  const out=[], P=2*L;
+  for(const s of SING){
+    const k0=Math.floor((lo-s.x)/P)-1, k1=Math.ceil((hi-s.x)/P)+1;
+    for(let k=k0;k<=k1;k++){
+      const xx=s.x+k*P;
+      if(xx>=lo-1e-12&&xx<=hi+1e-12) out.push(Object.assign({},s,{x:xx}));
+    }
+  }
+  return out;
+}
+function nearestJump(from){
+  const js=jumps(); if(!js.length) return null;
+  let best=null, bd=Infinity;
+  for(const s of js) for(let k=-2;k<=2;k++){
+    const xx=s.x+k*2*L, d=Math.abs(xx-from);
+    if(d<bd){bd=d;best=Object.assign({},s,{x:xx});}
+  }
+  return best;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5. ERROR MEASUREMENTS
+
+   Honest accounting: these are maxima over a finite sample, hence
+   LOWER bounds on the true suprema. The label on the panel says so.
+   ══════════════════════════════════════════════════════════════════ */
+
+const MG=1400;                       /* samples for sup over the period */
+const WG=900;                        /* samples for sup over the window */
+let supPer=null, supWin=null, supWinArgmax=0;
+
+/* A uniform grid is not good enough for the sup near a jump. The true
+   supremum equals J/2 and is approached as x -> the jump, but S_N
+   climbs away from the midpoint on the scale 1/N, so a fixed grid's
+   nearest sample gives a lower bound that gets WORSE as N grows — the
+   measured curve would sag and look like slow uniform convergence.
+   Clustering samples logarithmically onto each jump fixes that: the
+   curve then sits flat on J/2, which is the truth.                  */
+function sampleGrid(lo,hi,n){
+  const out=[], h=(hi-lo)/n;
+  for(let i=0;i<n;i++) out.push(lo+(i+0.5)*h);   /* midpoints: never on a jump */
+  for(const s of singsIn(lo,hi)){
+    if(s.kind!=='jump') continue;
+    for(let k=1;k<=12;k++){
+      const d=Math.pow(10,-k);
+      if(s.x-d>lo) out.push(s.x-d);
+      if(s.x+d<hi) out.push(s.x+d);
+    }
+  }
+  return Float64Array.from(out);
+}
+/* running max of |f - S_N| over a grid, for every N at once */
+function supCurve(grid){
+  const out=new Float64Array(NMAX+1);
+  for(let i=0;i<grid.length;i++){
+    const x=grid[i], fv=fper(x);
+    if(!Number.isFinite(fv)) continue;
+    const t=Math.PI*x/L, ct=Math.cos(t), st=Math.sin(t);
+    let c=1, s2=0, acc=A[0]/2;
+    let d=Math.abs(fv-acc); if(d>out[0]) out[0]=d;
+    for(let n=1;n<=NMAX;n++){
+      const c2=c*ct-s2*st, s3=s2*ct+c*st; c=c2; s2=s3;
+      acc+=A[n]*c+Bc[n]*s2;
+      d=Math.abs(fv-acc); if(d>out[n]) out[n]=d;
+    }
+  }
+  return out;
+}
+function measureAll(){
+  supPer=supCurve(sampleGrid(-L,L,MG));
+  const lo=S.ctr-S.half, hi=S.ctr+S.half;
+  const g=sampleGrid(lo,hi,WG);
+  supWin=supCurve(g);
+  /* where the window's worst point sits, at the current N */
+  let bd=-1;
+  for(let i=0;i<g.length;i++){
+    const d=Math.abs(fper(g[i])-SN(g[i],S.N));
+    if(d>bd){bd=d;supWinArgmax=g[i];}
+  }
+}
+/* how far S_N rings past f's own value, near the jump closest to view */
+function overshoot(){
+  const s=nearestJump(S.ctr); if(!s) return null;
+  const hi=Math.max(s.lm,s.lp), lo=Math.min(s.lm,s.lp);
+  const R=Math.max(4/(S.N+1),0.02), n=700;
+  let over=0, under=0;
+  for(let i=0;i<=n;i++){
+    const x=s.x-R+2*R*i/n, v=SN(x,S.N);
+    over=Math.max(over,v-hi); under=Math.max(under,lo-v);
+  }
+  const J=Math.abs(s.jump);
+  return {over:Math.max(over,under), J:J, pred:GIBBS*J, at:s.x};
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6. CANVAS PLUMBING
+   ══════════════════════════════════════════════════════════════════ */
+
+const INK='#23191b', CRIM='#9E1B32', BRZ='#9A7B2E', SLT='#2D343C', MUT='#857f78';
+function hidpi(cv,c,w,h){
+  const d=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*d; cv.height=h*d; cv.style.maxWidth=w+'px'; c.setTransform(d,0,0,d,0,0);
+}
+function niceStep(x){
+  if(!(x>0)) return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(x))), f=x/e;
+  return (f<1.5?1:f<3?2:f<7?5:10)*e;
+}
+function fmt(v,d){
+  if(!Number.isFinite(v)) return '\u2014';
+  if(v!==0&&Math.abs(v)<1e-4) return v.toExponential(2);
+  return v.toFixed(d===undefined?4:d);
+}
+function fmtX(v){
+  const dec=Math.max(2,Math.min(9,Math.ceil(-Math.log10(S.half))+2));
+  return v.toFixed(dec);
+}
+
+const mc=document.getElementById('main'), mx=mc.getContext('2d');
+const dc=document.getElementById('diag'), dx=dc.getContext('2d');
+const MW=1180, MH=420, DW=1180, DH=340;
+
+/* ══════════════════════════════════════════════════════════════════
+   7. PANEL 1 — f, the partial sums, the midpoints, the Gibbs levels
+   ══════════════════════════════════════════════════════════════════ */
+
+const NSX=1600;
+function renderMain(){
+  mx.clearRect(0,0,MW,MH); mx.fillStyle='#fff'; mx.fillRect(0,0,MW,MH);
+  const P={l:64,r:22,t:24,b:40}, gW=MW-P.l-P.r, gH=MH-P.t-P.b;
+  const lo=S.ctr-S.half, hi=S.ctr+S.half;
+
+  const xs=new Float64Array(NSX), fv=new Float64Array(NSX), sv=new Float64Array(NSX);
+  for(let i=0;i<NSX;i++){
+    const x=lo+(hi-lo)*i/(NSX-1);
+    xs[i]=x; fv[i]=fper(x); sv[i]=SN(x,S.N);
+  }
+  const LAD=[2,8,32].filter(v=>v<S.N);
+  const lad=LAD.map(n=>{
+    const a=new Float64Array(NSX);
+    for(let i=0;i<NSX;i++) a[i]=SN(xs[i],n);
+    return {n:n,v:a};
+  });
+  const sg=singsIn(lo,hi);
+
+  /* y range */
+  let ylo=Infinity, yhi=-Infinity;
+  const consider=v=>{ if(Number.isFinite(v)){ if(v<ylo)ylo=v; if(v>yhi)yhi=v; } };
+  if(S.resid){
+    for(let i=0;i<NSX;i++) consider(fv[i]-sv[i]);
+    if(ylo===Infinity){ylo=-1;yhi=1;}
+    const m=Math.max(Math.abs(ylo),Math.abs(yhi))||1; ylo=-m; yhi=m;
+  }else{
+    for(let i=0;i<NSX;i++){ consider(fv[i]); consider(sv[i]); }
+    for(const l of lad) for(let i=0;i<NSX;i++) consider(l.v[i]);
+    if(S.gibbs) for(const s of sg){
+      const J=Math.abs(s.jump);
+      if(J>0){ consider(Math.max(s.lm,s.lp)+GIBBS*J); consider(Math.min(s.lm,s.lp)-GIBBS*J); }
+    }
+    if(ylo===Infinity){ylo=-1;yhi=1;}
+  }
+  const pad=(yhi-ylo)*0.10||0.5; ylo-=pad; yhi+=pad;
+  const X=x=>P.l+(x-lo)/(hi-lo)*gW, Y=y=>P.t+(yhi-y)/(yhi-ylo)*gH;
+
+  /* grid */
+  mx.lineWidth=1; mx.font='500 10px "IBM Plex Mono",monospace';
+  const ys=niceStep((yhi-ylo)/5);
+  mx.textAlign='right'; mx.textBaseline='middle';
+  for(let k=Math.ceil(ylo/ys);k*ys<=yhi;k++){
+    const y=Y(k*ys);
+    mx.strokeStyle=(Math.abs(k*ys)<1e-14)?'rgba(35,25,27,0.30)':'rgba(158,27,50,0.07)';
+    mx.beginPath(); mx.moveTo(P.l,y); mx.lineTo(P.l+gW,y); mx.stroke();
+    mx.fillStyle=MUT; mx.fillText(fmt(k*ys,Math.abs(k*ys)<1?3:2),P.l-7,y);
+  }
+  const xs2=niceStep((hi-lo)/6);
+  mx.textAlign='center'; mx.textBaseline='top';
+  for(let k=Math.ceil(lo/xs2);k*xs2<=hi;k++){
+    const x=X(k*xs2);
+    mx.strokeStyle='rgba(158,27,50,0.07)';
+    mx.beginPath(); mx.moveTo(x,P.t); mx.lineTo(x,P.t+gH); mx.stroke();
+    mx.fillStyle=MUT; mx.fillText(fmtX(k*xs2),x,P.t+gH+6);
+  }
+
+  mx.save(); mx.beginPath(); mx.rect(P.l,P.t,gW,gH); mx.clip();
+
+  /* Gibbs reference levels */
+  if(S.gibbs&&!S.resid){
+    for(const s of sg){
+      const J=Math.abs(s.jump); if(!J) continue;
+      const top=Math.max(s.lm,s.lp)+GIBBS*J, bot=Math.min(s.lm,s.lp)-GIBBS*J;
+      mx.strokeStyle='rgba(154,123,46,0.75)'; mx.lineWidth=1.2; mx.setLineDash([5,4]);
+      for(const lv of [top,bot]){
+        mx.beginPath(); mx.moveTo(P.l,Y(lv)); mx.lineTo(P.l+gW,Y(lv)); mx.stroke();
+      }
+      mx.setLineDash([]);
+      break;
+    }
+  }
+  /* singular verticals */
+  for(const s of sg){
+    mx.strokeStyle=s.kind==='jump'?'rgba(45,52,60,0.35)':'rgba(154,123,46,0.3)';
+    mx.lineWidth=1; mx.setLineDash([3,3]);
+    mx.beginPath(); mx.moveTo(X(s.x),P.t); mx.lineTo(X(s.x),P.t+gH); mx.stroke();
+    mx.setLineDash([]);
+  }
+
+  if(S.resid){
+    mx.strokeStyle=CRIM; mx.lineWidth=2.2;
+    mx.beginPath();
+    for(let i=0;i<NSX;i++){
+      const px=X(xs[i]), py=Y(fv[i]-sv[i]);
+      i?mx.lineTo(px,py):mx.moveTo(px,py);
+    }
+    mx.stroke();
+  }else{
+    /* ladder */
+    for(let q=0;q<lad.length;q++){
+      const al=0.18+0.14*q;
+      mx.strokeStyle='rgba(158,27,50,'+al.toFixed(2)+')'; mx.lineWidth=1.5;
+      mx.beginPath();
+      for(let i=0;i<NSX;i++){ const px=X(xs[i]), py=Y(lad[q].v[i]);
+        i?mx.lineTo(px,py):mx.moveTo(px,py); }
+      mx.stroke();
+    }
+    /* f, broken at each jump so the leap is never drawn as a line */
+    mx.strokeStyle=INK; mx.lineWidth=2.4;
+    const cut=sg.filter(s=>s.kind==='jump').map(s=>s.x).sort((a,b)=>a-b);
+    let start=0;
+    const drawRun=(i0,i1)=>{
+      if(i1<=i0) return;
+      mx.beginPath();
+      for(let i=i0;i<i1;i++){ const px=X(xs[i]), py=Y(fv[i]);
+        i===i0?mx.moveTo(px,py):mx.lineTo(px,py); }
+      mx.stroke();
+    };
+    for(const cx of cut){
+      let idx=0; while(idx<NSX&&xs[idx]<cx) idx++;
+      drawRun(start,idx); start=idx;
+    }
+    drawRun(start,NSX);
+    /* the partial sum */
+    mx.strokeStyle=CRIM; mx.lineWidth=2.8;
+    mx.beginPath();
+    for(let i=0;i<NSX;i++){ const px=X(xs[i]), py=Y(sv[i]);
+      i?mx.lineTo(px,py):mx.moveTo(px,py); }
+    mx.stroke();
+    /* one-sided limits and the midpoint the series actually hits */
+    if(S.mid) for(const s of sg){
+      if(s.kind!=='jump') continue;
+      for(const v of [s.lm,s.lp]){
+        mx.beginPath(); mx.arc(X(s.x),Y(v),4.4,0,6.283);
+        mx.fillStyle='#fff'; mx.fill();
+        mx.strokeStyle=INK; mx.lineWidth=2; mx.stroke();
+      }
+      mx.beginPath(); mx.arc(X(s.x),Y(s.mid),4.6,0,6.283);
+      mx.fillStyle=BRZ; mx.fill();
+      mx.strokeStyle='#fff'; mx.lineWidth=1.4; mx.stroke();
+    }
+  }
+
+  /* the probe */
+  const insideView=(S.x0>=lo&&S.x0<=hi);
+  if(insideView){
+    mx.strokeStyle='rgba(45,52,60,0.55)'; mx.lineWidth=1.4; mx.setLineDash([6,4]);
+    mx.beginPath(); mx.moveTo(X(S.x0),P.t); mx.lineTo(X(S.x0),P.t+gH); mx.stroke();
+    mx.setLineDash([]);
+    const sy=S.resid?(fper(S.x0)-SN(S.x0,S.N)):SN(S.x0,S.N);
+    mx.beginPath(); mx.arc(X(S.x0),Y(sy),4.2,0,6.283);
+    mx.fillStyle=CRIM; mx.fill(); mx.strokeStyle='#fff'; mx.lineWidth=1.4; mx.stroke();
+  }
+  mx.restore();
+
+  mx.strokeStyle='rgba(35,25,27,0.35)'; mx.lineWidth=1; mx.strokeRect(P.l,P.t,gW,gH);
+  mx.font='600 9.5px "IBM Plex Mono",monospace'; mx.textAlign='left'; mx.textBaseline='alphabetic';
+  mx.fillStyle=MUT;
+  mx.fillText((S.resid?'f \u2212 S':'f  and  S')+'\u2099   \u00B7   N = '+S.N+
+    '   \u00B7   window \u00B1'+S.half.toExponential(1).replace('e+0','')+
+    '   \u00B7   f = '+SPECS[S.id].lab, P.l, P.t-8);
+  mx.textAlign='center'; mx.font='italic 700 11px "Crimson Pro",Georgia,serif';
+  mx.fillStyle='rgba(35,25,27,0.78)'; mx.fillText('x',P.l+gW/2,P.t+gH+21);
+  return {P:P,gW:gW,gH:gH,lo:lo,hi:hi,ylo:ylo,yhi:yhi};
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   8. PANEL 2 — pointwise history at the probe, and the error curves
+   ══════════════════════════════════════════════════════════════════ */
+
+function renderDiag(){
+  dx.clearRect(0,0,DW,DH); dx.fillStyle='#fff'; dx.fillRect(0,0,DW,DH);
+  const half=DW/2;
+
+  /* ── left: S_N(x0) against N ── */
+  const P={l:62,t:44}, gW=half-P.l-34, gH=DH-P.t-46;
+  const hist=SNall(S.x0);
+  const target=limAt(S.x0);
+  let ylo=Math.min(target.mid,target.lm,target.lp), yhi=Math.max(target.mid,target.lm,target.lp);
+  for(let n=1;n<=NMAX;n++){ ylo=Math.min(ylo,hist[n]); yhi=Math.max(yhi,hist[n]); }
+  let pad=(yhi-ylo)*0.12||0.4; ylo-=pad; yhi+=pad;
+  const XN=n=>P.l+Math.log(n)/Math.log(NMAX)*gW, YV=v=>P.t+(yhi-v)/(yhi-ylo)*gH;
+
+  dx.font='500 10px "IBM Plex Mono",monospace';
+  const ys=niceStep((yhi-ylo)/4);
+  dx.textAlign='right'; dx.textBaseline='middle';
+  for(let k=Math.ceil(ylo/ys);k*ys<=yhi;k++){
+    const y=YV(k*ys);
+    dx.strokeStyle=(Math.abs(k*ys)<1e-14)?'rgba(35,25,27,0.28)':'rgba(158,27,50,0.07)';
+    dx.lineWidth=1; dx.beginPath(); dx.moveTo(P.l,y); dx.lineTo(P.l+gW,y); dx.stroke();
+    dx.fillStyle=MUT; dx.fillText(fmt(k*ys,3),P.l-7,y);
+  }
+  /* one-sided limits, then the midpoint the theorem promises */
+  if(Math.abs(target.lp-target.lm)>1e-7){
+    for(const [v,lab] of [[target.lm,'f(x\u2080\u207B)'],[target.lp,'f(x\u2080\u207A)']]){
+      dx.strokeStyle='rgba(35,25,27,0.35)'; dx.lineWidth=1; dx.setLineDash([3,3]);
+      dx.beginPath(); dx.moveTo(P.l,YV(v)); dx.lineTo(P.l+gW,YV(v)); dx.stroke(); dx.setLineDash([]);
+      dx.fillStyle=MUT; dx.textAlign='left'; dx.font='600 9px "IBM Plex Mono",monospace';
+      dx.fillText(lab,P.l+4,YV(v)-6);
+    }
+  }
+  dx.strokeStyle=BRZ; dx.lineWidth=2; dx.setLineDash([8,4]);
+  dx.beginPath(); dx.moveTo(P.l,YV(target.mid)); dx.lineTo(P.l+gW,YV(target.mid)); dx.stroke();
+  dx.setLineDash([]);
+  dx.strokeStyle=CRIM; dx.lineWidth=1.9; dx.beginPath();
+  for(let n=1;n<=NMAX;n++){ const px=XN(n), py=YV(hist[n]); n===1?dx.moveTo(px,py):dx.lineTo(px,py); }
+  dx.stroke();
+  dx.beginPath(); dx.arc(XN(S.N),YV(hist[S.N]),4,0,6.283);
+  dx.fillStyle=CRIM; dx.fill(); dx.strokeStyle='#fff'; dx.lineWidth=1.3; dx.stroke();
+  logTicksN(dx,P,gW,gH,XN);
+  dx.strokeStyle='rgba(35,25,27,0.35)'; dx.lineWidth=1; dx.strokeRect(P.l,P.t,gW,gH);
+  dx.font='600 9.5px "IBM Plex Mono",monospace'; dx.textAlign='left'; dx.textBaseline='alphabetic';
+  dx.fillStyle=MUT; dx.fillText('POINTWISE AT THE PROBE',P.l,P.t-24);
+  dx.font='700 13px "Playfair Display",Georgia,serif'; dx.fillStyle=INK;
+  dx.fillText('S\u2099(x\u2080) \u2192 \u00BD[f(x\u2080\u207B)+f(x\u2080\u207A)]',P.l,P.t-8);
+
+  /* ── right: the three error measures ── */
+  const P2={l:half+70,t:44}, g2W=half-118, g2H=gH;
+  const curves=[
+    {v:tailE, col:CRIM, lab:'mean-square \u222B|f\u2212S\u2099|\u00B2'},
+    {v:supPer,col:SLT,  lab:'sup over the period'},
+    {v:supWin,col:BRZ,  lab:'sup over the window'}
+  ];
+  let mn=Infinity, mxv=0;
+  for(const c of curves) for(let n=1;n<=NMAX;n++){
+    const v=c.v[n];
+    if(v>0&&Number.isFinite(v)){ mn=Math.min(mn,v); mxv=Math.max(mxv,v); }
+  }
+  if(!(mxv>0)){ mxv=1; mn=1e-12; }
+  mn=Math.max(mn,mxv*1e-13);
+  const top=Math.pow(10,Math.ceil(Math.log10(mxv))), bot=Math.pow(10,Math.floor(Math.log10(mn)));
+  const dec=Math.max(1,Math.round(Math.log10(top/bot)));
+  const XN2=n=>P2.l+Math.log(n)/Math.log(NMAX)*g2W;
+  const YL=v=>{ const a=Math.max(v,bot*1e-2);
+    return P2.t+g2H-(Math.log10(a/bot)/dec)*g2H; };
+  dx.font='500 10px "IBM Plex Mono",monospace'; dx.textAlign='right'; dx.textBaseline='middle';
+  for(let k=0;k<=dec;k++){
+    const v=bot*Math.pow(10,k), y=YL(v);
+    dx.strokeStyle='rgba(158,27,50,0.07)'; dx.lineWidth=1;
+    dx.beginPath(); dx.moveTo(P2.l,y); dx.lineTo(P2.l+g2W,y); dx.stroke();
+    dx.fillStyle=MUT; dx.fillText(v.toExponential(0),P2.l-7,y);
+  }
+  /* the barrier at J/2 */
+  const J=maxJump();
+  if(J>0){
+    const y=YL(J/2);
+    dx.strokeStyle='rgba(45,52,60,0.7)'; dx.lineWidth=1.5; dx.setLineDash([6,4]);
+    dx.beginPath(); dx.moveTo(P2.l,y); dx.lineTo(P2.l+g2W,y); dx.stroke(); dx.setLineDash([]);
+    dx.fillStyle=SLT; dx.textAlign='left'; dx.font='600 9px "IBM Plex Mono",monospace';
+    dx.fillText('J/2 = '+fmt(J/2,3)+'  \u2014 the sup cannot get below this',P2.l+5,y-6);
+  }
+  dx.save(); dx.beginPath(); dx.rect(P2.l,P2.t,g2W,g2H); dx.clip();
+  for(const c of curves){
+    dx.strokeStyle=c.col; dx.lineWidth=2; dx.beginPath();
+    let open=false;
+    for(let n=1;n<=NMAX;n++){
+      const v=c.v[n];
+      if(!(v>0)||!Number.isFinite(v)){ open=false; continue; }
+      const px=XN2(n), py=YL(v);
+      open?dx.lineTo(px,py):dx.moveTo(px,py); open=true;
+    }
+    dx.stroke();
+    if(c.v[S.N]>0){
+      dx.beginPath(); dx.arc(XN2(S.N),YL(c.v[S.N]),3.4,0,6.283);
+      dx.fillStyle=c.col; dx.fill();
+    }
+  }
+  dx.restore();
+  logTicksN(dx,P2,g2W,g2H,XN2);
+  dx.strokeStyle='rgba(35,25,27,0.35)'; dx.lineWidth=1; dx.strokeRect(P2.l,P2.t,g2W,g2H);
+  dx.font='600 9.5px "IBM Plex Mono",monospace'; dx.textAlign='left'; dx.textBaseline='alphabetic';
+  dx.fillStyle=MUT; dx.fillText('ERROR AGAINST N  (both axes logarithmic)',P2.l,P2.t-24);
+  dx.font='700 13px "Playfair Display",Georgia,serif'; dx.fillStyle=INK;
+  dx.fillText('mean-square falls \u00B7 sup-norm need not',P2.l,P2.t-8);
+
+  dx.strokeStyle='#e0dbd2'; dx.lineWidth=1;
+  dx.beginPath(); dx.moveTo(half+8,14); dx.lineTo(half+8,DH-14); dx.stroke();
+}
+function logTicksN(c,P,gW,gH,XN){
+  c.font='500 10px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='top';
+  c.fillStyle=MUT;
+  for(const n of [1,2,5,10,20,50,100,200]){
+    if(n>NMAX) continue;
+    const x=XN(n);
+    c.strokeStyle='rgba(35,25,27,0.22)'; c.lineWidth=1;
+    c.beginPath(); c.moveTo(x,P.t+gH); c.lineTo(x,P.t+gH+4); c.stroke();
+    c.fillText(n,x,P.t+gH+7);
+  }
+  c.font='italic 700 11px "Crimson Pro",Georgia,serif'; c.fillStyle='rgba(35,25,27,0.78)';
+  c.fillText('N',P.l+gW/2,P.t+gH+21);
+}
+
+/* the one-sided limits of the periodic extension at a point */
+function limAt(x){
+  const lm=fper(x-1e-8), lp=fper(x+1e-8);
+  return {lm:lm, lp:lp, mid:0.5*(lm+lp)};
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   9. READOUTS
+   ══════════════════════════════════════════════════════════════════ */
+
+function stat(k,v,n,cls){
+  return '<div class="stat"><div class="k">'+k+'</div><div class="v'+(cls?' '+cls:'')+'">'+v+
+         '</div><div class="n">'+n+'</div></div>';
+}
+function renderStats(){
+  const t=limAt(S.x0), sN=SN(S.x0,S.N);
+  const isJump=Math.abs(t.lp-t.lm)>1e-7;
+  const ov=overshoot();
+  document.getElementById('stats1').innerHTML=
+    stat('S\u2099(x\u2080)', fmt(sN,6), 'at x\u2080 = '+fmtX(S.x0)+', N = '+S.N)+
+    stat('\u00BD[f(x\u2080\u207B)+f(x\u2080\u207A)]', fmt(t.mid,6),
+         isJump?('jump here: '+fmt(t.lm,3)+' \u2192 '+fmt(t.lp,3)):'f is continuous here','gold')+
+    stat('|S\u2099(x\u2080) \u2212 midpoint|', fmt(Math.abs(sN-t.mid),6),
+         'the pointwise gap at this N','dark')+
+    (ov&&ov.J>0
+      ? stat('measured overshoot', fmt(ov.over,5),
+             'past f, near the jump at x = '+fmt(ov.at,2))+
+        stat('0.0894898 \u00B7 J', fmt(ov.pred,5),
+             'Wilbraham\u2013Gibbs prediction, J = '+fmt(ov.J,3),'gold')
+      : stat('overshoot', '\u2014', 'no jump in this specimen')+
+        stat('Wilbraham\u2013Gibbs', '\u2014', 'nothing to overshoot','gold'));
+  const J=maxJump();
+  const slope=(c)=>{
+    const pts=[];
+    for(let n=Math.max(8,Math.floor(NMAX/4));n<=NMAX;n++)
+      if(c[n]>0&&Number.isFinite(c[n])) pts.push([Math.log(n),Math.log(c[n])]);
+    if(pts.length<6) return null;
+    let sx=0,sy=0,sxx=0,sxy=0;
+    for(const p of pts){ sx+=p[0]; sy+=p[1]; sxx+=p[0]*p[0]; sxy+=p[0]*p[1]; }
+    const nn=pts.length, den=nn*sxx-sx*sx;
+    return Math.abs(den)<1e-12?null:(nn*sxy-sx*sy)/den;
+  };
+  const sE=slope(tailE), sP=slope(supPer);
+  document.getElementById('stats2').innerHTML=
+    stat('mean-square error', fmt(tailE[S.N],6),'leftover tail energy at N = '+S.N)+
+    stat('sup over the period', fmt(supPer[S.N],6),
+         J>0?('barrier J/2 = '+fmt(J/2,3)):'no jump: this one does fall','dark')+
+    stat('sup over the window', fmt(supWin[S.N],6),
+         'worst point near x = '+fmtX(supWinArgmax),'gold')+
+    stat('mean-square decay', sE===null?'\u2014':'~N^'+sE.toFixed(2),
+         'fitted over the upper range of N')+
+    stat('sup decay', sP===null?'\u2014':'~N^'+sP.toFixed(2),
+         J>0?'flat means no uniform convergence':'falling: uniform on the period');
+  document.getElementById('specMeta').textContent=
+    SPECS[S.id].cls+'  \u00B7  coefficients '+SPECS[S.id].decay+
+    '  \u00B7  expect '+SPECS[S.id].mode;
+  document.getElementById('xVal').textContent=fmtX(S.x0);
+  document.getElementById('zVal').textContent='\u00B1'+
+    (S.half>=0.01?S.half.toFixed(2):S.half.toExponential(0));
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   10. SPECIMEN STRIP — a sparkline apiece
+   ══════════════════════════════════════════════════════════════════ */
+
+function buildSpec(){
+  const host=document.getElementById('spec'); host.innerHTML='';
+  for(const id in SPECS){
+    const sp=SPECS[id];
+    const b=document.createElement('button');
+    b.className='sp'; b.setAttribute('aria-pressed',id===S.id?'true':'false');
+    b.innerHTML='<div class="nm">'+sp.lab+'</div><div class="cl">'+sp.cls+'</div>';
+    const cv=document.createElement('canvas');
+    cv.width=340; cv.height=68; cv.style.width='100%';
+    b.appendChild(cv);
+    host.appendChild(b);
+    /* sparkline of two periods */
+    const c=cv.getContext('2d');
+    c.clearRect(0,0,340,68);
+    let lo=Infinity,hi=-Infinity;
+    const N=300, v=[];
+    for(let i=0;i<N;i++){
+      const x=-2+4*i/(N-1);
+      const P=2*L; let t=(x+L)%P; if(t<0)t+=P;
+      const y=sp.f(t-L);
+      v.push([x,y]); lo=Math.min(lo,y); hi=Math.max(hi,y);
+    }
+    const pad=(hi-lo)*0.16||0.5; lo-=pad; hi+=pad;
+    c.strokeStyle=id===S.id?'#9E1B32':'rgba(35,25,27,0.55)'; c.lineWidth=1.8;
+    let prev=null;
+    c.beginPath();
+    for(const [x,y] of v){
+      const px=6+(x+2)/4*328, py=6+(hi-y)/(hi-lo)*56;
+      if(prev!==null&&Math.abs(y-prev)>(hi-lo)*0.4){ c.stroke(); c.beginPath(); c.moveTo(px,py); }
+      else if(prev===null) c.moveTo(px,py);
+      else c.lineTo(px,py);
+      prev=y;
+    }
+    c.stroke();
+    b.addEventListener('click',function(){
+      S.id=id; S.x0=0; recompute(true);
+      for(const o of host.children) o.setAttribute('aria-pressed','false');
+      b.setAttribute('aria-pressed','true');
+      buildSpec();
+    });
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   11. WIRE-UP
+   ══════════════════════════════════════════════════════════════════ */
+
+const $=id=>document.getElementById(id);
+let geom=null;
+
+function recompute(full){
+  if(full){ computeCoef(); findSingularities(); }
+  measureAll();
+  draw();
+}
+function draw(){
+  geom=renderMain(); renderDiag(); renderStats();
+}
+function redrawLight(){ measureAll(); draw(); }
+
+$('slN').addEventListener('input',function(){
+  S.N=parseInt(this.value,10); $('nVal').textContent=S.N; draw();
+});
+$('slZ').addEventListener('input',function(){
+  S.half=Math.pow(10,parseFloat(this.value)); redrawLight();
+});
+$('bJump').addEventListener('click',function(){
+  const s=nearestJump(S.ctr);
+  if(!s){ return; }
+  S.x0=s.x; S.ctr=s.x;
+  if(S.half>0.2){ S.half=0.2; $('slZ').value=Math.log10(0.2); }
+  redrawLight();
+});
+$('bEnd').addEventListener('click',function(){
+  S.x0=1; S.ctr=1;
+  if(S.half>0.2){ S.half=0.2; $('slZ').value=Math.log10(0.2); }
+  redrawLight();
+});
+$('bCenter').addEventListener('click',function(){ S.ctr=S.x0; redrawLight(); });
+$('bFit').addEventListener('click',function(){
+  S.ctr=0; S.half=1; $('slZ').value=0; redrawLight();
+});
+for(const [id,key] of [['cLadder','ladder'],['cGibbs','gibbs'],['cMid','mid'],['cResid','resid']]){
+  $(id).addEventListener('change',function(){ S[key]=this.checked; draw(); });
+}
+
+/* click to place the probe, drag to pan */
+let panning=false, panFrom=null, moved=false;
+function toX(e){
+  if(!geom) return null;
+  const r=mc.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  const px=(t.clientX-r.left)*(MW/r.width);
+  return geom.lo+(px-geom.P.l)/geom.gW*(geom.hi-geom.lo);
+}
+mc.addEventListener('mousedown',function(e){
+  panning=true; moved=false; panFrom=toX(e);
+});
+window.addEventListener('mousemove',function(e){
+  if(!panning) return;
+  const x=toX(e); if(x===null||panFrom===null) return;
+  if(Math.abs(x-panFrom)>(geom.hi-geom.lo)*0.004){
+    moved=true;
+    S.ctr-=(x-panFrom);
+    redrawLight();
+  }
+});
+window.addEventListener('mouseup',function(e){
+  if(panning&&!moved){
+    const x=toX(e);
+    if(x!==null&&x>=geom.lo&&x<=geom.hi){ S.x0=x; draw(); }
+  }
+  panning=false; panFrom=null;
+});
+mc.addEventListener('touchstart',function(e){ panning=true; moved=false; panFrom=toX(e); },{passive:false});
+mc.addEventListener('touchmove',function(e){
+  if(!panning) return;
+  const x=toX(e); if(x===null||panFrom===null) return;
+  if(Math.abs(x-panFrom)>(geom.hi-geom.lo)*0.004){ moved=true; S.ctr-=(x-panFrom); redrawLight(); }
+  e.preventDefault();
+},{passive:false});
+mc.addEventListener('touchend',function(){ panning=false; panFrom=null; });
+
+function sizeAll(){ hidpi(mc,mx,MW,MH); hidpi(dc,dx,DW,DH); }
+window.addEventListener('resize',function(){ sizeAll(); draw(); });
+document.fonts && document.fonts.ready.then(draw);
+
+sizeAll();
+$('nVal').textContent=S.N;
+buildSpec();
+recompute(true);
+</script>
+</body>
+</html>

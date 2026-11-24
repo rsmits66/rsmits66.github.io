@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cauchy Integral Formula and Mean Value Property</title>
+<style>
+/* Layout: toolbar, then two plane views (z-plane | w-plane).
+   N sample points on the circle C are colored by angle; the same hue marks their images.
+   On C, dz = i(z − c)dθ, so the Cauchy integral is an average over θ of f(z) times the weight
+   K = (z − c)/(z − z0). With z0 at the center every weight is 1: the mean value property.
+   The w-plane draws that average as a head-to-tail chain of N arrows starting at 0. */
+:root {
+  --bg: #F3F4F0; --pane: #FFFFFF; --ink: #1C2321; --ink-2: #5C6663; --rule: #D8DCD6;
+  --grid: #E6E9E4; --axis: #B3BAB5; --accent: #0B6E6A; --center: #B23A2E; --warn: #A04A00; --good: #1E7A3C;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+    --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; --warn: #F0B070; --good: #7FD39A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --pane: #1C2320; --ink: #E7ECE9; --ink-2: #9EA8A3; --rule: #2F3835;
+  --grid: #252D2A; --axis: #4A5551; --accent: #4FC3BD; --center: #F08A7B; --warn: #F0B070; --good: #7FD39A; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); }
+.wrap { max-width: 78rem; margin-inline: auto; padding: 1.25rem 16px 2rem; display: grid; gap: 1rem; }
+h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+.sub { margin: 0.2rem 0 0; color: var(--ink-2); max-width: 76ch; }
+.formula { margin: 0.4rem 0 0; font-family: var(--mono); font-size: 0.95rem; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--pane); }
+.seg button { border: 0; border-radius: 0; background: transparent; padding: 0.45rem 0.9rem; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--pane); font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: end; }
+.field { display: grid; gap: 0.25rem; min-width: 0; }
+.field > span { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+select, button { font: inherit; color: var(--ink); background: var(--pane); border: 1px solid var(--rule); border-radius: 6px; padding: 0.35rem 0.6rem; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+select { min-width: 11rem; max-width: 100%; }
+input[type="range"] { width: 11rem; max-width: 100%; accent-color: var(--accent); margin: 0; }
+.chk { display: flex; gap: 0.4rem; align-items: center; color: var(--ink-2); padding-bottom: 0.4rem; }
+.chk input { accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.planes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 46rem) { .planes { grid-template-columns: 1fr; } }
+.pane { background: var(--pane); border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; min-width: 0; display: grid; gap: 0.5rem; align-content: start; }
+.pane h2 { margin: 0; font-size: 1rem; font-weight: 600; display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
+.pane h2 small { font-weight: 400; color: var(--ink-2); font-size: 0.82rem; }
+.view { width: 100%; aspect-ratio: 1; }
+canvas { display: block; width: 100%; height: 100%; border-radius: 4px; cursor: crosshair; touch-action: none; }
+#dom { cursor: grab; }
+.read { font-family: var(--mono); font-size: 0.86rem; font-variant-numeric: tabular-nums; color: var(--ink-2); display: grid; gap: 0.15rem; }
+.read b { color: var(--ink); font-weight: 600; }
+.sw { display: inline-block; width: 0.75em; height: 0.75em; border-radius: 50%; vertical-align: -0.05em; margin-right: 0.35em; background: var(--center); }
+.sw.ring { background: transparent; border: 2px solid var(--ink); }
+.verdict { margin: 0; padding: 0.5rem 0.65rem; border-left: 3px solid var(--good); background: var(--pane); border-radius: 0 6px 6px 0; max-width: 100ch; }
+.verdict.bad { border-left-color: var(--warn); }
+.hint { color: var(--ink-2); font-size: 0.86rem; margin: 0; max-width: 100ch; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Cauchy Integral Formula and Mean Value Property</h1>
+    <p class="sub" id="sub"></p>
+    <p class="formula" id="formula"></p>
+  </header>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Mode">
+      <button type="button" id="mMean" aria-pressed="true">Mean value (z₀ at the center)</button>
+      <button type="button" id="mCauchy" aria-pressed="false">Cauchy formula (z₀ anywhere)</button>
+    </div>
+    <label class="field"><span>Function f(z)</span><select id="fn"></select></label>
+    <label class="field"><span>Sample points N = <output id="Nv"></output></span>
+      <input type="range" id="N" min="3" max="120" step="1" value="12">
+    </label>
+    <label class="chk"><input type="checkbox" id="chain" checked> Draw the average as a chain of arrows</label>
+    <label class="chk"><input type="checkbox" id="fit" checked> Fit w-plane view</label>
+  </div>
+
+  <div class="planes">
+    <section class="pane">
+      <h2>z-plane <small id="how"></small></h2>
+      <div class="view"><canvas id="dom"></canvas></div>
+      <div class="read">
+        <div>C: center c = <b id="rc"></b>, radius r = <b id="rr"></b></div>
+        <div><span class="sw"></span>z₀ = <b id="rz0"></b> <span id="where"></span></div>
+        <div id="wline">weights |K| run from <b id="kmin"></b> to <b id="kmax"></b> (dot size)</div>
+      </div>
+    </section>
+    <section class="pane">
+      <h2>w-plane <small>scroll to zoom, drag to pan</small></h2>
+      <div class="view"><canvas id="ran"></canvas></div>
+      <div class="read">
+        <div><span class="sw"></span>f(z₀) = <b id="rf"></b></div>
+        <div><span class="sw ring"></span><span id="lblN"></span> = <b id="rN"></b> <span id="rErr"></span></div>
+        <div><span id="lblX"></span> = <b id="rX"></b></div>
+      </div>
+    </section>
+  </div>
+  <p class="verdict" id="verdict"></p>
+  <p class="hint" id="note"></p>
+</main>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------- complex arithmetic ----------
+const C = (re, im) => ({ re, im });
+const add = (a, b) => C(a.re + b.re, a.im + b.im);
+const sub = (a, b) => C(a.re - b.re, a.im - b.im);
+const mul = (a, b) => C(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+const div = (a, b) => { const d = b.re * b.re + b.im * b.im; return C((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+const exp = z => { const m = Math.exp(z.re); return C(m * Math.cos(z.im), m * Math.sin(z.im)); };
+const sin = z => C(Math.sin(z.re) * Math.cosh(z.im), Math.cos(z.re) * Math.sinh(z.im));
+const abs = z => Math.hypot(z.re, z.im);
+const ONE = C(1, 0);
+const finite = w => Number.isFinite(w.re) && Number.isFinite(w.im) && abs(w) < 1e8;
+const clean = x => Math.abs(x) < 5e-5 ? 0 : x;
+const fmt = z => { const a = clean(z.re), b = clean(z.im); return `${a < 0 ? '−' : ''}${Math.abs(a).toFixed(4)} ${b < 0 ? '−' : '+'} ${Math.abs(b).toFixed(4)}i`; };
+
+// sing: points where f is not analytic (isolated). analytic: false for comparison functions.
+const FUNCS = [
+  { name: 'z²', f: z => mul(z, z), sing: [],
+    note: 'For a polynomial of degree d the N-point average is already exact once N > d, so here even N = 3 lands on f(z₀) when z₀ is the center.' },
+  { name: 'z³ − z', f: z => sub(mul(z, mul(z, z)), z), sing: [],
+    note: 'The image of the circle can loop over itself, but the average of the image points is still the image of the center.' },
+  { name: 'eᶻ', f: exp, sing: [],
+    note: 'Not a polynomial, so small N leaves a visible error; raise N and it vanishes very quickly.' },
+  { name: 'sin z', f: sin, sing: [],
+    note: 'Entire, so the formula holds for every circle and every z₀ inside it.' },
+  { name: '1/z', f: z => div(ONE, z), sing: [C(0, 0)],
+    note: 'Analytic except at 0. Keep 0 outside the circle and the formula holds; enclose 0 and it fails, because f must be analytic everywhere inside C.' },
+  { name: 'z̄  (not analytic)', f: z => C(z.re, -z.im), sing: [], analytic: false,
+    note: 'z̄ is harmonic, so the mean value property still holds at the center. The Cauchy formula does not: the integral returns c̄ wherever z₀ sits inside C, so it cannot recover z̄₀.' },
+  { name: '|z|²  (not analytic)', f: z => C(z.re * z.re + z.im * z.im, 0), sing: [], analytic: false,
+    note: 'Neither analytic nor harmonic: the average over the circle is |c|² + r², which misses the center value by r².' },
+];
+FUNCS.forEach((F, i) => { const o = document.createElement('option'); o.value = i; o.textContent = F.name; $('fn').appendChild(o); });
+
+// ---------- state ----------
+const S = { mode: 'mean', fi: 0, cx: 1, cy: 0.5, r: 1, zx: 1.45, zy: 0.75, N: 12, chain: true, fit: true };
+const dom = { cvs: $('dom'), x: 0.8, y: 0.4, half: 2.4 };
+const ran = { cvs: $('ran'), x: 0, y: 0, half: 3 };
+const hue = t => `hsl(${(((t * 180 / Math.PI) % 360 + 360) % 360).toFixed(0)} 70% 48%)`;
+
+// ---------- canvas plumbing ----------
+function setup(v) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = v.cvs.clientWidth, h = v.cvs.clientHeight;
+  if (v.cvs.width !== Math.round(w * dpr) || v.cvs.height !== Math.round(h * dpr)) { v.cvs.width = Math.round(w * dpr); v.cvs.height = Math.round(h * dpr); }
+  const g = v.cvs.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  v.w = w; v.h = h; v.scale = Math.min(w, h) / (2 * v.half);
+  v.toPx = z => [w / 2 + (z.re - v.x) * v.scale, h / 2 - (z.im - v.y) * v.scale];
+  v.toZ = (px, py) => C(v.x + (px - w / 2) / v.scale, v.y - (py - h / 2) / v.scale);
+  return g;
+}
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function niceStep(half) { const raw = half / 3, p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+function drawGrid(g, v) {
+  g.clearRect(0, 0, v.w, v.h);
+  const step = niceStep(v.half), z0 = v.toZ(0, v.h), z1 = v.toZ(v.w, 0);
+  g.lineWidth = 1; g.strokeStyle = cssVar('--grid');
+  g.font = '11px ' + cssVar('--sans'); g.fillStyle = cssVar('--ink-2'); g.textAlign = 'left'; g.textBaseline = 'top';
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) { const [px] = v.toPx(C(x, 0)); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, v.h); g.stroke(); }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) { const [, py] = v.toPx(C(0, y)); g.beginPath(); g.moveTo(0, py); g.lineTo(v.w, py); g.stroke(); }
+  g.strokeStyle = cssVar('--axis');
+  const [ox, oy] = v.toPx(C(0, 0));
+  g.beginPath(); g.moveTo(ox, 0); g.lineTo(ox, v.h); g.moveTo(0, oy); g.lineTo(v.w, oy); g.stroke();
+  const dec = step < 1 ? Math.ceil(-Math.log10(step)) : 0;
+  for (let x = Math.ceil(z0.re / step) * step; x <= z1.re; x += step) { if (Math.abs(x) < 1e-9) continue; const [px] = v.toPx(C(x, 0)); g.fillText(x.toFixed(dec), px + 3, Math.min(Math.max(oy + 3, 2), v.h - 14)); }
+  for (let y = Math.ceil(z0.im / step) * step; y <= z1.im; y += step) { if (Math.abs(y) < 1e-9) continue; const [, py] = v.toPx(C(0, y)); g.fillText(y.toFixed(dec) + 'i', Math.min(Math.max(ox + 3, 2), v.w - 34), py + 2); }
+}
+function paintHue(g, v, pts, width) {      // closed curve painted by parameter; pts[i] = {t, w}
+  g.lineWidth = width; g.lineCap = 'round';
+  const lim = Math.max(v.w, v.h);
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    if (!finite(a.w) || !finite(b.w)) continue;
+    const [ax, ay] = v.toPx(a.w), [bx, by] = v.toPx(b.w);
+    if (Math.hypot(bx - ax, by - ay) > lim) continue;
+    g.strokeStyle = hue(a.t); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  }
+}
+function dot(g, v, z, color, rad, ring) {
+  if (!finite(z)) return;
+  const [x, y] = v.toPx(z);
+  g.beginPath(); g.arc(x, y, rad, 0, 2 * Math.PI);
+  if (ring) { g.lineWidth = 2.5; g.strokeStyle = color; g.stroke(); return; }
+  g.fillStyle = color; g.fill(); g.lineWidth = 1.5; g.strokeStyle = cssVar('--pane'); g.stroke();
+}
+
+// ---------- the average ----------
+// (1/n) Σ K(θ_j) f(z_j), with K = (z − c)/(z − z0); returns the terms too
+function average(f, c, z0, r, n) {
+  const terms = []; let sum = C(0, 0), kmin = Infinity, kmax = 0;
+  for (let j = 0; j < n; j++) {
+    const t = 2 * Math.PI * j / n, z = C(c.re + r * Math.cos(t), c.im + r * Math.sin(t));
+    const K = div(sub(z, c), sub(z, z0)), w = f(z), term = mul(K, w);
+    const k = abs(K); if (k < kmin) kmin = k; if (k > kmax) kmax = k;
+    sum = add(sum, term); terms.push({ t, z, w, k, step: C(term.re / n, term.im / n) });
+  }
+  return { val: C(sum.re / n, sum.im / n), terms, kmin, kmax };
+}
+
+// ---------- render ----------
+function render() {
+  const F = FUNCS[S.fi], f = F.f, mean = S.mode === 'mean';
+  const c = C(S.cx, S.cy), z0 = mean ? c : C(S.zx, S.zy), r = S.r;
+  const d0 = abs(sub(z0, c)), inside = d0 < r, onC = Math.abs(d0 - r) < 0.004 * r + 1e-9;
+  const w0 = f(z0);
+  const A = average(f, c, z0, r, S.N);
+  const X = average(f, c, z0, r, 6000);
+  const singOn = F.sing.some(s => Math.abs(abs(sub(s, c)) - r) < 0.01 * r);
+  const singIn = F.sing.filter(s => abs(sub(s, c)) < r);
+  const defined = !onC && !singOn && finite(X.val);
+
+  const curve = [];
+  for (let i = 0; i <= 720; i++) { const t = 2 * Math.PI * i / 720, z = C(c.re + r * Math.cos(t), c.im + r * Math.sin(t)); curve.push({ t, z, w: f(z) }); }
+
+  // partial sums of the chain
+  const chain = [C(0, 0)];
+  for (const q of A.terms) chain.push(add(chain[chain.length - 1], q.step));
+
+  if (S.fit) {
+    const all = [C(0, 0)];
+    curve.forEach(p => { if (finite(p.w)) all.push(p.w); });
+    if (finite(w0)) all.push(w0);
+    if (S.chain) chain.forEach(p => { if (finite(p)) all.push(p); });
+    const re = all.map(w => w.re).sort((a, b) => a - b), im = all.map(w => w.im).sort((a, b) => a - b);
+    const q = (arr, p) => arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
+    const L = C(Math.min(q(re, 0.01), 0), Math.min(q(im, 0.01), 0)), H = C(Math.max(q(re, 0.99), 0), Math.max(q(im, 0.99), 0));
+    ran.x = (L.re + H.re) / 2; ran.y = (L.im + H.im) / 2;
+    ran.half = Math.max(0.05, Math.max(H.re - L.re, H.im - L.im) / 2 * 1.25);
+  }
+
+  const gd = setup(dom), gr = setup(ran);
+  drawGrid(gd, dom); drawGrid(gr, ran);
+  const ink = cssVar('--ink'), ink2 = cssVar('--ink-2'), red = cssVar('--center'), pane = cssVar('--pane');
+
+  // z-plane: circle, singular points, samples sized by weight, z0
+  paintHue(gd, dom, curve.map(p => ({ t: p.t, w: p.z })), 2.5);
+  for (const s of F.sing) {
+    const [x, y] = dom.toPx(s);
+    gd.lineWidth = 2.5; gd.strokeStyle = cssVar('--warn'); gd.beginPath(); gd.moveTo(x - 5, y - 5); gd.lineTo(x + 5, y + 5); gd.moveTo(x - 5, y + 5); gd.lineTo(x + 5, y - 5); gd.stroke();
+  }
+  const size = k => Math.max(2.5, Math.min(13, 4.5 * Math.sqrt(k)));
+  if (!mean) { const [x, y] = dom.toPx(c); gd.beginPath(); gd.arc(x, y, 3, 0, 7); gd.fillStyle = ink2; gd.fill(); }
+  for (const q of A.terms) { dot(gd, dom, q.z, hue(q.t), size(q.k)); dot(gr, ran, q.w, hue(q.t), size(q.k)); }
+  dot(gd, dom, z0, red, 6.5);
+
+  // w-plane: image curve, chain from 0, f(z0), N-point result
+  paintHue(gr, ran, curve, 2);
+  if (S.chain) {
+    gr.lineWidth = S.N > 60 ? 1.5 : 2.5; gr.lineCap = 'round';
+    for (let j = 0; j < A.terms.length; j++) {
+      const a = chain[j], b = chain[j + 1];
+      if (!finite(a) || !finite(b)) continue;
+      const [ax, ay] = ran.toPx(a), [bx, by] = ran.toPx(b);
+      gr.strokeStyle = hue(A.terms[j].t); gr.beginPath(); gr.moveTo(ax, ay); gr.lineTo(bx, by); gr.stroke();
+      const len = Math.hypot(bx - ax, by - ay);
+      if (len > 14) {
+        const a2 = Math.atan2(by - ay, bx - ax);
+        gr.save(); gr.translate(bx, by); gr.rotate(a2); gr.beginPath(); gr.moveTo(0, 0); gr.lineTo(-8, -4); gr.lineTo(-8, 4); gr.closePath(); gr.fillStyle = hue(A.terms[j].t); gr.fill(); gr.restore();
+      }
+    }
+    const [ox, oy] = ran.toPx(C(0, 0));
+    gr.beginPath(); gr.arc(ox, oy, 3.5, 0, 7); gr.fillStyle = ink; gr.fill();
+  }
+  dot(gr, ran, w0, red, 6.5);
+  dot(gr, ran, A.val, ink, 10, true);
+  gr.font = '12px ' + cssVar('--sans'); gr.fillStyle = ink; gr.textBaseline = 'middle'; gr.textAlign = 'left';
+  if (finite(w0)) { const [x, y] = ran.toPx(w0); gr.fillText('f(z₀)', x + 14, y - 12); }
+
+  // readouts
+  $('rc').textContent = fmt(c); $('rr').textContent = r.toFixed(3); $('rz0').textContent = fmt(z0);
+  $('where').textContent = mean ? '(the center)' : onC ? '(on C)' : inside ? '(inside C)' : '(outside C)';
+  $('wline').hidden = mean; $('kmin').textContent = A.kmin.toFixed(2); $('kmax').textContent = A.kmax > 999 ? '∞' : A.kmax.toFixed(2);
+  $('rf').textContent = finite(w0) ? fmt(w0) : 'undefined';
+  $('lblN').textContent = mean ? `average of the ${S.N} sample values` : `weighted average of the ${S.N} samples`;
+  $('rN').textContent = finite(A.val) ? fmt(A.val) : 'undefined';
+  const err = finite(A.val) && finite(w0) ? abs(sub(A.val, w0)) : NaN;
+  $('rErr').textContent = Number.isFinite(err) && inside && !onC ? `(off by ${err < 1e-4 ? err.toExponential(1).replace('-', '−') : err.toFixed(4)})` : '';
+  $('lblX').innerHTML = mean ? '(1/2π) ∫ f(z₀ + re<sup>iθ</sup>) dθ' : '(1/2πi) ∮<sub>C</sub> f(z)/(z − z₀) dz';
+  $('rX').textContent = defined ? fmt(X.val) : 'undefined';
+
+  // verdict
+  let msg, bad = false;
+  const scale = Math.max(1, finite(w0) ? abs(w0) : 1);
+  if (singOn) { msg = 'C passes through a point where f is not defined. Move the circle off it.'; bad = true; }
+  else if (onC) { msg = 'z₀ lies on C, where the integrand f(z)/(z − z₀) blows up. Move z₀ off the circle.'; bad = true; }
+  else if (!inside) {
+    if (abs(X.val) < 1e-6 * scale) msg = 'z₀ is outside C, so f(z)/(z − z₀) is analytic on and inside C and the integral is 0 (Cauchy–Goursat). The chain of arrows closes up at the origin.';
+    else { msg = 'z₀ is outside C, yet the integral is not 0, because f is not analytic inside C.'; bad = true; }
+  } else if (abs(sub(X.val, w0)) < 1e-6 * scale) {
+    msg = mean
+      ? 'The average of f over the circle equals its value at the center (Gauss’s mean value theorem). The chain of N arrows, each one a sample value divided by N, ends on f(z₀).'
+      : 'The values of f on C alone determine f(z₀). Samples nearer to z₀ carry more weight (larger dots), and the weighted chain ends on f(z₀).';
+    if (err > 2e-3 * scale) msg += ` With only N = ${S.N} samples the sum is still off by ${err.toFixed(3)}; raise N${mean ? '' : ' or move z₀ away from the circle'}.`;
+  } else {
+    bad = true;
+    msg = singIn.length ? 'A singular point of f lies inside C, so the hypothesis “f analytic everywhere inside and on C” fails and the integral does not return f(z₀).'
+      : (mean ? 'The average over the circle is not the center value: f is not analytic (and not harmonic).' : 'The integral does not return f(z₀): f is not analytic inside C.');
+  }
+  $('verdict').textContent = msg; $('verdict').className = bad ? 'verdict bad' : 'verdict';
+
+  // static text
+  $('sub').textContent = mean
+    ? 'Gauss’s mean value theorem: if f is analytic on and inside a circle, its value at the center is the average of its values around the circle.'
+    : 'Cauchy integral formula: if f is analytic on and inside C, its values on C determine its value at every point z₀ inside. On a circle the formula is a weighted average of the boundary values.';
+  $('formula').innerHTML = mean
+    ? 'f(z₀) = (1/2π) ∫<sub>0</sub><sup>2π</sup> f(z₀ + re<sup>iθ</sup>) dθ'
+    : 'f(z₀) = (1/2πi) ∮<sub>C</sub> f(z)/(z − z₀) dz = (1/2π) ∫<sub>0</sub><sup>2π</sup> f(z) · (z − c)/(z − z₀) dθ';
+  $('how').textContent = mean ? 'drag inside the circle to move it, drag the edge to resize, scroll to zoom' : 'drag the red point z₀ · drag inside to move the circle · drag the edge to resize';
+  $('note').textContent = F.note;
+  $('Nv').textContent = S.N;
+  $('mMean').setAttribute('aria-pressed', String(mean)); $('mCauchy').setAttribute('aria-pressed', String(!mean));
+}
+
+// ---------- controls ----------
+$('mMean').addEventListener('click', () => { S.mode = 'mean'; render(); });
+$('mCauchy').addEventListener('click', () => {
+  S.mode = 'cauchy';
+  if (Math.hypot(S.zx - S.cx, S.zy - S.cy) < 0.02 * S.r) { S.zx = S.cx + 0.45 * S.r; S.zy = S.cy + 0.25 * S.r; }
+  render();
+});
+$('fn').addEventListener('change', e => { S.fi = +e.target.value; render(); });
+$('N').addEventListener('input', e => { S.N = +e.target.value; render(); });
+$('chain').addEventListener('change', e => { S.chain = e.target.checked; render(); });
+$('fit').addEventListener('change', e => { S.fit = e.target.checked; render(); });
+
+let drag = null;
+const pos = (v, e) => { const r = v.cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+dom.cvs.addEventListener('pointerdown', e => {
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py), tol = 13 / dom.scale;
+  const d = Math.hypot(z.re - S.cx, z.im - S.cy);
+  if (S.mode === 'cauchy' && Math.hypot(z.re - S.zx, z.im - S.zy) < tol) drag = { kind: 'z0' };
+  else if (Math.abs(d - S.r) < tol && d > tol) drag = { kind: 'edge' };
+  else if (d < S.r) drag = { kind: 'move', z };
+  else drag = { kind: 'pan', px, py, x: dom.x, y: dom.y };
+  dom.cvs.setPointerCapture(e.pointerId);
+});
+dom.cvs.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [px, py] = pos(dom, e), z = dom.toZ(px, py);
+  if (drag.kind === 'z0') { S.zx = z.re; S.zy = z.im; }
+  else if (drag.kind === 'edge') S.r = Math.max(0.05, Math.hypot(z.re - S.cx, z.im - S.cy));
+  else if (drag.kind === 'move') { const dx = z.re - drag.z.re, dy = z.im - drag.z.im; S.cx += dx; S.cy += dy; S.zx += dx; S.zy += dy; drag.z = z; }
+  else { dom.x = drag.x - (px - drag.px) / dom.scale; dom.y = drag.y + (py - drag.py) / dom.scale; }
+  render();
+});
+const stop = () => { drag = null; };
+dom.cvs.addEventListener('pointerup', stop); dom.cvs.addEventListener('pointercancel', stop);
+
+let pan = null;
+ran.cvs.addEventListener('pointerdown', e => { const [px, py] = pos(ran, e); pan = { px, py, x: ran.x, y: ran.y }; ran.cvs.setPointerCapture(e.pointerId); });
+ran.cvs.addEventListener('pointermove', e => {
+  if (!pan) return;
+  const [px, py] = pos(ran, e);
+  if (S.fit) { S.fit = false; $('fit').checked = false; }
+  ran.x = pan.x - (px - pan.px) / ran.scale; ran.y = pan.y + (py - pan.py) / ran.scale; render();
+});
+ran.cvs.addEventListener('pointerup', () => { pan = null; }); ran.cvs.addEventListener('pointercancel', () => { pan = null; });
+
+function wheel(v) {
+  return e => {
+    e.preventDefault();
+    const [px, py] = pos(v, e), before = v.toZ(px, py);
+    v.half = Math.min(1e4, Math.max(1e-3, v.half * Math.exp(e.deltaY * 0.0015)));
+    if (v === ran && S.fit) { S.fit = false; $('fit').checked = false; }
+    setup(v);
+    const after = v.toZ(px, py);
+    v.x += before.re - after.re; v.y += before.im - after.im;
+    render();
+  };
+}
+dom.cvs.addEventListener('wheel', wheel(dom), { passive: false });
+ran.cvs.addEventListener('wheel', wheel(ran), { passive: false });
+
+new ResizeObserver(render).observe(dom.cvs);
+new ResizeObserver(render).observe(ran.cvs);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+render();
+})();
+</script>
+</body>
+</html>

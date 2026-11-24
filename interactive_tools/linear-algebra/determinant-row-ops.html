@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Determinant via Row Reduction</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+  <style>
+    :root {
+      --cream:    #faf7f2;
+      --paper:    #ffffff;
+      --navy:     #18284a;
+      --navy2:    #2c4070;
+      --accent:   #3a6eb5;
+      --red:      #b33a2f;
+      --red-bg:   #fef0ee;
+      --gold:     #c8a430;
+      --gray:     #7a7a8a;
+      --border:   #ddd9d0;
+      --acc-bg:   #edf1fb;
+      --mod-bg:   #fff9f5;
+      --green:    #2e7d32;
+      --green-bg: #e8f5e9;
+      --font-body:'Crimson Pro', Georgia, serif;
+      --font-head:'Playfair Display', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--navy);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 1.8rem 2.5rem;
+      border-bottom: 3px solid var(--gold);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    header h1 { font-family: var(--font-head); font-size: 2rem; font-weight: 400; letter-spacing:.02em; }
+    header p  { color: #a0b8d8; font-size: 1.05rem; font-style: italic; }
+
+    main { max-width: 1060px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 14px rgba(24,40,74,.06);
+    }
+    .card h2 {
+      font-family: var(--font-head);
+      font-size: 1.25rem; font-weight:600;
+      color: var(--navy);
+      margin-bottom: 1.2rem;
+    }
+
+    .size-row { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .size-row label { display:flex; align-items:center; gap:.5rem; font-size:.95rem; color: var(--navy2); }
+    .size-row input[type=number] {
+      width:56px; padding:.28rem .4rem;
+      border: 1px solid var(--border); border-radius:4px;
+      font-family:var(--font-body); font-size:1rem;
+      color:var(--navy); text-align:center;
+    }
+    .size-row input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+    .examples-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+
+    button {
+      font-family: var(--font-body);
+      font-size:.95rem; cursor:pointer;
+      border:none; border-radius:4px;
+      padding:.35rem .9rem;
+      transition: background .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    .btn-ghost { background: var(--acc-bg); color: var(--navy2); border:1px solid #c0ccdd; }
+    .btn-ghost:hover { background:#d8e4f8; }
+    .btn-solve {
+      background: var(--red); color:#fff;
+      padding: .55rem 2rem; font-size:1.05rem;
+      letter-spacing:.04em; margin-top:1.4rem;
+      display:inline-flex; align-items:center; gap:.5rem;
+    }
+    .btn-solve:hover { background:#952e24; }
+
+    .matrix-wrapper { overflow-x:auto; margin: .8rem 0; }
+    .matrix-grid {
+      display: inline-grid;
+      gap: 7px 8px;
+      align-items: center;
+    }
+    .matrix-grid input {
+      width: 62px;
+      padding: .32rem .4rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--font-body); font-size: 1rem;
+      color: var(--navy); text-align:center; background:#fafafa;
+      transition: border-color .15s, background .15s;
+    }
+    .matrix-grid input:focus { outline:none; border-color:var(--accent); background:#fff; }
+    .matrix-grid .col-lbl { text-align:center; font-size:.82rem; color:var(--gray); }
+    .matrix-grid .row-lbl { text-align:right; padding-right:8px; font-size:.88rem; color:var(--gray); }
+
+    /* ── STEPS ─────────────────────────────────── */
+    .steps-container { display:flex; flex-direction:column; gap:1.6rem; }
+
+    .step-block {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(24,40,74,.05);
+    }
+    .step-header {
+      background: var(--navy);
+      color:#fff;
+      padding:.6rem 1.2rem;
+      display:flex; align-items:center; gap:.75rem;
+    }
+    .step-num {
+      background: var(--gold); color: var(--navy);
+      width:26px; height:26px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:.8rem; font-weight:700; flex-shrink:0;
+    }
+    .step-num.init-badge { background: #4a6fa0; color:#fff; font-size:.72rem; font-weight:600; letter-spacing:.03em; }
+    .step-title-txt { font-style:italic; font-size:.95rem; color:#d0ddf0; }
+
+    .step-body { padding: .8rem 1.2rem; }
+    .tableau-scroll { overflow-x:auto; padding:.4rem 0 .6rem; }
+
+    .tableau {
+      border-collapse: collapse;
+      font-size: .93rem;
+    }
+    .tableau th, .tableau td {
+      padding: .4rem .75rem;
+      border: 1px solid #e8e4de;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .tableau thead th {
+      font-family: var(--font-body); font-weight:400; font-size:.85rem;
+      color: var(--navy2);
+      background: #f5f7fa;
+      border-bottom: 2px solid var(--border);
+    }
+    .tableau thead th.op-hdr { text-align:left; }
+    .tableau td.op-lbl {
+      text-align: left; padding-left: 1rem;
+      color: var(--navy2); background: #fafafa;
+      font-size: .88rem; min-width: 160px; max-width: 260px;
+    }
+    .tableau td.pivot-cell { background: var(--red-bg); }
+    .pivot-inner {
+      display: inline-block;
+      border: 2px solid var(--red);
+      border-radius: 4px;
+      padding: 1px 7px;
+      color: var(--red);
+      font-weight: 600;
+    }
+    .tableau tbody tr.mod-row > td           { background: var(--mod-bg); }
+    .tableau tbody tr.mod-row > td.pivot-cell{ background: var(--red-bg); }
+    .tableau tbody tr.mod-row > td.op-lbl    { background: #fff4ee; }
+
+    /* Det-tracking row at bottom of each step */
+    .det-track {
+      margin-top: .5rem;
+      padding: .55rem 1rem;
+      background: var(--acc-bg);
+      border-radius: 6px;
+      font-size: .92rem;
+      color: var(--navy2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem .8rem;
+      align-items: center;
+    }
+    .det-track .det-label { font-weight:600; color: var(--accent); }
+
+    /* ── SOLUTION BOX ────────────────────────────── */
+    .solution-card {
+      background: var(--navy);
+      color:#fff;
+      border-radius: 8px;
+      padding: 1.4rem 2rem;
+    }
+    .solution-card h3 { font-family:var(--font-head); color:var(--gold); font-size:1.3rem; margin-bottom:.6rem; }
+    .solution-card .det-val {
+      font-size: 1.6rem; font-weight: 600; color: #fff;
+      margin: .4rem 0;
+    }
+    .solution-card .det-formula {
+      font-size: 1rem; color: #a0b8d8; margin-top: .6rem;
+      line-height: 1.7;
+    }
+
+    .key-box {
+      background: var(--acc-bg);
+      border: 1px solid #c0ccdd;
+      border-radius: 6px;
+      padding: .85rem 1.2rem;
+      font-size: .9rem;
+      color: var(--navy2);
+      line-height: 1.6;
+    }
+    .key-box strong { color: var(--navy); }
+    .red-sq { color: var(--red); }
+
+    .err-msg { color: var(--red); font-style:italic; padding:.5rem 0; }
+
+    @media(max-width:600px){
+      header{padding:1.2rem 1rem;} header h1{font-size:1.5rem;}
+      main{padding:1rem .75rem;}
+      .card{padding:1.2rem 1rem;}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Determinant via Row Reduction</h1>
+  <p>Step-by-step row operations reducing to upper-triangular form — the determinant is the product of pivots, adjusted for swaps</p>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Enter a Square Matrix</h2>
+
+    <div class="size-row">
+      <label>Size (n × n): <input type="number" id="nSize" min="2" max="6" value="3"></label>
+      <button class="btn-ghost" onclick="rebuildMatrix()">Resize</button>
+    </div>
+
+    <div class="examples-row">
+      <button class="btn-ghost" onclick="loadExample(0)">2×2</button>
+      <button class="btn-ghost" onclick="loadExample(1)">3×3</button>
+      <button class="btn-ghost" onclick="loadExample(2)">3×3 (singular)</button>
+      <button class="btn-ghost" onclick="loadExample(3)">4×4</button>
+      <button class="btn-ghost" onclick="loadExample(4)">3×3 (lecture)</button>
+    </div>
+
+    <p style="font-size:.88rem; color:var(--gray); margin-bottom:.5rem;">
+      Enter integers, decimals, or fractions like <code>2/3</code>.
+    </p>
+
+    <div class="matrix-wrapper" id="matrixContainer"></div>
+
+    <button class="btn-solve" onclick="runDet()">
+      Compute Determinant →
+    </button>
+  </div>
+
+  <div id="solutionSection"></div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  FRACTION ARITHMETIC (same as row-reduction)
+// ═══════════════════════════════════════════════
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b > 0) { const t = b; b = a % b; a = t; }
+  return a === 0 ? 1 : a;
+}
+
+class Frac {
+  constructor(n, d = 1) {
+    if (d === 0) { this.n = 0; this.d = 1; this.bad = true; return; }
+    if (d < 0)   { n = -n; d = -d; }
+    const g = gcd(Math.abs(n), d);
+    this.n = Math.trunc(n / g);
+    this.d = Math.trunc(d / g);
+  }
+
+  static parse(str) {
+    str = (str || '').trim();
+    if (!str || str === '-') return new Frac(0);
+    if (str.includes('/')) {
+      const [a, b] = str.split('/');
+      const na = parseInt(a), nd = parseInt(b);
+      return (isNaN(na)||isNaN(nd)) ? new Frac(0) : new Frac(na, nd);
+    }
+    if (str.includes('.')) {
+      const parts = str.replace('-','').split('.');
+      const dec = parts[1] ? parts[1].length : 0;
+      const denom = Math.pow(10, dec);
+      return new Frac(Math.round(parseFloat(str)*denom), denom);
+    }
+    const n = parseInt(str);
+    return isNaN(n) ? new Frac(0) : new Frac(n);
+  }
+
+  clone()  { return new Frac(this.n, this.d); }
+  add(o)   { return new Frac(this.n*o.d + o.n*this.d, this.d*o.d); }
+  sub(o)   { return new Frac(this.n*o.d - o.n*this.d, this.d*o.d); }
+  mul(o)   { return new Frac(this.n*o.n, this.d*o.d); }
+  div(o)   { return new Frac(this.n*o.d, this.d*o.n); }
+  neg()    { return new Frac(-this.n, this.d); }
+  recip()  { return new Frac(this.d, this.n); }
+
+  isZero() { return this.n === 0; }
+  isOne()  { return this.n === 1 && this.d === 1; }
+  isNeg()  { return this.n < 0; }
+  abs()    { return new Frac(Math.abs(this.n), this.d); }
+  eq(o)    { return this.n * o.d === o.n * this.d; }
+
+  toTeX(inline=true) {
+    if (this.d === 1) return String(this.n);
+    const cmd = inline ? '\\tfrac' : '\\dfrac';
+    const abs = Math.abs(this.n);
+    const sg  = this.n < 0 ? '-' : '';
+    return `${sg}${cmd}{${abs}}{${this.d}}`;
+  }
+
+  toFloat() { return this.n / this.d; }
+}
+
+const ZERO = new Frac(0);
+const ONE  = new Frac(1);
+const NEG1 = new Frac(-1);
+
+// ═══════════════════════════════════════════════
+//  DETERMINANT VIA ROW REDUCTION
+// ═══════════════════════════════════════════════
+function computeDet(input) {
+  const n = input.length;
+  let A = input.map(r => r.map(f => f.clone()));
+  let signFlips = 0;        // each swap flips sign
+  const steps = [];
+
+  function snap(pivots, ops, note) {
+    return {
+      rows: Array.from({length:n}, (_,i) => ({
+        entries: A[i].map(f=>f.clone()),
+        op: ops[i]
+      })),
+      pivots,
+      signFlips,
+      note
+    };
+  }
+
+  // Initial
+  steps.push({
+    title: 'Initial matrix',
+    isInit: true,
+    ...snap([], Array.from({length:n},(_,i)=>({
+      modified:false, tex:`R_{${i+1}}`
+    })), null)
+  });
+
+  let pivotRow = 0;
+  const pivotPositions = []; // {row, col}
+
+  for (let col=0; col<n && pivotRow<n; col++) {
+    // Find pivot (partial pivoting: pick largest for numerical stability)
+    let best = -1, bestAbs = -1;
+    for (let r=pivotRow; r<n; r++) {
+      if (!A[r][col].isZero()) {
+        const av = Math.abs(A[r][col].toFloat());
+        if (av > bestAbs) { bestAbs = av; best = r; }
+      }
+    }
+    if (best === -1) {
+      // Zero column → det = 0, but we continue to show the work
+      steps.push({
+        title: `Column ${col+1}: no nonzero entry below — determinant is 0`,
+        isInit: false,
+        ...snap([], Array.from({length:n},(_,i)=>({modified:false, tex:`R_{${i+1}}`})),
+          'zero-col')
+      });
+      continue;
+    }
+
+    // Swap if needed
+    if (best !== pivotRow) {
+      [A[best], A[pivotRow]] = [A[pivotRow], A[best]];
+      signFlips++;
+      const swops = Array.from({length:n},(_,i)=>({
+        modified: i===pivotRow || i===best,
+        tex: i===pivotRow ? `R_{${best+1}} \\leftrightarrow R_{${pivotRow+1}}`
+           : i===best     ? `R_{${pivotRow+1}} \\leftrightarrow R_{${best+1}}`
+           : `R_{${i+1}}`
+      }));
+      steps.push({
+        title: `Swap rows ${pivotRow+1} and ${best+1} — sign flips to ${signFlips % 2 === 0 ? '+' : '−'}`,
+        isInit: false,
+        ...snap([{row:pivotRow, col}], swops, 'swap')
+      });
+    }
+
+    pivotPositions.push({row:pivotRow, col});
+
+    // Eliminate below pivot
+    const ops = Array.from({length:n},(_,i)=>({modified:false, tex:`R_{${i+1}}`}));
+    let any = false;
+
+    for (let r=pivotRow+1; r<n; r++) {
+      if (!A[r][col].isZero()) {
+        const mult = A[r][col].div(A[pivotRow][col]);
+        for (let c=0; c<n; c++) A[r][c] = A[r][c].sub(mult.mul(A[pivotRow][c]));
+        ops[r] = { modified: true, tex: opLabel(r, pivotRow, mult) };
+        any = true;
+      }
+    }
+
+    if (any) {
+      steps.push({
+        title: `Eliminate below pivot in column ${col+1}`,
+        isInit: false,
+        ...snap([{row:pivotRow, col}], ops, 'elim')
+      });
+    } else if (best === pivotRow) {
+      // No swap, no elimination needed — just note the pivot
+      steps.push({
+        title: `Column ${col+1}: pivot already isolated`,
+        isInit: false,
+        ...snap([{row:pivotRow, col}], ops, 'trivial')
+      });
+    }
+
+    pivotRow++;
+  }
+
+  // Compute determinant: product of diagonal × (−1)^swaps
+  const diag = [];
+  let detVal = ONE;
+  for (let i=0; i<n; i++) {
+    diag.push(A[i][i].clone());
+    detVal = detVal.mul(A[i][i]);
+  }
+  if (signFlips % 2 === 1) detVal = detVal.neg();
+
+  return { steps, n, diag, signFlips, detVal, pivotPositions };
+}
+
+function opLabel(ri, rj, mult) {
+  const mt = mult.toTeX(true);
+  if (mult.isOne())
+    return `R_{${ri+1}} - R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n === -mult.d)
+    return `R_{${ri+1}} + R_{${rj+1}} \\to R_{${ri+1}}`;
+  if (mult.n < 0)
+    return `R_{${ri+1}} + ${mult.neg().toTeX(true)}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+  return `R_{${ri+1}} - ${mt}\\,R_{${rj+1}} \\to R_{${ri+1}}`;
+}
+
+// ═══════════════════════════════════════════════
+//  LATEX UTILITIES
+// ═══════════════════════════════════════════════
+function rk(tex) {
+  try { return katex.renderToString(tex, {throwOnError:false}); }
+  catch(e) { return tex; }
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER STEPS
+// ═══════════════════════════════════════════════
+function renderSteps(result) {
+  const { steps, n, diag, signFlips, detVal, pivotPositions } = result;
+  const sec = document.getElementById('solutionSection');
+  sec.innerHTML = '';
+  const cont = document.createElement('div');
+  cont.className = 'steps-container';
+
+  // Running determinant info
+  let swapsSoFar = 0;
+
+  steps.forEach((step, si) => {
+    const block = document.createElement('div');
+    block.className = 'step-block';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'step-header';
+    const badge = document.createElement('span');
+    if (step.isInit) {
+      badge.className = 'step-num init-badge';
+      badge.textContent = 'init';
+    } else {
+      badge.className = 'step-num';
+      badge.textContent = si;
+    }
+    const ttxt = document.createElement('span');
+    ttxt.className = 'step-title-txt';
+    ttxt.textContent = step.title;
+    hdr.append(badge, ttxt);
+    block.appendChild(hdr);
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'step-body';
+
+    // Table
+    const wrap = document.createElement('div');
+    wrap.className = 'tableau-scroll';
+    const tbl = document.createElement('table');
+    tbl.className = 'tableau';
+
+    // Thead
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+
+    const thOp = document.createElement('th');
+    thOp.className = 'op-hdr';
+    thOp.textContent = 'Row operation';
+    hr.appendChild(thOp);
+
+    for (let j=0; j<n; j++) {
+      const th = document.createElement('th');
+      th.textContent = `Col ${j+1}`;
+      hr.appendChild(th);
+    }
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
+
+    // Tbody
+    const tbody = document.createElement('tbody');
+    step.rows.forEach((row, ri) => {
+      const tr = document.createElement('tr');
+      if (row.op.modified) tr.classList.add('mod-row');
+
+      // Op label
+      const tdOp = document.createElement('td');
+      tdOp.className = 'op-lbl';
+      tdOp.innerHTML = rk(row.op.tex);
+      tr.appendChild(tdOp);
+
+      // Matrix entries
+      row.entries.forEach((f, j) => {
+        const td = document.createElement('td');
+        const isPiv = step.pivots.some(p => p.row === ri && p.col === j);
+        const isDiag = ri === j;
+
+        if (isPiv) {
+          td.className = 'pivot-cell';
+          td.innerHTML = `<span class="pivot-inner">${rk(f.toTeX(true))}</span>`;
+        } else {
+          td.innerHTML = rk(f.toTeX(true));
+          // Subtle highlight for diagonal
+          if (isDiag && !step.isInit) {
+            td.style.fontWeight = '600';
+          }
+        }
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    body.appendChild(wrap);
+
+    // Running determinant tracker
+    if (step.note === 'swap') swapsSoFar = step.signFlips;
+
+    if (!step.isInit) {
+      const track = document.createElement('div');
+      track.className = 'det-track';
+
+      const diagEntries = step.rows.map((r,i) => r.entries[i]);
+      const prodParts = [];
+      let runProd = ONE;
+      let allPivFound = true;
+      for (let i=0; i<n; i++) {
+        // Only include diagonal entries for rows that already have pivots
+        const hasPivot = step.rows[i].entries.slice(0, i).every(f => f.isZero()) || i === 0;
+        prodParts.push(diagEntries[i].toTeX(true));
+        runProd = runProd.mul(diagEntries[i]);
+      }
+
+      const signTeX = step.signFlips % 2 === 0 ? '+' : '-';
+      const signWord = step.signFlips % 2 === 0 ? '' : '(-1) \\times ';
+
+      track.innerHTML = `
+        <span class="det-label">det tracking:</span>
+        <span>${rk(`\\text{sign} = (${signTeX}1)`)}</span>
+        <span style="color:#888">|</span>
+        <span>${rk(`\\text{swaps} = ${step.signFlips}`)}</span>
+        <span style="color:#888">|</span>
+        <span>${rk(`\\text{diag product} = ${prodParts.join(' \\times ')}`)}</span>
+      `;
+      body.appendChild(track);
+    }
+
+    block.appendChild(body);
+    cont.appendChild(block);
+  });
+
+  // ── Final result card ──
+  const solCard = document.createElement('div');
+  solCard.className = 'solution-card';
+
+  const diagTeX = diag.map(f => f.toTeX(true));
+  const prodTeX = diagTeX.join(' \\times ');
+  let prodVal = ONE;
+  diag.forEach(f => { prodVal = prodVal.mul(f); });
+
+  const signMul = signFlips % 2 === 1 ? '(-1) \\times ' : '';
+  const signLabel = signFlips % 2 === 0 ? '+1' : '-1';
+
+  // Build the derivation
+  let formulaHTML = '';
+  formulaHTML += `<p class="det-formula">`;
+  formulaHTML += `After row-reducing to upper-triangular form:`;
+  formulaHTML += `</p>`;
+  formulaHTML += `<p class="det-formula">`;
+  formulaHTML += rk(`\\det(A) = (-1)^{\\text{swaps}} \\times \\prod \\text{pivots}`);
+  formulaHTML += `</p>`;
+  formulaHTML += `<p class="det-formula">`;
+  formulaHTML += rk(`= (${signLabel}) \\times ${prodTeX}`);
+  formulaHTML += `</p>`;
+  formulaHTML += `<p class="det-formula">`;
+  formulaHTML += rk(`= (${signLabel}) \\times ${prodVal.toTeX(false)}`);
+  formulaHTML += `</p>`;
+
+  solCard.innerHTML = `
+    <h3>Determinant</h3>
+    <div class="det-val">${rk(`\\det(A) \\;=\\; \\boxed{${detVal.toTeX(false)}}`)}</div>
+    ${formulaHTML}
+    <p class="det-formula" style="margin-top:.8rem; font-size:.88rem; color:#7a9cc8;">
+      ${signFlips} row swap${signFlips !== 1 ? 's' : ''} performed — each swap multiplies det by −1.
+      <br>
+      Row operations R<sub>i</sub> − c·R<sub>j</sub> → R<sub>i</sub> do not change the determinant.
+    </p>
+  `;
+  cont.appendChild(solCard);
+
+  // ── Key box ──
+  const key = document.createElement('div');
+  key.className = 'key-box';
+  key.innerHTML = `
+    <strong>How this works:</strong>
+    We reduce the matrix to <em>upper-triangular form</em> using two types of
+    elementary row operations:
+    <br><br>
+    <strong>1. Row replacement</strong> (R<sub>i</sub> − c·R<sub>j</sub> → R<sub>i</sub>):
+    These do <em>not</em> change the determinant. Geometrically, this is a
+    <em>shear</em> — sliding one face of the parallelepiped along another,
+    preserving volume (same base, same height).
+    <br><br>
+    <strong>2. Row swaps</strong> (R<sub>i</sub> ↔ R<sub>j</sub>):
+    Each swap <em>flips the sign</em> of the determinant. Geometrically,
+    swapping two edges of the parallelepiped reverses its orientation.
+    <br><br>
+    Once the matrix is upper-triangular, the determinant is just the <em>product
+    of the diagonal entries</em> (the pivots), times (−1)<sup>number of swaps</sup>.
+    <br><br>
+    <span class="red-sq">■</span> Red-boxed entries are <strong>pivot elements</strong>.
+    Highlighted rows were <strong>modified</strong> in that step.
+  `;
+  cont.appendChild(key);
+
+  sec.appendChild(cont);
+  sec.scrollIntoView({behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════
+//  MATRIX INPUT UI
+// ═══════════════════════════════════════════════
+let cN = 3;
+
+function rebuildMatrix() {
+  cN = Math.min(Math.max(parseInt(document.getElementById('nSize').value) || 3, 2), 6);
+  document.getElementById('nSize').value = cN;
+  buildGrid();
+}
+
+function buildGrid() {
+  const cont = document.getElementById('matrixContainer');
+  cont.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'matrix-grid';
+  grid.style.gridTemplateColumns = `auto repeat(${cN}, 64px)`;
+
+  // Header row
+  const empty = document.createElement('div');
+  grid.appendChild(empty);
+  for (let j=0; j<cN; j++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'col-lbl';
+    lbl.textContent = `c${j+1}`;
+    grid.appendChild(lbl);
+  }
+
+  // Data rows
+  for (let i=0; i<cN; i++) {
+    const rl = document.createElement('div');
+    rl.className = 'row-lbl';
+    rl.innerHTML = rk(`R_{${i+1}}`);
+    grid.appendChild(rl);
+    for (let j=0; j<cN; j++) {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = `c${i}_${j}`;
+      inp.placeholder = '0';
+      inp.autocomplete = 'off';
+      grid.appendChild(inp);
+    }
+  }
+  cont.appendChild(grid);
+}
+
+function getInput() {
+  return Array.from({length:cN}, (_,i) =>
+    Array.from({length:cN}, (_,j) =>
+      Frac.parse(document.getElementById(`c${i}_${j}`)?.value || '0')
+    )
+  );
+}
+
+// ── Pre-baked examples ──
+const EXAMPLES = [
+  { n:2, data:[['3','5'],['2','7']] },
+  { n:3, data:[['1','2','-1'],['2','1','3'],['-1','3','2']] },
+  { n:3, data:[['1','2','3'],['4','5','6'],['7','8','9']] },
+  { n:4, data:[['2','1','0','3'],['1','0','2','1'],['0','3','1','2'],['1','2','0','1']] },
+  { n:3, data:[['3','1','1'],['1','3','1'],['1','1','3']] },
+];
+
+function loadExample(idx) {
+  const ex = EXAMPLES[idx];
+  cN = ex.n;
+  document.getElementById('nSize').value = cN;
+  buildGrid();
+  ex.data.forEach((row, i) => {
+    for (let j=0; j<ex.n; j++) {
+      const el = document.getElementById(`c${i}_${j}`);
+      if (el) el.value = row[j];
+    }
+  });
+}
+
+function runDet() {
+  try {
+    const input = getInput();
+    const result = computeDet(input);
+    renderSteps(result);
+  } catch(e) {
+    document.getElementById('solutionSection').innerHTML =
+      `<div class="err-msg" style="padding:1rem">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+// ── init ──
+window.addEventListener('DOMContentLoaded', () => {
+  buildGrid();
+  loadExample(4);
+});
+</script>
+</body>
+</html>
